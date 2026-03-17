@@ -1,0 +1,196 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         RenoDXCommander — Refined Dark Theme
+         A softer, warmer dark palette that reduces eye strain while keeping
+         the app's identity. Higher contrast text, gentler accent colors.
+         ═══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- ── Base surfaces ─────────────────────────────────────────────────── -->
+    <Color x:Key="SurfaceBase">#FF121518</Color>          <!-- main background -->
+    <Color x:Key="SurfaceRaised">#FF181D23</Color>        <!-- cards, panels -->
+    <Color x:Key="SurfaceOverlay">#FF1E242C</Color>       <!-- overlays, modals -->
+    <Color x:Key="SurfaceHeader">#FF0F1318</Color>        <!-- header bar -->
+    <Color x:Key="SurfaceStatusBar">#FF0D1015</Color>     <!-- status bar -->
+    <Color x:Key="SurfaceSidebar">#FF101419</Color>       <!-- sidebar -->
+    <Color x:Key="SurfaceToolbar">#FF131820</Color>       <!-- toolbar strip -->
+    <Color x:Key="SurfaceInput">#FF151A22</Color>         <!-- text inputs -->
+    <Color x:Key="SurfaceComponentTable">#FF131820</Color><!-- component table bg -->
+
+    <!-- ── Borders ───────────────────────────────────────────────────────── -->
+    <Color x:Key="BorderSubtle">#FF1E2630</Color>         <!-- subtle dividers -->
+    <Color x:Key="BorderDefault">#FF283240</Color>        <!-- card borders -->
+    <Color x:Key="BorderStrong">#FF354050</Color>         <!-- focused/active -->
+
+    <!-- ── Text ──────────────────────────────────────────────────────────── -->
+    <Color x:Key="TextPrimary">#FFE8ECF2</Color>          <!-- headings, names -->
+    <Color x:Key="TextSecondary">#FFA0AABB</Color>        <!-- body text -->
+    <Color x:Key="TextTertiary">#FF6B7A8E</Color>         <!-- muted labels -->
+    <Color x:Key="TextDisabled">#FF404858</Color>         <!-- disabled/dim -->
+
+    <!-- ── Accent: Teal (primary brand) ──────────────────────────────────── -->
+    <Color x:Key="AccentTeal">#FF4DC9E6</Color>           <!-- primary accent -->
+    <Color x:Key="AccentTealDim">#FF2A7A90</Color>        <!-- muted teal -->
+    <Color x:Key="AccentTealBg">#FF122830</Color>         <!-- teal tinted bg -->
+    <Color x:Key="AccentTealBorder">#FF1E4858</Color>     <!-- teal border -->
+
+    <!-- ── Accent: Green (success / installed) ───────────────────────────── -->
+    <Color x:Key="AccentGreen">#FF5ECB7D</Color>          <!-- installed, success -->
+    <Color x:Key="AccentGreenDim">#FF2E7A48</Color>       <!-- muted green -->
+    <Color x:Key="AccentGreenBg">#FF122818</Color>        <!-- green tinted bg -->
+    <Color x:Key="AccentGreenBorder">#FF1E4028</Color>    <!-- green border -->
+
+    <!-- ── Accent: Purple (updates) ──────────────────────────────────────── -->
+    <Color x:Key="AccentPurple">#FFB898E8</Color>         <!-- update available -->
+    <Color x:Key="AccentPurpleDim">#FF7A60A8</Color>      <!-- muted purple -->
+    <Color x:Key="AccentPurpleBg">#FF201838</Color>       <!-- purple tinted bg -->
+    <Color x:Key="AccentPurpleBorder">#FF3A2860</Color>   <!-- purple border -->
+
+    <!-- ── Accent: Amber (warning / in-progress) ─────────────────────────── -->
+    <Color x:Key="AccentAmber">#FFD4A856</Color>          <!-- warnings -->
+    <Color x:Key="AccentAmberDim">#FF8A7040</Color>       <!-- muted amber -->
+    <Color x:Key="AccentAmberBg">#FF201C10</Color>        <!-- amber tinted bg -->
+
+    <!-- ── Accent: Red (danger / remove) ─────────────────────────────────── -->
+    <Color x:Key="AccentRed">#FFE07070</Color>            <!-- errors, delete -->
+    <Color x:Key="AccentRedBg">#FF201010</Color>          <!-- red tinted bg -->
+
+    <!-- ── Accent: Blue (action buttons) ─────────────────────────────────── -->
+    <Color x:Key="AccentBlue">#FF7AACDD</Color>           <!-- action buttons -->
+    <Color x:Key="AccentBlueBg">#FF182840</Color>         <!-- blue button bg -->
+    <Color x:Key="AccentBlueBorder">#FF2A4468</Color>     <!-- blue button border -->
+
+    <!-- ── Filter chip colors ────────────────────────────────────────────── -->
+    <Color x:Key="ChipDefault">#FF1A2030</Color>          <!-- inactive chip -->
+    <Color x:Key="ChipActive">#FF243050</Color>           <!-- active chip -->
+    <Color x:Key="ChipText">#FF8898B0</Color>             <!-- chip label -->
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SolidColorBrush resources (for direct XAML binding)
+         ═══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Surfaces -->
+    <SolidColorBrush x:Key="SurfaceBaseBrush"           Color="{StaticResource SurfaceBase}"/>
+    <SolidColorBrush x:Key="SurfaceRaisedBrush"         Color="{StaticResource SurfaceRaised}"/>
+    <SolidColorBrush x:Key="SurfaceOverlayBrush"        Color="{StaticResource SurfaceOverlay}"/>
+    <SolidColorBrush x:Key="SurfaceHeaderBrush"         Color="{StaticResource SurfaceHeader}"/>
+    <SolidColorBrush x:Key="SurfaceStatusBarBrush"      Color="{StaticResource SurfaceStatusBar}"/>
+    <SolidColorBrush x:Key="SurfaceSidebarBrush"        Color="{StaticResource SurfaceSidebar}"/>
+    <SolidColorBrush x:Key="SurfaceToolbarBrush"        Color="{StaticResource SurfaceToolbar}"/>
+    <SolidColorBrush x:Key="SurfaceInputBrush"          Color="{StaticResource SurfaceInput}"/>
+    <SolidColorBrush x:Key="SurfaceComponentTableBrush" Color="{StaticResource SurfaceComponentTable}"/>
+
+    <!-- Borders -->
+    <SolidColorBrush x:Key="BorderSubtleBrush"  Color="{StaticResource BorderSubtle}"/>
+    <SolidColorBrush x:Key="BorderDefaultBrush"  Color="{StaticResource BorderDefault}"/>
+    <SolidColorBrush x:Key="BorderStrongBrush"  Color="{StaticResource BorderStrong}"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextPrimaryBrush"   Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+    <SolidColorBrush x:Key="TextTertiaryBrush"  Color="{StaticResource TextTertiary}"/>
+    <SolidColorBrush x:Key="TextDisabledBrush"  Color="{StaticResource TextDisabled}"/>
+
+    <!-- Accents -->
+    <SolidColorBrush x:Key="AccentTealBrush"       Color="{StaticResource AccentTeal}"/>
+    <SolidColorBrush x:Key="AccentTealDimBrush"    Color="{StaticResource AccentTealDim}"/>
+    <SolidColorBrush x:Key="AccentTealBgBrush"     Color="{StaticResource AccentTealBg}"/>
+    <SolidColorBrush x:Key="AccentTealBorderBrush" Color="{StaticResource AccentTealBorder}"/>
+
+    <SolidColorBrush x:Key="AccentGreenBrush"       Color="{StaticResource AccentGreen}"/>
+    <SolidColorBrush x:Key="AccentGreenDimBrush"    Color="{StaticResource AccentGreenDim}"/>
+    <SolidColorBrush x:Key="AccentGreenBgBrush"     Color="{StaticResource AccentGreenBg}"/>
+    <SolidColorBrush x:Key="AccentGreenBorderBrush" Color="{StaticResource AccentGreenBorder}"/>
+
+    <SolidColorBrush x:Key="AccentPurpleBrush"       Color="{StaticResource AccentPurple}"/>
+    <SolidColorBrush x:Key="AccentPurpleDimBrush"    Color="{StaticResource AccentPurpleDim}"/>
+    <SolidColorBrush x:Key="AccentPurpleBgBrush"     Color="{StaticResource AccentPurpleBg}"/>
+    <SolidColorBrush x:Key="AccentPurpleBorderBrush" Color="{StaticResource AccentPurpleBorder}"/>
+
+    <SolidColorBrush x:Key="AccentAmberBrush"    Color="{StaticResource AccentAmber}"/>
+    <SolidColorBrush x:Key="AccentAmberDimBrush" Color="{StaticResource AccentAmberDim}"/>
+    <SolidColorBrush x:Key="AccentAmberBgBrush"  Color="{StaticResource AccentAmberBg}"/>
+
+    <SolidColorBrush x:Key="AccentRedBrush"   Color="{StaticResource AccentRed}"/>
+    <SolidColorBrush x:Key="AccentRedBgBrush" Color="{StaticResource AccentRedBg}"/>
+
+    <SolidColorBrush x:Key="AccentBlueBrush"       Color="{StaticResource AccentBlue}"/>
+    <SolidColorBrush x:Key="AccentBlueBgBrush"     Color="{StaticResource AccentBlueBg}"/>
+    <SolidColorBrush x:Key="AccentBlueBorderBrush" Color="{StaticResource AccentBlueBorder}"/>
+
+    <!-- Chips -->
+    <SolidColorBrush x:Key="ChipDefaultBrush" Color="{StaticResource ChipDefault}"/>
+    <SolidColorBrush x:Key="ChipActiveBrush"  Color="{StaticResource ChipActive}"/>
+    <SolidColorBrush x:Key="ChipTextBrush"    Color="{StaticResource ChipText}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Sidebar item colors
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="SidebarItemSelected">#FF1A2840</Color>
+    <Color x:Key="SidebarItemSelectedBorder">#FF2A4060</Color>
+    <Color x:Key="SidebarItemSelectedText">#FFE2E8FF</Color>
+    <Color x:Key="SidebarItemHover">#FF151C28</Color>
+    <Color x:Key="SidebarItemHoverBorder">#FF1E2C40</Color>
+    <Color x:Key="SidebarItemText">#FF8090B8</Color>
+    <Color x:Key="SidebarUpdateBadge">#FF39FF14</Color>
+
+    <SolidColorBrush x:Key="SidebarItemSelectedBrush"       Color="{StaticResource SidebarItemSelected}"/>
+    <SolidColorBrush x:Key="SidebarItemSelectedBorderBrush" Color="{StaticResource SidebarItemSelectedBorder}"/>
+    <SolidColorBrush x:Key="SidebarItemSelectedTextBrush"   Color="{StaticResource SidebarItemSelectedText}"/>
+    <SolidColorBrush x:Key="SidebarItemHoverBrush"          Color="{StaticResource SidebarItemHover}"/>
+    <SolidColorBrush x:Key="SidebarItemHoverBorderBrush"    Color="{StaticResource SidebarItemHoverBorder}"/>
+    <SolidColorBrush x:Key="SidebarItemTextBrush"           Color="{StaticResource SidebarItemText}"/>
+    <SolidColorBrush x:Key="SidebarUpdateBadgeBrush"        Color="{StaticResource SidebarUpdateBadge}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Inline description style (secondary/muted text beneath controls)
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="InlineDescriptionText">#FF6B7A8E</Color>
+    <SolidColorBrush x:Key="InlineDescriptionBrush" Color="{StaticResource InlineDescriptionText}"/>
+
+    <Style x:Key="InlineDescriptionStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource InlineDescriptionBrush}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="LineHeight" Value="18"/>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Settings section header style
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="SettingsHeaderText">#FFA0B0D8</Color>
+    <SolidColorBrush x:Key="SettingsHeaderBrush" Color="{StaticResource SettingsHeaderText}"/>
+
+    <Style x:Key="SettingsSectionHeaderStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource SettingsHeaderBrush}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Card grid colors
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="CardBackground">#FF141820</Color>
+    <Color x:Key="CardHighlightBackground">#FF1A2840</Color>
+    <Color x:Key="CardBorder">#FF1E2430</Color>
+    <Color x:Key="CardHighlightBorder">#FF2A4060</Color>
+
+    <SolidColorBrush x:Key="CardBackgroundBrush"          Color="{StaticResource CardBackground}"/>
+    <SolidColorBrush x:Key="CardHighlightBackgroundBrush" Color="{StaticResource CardHighlightBackground}"/>
+    <SolidColorBrush x:Key="CardBorderBrush"              Color="{StaticResource CardBorder}"/>
+    <SolidColorBrush x:Key="CardHighlightBorderBrush"     Color="{StaticResource CardHighlightBorder}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Layout constants
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <x:Double x:Key="CardItemWidth">496</x:Double>
+    <CornerRadius x:Key="CardRadius">14</CornerRadius>
+    <CornerRadius x:Key="ButtonRadius">8</CornerRadius>
+    <CornerRadius x:Key="ChipRadius">8</CornerRadius>
+    <CornerRadius x:Key="BadgeRadius">6</CornerRadius>
+    <Thickness x:Key="CardPadding">18,16</Thickness>
+    <Thickness x:Key="CardMargin">8</Thickness>
+
+</ResourceDictionary>

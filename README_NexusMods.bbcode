@@ -1,0 +1,91 @@
+[center][size=6][b]RenoDX Commander (RDXC)[/b][/size]
+[size=3]A desktop manager for HDR game mods on Windows. Auto-detects your game libraries, installs ReShade, Display Commander, RenoDX, and Luma Framework mods all in a few clicks.[/size][/center]
+
+[line]
+
+[color=FF6644][b]Disclaimer[/b][/color]
+RDXC is an unofficial third-party tool, not affiliated with or endorsed by the RenoDX project, Crosire, pmnoxx, or the Luma Framework. All mod files are downloaded from their official sources at runtime and are not redistributed.
+
+[color=FF4444][b] Single-player only[/b][/color]
+RDXC installs ReShade with full addon support, which may be flagged by anti-cheat in online/multiplayer games. Uninstall ReShade before playing online.
+
+[line]
+
+[size=5][b]Download[/b][/size]
+Grab the latest installer from the [url=https://github.com/RankFTW/RenoDXChecker/releases/tag/RDXC]Releases page[/url]. Requires Windows 10/11 x64 and [url=https://dotnet.microsoft.com/download/dotnet/8.0].NET 8 Desktop Runtime[/url].
+
+[line]
+
+[size=5][b]Quick Start[/b][/size]
+[list=1]
+[*] [b]Run RDXC[/b] — games are auto-detected from Steam, GOG, Epic, EA App, Ubisoft, Xbox Game Pass, Battle.net, and Rockstar on every launch.
+[*] [b]Pick a game[/b] from the sidebar. Use search or filter chips to narrow the list.
+[*] [b]Install components[/b] from the detail panel — ReShade, Display Commander, and RenoDX each have a one-click install button.
+[*] [b]Launch the game[/b], press [b]Home[/b] to open ReShade, go to the [b]Add-ons[/b] tab, and configure RenoDX.
+[/list]
+
+[line]
+
+[size=5][b]Features[/b][/size]
+[list]
+[*] [b]8-store game detection[/b] — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox Game Pass, Battle.net, Rockstar. New games appear automatically on every launch.
+[*] [b]One-click install/update/uninstall[/b] for ReShade, Display Commander, RenoDX addons, and Luma Framework mods
+[*] [b]Version display[/b] — installed ReShade and Display Commander version numbers shown directly on the component row
+[*] [b]DC Mode[/b] — 3 levels; controls how Display Commander loads alongside ReShade for better compatibility
+[*] [b]Shader pack management[/b] — 7 HDR shader packs with four deploy modes: Off, Minimum, All, User
+[*] [b]Per-game overrides[/b] — DLL naming, shader mode, DC mode, wiki name mapping, per-component Update All inclusion, reset overrides
+[*] [b]Drag-and-drop[/b] — drop a game .exe to add it, or drop an .addon64/.addon32 to install it
+[*] [b]Remote manifest[/b] — game-specific overrides updated server-side without app releases, including engine overrides and DLL name overrides
+[*] [b]UE-Extended / Native HDR[/b] — automatic detection and addon assignment for Unreal Engine games
+[*] [b]Engine detection[/b] — Unreal, Unity, and custom engine names detected and displayed with icons
+[*] [b]ReShadePreset.ini auto-deploy[/b] — place a preset in the RDXC inis folder and it will be copied to every game install automatically
+[*] [b]Foreign DLL protection[/b] — detects DXVK, Special K, ENB, etc. before overwriting
+[*] [b]Auto-update[/b] — checks for new RDXC versions on launch
+[*] [b]Settings page[/b] — DC Mode, shader mode, deploy actions, preferences, logs, about, and credits all in one place
+[/list]
+
+[line]
+
+[size=5][b]Troubleshooting[/b][/size]
+[list]
+[*] [b]Game not detected?[/b] Click [b]Add Game[/b] in the toolbar or drag the game's .exe onto the window.
+[*] [b]Xbox games missing?[/b] Click Refresh — RDXC uses the PackageManager API.
+[*] [b]ReShade not loading?[/b] Check the install path via the folder icon — dxgi.dll must be next to the game exe.
+[*] [b]Black screen (Unreal)?[/b] ReShade → Add-ons → RenoDX → set R10G10B10A2UNORM to output size.
+[*] [b]UE-Extended not working?[/b] Turn on in-game HDR — UE-Extended requires native HDR output.
+[*] [b]Downloads failing?[/b] Click Refresh, or clear cache from Settings → Open Downloads Cache.
+[*] [b]Foreign DLL blocking install?[/b] Choose Overwrite in the dialog, or cancel to keep the existing file.
+[*] [b]Games/mods out of sync?[/b] Settings → Full Refresh to clear all caches.
+[/list]
+
+For detailed documentation on DC Mode, shader packs, Luma Framework, per-game overrides, game detection methods, and more, see the [url=https://github.com/RankFTW/RenoDXChecker]Detailed Guide[/url].
+
+[line]
+
+[size=5][b]Third-Party Components[/b][/size]
+[list]
+[*] [url=https://reshade.me]ReShade[/url] by Crosire — BSD 3-Clause
+[*] [url=https://github.com/pmnoxx/display-commander]Display Commander[/url] by pmnoxx — Source-available
+[*] [url=https://github.com/clshortfuse/renodx]RenoDX[/url] by clshortfuse & contributors — MIT
+[*] [url=https://github.com/FiloppiLuma-Framework]Luma Framework[/url] by Pumbo & Filoppi — Source-available
+[*] [url=https://www.7-zip.org]7-Zip[/url] by Igor Pavlov — LGPL-2.1 / BSD-3-Clause
+[/list]
+
+[line]
+
+[size=5][b]Links[/b][/size]
+[list]
+[*] [url=https://github.com/clshortfuse/renodx]RenoDX[/url]
+[*] [url=https://github.com/clshortfuse/renodx/wiki/Mods]RenoDX Wiki[/url]
+[*] [url=https://reshade.me]ReShade[/url]
+[*] [url=https://github.com/pmnoxx/display-commander]Display Commander[/url]
+[*] [url=https://github.com/FiloppiLuma-Framework]Luma Framework[/url]
+[*] [url=https://github.com/FiloppiLuma-Framework/wiki/Mods-List]Luma Mods List[/url]
+[*] [url=https://www.hdrmods.com]HDR Guides[/url]
+[*] [url=https://discord.gg/gF4GRJWZ2A]RenoDX Discord[/url]
+[*] [url=https://discord.gg/k3cDruEQ]HDR Den Discord[/url]
+[*] [url=https://discordapp.com/channels/1296187754979528747/1475173660686815374]RDXC Support Channel[/url]
+[*] [url=https://discord.gg/pQtPYcdE]The Ultra Place (Ultra Discord)[/url]
+[*] [url=https://github.com/RankFTW/RenoDXChecker]RDXC GitHub[/url]
+[*] [url=https://ko-fi.com/rankftw]Support RDXC on Ko-Fi[/url]
+[/list]

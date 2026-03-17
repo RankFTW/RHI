@@ -1,0 +1,1063 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="RenoDXCommander.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:RenoDXCommander.ViewModels"
+    xmlns:converters="using:RenoDXCommander.Converters"
+    xmlns:controls="using:RenoDXCommander.Controls"
+    Title="RDXC - RenoDXCommander">
+    <Grid Background="{StaticResource SurfaceBaseBrush}" AllowDrop="True" DragOver="Grid_DragOver" Drop="Grid_Drop">
+        <Grid.Resources>
+            <x:Double x:Key="CardItemWidth">390</x:Double>
+            <x:Double x:Key="CompactCardWidth">400</x:Double>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Row 0: Toolbar -->
+            <RowDefinition Height="*"/>     <!-- Row 1: Content (GameView or Settings) -->
+            <RowDefinition Height="Auto"/>  <!-- Row 2: Status Bar -->
+        </Grid.RowDefinitions>
+
+        <!--  ROW 0: TOOLBAR  -->
+        <Border Grid.Row="0" Padding="16,10" Background="{StaticResource SurfaceHeaderBrush}"
+                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>  <!-- Logo + title -->
+                    <ColumnDefinition Width="*"/>     <!-- Spacer -->
+                    <ColumnDefinition Width="Auto"/>  <!-- Action buttons -->
+                </Grid.ColumnDefinitions>
+
+                <!-- Logo + title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="8">
+                        <Image Source="icon.ico" Width="36" Height="36" Stretch="Uniform"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontSize="15" FontWeight="Bold">
+                            <Run Text="RDXC" Foreground="{StaticResource AccentTealBrush}"/>
+                        </TextBlock>
+                        <TextBlock Text="RenoDXCommander" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Action buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button x:Name="AddGameBtn" Content="Add Game"
+                            Click="AddGameButton_Click"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentGreenBrush}"
+                            BorderBrush="{StaticResource AccentGreenBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Manually add a game folder"/>
+                    <Button x:Name="RefreshBtn" Content="Refresh"
+                            Click="RefreshButton_Click"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
+                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Rescan game library and fetch latest mod info"/>
+                    <Button x:Name="DeployBtn" Content="Deploy..."
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Deploy and update actions">
+                        <Button.Flyout>
+                            <MenuFlyout Placement="Bottom">
+                                <MenuFlyoutItem Text="Deploy DC Mode to All" Click="DeployDcModeButton_Click"/>
+                                <MenuFlyoutItem Text="Deploy Shaders to All" Click="DeployShadersButton_Click"/>
+                                <MenuFlyoutSeparator/>
+                                <MenuFlyoutItem Text="Update All RenoDX" Click="UpdateAllRenoDx_Click"/>
+                                <MenuFlyoutItem Text="Update All ReShade" Click="UpdateAllReShade_Click"/>
+                                <MenuFlyoutItem Text="Update All Display Commander" Click="UpdateAllDc_Click"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                    <Button x:Name="SupportBtn" Content="Support"
+                            Click="SupportButton_Click"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Open RenoDXCommander support channel on Discord"/>
+
+                    <Button x:Name="LayoutToggleBtn"
+                            Content="{x:Bind ViewModel.LayoutToggleLabel, Mode=OneWay}"
+                            Click="LayoutToggle_Click"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
+                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Switch between detail and grid view"/>
+
+                    <!-- Settings button with update notification badge -->
+                    <Button x:Name="SettingsBtn" Content="Settings"
+                            Click="SettingsButton_Click"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
+                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Open settings"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!--  ROW 1: CONTENT AREA  -->
+        <Grid Grid.Row="1">
+
+            <!-- Loading overlay -->
+            <StackPanel x:Name="LoadingPanel" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Spacing="16" Visibility="Visible" Canvas.ZIndex="10">
+                <ProgressRing x:Name="LoadingRing" IsActive="True" Width="48" Height="48"
+                              Foreground="{StaticResource AccentBlueBrush}"/>
+                <TextBlock x:Name="LoadingTitle" Text="Loading..." FontSize="16"
+                           Foreground="{StaticResource ChipTextBrush}" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="LoadingSubtitle" Text="" FontSize="12"
+                           Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!--  GAME VIEW PANEL  -->
+            <Grid x:Name="GameViewPanel" Visibility="Collapsed" Background="{StaticResource SurfaceBaseBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300"/>  <!-- Sidebar -->
+                    <ColumnDefinition Width="*"/>    <!-- Detail Panel -->
+                </Grid.ColumnDefinitions>
+
+                <!-- ── SIDEBAR (Column 0) ──────────────────────────────────────── -->
+                <Border Grid.Column="0" Background="{StaticResource SurfaceSidebarBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,1,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>  <!-- Search box -->
+                            <RowDefinition Height="Auto"/>  <!-- Filter chips -->
+                            <RowDefinition Height="Auto"/>  <!-- Counts -->
+                            <RowDefinition Height="*"/>     <!-- Game list -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Search box -->
+                        <Border Grid.Row="0" Padding="10,8,10,4" Background="{StaticResource SurfaceToolbarBrush}">
+                            <TextBox x:Name="SearchBox"
+                                     PlaceholderText="Search games..."
+                                     TextChanged="SearchBox_TextChanged"
+                                     Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                     BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                     CornerRadius="8" Padding="10,7"
+                                     FontSize="12"/>
+                        </Border>
+
+                        <!-- Filter chips -->
+                        <Border Grid.Row="1" Padding="10,8" Background="{StaticResource SurfaceToolbarBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
+                            <StackPanel Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button x:Name="FilterDetected" Content="All Games" Tag="Detected"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipActiveBrush}" Foreground="White"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                    <Button x:Name="FilterInstalled" Content="Installed" Tag="Installed"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                    <Button x:Name="FilterFavourites" Content="Favourites" Tag="Favourites"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                    <Button x:Name="FilterHidden" Content="Hidden" Tag="Hidden"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Button x:Name="FilterUnreal" Content="Unreal" Tag="Unreal"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                    <Button x:Name="FilterUnity" Content="Unity" Tag="Unity"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                    <Button x:Name="FilterOther" Content="Other" Tag="Other"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                    <Button x:Name="FilterRenoDX" Content="RenoDX" Tag="RenoDX"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                    <Button x:Name="FilterLuma" Content="Luma" Tag="Luma"
+                                            Click="Filter_Click"
+                                            Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
+                                            BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Game/installed counts -->
+                        <Border Grid.Row="2" Padding="12,4,12,4">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="{StaticResource AccentGreenDimBrush}"/>
+                                <TextBlock x:Name="GameCountText" Text="0 shown"
+                                           FontSize="11" Foreground="{StaticResource TextDisabledBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="InstalledCountText" Text="0 installed"
+                                           FontSize="11" Foreground="{StaticResource AccentGreenDimBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="HiddenCountText" Text=""
+                                           FontSize="11" Foreground="{StaticResource AccentPurpleDimBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Game ListView -->
+                        <ListView x:Name="GameList" Grid.Row="3"
+                                  SelectionChanged="GameList_SelectionChanged"
+                                  Background="Transparent"
+                                  SelectionMode="Single" Padding="4">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:GameCardViewModel">
+                                    <Border Background="{x:Bind SidebarItemBackground, Mode=OneWay}"
+                                            BorderBrush="{x:Bind SidebarItemBorderBrush, Mode=OneWay}"
+                                            BorderThickness="1" CornerRadius="6" Padding="8,6">
+                                        <Grid ColumnSpacing="6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid Grid.Column="0" VerticalAlignment="Center">
+                                                <Image Width="14" Height="14"
+                                                       Stretch="Uniform"
+                                                       Visibility="{x:Bind SourceIconImageVisibility}">
+                                                    <Image.Source>
+                                                        <BitmapImage UriSource="{x:Bind SourceIconUri}"/>
+                                                    </Image.Source>
+                                                </Image>
+                                                <TextBlock Text="{x:Bind SourceIcon}" FontSize="11"
+                                                           Visibility="{x:Bind SourceIconTextVisibility}"/>
+                                            </Grid>
+                                            <TextBlock Grid.Column="1" Text="{x:Bind GameName}" FontSize="12"
+                                                       Foreground="{x:Bind SidebarItemForeground, Mode=OneWay}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxLines="1" VerticalAlignment="Center"/>
+
+                                            <!-- Update badge dot -->
+                                            <Ellipse Grid.Column="2" Width="8" Height="8"
+                                                     Fill="{StaticResource AccentGreenBrush}" VerticalAlignment="Center"
+                                                     Margin="4,0,2,0"
+                                                     Visibility="{x:Bind UpdateBadgeVisibility, Mode=OneWay}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Grid>
+                </Border>
+
+                <!-- ── CONTENT COLUMN (Column 1): Detail Panel / Card Grid ────── -->
+                <Grid Grid.Column="1">
+                    <!-- Detail Panel (existing) — visible when NOT grid layout -->
+                    <ScrollViewer x:Name="DetailScrollViewer"
+                                  Visibility="{x:Bind ViewModel.DetailPanelVisibility, Mode=OneWay}"
+                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                  SizeChanged="DetailScrollViewer_SizeChanged">
+                    <StackPanel x:Name="DetailPanel" Spacing="16" Visibility="Collapsed"
+                                Padding="24,18,24,24" HorizontalAlignment="Center">
+
+                        <!-- ── Header: Name + badges + utility buttons ── -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Spacing="6">
+                                <TextBlock x:Name="DetailGameName" x:FieldModifier="internal" FontSize="20" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis" MaxLines="1"/>
+                                <TextBlock x:Name="DetailInstallPath" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}"
+                                           FontFamily="Consolas" VerticalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Utility buttons -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top">
+                                <Button x:Name="DetailDiscussionBtn" x:FieldModifier="internal" Background="Transparent" BorderThickness="0"
+                                        Padding="6,4" MinWidth="0" MinHeight="0" Visibility="Collapsed"
+                                        Click="NameLink_Click"
+                                        ToolTipService.ToolTip="Open discussion / instructions">
+                                    <TextBlock Text="💬" FontSize="14" HorizontalAlignment="Center"/>
+                                </Button>
+                                <Button x:Name="DetailNotesBtn" x:FieldModifier="internal" Background="Transparent" BorderThickness="0"
+                                        Padding="6,4" MinWidth="0" MinHeight="0" Visibility="Collapsed"
+                                        Click="NotesButton_Click"
+                                        ToolTipService.ToolTip="Game info / notes">
+                                    <TextBlock Text="ℹ" FontSize="15" Foreground="{StaticResource TextTertiaryBrush}" HorizontalAlignment="Center"/>
+                                </Button>
+                                <Button x:Name="DetailHideBtn" x:FieldModifier="internal"
+                                        Background="{StaticResource SurfaceOverlayBrush}"
+                                        Foreground="{StaticResource TextTertiaryBrush}"
+                                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                        CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                        FontSize="11"
+                                        Click="HideButton_Click">
+                                    <TextBlock x:Name="DetailHideIcon" x:FieldModifier="internal" FontSize="11"/>
+                                </Button>
+                                <Button x:Name="DetailFolderBtn" x:FieldModifier="internal"
+                                        Background="{StaticResource SurfaceOverlayBrush}"
+                                        Foreground="{StaticResource TextTertiaryBrush}"
+                                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                        CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                        FontSize="11" Content="Browse"
+                                        Click="OpenFolder_Click"
+                                        ToolTipService.ToolTip="Open game folder in Explorer"/>
+
+                                <Button x:Name="DetailFavBtn" x:FieldModifier="internal" Background="Transparent" BorderThickness="0"
+                                        Width="32" Height="32" Padding="0"
+                                        Click="FavouriteButton_Click"
+                                        ToolTipService.ToolTip="Toggle favourite">
+                                    <TextBlock x:Name="DetailFavIcon" x:FieldModifier="internal" FontSize="14" HorizontalAlignment="Center"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- ── Addon file + info badges ── -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <controls:WrapPanel Grid.Column="0" HorizontalSpacing="8" VerticalSpacing="6">
+                            <!-- Group 1: Mod info (addon file + generic/extended badge) -->
+                            <Border x:Name="DetailInstalledFileBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                    Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Visibility="Collapsed">
+                                <TextBlock x:Name="DetailInstalledFile" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
+                            </Border>
+                            <Border x:Name="DetailGenericBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                    Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Visibility="Collapsed">
+                                <TextBlock x:Name="DetailGenericText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
+                            </Border>
+
+                            <!-- Separator: mod → platform -->
+                            <Border x:Name="DetailSepModPlatform" x:FieldModifier="internal" Width="1" Background="{StaticResource BorderSubtleBrush}"
+                                    VerticalAlignment="Stretch" Visibility="Collapsed"/>
+
+                            <!-- Group 2: Platform info (source + engine + 32-bit) -->
+                            <Border x:Name="DetailSourceBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                    Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Image x:Name="DetailSourceIcon" x:FieldModifier="internal" Width="14" Height="14" Stretch="Uniform"/>
+                                    <TextBlock x:Name="DetailSourceText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="DetailEngineBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                    Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Image x:Name="DetailEngineIcon" x:FieldModifier="internal" Width="14" Height="14" Stretch="Uniform"/>
+                                    <TextBlock x:Name="DetailEngineText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="DetailGraphicsApiBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                    Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Visibility="Collapsed">
+                                <TextBlock x:Name="DetailGraphicsApiText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
+                            </Border>
+                            <Border x:Name="Detail32BitBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                    Background="{StaticResource AccentAmberBgBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Visibility="Collapsed">
+                                <TextBlock Text="32-bit" FontSize="11" Foreground="{StaticResource AccentAmberBrush}"/>
+                            </Border>
+
+                            <!-- Separator: platform → status -->
+                            <Border x:Name="DetailSepPlatformStatus" x:FieldModifier="internal" Width="1" Background="{StaticResource BorderSubtleBrush}"
+                                    VerticalAlignment="Stretch" Visibility="Collapsed"/>
+
+                            <!-- Group 3: Status (wiki + luma) -->
+                            <Border x:Name="DetailWikiBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="DetailWikiText" x:FieldModifier="internal" FontSize="11"/>
+                            </Border>
+                        </controls:WrapPanel>
+
+                            <!-- Group 4: Author badges (right-aligned) -->
+                            <StackPanel Grid.Column="1" x:Name="DetailAuthorBadgePanel" x:FieldModifier="internal" Orientation="Horizontal" Spacing="4"
+                                        VerticalAlignment="Center" Visibility="Collapsed"/>
+                        </Grid>
+
+                        <!-- ── Component status table ── -->
+                        <Border x:Name="DetailComponentSection" Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
+                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" Padding="16,14">
+                            <StackPanel Spacing="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Components" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                    <Border x:Name="DetailLumaBadgeContainer" x:FieldModifier="internal" Grid.Column="1" Visibility="Collapsed"
+                                            CornerRadius="6" VerticalAlignment="Center">
+                                        <ToggleButton x:Name="DetailLumaToggle" x:FieldModifier="internal"
+                                                      Click="LumaToggle_Click"
+                                                      Padding="10,4" MinHeight="0" MinWidth="0"
+                                                      CornerRadius="6" BorderThickness="1" FontSize="11">
+                                            <TextBlock x:Name="DetailLumaToggleText" x:FieldModifier="internal" FontSize="11"/>
+                                        </ToggleButton>
+                                    </Border>
+                                </Grid>
+
+                                <!-- ReShade row -->
+                                <Grid x:Name="DetailRsRow" x:FieldModifier="internal" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="ReShade" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DetailRsStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
+                                               VerticalAlignment="Center"/>
+                                    <Button x:Name="DetailRsInstallBtn" x:FieldModifier="internal" Grid.Column="2"
+                                            Click="InstallRsButton_Click"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                            CornerRadius="8" FontSize="12" Height="32"/>
+                                    <Button x:Name="DetailRsIniBtn" x:FieldModifier="internal" Grid.Column="3"
+                                            Click="RsIniButton_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Copy ReShade.ini &amp; ReShadePreset.ini">
+                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button x:Name="DetailRsDeleteBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Click="UninstallRsButton_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Remove ReShade" Opacity="0" IsHitTestVisible="False">
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Display Commander row -->
+                                <Grid x:Name="DetailDcRow" x:FieldModifier="internal" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Display Commander" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DetailDcStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
+                                               VerticalAlignment="Center"/>
+                                    <Button x:Name="DetailDcInstallBtn" x:FieldModifier="internal" Grid.Column="2"
+                                            Click="InstallDcButton_Click"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                            CornerRadius="8" FontSize="12" Height="32"/>
+                                    <Button x:Name="DetailDcIniBtn" x:FieldModifier="internal" Grid.Column="3"
+                                            Click="DcIniButton_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Copy DisplayCommander.toml">
+                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button x:Name="DetailDcDeleteBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Click="UninstallDcButton_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Remove Display Commander" Opacity="0" IsHitTestVisible="False">
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
+
+                                <!-- RenoDX row -->
+                                <Grid x:Name="DetailRdxRow" x:FieldModifier="internal" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="RenoDX" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="DetailRdxStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
+                                               VerticalAlignment="Center"/>
+                                    <Button x:Name="DetailRdxInstallBtn" x:FieldModifier="internal" Grid.Column="2"
+                                            Click="InstallButton_Click"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                            CornerRadius="8" FontSize="12" Height="32"/>
+                                    <Button x:Name="DetailUeExtendedBtn" x:FieldModifier="internal" Grid.Column="3"
+                                            Click="UeExtendedFlyoutItem_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            Opacity="0" IsHitTestVisible="False"
+                                            ToolTipService.ToolTip="Toggle UE Extended">
+                                        <TextBlock Text="UE" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button x:Name="DetailRdxDeleteBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Click="UninstallButton_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Remove RenoDX mod" Opacity="0" IsHitTestVisible="False">
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Luma row (shown in Luma mode) -->
+                                <Grid x:Name="DetailLumaRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Luma" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="DetailLumaStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
+                                               VerticalAlignment="Center"/>
+                                    <Button x:Name="DetailLumaInstallBtn" x:FieldModifier="internal" Grid.Column="2"
+                                            Click="InstallLumaButton_Click"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                            CornerRadius="8" FontSize="12" Height="32"
+                                            BorderThickness="1"/>
+                                    <Border Grid.Column="3"/>
+                                    <Button x:Name="DetailLumaDeleteBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Click="UninstallLumaButton_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Remove Luma mod" Opacity="0" IsHitTestVisible="False">
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
+
+                                <!-- No mod message -->
+                                <Border x:Name="DetailNoModMsg" x:FieldModifier="internal" Visibility="Collapsed"
+                                        Background="{StaticResource AccentPurpleBgBrush}" CornerRadius="8" Padding="12,8"
+                                        BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1">
+                                    <TextBlock Text="No RenoDX mod available for this game"
+                                               FontSize="12" Foreground="{StaticResource TextDisabledBrush}" TextAlignment="Center"/>
+                                </Border>
+
+                                <!-- Progress bars -->
+                                <StackPanel x:Name="DetailProgressSection" Spacing="4">
+                                    <ProgressBar x:Name="DetailRsProgress" x:FieldModifier="internal" Visibility="Collapsed"
+                                                 Maximum="100" Height="3" CornerRadius="2"
+                                                 Foreground="{StaticResource AccentTealDimBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
+                                    <TextBlock x:Name="DetailRsMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource TextTertiaryBrush}"
+                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                                    <ProgressBar x:Name="DetailDcProgress" x:FieldModifier="internal" Visibility="Collapsed"
+                                                 Maximum="100" Height="3" CornerRadius="2"
+                                                 Foreground="{StaticResource AccentGreenDimBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
+                                    <TextBlock x:Name="DetailDcMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentGreenDimBrush}"
+                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                                    <ProgressBar x:Name="DetailRdxProgress" x:FieldModifier="internal" Visibility="Collapsed"
+                                                 Maximum="100" Height="3" CornerRadius="2"
+                                                 Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
+                                    <TextBlock x:Name="DetailRdxMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentBlueBrush}"
+                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                                    <ProgressBar x:Name="DetailLumaProgress" x:FieldModifier="internal" Visibility="Collapsed"
+                                                 Maximum="100" Height="3" CornerRadius="2"
+                                                 Foreground="{StaticResource AccentGreenBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
+                                    <TextBlock x:Name="DetailLumaMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentGreenBrush}"
+                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Overrides section ── -->
+                        <Border x:Name="OverridesContainer"
+                                Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
+                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                Padding="16,14" Visibility="Collapsed">
+                            <StackPanel x:Name="OverridesPanel" x:FieldModifier="internal" Spacing="8"/>
+                        </Border>
+
+                        <!-- ── Game Management section ── -->
+                        <Border Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
+                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                Padding="16,14">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Manage" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4"/>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="DetailChangeFolderBtn" x:FieldModifier="internal" Grid.Column="0"
+                                            Click="BrowseFolder_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                            CornerRadius="8" FontSize="12" Height="32"
+                                            HorizontalAlignment="Stretch"
+                                            Content="Change install folder"/>
+                                    <Button x:Name="DetailRemoveGameBtn" x:FieldModifier="internal" Grid.Column="1"
+                                            Click="RemoveManualGame_Click"
+                                            Background="{StaticResource AccentRedBgBrush}"
+                                            Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" FontSize="12" Height="32"
+                                            HorizontalAlignment="Stretch"
+                                            Content="Reset folder / Remove game"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                    <!-- Card Grid — visible when grid layout -->
+                    <ScrollViewer x:Name="CardGridScrollViewer"
+                                  Visibility="{x:Bind ViewModel.CardGridVisibility, Mode=OneWay}"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <controls:WrapPanel x:Name="CardGridPanel"
+                                            HorizontalSpacing="12" VerticalSpacing="12"
+                                            Margin="16"/>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+
+            <!--  SETTINGS PANEL  -->
+            <Grid x:Name="SettingsPanel" Visibility="Collapsed" Background="{StaticResource SurfaceBaseBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Back button bar -->
+                <Border Grid.Row="0" Padding="24,12,24,10" Background="Transparent"
+                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Button x:Name="SettingsBackBtn" Content="← Back to Games"
+                                Click="SettingsBack_Click"
+                                Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                CornerRadius="8" Padding="12,6" FontSize="12"/>
+                        <TextBlock Text="Settings" FontSize="20" FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Scrollable settings content -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
+                                HorizontalAlignment="Center">
+
+                        <!-- ── DC Mode Settings ──────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Display Commander Mode" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                           Text="Controls how Display Commander loads alongside ReShade. Off = normal dxgi.dll proxy. Mode 1 = DC as dxgi.dll, ReShade as ReShade64.dll. Mode 2 = DC as winmm.dll, ReShade as ReShade64.dll."/>
+                                <Button x:Name="DcModeBtn"
+                                        Click="DcModeButton_Click"
+                                        Content="{x:Bind ViewModel.DcModeBtnLabel, Mode=OneWay}"
+                                        Background="{x:Bind ViewModel.DcModeBtnBackground, Mode=OneWay}"
+                                        Foreground="{x:Bind ViewModel.DcModeBtnForeground, Mode=OneWay}"
+                                        BorderBrush="{x:Bind ViewModel.DcModeBtnBorder, Mode=OneWay}"
+                                        BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"
+                                        ToolTipService.ToolTip="Cycle DC Mode: Off → Mode 1 (DC → dxgi.dll) → Mode 2 (DC → winmm.dll) → Off"/>
+                                <Button x:Name="DeployDcModeBtn" Content="Deploy DC Mode to All"
+                                        Click="DeployDcModeButton_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"
+                                        ToolTipService.ToolTip="Apply the current DC Mode to all installed games"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                           Text="Applies the current DC Mode naming to all games that have ReShade and Display Commander installed."/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Shader Deploy Mode ─────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Shader Deploy Mode" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                           Text="Controls which shader packs are deployed to game folders. Off = no shaders. Minimum = Lilium HDR only. All = all available packs. User = custom user-defined folder."/>
+                                <Button x:Name="ShadersModeBtn"
+                                        Content="{x:Bind ViewModel.ShadersBtnLabel, Mode=OneWay}"
+                                        Click="ShadersModeButton_Click"
+                                        Background="{x:Bind ViewModel.ShadersBtnBackground, Mode=OneWay}"
+                                        Foreground="{x:Bind ViewModel.ShadersBtnForeground, Mode=OneWay}"
+                                        BorderBrush="{x:Bind ViewModel.ShadersBtnBorder, Mode=OneWay}"
+                                        BorderThickness="1" CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"
+                                        ToolTipService.ToolTip="Click to cycle shader deploy mode: Off → Minimum → All → User → Off"/>
+                                <Button x:Name="DeployShadersBtn" Content="Deploy Shaders to All"
+                                        Click="DeployShadersButton_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"
+                                        ToolTipService.ToolTip="Deploy current shader mode to all installed games"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                           Text="Deploys the selected shader packs to all games that have ReShade installed."/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Preferences ────────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Preferences" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <ToggleSwitch x:Name="SkipUpdateToggle"
+                                              Header="Skip update check on launch"
+                                              Toggled="SkipUpdateToggle_Toggled"
+                                              OnContent="Disabled — RDXC will not check for updates"
+                                              OffContent="Enabled — RDXC checks for updates on launch"
+                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                           Text="When enabled, RDXC skips the automatic update check that runs on every launch."/>
+                                <ToggleSwitch x:Name="BetaOptInToggle"
+                                              Header="Opt into Betas"
+                                              Toggled="BetaOptInToggle_Toggled"
+                                              OnContent="Enabled — RDXC will check for beta releases"
+                                              OffContent="Disabled — stable releases only"
+                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource InlineDescriptionBrush}"
+                                           Text="When enabled, RDXC also checks for pre-release beta versions. Stable releases always take priority."/>
+                                <ToggleSwitch x:Name="VerboseLoggingToggle"
+                                              Header="Verbose Logging"
+                                              Toggled="VerboseLoggingToggle_Toggled"
+                                              OnContent="Enabled — all activity logged to rdxc_log.txt"
+                                              OffContent="Disabled — only crash/error reports saved"
+                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                           Text="When enabled, every action is logged to rdxc_log.txt for debugging. Disable for normal use."/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Full Refresh ────────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Full Refresh" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                           Text="Clears all caches and re-scans everything from disk. Use this if games or mods appear out of sync."/>
+                                <Button x:Name="FullRefreshBtn" Content="Full Refresh"
+                                        Click="FullRefreshButton_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"
+                                        ToolTipService.ToolTip="Full refresh — clears all caches and re-scans everything from disk"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Folders ─────────────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Crash &amp; Error Logs" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="20">
+                                    If the app crashes or behaves unexpectedly, a report is automatically saved to AppData.
+                                    Send any <Run Text="crash_*.txt" FontFamily="Consolas" Foreground="{StaticResource TextTertiaryBrush}"/> files to the developer.
+                                </TextBlock>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button x:Name="OpenLogsBtn"
+                                            Content="Open Logs Folder"
+                                            Click="OpenLogsFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                    <Button x:Name="OpenDownloadsBtn"
+                                            Content="Open Downloads Cache"
+                                            Click="OpenDownloadsFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                </StackPanel>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
+                                    Logs: <Run Text="%LocalAppData%\RenoDXCommander\logs\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
+                                    Downloads: <Run Text="%LocalAppData%\RenoDXCommander\downloads\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
+                                    ReShade staging: <Run Text="%LocalAppData%\RenoDXCommander\reshade\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── About ───────────────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="About" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,4">
+                                    <Image Source="icon.ico" Width="48" Height="48"/>
+                                    <StackPanel VerticalAlignment="Center" Spacing="4">
+                                        <TextBlock FontSize="20" FontWeight="Bold">
+                                            <Run Text="RenoDXCommander" Foreground="{StaticResource AccentTealBrush}"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}">
+                                            <Run Text="v1.4.8 beta 2  ·  HDR mod manager by "/>
+                                            <Run Text="RankFTW" FontWeight="SemiBold" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  Unofficial companion tool"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Disclaimer -->
+                                <Border Background="{StaticResource AccentPurpleBgBrush}" CornerRadius="8" Padding="14,10"
+                                        BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Disclaimer" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource AccentAmberBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="20">
+                                            <Run Text="RenoDXCommander is an unofficial third-party tool "/>
+                                            <Run Text="not affiliated with or endorsed by the RenoDX project, Crosire, pmnoxx, or the Luma Framework."
+                                                 FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" RenoDX mod files are fetched from official RenoDX GitHub snapshots. Display Commander is downloaded from pmnoxx's GitHub. ReShade with full addon support is downloaded from reshade.me. 7-Zip is bundled under the LGPL licence for archive extraction. No mod files are modified — everything is used directly from its official source."/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Credits ─────────────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Credits &amp; Acknowledgements" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="20"
+                                           Text="This app would not exist without the work of the following people and projects."/>
+
+                                <!-- RenoDX -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="RenoDX" FontWeight="SemiBold" Foreground="{StaticResource AccentTealBrush}"/>
+                                            <Run Text=" by clshortfuse &amp; contributors" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  MIT Licence" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" Margin="0,0,0,0" TextWrapping="Wrap"
+                                                   Text="HDR mod framework powering 150+ games. The entire reason this app exists."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/clshortfuse/renodx" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/clshortfuse/renodx"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ReShade -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="ReShade" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by Crosire" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  BSD 3-Clause Licence" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="Post-processing injection framework. Downloaded with full addon support from reshade.me and cached locally. Copyright © Crosire."/>
+                                        <HyperlinkButton NavigateUri="https://reshade.me" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="reshade.me  ·  github.com/crosire/reshade"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Display Commander -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="Display Commander" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by pmnoxx" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  Source-available" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="ReShade addon for display, window, and audio management. Downloaded from official GitHub releases."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/pmnoxx/display-commander" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/pmnoxx/display-commander"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Luma Framework -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="Luma Framework" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
+                                            <Run Text=" by Pumbo (Filoppi)" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  Source-available" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="DX11 modding framework adding HDR support and graphics improvements via the ReShade addon system. Mods are downloaded from official GitHub releases. Experimental integration — not fully supported."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/Filoppi/Luma-Framework" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/Filoppi/Luma-Framework"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- 7-Zip -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="7-Zip" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by Igor Pavlov" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  LGPL + BSD 3-Clause" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="Archive utility used to extract ReShade DLLs from the NSIS installer. 7z.exe and 7z.dll are bundled under the LGPL licence. Copyright © Igor Pavlov."/>
+                                        <HyperlinkButton NavigateUri="https://www.7-zip.org/" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="7-zip.org  ·  LGPL-2.1 / BSD-3-Clause"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- HtmlAgilityPack -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="HtmlAgilityPack" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by ZZZ Projects" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  MIT Licence" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="HTML parser used to scrape game data from the RenoDX wiki. Copyright © ZZZ Projects Inc."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/zzzprojects/html-agility-pack" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/zzzprojects/html-agility-pack"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- CommunityToolkit.Mvvm -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="CommunityToolkit.Mvvm" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by Microsoft" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  MIT Licence" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="MVVM helpers (ObservableObject, RelayCommand, etc.) used throughout the app. Copyright © .NET Foundation."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/CommunityToolkit/dotnet" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/CommunityToolkit/dotnet"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Lazorr -->
+                                <Border Background="{StaticResource SurfaceStatusBarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="UI Design" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
+                                            <Run Text=" by Lazorr" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="Somehow I have become a UI guy in multiple aspects of life lol."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/lazorr410" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="https://github.com/lazorr410"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- App author -->
+                                <Border Background="{StaticResource SurfaceStatusBarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="RenoDXCommander" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
+                                            <Run Text=" by RankFTW" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="Unofficial companion app. Not affiliated with RenoDX, Crosire, or pmnoxx."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/RankFTW" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/RankFTW"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Links ───────────────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Links" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <HyperlinkButton NavigateUri="https://github.com/clshortfuse/renodx" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">RenoDX Project — github.com/clshortfuse/renodx</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://github.com/clshortfuse/renodx/wiki/Mods" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">RenoDX Mod Wiki</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://discord.gg/gF4GRJWZ2A" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">RenoDX Discord</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://discord.gg/k3cDruEQ" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">HDR Den Discord</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://github.com/Filoppi/Luma-Framework/wiki/Mods-List" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">HDR Den / Luma Wiki</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://reshade.me" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">ReShade — reshade.me</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://github.com/pmnoxx/display-commander" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">Display Commander — github.com/pmnoxx/display-commander</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://github.com/Filoppi/Luma-Framework" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">Luma Framework — github.com/Filoppi/Luma-Framework</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://www.hdrmods.com/" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">Creepy's HDR Guides — hdrmods.com</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://discord.gg/pQtPYcdE" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">The Ultra Place / Ultra+ Discord</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://github.com/RankFTW" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">RankFTW GitHub</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://ko-fi.com/rankftw" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentRedBrush}" FontSize="12">Support RDXC on Ko-Fi</TextBlock>
+                                </HyperlinkButton>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- end SettingsPanel -->
+        </Grid>
+
+        <!-- end Row 1 content area -->
+
+        <!--  ROW 2: STATUS BAR  -->
+        <Border Grid.Row="2" Padding="20,6" Background="{StaticResource SurfaceStatusBarBrush}"
+                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+                    <TextBlock x:Name="StatusBarText" Text=""
+                               FontSize="11" Foreground="{StaticResource TextDisabledBrush}"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                           FontSize="10" Foreground="{StaticResource AccentAmberDimBrush}"
+                           Text="⚠ Single-player only — ReShade with addon support may trigger anti-cheat in online/multiplayer games"/>
+                <Button Grid.Column="2" Content="Patch Notes"
+                        Click="PatchNotesLink_Click"
+                        Background="Transparent" BorderThickness="0"
+                        Foreground="{StaticResource TextDisabledBrush}" FontSize="11"
+                        Padding="8,2" VerticalAlignment="Center" HorizontalAlignment="Right"
+                        ToolTipService.ToolTip="View recent patch notes"/>
+            </Grid>
+        </Border>
+
+        <!-- (Old card DataTemplate removed — detail panel is now built in code-behind) -->
+    </Grid>
+</Window>

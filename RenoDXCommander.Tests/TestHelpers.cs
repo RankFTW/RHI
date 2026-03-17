@@ -1,0 +1,164 @@
+using RenoDXCommander.Models;
+using RenoDXCommander.Services;
+using RenoDXCommander.ViewModels;
+
+namespace RenoDXCommander.Tests;
+
+/// <summary>
+/// Provides factory methods for creating MainViewModel instances in tests
+/// with minimal stub service implementations.
+/// </summary>
+internal static class TestHelpers
+{
+    /// <summary>
+    /// Creates a MainViewModel with stub services suitable for property/layout tests
+    /// that don't exercise service I/O.
+    /// </summary>
+    public static MainViewModel CreateMainViewModel()
+    {
+        var installer = new StubModInstallService();
+        var auxInstaller = new StubAuxInstallService();
+        var wikiService = new StubWikiService();
+        var manifestService = new StubManifestService();
+        var gameLibraryService = new StubGameLibraryService();
+        var gameDetectionService = new StubGameDetectionService();
+        var peHeaderService = new StubPeHeaderService();
+        var updateService = new StubUpdateService();
+        var shaderPackService = new StubShaderPackService();
+        var lumaService = new StubLumaService();
+        var rsUpdateService = new StubReShadeUpdateService();
+        var settingsVm = new SettingsViewModel();
+        var filterVm = new FilterViewModel();
+        var updateOrch = new UpdateOrchestrationService(installer, auxInstaller);
+        var dllOverride = new DllOverrideService(auxInstaller);
+        var gameName = new GameNameService(gameDetectionService, installer, auxInstaller, lumaService);
+        var gameInit = new GameInitializationService(
+            gameDetectionService, wikiService, manifestService, installer, auxInstaller,
+            gameLibraryService, peHeaderService, lumaService, rsUpdateService, shaderPackService);
+
+        return new MainViewModel(
+            new HttpClient(),
+            installer,
+            auxInstaller,
+            wikiService,
+            manifestService,
+            gameLibraryService,
+            gameDetectionService,
+            peHeaderService,
+            updateService,
+            shaderPackService,
+            lumaService,
+            rsUpdateService,
+            settingsVm,
+            filterVm,
+            updateOrch,
+            dllOverride,
+            gameName,
+            gameInit);
+    }
+
+    // ── Stub implementations ──────────────────────────────────────────────────
+
+    private class StubModInstallService : IModInstallService
+    {
+        public event Action<InstalledModRecord>? InstallCompleted;
+        public Task<InstalledModRecord> InstallAsync(GameMod mod, string gameInstallPath, IProgress<(string, double)>? progress = null, string? gameName = null) => Task.FromResult(new InstalledModRecord());
+        public Task<bool> CheckForUpdateAsync(InstalledModRecord record) => Task.FromResult(false);
+        public void Uninstall(InstalledModRecord record) { }
+        public List<InstalledModRecord> LoadAll() => new();
+        public InstalledModRecord? FindRecord(string gameName, string? installPath = null) => null;
+        public void SaveRecordPublic(InstalledModRecord record) { }
+        public void RemoveRecord(InstalledModRecord record) { }
+    }
+
+    private class StubAuxInstallService : IAuxInstallService
+    {
+        public Task<AuxInstalledRecord> InstallDcAsync(string gameName, string installPath, int dcModeLevel, AuxInstalledRecord? existingDcRecord = null, AuxInstalledRecord? existingRsRecord = null, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new AuxInstalledRecord());
+        public Task<AuxInstalledRecord> InstallReShadeAsync(string gameName, string installPath, bool dcMode, bool dcIsInstalled = false, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new AuxInstalledRecord());
+        public Task<bool> CheckForUpdateAsync(AuxInstalledRecord record) => Task.FromResult(false);
+        public void Uninstall(AuxInstalledRecord record) { }
+        public List<AuxInstalledRecord> LoadAll() => new();
+        public AuxInstalledRecord? FindRecord(string gameName, string installPath, string addonType) => null;
+        public void SaveAuxRecord(AuxInstalledRecord record) { }
+        public void RemoveRecord(AuxInstalledRecord record) { }
+    }
+
+    private class StubWikiService : IWikiService
+    {
+        public Task<(List<GameMod> Mods, Dictionary<string, string> GenericNotes)> FetchAllAsync(IProgress<string>? progress = null) => Task.FromResult((new List<GameMod>(), new Dictionary<string, string>()));
+        public Task<DateTime?> GetSnapshotLastModifiedAsync(string url) => Task.FromResult<DateTime?>(null);
+    }
+
+    private class StubManifestService : IManifestService
+    {
+        public Task<RemoteManifest?> FetchAsync() => Task.FromResult<RemoteManifest?>(null);
+        public RemoteManifest? LoadCached() => null;
+    }
+
+    private class StubGameLibraryService : IGameLibraryService
+    {
+        public SavedGameLibrary? Load() => null;
+        public void Save(List<DetectedGame> games, Dictionary<string, bool> addonCache, HashSet<string> hiddenGames, HashSet<string> favouriteGames, List<DetectedGame> manualGames, Dictionary<string, string>? engineTypeCache = null, Dictionary<string, string>? resolvedPathCache = null, Dictionary<string, string>? addonFileCache = null, Dictionary<string, MachineType>? bitnessCache = null) { }
+        public List<DetectedGame> ToDetectedGames(SavedGameLibrary lib) => new();
+        public List<DetectedGame> ToManualGames(SavedGameLibrary lib) => new();
+    }
+
+    private class StubGameDetectionService : IGameDetectionService
+    {
+        public List<DetectedGame> FindSteamGames() => new();
+        public List<DetectedGame> FindGogGames() => new();
+        public List<DetectedGame> FindEpicGames() => new();
+        public List<DetectedGame> FindEaGames() => new();
+        public List<DetectedGame> FindXboxGames() => new();
+        public List<DetectedGame> FindUbisoftGames() => new();
+        public List<DetectedGame> FindBattleNetGames() => new();
+        public List<DetectedGame> FindRockstarGames() => new();
+        public (string installPath, EngineType engine) DetectEngineAndPath(string rootPath) => (rootPath, EngineType.Unknown);
+        public GameMod? MatchGame(DetectedGame game, IEnumerable<GameMod> mods, Dictionary<string, string>? nameMappings = null) => null;
+        public string NormalizeName(string name) => name.ToLowerInvariant();
+    }
+
+    private class StubPeHeaderService : IPeHeaderService
+    {
+        public MachineType DetectArchitecture(string exePath) => MachineType.Native;
+        public string? FindGameExe(string installPath) => null;
+        public MachineType DetectGameArchitecture(string installPath) => MachineType.Native;
+    }
+
+    private class StubUpdateService : IUpdateService
+    {
+        public Version CurrentVersion => new(1, 0, 0);
+        public Task<UpdateInfo?> CheckForUpdateAsync(bool betaOptIn = false) => Task.FromResult<UpdateInfo?>(null);
+        public Task<string?> DownloadInstallerAsync(string downloadUrl, IProgress<(string, double)>? progress = null) => Task.FromResult<string?>(null);
+        public void LaunchInstallerAndExit(string installerPath, Action closeApp) { }
+    }
+
+    private class StubShaderPackService : IShaderPackService
+    {
+        public IReadOnlyList<(string Id, string DisplayName)> AvailablePacks { get; } = new List<(string, string)>();
+        public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
+        public void DeployToDcFolder(ShaderPackService.DeployMode? mode = null) { }
+        public void DeployToGameFolder(string gameDir, ShaderPackService.DeployMode? mode = null) { }
+        public void RemoveFromGameFolder(string gameDir) { }
+        public bool IsManagedByRdxc(string gameDir) => false;
+        public void RestoreOriginalIfPresent(string gameDir) { }
+        public void SyncDcFolder(ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null) { }
+        public void SyncGameFolder(string gameDir, ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null) { }
+        public void SyncShadersToAllLocations(IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations, ShaderPackService.DeployMode? mode = null, IEnumerable<string>? selectedPackIds = null) { }
+    }
+
+    private class StubLumaService : ILumaService
+    {
+        public Task<List<LumaMod>> FetchCompletedModsAsync(IProgress<string>? progress = null) => Task.FromResult(new List<LumaMod>());
+        public Task<LumaInstalledRecord> InstallAsync(LumaMod mod, string gameInstallPath, IProgress<(string, double)>? progress = null) => Task.FromResult(new LumaInstalledRecord());
+        public void Uninstall(LumaInstalledRecord record) { }
+        public void SaveLumaRecord(LumaInstalledRecord record) { }
+        public void RemoveLumaRecord(string gameName, string installPath) { }
+    }
+
+    private class StubReShadeUpdateService : IReShadeUpdateService
+    {
+        public Task<(string version, string url)?> CheckLatestVersionAsync() => Task.FromResult<(string, string)?>(null);
+        public Task<bool> EnsureLatestAsync(IProgress<(string, double)>? progress = null) => Task.FromResult(false);
+    }
+}

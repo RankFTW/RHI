@@ -1,0 +1,1262 @@
+using System.Text.Json;
+using SharpCompress.Archives;
+
+namespace RenoDXCommander.Services;
+
+/// <summary>
+/// Downloads, extracts and deploys HDR ReShade shader packs from multiple sources.
+///
+/// All packs are merged into a single shared staging tree:
+///   %LocalAppData%\RenoDXCommander\reshade\Shaders\
+///   %LocalAppData%\RenoDXCommander\reshade\Textures\
+///
+/// Each pack's extracted files are tracked individually. If a pack's cache zip is
+/// deleted — or extracted files are missing from the staging folder — the pack is
+/// re-downloaded and re-extracted on the next launch.
+///
+/// Source types:
+///   GhRelease — GitHub Releases API, picks first matching asset extension
+///   DirectUrl — Any static URL; versioned by ETag / Last-Modified header
+/// </summary>
+public class ShaderPackService : IShaderPackService
+{
+    private readonly HttpClient _http;
+
+    public ShaderPackService(HttpClient http) => _http = http;
+    // ── Public path constants (used by AuxInstallService) ─────────────────────────
+    public static readonly string ShadersDir = Path.Combine(AuxInstallService.RsStagingDir, "Shaders");
+    public static readonly string TexturesDir = Path.Combine(AuxInstallService.RsStagingDir, "Textures");
+
+    public static readonly string DcReshadeDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Programs", "Display_Commander", "Reshade");
+    public static readonly string DcShadersDir = Path.Combine(DcReshadeDir, "Shaders");
+    public static readonly string DcTexturesDir = Path.Combine(DcReshadeDir, "Textures");
+
+    // User-defined custom shaders — placed by the user, never auto-downloaded
+    public static readonly string CustomDir = Path.Combine(AuxInstallService.RsStagingDir, "Custom");
+    public static readonly string CustomShadersDir = Path.Combine(CustomDir, "Shaders");
+    public static readonly string CustomTexturesDir = Path.Combine(CustomDir, "Textures");
+
+    public const string GameReShadeShaders = "reshade-shaders";
+    public const string GameReShadeOriginal = "reshade-shaders-original";
+    private const string ManagedMarkerFile = "Managed by RDXC.txt";
+    private const string ManagedMarkerContent = "This folder is managed by RenoDXCommander. Do not edit manually.\n"
+                                                  + "Deleting this file will cause RDXC to treat the folder as user-managed.";
+
+    // ── Shader deploy mode ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Off      — RDXC does not manage shaders; user handles them manually.
+    /// Minimum  — Only the Lilium HDR Shaders pack is deployed.
+    /// All      — All included shader packs are deployed.
+    /// </summary>
+    /// <summary>
+    /// Off      — RDXC does not manage shaders.
+    /// Minimum  — Only the Lilium HDR Shaders pack is deployed.
+    /// All      — All included shader packs are deployed.
+    /// User     — Only files the user has placed in the Custom folder are deployed.
+    /// </summary>
+    public enum DeployMode { Off, Minimum, All, User, Select }
+
+    // ── Active deploy mode (set by MainViewModel on load and on change) ──────────
+
+    /// <summary>
+    /// The currently active shader deploy mode. Set by the ViewModel whenever
+    /// ShaderDeployMode is loaded or changed. AuxInstallService reads this so
+    /// it does not need a direct ViewModel reference.
+    /// </summary>
+    public static DeployMode CurrentMode { get; set; } = DeployMode.Off;
+
+    // ── Pack definitions ──────────────────────────────────────────────────────────
+
+    private enum SourceKind { GhRelease, DirectUrl }
+
+    private record ShaderPack(
+        string Id,           // unique key — used in settings.json and cache filenames
+        string DisplayName,  // shown in progress messages and logs
+        SourceKind Kind,
+        string Url,          // API url (GhRelease) or direct download url (DirectUrl)
+        bool IsMinimum,    // included when DeployMode == Minimum
+        string? AssetExt = null  // GhRelease: required file extension of the release asset
+    );
+
+    // Packs in order of download. IsMinimum=true → included in Minimum mode.
+    private static readonly ShaderPack[] Packs =
+    {
+        new(
+            Id          : "Lilium",
+            DisplayName : "Lilium HDR Shaders",
+            Kind        : SourceKind.GhRelease,
+            Url         : "https://api.github.com/repos/EndlesslyFlowering/ReShade_HDR_shaders/releases/latest",
+            IsMinimum   : true,
+            AssetExt    : ".7z"
+        ),
+        new(
+            Id          : "PumboAutoHDR",
+            DisplayName : "PumboAutoHDR",
+            Kind        : SourceKind.GhRelease,
+            Url         : "https://api.github.com/repos/Filoppi/PumboAutoHDR/releases/latest",
+            IsMinimum   : false,
+            AssetExt    : ".zip"
+        ),
+        new(
+            Id          : "SmolbbsoopShaders",
+            DisplayName : "smolbbsoop shaders",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/smolbbsoop/smolbbsoopshaders/archive/refs/heads/main.zip",
+            IsMinimum   : false
+        ),
+        new(
+            Id          : "MaxG2DSimpleHDR",
+            DisplayName : "MaxG2D Simple HDR Shaders",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/MaxG2D/ReshadeSimpleHDRShaders/releases/download/1.055/ReshadeSimpleHDRShaders.7z",
+            IsMinimum   : false
+        ),
+        new(
+            Id          : "ClshortfuseShaders",
+            DisplayName : "clshortfuse ReShade shaders",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/clshortfuse/reshade-shaders/archive/refs/heads/main.zip",
+            IsMinimum   : false
+        ),
+        new(
+            Id          : "PotatoFX",
+            DisplayName : "potatoFX (CreepySasquatch)",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/CreepySasquatch/potatoFX/archive/refs/heads/main.zip",
+            IsMinimum   : false
+        ),
+        new(
+            Id          : "CrosireSlim",
+            DisplayName : "crosire reshade-shaders (slim)",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/crosire/reshade-shaders/archive/refs/heads/slim.zip",
+            IsMinimum   : false
+        ),
+    };
+
+    // ── Main entry point ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Checks every pack. A pack is (re-)downloaded when:
+    ///   • its version token has changed (new release / changed ETag), OR
+    ///   • its cache zip is missing from the downloads folder, OR
+    ///   • it has no extracted files in the staging Shaders/Textures tree.
+    /// Failures in one pack are logged and skipped; others continue.
+    /// </summary>
+    public async Task EnsureLatestAsync(
+        IProgress<string>? progress = null)
+    {
+        foreach (var pack in Packs)
+        {
+            try { await EnsurePackAsync(pack, progress); }
+            catch (Exception ex)
+            { CrashReporter.Log($"[ShaderPackService.EnsureLatestAsync] Unexpected error for '{pack.Id}' — {ex.Message}"); }
+        }
+    }
+
+    // ── Per-pack download + extract ───────────────────────────────────────────────
+
+    private async Task EnsurePackAsync(
+        ShaderPack pack,
+        IProgress<string>? progress)
+    {
+        string? downloadUrl;
+        string versionToken;
+
+        if (pack.Kind == SourceKind.GhRelease)
+        {
+            (downloadUrl, versionToken) = await ResolveGhRelease(pack);
+            if (downloadUrl == null) return;
+        }
+        else
+        {
+            downloadUrl = pack.Url;
+            versionToken = await ResolveDirectUrlVersion(pack);
+        }
+
+        // Derive the expected cache path so we can check physical existence
+        var ext = Path.GetExtension(new Uri(downloadUrl).AbsolutePath);
+        if (string.IsNullOrEmpty(ext)) ext = ".zip";
+        var cachePath = Path.Combine(AuxInstallService.DownloadCacheDir, $"shaders_{pack.Id}{ext}");
+
+        var stored = LoadStoredVersion(pack.Id);
+        var versionMatch = stored == versionToken && versionToken != "unknown";
+        var cacheExists = File.Exists(cachePath);
+        var hasExtracted = PackHasExtractedFiles(pack.Id, cachePath);
+
+        if (versionMatch && cacheExists && hasExtracted)
+        {
+            CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Up to date ({versionToken})");
+            return;
+        }
+
+        CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Need update — " +
+            $"versionMatch={versionMatch} cacheExists={cacheExists} hasExtracted={hasExtracted}");
+
+        // ── Download ──────────────────────────────────────────────────────────────
+        progress?.Report($"Downloading {pack.DisplayName}...");
+        CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Downloading from {downloadUrl}");
+
+        Directory.CreateDirectory(AuxInstallService.DownloadCacheDir);
+        var tempPath = cachePath + ".tmp";
+
+        try
+        {
+            var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+            if (!dlResp.IsSuccessStatusCode)
+            {
+                CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Download failed ({dlResp.StatusCode})");
+                return;
+            }
+
+            var total = dlResp.Content.Headers.ContentLength ?? -1L;
+            long received = 0;
+            var buf = new byte[1024 * 1024]; // 1 MB
+
+            using (var net = await dlResp.Content.ReadAsStreamAsync())
+            using (var file = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
+            {
+                int read;
+                while ((read = await net.ReadAsync(buf)) > 0)
+                {
+                    await file.WriteAsync(buf.AsMemory(0, read));
+                    received += read;
+                    if (total > 0)
+                        progress?.Report($"Downloading {pack.DisplayName}... {received / 1024} KB / {total / 1024} KB");
+                }
+            }
+
+            if (File.Exists(cachePath)) File.Delete(cachePath);
+            File.Move(tempPath, cachePath);
+        }
+        catch (Exception ex)
+        {
+            if (File.Exists(tempPath)) try { File.Delete(tempPath); } catch (Exception cleanupEx) { CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] Temp file cleanup failed — {cleanupEx.Message}"); }
+            CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Download exception — {ex.Message}");
+            return;
+        }
+
+        // ── Extract ───────────────────────────────────────────────────────────────
+        progress?.Report($"Extracting {pack.DisplayName}...");
+        try
+        {
+            Directory.CreateDirectory(ShadersDir);
+            Directory.CreateDirectory(TexturesDir);
+
+            using var archive = ArchiveFactory.Open(cachePath);
+            foreach (var entry in archive.Entries)
+            {
+                if (entry.IsDirectory) continue;
+
+                var key = entry.Key?.Replace('\\', '/') ?? "";
+
+                string? rootDir = null;
+                string? relInRoot = null;
+
+                foreach (var (token, dir) in new[]
+                {
+                    ("Shaders/",  ShadersDir),
+                    ("Textures/", TexturesDir),
+                })
+                {
+                    int idx = key.IndexOf("/" + token, StringComparison.OrdinalIgnoreCase);
+                    if (idx >= 0)
+                    {
+                        rootDir = dir;
+                        relInRoot = key.Substring(idx + 1 + token.Length);
+                        break;
+                    }
+                    if (key.StartsWith(token, StringComparison.OrdinalIgnoreCase))
+                    {
+                        rootDir = dir;
+                        relInRoot = key.Substring(token.Length);
+                        break;
+                    }
+                }
+
+                if (rootDir == null || string.IsNullOrEmpty(relInRoot)) continue;
+
+                var relPath = relInRoot.Replace('/', Path.DirectorySeparatorChar);
+                var destPath = Path.Combine(rootDir, relPath);
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+
+                using var entryStream = entry.OpenEntryStream();
+                using var fileStream = File.Create(destPath);
+                await entryStream.CopyToAsync(fileStream);
+            }
+
+            // Record which files this pack contributed so we can verify presence later
+            RecordExtractedFiles(pack.Id, cachePath);
+            CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Extracted successfully");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Extraction failed — {ex.Message}");
+            return;
+        }
+
+        SaveStoredVersion(pack.Id, versionToken);
+        progress?.Report($"{pack.DisplayName} updated.");
+        CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Done. Version = {versionToken}");
+    }
+
+    // ── Extracted-file tracking ───────────────────────────────────────────────────
+
+    // Settings key that stores the list of files extracted by a pack.
+    // Value is a JSON array of paths relative to RsStagingDir.
+    private string FileListKey(string packId) => $"ShaderPack_{packId}_Files";
+
+    /// <summary>
+    /// Returns true when every file previously recorded for this pack still exists
+    /// on disk AND the cache zip itself exists. Either condition missing → re-extract.
+    /// </summary>
+    private bool PackHasExtractedFiles(string packId, string cachePath)
+    {
+        if (!File.Exists(cachePath)) return false;
+        try
+        {
+            if (!File.Exists(SettingsPath)) return false;
+            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+            if (d == null || !d.TryGetValue(FileListKey(packId), out var json) || string.IsNullOrEmpty(json))
+                return false; // no record → treat as missing
+            var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+            if (files.Count == 0) return false;
+            // All recorded files must still exist
+            return files.All(rel => File.Exists(Path.Combine(AuxInstallService.RsStagingDir, rel)));
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.PackHasExtractedFiles] Failed to check extracted files for '{packId}' — {ex.Message}"); return false; }
+    }
+
+    /// <summary>
+    /// After a successful extraction, walks the archive again and records every
+    /// extracted relative path so PackHasExtractedFiles can verify them next run.
+    /// </summary>
+    private void RecordExtractedFiles(string packId, string cachePath)
+    {
+        try
+        {
+            var files = new List<string>();
+            using var archive = ArchiveFactory.Open(cachePath);
+            foreach (var entry in archive.Entries)
+            {
+                if (entry.IsDirectory) continue;
+                var key = entry.Key?.Replace('\\', '/') ?? "";
+
+                string? rootDir = null;
+                string? relInRoot = null;
+                foreach (var (token, dir) in new[]
+                {
+                    ("Shaders/",  ShadersDir),
+                    ("Textures/", TexturesDir),
+                })
+                {
+                    int idx = key.IndexOf("/" + token, StringComparison.OrdinalIgnoreCase);
+                    if (idx >= 0) { rootDir = dir; relInRoot = key.Substring(idx + 1 + token.Length); break; }
+                    if (key.StartsWith(token, StringComparison.OrdinalIgnoreCase)) { rootDir = dir; relInRoot = key.Substring(token.Length); break; }
+                }
+                if (rootDir == null || string.IsNullOrEmpty(relInRoot)) continue;
+                // Store as relative path from RsStagingDir
+                var subDir = rootDir == ShadersDir ? "Shaders" : "Textures";
+                files.Add(Path.Combine(subDir, relInRoot.Replace('/', Path.DirectorySeparatorChar)));
+            }
+
+            Dictionary<string, string> d = new();
+            if (File.Exists(SettingsPath))
+                d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
+            d[FileListKey(packId)] = JsonSerializer.Serialize(files);
+            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.RecordExtractedFiles] Failed for '{packId}' — {ex.Message}"); }
+    }
+
+    // ── Source resolution ─────────────────────────────────────────────────────────
+
+    private async Task<(string? url, string version)> ResolveGhRelease(
+        ShaderPack pack)
+    {
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, pack.Url);
+            req.Headers.Add("User-Agent", "RenoDXCommander");
+            req.Headers.Add("Accept", "application/vnd.github+json");
+            var resp = await _http.SendAsync(req);
+            if (!resp.IsSuccessStatusCode)
+            {
+                CrashReporter.Log($"[ShaderPackService.ResolveGhRelease] [{pack.Id}] GitHub API {resp.StatusCode}");
+                return (null, "");
+            }
+
+            var json = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("assets", out var assets))
+            {
+                foreach (var asset in assets.EnumerateArray())
+                {
+                    var name = asset.GetProperty("name").GetString() ?? "";
+                    var url = asset.GetProperty("browser_download_url").GetString() ?? "";
+                    bool matches = pack.AssetExt == null ||
+                                   name.EndsWith(pack.AssetExt, StringComparison.OrdinalIgnoreCase);
+                    if (matches && !string.IsNullOrEmpty(url))
+                        return (url, name);
+                }
+            }
+
+            // Fall back to source code zipball
+            if (root.TryGetProperty("zipball_url", out var zb))
+            {
+                var tagName = root.TryGetProperty("tag_name", out var t) ? t.GetString() ?? "unknown" : "unknown";
+                var zbUrl = zb.GetString();
+                if (!string.IsNullOrEmpty(zbUrl))
+                    return (zbUrl, $"source_{tagName}.zip");
+            }
+
+            CrashReporter.Log($"[ShaderPackService.ResolveGhRelease] [{pack.Id}] No suitable asset found");
+            return (null, "");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ShaderPackService.ResolveGhRelease] [{pack.Id}] GH API error — {ex.Message}");
+            return (null, "");
+        }
+    }
+
+    private async Task<string> ResolveDirectUrlVersion(ShaderPack pack)
+    {
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Head, pack.Url);
+            req.Headers.Add("User-Agent", "RenoDXCommander");
+            var resp = await _http.SendAsync(req);
+            if (!resp.IsSuccessStatusCode) return "unknown";
+            var etag = resp.Headers.ETag?.Tag;
+            var modified = resp.Content.Headers.LastModified?.ToString("O");
+            return etag ?? modified ?? "unknown";
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.ResolveDirectUrlVersion] Failed to resolve version for URL — {ex.Message}"); return "unknown"; }
+    }
+
+    // ── Deployment helpers ────────────────────────────────────────────────────────
+
+    // ── AvailablePacks (Task 5.1) ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Exposes pack metadata for the picker UI — returns every known pack's Id and DisplayName.
+    /// </summary>
+    public IReadOnlyList<(string Id, string DisplayName)> AvailablePacks { get; } =
+        Packs.Select(p => (p.Id, p.DisplayName)).ToList().AsReadOnly();
+
+    // ── Pack filtering ────────────────────────────────────────────────────────────
+
+    /// <summary>Returns the packs eligible for deployment under <paramref name="mode"/>.</summary>
+    private IEnumerable<ShaderPack> PacksForMode(DeployMode mode) => mode switch
+    {
+        DeployMode.Off => Enumerable.Empty<ShaderPack>(),
+        DeployMode.Minimum => Packs.Where(p => p.IsMinimum),
+        DeployMode.All => Packs,
+        DeployMode.User => Enumerable.Empty<ShaderPack>(), // custom folder only
+        DeployMode.Select => Enumerable.Empty<ShaderPack>(), // actual filtering uses pack IDs via PacksForIds
+        _ => Enumerable.Empty<ShaderPack>(),
+    };
+
+    /// <summary>
+    /// Returns packs whose Id is in the given set. Unknown IDs are silently ignored.
+    /// </summary>
+    private IEnumerable<ShaderPack> PacksForIds(IEnumerable<string> packIds)
+    {
+        var idSet = new HashSet<string>(packIds, StringComparer.OrdinalIgnoreCase);
+        return Packs.Where(p => idSet.Contains(p.Id));
+    }
+
+    /// <summary>
+    /// Collects the staging files that belong to the packs selected by <paramref name="mode"/>
+    /// and copies any missing ones to <paramref name="destShadersDir"/> / <paramref name="destTexturesDir"/>.
+    /// </summary>
+    private void DeployPacksIfAbsent(DeployMode mode, string destShadersDir, string destTexturesDir)
+    {
+        // Build the set of relative paths that the eligible packs contributed.
+        // We read the recorded file lists from settings so we know exactly which
+        // files came from which pack, and only deploy those.
+        var shadersFiles = new List<string>();
+        var texturesFiles = new List<string>();
+
+        foreach (var pack in PacksForMode(mode))
+        {
+            try
+            {
+                if (!File.Exists(SettingsPath)) continue;
+                var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+                if (d == null || !d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json))
+                    continue;
+                var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                foreach (var rel in files)
+                {
+                    // rel is like "Shaders\foo\bar.fx" or "Textures\foo\bar.png"
+                    if (rel.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        shadersFiles.Add(rel.Substring("Shaders".Length + 1));
+                    else if (rel.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        texturesFiles.Add(rel.Substring("Textures".Length + 1));
+                }
+            }
+            catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Failed to read pack record — {ex.Message}"); }
+        }
+
+        // Fall back: if no records exist yet (first run, mode just changed), deploy all staging files
+        bool hasRecords = shadersFiles.Count > 0 || texturesFiles.Count > 0;
+
+        if (hasRecords)
+        {
+            DeployFileListIfAbsent(ShadersDir, destShadersDir, shadersFiles);
+            DeployFileListIfAbsent(TexturesDir, destTexturesDir, texturesFiles);
+        }
+        else
+        {
+            // No per-pack records yet — fall back to copying whatever is in staging
+            DeployFolderIfAbsent(ShadersDir, destShadersDir);
+            DeployFolderIfAbsent(TexturesDir, destTexturesDir);
+        }
+    }
+
+    /// <summary>
+    /// Overload that deploys only the packs matching the given <paramref name="packIds"/>.
+    /// Used when mode is Select to deploy the user's chosen subset.
+    /// </summary>
+    private void DeployPacksIfAbsent(IEnumerable<string> packIds, string destShadersDir, string destTexturesDir)
+    {
+        var shadersFiles = new List<string>();
+        var texturesFiles = new List<string>();
+
+        foreach (var pack in PacksForIds(packIds))
+        {
+            try
+            {
+                if (!File.Exists(SettingsPath)) continue;
+                var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+                if (d == null || !d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json))
+                    continue;
+                var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                foreach (var rel in files)
+                {
+                    if (rel.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        shadersFiles.Add(rel.Substring("Shaders".Length + 1));
+                    else if (rel.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        texturesFiles.Add(rel.Substring("Textures".Length + 1));
+                }
+            }
+            catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Failed to read pack record — {ex.Message}"); }
+        }
+
+        bool hasRecords = shadersFiles.Count > 0 || texturesFiles.Count > 0;
+
+        if (hasRecords)
+        {
+            DeployFileListIfAbsent(ShadersDir, destShadersDir, shadersFiles);
+            DeployFileListIfAbsent(TexturesDir, destTexturesDir, texturesFiles);
+        }
+        else
+        {
+            // No per-pack records yet — nothing to deploy for Select mode
+            // (unlike mode-based overload, we don't fall back to full staging copy)
+        }
+    }
+
+    /// <summary>
+    /// Collects relative paths for all files belonging to packs matching the given <paramref name="packIds"/>.
+    /// </summary>
+    private (List<string> shaders, List<string> textures) FilesForIds(IEnumerable<string> packIds)
+    {
+        var shaders = new List<string>();
+        var textures = new List<string>();
+        try
+        {
+            if (!File.Exists(SettingsPath)) return (shaders, textures);
+            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+            if (d == null) return (shaders, textures);
+            foreach (var pack in PacksForIds(packIds))
+            {
+                if (!d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json)) continue;
+                var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                foreach (var rel in files)
+                {
+                    if (rel.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        shaders.Add(rel.Substring("Shaders".Length + 1));
+                    else if (rel.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        textures.Add(rel.Substring("Textures".Length + 1));
+                }
+            }
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+        return (shaders, textures);
+    }
+
+    /// <summary>
+    /// Deploys user-provided custom shaders and textures from the Custom folder
+    /// into the destination shader/texture directories, but only if the files
+    /// do not already exist there.
+    /// </summary>
+    private void DeployCustomIfAbsent(string destShadersDir, string destTexturesDir)
+    {
+        try
+        {
+            Directory.CreateDirectory(destShadersDir);
+            Directory.CreateDirectory(destTexturesDir);
+
+            // Copy custom shaders
+            if (Directory.Exists(CustomShadersDir))
+            {
+                foreach (var src in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(CustomShadersDir, src);
+                    var dest = Path.Combine(destShadersDir, rel);
+                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+
+                    if (!File.Exists(dest))
+                        File.Copy(src, dest, overwrite: false);
+                    else if (IsFileStale(src, dest))
+                        try { File.Copy(src, dest, overwrite: true); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                }
+            }
+
+            // Copy custom textures
+            if (Directory.Exists(CustomTexturesDir))
+            {
+                foreach (var src in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(CustomTexturesDir, src);
+                    var dest = Path.Combine(destTexturesDir, rel);
+                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+
+                    if (!File.Exists(dest))
+                        File.Copy(src, dest, overwrite: false);
+                    else if (IsFileStale(src, dest))
+                        try { File.Copy(src, dest, overwrite: true); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ShaderPackService.DeployCustomIfAbsent] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Copies staging Shaders/ and Textures/ to the DC global Reshade folder,
+    /// filtered to the packs selected by <paramref name="mode"/>.
+    /// </summary>
+    // ── Marker / ownership helpers ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns true if the reshade-shaders folder in <paramref name="gameDir"/>
+    /// was placed there by RDXC (contains our marker file).
+    /// </summary>
+    public bool IsManagedByRdxc(string gameDir)
+    {
+        var marker = Path.Combine(gameDir, GameReShadeShaders, ManagedMarkerFile);
+        return File.Exists(marker);
+    }
+
+    /// <summary>
+    /// Writes the RDXC ownership marker into the reshade-shaders folder.
+    /// Call after creating the folder so future runs recognise it as ours.
+    /// </summary>
+    private void WriteMarker(string gameDir)
+    {
+        try
+        {
+            var rsDir = Path.Combine(gameDir, GameReShadeShaders);
+            var marker = Path.Combine(rsDir, ManagedMarkerFile);
+            Directory.CreateDirectory(rsDir);
+            File.WriteAllText(marker, ManagedMarkerContent);
+        }
+        catch (Exception ex)
+        { CrashReporter.Log($"[ShaderPackService.WriteMarkerFile] Failed to write marker — {ex.Message}"); }
+    }
+
+    /// <summary>
+    /// If a user-owned reshade-shaders folder was previously renamed to
+    /// reshade-shaders-original, rename it back. Called on RS/DC uninstall.
+    /// </summary>
+    public void RestoreOriginalIfPresent(string gameDir)
+    {
+        var orig = Path.Combine(gameDir, GameReShadeOriginal);
+        var current = Path.Combine(gameDir, GameReShadeShaders);
+        if (!Directory.Exists(orig)) return;
+        // Only restore if our managed copy is gone
+        if (!Directory.Exists(current))
+        {
+            try { Directory.Move(orig, current); }
+            catch (Exception ex)
+            { CrashReporter.Log($"[ShaderPackService.RestoreOriginalShaders] Failed to restore original — {ex.Message}"); }
+        }
+    }
+
+    // ── Deployment helpers ────────────────────────────────────────────────────────
+
+    public void DeployToDcFolder(DeployMode? mode = null)
+    {
+        var m = mode ?? CurrentMode;
+        if (m == DeployMode.Off) return;
+        if (m == DeployMode.User)
+            DeployCustomIfAbsent(DcShadersDir, DcTexturesDir);
+        else
+            DeployPacksIfAbsent(m, DcShadersDir, DcTexturesDir);
+    }
+
+    /// <summary>
+    /// Copies staging Shaders/ and Textures/ into <c>gameDir\reshade-shaders\</c>,
+    /// filtered to the packs selected by <paramref name="mode"/>.
+    /// </summary>
+    /// <summary>
+    /// Deploys staging shaders to <c>gameDir\reshade-shaders\</c>.
+    /// If a pre-existing non-RDXC reshade-shaders folder is found, it is renamed
+    /// to reshade-shaders-original before creating our managed folder.
+    /// </summary>
+    public void DeployToGameFolder(string gameDir, DeployMode? mode = null)
+    {
+        var m = mode ?? CurrentMode;
+        if (m == DeployMode.Off) return;
+
+        var rsDir = Path.Combine(gameDir, GameReShadeShaders);
+
+        // If an existing reshade-shaders folder is NOT ours, preserve it
+        if (Directory.Exists(rsDir) && !IsManagedByRdxc(gameDir))
+        {
+            var origDir = Path.Combine(gameDir, GameReShadeOriginal);
+            try
+            {
+                if (!Directory.Exists(origDir))
+                    Directory.Move(rsDir, origDir);
+                else
+                    CrashReporter.Log($"[ShaderPackService.SyncGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename");
+            }
+            catch (Exception ex)
+            { CrashReporter.Log($"[ShaderPackService.SyncGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
+        }
+
+        if (m == DeployMode.User)
+            DeployCustomIfAbsent(Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+        else
+            DeployPacksIfAbsent(m, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+        WriteMarker(gameDir);
+    }
+
+    /// <summary>
+    /// Removes the RDXC-managed reshade-shaders folder (only if our marker is present).
+    /// If a pre-existing folder was renamed to reshade-shaders-original, it is left alone;
+    /// RestoreOriginalIfPresent() handles restoring it on RS/DC uninstall.
+    /// If the folder has no marker (user-owned), rename it to reshade-shaders-original.
+    /// Called when DC is installed to the same folder (ReShade uses DC global path).
+    /// </summary>
+    public void RemoveFromGameFolder(string gameDir)
+    {
+        var rsDir = Path.Combine(gameDir, GameReShadeShaders);
+        if (!Directory.Exists(rsDir)) return;
+
+        if (IsManagedByRdxc(gameDir))
+        {
+            try { Directory.Delete(rsDir, recursive: true); }
+            catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.RemoveFromGameFolder] Failed to remove managed reshade-shaders — {ex.Message}"); }
+        }
+        else
+        {
+            // User-owned folder — rename to preserve it
+            var origDir = Path.Combine(gameDir, GameReShadeOriginal);
+            if (!Directory.Exists(origDir))
+                try { Directory.Move(rsDir, origDir); }
+                catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.RemoveFromGameFolder] Failed to rename user reshade-shaders — {ex.Message}"); }
+            else
+                CrashReporter.Log($"[ShaderPackService.RemoveFromGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename of user folder");
+        }
+    }
+
+    // ── Global sync (called on Refresh) ──────────────────────────────────────────
+
+    /// <summary>
+    /// Builds the set of relative paths (relative to ShadersDir / TexturesDir)
+    /// that were ever deployed by RDXC for ANY pack — used to identify stale files
+    /// during sync.
+    /// </summary>
+    private (HashSet<string> shaders, HashSet<string> textures) AllKnownPackFiles()
+    {
+        var shaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var textures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            if (!File.Exists(SettingsPath)) return (shaders, textures);
+            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+            if (d == null) return (shaders, textures);
+            foreach (var pack in Packs)
+            {
+                if (!d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json)) continue;
+                var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                foreach (var rel in files)
+                {
+                    if (rel.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        shaders.Add(rel.Substring("Shaders".Length + 1));
+                    else if (rel.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        textures.Add(rel.Substring("Textures".Length + 1));
+                }
+            }
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+        return (shaders, textures);
+    }
+
+    /// <summary>
+    /// Removes from <paramref name="destDir"/> every file in <paramref name="knownFiles"/>
+    /// that is NOT in <paramref name="keepFiles"/>. Leaves directories in place.
+    /// </summary>
+    private void PruneFiles(string destDir, IEnumerable<string> knownFiles, IEnumerable<string> keepFiles)
+    {
+        if (!Directory.Exists(destDir)) return;
+        var keepSet = new HashSet<string>(keepFiles, StringComparer.OrdinalIgnoreCase);
+        foreach (var rel in knownFiles)
+        {
+            if (keepSet.Contains(rel)) continue;
+            var path = Path.Combine(destDir, rel);
+            if (!File.Exists(path)) continue;
+            try { File.Delete(path); }
+            catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.PruneFiles] Failed for '{path}' — {ex.Message}"); }
+        }
+    }
+
+    /// <summary>
+    /// Collects relative paths for all files belonging to packs eligible under <paramref name="mode"/>.
+    /// </summary>
+    private (List<string> shaders, List<string> textures) FilesForMode(DeployMode mode)
+    {
+        var shaders = new List<string>();
+        var textures = new List<string>();
+        try
+        {
+            if (!File.Exists(SettingsPath)) return (shaders, textures);
+            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+            if (d == null) return (shaders, textures);
+            foreach (var pack in PacksForMode(mode))
+            {
+                if (!d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json)) continue;
+                var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                foreach (var rel in files)
+                {
+                    if (rel.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        shaders.Add(rel.Substring("Shaders".Length + 1));
+                    else if (rel.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        textures.Add(rel.Substring("Textures".Length + 1));
+                }
+            }
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+        return (shaders, textures);
+    }
+
+    /// <summary>
+    /// Synchronises the DC global Reshade folder to exactly match the current mode.
+    /// • Removes pack files that should no longer be there (mode changed down).
+    /// • Deploys files that are missing for the current mode.
+    /// • Leaves any files not managed by RDXC (user-added) untouched.
+    /// • For User mode: removes all pack files, then copies from Custom folder.
+    /// • For Off mode: removes all pack files and all custom files previously copied.
+    /// </summary>
+    public void SyncDcFolder(DeployMode m, IEnumerable<string>? selectedPackIds = null)
+    {
+        var (allKnownShaders, allKnownTextures) = AllKnownPackFiles();
+
+        // Select mode with null/empty selection → treat as Off
+        if (m == DeployMode.Select && (selectedPackIds == null || !selectedPackIds.Any()))
+            m = DeployMode.Off;
+
+        if (m == DeployMode.Off)
+        {
+            // Remove every pack file and every custom file from the DC folder
+            PruneFiles(DcShadersDir, allKnownShaders, Enumerable.Empty<string>());
+            PruneFiles(DcTexturesDir, allKnownTextures, Enumerable.Empty<string>());
+
+            // Remove custom files too — enumerate what's in Custom staging and delete from DC
+            if (Directory.Exists(CustomShadersDir))
+                foreach (var f in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(CustomShadersDir, f);
+                    var dest = Path.Combine(DcShadersDir, rel);
+                    if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                }
+            if (Directory.Exists(CustomTexturesDir))
+                foreach (var f in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(CustomTexturesDir, f);
+                    var dest = Path.Combine(DcTexturesDir, rel);
+                    if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                }
+            return;
+        }
+
+        if (m == DeployMode.User)
+        {
+            // Remove all pack files, then deploy custom
+            PruneFiles(DcShadersDir, allKnownShaders, Enumerable.Empty<string>());
+            PruneFiles(DcTexturesDir, allKnownTextures, Enumerable.Empty<string>());
+            DeployCustomIfAbsent(DcShadersDir, DcTexturesDir);
+            return;
+        }
+
+        // Select mode: prune + deploy using pack IDs
+        if (m == DeployMode.Select)
+        {
+            var (selectShaders, selectTextures) = FilesForIds(selectedPackIds!);
+            PruneFiles(DcShadersDir, allKnownShaders, selectShaders);
+            PruneFiles(DcTexturesDir, allKnownTextures, selectTextures);
+
+            // Remove any custom files (switching away from User mode)
+            if (Directory.Exists(CustomShadersDir))
+                foreach (var f in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(CustomShadersDir, f);
+                    var dest = Path.Combine(DcShadersDir, rel);
+                    if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                }
+            if (Directory.Exists(CustomTexturesDir))
+                foreach (var f in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(CustomTexturesDir, f);
+                    var dest = Path.Combine(DcTexturesDir, rel);
+                    if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                }
+
+            DeployPacksIfAbsent(selectedPackIds!, DcShadersDir, DcTexturesDir);
+            return;
+        }
+
+        // Minimum or All: prune files that belong to packs not in the current mode,
+        // then deploy what's missing for the current mode.
+        var (modeShaders, modeTextures) = FilesForMode(m);
+        PruneFiles(DcShadersDir, allKnownShaders, modeShaders);
+        PruneFiles(DcTexturesDir, allKnownTextures, modeTextures);
+
+        // Remove any custom files (switching away from User mode)
+        if (Directory.Exists(CustomShadersDir))
+            foreach (var f in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(CustomShadersDir, f);
+                var dest = Path.Combine(DcShadersDir, rel);
+                if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+            }
+        if (Directory.Exists(CustomTexturesDir))
+            foreach (var f in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(CustomTexturesDir, f);
+                var dest = Path.Combine(DcTexturesDir, rel);
+                if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+            }
+
+        DeployToDcFolder(m);
+    }
+
+    /// <summary>
+    /// Synchronises the game-local reshade-shaders folder to exactly match the current mode.
+    /// Same pruning + deploy logic as SyncDcFolder but for the per-game folder.
+    /// </summary>
+    public void SyncGameFolder(string gameDir, DeployMode m, IEnumerable<string>? selectedPackIds = null)
+    {
+        var rsShaders = Path.Combine(gameDir, GameReShadeShaders, "Shaders");
+        var rsTextures = Path.Combine(gameDir, GameReShadeShaders, "Textures");
+
+        var (allKnownShaders, allKnownTextures) = AllKnownPackFiles();
+
+        // Select mode with null/empty selection → treat as Off
+        if (m == DeployMode.Select && (selectedPackIds == null || !selectedPackIds.Any()))
+            m = DeployMode.Off;
+
+        if (m == DeployMode.Off)
+        {
+            if (IsManagedByRdxc(gameDir))
+                RemoveFromGameFolder(gameDir);
+            RestoreOriginalIfPresent(gameDir);
+            return;
+        }
+
+        if (m == DeployMode.User)
+        {
+            // Ensure the folder exists (it may have been created by a previous mode)
+            if (IsManagedByRdxc(gameDir))
+            {
+                PruneFiles(rsShaders, allKnownShaders, Enumerable.Empty<string>());
+                PruneFiles(rsTextures, allKnownTextures, Enumerable.Empty<string>());
+                DeployCustomIfAbsent(rsShaders, rsTextures);
+            }
+            else
+            {
+                // Not yet managed — let DeployToGameFolder handle rename + marker + deploy
+                DeployToGameFolder(gameDir, m);
+            }
+            return;
+        }
+
+        // Select mode: prune + deploy using pack IDs
+        if (m == DeployMode.Select)
+        {
+            if (IsManagedByRdxc(gameDir))
+            {
+                var (selectShaders, selectTextures) = FilesForIds(selectedPackIds!);
+                PruneFiles(rsShaders, allKnownShaders, selectShaders);
+                PruneFiles(rsTextures, allKnownTextures, selectTextures);
+
+                // Remove custom files if switching away from User mode
+                if (Directory.Exists(CustomShadersDir))
+                    foreach (var f in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
+                    {
+                        var rel = Path.GetRelativePath(CustomShadersDir, f);
+                        var dest = Path.Combine(rsShaders, rel);
+                        if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                    }
+                if (Directory.Exists(CustomTexturesDir))
+                    foreach (var f in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
+                    {
+                        var rel = Path.GetRelativePath(CustomTexturesDir, f);
+                        var dest = Path.Combine(rsTextures, rel);
+                        if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                    }
+
+                DeployPacksIfAbsent(selectedPackIds!, rsShaders, rsTextures);
+                WriteMarker(gameDir);
+            }
+            else
+            {
+                // Not yet managed — handle rename + marker, then deploy selected packs
+                var rsDir = Path.Combine(gameDir, GameReShadeShaders);
+                if (Directory.Exists(rsDir) && !IsManagedByRdxc(gameDir))
+                {
+                    var origDir = Path.Combine(gameDir, GameReShadeOriginal);
+                    try
+                    {
+                        if (!Directory.Exists(origDir))
+                            Directory.Move(rsDir, origDir);
+                        else
+                            CrashReporter.Log($"[ShaderPackService.SyncGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename");
+                    }
+                    catch (Exception ex)
+                    { CrashReporter.Log($"[ShaderPackService.SyncGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
+                }
+
+                DeployPacksIfAbsent(selectedPackIds!, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+                WriteMarker(gameDir);
+            }
+            return;
+        }
+
+        // Minimum or All
+        if (IsManagedByRdxc(gameDir))
+        {
+            var (modeShaders, modeTextures) = FilesForMode(m);
+            PruneFiles(rsShaders, allKnownShaders, modeShaders);
+            PruneFiles(rsTextures, allKnownTextures, modeTextures);
+
+            // Remove custom files if switching away from User mode
+            if (Directory.Exists(CustomShadersDir))
+                foreach (var f in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(CustomShadersDir, f);
+                    var dest = Path.Combine(rsShaders, rel);
+                    if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                }
+            if (Directory.Exists(CustomTexturesDir))
+                foreach (var f in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(CustomTexturesDir, f);
+                    var dest = Path.Combine(rsTextures, rel);
+                    if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
+                }
+
+            DeployToGameFolder(gameDir, m);
+        }
+        else
+        {
+            DeployToGameFolder(gameDir, m);
+        }
+    }
+
+    /// <summary>
+    /// Synchronises shaders across every installed location AND the DC global folder.
+    /// Called after ↻ Refresh so mode changes take effect immediately everywhere.
+    /// </summary>
+    public void SyncShadersToAllLocations(
+        IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
+        DeployMode? mode = null,
+        IEnumerable<string>? selectedPackIds = null)
+    {
+        var globalMode = mode ?? CurrentMode;
+        bool dcSynced = false;
+
+        foreach (var loc in locations)
+        {
+            if (string.IsNullOrEmpty(loc.installPath) || !Directory.Exists(loc.installPath))
+                continue;
+
+            // Resolve effective mode: per-game override wins, otherwise global
+            var effectiveMode = loc.shaderModeOverride != null
+                && Enum.TryParse<DeployMode>(loc.shaderModeOverride, true, out var overrideMode)
+                ? overrideMode
+                : globalMode;
+
+            if (loc.dcInstalled)
+            {
+                // DC mode: game-local reshade-shaders not used — clean it up
+                if (IsManagedByRdxc(loc.installPath))
+                    RemoveFromGameFolder(loc.installPath);
+                RestoreOriginalIfPresent(loc.installPath);
+
+                if (!dcSynced)
+                {
+                    // DC folder is shared across all DC-mode games — always use
+                    // the global mode, never a per-game override.
+                    SyncDcFolder(globalMode, selectedPackIds);
+                    dcSynced = true;
+                }
+            }
+            else if (loc.rsInstalled && !loc.dcInstalled)
+            {
+                // SyncGameFolder handles all modes including Off (removes managed folder)
+                SyncGameFolder(loc.installPath, effectiveMode, selectedPackIds);
+            }
+        }
+
+        // If no DC game was seen but DC folder exists and mode is Off, still prune it
+        if (!dcSynced && globalMode == DeployMode.Off && Directory.Exists(DcReshadeDir))
+            SyncDcFolder(globalMode, selectedPackIds);
+    }
+
+    // ── Private copy helpers ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Copies a specific list of relative paths from sourceDir → destDir.
+    /// Skips any file that already exists at the destination.
+    /// </summary>
+    /// <summary>
+    /// Returns true if the staged source file differs from the deployed destination file.
+    /// Compares file size first (fast), then falls back to byte-level comparison if sizes match
+    /// but the staging file is newer — covers edge cases where content changes without size change.
+    /// </summary>
+    private bool IsFileStale(string srcPath, string destPath)
+    {
+        try
+        {
+            var srcInfo  = new FileInfo(srcPath);
+            var destInfo = new FileInfo(destPath);
+
+            // Different size → definitely stale
+            if (srcInfo.Length != destInfo.Length) return true;
+
+            // Same size but source is newer → compare bytes
+            if (srcInfo.LastWriteTimeUtc > destInfo.LastWriteTimeUtc)
+            {
+                // Quick byte comparison (read in 8 KB chunks)
+                using var fs1 = File.OpenRead(srcPath);
+                using var fs2 = File.OpenRead(destPath);
+                var buf1 = new byte[8192];
+                var buf2 = new byte[8192];
+                int read1;
+                while ((read1 = fs1.Read(buf1, 0, buf1.Length)) > 0)
+                {
+                    var read2 = fs2.Read(buf2, 0, buf2.Length);
+                    if (read1 != read2) return true;
+                    if (!buf1.AsSpan(0, read1).SequenceEqual(buf2.AsSpan(0, read2))) return true;
+                }
+                return false; // Identical bytes
+            }
+
+            return false; // Same size and destination is same age or newer
+        }
+        catch
+        {
+            return false; // On error, don't overwrite
+        }
+    }
+
+    private void DeployFileListIfAbsent(string sourceDir, string destDir, List<string> relPaths)
+    {
+        if (!Directory.Exists(sourceDir)) return;
+        Directory.CreateDirectory(destDir);
+        foreach (var rel in relPaths)
+        {
+            var src = Path.Combine(sourceDir, rel);
+            if (!File.Exists(src)) continue;
+            var dest = Path.Combine(destDir, rel);
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+
+            if (File.Exists(dest))
+            {
+                // Overwrite if the staged file differs from the deployed file
+                if (!IsFileStale(src, dest)) continue;
+                try { File.Copy(src, dest, overwrite: true); }
+                catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.DeployFileListIfAbsent] Update '{rel}' failed — {ex.Message}"); }
+            }
+            else
+            {
+                File.Copy(src, dest, overwrite: false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Full-folder copy fallback: copies all files from sourceDir → destDir,
+    /// skipping any that already exist. Used when per-pack file records are absent.
+    /// </summary>
+    private void DeployFolderIfAbsent(string sourceDir, string destDir)
+    {
+        if (!Directory.Exists(sourceDir)) return;
+        Directory.CreateDirectory(destDir);
+        foreach (var file in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            var rel = Path.GetRelativePath(sourceDir, file);
+            var destFile = Path.Combine(destDir, rel);
+            Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+
+            if (File.Exists(destFile))
+            {
+                if (!IsFileStale(file, destFile)) continue;
+                try { File.Copy(file, destFile, overwrite: true); }
+                catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.DeployFolderIfAbsent] Update '{rel}' failed — {ex.Message}"); }
+            }
+            else
+            {
+                File.Copy(file, destFile, overwrite: false);
+            }
+        }
+    }
+
+    // ── Settings persistence ──────────────────────────────────────────────────────
+
+    private static readonly string SettingsPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RenoDXCommander", "settings.json");
+
+    private string VersionKey(string packId) => $"ShaderPack_{packId}_Version";
+
+    private string? LoadStoredVersion(string packId)
+    {
+        try
+        {
+            if (!File.Exists(SettingsPath)) return null;
+            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+            return d != null && d.TryGetValue(VersionKey(packId), out var v) ? v : null;
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.LoadStoredVersion] Failed to load stored version for '{packId}' — {ex.Message}"); return null; }
+    }
+
+    private void SaveStoredVersion(string packId, string version)
+    {
+        try
+        {
+            Dictionary<string, string> d = new();
+            if (File.Exists(SettingsPath))
+                d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
+            d[VersionKey(packId)] = version;
+            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.SaveStoredVersion] Failed to save version for '{packId}' — {ex.Message}"); }
+    }
+}
