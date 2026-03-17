@@ -2394,30 +2394,57 @@ public sealed partial class MainWindow : Window
         var packs = ViewModel.ShaderPackServiceInstance.AvailablePacks;
         var selected = new HashSet<string>(currentSelection ?? [], StringComparer.OrdinalIgnoreCase);
 
-        var panel = new StackPanel { Spacing = 6 };
+        var panel = new StackPanel { Spacing = 4 };
         var checkBoxes = new List<(string Id, CheckBox Box)>();
 
         foreach (var (id, displayName) in packs)
         {
-            var cb = new CheckBox
+            var description = ViewModel.ShaderPackServiceInstance.GetPackDescription(id);
+
+            // Build a two-line content block: name + description
+            var contentPanel = new StackPanel { Spacing = 0 };
+            contentPanel.Children.Add(new TextBlock
             {
-                Content    = displayName,
-                IsChecked  = selected.Contains(id),
+                Text       = displayName,
                 FontSize   = 13,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+            });
+            if (!string.IsNullOrEmpty(description))
+            {
+                contentPanel.Children.Add(new TextBlock
+                {
+                    Text       = description,
+                    FontSize   = 11,
+                    Opacity    = 0.6,
+                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                });
+            }
+
+            var cb = new CheckBox
+            {
+                Content    = contentPanel,
+                IsChecked  = selected.Contains(id),
             };
             checkBoxes.Add((id, cb));
             panel.Children.Add(cb);
         }
 
+        var scrollViewer = new ScrollViewer
+        {
+            Content           = panel,
+            MaxHeight         = 500,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
+
         var dlg = new ContentDialog
         {
             Title             = "Select Shader Packs",
-            Content           = panel,
+            Content           = scrollViewer,
             PrimaryButtonText = "OK",
             CloseButtonText   = "Cancel",
             XamlRoot          = Content.XamlRoot,
             Background        = Brush(ResourceKeys.SurfaceOverlayBrush),
+            MinWidth          = 650,
         };
 
         var dialogResult = await dlg.ShowAsync();

@@ -34,16 +34,16 @@ public class SelectShaderModeUnitTests
     }
 
     /// <summary>
-    /// 10.3 — AvailablePacks returns exactly 7 packs with non-empty DisplayNames.
+    /// 10.3 — AvailablePacks returns exactly 44 packs with non-empty DisplayNames.
     /// Validates: Requirement 4.2
     /// </summary>
     [Fact]
-    public void AvailablePacks_Returns7PacksWithNonEmptyDisplayNames()
+    public void AvailablePacks_Returns43PacksWithNonEmptyDisplayNames()
     {
         var service = new ShaderPackService(new HttpClient());
         var packs = service.AvailablePacks;
 
-        Assert.Equal(7, packs.Count);
+        Assert.Equal(44, packs.Count);
         Assert.All(packs, p =>
         {
             Assert.False(string.IsNullOrWhiteSpace(p.Id));

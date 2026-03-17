@@ -136,6 +136,7 @@ internal static class TestHelpers
     private class StubShaderPackService : IShaderPackService
     {
         public IReadOnlyList<(string Id, string DisplayName)> AvailablePacks { get; } = new List<(string, string)>();
+        public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
         public void DeployToDcFolder(ShaderPackService.DeployMode? mode = null) { }
         public void DeployToGameFolder(string gameDir, ShaderPackService.DeployMode? mode = null) { }

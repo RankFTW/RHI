@@ -10,6 +10,11 @@ public interface IShaderPackService
     /// </summary>
     IReadOnlyList<(string Id, string DisplayName)> AvailablePacks { get; }
 
+    /// <summary>
+    /// Returns the short description for a pack, or null if none is set.
+    /// </summary>
+    string? GetPackDescription(string packId);
+
     Task EnsureLatestAsync(IProgress<string>? progress = null);
 
     void DeployToDcFolder(ShaderPackService.DeployMode? mode = null);
