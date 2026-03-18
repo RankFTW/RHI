@@ -1,28 +1,17 @@
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 using Xunit;
-using ShaderDeployMode = RenoDXCommander.Services.ShaderPackService.DeployMode;
 
 namespace RenoDXCommander.Tests;
 
 /// <summary>
 /// Unit tests for the Select Shader Mode feature.
-/// Covers enum ordinals, version display, available packs,
+/// Covers version display, available packs,
 /// settings defaults, and unknown pack ID handling.
+/// DeployMode enum was removed — ordinal test removed.
 /// </summary>
-[Collection("StaticShaderMode")]
 public class SelectShaderModeUnitTests
 {
-    /// <summary>
-    /// 10.1 — DeployMode.Select has ordinal value 4.
-    /// Validates: Requirement 2.2
-    /// </summary>
-    [Fact]
-    public void DeployMode_Select_HasOrdinalValue4()
-    {
-        Assert.Equal(4, (int)ShaderDeployMode.Select);
-    }
-
     /// <summary>
     /// 10.2 — RdxcVersion(1, 4, 8, 2).ToDisplayString() returns "1.4.8 beta 2".
     /// Validates: Requirement 1.2
@@ -35,7 +24,7 @@ public class SelectShaderModeUnitTests
     }
 
     /// <summary>
-    /// 10.3 — AvailablePacks returns exactly 44 packs with non-empty DisplayNames.
+    /// 10.3 — AvailablePacks returns exactly 43 packs with non-empty DisplayNames.
     /// Validates: Requirement 4.2
     /// </summary>
     [Fact]
@@ -44,7 +33,7 @@ public class SelectShaderModeUnitTests
         var service = new ShaderPackService(new HttpClient());
         var packs = service.AvailablePacks;
 
-        Assert.Equal(42, packs.Count);
+        Assert.Equal(43, packs.Count);
         Assert.All(packs, p =>
         {
             Assert.False(string.IsNullOrWhiteSpace(p.Id));
@@ -70,7 +59,7 @@ public class SelectShaderModeUnitTests
 
     /// <summary>
     /// 10.5 — Unknown pack ID in selection is silently ignored during deployment.
-    /// SyncGameFolder with Select mode and a list containing an unknown pack ID should not throw.
+    /// SyncGameFolder with a list containing an unknown pack ID should not throw.
     /// Validates: Design error handling — unrecognized pack IDs are silently ignored.
     /// </summary>
     [Fact]
@@ -85,7 +74,7 @@ public class SelectShaderModeUnitTests
 
             // Should not throw — unknown IDs are silently ignored
             var exception = Record.Exception(() =>
-                service.SyncGameFolder(tempDir, ShaderDeployMode.Select, new[] { "NonExistentPack_XYZ" }));
+                service.SyncGameFolder(tempDir, new[] { "NonExistentPack_XYZ" }));
 
             Assert.Null(exception);
         }

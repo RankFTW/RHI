@@ -695,12 +695,19 @@ public class AuxInstallService : IAuxInstallService
         CopyRsPresetIniIfPresent(installPath);
 
         // ── Shader deployment ─────────────────────────────────────────────────────
-        // Deploy shaders locally to the game folder. DC installation no longer
-        // routes shaders to the DC global AppData folder.
-        // NOTE: selectedPackIds must be passed by the caller (ViewModel) for Select
-        // mode to work correctly. Without them, Select mode is treated as Off.
-        var effectiveShaderMode = ResolveShaderMode(shaderModeOverride);
-        _shaderPackService.SyncGameFolder(installPath, effectiveShaderMode, selectedPackIds);
+        // Deploy shaders locally to the game folder only when the game is in
+        // DC Mode (level 1 or 2). Level 0 means DC is an addon alongside ReShade,
+        // so ReShade manages shader deployment independently.
+        if (dcModeLevel > 0)
+        {
+            var packList = selectedPackIds?.ToList();
+            CrashReporter.Log($"[AuxInstallService.InstallDcAsync] Shader deploy: dcModeLevel={dcModeLevel}, packs={packList?.Count ?? -1} ({string.Join(",", packList ?? [])})");
+            _shaderPackService.SyncGameFolder(installPath, packList);
+        }
+        else
+        {
+            CrashReporter.Log($"[AuxInstallService.InstallDcAsync] Shader deploy skipped: dcModeLevel={dcModeLevel}");
+        }
 
         var record = new AuxInstalledRecord
         {
@@ -800,10 +807,8 @@ public class AuxInstallService : IAuxInstallService
         // ── Shader deployment ─────────────────────────────────────────────────────
         // Always deploy shaders locally to the game folder, regardless of DC mode
         // or DC installation status. Uses Sync (prune + deploy) so switching shader
-        // modes properly removes files from the previous mode. Off mode triggers
-        // removal inside Sync.
-        var effectiveShaderMode = ResolveShaderMode(shaderModeOverride);
-        _shaderPackService.SyncGameFolder(installPath, effectiveShaderMode, selectedPackIds);
+        // selections properly removes files from the previous selection.
+        _shaderPackService.SyncGameFolder(installPath, selectedPackIds);
 
         var record = new AuxInstalledRecord
         {
@@ -1093,15 +1098,4 @@ public class AuxInstallService : IAuxInstallService
         }
     }
 
-    /// <summary>
-    /// Resolves the effective shader deploy mode from a per-game override string.
-    /// null → use the global mode. "Off"/"Minimum"/"All"/"User" → override.
-    /// </summary>
-    private ShaderPackService.DeployMode ResolveShaderMode(string? shaderModeOverride)
-    {
-        if (shaderModeOverride != null
-            && Enum.TryParse<ShaderPackService.DeployMode>(shaderModeOverride, true, out var overrideMode))
-            return overrideMode;
-        return ShaderPackService.CurrentMode;
-    }
 }

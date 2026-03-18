@@ -177,8 +177,8 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
 
         public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-        public void DeployToDcFolder(ShaderPackService.DeployMode? mode = null) { }
-        public void DeployToGameFolder(string gameDir, ShaderPackService.DeployMode? mode = null) { }
+        public void DeployToDcFolder() { }
+        public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
 
         public void RemoveFromGameFolder(string gameDir)
         {
@@ -188,12 +188,11 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
 
         public bool IsManagedByRdxc(string gameDir) => false;
         public void RestoreOriginalIfPresent(string gameDir) { }
-        public void SyncDcFolder(ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null) { }
-        public void SyncGameFolder(string gameDir, ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null) { }
+        public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null) { }
+        public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null) { }
 
         public void SyncShadersToAllLocations(
             IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
-            ShaderPackService.DeployMode? mode = null,
             IEnumerable<string>? selectedPackIds = null) { }
     }
 

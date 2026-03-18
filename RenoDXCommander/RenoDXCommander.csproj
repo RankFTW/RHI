@@ -18,8 +18,8 @@
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyName>RenoDXCommander</AssemblyName>
     <AssemblyTitle>RenoDXCommander</AssemblyTitle>
-    <AssemblyVersion>1.4.8.2</AssemblyVersion>
-    <FileVersion>1.4.8.2</FileVersion>
+    <AssemblyVersion>1.4.9.0</AssemblyVersion>
+    <FileVersion>1.4.9.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -8,12 +8,14 @@ namespace RenoDXCommander.Tests;
 /// <summary>
 /// Property-based tests for shader pack data integrity (reshade-shader-packs feature).
 /// Uses FsCheck with xUnit. Each property runs a minimum of 100 iterations.
+/// NOTE: DeployMode enum was removed. Property 3 (DeployMode filtering) removed — will be
+/// replaced with pack-ID-based logic in Task 7.
 /// </summary>
 public class ShaderPackDataPropertyTests
 {
     private readonly ShaderPackService _service = new(new HttpClient());
 
-    /// <summary>All 42 expected pack Ids after adding ReShade installer packs.</summary>
+    /// <summary>All 43 expected pack Ids after adding ReShade installer packs.</summary>
     private static readonly string[] ExpectedPackIds =
     {
         "Lilium", "CrosireMaster", "PumboAutoHDR", "SmolbbsoopShaders", "MaxG2DSimpleHDR",
@@ -26,59 +28,10 @@ public class ShaderPackDataPropertyTests
         "iMMERSE", "VortShaders", "BXShade", "SHADERDECK",
         "METEOR", "AnnReShade", "ZenteonFX", "GShadeShaders",
         "PthoFX", "Anagrama", "BarbatosShaders", "BFBFX",
-        "Rendepth", "CropAndResize", "LumeniteFX"
+        "Rendepth", "CropAndResize", "LumeniteFX", "Azen"
     };
 
-    /// <summary>All valid DeployMode values.</summary>
-    private static readonly ShaderPackService.DeployMode[] AllModes =
-        Enum.GetValues<ShaderPackService.DeployMode>();
-
     // ── Helpers ───────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Invokes the private PacksForMode method via reflection.
-    /// Returns the count of packs returned for the given mode.
-    /// </summary>
-    private int InvokePacksForModeCount(ShaderPackService.DeployMode mode)
-    {
-        var method = typeof(ShaderPackService).GetMethod(
-            "PacksForMode",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-
-        if (method == null)
-            throw new InvalidOperationException("Could not find PacksForMode method via reflection");
-
-        var result = method.Invoke(_service, new object[] { mode });
-        // PacksForMode returns IEnumerable<ShaderPack> (private record), count via LINQ
-        return ((System.Collections.IEnumerable)result!).Cast<object>().Count();
-    }
-
-    /// <summary>
-    /// Invokes the private PacksForMode method via reflection.
-    /// Returns the pack Ids returned for the given mode.
-    /// </summary>
-    private List<string> InvokePacksForModeIds(ShaderPackService.DeployMode mode)
-    {
-        var method = typeof(ShaderPackService).GetMethod(
-            "PacksForMode",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-
-        if (method == null)
-            throw new InvalidOperationException("Could not find PacksForMode method via reflection");
-
-        var result = method.Invoke(_service, new object[] { mode });
-        var packs = ((System.Collections.IEnumerable)result!).Cast<object>();
-
-        // ShaderPack is a private record — use reflection to get Id property
-        var ids = new List<string>();
-        foreach (var pack in packs)
-        {
-            var idProp = pack.GetType().GetProperty("Id");
-            if (idProp != null)
-                ids.Add((string)idProp.GetValue(pack)!);
-        }
-        return ids;
-    }
 
     /// <summary>
     /// Invokes the private FileListKey method via reflection.
@@ -112,10 +65,6 @@ public class ShaderPackDataPropertyTests
 
     // ── Generators ────────────────────────────────────────────────────────────────
 
-    /// <summary>Generates any valid DeployMode value.</summary>
-    private static Gen<ShaderPackService.DeployMode> GenAnyDeployMode() =>
-        Gen.Elements(AllModes);
-
     /// <summary>
     /// Generates a non-empty alphanumeric string suitable as a pack Id.
     /// </summary>
@@ -134,8 +83,8 @@ public class ShaderPackDataPropertyTests
     /// <summary>
     /// **Validates: Requirements 1.1, 1.4, 4.1**
     ///
-    /// For any expected pack Id from the complete set of 44 (8 original + 36 new),
-    /// that Id must exist in AvailablePacks, the total count must be exactly 44,
+    /// For any expected pack Id from the complete set of 43,
+    /// that Id must exist in AvailablePacks, the total count must be exactly 43,
     /// and AvailablePacks must match the Packs array.
     /// </summary>
     [Property(MaxTest = 100)]
@@ -146,22 +95,20 @@ public class ShaderPackDataPropertyTests
         {
             var available = _service.AvailablePacks;
 
-            // Total count must be exactly 42
-            if (available.Count != 42)
-                return false.Label($"AvailablePacks.Count is {available.Count}, expected 42");
+            // Total count must be exactly 43
+            if (available.Count != 43)
+                return false.Label($"AvailablePacks.Count is {available.Count}, expected 43");
 
             // The randomly chosen expected Id must be present
             var ids = available.Select(p => p.Id).ToList();
             if (!ids.Contains(expectedId))
                 return false.Label($"Expected Id '{expectedId}' not found in AvailablePacks");
 
-            // All 44 expected Ids must be present (static check, but verified each iteration)
+            // All 43 expected Ids must be present (static check, but verified each iteration)
             var missingIds = ExpectedPackIds.Where(id => !ids.Contains(id)).ToList();
             if (missingIds.Count > 0)
                 return false.Label($"Missing Ids: {string.Join(", ", missingIds)}");
 
-            // AvailablePacks count must match Packs array length
-            // (AvailablePacks derives from Packs, so count equality confirms they match)
             return true.Label($"OK: verified '{expectedId}', total={available.Count}");
         });
     }
@@ -228,63 +175,8 @@ public class ShaderPackDataPropertyTests
         });
     }
 
-    // ── Property 3: DeployMode filtering correctness ──────────────────────────────
-
-    // Feature: reshade-shader-packs, Property 3: DeployMode filtering correctness
-    /// <summary>
-    /// **Validates: Requirements 1.3, 5.1, 5.2, 5.3, 5.4**
-    ///
-    /// For any DeployMode value, PacksForMode returns exactly the correct subset:
-    /// All returns all 44 packs, Minimum returns only packs with IsMinimum == true
-    /// (only Lilium), Off returns zero packs, User returns zero packs, and Select
-    /// returns zero packs.
-    /// </summary>
-    [Property(MaxTest = 100)]
-    public Property DeployModeFiltering_ReturnsCorrectSubsetPerMode()
-    {
-        return Prop.ForAll(GenAnyDeployMode().ToArbitrary(), mode =>
-        {
-            var count = InvokePacksForModeCount(mode);
-            var ids = InvokePacksForModeIds(mode);
-
-            switch (mode)
-            {
-                case ShaderPackService.DeployMode.All:
-                    if (count != 42)
-                        return false.Label($"All mode returned {count} packs, expected 42");
-                    break;
-
-                case ShaderPackService.DeployMode.Minimum:
-                    if (count != 2)
-                        return false.Label($"Minimum mode returned {count} packs, expected 2");
-                    if (!ids.Contains("Lilium"))
-                        return false.Label("Minimum mode did not include Lilium");
-                    if (!ids.Contains("CrosireMaster"))
-                        return false.Label("Minimum mode did not include CrosireMaster");
-                    break;
-
-                case ShaderPackService.DeployMode.Off:
-                    if (count != 0)
-                        return false.Label($"Off mode returned {count} packs, expected 0");
-                    break;
-
-                case ShaderPackService.DeployMode.User:
-                    if (count != 0)
-                        return false.Label($"User mode returned {count} packs, expected 0");
-                    break;
-
-                case ShaderPackService.DeployMode.Select:
-                    if (count != 0)
-                        return false.Label($"Select mode returned {count} packs, expected 0");
-                    break;
-
-                default:
-                    return false.Label($"Unknown mode: {mode}");
-            }
-
-            return true.Label($"OK: mode={mode}, count={count}");
-        });
-    }
+    // ── Property 3: DeployMode filtering — REMOVED (DeployMode enum deleted) ──
+    // Will be replaced with pack-ID-based logic in Task 7.
 
     // ── Property 4: Settings key naming convention ────────────────────────────────
 

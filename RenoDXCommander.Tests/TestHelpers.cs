@@ -137,24 +137,30 @@ internal static class TestHelpers
     internal class StubShaderPackService : IShaderPackService
     {
         /// <summary>Records each call to SyncGameFolder with its parameters.</summary>
-        public List<(string GameDir, ShaderPackService.DeployMode Mode, IEnumerable<string>? SelectedPackIds)> SyncGameFolderCalls { get; } = new();
+        public List<(string GameDir, IEnumerable<string>? SelectedPackIds)> SyncGameFolderCalls { get; } = new();
 
         /// <summary>Records each call to SyncDcFolder with its parameters.</summary>
-        public List<(ShaderPackService.DeployMode Mode, IEnumerable<string>? SelectedPackIds)> SyncDcFolderCalls { get; } = new();
+        public List<IEnumerable<string>?> SyncDcFolderCalls { get; } = new();
+
+        /// <summary>Records each call to RemoveFromGameFolder with the gameDir argument.</summary>
+        public List<string> RemoveFromGameFolderCalls { get; } = new();
+
+        /// <summary>Records each call to RestoreOriginalIfPresent with the gameDir argument.</summary>
+        public List<string> RestoreOriginalIfPresentCalls { get; } = new();
 
         public IReadOnlyList<(string Id, string DisplayName, ShaderPackService.PackCategory Category)> AvailablePacks { get; } = new List<(string, string, ShaderPackService.PackCategory)>();
         public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-        public void DeployToDcFolder(ShaderPackService.DeployMode? mode = null) { }
-        public void DeployToGameFolder(string gameDir, ShaderPackService.DeployMode? mode = null) { }
-        public void RemoveFromGameFolder(string gameDir) { }
+        public void DeployToDcFolder() { }
+        public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
+        public void RemoveFromGameFolder(string gameDir) => RemoveFromGameFolderCalls.Add(gameDir);
         public bool IsManagedByRdxc(string gameDir) => false;
-        public void RestoreOriginalIfPresent(string gameDir) { }
-        public void SyncDcFolder(ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null)
-            => SyncDcFolderCalls.Add((m, selectedPackIds));
-        public void SyncGameFolder(string gameDir, ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null)
-            => SyncGameFolderCalls.Add((gameDir, m, selectedPackIds));
-        public void SyncShadersToAllLocations(IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations, ShaderPackService.DeployMode? mode = null, IEnumerable<string>? selectedPackIds = null) { }
+        public void RestoreOriginalIfPresent(string gameDir) => RestoreOriginalIfPresentCalls.Add(gameDir);
+        public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null)
+            => SyncDcFolderCalls.Add(selectedPackIds);
+        public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null)
+            => SyncGameFolderCalls.Add((gameDir, selectedPackIds));
+        public void SyncShadersToAllLocations(IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations, IEnumerable<string>? selectedPackIds = null) { }
     }
 
     private class StubLumaService : ILumaService

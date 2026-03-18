@@ -43,39 +43,37 @@
 
                 <!-- Action buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Button x:Name="AddGameBtn" Content="Add Game"
-                            Click="AddGameButton_Click"
-                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentGreenBrush}"
-                            BorderBrush="{StaticResource AccentGreenBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Manually add a game folder"/>
                     <Button x:Name="RefreshBtn" Content="Refresh"
                             Click="RefreshButton_Click"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
                             BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Rescan game library and fetch latest mod info"/>
-                    <Button x:Name="DeployBtn" Content="Deploy..."
+                    <Button x:Name="UpdateBtn" Content="Update"
+                            Click="UpdateAllButton_Click"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentBlueBrush}"
                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Deploy and update actions">
-                        <Button.Flyout>
-                            <MenuFlyout Placement="Bottom">
-                                <MenuFlyoutItem Text="Deploy DC Mode to All" Click="DeployDcModeButton_Click"/>
-                                <MenuFlyoutSeparator/>
-                                <MenuFlyoutItem Text="Update All RenoDX" Click="UpdateAllRenoDx_Click"/>
-                                <MenuFlyoutItem Text="Update All ReShade" Click="UpdateAllReShade_Click"/>
-                                <MenuFlyoutItem Text="Update All Display Commander" Click="UpdateAllDc_Click"/>
-                            </MenuFlyout>
-                        </Button.Flyout>
-                    </Button>
-                    <Button x:Name="SupportBtn" Content="Support"
-                            Click="SupportButton_Click"
+                            ToolTipService.ToolTip="Update ReShade, Display Commander, and RenoDX for all games"/>
+                    <Button x:Name="ChooseShadersBtn" Content="Global Shaders"
+                            Click="ChooseShadersButton_Click"
+                            Background="{StaticResource SurfaceInputBrush}"
+                            Foreground="{StaticResource TextTertiaryBrush}"
+                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Choose which shader packs to deploy"/>
+                    <Button x:Name="SupportBtn" Content="Help"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Open RenoDXCommander support channel on Discord"/>
+                            ToolTipService.ToolTip="Support and help resources">
+                        <Button.Flyout>
+                            <MenuFlyout Placement="Bottom">
+                                <MenuFlyoutItem Text="Discord" Click="SupportDiscord_Click"/>
+                                <MenuFlyoutItem Text="Guide" Click="SupportGuide_Click"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
 
                     <Button x:Name="LayoutToggleBtn"
                             Content="{x:Bind ViewModel.LayoutToggleLabel, Mode=OneWay}"
@@ -677,22 +675,38 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- ── Shader Deploy Mode ─────────────────────────────────── -->
+                        <!-- ── Add Game ───────────────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Shader Deploy Mode" FontSize="13" FontWeight="SemiBold"
+                                <TextBlock Text="Add Game" FontSize="13" FontWeight="SemiBold"
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Opens a popup to select which shader packs to deploy. Chosen packs are deployed to all eligible games."/>
-                                <Button x:Name="ChooseShadersBtn"
-                                        Content="Choose Shaders"
-                                        Click="ChooseShadersButton_Click"
+                                           Text="Manually add a game that wasn't automatically detected. You'll be asked to name it and select the game folder."/>
+                                <Button x:Name="AddGameBtn" Content="Add Game"
+                                        Click="AddGameButton_Click"
+                                        Background="{StaticResource AccentGreenBgBrush}" Foreground="{StaticResource AccentGreenBrush}"
+                                        BorderBrush="{StaticResource AccentGreenBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"
+                                        ToolTipService.ToolTip="Manually add a game folder"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Full Refresh ────────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Full Refresh" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                           Text="Clears all caches and re-scans everything from disk. Use this if games or mods appear out of sync."/>
+                                <Button x:Name="FullRefreshBtn" Content="Full Refresh"
+                                        Click="FullRefreshButton_Click"
                                         Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                         CornerRadius="8" Padding="12,7" FontSize="12"
                                         HorizontalAlignment="Stretch"
-                                        ToolTipService.ToolTip="Open shader pack selection popup"/>
+                                        ToolTipService.ToolTip="Full refresh — clears all caches and re-scans everything from disk"/>
                             </StackPanel>
                         </Border>
 
@@ -726,23 +740,6 @@
                                               Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
                                            Text="When enabled, every action is logged to rdxc_log.txt for debugging. Disable for normal use."/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ── Full Refresh ────────────────────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Full Refresh" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="Clears all caches and re-scans everything from disk. Use this if games or mods appear out of sync."/>
-                                <Button x:Name="FullRefreshBtn" Content="Full Refresh"
-                                        Click="FullRefreshButton_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"
-                                        ToolTipService.ToolTip="Full refresh — clears all caches and re-scans everything from disk"/>
                             </StackPanel>
                         </Border>
 
@@ -784,34 +781,55 @@
                         <!-- ── About ───────────────────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="About" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <StackPanel Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,4">
                                     <Image Source="icon.ico" Width="48" Height="48"/>
                                     <StackPanel VerticalAlignment="Center" Spacing="4">
                                         <TextBlock FontSize="20" FontWeight="Bold">
-                                            <Run Text="RenoDXCommander" Foreground="{StaticResource AccentTealBrush}"/>
+                                            <Run Text="RenoDX Commander" Foreground="{StaticResource AccentTealBrush}"/>
                                         </TextBlock>
-                                        <TextBlock FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}">
-                                            <Run Text="v1.4.8 beta 2  ·  HDR mod manager by "/>
-                                            <Run Text="RankFTW" FontWeight="SemiBold" Foreground="{StaticResource TextTertiaryBrush}"/>
-                                            <Run Text="  ·  Unofficial companion tool"/>
-                                        </TextBlock>
+                                        <TextBlock x:Name="AboutVersionText" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                     </StackPanel>
                                 </StackPanel>
+
+                                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="20"
+                                           Text="A desktop manager for HDR game mods on Windows. Auto-detects your game libraries and installs ReShade, Display Commander, RenoDX, and Luma Framework mods in a few clicks."/>
+
+                                <!-- What it does -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="14,10"
+                                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="What RDXC does" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Scans Steam, GOG, Epic, EA App, Ubisoft, Xbox/Game Pass, Battle.net, and Rockstar for installed games. Provides one-click install, update, and uninstall for ReShade, Display Commander, RenoDX addons, and Luma Framework mods. Manages shader packs, per-game overrides, and DC Mode configuration."/>
+                                    </StackPanel>
+                                </Border>
 
                                 <!-- Disclaimer -->
                                 <Border Background="{StaticResource AccentPurpleBgBrush}" CornerRadius="8" Padding="14,10"
                                         BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1">
-                                    <StackPanel Spacing="6">
+                                    <StackPanel Spacing="4">
                                         <TextBlock Text="Disclaimer" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource AccentAmberBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="20">
-                                            <Run Text="RenoDXCommander is an unofficial third-party tool "/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="18">
+                                            <Run Text="RenoDX Commander is an unofficial third-party tool, "/>
                                             <Run Text="not affiliated with or endorsed by the RenoDX project, Crosire, pmnoxx, or the Luma Framework."
                                                  FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                            <Run Text=" RenoDX mod files are fetched from official RenoDX GitHub snapshots. Display Commander is downloaded from pmnoxx's GitHub. ReShade with full addon support is downloaded from reshade.me. 7-Zip is bundled under the LGPL licence for archive extraction. No mod files are modified — everything is used directly from its official source."/>
                                         </TextBlock>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="All mod files are fetched directly from their official sources and are not modified. RenoDX addons come from official GitHub snapshots. Display Commander is downloaded from pmnoxx's GitHub releases. ReShade with full addon support is downloaded from reshade.me. 7-Zip is bundled under the LGPL licence for archive extraction."/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Single-player warning -->
+                                <Border Background="{StaticResource AccentRedBgBrush}" CornerRadius="8" Padding="14,10"
+                                        BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Single-player only" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource AccentRedBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="RDXC installs ReShade with full addon support, which may be flagged by anti-cheat in online or multiplayer games. Uninstall ReShade before playing online."/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

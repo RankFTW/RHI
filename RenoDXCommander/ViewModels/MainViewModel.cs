@@ -5,7 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using RenoDXCommander.Collections;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
-using ShaderDeployMode = RenoDXCommander.Services.ShaderPackService.DeployMode;
+
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -33,6 +33,11 @@ public partial class MainViewModel : ObservableObject
     private readonly IDllOverrideService _dllOverrideService;
     private readonly IGameNameService _gameNameService;
     private readonly IGameInitializationService _gameInitializationService;
+    /// <summary>
+    /// Task that tracks the background shader pack download/extraction.
+    /// Awaited before the post-init shader sync so packs are available.
+    /// </summary>
+    private Task? _shaderPackReadyTask;
     public IUpdateService UpdateServiceInstance => _updateService;
     public IShaderPackService ShaderPackServiceInstance => _shaderPackService;
     public IGameDetectionService GameDetectionServiceInstance => _gameDetectionService;
@@ -43,12 +48,6 @@ public partial class MainViewModel : ObservableObject
     public IUpdateOrchestrationService UpdateOrchestrationServiceInstance => _updateOrchestrationService;
     public IGameInitializationService GameInitializationServiceInstance => _gameInitializationService;
 
-    // ── Forwarding properties — delegate to SettingsViewModel, preserve UI bindings ──
-    public ShaderDeployMode ShaderDeployMode
-    {
-        get => _settingsViewModel.ShaderDeployMode;
-        set => _settingsViewModel.ShaderDeployMode = value;
-    }
     public bool SkipUpdateCheck
     {
         get => _settingsViewModel.SkipUpdateCheck;
@@ -69,7 +68,6 @@ public partial class MainViewModel : ObservableObject
         get => _settingsViewModel.LastSeenVersion;
         set => _settingsViewModel.LastSeenVersion = value;
     }
-    public ShaderDeployMode CurrentShaderMode => _settingsViewModel.CurrentShaderMode;
 
     [ObservableProperty] private int _dcModeLevel;
     [ObservableProperty] private bool _lumaFeatureEnabled = true;
@@ -142,7 +140,7 @@ public partial class MainViewModel : ObservableObject
     public Func<string, List<string>?, Task<List<string>?>>? ShowPerGameShaderSelectionPicker { get; set; }
 
     /// <summary>Guard flag — true while LoadNameMappings is running so that
-    /// property-change handlers (DcModeLevel, ShaderDeployMode, etc.) don't
+    /// property-change handlers (DcModeLevel, etc.) don't
     /// call SaveNameMappings before all fields have been loaded.</summary>
     private bool _isLoadingSettings
     {
@@ -160,8 +158,6 @@ public partial class MainViewModel : ObservableObject
         {
             try
             {
-                var globalMode = ShaderDeployMode;
-
                 foreach (var card in _allCards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
@@ -169,25 +165,14 @@ public partial class MainViewModel : ObservableObject
                     bool rsInstalled = card.RequiresVulkanInstall
                         ? VulkanFootprintService.Exists(card.InstallPath)
                         : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
+                    bool dcInstalled = card.DcStatus == GameStatus.Installed || card.DcStatus == GameStatus.UpdateAvailable;
 
-                    // Resolve effective mode: per-game override wins, otherwise global
-                    var effectiveMode = card.ShaderModeOverride != null
-                        && Enum.TryParse<ShaderPackService.DeployMode>(card.ShaderModeOverride, true, out var overrideMode)
-                        ? overrideMode
-                        : globalMode;
+                    // Resolve effective selection: per-game override wins, otherwise global
+                    var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
 
-                    // Resolve effective selection for Select mode
-                    IEnumerable<string>? effectiveSelection = null;
-                    if (effectiveMode == ShaderDeployMode.Select)
+                    if (rsInstalled || dcInstalled)
                     {
-                        effectiveSelection = _gameNameService.PerGameShaderSelection.TryGetValue(card.GameName, out var perGameSel)
-                            ? perGameSel
-                            : _settingsViewModel.SelectedShaderPacks;
-                    }
-
-                    if (rsInstalled)
-                    {
-                        _shaderPackService.SyncGameFolder(card.InstallPath, effectiveMode, effectiveSelection);
+                        _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection);
                     }
                 }
             }
@@ -213,25 +198,14 @@ public partial class MainViewModel : ObservableObject
                 bool rsInstalled = card.RequiresVulkanInstall
                     ? VulkanFootprintService.Exists(card.InstallPath)
                     : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
+                bool dcInstalled = card.DcStatus == GameStatus.Installed || card.DcStatus == GameStatus.UpdateAvailable;
 
-                // Resolve effective mode: per-game override wins, otherwise global
-                var effectiveMode = card.ShaderModeOverride != null
-                    && Enum.TryParse<ShaderPackService.DeployMode>(card.ShaderModeOverride, true, out var overrideMode)
-                    ? overrideMode
-                    : ShaderDeployMode;
+                // Resolve effective selection: per-game override wins, otherwise global
+                var effectiveSelection = ResolveShaderSelection(gameName, card.ShaderModeOverride);
 
-                // Resolve effective selection for Select mode
-                IEnumerable<string>? effectiveSelection = null;
-                if (effectiveMode == ShaderDeployMode.Select)
+                if (rsInstalled || dcInstalled)
                 {
-                    effectiveSelection = _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var perGameSel)
-                        ? perGameSel
-                        : _settingsViewModel.SelectedShaderPacks;
-                }
-
-                if (rsInstalled)
-                {
-                    _shaderPackService.SyncGameFolder(card.InstallPath, effectiveMode, effectiveSelection);
+                    _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection);
                 }
             }
             catch (Exception ex)
@@ -240,23 +214,17 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Resolves the effective shader pack selection for a game, matching the same
-    /// logic used by DeployAllShaders / DeployShadersForCard. Returns the pack IDs
-    /// to pass to SyncGameFolder when the effective mode is Select, or null otherwise.
+    /// Resolves the effective shader pack selection for a game.
+    /// Per-game selection wins; otherwise falls back to the global selection.
     /// </summary>
     private IEnumerable<string>? ResolveShaderSelection(string gameName, string? shaderModeOverride)
     {
-        var effectiveMode = shaderModeOverride != null
-            && Enum.TryParse<ShaderPackService.DeployMode>(shaderModeOverride, true, out var overrideMode)
-            ? overrideMode
-            : ShaderDeployMode;
+        // Per-game selection takes precedence when the game has a "Select" override
+        if (shaderModeOverride != null
+            && _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var perGameSel))
+            return perGameSel;
 
-        if (effectiveMode != ShaderDeployMode.Select)
-            return null;
-
-        return _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var perGameSel)
-            ? perGameSel
-            : _settingsViewModel.SelectedShaderPacks;
+        return _settingsViewModel.SelectedShaderPacks;
     }
     private List<GameMod> _allMods = new();
     private Dictionary<string, string> _genericNotes = new(StringComparer.OrdinalIgnoreCase);
@@ -285,6 +253,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _statusText = "Loading...";
     [ObservableProperty] private string _subStatusText = "";
     [ObservableProperty] private bool _isLoading = true;
+    private bool _hasInitialized;
+    public bool HasInitialized => _hasInitialized;
+    public void MarkInitialized() => _hasInitialized = true;
 
     // ── Forwarding properties — delegate to FilterViewModel, preserve UI bindings ──
     public string SearchQuery
@@ -539,7 +510,7 @@ public partial class MainViewModel : ObservableObject
     ///   DC Mode turning OFF → rename DC FIRST (vacate dxgi.dll), then rename ReShade into it.
     ///   Mode 1 ↔ Mode 2    → only DC changes (dxgi.dll ↔ winmm.dll), ReShade stays as ReShade64.dll.
     /// </summary>
-    public void ApplyDcModeSwitch()
+    public void ApplyDcModeSwitch(int previousGlobalLevel)
     {
         foreach (var card in _allCards)
         {
@@ -593,6 +564,33 @@ public partial class MainViewModel : ObservableObject
             if (dcNeedsRename)
                 RenameFile(card, isRs: false, dcOldName!, dcNewName!);
 
+            // ── Shader transitions based on effective level change ──
+            // Compute previous and new effective levels to detect 0↔non-zero transitions.
+            // Requirements: 3.1, 3.2, 3.3, 4.1, 4.2, 5.3
+            var previousEffective = ComputeEffectiveLevel(card, previousGlobalLevel, card.PerGameDcMode);
+            var newEffective = ComputeEffectiveLevel(card, DcModeLevel, card.PerGameDcMode);
+
+            try
+            {
+                if (previousEffective == 0 && newEffective > 0 && card.DcRecord != null)
+                {
+                    // 0→non-zero with DC installed: deploy shaders
+                    _shaderPackService.SyncGameFolder(card.InstallPath,
+                        ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
+                }
+                else if (previousEffective > 0 && newEffective == 0)
+                {
+                    // non-zero→0: remove shaders and restore originals
+                    _shaderPackService.RemoveFromGameFolder(card.InstallPath);
+                    _shaderPackService.RestoreOriginalIfPresent(card.InstallPath);
+                }
+                // Both non-zero (1↔2) or both zero → no shader action
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[MainViewModel.ApplyDcModeSwitch] Shader transition failed for '{card.GameName}' — {ex.Message}");
+            }
+
             card.NotifyAll();
         }
 
@@ -605,7 +603,7 @@ public partial class MainViewModel : ObservableObject
     /// Called when the user saves a per-game DC Mode override so changes take
     /// effect immediately without requiring a full Refresh.
     /// </summary>
-    public void ApplyDcModeSwitchForCard(string gameName)
+    public void ApplyDcModeSwitchForCard(string gameName, int? previousPerGameDcMode)
     {
         var card = _allCards.FirstOrDefault(c =>
             c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
@@ -657,6 +655,33 @@ public partial class MainViewModel : ObservableObject
 
         if (dcNeedsRename)
             RenameFile(card, isRs: false, dcOldName!, dcNewName!);
+
+        // ── Shader transitions based on effective level change ──
+        // Compute previous and new effective levels to detect 0↔non-zero transitions.
+        // Requirements: 3.1, 3.2, 3.3, 4.1, 4.2, 5.4
+        var previousEffective = ComputeEffectiveLevel(card, DcModeLevel, previousPerGameDcMode);
+        var newEffective = ComputeEffectiveLevel(card, DcModeLevel, card.PerGameDcMode);
+
+        try
+        {
+            if (previousEffective == 0 && newEffective > 0 && card.DcRecord != null)
+            {
+                // 0→non-zero with DC installed: deploy shaders
+                _shaderPackService.SyncGameFolder(card.InstallPath,
+                    ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
+            }
+            else if (previousEffective > 0 && newEffective == 0)
+            {
+                // non-zero→0: remove shaders and restore originals
+                _shaderPackService.RemoveFromGameFolder(card.InstallPath);
+                _shaderPackService.RestoreOriginalIfPresent(card.InstallPath);
+            }
+            // Both non-zero (1↔2) or both zero → no shader action
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[MainViewModel.ApplyDcModeSwitchForCard] Shader transition failed for '{card.GameName}' — {ex.Message}");
+        }
 
         card.NotifyAll();
     }
@@ -1274,12 +1299,8 @@ public partial class MainViewModel : ObservableObject
         if (card != null)
         {
             card.ShaderModeOverride = mode == "Global" ? null : mode;
-            card.ExcludeFromShaders = mode == "Off";
         }
     }
-
-    // Keep backward compat for old callers
-    public bool IsShaderExcluded(string gameName) => _perGameShaderMode.TryGetValue(gameName, out var m) && m == "Off";
 
     public bool AnyUpdateAvailable =>
         _allCards.Any(c => c.Status    == GameStatus.UpdateAvailable ||
@@ -1828,7 +1849,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     public async Task RefreshAsync()
     {
-        ApplyDcModeSwitch();
+        ApplyDcModeSwitch(DcModeLevel);
         await InitializeAsync(forceRescan: true);
     }
 
@@ -1840,7 +1861,7 @@ public partial class MainViewModel : ObservableObject
         _resolvedPathCache.Clear();
         _addonFileCache.Clear();
         _bitnessCache.Clear();
-        ApplyDcModeSwitch();
+        ApplyDcModeSwitch(DcModeLevel);
         await InitializeAsync(forceRescan: true);
     }
 
@@ -2150,7 +2171,6 @@ public partial class MainViewModel : ObservableObject
             ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
             ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(game.Name),
             ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
-            ExcludeFromShaders     = IsShaderExcluded(game.Name),
             ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smO) ? smO : null,
             Is32Bit                = ResolveIs32Bit(game.Name, manualMachine),
             GraphicsApi            = DetectGraphicsApi(scanPath, engine, game.Name),
@@ -2399,12 +2419,42 @@ public partial class MainViewModel : ObservableObject
         finally { card.DcIsInstalling = false; }
     }
 
+    /// <summary>
+    /// Computes the effective DC mode level for a game card, respecting DLL overrides,
+    /// Luma mode, Vulkan defaults, and per-game overrides.
+    /// </summary>
+    private static int ComputeEffectiveLevel(GameCardViewModel card, int globalLevel, int? perGameOverride)
+    {
+        if (card.DllOverrideEnabled) return 0;
+        if (card.IsLumaMode) return 0;
+        if (card.RequiresVulkanInstall && !perGameOverride.HasValue) return 0;
+        return perGameOverride ?? globalLevel;
+    }
+
     [RelayCommand]
     public void UninstallDc(GameCardViewModel? card)
     {
         if (card?.DcRecord == null) return;
         try
         {
+            // Compute effective DC mode level to decide whether to remove shaders
+            var effectiveLevel = card.DllOverrideEnabled ? 0
+                : card.IsLumaMode ? 0
+                : (card.RequiresVulkanInstall && !card.PerGameDcMode.HasValue) ? 0
+                : card.PerGameDcMode ?? DcModeLevel;
+
+            if (effectiveLevel > 0 && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                try
+                {
+                    _shaderPackService.RemoveFromGameFolder(card.InstallPath);
+                }
+                catch (Exception shaderEx)
+                {
+                    CrashReporter.Log($"[UninstallDc] Shader removal failed for '{card.GameName}': {shaderEx.Message}");
+                }
+            }
+
             _auxInstaller.Uninstall(card.DcRecord);
             card.DcRecord           = null;
             card.DcInstalledFile    = null;
@@ -2567,11 +2617,7 @@ public partial class MainViewModel : ObservableObject
             VulkanFootprintService.Create(card.InstallPath);
 
             // 5c. Deploy shaders locally to the game folder
-            var effectiveShaderMode = card.ShaderModeOverride != null
-                && Enum.TryParse<ShaderPackService.DeployMode>(card.ShaderModeOverride, true, out var overrideMode)
-                ? overrideMode
-                : ShaderDeployMode;
-            _shaderPackService.SyncGameFolder(card.InstallPath, effectiveShaderMode,
+            _shaderPackService.SyncGameFolder(card.InstallPath,
                 ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
 
             // 6. Mark warning as shown for this session
@@ -2936,7 +2982,7 @@ public partial class MainViewModel : ObservableObject
     public async Task InitializeAsync(bool forceRescan = false)
     {
         IsLoading = true;
-        DisplayedGames.Clear();
+        if (!_hasInitialized) DisplayedGames.Clear();
         _allCards.Clear();
         _originalDetectedNames.Clear();
 
@@ -3136,15 +3182,22 @@ public partial class MainViewModel : ObservableObject
             _filterViewModel.UpdateCounts();
             _filterViewModel.ApplyFilter();
 
-            // Sync shaders to all installed locations to reflect current deploy mode.
+            // Sync shaders to all installed locations to reflect current selection.
+            // Wait for shader packs to be downloaded/extracted first (backwards compat:
+            // ensures games with RS/DC installed get shaders even if they were installed
+            // by an older version that didn't deploy shaders on install).
+            if (_shaderPackReadyTask != null)
+            {
+                try { await _shaderPackReadyTask; }
+                catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] ShaderPackReady failed — {ex.Message}"); }
+            }
+
             // Runs on a background thread — never blocks the UI.
             SubStatusText = "Deploying shaders to installed games...";
             _ = Task.Run(() =>
             {
                 try
                 {
-                    var globalMode = ShaderDeployMode;
-
                     foreach (var card in _allCards)
                     {
                         if (string.IsNullOrEmpty(card.InstallPath)) continue;
@@ -3152,25 +3205,14 @@ public partial class MainViewModel : ObservableObject
                         bool rsInstalled = card.RequiresVulkanInstall
                             ? VulkanFootprintService.Exists(card.InstallPath)
                             : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
+                        bool dcInstalled = card.DcStatus == GameStatus.Installed || card.DcStatus == GameStatus.UpdateAvailable;
 
-                        // Resolve effective mode: per-game override wins, otherwise global
-                        var effectiveMode = card.ShaderModeOverride != null
-                            && Enum.TryParse<ShaderPackService.DeployMode>(card.ShaderModeOverride, true, out var overrideMode)
-                            ? overrideMode
-                            : globalMode;
+                        // Resolve effective selection: per-game override wins, otherwise global
+                        var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
 
-                        // Resolve effective selection for Select mode
-                        IEnumerable<string>? effectiveSelection = null;
-                        if (effectiveMode == ShaderDeployMode.Select)
+                        if (rsInstalled || dcInstalled)
                         {
-                            effectiveSelection = _gameNameService.PerGameShaderSelection.TryGetValue(card.GameName, out var perGameSel)
-                                ? perGameSel
-                                : _settingsViewModel.SelectedShaderPacks;
-                        }
-
-                        if (rsInstalled)
-                        {
-                            _shaderPackService.SyncGameFolder(card.InstallPath, effectiveMode, effectiveSelection);
+                            _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection);
                         }
                     }
                 }
@@ -3197,7 +3239,10 @@ public partial class MainViewModel : ObservableObject
             SubStatusText = ex.Message;
             CrashReporter.WriteCrashReport("InitializeAsync", ex);
         }
-        finally { IsLoading = false; }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     // ── Update checking ───────────────────────────────────────────────────────────
@@ -3219,6 +3264,9 @@ public partial class MainViewModel : ObservableObject
     // Dispatcher reference for cross-thread UI updates
     private Microsoft.UI.Dispatching.DispatcherQueue? DispatcherQueue { get; set; }
     public void SetDispatcher(Microsoft.UI.Dispatching.DispatcherQueue dq) => DispatcherQueue = dq;
+
+    /// <summary>Store the background shader-pack download task so InitializeAsync can await it.</summary>
+    public void SetShaderPackReadyTask(Task task) => _shaderPackReadyTask = task;
 
     // ── Detection ─────────────────────────────────────────────────────────────────
 
@@ -3808,7 +3856,6 @@ public partial class MainViewModel : ObservableObject
                 ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
                 ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(game.Name),
                 ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
-                ExcludeFromShaders     = IsShaderExcluded(game.Name),
                 ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smBc) ? smBc : null,
                 Is32Bit                = ResolveIs32Bit(game.Name, detectedMachine),
                 GraphicsApi            = DetectGraphicsApi(installPath, engine, game.Name),

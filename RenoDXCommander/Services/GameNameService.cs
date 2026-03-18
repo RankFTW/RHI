@@ -166,15 +166,14 @@ public class GameNameService : IGameNameService
         }
 
         var pgsmDict = Load<Dictionary<string, string>?>("PerGameShaderMode", null);
+        _perGameShaderMode = new(StringComparer.OrdinalIgnoreCase);
         if (pgsmDict != null)
         {
-            _perGameShaderMode = new(pgsmDict, StringComparer.OrdinalIgnoreCase);
-        }
-        else
-        {
-            var oldList = Load<List<string>>("ShaderExcluded", new());
-            _perGameShaderMode = new(StringComparer.OrdinalIgnoreCase);
-            foreach (var name in oldList) _perGameShaderMode[name] = "Off";
+            foreach (var kv in pgsmDict)
+            {
+                if (kv.Value == "Select")
+                    _perGameShaderMode[kv.Key] = kv.Value;
+            }
         }
 
         var pgssDict = Load<Dictionary<string, List<string>>?>("PerGameShaderSelection", null);
@@ -182,7 +181,10 @@ public class GameNameService : IGameNameService
         {
             _perGameShaderSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgssDict)
-                _perGameShaderSelection[kv.Key] = kv.Value;
+            {
+                if (_perGameShaderMode.ContainsKey(kv.Key))
+                    _perGameShaderSelection[kv.Key] = kv.Value;
+            }
         }
 
         settingsViewModel.LoadSettingsFromDict(s);

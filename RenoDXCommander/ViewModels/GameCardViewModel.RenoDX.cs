@@ -136,6 +136,12 @@ public partial class GameCardViewModel
     // ── Per-component installed state (card install flyout uninstall visibility) ──
     public bool IsRdxInstalled  => Status is GameStatus.Installed or GameStatus.UpdateAvailable;
 
+    // ── External link label: "Redownload" when RenoDX is installed ────────────────
+    public string ExternalDisplayLabel =>
+        IsRdxInstalled && !string.IsNullOrEmpty(ExternalLabel)
+            ? ExternalLabel.Replace("Download", "Redownload")
+            : ExternalLabel;
+
     // Compact list item highlight — purple when any component has an update available
     private bool AnyUpdateAvailable => Status == GameStatus.UpdateAvailable
                                     || RsStatus == GameStatus.UpdateAvailable
@@ -154,6 +160,7 @@ public partial class GameCardViewModel
         OnPropertyChanged(nameof(ReinstallRowVisibility));
         OnPropertyChanged(nameof(IsNotInstalling));
         OnPropertyChanged(nameof(IsRdxInstalled));
+        OnPropertyChanged(nameof(ExternalDisplayLabel));
         OnPropertyChanged(nameof(RdxStatusText));
         OnPropertyChanged(nameof(RdxStatusColor));
         OnPropertyChanged(nameof(RdxShortAction));

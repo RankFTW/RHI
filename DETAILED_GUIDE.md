@@ -99,7 +99,7 @@ Click **Settings** in the toolbar to open the Settings page. Click **← Back to
 | Section | Contents |
 |---------|----------|
 | **Display Commander Mode** | DC Mode selector (Off / Mode 1 / Mode 2) with inline explanation, plus Deploy DC Mode to All button |
-| **Shader Deploy Mode** | Shader mode selector (Off / Minimum / All / User) with inline explanation, plus Deploy Shaders to All button |
+| **Shader Deploy Mode** | Shader mode selector (Off / Minimum / All / User / Select) with inline explanation, plus Deploy Shaders to All button |
 | **Preferences** | Skip Update Check toggle, Beta Opt-In toggle, Verbose Logging toggle — each with inline description |
 | **Full Refresh** | Clears all caches and re-scans everything from disk |
 | **Crash & Error Logs** | Open Logs Folder and Open Downloads Cache buttons, with paths shown inline. A new session log is created on every launch (max 10 kept). |
@@ -346,8 +346,13 @@ Configure on the Settings page:
 | **Minimum** (default) | Lilium HDR Shaders only. |
 | **All** | All 7 packs. |
 | **User** | Custom folder only — no auto-downloaded packs. |
+| **Select** | Choose exactly which shader packs to deploy via a picker window. Selection saved globally and restored across restarts. |
 
 Custom shaders: `%LOCALAPPDATA%\RenoDXCommander\reshade\Custom\Shaders\` and `\Textures\`.
+
+### Shader Selection Picker
+
+When Select mode is chosen (globally or per-game), a picker window lists all 7 available shader packs with checkboxes. The selection is saved and restored across app restarts. Per-game shader overrides in both Detail View and Grid View include Select as an option, allowing different games to use different subsets of shader packs. Clicking Deploy in the picker immediately deploys the chosen shaders to the game folder.
 
 ### Deploy Destinations
 
@@ -358,6 +363,10 @@ Custom shaders: `%LOCALAPPDATA%\RenoDXCommander\reshade\Custom\Shaders\` and `\T
 | DC Mode OFF (Vulkan ReShade) | `<game folder>\reshade-shaders\Shaders\` and `\Textures\` (requires `RDXC_VULKAN_FOOTPRINT`) |
 
 User-owned shader folders are preserved by renaming to `reshade-shaders-original` before deployment and restored when the shader mode is set to Off or when Vulkan ReShade is uninstalled.
+
+### Startup Shader Deployment
+
+On launch, RDXC ensures shader packs are fully downloaded before syncing shaders to all installed game folders. Games with ReShade or DC installed will have the correct global or per-game shaders deployed automatically, even if they were installed by an older version that didn't deploy shaders.
 
 ### Shader Sync After DC Removal
 
@@ -384,23 +393,22 @@ Luma downloads are restricted to trusted GitHub URLs under `https://github.com/F
 
 ## Per-Game Overrides
 
-The Overrides section appears below Components in the detail panel. A hint message "You must press Save for changes to apply." is displayed between the Reset and Save buttons.
+The Overrides section appears below Components in the detail panel. All controls save immediately when changed — no Save button needed.
 
 | Override | Effect |
 |----------|--------|
 | **Game name (editable)** | Rename the game — persists across Refresh and restarts, including for games with custom folder overrides |
 | **Wiki mod name** | Match to a different wiki entry. Also applies to Luma matching. |
 | **↩ Reset** | Restore original name and clear wiki mapping |
-| **DLL naming override** | Custom filenames for ReShade and DC via dropdown combo boxes with common DLL suggestions (`dxgi.dll`, `d3d11.dll`, `dinput8.dll`, `version.dll`, `winmm.dll`, `d3d12.dll`, `xinput1_3.dll`, `msvcp140.dll`, `bink2w64.dll`, `d3d9.dll`). Existing installs are renamed in place — no reinstall needed. Takes priority over any manifest-defined DLL names. |
+| **DLL naming override** | Custom filenames for ReShade and DC via dropdown combo boxes with common DLL suggestions (`dxgi.dll`, `d3d11.dll`, `dinput8.dll`, `version.dll`, `winmm.dll`, `d3d12.dll`, `xinput1_3.dll`, `msvcp140.dll`, `bink2w64.dll`, `d3d9.dll`). Dropdowns cross-filter so both can't use the same name. Existing installs are renamed in place — no reinstall needed. Takes priority over any manifest-defined DLL names. |
 | **Global update inclusion** | Three toggle switches (ReShade, DC, RenoDX) controlling whether the game is included in bulk updates for each component. All default to On. Legacy single-toggle settings are auto-migrated. |
 | **DC Mode** | Follow Global / Exclude (Off) / Force Mode 1 / Force Mode 2. Vulkan games default to Exclude (Off). |
-| **Shader Mode** | Global / Off / Minimum / All / User. Per-game shader mode only applies when DC Mode is OFF. |
+| **Shader Mode** | Global / Off / Minimum / All / User / Select. Per-game shader mode only applies when DC Mode is OFF. Select mode opens a picker to choose specific shader packs. |
 | **Rendering Path** | For dual-API games: DirectX or Vulkan. Switching from DirectX to Vulkan triggers automatic cleanup of DX artifacts. |
 | **Wiki exclusion** | Exclude the game from wiki lookups |
 | **Reset Overrides** | Reset all override settings back to defaults (game name, wiki name, DC mode, shader mode, DLL override, all three update toggles, and wiki exclusion) |
-| **Save Overrides** | Apply changes and refresh status |
 
-In Compact mode, the previously selected game card is automatically re-selected after saving overrides.
+In Compact mode, the previously selected game card is automatically re-selected after changing overrides.
 
 ---
 
@@ -472,7 +480,7 @@ When Beta Opt-In is enabled in Settings, RDXC checks both the stable release (`R
 - Beta is only offered when its base version exceeds the latest stable, OR when the current app is already on a beta and a newer beta at the same base version is available
 - No update is offered if all candidates are at or below the current version
 
-The app encodes its beta status in the 4th component of the assembly version: `1.4.8.0` = stable, `1.4.8.1` = beta 1, `1.4.8.2` = beta 2, etc.
+The app encodes its beta status in the 4th component of the assembly version: `1.4.9.0` = stable, `1.4.9.1` = beta 1, `1.4.9.2` = beta 2, etc.
 
 ---
 
@@ -509,7 +517,7 @@ Everything under `%LOCALAPPDATA%\RenoDXCommander\`:
 | Drag-and-drop not working | Ensure RDXC is running. Drag-and-drop uses Win32 shell handling and works even as administrator. |
 | Vulkan ReShade not showing as installed | Check that `reshade.ini` exists in the game folder. The Vulkan layer must also be installed globally. |
 | Shaders missing after DC uninstall | Click **Refresh** or **Deploy Shaders** — RDXC will detect the missing shaders and redeploy them. For Vulkan games, the footprint file is also restored. |
-| Auto-update not triggering for beta | Ensure Beta Opt-In is enabled in Settings. The beta release on GitHub must have a parseable version in the title (e.g. "RDXC 1.4.8 beta 2") and the asset must be named `RDXC-Setup.exe`. |
+| Auto-update not triggering for beta | Ensure Beta Opt-In is enabled in Settings. The beta release on GitHub must have a parseable version in the title (e.g. "RDXC 1.4.9 beta 1") and the asset must be named `RDXC-Setup.exe`. |
 | Games showing as installed after manual file removal | Click **Refresh** — RDXC verifies files exist on disk and cleans up stale records. |
 | DLL override not applying from manifest | Click **Refresh** — manifest DLL overrides are applied on every refresh, renaming existing files to match. |
 

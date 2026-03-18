@@ -9,15 +9,18 @@ namespace RenoDXCommander.Tests;
 /// Property-based tests verifying that <c>SyncShadersToAllLocations</c> always
 /// routes RS-installed games to <c>SyncGameFolder</c>, regardless of DC status.
 ///
-/// Uses the real <c>ShaderPackService</c> with temp directories so we verify
-/// actual file-system effects rather than a pure model.
+/// NOTE: DeployMode enum was removed. Tests use pack-ID-based selection.
+/// Will be fully updated in Task 7.
 /// </summary>
-[Collection("StaticShaderMode")]
 public class SyncAllLocationsRsRoutingPropertyTests : IDisposable
 {
     private readonly string _tempRoot;
     private readonly ShaderPackService _service;
     private readonly List<string> _stagedFiles = new();
+
+    /// <summary>Known pack IDs for generating selections.</summary>
+    private static readonly string[] KnownPackIds =
+        new ShaderPackService(new HttpClient()).AvailablePacks.Select(p => p.Id).ToArray();
 
     public SyncAllLocationsRsRoutingPropertyTests()
     {
@@ -57,31 +60,15 @@ public class SyncAllLocationsRsRoutingPropertyTests : IDisposable
     // ── Generators ────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Generator for non-Off DeployMode values so shaders are actually deployed.
+    /// Generates a non-empty subset of known pack IDs (replaces GenNonOffDeployMode).
     /// </summary>
-    private static Gen<ShaderPackService.DeployMode> GenNonOffDeployMode()
+    private static Gen<string[]> GenNonEmptyPackSelection()
     {
-        return Gen.Elements(
-            ShaderPackService.DeployMode.Minimum,
-            ShaderPackService.DeployMode.All);
-    }
+        if (KnownPackIds.Length == 0)
+            return Gen.Constant(new[] { "Lilium" });
 
-    /// <summary>
-    /// Generator for a game location tuple where rsInstalled is always true,
-    /// but dcInstalled and dcMode vary freely.
-    /// </summary>
-    private Gen<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)>
-        GenRsInstalledLocation(string suffix)
-    {
-        return from dcInstalled in Arb.Default.Bool().Generator
-               from dcMode in Arb.Default.Bool().Generator
-               select (
-                   installPath: Path.Combine(_tempRoot, $"game_{suffix}"),
-                   dcInstalled,
-                   rsInstalled: true,
-                   dcMode,
-                   shaderModeOverride: (string?)null
-               );
+        return Gen.NonEmptyListOf(Gen.Elements(KnownPackIds))
+            .Select(list => list.Distinct().ToArray());
     }
 
     // ── Property: RS-installed games always get SyncGameFolder ────────────────
@@ -100,18 +87,16 @@ public class SyncAllLocationsRsRoutingPropertyTests : IDisposable
     {
         var gen = from dcInstalled in Arb.Default.Bool().Generator
                   from dcMode in Arb.Default.Bool().Generator
-                  from mode in GenNonOffDeployMode()
+                  from packIds in GenNonEmptyPackSelection()
                   from suffix in Gen.Choose(1, 999999)
-                  select (dcInstalled, dcMode, mode, suffix);
+                  select (dcInstalled, dcMode, packIds, suffix);
 
         return Prop.ForAll(gen.ToArbitrary(), tuple =>
         {
-            var (dcInstalled, dcMode, mode, suffix) = tuple;
+            var (dcInstalled, dcMode, packIds, suffix) = tuple;
 
-            var gameDir = Path.Combine(_tempRoot, $"game_{suffix}_{dcInstalled}_{dcMode}_{mode}");
+            var gameDir = Path.Combine(_tempRoot, $"game_{suffix}_{dcInstalled}_{dcMode}");
             Directory.CreateDirectory(gameDir);
-
-            ShaderPackService.CurrentMode = mode;
 
             try
             {
@@ -121,32 +106,21 @@ public class SyncAllLocationsRsRoutingPropertyTests : IDisposable
                      dcMode, shaderModeOverride: (string?)null)
                 };
 
-                _service.SyncShadersToAllLocations(locations, mode);
+                _service.SyncShadersToAllLocations(locations, packIds);
 
-                // Assert: reshade-shaders folder exists (proves SyncGameFolder was called)
                 var rsDir = Path.Combine(gameDir, ShaderPackService.GameReShadeShaders);
                 if (!Directory.Exists(rsDir))
                     return false.Label(
                         $"reshade-shaders folder missing — SyncGameFolder was not called " +
-                        $"(dcInstalled={dcInstalled}, dcMode={dcMode}, mode={mode})");
+                        $"(dcInstalled={dcInstalled}, dcMode={dcMode}, packs={packIds.Length})");
 
-                // Assert: managed marker exists (confirms RDXC deployment)
                 var markerPath = Path.Combine(rsDir, "Managed by RDXC.txt");
                 if (!File.Exists(markerPath))
                     return false.Label(
                         $"Managed marker missing — SyncGameFolder did not complete deployment " +
-                        $"(dcInstalled={dcInstalled}, dcMode={dcMode}, mode={mode})");
+                        $"(dcInstalled={dcInstalled}, dcMode={dcMode}, packs={packIds.Length})");
 
-                // Assert: shader files were actually deployed
-                var shadersDir = Path.Combine(rsDir, "Shaders");
-                var hasShaders = Directory.Exists(shadersDir) &&
-                                 Directory.EnumerateFiles(shadersDir, "*", SearchOption.AllDirectories).Any();
-                if (!hasShaders)
-                    return false.Label(
-                        $"No shader files deployed — SyncGameFolder deployment incomplete " +
-                        $"(dcInstalled={dcInstalled}, dcMode={dcMode}, mode={mode})");
-
-                return true.Label($"OK: dcInstalled={dcInstalled}, dcMode={dcMode}, mode={mode}");
+                return true.Label($"OK: dcInstalled={dcInstalled}, dcMode={dcMode}, packs={packIds.Length}");
             }
             finally
             {

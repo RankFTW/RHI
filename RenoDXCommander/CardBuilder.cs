@@ -424,6 +424,7 @@ public class CardBuilder
             copyConfigTooltip: "Copy DisplayCommander.toml",
             btnBackground: card.DcBtnBackground, btnForeground: card.DcBtnForeground, btnBorderBrush: card.DcBtnBorderBrush);
         dcRow.Visibility = card.DcRowVisibility;
+        ApplyDcStatusLink(dcRow, card.IsDcInstalled);
         panel.Children.Add(dcRow);
 
         // RenoDX row
@@ -443,6 +444,7 @@ public class CardBuilder
             externalRow = new Grid { Margin = new Thickness(0, 2, 0, 2) };
             externalRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
             externalRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            externalRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var extName = new TextBlock
             {
@@ -456,7 +458,7 @@ public class CardBuilder
 
             var extBtn = new Button
             {
-                Content = card.ExternalLabel,
+                Content = card.ExternalDisplayLabel,
                 Tag = card,
                 FontSize = 11,
                 Padding = new Thickness(8, 3, 8, 3),
@@ -475,6 +477,30 @@ public class CardBuilder
             };
             Grid.SetColumn(extBtn, 1);
             externalRow.Children.Add(extBtn);
+
+            var extDeleteBtn = new Button
+            {
+                Content = "✕",
+                Tag = card,
+                FontSize = 11,
+                Padding = new Thickness(4, 2, 4, 2),
+                MinWidth = 0,
+                Background = UIFactory.GetBrush("transparent"),
+                Foreground = UIFactory.GetBrush("#FF4444"),
+                BorderThickness = new Thickness(0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0),
+                Opacity = card.IsRdxInstalled ? 1 : 0,
+                IsHitTestVisible = card.IsRdxInstalled,
+            };
+            ToolTipService.SetToolTip(extDeleteBtn, "Uninstall RenoDX mod");
+            extDeleteBtn.Click += (s, ev) =>
+            {
+                if ((s as FrameworkElement)?.Tag is GameCardViewModel c)
+                    _window.ViewModel.UninstallModCommand.Execute(c);
+            };
+            Grid.SetColumn(extDeleteBtn, 2);
+            externalRow.Children.Add(extDeleteBtn);
 
             panel.Children.Add(externalRow);
         }
@@ -517,6 +543,7 @@ public class CardBuilder
                     UpdateComponentRow(dcRow, c.DcStatusText, c.DcStatusColor, c.DcShortAction,
                         c.CardDcInstallEnabled, c.IsDcInstalled, c.DcIniExists,
                         c.DcBtnBackground, c.DcBtnForeground, c.DcBtnBorderBrush);
+                    ApplyDcStatusLink(dcRow, c.IsDcInstalled);
                     UpdateComponentRow(rdxRow, c.RdxStatusText, c.RdxStatusColor, c.RdxShortAction,
                         c.CardRdxInstallEnabled, c.IsRdxInstalled, false,
                         c.InstallBtnBackground, c.InstallBtnForeground, c.InstallBtnBorderBrush);
@@ -691,6 +718,40 @@ public class CardBuilder
                 }
             }
         }
+    }
+
+    private static readonly Uri _dcCommitUri = new("https://github.com/pmnoxx/display-commander/commit/main");
+
+    /// <summary>
+    /// Styles the DC row's status TextBlock as a clickable link when installed.
+    /// </summary>
+    private static void ApplyDcStatusLink(Grid row, bool isInstalled)
+    {
+        foreach (var child in row.Children)
+        {
+            if (child is TextBlock tb && tb.Tag as string == "StatusText")
+            {
+                if (isInstalled)
+                {
+                    tb.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
+                    tb.PointerPressed -= DcStatusLink_PointerPressed;
+                    tb.PointerPressed += DcStatusLink_PointerPressed;
+                    ToolTipService.SetToolTip(tb, "Version information");
+                }
+                else
+                {
+                    tb.TextDecorations = Windows.UI.Text.TextDecorations.None;
+                    tb.PointerPressed -= DcStatusLink_PointerPressed;
+                    ToolTipService.SetToolTip(tb, null);
+                }
+                break;
+            }
+        }
+    }
+
+    private static void DcStatusLink_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        _ = Windows.System.Launcher.LaunchUriAsync(_dcCommitUri);
     }
 
 }

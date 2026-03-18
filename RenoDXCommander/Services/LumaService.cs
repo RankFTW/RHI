@@ -350,8 +350,8 @@ public class LumaService : ILumaService
         progress?.Report(("Deploying shaders...", 95));
         try
         {
-            // Use ShaderPackService in Minimum mode to deploy only the Lilium HDR pack
-            _shaderPackService.DeployToGameFolder(gameInstallPath, ShaderPackService.DeployMode.Minimum);
+            // Deploy only the Lilium HDR shader pack by ID
+            _shaderPackService.DeployToGameFolder(gameInstallPath, new[] { "Lilium" });
 
             // Track deployed shader files for clean uninstall
             var rsDir = Path.Combine(gameInstallPath, ShaderPackService.GameReShadeShaders);

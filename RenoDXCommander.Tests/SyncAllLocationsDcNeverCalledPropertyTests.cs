@@ -12,20 +12,21 @@ namespace RenoDXCommander.Tests;
 ///
 /// **Validates: Requirements 8.2**
 ///
-/// Uses the real <c>ShaderPackService</c> with temp directories and verifies
-/// that the DC AppData Shaders/Textures directories are never created or
-/// modified by <c>SyncShadersToAllLocations</c>.
+/// NOTE: DeployMode enum was removed. Tests use pack-ID-based selection.
+/// Will be fully updated in Task 7.
 /// </summary>
-[Collection("StaticShaderMode")]
 public class SyncAllLocationsDcNeverCalledPropertyTests : IDisposable
 {
     private readonly string _tempRoot;
     private readonly ShaderPackService _service;
     private readonly List<string> _stagedFiles = new();
 
-    // Snapshot of DC folder state before each test run
     private readonly HashSet<string> _dcShadersSnapshot;
     private readonly HashSet<string> _dcTexturesSnapshot;
+
+    /// <summary>Known pack IDs for generating selections.</summary>
+    private static readonly string[] KnownPackIds =
+        new ShaderPackService(new HttpClient()).AvailablePacks.Select(p => p.Id).ToArray();
 
     public SyncAllLocationsDcNeverCalledPropertyTests()
     {
@@ -34,7 +35,6 @@ public class SyncAllLocationsDcNeverCalledPropertyTests : IDisposable
         _service = new ShaderPackService(new HttpClient());
         EnsureStagingFiles();
 
-        // Snapshot the DC folders before any test runs
         _dcShadersSnapshot = SnapshotDirectory(ShaderPackService.DcShadersDir);
         _dcTexturesSnapshot = SnapshotDirectory(ShaderPackService.DcTexturesDir);
     }
@@ -66,9 +66,6 @@ public class SyncAllLocationsDcNeverCalledPropertyTests : IDisposable
         }
     }
 
-    /// <summary>
-    /// Returns a set of all file paths (relative) inside a directory, or empty if it doesn't exist.
-    /// </summary>
     private static HashSet<string> SnapshotDirectory(string dir)
     {
         if (!Directory.Exists(dir))
@@ -82,32 +79,18 @@ public class SyncAllLocationsDcNeverCalledPropertyTests : IDisposable
     // ── Generators ────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Generator for any DeployMode value (including Off).
+    /// Generates a pack selection (null for empty, or a non-empty subset of known packs).
+    /// Replaces GenAnyDeployMode.
     /// </summary>
-    private static Gen<ShaderPackService.DeployMode> GenAnyDeployMode()
+    private static Gen<string[]?> GenAnyPackSelection()
     {
-        return Gen.Elements(
-            ShaderPackService.DeployMode.Off,
-            ShaderPackService.DeployMode.Minimum,
-            ShaderPackService.DeployMode.All);
-    }
+        if (KnownPackIds.Length == 0)
+            return Gen.Constant<string[]?>(null);
 
-    /// <summary>
-    /// Generator for a single game location tuple with all booleans varying freely.
-    /// </summary>
-    private Gen<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)>
-        GenLocation(int suffix)
-    {
-        return from dcInstalled in Arb.Default.Bool().Generator
-               from rsInstalled in Arb.Default.Bool().Generator
-               from dcMode in Arb.Default.Bool().Generator
-               select (
-                   installPath: Path.Combine(_tempRoot, $"game_{suffix}"),
-                   dcInstalled,
-                   rsInstalled,
-                   dcMode,
-                   shaderModeOverride: (string?)null
-               );
+        return Gen.OneOf(
+            Gen.Constant<string[]?>(null),
+            Gen.NonEmptyListOf(Gen.Elements(KnownPackIds))
+                .Select(list => (string[]?)list.Distinct().ToArray()));
     }
 
     // ── Property: SyncDcFolder is never called ───────────────────────────────
@@ -117,60 +100,52 @@ public class SyncAllLocationsDcNeverCalledPropertyTests : IDisposable
     ///
     /// For any set of game locations passed to <c>SyncShadersToAllLocations</c>,
     /// the DC AppData folder's Shaders and Textures directories SHALL NOT have
-    /// any new files created — proving <c>SyncDcFolder</c> was never invoked
-    /// with actual file-system side effects.
+    /// any new files created.
     /// </summary>
     [Property(MaxTest = 100)]
     public Property SyncShadersToAllLocations_NeverWritesToDcFolder()
     {
-        var gen = from mode in GenAnyDeployMode()
+        var gen = from selection in GenAnyPackSelection()
                   from count in Gen.Choose(1, 5)
                   from suffix in Gen.Choose(1, 999999)
                   from dcInstalled in Arb.Default.Bool().Generator
                   from rsInstalled in Arb.Default.Bool().Generator
                   from dcMode in Arb.Default.Bool().Generator
-                  select (mode, count, suffix, dcInstalled, rsInstalled, dcMode);
+                  select (selection, count, suffix, dcInstalled, rsInstalled, dcMode);
 
         return Prop.ForAll(gen.ToArbitrary(), tuple =>
         {
-            var (mode, count, baseSuffix, dcInstalled, rsInstalled, dcMode) = tuple;
+            var (selection, count, baseSuffix, dcInstalled, rsInstalled, dcMode) = tuple;
 
-            // Build a list of game locations
             var locations = new List<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)>();
             var gameDirs = new List<string>();
 
             for (int i = 0; i < count; i++)
             {
-                var gameDir = Path.Combine(_tempRoot, $"game_{baseSuffix}_{i}_{dcInstalled}_{rsInstalled}_{dcMode}_{mode}");
+                var gameDir = Path.Combine(_tempRoot, $"game_{baseSuffix}_{i}_{dcInstalled}_{rsInstalled}_{dcMode}");
                 Directory.CreateDirectory(gameDir);
                 gameDirs.Add(gameDir);
                 locations.Add((gameDir, dcInstalled, rsInstalled, dcMode, (string?)null));
             }
 
-            ShaderPackService.CurrentMode = mode;
-
             try
             {
-                _service.SyncShadersToAllLocations(locations, mode);
+                _service.SyncShadersToAllLocations(locations, selection);
 
-                // Assert: DC Shaders directory has no new files
                 var currentDcShaders = SnapshotDirectory(ShaderPackService.DcShadersDir);
                 var newShaderFiles = currentDcShaders.Except(_dcShadersSnapshot).ToList();
                 if (newShaderFiles.Count > 0)
                     return false.Label(
-                        $"DC Shaders folder was modified — new files: {string.Join(", ", newShaderFiles)} " +
-                        $"(mode={mode}, dcInstalled={dcInstalled}, rsInstalled={rsInstalled}, dcMode={dcMode})");
+                        $"DC Shaders folder was modified — new files: {string.Join(", ", newShaderFiles)}");
 
-                // Assert: DC Textures directory has no new files
                 var currentDcTextures = SnapshotDirectory(ShaderPackService.DcTexturesDir);
                 var newTextureFiles = currentDcTextures.Except(_dcTexturesSnapshot).ToList();
                 if (newTextureFiles.Count > 0)
                     return false.Label(
-                        $"DC Textures folder was modified — new files: {string.Join(", ", newTextureFiles)} " +
-                        $"(mode={mode}, dcInstalled={dcInstalled}, rsInstalled={rsInstalled}, dcMode={dcMode})");
+                        $"DC Textures folder was modified — new files: {string.Join(", ", newTextureFiles)}");
 
                 return true.Label(
-                    $"OK: mode={mode}, locations={count}, dcInstalled={dcInstalled}, rsInstalled={rsInstalled}, dcMode={dcMode}");
+                    $"OK: selection={selection?.Length ?? 0}, locations={count}");
             }
             finally
             {

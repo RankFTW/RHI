@@ -18,6 +18,7 @@ public class DetailPanelBuilder
     private readonly MainWindow _window;
     private readonly DispatcherQueue _dispatcherQueue;
     private GameCardViewModel? _currentDetailCard;
+    private System.ComponentModel.PropertyChangedEventHandler? _dcModeLevelHandler;
 
     public DetailPanelBuilder(MainWindow window)
     {
@@ -250,6 +251,20 @@ public class DetailPanelBuilder
         {
             _window.DetailDcStatus.Text = card.DcStatusText;
             _window.DetailDcStatus.Foreground = UIFactory.GetBrush(card.DcStatusColor);
+            // Make version number a clickable link when DC is installed
+            if (card.IsDcInstalled)
+            {
+                _window.DetailDcStatus.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
+                _window.DetailDcStatus.PointerPressed -= DcStatusLink_PointerPressed;
+                _window.DetailDcStatus.PointerPressed += DcStatusLink_PointerPressed;
+                ToolTipService.SetToolTip(_window.DetailDcStatus, "Version information");
+            }
+            else
+            {
+                _window.DetailDcStatus.TextDecorations = Windows.UI.Text.TextDecorations.None;
+                _window.DetailDcStatus.PointerPressed -= DcStatusLink_PointerPressed;
+                ToolTipService.SetToolTip(_window.DetailDcStatus, null);
+            }
             _window.DetailDcInstallBtn.Tag = card;
             _window.DetailDcInstallBtn.Content = card.DcActionLabel;
             _window.DetailDcInstallBtn.IsEnabled = card.IsDcNotInstalling;
@@ -275,14 +290,16 @@ public class DetailPanelBuilder
             if (card.IsExternalOnly)
             {
                 _window.DetailRdxStatus.Text = "";
-                _window.DetailRdxInstallBtn.Content = card.ExternalLabel;
+                _window.DetailRdxInstallBtn.Content = card.ExternalDisplayLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = true;
                 _window.DetailRdxInstallBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
                 _window.DetailRdxInstallBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
                 _window.DetailRdxInstallBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
-                _window.DetailRdxDeleteBtn.Opacity = 0;
-                _window.DetailRdxDeleteBtn.IsHitTestVisible = false;
+                _window.DetailRdxDeleteBtn.Tag = card;
+                var extInstalled = card.IsRdxInstalled;
+                _window.DetailRdxDeleteBtn.Opacity = extInstalled ? 1 : 0;
+                _window.DetailRdxDeleteBtn.IsHitTestVisible = extInstalled;
             }
             else
             {
@@ -404,8 +421,22 @@ public class DetailPanelBuilder
         });
     }
 
+    private static readonly Uri _dcCommitUri = new("https://github.com/pmnoxx/display-commander/commit/main");
+
+    private void DcStatusLink_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        _ = Windows.System.Launcher.LaunchUriAsync(_dcCommitUri);
+    }
+
     public void BuildOverridesPanel(GameCardViewModel card)
     {
+        // Unsubscribe previous DcModeLevel handler to avoid leaked subscriptions
+        if (_dcModeLevelHandler != null)
+        {
+            _window.ViewModel.PropertyChanged -= _dcModeLevelHandler;
+            _dcModeLevelHandler = null;
+        }
+
         _window.OverridesPanel.Children.Clear();
 
         var gameName = card.GameName;
@@ -437,6 +468,10 @@ public class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         var originalStoreName = _window.ViewModel.GetOriginalStoreName(gameName);
+
+        // Mutable captured name so rename handler can update it for subsequent handlers
+        var capturedName = gameName;
+
         var resetBtn = new Button
         {
             Content = "↩ Reset",
@@ -451,8 +486,21 @@ public class DetailPanelBuilder
             "Reset game name back to auto-detected and clear wiki name mapping.");
         resetBtn.Click += (s, ev) =>
         {
-            detectedBox.Text = originalStoreName ?? gameName;
+            var resetName = (originalStoreName ?? gameName).Trim();
+            detectedBox.Text = resetName;
             wikiBox.Text = "";
+
+            // Persist wiki mapping removal
+            if (_window.ViewModel.GetNameMapping(capturedName) != null)
+                _window.ViewModel.RemoveNameMapping(capturedName);
+
+            // Persist rename back to original if name was changed
+            if (!resetName.Equals(capturedName, StringComparison.OrdinalIgnoreCase))
+            {
+                _window.ViewModel.RenameGame(capturedName, resetName);
+                capturedName = resetName;
+                _window.RequestReselect(resetName);
+            }
         };
 
         var nameGrid = new Grid { ColumnSpacing = 8 };
@@ -467,6 +515,36 @@ public class DetailPanelBuilder
         nameGrid.Children.Add(resetBtn);
         _window.OverridesPanel.Children.Add(nameGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
+
+        // ── Auto-save: Game name on Enter ────────────────────────────────────────
+        detectedBox.KeyDown += (s, e) =>
+        {
+            if (e.Key != Windows.System.VirtualKey.Enter) return;
+            var det = detectedBox.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(det)) return;
+            if (det.Equals(capturedName, StringComparison.OrdinalIgnoreCase)) return;
+            _window.ViewModel.RenameGame(capturedName, det);
+            _window.RequestReselect(det);
+            capturedName = det;
+        };
+
+        // ── Auto-save: Wiki name on Enter ────────────────────────────────────────
+        wikiBox.KeyDown += (s, e) =>
+        {
+            if (e.Key != Windows.System.VirtualKey.Enter) return;
+            var key = wikiBox.Text?.Trim();
+            if (!string.IsNullOrEmpty(key))
+            {
+                var existing = _window.ViewModel.GetNameMapping(capturedName);
+                if (!key.Equals(existing, StringComparison.OrdinalIgnoreCase))
+                    _window.ViewModel.AddNameMapping(capturedName, key);
+            }
+            else
+            {
+                if (_window.ViewModel.GetNameMapping(capturedName) != null)
+                    _window.ViewModel.RemoveNameMapping(capturedName);
+            }
+        };
 
         // ── Per-game DC Mode + Shader mode (side by side) ─────────────────────────
         int? currentDcMode = _window.ViewModel.GetPerGameDcModeOverride(gameName);
@@ -486,54 +564,96 @@ public class DetailPanelBuilder
             "Global = use the Settings DC Mode. Exclude (Off) = always use normal naming. " +
             "DC Mode 1 = force dxgi.dll proxy. DC Mode 2 = force winmm.dll proxy.");
 
-        string currentShaderMode = _window.ViewModel.GetPerGameShaderMode(gameName);
-        var shaderModeValues = new[] { "Global", "Select" };
-        var shaderModeDisplay = new[] { "Global", "Select" };
-        int shaderSelectedIdx = currentShaderMode == "Select" ? 1 : 0;
-        var shaderModeCombo = new ComboBox
+        // Subscribe to DcModeLevel changes to keep the "Global (...)" label current
+        _dcModeLevelHandler = (sender, e) =>
         {
-            ItemsSource = shaderModeDisplay,
-            SelectedIndex = shaderSelectedIdx,
-            FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Header = "Shader Mode",
+            if (e.PropertyName != "DcModeLevel") return;
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                var updatedLabel = _window.ViewModel.DcModeLevel switch { 1 => "DC Mode 1", 2 => "DC Mode 2", _ => "Off" };
+                var updatedOptions = new[] { $"Global ({updatedLabel})", "Exclude (Off)", "DC Mode 1", "DC Mode 2" };
+                var savedIndex = dcModeCombo.SelectedIndex;
+                dcModeCombo.ItemsSource = updatedOptions;
+                dcModeCombo.SelectedIndex = savedIndex;
+            });
         };
-        ToolTipService.SetToolTip(shaderModeCombo,
-            "Global = use the global shader selection. Select = pick specific shader packs for this game.\n" +
-            "Note: Per-game shader mode only applies when ReShade is used standalone (DC Mode OFF). " +
-            "When DC Mode is ON, all DC-mode games share the DC global shader folder.");
+        _window.ViewModel.PropertyChanged += _dcModeLevelHandler;
 
-        // Track previous shader mode index so we can revert on picker cancel
-        int previousShaderIdx = shaderSelectedIdx;
-        shaderModeCombo.SelectionChanged += async (s, ev) =>
+        // ── Auto-save: DC Mode on selection change ───────────────────────────────
+        dcModeCombo.SelectionChanged += (s, e) =>
         {
-            var idx = shaderModeCombo.SelectedIndex;
-            if (idx >= 0 && idx < shaderModeValues.Length && shaderModeValues[idx] == "Select")
+            int? newDcMode = dcModeCombo.SelectedIndex switch { 1 => 0, 2 => 1, 3 => 2, _ => (int?)null };
+            var currentOverride = _window.ViewModel.GetPerGameDcModeOverride(capturedName);
+            if (newDcMode != currentOverride)
             {
-                // Pre-populate with existing per-game selection, or fall back to global
-                List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.TryGetValue(gameName, out var existing)
-                    ? existing
-                    : _window.ViewModel.Settings.SelectedShaderPacks;
-                var result = await ShaderPopupHelper.ShowAsync(
-                    _window.Content.XamlRoot,
-                    _window.ViewModel.ShaderPackServiceInstance,
-                    current,
-                    ShaderPopupHelper.PopupContext.PerGame);
-                if (result != null)
-                {
-                    // Store the per-game selection
-                    _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection[gameName] = result;
-                    previousShaderIdx = idx;
-                }
-                else
-                {
-                    // User cancelled — revert ComboBox to previous value
-                    shaderModeCombo.SelectedIndex = previousShaderIdx;
-                }
+                var previousDcMode = currentOverride;
+                _window.ViewModel.SetPerGameDcModeOverride(capturedName, newDcMode);
+                _window.ViewModel.ApplyDcModeSwitchForCard(capturedName, previousDcMode);
             }
-            else
+        };
+
+        string currentShaderMode = _window.ViewModel.GetPerGameShaderMode(gameName);
+        bool isGlobalShaders = currentShaderMode != "Select";
+        var shaderToggle = new ToggleSwitch
+        {
+            Header = "Global Shaders",
+            IsOn = isGlobalShaders,
+            OnContent = "Using global shader selection",
+            OffContent = "Using per-game shader selection",
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 12,
+        };
+        ToolTipService.SetToolTip(shaderToggle,
+            "On = use the global shader selection from Settings. Off = pick specific shader packs for this game.");
+
+        var selectShadersBtn = new Button
+        {
+            Content = "Select Shaders",
+            FontSize = 12,
+            Padding = new Thickness(12, 7, 12, 7),
+            CornerRadius = new CornerRadius(8),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsEnabled = !isGlobalShaders,
+            Background = UIFactory.Brush(isGlobalShaders ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(isGlobalShaders ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(isGlobalShaders ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+        };
+        ToolTipService.SetToolTip(selectShadersBtn, "Choose which shader packs to use for this game");
+
+        shaderToggle.Toggled += (s, ev) =>
+        {
+            bool global = shaderToggle.IsOn;
+            selectShadersBtn.IsEnabled = !global;
+            selectShadersBtn.Background = UIFactory.Brush(global ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush);
+            selectShadersBtn.Foreground = UIFactory.Brush(global ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush);
+            selectShadersBtn.BorderBrush = UIFactory.Brush(global ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush);
+
+            // Auto-save: persist shader mode immediately
+            var newMode = global ? "Global" : "Select";
+            if (newMode != _window.ViewModel.GetPerGameShaderMode(capturedName))
             {
-                previousShaderIdx = idx;
+                _window.ViewModel.SetPerGameShaderMode(capturedName, newMode);
+                if (newMode == "Global")
+                    _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.Remove(capturedName);
+                _window.ViewModel.DeployShadersForCard(capturedName);
+            }
+        };
+
+        selectShadersBtn.Click += async (s, ev) =>
+        {
+            List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.TryGetValue(gameName, out var existing)
+                ? existing
+                : _window.ViewModel.Settings.SelectedShaderPacks;
+            var result = await ShaderPopupHelper.ShowAsync(
+                _window.Content.XamlRoot,
+                _window.ViewModel.ShaderPackServiceInstance,
+                current,
+                ShaderPopupHelper.PopupContext.PerGame);
+            if (result != null)
+            {
+                _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection[gameName] = result;
+                _window.ViewModel.DeployShadersForCard(capturedName);
             }
         };
 
@@ -541,10 +661,11 @@ public class DetailPanelBuilder
         modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         Grid.SetColumn(dcModeCombo, 0);
-        Grid.SetColumn(shaderModeCombo, 1);
+        Grid.SetColumn(shaderToggle, 1);
         modeGrid.Children.Add(dcModeCombo);
-        modeGrid.Children.Add(shaderModeCombo);
+        modeGrid.Children.Add(shaderToggle);
         _window.OverridesPanel.Children.Add(modeGrid);
+        _window.OverridesPanel.Children.Add(selectShadersBtn);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
         // ── Rendering Path (dual-API games only) ─────────────────────────────────
@@ -570,6 +691,27 @@ public class DetailPanelBuilder
                 var selected = renderPathCombo.SelectedItem as string;
                 if (selected == "Vulkan" && !card.PerGameDcMode.HasValue)
                     dcModeCombo.SelectedIndex = 1; // "Exclude (Off)"
+
+                // Auto-save: persist rendering path immediately
+                var newRenderPath = selected ?? "DirectX";
+                var oldRenderPath = _window.ViewModel.GetVulkanRenderingPath(capturedName);
+                if (newRenderPath != oldRenderPath)
+                {
+                    // Switching from DirectX → Vulkan: clean up DX install artifacts
+                    if (newRenderPath == "Vulkan" && !string.IsNullOrEmpty(card.InstallPath))
+                    {
+                        if (card.RsRecord != null)
+                            _window.ViewModel.UninstallReShadeCommand.Execute(card);
+                        if (card.DcRecord != null)
+                            _window.ViewModel.UninstallDcCommand.Execute(card);
+                        var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
+                        if (File.Exists(iniPath))
+                            try { File.Delete(iniPath); } catch { }
+                        _window.ViewModel.ShaderPackServiceInstance.RemoveFromGameFolder(card.InstallPath);
+                        _window.ViewModel.ShaderPackServiceInstance.RestoreOriginalIfPresent(card.InstallPath);
+                    }
+                    _window.ViewModel.SetVulkanRenderingPath(capturedName, newRenderPath);
+                }
             };
 
             _window.OverridesPanel.Children.Add(renderPathCombo);
@@ -596,9 +738,31 @@ public class DetailPanelBuilder
         ToolTipService.SetToolTip(dllOverrideToggle,
             "Override the filenames ReShade and Display Commander are installed as. " +
             "When enabled, existing RS/DC files are renamed to the custom filenames. " +
-            "The game is automatically excluded from DC Mode, Update All, and global shaders.");
+            "The game is automatically excluded from DC Mode and Update All.");
         var existingRsName = existingCfg?.ReShadeFileName ?? "";
         var existingDcName = existingCfg?.DcFileName ?? "";
+        // Helper: rebuild one ComboBox's ItemsSource excluding the name chosen in the other box
+        bool _updatingDllItems = false;
+        void SyncDllNameItems(ComboBox box, ComboBox otherBox)
+        {
+            if (_updatingDllItems) return;
+            _updatingDllItems = true;
+            var otherSelected = (otherBox.SelectedItem as string ?? otherBox.Text ?? "").Trim();
+            var filtered = string.IsNullOrWhiteSpace(otherSelected)
+                ? DllOverrideConstants.CommonDllNames
+                : DllOverrideConstants.CommonDllNames.Where(n => !n.Equals(otherSelected, StringComparison.OrdinalIgnoreCase)).ToArray();
+            var currentSel = box.SelectedItem as string ?? box.Text;
+            box.ItemsSource = filtered;
+            // Restore selection/text
+            if (!string.IsNullOrWhiteSpace(currentSel))
+            {
+                var match = filtered.FirstOrDefault(n => n.Equals(currentSel.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (match != null) box.SelectedItem = match;
+                else box.Text = currentSel;
+            }
+            _updatingDllItems = false;
+        }
+
         var rsNameBox = new ComboBox
         {
             IsEditable = true,
@@ -639,7 +803,34 @@ public class DetailPanelBuilder
                 dcNameBox.Loaded += (s, e) => dcNameBox.Text = capturedDc;
             }
         }
-        dllOverrideToggle.Toggled += (s, ev) => { rsNameBox.IsEnabled = dllOverrideToggle.IsOn; dcNameBox.IsEnabled = dllOverrideToggle.IsOn; };
+        // Initial cross-filter so each box hides the other's current selection
+        SyncDllNameItems(dcNameBox, rsNameBox);
+        SyncDllNameItems(rsNameBox, dcNameBox);
+        dllOverrideToggle.Toggled += (s, ev) =>
+        {
+            rsNameBox.IsEnabled = dllOverrideToggle.IsOn;
+            dcNameBox.IsEnabled = dllOverrideToggle.IsOn;
+
+            // Auto-save: persist DLL override state immediately
+            bool nowOn = dllOverrideToggle.IsOn;
+            bool wasOn = _window.ViewModel.HasDllOverride(capturedName);
+            if (nowOn == wasOn) return;
+            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard == null) return;
+            if (nowOn)
+            {
+                var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
+                var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
+                var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
+                var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
+                _window.ViewModel.EnableDllOverride(targetCard, rsName, dcName);
+            }
+            else
+            {
+                _window.ViewModel.DisableDllOverride(targetCard);
+            }
+        };
 
         var dllNameGrid = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 4, 0, 0) };
         dllNameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -664,15 +855,70 @@ public class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(dllGroupBorder);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
-        // ── Global update inclusion (3 ToggleSwitches) ───────────────────────────
-        _window.OverridesPanel.Children.Add(new TextBlock
+        // ── Auto-save: RS/DC name boxes on Enter ─────────────────────────────────
+        rsNameBox.KeyDown += (s, e) =>
         {
-            Text = "Global update inclusion",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            Margin = new Thickness(0, 0, 0, 8),
-        });
+            if (e.Key != Windows.System.VirtualKey.Enter) return;
+            if (!dllOverrideToggle.IsOn) return;
+            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard == null) return;
+            var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
+            var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
+            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
+            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
+            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
+            _window.ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
+            SyncDllNameItems(dcNameBox, rsNameBox);
+        };
+        dcNameBox.KeyDown += (s, e) =>
+        {
+            if (e.Key != Windows.System.VirtualKey.Enter) return;
+            if (!dllOverrideToggle.IsOn) return;
+            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard == null) return;
+            var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
+            var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
+            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
+            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
+            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
+            _window.ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
+            SyncDllNameItems(rsNameBox, dcNameBox);
+        };
+        // ── Auto-save: RS/DC name boxes on dropdown selection ────────────────────
+        rsNameBox.SelectionChanged += (s, e) =>
+        {
+            if (_updatingDllItems) return;
+            if (!dllOverrideToggle.IsOn) return;
+            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard == null) return;
+            var rsName = rsNameBox.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(rsName)) return;
+            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
+            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
+            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
+            _window.ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
+            SyncDllNameItems(dcNameBox, rsNameBox);
+        };
+        dcNameBox.SelectionChanged += (s, e) =>
+        {
+            if (_updatingDllItems) return;
+            if (!dllOverrideToggle.IsOn) return;
+            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard == null) return;
+            var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
+            var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
+            var dcName = dcNameBox.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(dcName)) return;
+            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
+            _window.ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
+            SyncDllNameItems(rsNameBox, dcNameBox);
+        };
 
+        // ── Global update inclusion + Wiki exclusion (inline row) ─────────────────
         var rsToggle = new ToggleSwitch
         {
             Header = "ReShade",
@@ -737,10 +983,24 @@ public class DetailPanelBuilder
         toggleRow.Children.Add(rsBorder);
         toggleRow.Children.Add(dcBorder);
         toggleRow.Children.Add(rdxBorder);
-        _window.OverridesPanel.Children.Add(toggleRow);
-        _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
-        // ── Wiki exclusion ────────────────────────────────────────────────────────
+        // ── Auto-save: Update inclusion toggles ──────────────────────────────────
+        rsToggle.Toggled += (s, ev) =>
+        {
+            if (!rsToggle.IsOn != _window.ViewModel.IsUpdateAllExcludedReShade(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
+        };
+        dcToggle.Toggled += (s, ev) =>
+        {
+            if (!dcToggle.IsOn != _window.ViewModel.IsUpdateAllExcludedDc(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionDc(capturedName);
+        };
+        rdxToggle.Toggled += (s, ev) =>
+        {
+            if (!rdxToggle.IsOn != _window.ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
+        };
+
         var wikiExcludeToggle = new ToggleSwitch
         {
             Header = "Wiki exclusion",
@@ -753,10 +1013,55 @@ public class DetailPanelBuilder
         ToolTipService.SetToolTip(wikiExcludeToggle,
             "When enabled, this game will not be looked up on the RenoDX wiki. " +
             "Useful for games that share a name with an unrelated wiki entry.");
-        _window.OverridesPanel.Children.Add(wikiExcludeToggle);
+
+        // ── Auto-save: Wiki exclusion toggle ─────────────────────────────────────
+        wikiExcludeToggle.Toggled += (s, ev) =>
+        {
+            if (wikiExcludeToggle.IsOn != _window.ViewModel.IsWikiExcluded(capturedName))
+                _window.ViewModel.ToggleWikiExclusion(capturedName);
+        };
+
+        // Build inline row Grid: [Global update inclusion | divider | Wiki exclusion]
+        var inlineRowGrid = new Grid();
+        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        // Column 0: Global update inclusion
+        var leftSection = new StackPanel { Spacing = 0 };
+        leftSection.Children.Add(new TextBlock
+        {
+            Text = "Global update inclusion",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            Margin = new Thickness(0, 0, 0, 8),
+        });
+        leftSection.Children.Add(toggleRow);
+        Grid.SetColumn(leftSection, 0);
+
+        // Column 1: Vertical divider
+        var divider = new Border
+        {
+            Width = 1,
+            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Margin = new Thickness(12, 0, 12, 0),
+        };
+        Grid.SetColumn(divider, 1);
+
+        // Column 2: Wiki exclusion
+        var rightSection = new StackPanel { Spacing = 0 };
+        rightSection.Children.Add(wikiExcludeToggle);
+        Grid.SetColumn(rightSection, 2);
+
+        inlineRowGrid.Children.Add(leftSection);
+        inlineRowGrid.Children.Add(divider);
+        inlineRowGrid.Children.Add(rightSection);
+
+        _window.OverridesPanel.Children.Add(inlineRowGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
-        // ── Button row (Reset + Save) ───────────────────────────────────────────
+        // ── Button row (Reset only — auto-save replaces Save button) ──────────
         var resetOverridesBtn = new Button
         {
             Content = "Reset Overrides",
@@ -770,182 +1075,76 @@ public class DetailPanelBuilder
         };
         resetOverridesBtn.Click += (s, ev) =>
         {
+            // Reset all controls to defaults
             detectedBox.Text = originalStoreName ?? gameName;
             wikiBox.Text = "";
             dcModeCombo.SelectedIndex = 0;
-            shaderModeCombo.SelectedIndex = 0;
+            shaderToggle.IsOn = true;
             if (renderPathCombo != null) renderPathCombo.SelectedItem = "DirectX";
             dllOverrideToggle.IsOn = false;
             rsToggle.IsOn = true;
             dcToggle.IsOn = true;
             rdxToggle.IsOn = true;
             wikiExcludeToggle.IsOn = false;
-        };
 
-        var saveBtn = new Button
-        {
-            Content = "Save Overrides",
-            FontSize = 12,
-            Padding = new Thickness(16, 8, 16, 8),
-            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-
-        var hintText = new TextBlock
-        {
-            Text = "You must press Save for changes to apply.",
-            FontSize = 11,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            TextWrapping = TextWrapping.Wrap,
-        };
-
-        var buttonRow = new Grid();
-        buttonRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        buttonRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        buttonRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        Grid.SetColumn(resetOverridesBtn, 0);
-        Grid.SetColumn(hintText, 1);
-        Grid.SetColumn(saveBtn, 2);
-        buttonRow.Children.Add(resetOverridesBtn);
-        buttonRow.Children.Add(hintText);
-        buttonRow.Children.Add(saveBtn);
-        var capturedName = gameName;
-        saveBtn.Click += (s, ev) =>
-        {
-            var det = detectedBox.Text?.Trim();
-
-            // Handle game rename
-            if (!string.IsNullOrEmpty(capturedName) && !string.IsNullOrEmpty(det)
-                && !det.Equals(capturedName, StringComparison.OrdinalIgnoreCase))
+            // Persist all reset values immediately
+            var resetName = (originalStoreName ?? gameName).Trim();
+            bool nameChanged = !resetName.Equals(capturedName, StringComparison.OrdinalIgnoreCase);
+            if (nameChanged && !string.IsNullOrWhiteSpace(resetName))
             {
-                _window.ViewModel.RenameGame(capturedName, det);
+                _window.ViewModel.RenameGame(capturedName, resetName);
+                capturedName = resetName;
             }
 
-            // DC Mode override
-            int? newDcMode = dcModeCombo.SelectedIndex switch { 1 => 0, 2 => 1, 3 => 2, _ => null };
-            if (!string.IsNullOrEmpty(det) && newDcMode != _window.ViewModel.GetPerGameDcModeOverride(det))
+            // Remove wiki mapping
+            if (_window.ViewModel.GetNameMapping(capturedName) != null)
+                _window.ViewModel.RemoveNameMapping(capturedName);
+
+            // DC mode → Global (null)
+            if (_window.ViewModel.GetPerGameDcModeOverride(capturedName) != null)
             {
-                _window.ViewModel.SetPerGameDcModeOverride(det, newDcMode);
-                _window.ViewModel.ApplyDcModeSwitchForCard(det);
+                var prev = _window.ViewModel.GetPerGameDcModeOverride(capturedName);
+                _window.ViewModel.SetPerGameDcModeOverride(capturedName, null);
+                _window.ViewModel.ApplyDcModeSwitchForCard(capturedName, prev);
             }
 
-            // Per-component Update All
-            bool nowRsExcluded = !rsToggle.IsOn;
-            if (!string.IsNullOrEmpty(det) && nowRsExcluded != _window.ViewModel.IsUpdateAllExcludedReShade(det))
-                _window.ViewModel.ToggleUpdateAllExclusionReShade(det);
-
-            bool nowDcExcluded = !dcToggle.IsOn;
-            if (!string.IsNullOrEmpty(det) && nowDcExcluded != _window.ViewModel.IsUpdateAllExcludedDc(det))
-                _window.ViewModel.ToggleUpdateAllExclusionDc(det);
-
-            bool nowRdxExcluded = !rdxToggle.IsOn;
-            if (!string.IsNullOrEmpty(det) && nowRdxExcluded != _window.ViewModel.IsUpdateAllExcludedRenoDx(det))
-                _window.ViewModel.ToggleUpdateAllExclusionRenoDx(det);
-
-            // Shader mode — always persist the mode and deploy on save (Req 7.1, 7.2, 7.3)
-            var shaderModeIdx = shaderModeCombo.SelectedIndex;
-            var newShaderMode = shaderModeIdx >= 0 && shaderModeIdx < shaderModeValues.Length
-                ? shaderModeValues[shaderModeIdx] : "Global";
-            if (!string.IsNullOrEmpty(det))
+            // Shader mode → Global
+            if (_window.ViewModel.GetPerGameShaderMode(capturedName) != "Global")
             {
-                if (newShaderMode != _window.ViewModel.GetPerGameShaderMode(det))
-                    _window.ViewModel.SetPerGameShaderMode(det, newShaderMode);
-
-                if (newShaderMode == "Select")
-                {
-                    // Deploy using the per-game selection stored in PerGameShaderSelection
-                    _window.ViewModel.DeployShadersForCard(det);
-                }
-                else
-                {
-                    // "Global": ensure per-game entry is removed, then deploy with global selection
-                    _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.Remove(det);
-                    _window.ViewModel.DeployShadersForCard(det);
-                }
+                _window.ViewModel.SetPerGameShaderMode(capturedName, "Global");
+                _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.Remove(capturedName);
+                _window.ViewModel.DeployShadersForCard(capturedName);
             }
 
-            // Rendering path (dual-API games)
-            if (renderPathCombo != null && !string.IsNullOrEmpty(det))
-            {
-                var newRenderPath = renderPathCombo.SelectedItem as string ?? "DirectX";
-                var oldRenderPath = _window.ViewModel.GetVulkanRenderingPath(det);
-                if (newRenderPath != oldRenderPath)
-                {
-                    // Switching from DirectX → Vulkan: clean up DX install artifacts
-                    if (newRenderPath == "Vulkan" && !string.IsNullOrEmpty(card.InstallPath))
-                    {
-                        // Uninstall DX ReShade DLL if installed
-                        if (card.RsRecord != null)
-                            _window.ViewModel.UninstallReShadeCommand.Execute(card);
-                        // Uninstall DC if installed
-                        if (card.DcRecord != null)
-                            _window.ViewModel.UninstallDcCommand.Execute(card);
-                        // Remove reshade.ini (DX version)
-                        var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-                        if (File.Exists(iniPath))
-                            try { File.Delete(iniPath); } catch { }
-                        // Remove managed shaders and restore originals
-                        _window.ViewModel.ShaderPackServiceInstance.RemoveFromGameFolder(card.InstallPath);
-                        _window.ViewModel.ShaderPackServiceInstance.RestoreOriginalIfPresent(card.InstallPath);
-                    }
-
-                    _window.ViewModel.SetVulkanRenderingPath(det, newRenderPath);
-                }
-            }
-
-            // Wiki exclusion
-            if (!string.IsNullOrEmpty(det) && wikiExcludeToggle.IsOn != _window.ViewModel.IsWikiExcluded(det))
-                _window.ViewModel.ToggleWikiExclusion(det);
-
-            // DLL naming override
-            bool nowDllOverride = dllOverrideToggle.IsOn;
-            bool wasDllOverride = !string.IsNullOrEmpty(det) && _window.ViewModel.HasDllOverride(det);
-            if (!string.IsNullOrEmpty(det))
+            // Disable DLL override
+            if (_window.ViewModel.HasDllOverride(capturedName))
             {
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                    c.GameName.Equals(det, StringComparison.OrdinalIgnoreCase));
-
-                if (nowDllOverride && !wasDllOverride && targetCard != null)
-                {
-                    var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
-                    var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-                    var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-                    var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-                    _window.ViewModel.EnableDllOverride(targetCard, rsName, dcName);
-                }
-                else if (nowDllOverride && wasDllOverride && targetCard != null)
-                {
-                    var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
-                    var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-                    var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-                    var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-                    _window.ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-                }
-                else if (!nowDllOverride && wasDllOverride && targetCard != null)
-                {
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard != null)
                     _window.ViewModel.DisableDllOverride(targetCard);
-                }
             }
 
-            // Name mapping
-            var key = wikiBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(det) && !string.IsNullOrEmpty(key))
-                _window.ViewModel.AddNameMapping(det, key);
-            else if (!string.IsNullOrEmpty(det) && string.IsNullOrEmpty(key))
-                _window.ViewModel.RemoveNameMapping(det);
+            // Include all in Update All
+            if (_window.ViewModel.IsUpdateAllExcludedReShade(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
+            if (_window.ViewModel.IsUpdateAllExcludedDc(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionDc(capturedName);
+            if (_window.ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
 
-            CrashReporter.Log($"[DetailPanelBuilder.BuildOverridesPanel] Compact overrides saved for: {det}");
+            // Disable wiki exclusion
+            if (_window.ViewModel.IsWikiExcluded(capturedName))
+                _window.ViewModel.ToggleWikiExclusion(capturedName);
 
-            // Re-select the game card after the filter refresh so the user
-            // doesn't lose their selection when saving overrides.
-            _window.RequestReselect(det);
+            CrashReporter.Log($"[DetailPanelBuilder.BuildOverridesPanel] Overrides reset for: {capturedName}");
+
+            // Only reselect if the game name actually changed
+            if (nameChanged)
+                _window.RequestReselect(capturedName);
         };
-        _window.OverridesPanel.Children.Add(buttonRow);
+
+        _window.OverridesPanel.Children.Add(resetOverridesBtn);
     }
 
 

@@ -29,18 +29,24 @@ Grab the latest installer from the [url=https://github.com/RankFTW/RenoDXChecker
 [size=5][b]Features[/b][/size]
 [list]
 [*] [b]8-store game detection[/b] — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox Game Pass, Battle.net, Rockstar. New games appear automatically on every launch.
+[*] [b]Graphics API detection[/b] — scans game executables via PE header analysis to detect DirectX 11/12, Vulkan, and OpenGL. API badges shown on game cards.
+[*] [b]Vulkan ReShade support[/b] — installs ReShade as a global Vulkan implicit layer for Vulkan-rendered games, with per-game INI and shader deployment
 [*] [b]One-click install/update/uninstall[/b] for ReShade, Display Commander, RenoDX addons, and Luma Framework mods
 [*] [b]Version display[/b] — installed ReShade and Display Commander version numbers shown directly on the component row
 [*] [b]DC Mode[/b] — 3 levels; controls how Display Commander loads alongside ReShade for better compatibility
-[*] [b]Shader pack management[/b] — 7 HDR shader packs with four deploy modes: Off, Minimum, All, User
-[*] [b]Per-game overrides[/b] — DLL naming, shader mode, DC mode, wiki name mapping, per-component Update All inclusion, reset overrides
-[*] [b]Drag-and-drop[/b] — drop a game .exe to add it, or drop an .addon64/.addon32 to install it
-[*] [b]Remote manifest[/b] — game-specific overrides updated server-side without app releases, including engine overrides and DLL name overrides
+[*] [b]Shader pack management[/b] — 7 HDR shader packs with five deploy modes: Off, Minimum, All, User, Select — plus a per-game shader selection picker
+[*] [b]Auto-save overrides[/b] — all per-game settings save immediately when changed, no Save button needed
+[*] [b]Per-game overrides[/b] — DLL naming, shader mode/selection, DC mode, rendering path, wiki name mapping, wiki exclusion, per-component Update All inclusion, reset overrides
+[*] [b]Seamless refresh[/b] — after initial boot, refresh updates everything in the background without blanking the UI
+[*] [b]DLL name conflict prevention[/b] — ReShade and DC filename dropdowns cross-filter to prevent both using the same DLL name
+[*] [b]Startup shader deployment[/b] — on launch, shaders are automatically synced to all installed game folders for backwards compatibility
+[*] [b]Drag-and-drop[/b] — drop a game .exe to add it, drop an .addon64/.addon32 to install it, or drop an archive to extract and install addons
+[*] [b]Remote manifest[/b] — game-specific overrides updated server-side without app releases, including engine overrides, DLL name overrides, and API overrides
 [*] [b]UE-Extended / Native HDR[/b] — automatic detection and addon assignment for Unreal Engine games
 [*] [b]Engine detection[/b] — Unreal, Unity, and custom engine names detected and displayed with icons
 [*] [b]ReShadePreset.ini auto-deploy[/b] — place a preset in the RDXC inis folder and it will be copied to every game install automatically
 [*] [b]Foreign DLL protection[/b] — detects DXVK, Special K, ENB, etc. before overwriting
-[*] [b]Auto-update[/b] — checks for new RDXC versions on launch
+[*] [b]Auto-update[/b] — checks for new RDXC versions on launch with stable and beta channels
 [*] [b]Settings page[/b] — DC Mode, shader mode, deploy actions, preferences, logs, about, and credits all in one place
 [/list]
 

@@ -71,8 +71,7 @@ public partial class GameCardViewModel : ObservableObject
     public bool ExcludeFromUpdateAllReShade { get; set; }
     public bool ExcludeFromUpdateAllDc      { get; set; }
     public bool ExcludeFromUpdateAllRenoDx  { get; set; }
-    public bool ExcludeFromShaders   { get; set; }
-    /// <summary>Per-game shader mode override: null = follow global, "Off"/"Minimum"/"All"/"User".</summary>
+    /// <summary>Per-game shader selection override: null = follow global selection.</summary>
     public string? ShaderModeOverride { get; set; }
 
     // ── 32-bit mode ───────────────────────────────────────────────────────────────

@@ -24,7 +24,7 @@ public static class ShaderPopupHelper
         PopupContext context)
     {
         var packs = shaderPackService.AvailablePacks;
-        var primaryButtonText = context == PopupContext.Global ? "Deploy" : "Confirm";
+        var primaryButtonText = "Deploy";
 
         // Handle empty packs state (Req 9.1, 9.2)
         if (packs.Count == 0)
@@ -43,7 +43,7 @@ public static class ShaderPopupHelper
                 CloseButtonText   = "Cancel",
                 XamlRoot          = xamlRoot,
                 Background        = Brush(ResourceKeys.SurfaceOverlayBrush),
-                MinWidth          = 650,
+                MinWidth          = 750,
             };
 
             await emptyDlg.ShowAsync();
@@ -113,7 +113,7 @@ public static class ShaderPopupHelper
         var scrollViewer = new ScrollViewer
         {
             Content                    = panel,
-            MaxHeight                  = 500,
+            MaxHeight                  = 700,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
 
@@ -125,7 +125,7 @@ public static class ShaderPopupHelper
             CloseButtonText   = "Cancel",
             XamlRoot          = xamlRoot,
             Background        = Brush(ResourceKeys.SurfaceOverlayBrush),
-            MinWidth          = 650,
+            MinWidth          = 750,
         };
 
         var dialogResult = await dlg.ShowAsync();

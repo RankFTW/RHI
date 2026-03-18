@@ -60,8 +60,6 @@ public class InstallReShadeLocalDeployPropertyTests : IDisposable
             var installPath = Path.Combine(_tempRoot, $"game_{suffix}_{dcMode}_{dcIsInstalled}");
             Directory.CreateDirectory(installPath);
 
-            ShaderPackService.CurrentMode = ShaderPackService.DeployMode.Minimum;
-
             var tracker = new TrackingShaderPackService();
             var handler = new FakeHttpMessageHandler(new byte[] { 0xDE, 0xAD });
             using var http = new HttpClient(handler);
@@ -103,7 +101,6 @@ public class InstallReShadeLocalDeployPropertyTests : IDisposable
     {
         public bool SyncGameFolderCalled { get; private set; }
         public string? SyncGameFolderDir { get; private set; }
-        public ShaderPackService.DeployMode? SyncGameFolderMode { get; private set; }
 
         public bool SyncDcFolderCalled { get; private set; }
 
@@ -112,27 +109,25 @@ public class InstallReShadeLocalDeployPropertyTests : IDisposable
 
         public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-        public void DeployToDcFolder(ShaderPackService.DeployMode? mode = null) { }
-        public void DeployToGameFolder(string gameDir, ShaderPackService.DeployMode? mode = null) { }
+        public void DeployToDcFolder() { }
+        public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
         public void RemoveFromGameFolder(string gameDir) { }
         public bool IsManagedByRdxc(string gameDir) => false;
         public void RestoreOriginalIfPresent(string gameDir) { }
 
-        public void SyncDcFolder(ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null)
+        public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null)
         {
             SyncDcFolderCalled = true;
         }
 
-        public void SyncGameFolder(string gameDir, ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null)
+        public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null)
         {
             SyncGameFolderCalled = true;
             SyncGameFolderDir = gameDir;
-            SyncGameFolderMode = m;
         }
 
         public void SyncShadersToAllLocations(
             IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
-            ShaderPackService.DeployMode? mode = null,
             IEnumerable<string>? selectedPackIds = null) { }
     }
 

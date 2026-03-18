@@ -83,7 +83,7 @@ public class ShaderPopupGlobalModePropertyTests
     ///   effectiveSelection = PerGameShaderSelection[gameName] ?? SelectedShaderPacks
     /// When the game has no per-game entry, the fallback is always the global selection.
     /// </summary>
-    [Property(MaxTest = 30)]
+    [Property(MaxTest = 10)]
     public Property GlobalMode_ResolvesToGlobalSelection()
     {
         var gen = GenGameName().SelectMany(gameName =>

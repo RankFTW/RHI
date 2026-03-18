@@ -44,30 +44,6 @@ public class ShaderPackService : IShaderPackService
     private const string ManagedMarkerContent = "This folder is managed by RenoDXCommander. Do not edit manually.\n"
                                                   + "Deleting this file will cause RDXC to treat the folder as user-managed.";
 
-    // ── Shader deploy mode ────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Off      — RDXC does not manage shaders; user handles them manually.
-    /// Minimum  — Only the Lilium HDR Shaders pack is deployed.
-    /// All      — All included shader packs are deployed.
-    /// </summary>
-    /// <summary>
-    /// Off      — RDXC does not manage shaders.
-    /// Minimum  — Only the Lilium HDR Shaders pack is deployed.
-    /// All      — All included shader packs are deployed.
-    /// User     — Only files the user has placed in the Custom folder are deployed.
-    /// </summary>
-    public enum DeployMode { Off, Minimum, All, User, Select }
-
-    // ── Active deploy mode (set by MainViewModel on load and on change) ──────────
-
-    /// <summary>
-    /// The currently active shader deploy mode. Set by the ViewModel whenever
-    /// ShaderDeployMode is loaded or changed. AuxInstallService reads this so
-    /// it does not need a direct ViewModel reference.
-    /// </summary>
-    public static DeployMode CurrentMode { get; set; } = DeployMode.Off;
-
     // ── Pack definitions ──────────────────────────────────────────────────────────
 
     private enum SourceKind { GhRelease, DirectUrl }
@@ -97,7 +73,7 @@ public class ShaderPackService : IShaderPackService
         string DisplayName,  // shown in progress messages and logs
         SourceKind Kind,
         string Url,          // API url (GhRelease) or direct download url (DirectUrl)
-        bool IsMinimum,    // included when DeployMode == Minimum
+        bool IsMinimum,    // true for packs included in the Lilium/minimum set
         string? AssetExt = null,  // GhRelease: required file extension of the release asset
         string? Description = null, // short description shown in the shader picker dialog
         PackCategory Category = PackCategory.Extra // UI grouping
@@ -378,6 +354,14 @@ public class ShaderPackService : IShaderPackService
             Url         : "https://github.com/Zenteon/ZenteonFX/archive/refs/heads/main.zip",
             IsMinimum   : false,
             Description : "Global illumination, SSR, and path tracing effects"
+        ),
+        new(
+            Id          : "Azen",
+            DisplayName : "Azen by Zenteon",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/Zenteon/Azen/archive/refs/heads/main.zip",
+            IsMinimum   : false,
+            Description : "Zenteon's casual shader collection — experimental effects"
         ),
         new(
             Id          : "GShadeShaders",
@@ -793,17 +777,6 @@ public class ShaderPackService : IShaderPackService
 
     // ── Pack filtering ────────────────────────────────────────────────────────────
 
-    /// <summary>Returns the packs eligible for deployment under <paramref name="mode"/>.</summary>
-    private IEnumerable<ShaderPack> PacksForMode(DeployMode mode) => mode switch
-    {
-        DeployMode.Off => Enumerable.Empty<ShaderPack>(),
-        DeployMode.Minimum => Packs.Where(p => p.IsMinimum),
-        DeployMode.All => Packs,
-        DeployMode.User => Enumerable.Empty<ShaderPack>(), // custom folder only
-        DeployMode.Select => Enumerable.Empty<ShaderPack>(), // actual filtering uses pack IDs via PacksForIds
-        _ => Enumerable.Empty<ShaderPack>(),
-    };
-
     /// <summary>
     /// Returns packs whose Id is in the given set. Unknown IDs are silently ignored.
     /// </summary>
@@ -814,58 +787,8 @@ public class ShaderPackService : IShaderPackService
     }
 
     /// <summary>
-    /// Collects the staging files that belong to the packs selected by <paramref name="mode"/>
-    /// and copies any missing ones to <paramref name="destShadersDir"/> / <paramref name="destTexturesDir"/>.
-    /// </summary>
-    private void DeployPacksIfAbsent(DeployMode mode, string destShadersDir, string destTexturesDir)
-    {
-        // Build the set of relative paths that the eligible packs contributed.
-        // We read the recorded file lists from settings so we know exactly which
-        // files came from which pack, and only deploy those.
-        var shadersFiles = new List<string>();
-        var texturesFiles = new List<string>();
-
-        foreach (var pack in PacksForMode(mode))
-        {
-            try
-            {
-                if (!File.Exists(SettingsPath)) continue;
-                var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
-                if (d == null || !d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json))
-                    continue;
-                var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
-                foreach (var rel in files)
-                {
-                    // rel is like "Shaders\foo\bar.fx" or "Textures\foo\bar.png"
-                    if (rel.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                        shadersFiles.Add(rel.Substring("Shaders".Length + 1));
-                    else if (rel.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                        texturesFiles.Add(rel.Substring("Textures".Length + 1));
-                }
-            }
-            catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Failed to read pack record — {ex.Message}"); }
-        }
-
-        // Fall back: if no records exist yet (first run, mode just changed), deploy all staging files
-        bool hasRecords = shadersFiles.Count > 0 || texturesFiles.Count > 0;
-
-        if (hasRecords)
-        {
-            EnsureReShadeHeaders(shadersFiles);
-            DeployFileListIfAbsent(ShadersDir, destShadersDir, shadersFiles);
-            DeployFileListIfAbsent(TexturesDir, destTexturesDir, texturesFiles);
-        }
-        else
-        {
-            // No per-pack records yet — fall back to copying whatever is in staging
-            DeployFolderIfAbsent(ShadersDir, destShadersDir);
-            DeployFolderIfAbsent(TexturesDir, destTexturesDir);
-        }
-    }
-
-    /// <summary>
-    /// Overload that deploys only the packs matching the given <paramref name="packIds"/>.
-    /// Used when mode is Select to deploy the user's chosen subset.
+    /// Deploys only the packs matching the given <paramref name="packIds"/>.
+    /// Used to deploy the user's chosen subset of shader packs.
     /// </summary>
     private void DeployPacksIfAbsent(IEnumerable<string> packIds, string destShadersDir, string destTexturesDir)
     {
@@ -900,11 +823,15 @@ public class ShaderPackService : IShaderPackService
             DeployFileListIfAbsent(ShadersDir, destShadersDir, shadersFiles);
             DeployFileListIfAbsent(TexturesDir, destTexturesDir, texturesFiles);
         }
-        else
-        {
-            // No per-pack records yet — nothing to deploy for Select mode
-            // (unlike mode-based overload, we don't fall back to full staging copy)
-        }
+    }
+
+    /// <summary>
+    /// Deploys all known packs to the destination directories.
+    /// Fallback used by <see cref="DeployToGameFolder"/> when no specific pack IDs are provided.
+    /// </summary>
+    private void DeployAllPacksIfAbsent(string destShadersDir, string destTexturesDir)
+    {
+        DeployPacksIfAbsent(Packs.Select(p => p.Id), destShadersDir, destTexturesDir);
     }
 
     /// <summary>
@@ -956,60 +883,6 @@ public class ShaderPackService : IShaderPackService
         return (shaders, textures);
     }
 
-    /// <summary>
-    /// Deploys user-provided custom shaders and textures from the Custom folder
-    /// into the destination shader/texture directories, but only if the files
-    /// do not already exist there.
-    /// </summary>
-    private void DeployCustomIfAbsent(string destShadersDir, string destTexturesDir)
-    {
-        try
-        {
-            Directory.CreateDirectory(destShadersDir);
-            Directory.CreateDirectory(destTexturesDir);
-
-            // Copy custom shaders
-            if (Directory.Exists(CustomShadersDir))
-            {
-                foreach (var src in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
-                {
-                    var rel = Path.GetRelativePath(CustomShadersDir, src);
-                    var dest = Path.Combine(destShadersDir, rel);
-                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-
-                    if (!File.Exists(dest))
-                        File.Copy(src, dest, overwrite: false);
-                    else if (IsFileStale(src, dest))
-                        try { File.Copy(src, dest, overwrite: true); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
-                }
-            }
-
-            // Copy custom textures
-            if (Directory.Exists(CustomTexturesDir))
-            {
-                foreach (var src in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
-                {
-                    var rel = Path.GetRelativePath(CustomTexturesDir, src);
-                    var dest = Path.Combine(destTexturesDir, rel);
-                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-
-                    if (!File.Exists(dest))
-                        File.Copy(src, dest, overwrite: false);
-                    else if (IsFileStale(src, dest))
-                        try { File.Copy(src, dest, overwrite: true); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[ShaderPackService.DeployCustomIfAbsent] Failed — {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Copies staging Shaders/ and Textures/ to the DC global Reshade folder,
-    /// filtered to the packs selected by <paramref name="mode"/>.
-    /// </summary>
     // ── Marker / ownership helpers ────────────────────────────────────────────────
 
     /// <summary>
@@ -1059,7 +932,7 @@ public class ShaderPackService : IShaderPackService
 
     // ── Deployment helpers ────────────────────────────────────────────────────────
 
-    public void DeployToDcFolder(DeployMode? mode = null)
+    public void DeployToDcFolder()
     {
         CrashReporter.Log("[ShaderPackService.DeployToDcFolder] No-op — local-only shader deployment");
     }
@@ -1110,19 +983,13 @@ public class ShaderPackService : IShaderPackService
     }
 
     /// <summary>
-    /// Copies staging Shaders/ and Textures/ into <c>gameDir\reshade-shaders\</c>,
-    /// filtered to the packs selected by <paramref name="mode"/>.
-    /// </summary>
-    /// <summary>
     /// Deploys staging shaders to <c>gameDir\reshade-shaders\</c>.
     /// If a pre-existing non-RDXC reshade-shaders folder is found, it is renamed
     /// to reshade-shaders-original before creating our managed folder.
+    /// When <paramref name="packIds"/> is null, all packs are deployed (fallback for LumaService).
     /// </summary>
-    public void DeployToGameFolder(string gameDir, DeployMode? mode = null)
+    public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null)
     {
-        var m = mode ?? CurrentMode;
-        if (m == DeployMode.Off) return;
-
         var rsDir = Path.Combine(gameDir, GameReShadeShaders);
 
         // If an existing reshade-shaders folder is NOT ours, preserve it
@@ -1134,16 +1001,16 @@ public class ShaderPackService : IShaderPackService
                 if (!Directory.Exists(origDir))
                     Directory.Move(rsDir, origDir);
                 else
-                    CrashReporter.Log($"[ShaderPackService.SyncGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename");
+                    CrashReporter.Log($"[ShaderPackService.DeployToGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename");
             }
             catch (Exception ex)
-            { CrashReporter.Log($"[ShaderPackService.SyncGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
+            { CrashReporter.Log($"[ShaderPackService.DeployToGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
         }
 
-        if (m == DeployMode.User)
-            DeployCustomIfAbsent(Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+        if (packIds != null)
+            DeployPacksIfAbsent(packIds, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
         else
-            DeployPacksIfAbsent(m, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+            DeployAllPacksIfAbsent(Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
         WriteMarker(gameDir);
     }
 
@@ -1228,182 +1095,81 @@ public class ShaderPackService : IShaderPackService
     }
 
     /// <summary>
-    /// Collects relative paths for all files belonging to packs eligible under <paramref name="mode"/>.
+    /// Synchronises the DC global Reshade folder to exactly match the current selection.
     /// </summary>
-    private (List<string> shaders, List<string> textures) FilesForMode(DeployMode mode)
-    {
-        var shaders = new List<string>();
-        var textures = new List<string>();
-        try
-        {
-            if (!File.Exists(SettingsPath)) return (shaders, textures);
-            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
-            if (d == null) return (shaders, textures);
-            foreach (var pack in PacksForMode(mode))
-            {
-                if (!d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json)) continue;
-                var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
-                foreach (var rel in files)
-                {
-                    if (rel.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                        shaders.Add(rel.Substring("Shaders".Length + 1));
-                    else if (rel.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                        textures.Add(rel.Substring("Textures".Length + 1));
-                }
-            }
-        }
-        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
-        return (shaders, textures);
-    }
-
-    /// <summary>
-    /// Synchronises the DC global Reshade folder to exactly match the current mode.
-    /// • Removes pack files that should no longer be there (mode changed down).
-    /// • Deploys files that are missing for the current mode.
-    /// • Leaves any files not managed by RDXC (user-added) untouched.
-    /// • For User mode: removes all pack files, then copies from Custom folder.
-    /// • For Off mode: removes all pack files and all custom files previously copied.
-    /// </summary>
-    public void SyncDcFolder(DeployMode m, IEnumerable<string>? selectedPackIds = null)
+    public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null)
     {
         CrashReporter.Log("[ShaderPackService.SyncDcFolder] No-op — local-only shader deployment");
     }
 
 
     /// <summary>
-    /// Synchronises the game-local reshade-shaders folder to exactly match the current mode.
-    /// Same pruning + deploy logic as SyncDcFolder but for the per-game folder.
+    /// Synchronises the game-local reshade-shaders folder to match the current selection.
+    /// Null/empty selection → remove managed shaders and restore originals.
+    /// Non-empty selection → prune unselected pack files and deploy selected packs.
     /// </summary>
-    public void SyncGameFolder(string gameDir, DeployMode m, IEnumerable<string>? selectedPackIds = null)
+    public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null)
     {
         var rsShaders = Path.Combine(gameDir, GameReShadeShaders, "Shaders");
         var rsTextures = Path.Combine(gameDir, GameReShadeShaders, "Textures");
 
         var (allKnownShaders, allKnownTextures) = AllKnownPackFiles();
 
-        // Select mode with null/empty selection → treat as Off
-        if (m == DeployMode.Select && (selectedPackIds == null || !selectedPackIds.Any()))
-            m = DeployMode.Off;
-
-        if (m == DeployMode.Off)
+        // Null/empty selection → remove managed shaders and restore originals
+        if (selectedPackIds == null || !selectedPackIds.Any())
         {
+            CrashReporter.Log($"[ShaderPackService.SyncGameFolder] No packs selected → removing managed shaders for {gameDir}");
             if (IsManagedByRdxc(gameDir))
                 RemoveFromGameFolder(gameDir);
             RestoreOriginalIfPresent(gameDir);
             return;
         }
 
-        if (m == DeployMode.User)
-        {
-            // Ensure the folder exists (it may have been created by a previous mode)
-            if (IsManagedByRdxc(gameDir))
-            {
-                PruneFiles(rsShaders, allKnownShaders, Enumerable.Empty<string>());
-                PruneFiles(rsTextures, allKnownTextures, Enumerable.Empty<string>());
-                DeployCustomIfAbsent(rsShaders, rsTextures);
-            }
-            else
-            {
-                // Not yet managed — let DeployToGameFolder handle rename + marker + deploy
-                DeployToGameFolder(gameDir, m);
-            }
-            return;
-        }
+        // Non-empty selection → prune unselected and deploy selected
+        CrashReporter.Log($"[ShaderPackService.SyncGameFolder] gameDir={gameDir}, managed={IsManagedByRdxc(gameDir)}");
 
-        // Select mode: prune + deploy using pack IDs
-        if (m == DeployMode.Select)
-        {
-            if (IsManagedByRdxc(gameDir))
-            {
-                var (selectShaders, selectTextures) = FilesForIds(selectedPackIds!);
-                PruneFiles(rsShaders, allKnownShaders, selectShaders);
-                PruneFiles(rsTextures, allKnownTextures, selectTextures);
-
-                // Remove custom files if switching away from User mode
-                if (Directory.Exists(CustomShadersDir))
-                    foreach (var f in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
-                    {
-                        var rel = Path.GetRelativePath(CustomShadersDir, f);
-                        var dest = Path.Combine(rsShaders, rel);
-                        if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
-                    }
-                if (Directory.Exists(CustomTexturesDir))
-                    foreach (var f in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
-                    {
-                        var rel = Path.GetRelativePath(CustomTexturesDir, f);
-                        var dest = Path.Combine(rsTextures, rel);
-                        if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
-                    }
-
-                DeployPacksIfAbsent(selectedPackIds!, rsShaders, rsTextures);
-                WriteMarker(gameDir);
-            }
-            else
-            {
-                // Not yet managed — handle rename + marker, then deploy selected packs
-                var rsDir = Path.Combine(gameDir, GameReShadeShaders);
-                if (Directory.Exists(rsDir) && !IsManagedByRdxc(gameDir))
-                {
-                    var origDir = Path.Combine(gameDir, GameReShadeOriginal);
-                    try
-                    {
-                        if (!Directory.Exists(origDir))
-                            Directory.Move(rsDir, origDir);
-                        else
-                            CrashReporter.Log($"[ShaderPackService.SyncGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename");
-                    }
-                    catch (Exception ex)
-                    { CrashReporter.Log($"[ShaderPackService.SyncGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
-                }
-
-                DeployPacksIfAbsent(selectedPackIds!, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
-                WriteMarker(gameDir);
-            }
-            return;
-        }
-
-        // Minimum or All
         if (IsManagedByRdxc(gameDir))
         {
-            var (modeShaders, modeTextures) = FilesForMode(m);
-            PruneFiles(rsShaders, allKnownShaders, modeShaders);
-            PruneFiles(rsTextures, allKnownTextures, modeTextures);
+            var (selectShaders, selectTextures) = FilesForIds(selectedPackIds);
+            PruneFiles(rsShaders, allKnownShaders, selectShaders);
+            PruneFiles(rsTextures, allKnownTextures, selectTextures);
 
-            // Remove custom files if switching away from User mode
-            if (Directory.Exists(CustomShadersDir))
-                foreach (var f in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
-                {
-                    var rel = Path.GetRelativePath(CustomShadersDir, f);
-                    var dest = Path.Combine(rsShaders, rel);
-                    if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
-                }
-            if (Directory.Exists(CustomTexturesDir))
-                foreach (var f in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
-                {
-                    var rel = Path.GetRelativePath(CustomTexturesDir, f);
-                    var dest = Path.Combine(rsTextures, rel);
-                    if (File.Exists(dest)) try { File.Delete(dest); } catch (Exception ex) { CrashReporter.Log($"[ShaderPackService] Operation failed — {ex.Message}"); }
-                }
-
-            DeployToGameFolder(gameDir, m);
+            DeployPacksIfAbsent(selectedPackIds, rsShaders, rsTextures);
+            WriteMarker(gameDir);
         }
         else
         {
-            DeployToGameFolder(gameDir, m);
+            // Not yet managed — handle rename + marker, then deploy selected packs
+            var rsDir = Path.Combine(gameDir, GameReShadeShaders);
+            if (Directory.Exists(rsDir))
+            {
+                var origDir = Path.Combine(gameDir, GameReShadeOriginal);
+                try
+                {
+                    if (!Directory.Exists(origDir))
+                        Directory.Move(rsDir, origDir);
+                    else
+                        CrashReporter.Log($"[ShaderPackService.SyncGameFolder] reshade-shaders-original already exists in {gameDir}; skipping rename");
+                }
+                catch (Exception ex)
+                { CrashReporter.Log($"[ShaderPackService.SyncGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
+            }
+
+            DeployPacksIfAbsent(selectedPackIds, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+            WriteMarker(gameDir);
         }
     }
 
     /// <summary>
     /// Synchronises shaders to every game that has ReShade installed.
-    /// Called after ↻ Refresh so mode changes take effect immediately everywhere.
+    /// Called after ↻ Refresh so selection changes take effect immediately everywhere.
+    /// Per-game overrides are resolved from <paramref name="locations"/> shaderModeOverride;
+    /// otherwise the passed-in <paramref name="selectedPackIds"/> is used.
     /// </summary>
     public void SyncShadersToAllLocations(
         IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
-        DeployMode? mode = null,
         IEnumerable<string>? selectedPackIds = null)
     {
-        var globalMode = mode ?? CurrentMode;
-
         foreach (var loc in locations)
         {
             if (string.IsNullOrEmpty(loc.installPath) || !Directory.Exists(loc.installPath))
@@ -1412,22 +1178,12 @@ public class ShaderPackService : IShaderPackService
             if (!loc.rsInstalled)
                 continue;
 
-            // Resolve effective mode: per-game override wins, otherwise global
-            var effectiveMode = loc.shaderModeOverride != null
-                && Enum.TryParse<DeployMode>(loc.shaderModeOverride, true, out var overrideMode)
-                ? overrideMode
-                : globalMode;
-
-            SyncGameFolder(loc.installPath, effectiveMode, selectedPackIds);
+            SyncGameFolder(loc.installPath, selectedPackIds);
         }
     }
 
     // ── Private copy helpers ──────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Copies a specific list of relative paths from sourceDir → destDir.
-    /// Skips any file that already exists at the destination.
-    /// </summary>
     /// <summary>
     /// Returns true if the staged source file differs from the deployed destination file.
     /// Compares file size first (fast), then falls back to byte-level comparison if sizes match

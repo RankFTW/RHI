@@ -1,13 +1,12 @@
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using RenoDXCommander.Services;
-using ShaderDeployMode = RenoDXCommander.Services.ShaderPackService.DeployMode;
 
 namespace RenoDXCommander.ViewModels;
 
 /// <summary>
 /// Owns settings persistence (load/save settings file), theme, density,
-/// verbose logging, shader deploy mode, and related computed UI properties.
+/// verbose logging, shader pack selection, and related computed UI properties.
 /// Extracted from MainViewModel per Requirement 1.1.
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
@@ -17,7 +16,6 @@ public partial class SettingsViewModel : ObservableObject
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RenoDXCommander", "settings.json");
 
-    [ObservableProperty] private ShaderDeployMode _shaderDeployMode = ShaderDeployMode.Minimum;
     [ObservableProperty] private bool _skipUpdateCheck;
     [ObservableProperty] private bool _betaOptIn;
     [ObservableProperty] private bool _verboseLogging;
@@ -35,17 +33,6 @@ public partial class SettingsViewModel : ObservableObject
     /// property-change handlers don't trigger saves mid-load.
     /// </summary>
     public bool IsLoadingSettings { get; set; }
-
-    // ── Shader deploy mode ────────────────────────────────────────────────────────
-
-    partial void OnShaderDeployModeChanged(ShaderDeployMode value)
-    {
-        ShaderPackService.CurrentMode = value;
-        SettingsChanged?.Invoke();
-    }
-
-    /// <summary>The current ShaderDeployMode for AuxInstallService calls.</summary>
-    public ShaderDeployMode CurrentShaderMode => ShaderDeployMode;
 
     // ── Verbose logging ───────────────────────────────────────────────────────────
 
@@ -94,17 +81,12 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Loads settings-specific values (ShaderDeployMode, SkipUpdateCheck,
-    /// VerboseLogging, LastSeenVersion) from the given settings dictionary.
+    /// Loads settings-specific values (SkipUpdateCheck, VerboseLogging,
+    /// LastSeenVersion, SelectedShaderPacks) from the given settings dictionary.
     /// Called by MainViewModel during LoadNameMappings.
     /// </summary>
     public void LoadSettingsFromDict(Dictionary<string, string> s)
     {
-        if (s.TryGetValue("ShaderDeployMode", out var sdm) &&
-            Enum.TryParse<ShaderDeployMode>(sdm, out var parsedSdm))
-            ShaderDeployMode = parsedSdm;
-        ShaderPackService.CurrentMode = ShaderDeployMode;
-
         if (s.TryGetValue("SkipUpdateCheck", out var sucVal))
             SkipUpdateCheck = sucVal == "true";
 
@@ -117,7 +99,13 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("LastSeenVersion", out var lsvVal))
             LastSeenVersion = lsvVal ?? "";
 
-        if (s.TryGetValue("SelectedShaderPacks", out var sspVal))
+        // Migration: retain SelectedShaderPacks only when the persisted mode
+        // was "Select".  Any other value (or absent key) means the user was on
+        // an old mode — start with an empty selection.
+        var wasSelectMode = s.TryGetValue("ShaderDeployMode", out var sdm)
+                            && string.Equals(sdm, "Select", StringComparison.OrdinalIgnoreCase);
+
+        if (wasSelectMode && s.TryGetValue("SelectedShaderPacks", out var sspVal))
         {
             try
             {
@@ -132,15 +120,6 @@ public partial class SettingsViewModel : ObservableObject
         {
             SelectedShaderPacks = new();
         }
-
-        // Migration: old deploy modes (Off, Minimum, All, User) are no longer
-        // exposed in the UI.  Clear any stale selection and normalise to Select
-        // so the popup-based flow takes over.
-        if (ShaderDeployMode != ShaderDeployMode.Select)
-        {
-            SelectedShaderPacks = new List<string>();
-            ShaderDeployMode = ShaderDeployMode.Select;
-        }
     }
 
     /// <summary>
@@ -149,7 +128,6 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public void SaveSettingsToDict(Dictionary<string, string> s)
     {
-        s["ShaderDeployMode"]  = ShaderDeployMode.ToString();
         s["SkipUpdateCheck"]   = SkipUpdateCheck ? "true" : "false";
         s["BetaOptIn"]         = BetaOptIn ? "true" : "false";
         s["VerboseLogging"]    = VerboseLogging ? "true" : "false";

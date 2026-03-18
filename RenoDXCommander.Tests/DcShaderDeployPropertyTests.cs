@@ -6,10 +6,10 @@ using Xunit;
 namespace RenoDXCommander.Tests;
 
 /// <summary>
-/// Fix verification property tests for DC shader deploy on install.
-/// These tests verify the local-only routing model: <c>SyncGameFolder</c> is called
-/// during <c>InstallDcAsync</c> for all <c>dcModeLevel</c> values, and
-/// <c>RemoveFromGameFolder</c> is NOT called (shaders are preserved).
+/// Property tests for DC shader deploy on install.
+/// These tests verify that <c>SyncGameFolder</c> is called during
+/// <c>InstallDcAsync</c> only when <c>dcModeLevel &gt; 0</c> (DC Mode),
+/// and <c>RemoveFromGameFolder</c> is NOT called (shaders are preserved).
 ///
 /// EXPECTED OUTCOME: All tests PASS.
 /// </summary>
@@ -29,17 +29,18 @@ public class DcShaderDeployPropertyTests : IDisposable
         try { Directory.Delete(_tempRoot, recursive: true); } catch { }
     }
 
-    // ── Property 3.1: SyncGameFolder called for all dcModeLevel values ───────────
+    // ── Property 1: SyncGameFolder called iff dcModeLevel > 0 ──────────────────
 
     /// <summary>
     /// For any <c>dcModeLevel</c> in {0, 1, 2}, calling <c>InstallDcAsync</c> SHALL
-    /// invoke <c>SyncGameFolder</c> with the game's install path and the effective shader mode.
-    /// <c>SyncDcFolder</c> SHALL NOT be called.
+    /// invoke <c>SyncGameFolder</c> if and only if <c>dcModeLevel &gt; 0</c>.
+    /// When <c>dcModeLevel == 0</c>, <c>SyncGameFolder</c> SHALL NOT be called.
+    /// <c>SyncDcFolder</c> SHALL NOT be called for any level.
     ///
-    /// **Validates: Requirements 4.2, 4.3**
+    /// **Validates: Requirements 1.1, 1.2, 1.3, 5.1**
     /// </summary>
     [Property(MaxTest = 10)]
-    public Property SyncGameFolder_CalledForAllDcModeLevels()
+    public Property SyncGameFolder_CalledOnlyWhenDcModeLevel_GreaterThanZero()
     {
         var genLevel = Gen.Elements(0, 1, 2);
 
@@ -56,9 +57,6 @@ public class DcShaderDeployPropertyTests : IDisposable
                 var fakeBytes = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
                 File.WriteAllBytes(cachePath, fakeBytes);
 
-                // Set a known global shader mode
-                ShaderPackService.CurrentMode = ShaderPackService.DeployMode.Minimum;
-
                 var tracker = new TrackingShaderPackService();
                 var handler = new FakeHttpMessageHandler(fakeBytes);
                 using var http = new HttpClient(handler);
@@ -69,24 +67,27 @@ public class DcShaderDeployPropertyTests : IDisposable
                     installPath: installPath,
                     dcModeLevel: dcModeLevel).GetAwaiter().GetResult();
 
+                var expectSyncCalled = dcModeLevel > 0;
                 var gameFolderCalled = tracker.SyncGameFolderCalled;
-                var correctDir = tracker.SyncGameFolderDir == installPath;
+                var correctCallState = gameFolderCalled == expectSyncCalled;
+                var correctDir = !gameFolderCalled || tracker.SyncGameFolderDir == installPath;
                 var dcFolderNotCalled = !tracker.SyncDcFolderCalled;
 
-                return (gameFolderCalled && correctDir && dcFolderNotCalled)
-                    .Label($"dcModeLevel={dcModeLevel}: SyncGameFolderCalled={gameFolderCalled}, " +
+                return (correctCallState && correctDir && dcFolderNotCalled)
+                    .Label($"dcModeLevel={dcModeLevel}: SyncGameFolderCalled={gameFolderCalled} " +
+                           $"(expected {expectSyncCalled}), " +
                            $"dir={tracker.SyncGameFolderDir ?? "null"} (expected {installPath}), " +
                            $"SyncDcFolderCalled={tracker.SyncDcFolderCalled} (expected false)");
             });
     }
 
-    // ── Property 3.2: RemoveFromGameFolder NOT called during InstallDcAsync ──────
+    // ── Property 1 (cont.): RemoveFromGameFolder NOT called during InstallDcAsync ──
 
     /// <summary>
     /// For any <c>dcModeLevel</c> in {0, 1, 2}, calling <c>InstallDcAsync</c> SHALL NOT
     /// invoke <c>RemoveFromGameFolder</c> — game-local shaders are preserved during DC install.
     ///
-    /// **Validates: Requirements 4.1**
+    /// **Validates: Requirements 1.3, 5.1**
     /// </summary>
     [Property(MaxTest = 10)]
     public Property RemoveFromGameFolder_NotCalledDuringDcInstall()
@@ -105,8 +106,6 @@ public class DcShaderDeployPropertyTests : IDisposable
                 var cachePath = Path.Combine(AuxInstallService.DownloadCacheDir, AuxInstallService.DcCacheFile);
                 var fakeBytes = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
                 File.WriteAllBytes(cachePath, fakeBytes);
-
-                ShaderPackService.CurrentMode = ShaderPackService.DeployMode.Minimum;
 
                 var tracker = new TrackingShaderPackService();
                 var handler = new FakeHttpMessageHandler(fakeBytes);
@@ -131,12 +130,11 @@ public class DcShaderDeployPropertyTests : IDisposable
     private class TrackingShaderPackService : IShaderPackService
     {
         public bool SyncDcFolderCalled { get; private set; }
-        public ShaderPackService.DeployMode? SyncDcFolderMode { get; private set; }
         public bool SyncGameFolderCalled { get; private set; }
         public string? SyncGameFolderDir { get; private set; }
-        public ShaderPackService.DeployMode? SyncGameFolderMode { get; private set; }
         public bool RemoveFromGameFolderCalled { get; private set; }
         public string? RemoveFromGameFolderDir { get; private set; }
+        public bool RestoreOriginalIfPresentCalled { get; private set; }
 
         public IReadOnlyList<(string Id, string DisplayName, ShaderPackService.PackCategory Category)> AvailablePacks { get; } =
             new List<(string, string, ShaderPackService.PackCategory)>();
@@ -144,8 +142,8 @@ public class DcShaderDeployPropertyTests : IDisposable
         public string? GetPackDescription(string packId) => null;
 
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-        public void DeployToDcFolder(ShaderPackService.DeployMode? mode = null) { }
-        public void DeployToGameFolder(string gameDir, ShaderPackService.DeployMode? mode = null) { }
+        public void DeployToDcFolder() { }
+        public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
 
         public void RemoveFromGameFolder(string gameDir)
         {
@@ -154,26 +152,25 @@ public class DcShaderDeployPropertyTests : IDisposable
         }
 
         public bool IsManagedByRdxc(string gameDir) => false;
-        public void RestoreOriginalIfPresent(string gameDir) { }
-
-        public void SyncDcFolder(ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null)
+        public void RestoreOriginalIfPresent(string gameDir)
         {
-            SyncDcFolderCalled = true;
-            SyncDcFolderMode = m;
+            RestoreOriginalIfPresentCalled = true;
         }
 
-        public void SyncGameFolder(string gameDir, ShaderPackService.DeployMode m,
-            IEnumerable<string>? selectedPackIds = null)
+        public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null)
+        {
+            SyncDcFolderCalled = true;
+        }
+
+        public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null)
         {
             SyncGameFolderCalled = true;
             SyncGameFolderDir = gameDir;
-            SyncGameFolderMode = m;
         }
 
         public void SyncShadersToAllLocations(
             IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode,
                 string? shaderModeOverride)> locations,
-            ShaderPackService.DeployMode? mode = null,
             IEnumerable<string>? selectedPackIds = null) { }
     }
 

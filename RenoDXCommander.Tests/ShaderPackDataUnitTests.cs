@@ -7,6 +7,7 @@ namespace RenoDXCommander.Tests;
 /// <summary>
 /// Unit tests for shader pack data correctness (reshade-shader-packs feature).
 /// Verifies specific pack URLs, branch assignments, and edge-case behaviour.
+/// DeployMode enum was removed — PacksForMode tests removed (will be updated in Task 7).
 /// </summary>
 public class ShaderPackDataUnitTests
 {
@@ -40,34 +41,17 @@ public class ShaderPackDataUnitTests
         throw new InvalidOperationException($"Pack '{packId}' not found");
     }
 
-    /// <summary>Invokes the private PacksForMode method via reflection.</summary>
-    private List<string> InvokePacksForModeIds(ShaderPackService.DeployMode mode)
-    {
-        var method = typeof(ShaderPackService).GetMethod(
-            "PacksForMode", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.NotNull(method);
-
-        var result = method!.Invoke(_service, new object[] { mode });
-        var packs = ((System.Collections.IEnumerable)result!).Cast<object>();
-
-        return packs.Select(p =>
-        {
-            var idProp = p.GetType().GetProperty("Id")!;
-            return (string)idProp.GetValue(p)!;
-        }).ToList();
-    }
-
     // ── Tests ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Verify exact pack count is 44 (8 original + 36 new).
+    /// Verify exact pack count is 43.
     /// _Requirements: 1.1, 1.4_
     /// </summary>
     [Fact]
     public void PackCount_IsExactly43()
     {
-        Assert.Equal(42, GetPacksArray().Length);
-        Assert.Equal(42, _service.AvailablePacks.Count);
+        Assert.Equal(43, GetPacksArray().Length);
+        Assert.Equal(43, _service.AvailablePacks.Count);
     }
 
     /// <summary>
@@ -108,38 +92,24 @@ public class ShaderPackDataUnitTests
     }
 
     /// <summary>
-    /// Verify PacksForMode(Minimum) returns exactly 2 packs (Lilium + CrosireMaster).
-    /// _Requirements: 1.3, 5.2_
-    /// </summary>
-    [Fact]
-    public void PacksForMode_Minimum_ReturnsOnlyLilium()
-    {
-        var ids = InvokePacksForModeIds(ShaderPackService.DeployMode.Minimum);
-
-        Assert.Equal(2, ids.Count);
-        Assert.Contains("Lilium", ids);
-        Assert.Contains("CrosireMaster", ids);
-    }
-
-    /// <summary>
-    /// Verify empty selection in Select mode behaves like Off mode (no files deployed).
+    /// Verify empty selection behaves like Off mode (no files deployed).
     /// _Requirements: 5.2_
     /// </summary>
     [Fact]
-    public void SyncGameFolder_EmptySelectionInSelectMode_BehavesLikeOff()
+    public void SyncGameFolder_EmptySelection_BehavesLikeOff()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"rdxc_test_{Guid.NewGuid():N}");
         try
         {
             Directory.CreateDirectory(tempDir);
 
-            // Call SyncGameFolder with Select mode and empty selection
-            _service.SyncGameFolder(tempDir, ShaderPackService.DeployMode.Select, Array.Empty<string>());
+            // Call SyncGameFolder with empty selection
+            _service.SyncGameFolder(tempDir, Array.Empty<string>());
 
             // No reshade-shaders folder should be created (same as Off mode)
             var rsDir = Path.Combine(tempDir, "reshade-shaders");
             Assert.False(Directory.Exists(rsDir),
-                "Empty selection in Select mode should not create reshade-shaders folder");
+                "Empty selection should not create reshade-shaders folder");
         }
         finally
         {

@@ -17,9 +17,9 @@ public interface IShaderPackService
 
     Task EnsureLatestAsync(IProgress<string>? progress = null);
 
-    void DeployToDcFolder(ShaderPackService.DeployMode? mode = null);
+    void DeployToDcFolder();
 
-    void DeployToGameFolder(string gameDir, ShaderPackService.DeployMode? mode = null);
+    void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null);
 
     void RemoveFromGameFolder(string gameDir);
 
@@ -27,12 +27,11 @@ public interface IShaderPackService
 
     void RestoreOriginalIfPresent(string gameDir);
 
-    void SyncDcFolder(ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null);
+    void SyncDcFolder(IEnumerable<string>? selectedPackIds = null);
 
-    void SyncGameFolder(string gameDir, ShaderPackService.DeployMode m, IEnumerable<string>? selectedPackIds = null);
+    void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null);
 
     void SyncShadersToAllLocations(
         IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
-        ShaderPackService.DeployMode? mode = null,
         IEnumerable<string>? selectedPackIds = null);
 }

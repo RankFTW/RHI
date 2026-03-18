@@ -1,4 +1,6 @@
 using System.Reflection;
+using FsCheck;
+using FsCheck.Xunit;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
@@ -7,19 +9,19 @@ using Xunit;
 namespace RenoDXCommander.Tests;
 
 /// <summary>
-/// Unit tests verifying that <c>ApplyDcModeSwitch</c> and <c>ApplyDcModeSwitchForCard</c>
-/// never invoke any <c>IShaderPackService</c> methods — DC mode switching must not
-/// move, remove, or redeploy shader files.
+/// Property tests for DC uninstall shader removal.
+/// Verifies that <c>UninstallDc</c> calls <c>RemoveFromGameFolder</c>
+/// if and only if the computed effective DC mode level is greater than 0.
 ///
-/// **Validates: Requirements 5.1, 5.2, 5.3, 5.4**
+/// **Validates: Requirements 2.1, 2.3, 5.2**
 /// </summary>
-public class DcModeSwitchNoShaderTests : IDisposable
+public class DcUninstallShaderPropertyTests : IDisposable
 {
     private readonly string _tempRoot;
 
-    public DcModeSwitchNoShaderTests()
+    public DcUninstallShaderPropertyTests()
     {
-        _tempRoot = Path.Combine(Path.GetTempPath(), "RdxcDcSwitch_" + Guid.NewGuid().ToString("N")[..8]);
+        _tempRoot = Path.Combine(Path.GetTempPath(), "RdxcUninstProp_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempRoot);
     }
 
@@ -29,12 +31,74 @@ public class DcModeSwitchNoShaderTests : IDisposable
     }
 
     /// <summary>
-    /// Creates a MainViewModel wired to the given tracking shader service,
-    /// and injects the provided cards into the private <c>_allCards</c> field.
+    /// Property 2: DC Uninstall removes shaders iff effective level &gt; 0.
+    ///
+    /// For any game card with DC installed, calling <c>UninstallDc</c> SHALL call
+    /// <c>RemoveFromGameFolder</c> if and only if the computed effective DC mode level &gt; 0.
+    /// When the effective level is 0, <c>RemoveFromGameFolder</c> SHALL NOT be called.
+    ///
+    /// **Validates: Requirements 2.1, 2.3, 5.2**
     /// </summary>
-    private MainViewModel CreateViewModelWithCards(
-        TrackingShaderPackService tracker,
-        List<GameCardViewModel> cards)
+    [Property(MaxTest = 10)]
+    public Property UninstallDc_RemovesShaders_Iff_EffectiveLevel_GreaterThanZero()
+    {
+        var genDllOverride = Arb.From<bool>().Generator;
+        var genLumaMode = Arb.From<bool>().Generator;
+        var genVulkan = Arb.From<bool>().Generator;
+        var genPerGame = Gen.Elements<int?>(null, 0, 1, 2);
+        var genGlobal = Gen.Elements(0, 1, 2);
+
+        var genConfig = from dllOverride in genDllOverride
+                        from lumaMode in genLumaMode
+                        from vulkan in genVulkan
+                        from perGame in genPerGame
+                        from global_ in genGlobal
+                        select (dllOverride, lumaMode, vulkan, perGame, global_);
+
+        return Prop.ForAll(
+            Arb.From(genConfig),
+            config =>
+            {
+                var (dllOverride, lumaMode, vulkan, perGame, globalLevel) = config;
+
+                // Compute expected effective level using the same logic as UninstallDc
+                var expectedEffective = dllOverride ? 0
+                    : lumaMode ? 0
+                    : (vulkan && !perGame.HasValue) ? 0
+                    : perGame ?? globalLevel;
+
+                var tracker = new TrackingShaderPackService();
+                var vm = CreateViewModelWithTracker(tracker);
+                vm.DcModeLevel = globalLevel;
+
+                var card = CreateCardWithDcRecord(
+                    "TestGame",
+                    dllOverrideEnabled: dllOverride,
+                    isLumaMode: lumaMode,
+                    isVulkan: vulkan,
+                    perGameDcMode: perGame);
+
+                // Inject card into ViewModel
+                InjectCards(vm, new List<GameCardViewModel> { card });
+
+                // Act
+                vm.UninstallDc(card);
+
+                // Assert
+                var expectRemove = expectedEffective > 0;
+                var removeWasCalled = tracker.RemoveFromGameFolderCalled;
+
+                return (removeWasCalled == expectRemove)
+                    .Label($"DllOverride={dllOverride}, Luma={lumaMode}, Vulkan={vulkan}, " +
+                           $"PerGame={perGame?.ToString() ?? "null"}, Global={globalLevel} → " +
+                           $"effective={expectedEffective}: " +
+                           $"RemoveFromGameFolderCalled={removeWasCalled} (expected {expectRemove})");
+            });
+    }
+
+    // ── Helper: Create MainViewModel with tracking shader service ─────────────
+
+    private MainViewModel CreateViewModelWithTracker(TrackingShaderPackService tracker)
     {
         var auxInstaller = new StubAuxInstallService();
         var gameDetection = new StubGameDetectionService();
@@ -51,7 +115,7 @@ public class DcModeSwitchNoShaderTests : IDisposable
             installer, auxInstaller, new StubGameLibraryService(),
             new StubPeHeaderService(), lumaService, rsUpdate, tracker);
 
-        var vm = new MainViewModel(
+        return new MainViewModel(
             new HttpClient(),
             installer,
             auxInstaller,
@@ -70,191 +134,84 @@ public class DcModeSwitchNoShaderTests : IDisposable
             dllOverride,
             gameName,
             gameInit);
-
-        // Inject cards via reflection
-        var field = typeof(MainViewModel).GetField("_allCards", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        field.SetValue(vm, cards);
-
-        return vm;
     }
 
-    /// <summary>
-    /// Creates a game card with the given DC/RS installation state and a real temp directory.
-    /// </summary>
-    private GameCardViewModel CreateCard(
+    private static void InjectCards(MainViewModel vm, List<GameCardViewModel> cards)
+    {
+        var field = typeof(MainViewModel).GetField("_allCards", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        field.SetValue(vm, cards);
+    }
+
+    private GameCardViewModel CreateCardWithDcRecord(
         string name,
-        GameStatus dcStatus = GameStatus.NotInstalled,
-        GameStatus rsStatus = GameStatus.NotInstalled,
-        bool hasDcRecord = false,
-        bool hasRsRecord = false,
+        bool dllOverrideEnabled = false,
+        bool isLumaMode = false,
+        bool isVulkan = false,
         int? perGameDcMode = null)
     {
-        var dir = Path.Combine(_tempRoot, name);
+        var dir = Path.Combine(_tempRoot, name + "_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(dir);
+
+        // Create a fake DC DLL so uninstall logic doesn't crash
+        var dcFile = AuxInstallService.DcNormalName;
+        File.WriteAllBytes(Path.Combine(dir, dcFile), new byte[] { 0x00 });
 
         var card = new GameCardViewModel
         {
             GameName = name,
             InstallPath = dir,
-            DcStatus = dcStatus,
-            RsStatus = rsStatus,
+            DcStatus = GameStatus.Installed,
+            DllOverrideEnabled = dllOverrideEnabled,
+            IsLumaMode = isLumaMode,
             PerGameDcMode = perGameDcMode,
         };
 
-        if (hasDcRecord)
+        // Set Vulkan state via GraphicsApi
+        if (isVulkan)
         {
-            // Create a fake DC DLL so rename logic doesn't crash
-            var dcFile = AuxInstallService.DcNormalName;
-            File.WriteAllBytes(Path.Combine(dir, dcFile), new byte[] { 0x00 });
-            card.DcRecord = new AuxInstalledRecord
-            {
-                GameName = name,
-                InstallPath = dir,
-                InstalledAs = dcFile,
-                AddonType = "DisplayCommander"
-            };
+            card.GraphicsApi = GraphicsApiType.Vulkan;
+            card.IsDualApiGame = false; // pure Vulkan → IsVulkanOnly = true → RequiresVulkanInstall = true
         }
 
-        if (hasRsRecord)
+        // Attach a DcRecord so UninstallDc proceeds past the null check
+        card.DcRecord = new AuxInstalledRecord
         {
-            card.RsRecord = new AuxInstalledRecord
-            {
-                GameName = name,
-                InstallPath = dir,
-                InstalledAs = "ReShade64.dll",
-                AddonType = "ReShade"
-            };
-        }
+            GameName = name,
+            InstallPath = dir,
+            InstalledAs = dcFile,
+            AddonType = "DisplayCommander"
+        };
 
         return card;
     }
 
-    // ── ApplyDcModeSwitch tests ──────────────────────────────────────────────
-
-    /// <summary>
-    /// After <c>ApplyDcModeSwitch</c> with multiple games in various states,
-    /// no <c>IShaderPackService</c> methods shall be called.
-    ///
-    /// **Validates: Requirements 5.1, 5.3**
-    /// </summary>
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    public void ApplyDcModeSwitch_NeverCallsShaderMethods(int dcModeLevel)
-    {
-        var tracker = new TrackingShaderPackService();
-        var cards = new List<GameCardViewModel>
-        {
-            CreateCard("GameA", GameStatus.Installed, GameStatus.Installed, hasDcRecord: true, hasRsRecord: true),
-            CreateCard("GameB", GameStatus.Installed, GameStatus.NotInstalled, hasDcRecord: true),
-            CreateCard("GameC", GameStatus.NotInstalled, GameStatus.Installed, hasRsRecord: true),
-            CreateCard("GameD"),
-        };
-
-        var vm = CreateViewModelWithCards(tracker, cards);
-        vm.DcModeLevel = dcModeLevel;
-
-        vm.ApplyDcModeSwitch(dcModeLevel);
-
-        AssertNoShaderMethodsCalled(tracker, $"ApplyDcModeSwitch with dcModeLevel={dcModeLevel}");
-    }
-
-    // ── ApplyDcModeSwitchForCard tests ───────────────────────────────────────
-
-    /// <summary>
-    /// After <c>ApplyDcModeSwitchForCard</c> for a game with both DC and RS installed,
-    /// no <c>IShaderPackService</c> methods shall be called.
-    ///
-    /// **Validates: Requirements 5.2, 5.4**
-    /// </summary>
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    public void ApplyDcModeSwitchForCard_NeverCallsShaderMethods(int dcModeLevel)
-    {
-        var tracker = new TrackingShaderPackService();
-        var card = CreateCard("TargetGame", GameStatus.Installed, GameStatus.Installed,
-            hasDcRecord: true, hasRsRecord: true);
-        var cards = new List<GameCardViewModel> { card };
-
-        var vm = CreateViewModelWithCards(tracker, cards);
-        vm.DcModeLevel = dcModeLevel;
-
-        vm.ApplyDcModeSwitchForCard("TargetGame", card.PerGameDcMode);
-
-        AssertNoShaderMethodsCalled(tracker, $"ApplyDcModeSwitchForCard with dcModeLevel={dcModeLevel}");
-    }
-
-    /// <summary>
-    /// Per-game DC mode override also must not trigger shader operations.
-    ///
-    /// **Validates: Requirements 5.2, 5.4**
-    /// </summary>
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    public void ApplyDcModeSwitchForCard_WithPerGameOverride_NeverCallsShaderMethods(int perGameLevel)
-    {
-        var tracker = new TrackingShaderPackService();
-        var card = CreateCard("OverrideGame", GameStatus.Installed, GameStatus.Installed,
-            hasDcRecord: true, hasRsRecord: true, perGameDcMode: perGameLevel);
-        var cards = new List<GameCardViewModel> { card };
-
-        var vm = CreateViewModelWithCards(tracker, cards);
-        vm.DcModeLevel = 0; // global is off, per-game overrides
-
-        vm.ApplyDcModeSwitchForCard("OverrideGame", perGameLevel);
-
-        AssertNoShaderMethodsCalled(tracker, $"ApplyDcModeSwitchForCard with perGameDcMode={perGameLevel}");
-    }
-
-    // ── Assertion helper ─────────────────────────────────────────────────────
-
-    private static void AssertNoShaderMethodsCalled(TrackingShaderPackService tracker, string context)
-    {
-        Assert.False(tracker.SyncDcFolderCalled,
-            $"SyncDcFolder should NOT be called during {context}");
-        Assert.False(tracker.SyncGameFolderCalled,
-            $"SyncGameFolder should NOT be called during {context}");
-        Assert.False(tracker.RemoveFromGameFolderCalled,
-            $"RemoveFromGameFolder should NOT be called during {context}");
-        Assert.False(tracker.DeployToDcFolderCalled,
-            $"DeployToDcFolder should NOT be called during {context}");
-        Assert.False(tracker.RestoreOriginalIfPresentCalled,
-            $"RestoreOriginalIfPresent should NOT be called during {context}");
-    }
-
-    // ── Tracking IShaderPackService ──────────────────────────────────────────
+    // ── Tracking IShaderPackService ───────────────────────────────────────────
 
     private class TrackingShaderPackService : IShaderPackService
     {
+        public bool RemoveFromGameFolderCalled { get; private set; }
+        public string? RemoveFromGameFolderDir { get; private set; }
         public bool SyncDcFolderCalled { get; private set; }
         public bool SyncGameFolderCalled { get; private set; }
-        public bool RemoveFromGameFolderCalled { get; private set; }
-        public bool DeployToDcFolderCalled { get; private set; }
         public bool RestoreOriginalIfPresentCalled { get; private set; }
+        public bool DeployToDcFolderCalled { get; private set; }
 
         public IReadOnlyList<(string Id, string DisplayName, ShaderPackService.PackCategory Category)> AvailablePacks { get; } =
             new List<(string, string, ShaderPackService.PackCategory)>();
 
         public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-
-        public void DeployToDcFolder()
-            => DeployToDcFolderCalled = true;
-
+        public void DeployToDcFolder() => DeployToDcFolderCalled = true;
         public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
 
         public void RemoveFromGameFolder(string gameDir)
-            => RemoveFromGameFolderCalled = true;
+        {
+            RemoveFromGameFolderCalled = true;
+            RemoveFromGameFolderDir = gameDir;
+        }
 
         public bool IsManagedByRdxc(string gameDir) => false;
-
-        public void RestoreOriginalIfPresent(string gameDir)
-            => RestoreOriginalIfPresentCalled = true;
+        public void RestoreOriginalIfPresent(string gameDir) => RestoreOriginalIfPresentCalled = true;
 
         public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null)
             => SyncDcFolderCalled = true;
@@ -267,7 +224,7 @@ public class DcModeSwitchNoShaderTests : IDisposable
             IEnumerable<string>? selectedPackIds = null) { }
     }
 
-    // ── Minimal stubs (same pattern as TestHelpers) ──────────────────────────
+    // ── Minimal stubs ────────────────────────────────────────────────────────
 
     private class StubModInstallService : IModInstallService
     {
