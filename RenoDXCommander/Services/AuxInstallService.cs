@@ -515,7 +515,7 @@ public class AuxInstallService : IAuxInstallService
     /// <summary>Writes a parsed INI structure back to a file.</summary>
     private static void WriteIni(string path, Dictionary<string, OrderedDict> ini)
     {
-        using var writer = new StreamWriter(path, append: false, encoding: new System.Text.UTF8Encoding(true));
+        using var writer = new StreamWriter(path, append: false, encoding: new System.Text.UTF8Encoding(false));
 
         // Write the anonymous section first (keys before any [section])
         if (ini.TryGetValue("", out var anon) && anon.Count > 0)

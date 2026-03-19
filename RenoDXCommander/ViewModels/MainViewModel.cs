@@ -3089,6 +3089,7 @@ public partial class MainViewModel : ObservableObject
             List<DetectedGame> detectedGames;
             Dictionary<string, bool> addonCache;
             bool wikiFetchFailed = false;
+            Task rsTask = Task.CompletedTask; // hoisted so we can defer the await until after cards display
 
             // Merge hidden/favourite from library file with any already loaded from settings.json
             if (savedLib?.HiddenGames != null)
@@ -3119,7 +3120,7 @@ public partial class MainViewModel : ObservableObject
                 var lumaTask     = _lumaService.FetchCompletedModsAsync();
                 var manifestTask = _manifestService.FetchAsync();
                 var detectTask   = Task.Run(DetectAllGamesDeduped);
-                var rsTask       = Task.Run(async () => {
+                rsTask           = Task.Run(async () => {
                     try { await _rsUpdateService.EnsureLatestAsync(); }
                     catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] ReShade update task failed — {ex.Message}"); }
                 });
@@ -3131,8 +3132,7 @@ public partial class MainViewModel : ObservableObject
                 try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; CrashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
                 try { await lumaTask; } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
                 try { _manifest = await manifestTask; } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
-                await rsTask;
-                AuxInstallService.SyncReShadeToDisplayCommander();
+                // rsTask + SyncReShadeToDisplayCommander deferred until after cards display
 
                 _allMods      = !wikiFetchFailed ? wikiTask.Result.Mods : new();
                 _genericNotes = !wikiFetchFailed ? wikiTask.Result.GenericNotes : new();
@@ -3169,7 +3169,7 @@ public partial class MainViewModel : ObservableObject
                 var lumaTask     = _lumaService.FetchCompletedModsAsync();
                 var manifestTask = _manifestService.FetchAsync();
                 var detectTask   = Task.Run(DetectAllGamesDeduped);
-                var rsTask       = Task.Run(async () => {
+                rsTask           = Task.Run(async () => {
                     try { await _rsUpdateService.EnsureLatestAsync(); }
                     catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] ReShade update task failed — {ex.Message}"); }
                 });
@@ -3181,8 +3181,7 @@ public partial class MainViewModel : ObservableObject
                 try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; CrashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
                 try { await lumaTask; } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
                 try { _manifest = await manifestTask; } catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
-                await rsTask;
-                AuxInstallService.SyncReShadeToDisplayCommander();
+                // rsTask + SyncReShadeToDisplayCommander deferred until after cards display
 
                 _allMods      = !wikiFetchFailed ? wikiTask.Result.Mods : new();
                 _genericNotes = !wikiFetchFailed ? wikiTask.Result.GenericNotes : new();
@@ -3274,20 +3273,28 @@ public partial class MainViewModel : ObservableObject
             _filterViewModel.UpdateCounts();
             _filterViewModel.ApplyFilter();
 
-            // Sync shaders to all installed locations to reflect current selection.
-            // Wait for shader packs to be downloaded/extracted first (backwards compat:
-            // ensures games with RS/DC installed get shaders even if they were installed
-            // by an older version that didn't deploy shaders on install).
-            if (_shaderPackReadyTask != null)
+            // ── Deferred background work: ReShade staging + shader sync ──────────────
+            // These are not needed for card display, so we run them after the UI is ready.
+            // rsTask (ReShade download/staging) was started earlier but not awaited.
+            // _shaderPackReadyTask (shader pack download) was started in MainWindow constructor.
+            _ = Task.Run(async () =>
             {
-                try { await _shaderPackReadyTask; }
-                catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] ShaderPackReady failed — {ex.Message}"); }
-            }
+                try
+                {
+                    // Wait for ReShade staging to finish, then sync to DC folder
+                    await rsTask;
+                    AuxInstallService.SyncReShadeToDisplayCommander();
+                }
+                catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] Deferred ReShade sync failed — {ex.Message}"); }
 
-            // Runs on a background thread — never blocks the UI.
-            SubStatusText = "Deploying shaders to installed games...";
-            _ = Task.Run(() =>
-            {
+                // Wait for shader packs to be downloaded/extracted
+                if (_shaderPackReadyTask != null)
+                {
+                    try { await _shaderPackReadyTask; }
+                    catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] ShaderPackReady failed — {ex.Message}"); }
+                }
+
+                // Deploy shaders to all installed game locations
                 try
                 {
                     foreach (var card in _allCards)
@@ -3299,7 +3306,6 @@ public partial class MainViewModel : ObservableObject
                             : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
                         bool dcInstalled = card.DcStatus == GameStatus.Installed || card.DcStatus == GameStatus.UpdateAvailable;
 
-                        // Resolve effective selection: per-game override wins, otherwise global
                         var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
 
                         if (rsInstalled || dcInstalled)
@@ -3308,14 +3314,10 @@ public partial class MainViewModel : ObservableObject
                         }
                     }
                 }
-                catch (Exception ex)
-                { CrashReporter.Log($"[MainViewModel.InitializeAsync] SyncShaders failed — {ex.Message}"); }
+                catch (Exception ex) { CrashReporter.Log($"[MainViewModel.InitializeAsync] SyncShaders failed — {ex.Message}"); }
                 finally
                 {
-                    DispatcherQueue?.TryEnqueue(() =>
-                    {
-                        SubStatusText = "";
-                    });
+                    DispatcherQueue?.TryEnqueue(() => { SubStatusText = ""; });
                 }
             });
 

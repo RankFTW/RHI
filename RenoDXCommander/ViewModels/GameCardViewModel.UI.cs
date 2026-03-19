@@ -219,10 +219,7 @@ public partial class GameCardViewModel
     public Visibility IsHiddenVisibility         => IsHidden ? Visibility.Visible : Visibility.Collapsed;
     public Visibility IsNotHiddenVisibility      => IsHidden ? Visibility.Collapsed : Visibility.Visible;
     public Visibility NameLinkVisibility         => HasNameUrl ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility NoModVisibility            => (Mod == null && string.IsNullOrEmpty(InstalledAddonFileName)
-                                                      && !EffectiveLumaMode
-                                                      && !(LumaFeatureEnabled && IsLumaAvailable))
-                                                      ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility NoModVisibility            => Visibility.Collapsed;
     public Visibility SwitchToLumaVisibility     => (Mod == null && string.IsNullOrEmpty(InstalledAddonFileName)
                                                       && !EffectiveLumaMode
                                                       && LumaFeatureEnabled && IsLumaAvailable)

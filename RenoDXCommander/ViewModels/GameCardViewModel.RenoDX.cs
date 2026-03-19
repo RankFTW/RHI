@@ -14,6 +14,9 @@ public partial class GameCardViewModel
         get
         {
             if (IsInstalling) return "Installing...";
+            // No mod available and nothing manually installed
+            if (Mod?.SnapshotUrl == null && !IsExternalOnly && string.IsNullOrEmpty(InstalledAddonFileName))
+                return "No RenoDX mod available for this game";
             return Status == GameStatus.UpdateAvailable ? "⬆  Update RenoDX"
                  : Status == GameStatus.Installed       ? "↺  Reinstall RenoDX"
                  : "⬇  Install RenoDX";

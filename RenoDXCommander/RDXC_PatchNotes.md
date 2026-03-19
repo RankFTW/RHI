@@ -9,6 +9,14 @@
 **Installed indicator for Nexus/Discord mods**
 - External mods downloaded from Nexus Mods or Discord now show a green "Installed" status label next to the Redownload button in the detail panel when the mod is installed.
 
+### Improvements
+
+**Faster startup**
+- The app now displays game cards significantly faster by deferring ReShade staging and shader deployment to the background. Previously, the ReShade download/staging task and shader pack sync blocked the UI until they completed. Cards now appear as soon as game detection and mod matching finish, while ReShade staging and shader deployment continue silently in the background.
+
+**"No RenoDX mod available" moved to install button**
+- Removed the large purple "No RenoDX mod available" box from game cards. The install button now displays "No RenoDX mod available for this game" inline when no mod exists, keeping the card layout cleaner. If a mod is manually installed, normal install/reinstall labels are shown instead.
+
 ### Bug Fixes
 
 **Vulkan ReShade blocked by DC Mode when DC Mode is off**
@@ -16,6 +24,9 @@
 
 **Update All placing dxgi.dll in Vulkan game folders**
 - Fixed the Update All ReShade batch operation incorrectly running the standard DX ReShade install path for Vulkan games, which copied a `dxgi.dll` into the game directory. Vulkan games are now excluded from Update All ReShade since they use the global implicit layer and don't have per-game DLLs.
+
+**ReShade "unable to save configuration" error**
+- Fixed ReShade showing "Unable to save configuration and/or current preset" errors for `reshade.ini` and `ReShadePreset.ini` in games where these files were deployed by RDXC. The INI writer was emitting a UTF-8 BOM (byte order mark) that ReShade's native parser cannot handle. INI files are now written as plain UTF-8 without BOM.
 
 ---
 
