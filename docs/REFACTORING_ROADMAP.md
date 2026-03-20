@@ -14,13 +14,21 @@
 - Replaced all `.Result` accesses in `MainViewModel.InitializeAsync` with proper `await` on already-awaited tasks
 - Updated `IGameInitializationService` interface to match
 
-## 3. Add logging to bare catch blocks
-- **Status:** Not started
+## ✅ 3. Add logging to bare catch blocks
+- **Status:** Done
 - **Risk:** Low
 - **Impact:** Medium — improves debuggability
-- `GameDetectionService` catches `SecurityException` with no logging
-- `MainViewModel` has `catch { _lumaMods = new(); }` with no logging
-- Add `CrashReporter.Log` calls to all silent catch blocks
+- Added `CrashReporter.Log` calls to all silent catch blocks across 9 production files
+- `GameDetectionService` — 7 bare catches in EA/Ubisoft/Battle.net/Rockstar scan methods
+- `MainViewModel` — 13 bare catches in DetectGraphicsApi, ScanAllExesInDir, game notes lookup, ToggleLumaMode, InitializeAsync lumaMods, SaveLibrary fire-and-forget, addon scan methods
+- `SettingsViewModel` — 2 bare catches in LoadSettingsFile and shader pack deserialization
+- `MainWindow.xaml.cs` — 2 bare catches in Activated handler and Card_PointerPressed
+- `DragDropHandler` — 4 bare catches in archive cleanup, existing addon check, LooksLikeGameRoot, InferGameName
+- `DialogService` — 3 bare catches in patch notes marker cleanup and UE warning dialog
+- `DetailPanelBuilder` — 1 bare catch in reshade.ini delete
+- `CardBuilder` — 2 bare catches in PropertyChanged handlers
+- `ValueConverters` — 1 bare catch in HexColorToBrush
+- Intentionally skipped: `CrashReporter.cs` (must never crash), `WindowStateManager.cs`/`WindowStateService.cs` (best-effort persistence), test files (cleanup code)
 
 ## ✅ 4. Break up MainWindow.xaml.cs (~3400 → ~1187 lines)
 - **Status:** Done

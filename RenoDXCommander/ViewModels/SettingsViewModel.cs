@@ -52,7 +52,7 @@ public partial class SettingsViewModel : ObservableObject
             return JsonSerializer.Deserialize<Dictionary<string, string>>(json)
                    ?? new(StringComparer.OrdinalIgnoreCase);
         }
-        catch { return new(StringComparer.OrdinalIgnoreCase); }
+        catch (Exception ex) { CrashReporter.Log($"[SettingsViewModel.LoadSettingsFile] Failed to load settings — {ex.Message}"); return new(StringComparer.OrdinalIgnoreCase); }
     }
 
     public static void SaveSettingsFile(Dictionary<string, string> settings)
@@ -93,8 +93,9 @@ public partial class SettingsViewModel : ObservableObject
             {
                 SelectedShaderPacks = JsonSerializer.Deserialize<List<string>>(sspVal) ?? new();
             }
-            catch
+            catch (Exception ex)
             {
+                CrashReporter.Log($"[SettingsViewModel.LoadSettingsFromDict] Failed to deserialize SelectedShaderPacks — {ex.Message}");
                 SelectedShaderPacks = new();
             }
         }

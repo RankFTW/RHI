@@ -74,7 +74,7 @@ public class GameDetectionService : IGameDetectionService
                     games.Add(new DetectedGame { Name = name, InstallPath = path, Source = "GOG" });
             }
         }
-        catch (SecurityException) { }
+        catch (SecurityException ex) { CrashReporter.Log($"[GameDetectionService.FindGogGames] Registry access denied — {ex.Message}"); }
         return games;
     }
 
@@ -231,7 +231,7 @@ public class GameDetectionService : IGameDetectionService
                 {
                     if (!Directory.EnumerateFiles(gameDir, "*.exe", SearchOption.TopDirectoryOnly).Any()) continue;
                 }
-                catch { continue; }
+                catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindEaGames] Exe check failed for '{gameDir}' — {ex.Message}"); continue; }
                 var name = Path.GetFileName(gameDir);
                 games.Add(new DetectedGame { Name = name, InstallPath = gameDir, Source = "EA App" });
             }
@@ -388,8 +388,9 @@ public class GameDetectionService : IGameDetectionService
                     {
                         installLocation = package.InstalledLocation?.Path;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        CrashReporter.Log($"[GameDetectionService.FindXboxGames] Package '{package.Id?.Name}' — InstalledLocation inaccessible — {ex.Message}");
                         continue; // Some packages throw on accessing InstalledLocation
                     }
 
@@ -452,8 +453,9 @@ public class GameDetectionService : IGameDetectionService
                     {
                         displayName = package.DisplayName;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        CrashReporter.Log($"[GameDetectionService.FindXboxGames] Package '{package.Id?.Name}' — DisplayName inaccessible — {ex.Message}");
                         displayName = package.Id?.Name ?? "Unknown";
                     }
 
@@ -472,8 +474,9 @@ public class GameDetectionService : IGameDetectionService
                         Source      = "Xbox",
                     });
                 }
-                catch
+                catch (Exception ex)
                 {
+                    CrashReporter.Log($"[GameDetectionService.FindXboxGames] Package '{package.Id?.Name}' error — {ex.Message}");
                     // Individual package errors should not stop enumeration
                 }
             }
@@ -735,7 +738,7 @@ public class GameDetectionService : IGameDetectionService
                             {
                                 if (!HasFileShallow(gameDir, "*.exe", MaxScanDepth / 2)) continue;
                             }
-                            catch { continue; }
+                            catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindUbisoftGames] Exe check failed for '{gameDir}' — {ex.Message}"); continue; }
                             var name = Path.GetFileName(gameDir);
                             if (!string.IsNullOrEmpty(name))
                                 games.Add(new DetectedGame { Name = name, InstallPath = gameDir, Source = "Ubisoft" });
@@ -764,7 +767,7 @@ public class GameDetectionService : IGameDetectionService
                 {
                     if (!HasFileShallow(gameDir, "*.exe", MaxScanDepth / 2)) continue;
                 }
-                catch { continue; }
+                catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindUbisoftGames] Exe check failed for '{gameDir}' — {ex.Message}"); continue; }
                 var name = Path.GetFileName(gameDir);
                 if (!string.IsNullOrEmpty(name))
                     games.Add(new DetectedGame { Name = name, InstallPath = gameDir, Source = "Ubisoft" });
@@ -858,7 +861,7 @@ public class GameDetectionService : IGameDetectionService
                         foreach (var gameDir in Directory.GetDirectories(gamesRoot))
                         {
                             if (!seen.Add(gameDir)) continue;
-                            try { if (!HasFileShallow(gameDir, "*.exe", MaxScanDepth / 2)) continue; } catch { continue; }
+                            try { if (!HasFileShallow(gameDir, "*.exe", MaxScanDepth / 2)) continue; } catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindBattleNetGames] Exe check failed for '{gameDir}' — {ex.Message}"); continue; }
                             var name = Path.GetFileName(gameDir);
                             if (!string.IsNullOrEmpty(name))
                                 games.Add(new DetectedGame { Name = name, InstallPath = gameDir, Source = "Battle.net" });
@@ -890,7 +893,7 @@ public class GameDetectionService : IGameDetectionService
                     || dirName.Equals("Battle.net", StringComparison.OrdinalIgnoreCase)
                     || dirName.Equals("Agent", StringComparison.OrdinalIgnoreCase))
                     continue;
-                try { if (!HasFileShallow(gameDir, "*.exe", MaxScanDepth / 2)) continue; } catch { continue; }
+                try { if (!HasFileShallow(gameDir, "*.exe", MaxScanDepth / 2)) continue; } catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindBattleNetGames] Exe check failed for '{gameDir}' — {ex.Message}"); continue; }
                 games.Add(new DetectedGame { Name = dirName, InstallPath = gameDir, Source = "Battle.net" });
             }
         }
@@ -1000,7 +1003,7 @@ public class GameDetectionService : IGameDetectionService
                     || dirName.Equals("Launcher", StringComparison.OrdinalIgnoreCase)
                     || dirName.Equals("Social Club", StringComparison.OrdinalIgnoreCase))
                     continue;
-                try { if (!HasFileShallow(gameDir, "*.exe", MaxScanDepth / 2)) continue; } catch { continue; }
+                try { if (!HasFileShallow(gameDir, "*.exe", MaxScanDepth / 2)) continue; } catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindRockstarGames] Exe check failed for '{gameDir}' — {ex.Message}"); continue; }
                 games.Add(new DetectedGame { Name = dirName, InstallPath = gameDir, Source = "Rockstar" });
             }
         }

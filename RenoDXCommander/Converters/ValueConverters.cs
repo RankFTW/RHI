@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using RenoDXCommander.Models;
+using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 using Windows.UI;
 
@@ -50,7 +51,7 @@ public class HexColorToBrush : IValueConverter
             var b = System.Convert.ToByte(hex.Length == 8 ? hex[6..8] : hex[4..6], 16);
             return new SolidColorBrush(Color.FromArgb(a, r, g, b));
         }
-        catch { return new SolidColorBrush(Colors.Gray); }
+        catch (Exception ex) { CrashReporter.Log($"[HexColorToBrush.Convert] Failed to parse hex '{v}' — {ex.Message}"); return new SolidColorBrush(Colors.Gray); }
     }
     public object ConvertBack(object v, Type t, object p, string l) => throw new NotImplementedException();
 }

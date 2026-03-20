@@ -1107,7 +1107,7 @@ public partial class MainViewModel : ObservableObject
                     bestDetected = result;
             }
         }
-        catch { /* access denied or other I/O — ignore */ }
+        catch (Exception ex) { _crashReporter.Log($"[MainViewModel.DetectGraphicsApi] DLL scan failed for '{installPath}' — {ex.Message}"); }
 
         // Fallback: scan exe files in common subdirectories (some games put the
         // real exe in Bin64/, x64/, Win64/, etc. while the root has a launcher)
@@ -1138,7 +1138,7 @@ public partial class MainViewModel : ObservableObject
                     return GraphicsApiType.DirectX12;
             }
         }
-        catch { /* access denied or other I/O — ignore */ }
+        catch (Exception ex) { _crashReporter.Log($"[MainViewModel.DetectGraphicsApi] D3D12Core scan failed for '{installPath}' — {ex.Message}"); }
 
         // If the only graphics API found was OpenGL and this is a Unity or Unreal
         // game, override to DX11. Both engines statically link opengl32.dll as a
@@ -1205,7 +1205,7 @@ public partial class MainViewModel : ObservableObject
                 result.UnionWith(apis);
             }
         }
-        catch { /* access denied or other I/O — ignore */ }
+        catch (Exception ex) { CrashReporter.Log($"[MainViewModel.ScanAllExesInDir] Exe scan failed for '{dirPath}' — {ex.Message}"); }
     }
 
     /// <summary>
@@ -1883,11 +1883,11 @@ public partial class MainViewModel : ObservableObject
                 }
             }
         }
-        catch { }
+        catch (Exception ex) { _crashReporter.Log($"[MainViewModel.LookupGenericNotes] Name mapping lookup failed for '{gameName}' — {ex.Message}"); }
         // direct
         if (genericNotes.TryGetValue(gameName, out var v) && !string.IsNullOrEmpty(v)) return v;
         // detection-normalized
-        try { var k = _gameDetectionService.NormalizeName(gameName); if (!string.IsNullOrEmpty(k) && genericNotes.TryGetValue(k, out var v2) && !string.IsNullOrEmpty(v2)) return v2; } catch { }
+        try { var k = _gameDetectionService.NormalizeName(gameName); if (!string.IsNullOrEmpty(k) && genericNotes.TryGetValue(k, out var v2) && !string.IsNullOrEmpty(v2)) return v2; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.LookupGenericNotes] NormalizeName failed for '{gameName}' — {ex.Message}"); }
         // normalized-equality scan
         var tgt = NormalizeForLookup(gameName);
         foreach (var kv in genericNotes)
@@ -2942,7 +2942,7 @@ public partial class MainViewModel : ObservableObject
                                 || fn.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
                                 || fn.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase))
                             {
-                                try { File.Delete(f); } catch { }
+                                try { File.Delete(f); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.ToggleLumaMode] Failed to delete '{f}' — {ex.Message}"); }
                             }
                         }
                     }
@@ -3137,7 +3137,7 @@ public partial class MainViewModel : ObservableObject
                 var wikiResult = !wikiFetchFailed ? await wikiTask : default;
                 _allMods      = wikiResult.Mods ?? new();
                 _genericNotes = wikiResult.GenericNotes ?? new();
-                try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch { _lumaMods = new(); }
+                try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
 
                 var freshGames = freshGamesResult;
                 ApplyGameRenames(freshGames);
@@ -3187,7 +3187,7 @@ public partial class MainViewModel : ObservableObject
                 var wikiResult2 = !wikiFetchFailed ? await wikiTask : default;
                 _allMods      = wikiResult2.Mods ?? new();
                 _genericNotes = wikiResult2.GenericNotes ?? new();
-                try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch { _lumaMods = new(); }
+                try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
                 addonCache    = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
                 _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch complete: {_allMods.Count} mods. Store scan complete: {detectedGames.Count} games.");
             }
@@ -3269,7 +3269,7 @@ public partial class MainViewModel : ObservableObject
             if (SelectedGame != null && !_allCards.Contains(SelectedGame))
                 SelectedGame = null;
 
-            _ = Task.Run(() => { try { SaveLibrary(); } catch { } }); // fire-and-forget — don't block UI
+            _ = Task.Run(() => { try { SaveLibrary(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Fire-and-forget SaveLibrary failed — {ex.Message}"); } }); // fire-and-forget — don't block UI
             _filterViewModel.SetAllCards(_allCards);
             _filterViewModel.UpdateCounts();
             _filterViewModel.ApplyFilter();
@@ -4107,7 +4107,7 @@ public partial class MainViewModel : ObservableObject
                         if (found != null) return Path.GetFileName(found);
                     }
                 }
-                catch { }
+                catch (Exception ex) { CrashReporter.Log($"[MainViewModel.ScanForInstalledAddon] Subdir scan failed for '{sub}' in '{installPath}' — {ex.Message}"); }
             }
 
             // Last resort: depth-limited recursive search (catch and ignore access issues).
@@ -4120,9 +4120,9 @@ public partial class MainViewModel : ObservableObject
                     if (found != null) return found;
                 }
             }
-            catch { /* ignore permission errors */ }
+            catch (Exception ex) { CrashReporter.Log($"[MainViewModel.ScanForInstalledAddon] Recursive scan failed for '{installPath}' — {ex.Message}"); }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[MainViewModel.ScanForInstalledAddon] Top-level scan failed for '{installPath}' — {ex.Message}"); }
         return null;
     }
 
@@ -4141,7 +4141,7 @@ public partial class MainViewModel : ObservableObject
                     if (r != null) return r;
                 }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[MainViewModel.ScanAddonShallow] Scan failed for '{dir}' — {ex.Message}"); }
         return null;
     }
 
@@ -4178,10 +4178,10 @@ public partial class MainViewModel : ObservableObject
                         if (found != null) return Path.GetFileName(found);
                     }
                 }
-                catch { }
+                catch (Exception ex) { CrashReporter.Log($"[MainViewModel.ScanForInstalledAddonQuick] Subdir scan failed for '{sub}' in '{installPath}' — {ex.Message}"); }
             }
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[MainViewModel.ScanForInstalledAddonQuick] Scan failed for '{installPath}' — {ex.Message}"); }
         return null;
     }
 

@@ -354,7 +354,7 @@ public class DragDropHandler
         finally
         {
             // Clean up temp directory
-            try { Directory.Delete(tempDir, recursive: true); } catch { }
+            try { Directory.Delete(tempDir, recursive: true); } catch (Exception ex) { _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] Failed to clean up temp dir '{tempDir}' — {ex.Message}"); }
         }
     }
 
@@ -469,7 +469,7 @@ public class DragDropHandler
             if (existing.Count > 0)
                 existingAddon = string.Join(", ", existing.Select(Path.GetFileName));
         }
-        catch { }
+        catch (Exception ex) { _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Failed to check existing addons in '{installPath}' — {ex.Message}"); }
 
         // Confirmation dialog
         var warningText = $"Are you sure you want to install {addonFileName} for {gameName}?";
@@ -654,7 +654,7 @@ public class DragDropHandler
              || Directory.Exists(Path.Combine(dirPath, "Engine")))
                 return true;
         }
-        catch { /* permission issues — skip silently */ }
+        catch (Exception ex) { CrashReporter.Log($"[DragDropHandler.LooksLikeGameRoot] Permission error checking '{dirPath}' — {ex.Message}"); }
 
         return false;
     }
@@ -697,7 +697,7 @@ public class DragDropHandler
                         return CleanFolderName(candidate);
                 }
             }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[DragDropHandler.InferGameName] Failed to enumerate subdirs in '{gameRoot}' — {ex.Message}"); }
 
             return !string.IsNullOrEmpty(cleanExe) ? cleanExe : CleanFolderName(rootDirName);
         }

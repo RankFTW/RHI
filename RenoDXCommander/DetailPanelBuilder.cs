@@ -852,7 +852,7 @@ public class DetailPanelBuilder
                             _window.ViewModel.UninstallDcCommand.Execute(card);
                         var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
                         if (File.Exists(iniPath))
-                            try { File.Delete(iniPath); } catch { }
+                            try { File.Delete(iniPath); } catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] Failed to delete reshade.ini at '{iniPath}' — {ex.Message}"); }
                         _window.ViewModel.ShaderPackServiceInstance.RemoveFromGameFolder(card.InstallPath);
                         _window.ViewModel.ShaderPackServiceInstance.RestoreOriginalIfPresent(card.InstallPath);
                     }

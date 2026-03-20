@@ -118,7 +118,7 @@ public sealed partial class MainWindow : Window
             this.Activated -= MainWindow_Activated;
             _windowStateManager.TryRestoreWindowBounds();
         }
-        catch { }
+        catch (Exception ex) { _crashReporter.Log($"[MainWindow.MainWindow_Activated] Failed to restore window bounds — {ex.Message}"); }
     }
 
     private void MainWindow_Closed(object? sender, WindowEventArgs e)
@@ -994,7 +994,7 @@ public sealed partial class MainWindow : Window
             card.CardHighlighted = true;
             ViewModel.SelectedGame = card;
         }
-        catch { /* card may have been removed from visual tree */ }
+        catch (Exception ex) { _crashReporter.Log($"[MainWindow.Card_PointerPressed] Error selecting card — {ex.Message}"); }
     }
 
     private void NotesButton_Click(object sender, RoutedEventArgs e)

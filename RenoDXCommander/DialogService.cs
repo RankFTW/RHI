@@ -267,11 +267,11 @@ public class DialogService
                 {
                     if (!old.Equals(markerFile, StringComparison.OrdinalIgnoreCase))
                     {
-                        try { File.Delete(old); } catch { }
+                        try { File.Delete(old); } catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowPatchNotesIfNewVersionAsync] Failed to delete old marker '{old}' — {ex.Message}"); }
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowPatchNotesIfNewVersionAsync] Failed to clean up old patch note markers — {ex.Message}"); }
 
             // If marker exists, this version's notes have already been shown
             if (File.Exists(markerFile)) return;
@@ -574,7 +574,7 @@ public class DialogService
 
             await dlg.ShowAsync();
         }
-        catch { }
+        catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowUeExtendedWarningAsync] Failed to show UE warning for '{card.GameName}' — {ex.Message}"); }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────

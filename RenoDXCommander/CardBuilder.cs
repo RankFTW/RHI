@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
+using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 
 namespace RenoDXCommander;
@@ -354,7 +355,7 @@ public class CardBuilder
                             break;
                     }
                 }
-                catch { /* card may have been removed from visual tree */ }
+                catch (Exception ex) { CrashReporter.Log($"[CardBuilder.BuildGameCard] PropertyChanged update error for '{c.GameName}' — {ex.Message}"); }
             });
         };
 
@@ -555,7 +556,7 @@ public class CardBuilder
                             c.LumaBtnBackground, c.LumaBtnForeground, c.LumaBtnBorderBrush);
                     }
                 }
-                catch { /* flyout may have been closed / card removed */ }
+                catch (Exception ex) { CrashReporter.Log($"[CardBuilder.BuildInstallFlyoutContent] Flyout update error — {ex.Message}"); }
             });
         };
         card.PropertyChanged += handler;
