@@ -385,6 +385,8 @@ public partial class MainViewModel : ObservableObject
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();
         // Wire up DllOverrideService changes to trigger save
         _dllOverrideService.OverridesChanged = () => SaveNameMappings();
+        // Wire up FilterViewModel to persist filter mode on change
+        _filterViewModel.FilterModeChanged = () => SaveNameMappings();
         // Initialize FilterViewModel with the DisplayedGames collection
         _filterViewModel.Initialize(DisplayedGames);
         // Forward FilterViewModel property changes so UI bindings on MainViewModel still work
@@ -1415,7 +1417,8 @@ public partial class MainViewModel : ObservableObject
                 _settingsViewModel,
                 val => DcModeEnabled = val,
                 val => DcDllFileName = val,
-                grid => IsGridLayout = grid);
+                grid => IsGridLayout = grid,
+                val => _filterViewModel.RestoreFilterMode(val));
             _crashReporter.Log("[MainViewModel.LoadNameMappings] Delegated to GameNameService");
         }
         finally
@@ -1820,7 +1823,8 @@ public partial class MainViewModel : ObservableObject
             DcModeEnabled,
             DcDllFileName,
             IsGridLayout,
-            _isLoadingSettings);
+            _isLoadingSettings,
+            _filterViewModel.FilterMode);
     }
 
     private void LoadThemeAndDensity()

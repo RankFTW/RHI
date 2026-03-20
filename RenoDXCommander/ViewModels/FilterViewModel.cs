@@ -22,6 +22,12 @@ public partial class FilterViewModel : ObservableObject
 
     public IReadOnlySet<string> ActiveFilters => _activeFilters;
 
+    /// <summary>
+    /// Callback invoked after FilterMode is updated in SetFilter.
+    /// MainViewModel sets this to trigger SaveNameMappings.
+    /// </summary>
+    public Action? FilterModeChanged { get; set; }
+
     [ObservableProperty] private string _searchQuery = "";
     [ObservableProperty] private string _filterMode = "Detected";
     [ObservableProperty] private bool _showHidden = false;
@@ -90,6 +96,73 @@ public partial class FilterViewModel : ObservableObject
                 FilterMode = string.Join(",", _activeFilters);
             }
         }
+        ApplyFilter();
+        FilterModeChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Restores the filter mode from a persisted string value.
+    /// Validates the input and falls back to "Detected" on any validation failure.
+    /// </summary>
+    public void RestoreFilterMode(string? persisted)
+    {
+        if (string.IsNullOrWhiteSpace(persisted))
+        {
+            RestoreDefault();
+            return;
+        }
+
+        var tokens = persisted.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length == 0)
+        {
+            RestoreDefault();
+            return;
+        }
+
+        bool hasExclusive = false;
+        bool hasCombinable = false;
+
+        foreach (var token in tokens)
+        {
+            if (ExclusiveFilters.Contains(token))
+                hasExclusive = true;
+            else if (CombinableFilters.Contains(token))
+                hasCombinable = true;
+            else
+            {
+                // Unrecognised token
+                RestoreDefault();
+                return;
+            }
+        }
+
+        // Mixed exclusive + combinable is invalid
+        if (hasExclusive && hasCombinable)
+        {
+            RestoreDefault();
+            return;
+        }
+
+        // More than one exclusive filter is invalid
+        if (hasExclusive && tokens.Length > 1)
+        {
+            RestoreDefault();
+            return;
+        }
+
+        _activeFilters.Clear();
+        foreach (var token in tokens)
+            _activeFilters.Add(token);
+
+        FilterMode = string.Join(",", _activeFilters);
+        ApplyFilter();
+    }
+
+    private void RestoreDefault()
+    {
+        _activeFilters.Clear();
+        _activeFilters.Add("Detected");
+        FilterMode = "Detected";
         ApplyFilter();
     }
 

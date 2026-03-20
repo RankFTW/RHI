@@ -76,7 +76,8 @@ public interface IGameNameService
         SettingsViewModel settingsViewModel,
         Action<bool> setDcModeEnabled,
         Action<string> setDcDllFileName,
-        Action<bool> setIsGridLayout);
+        Action<bool> setIsGridLayout,
+        Action<string> setFilterMode);
 
     /// <summary>Persists all settings to disk.</summary>
     void SaveNameMappings(
@@ -85,7 +86,8 @@ public interface IGameNameService
         bool dcModeEnabled,
         string dcDllFileName,
         bool isGridLayout,
-        bool isLoadingSettings);
+        bool isLoadingSettings,
+        string filterMode);
 
     // ── Name mapping CRUD ─────────────────────────────────────────────────────
 

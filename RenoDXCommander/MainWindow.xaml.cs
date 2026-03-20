@@ -161,6 +161,7 @@ public sealed partial class MainWindow : Window
                     {
                         if (!silent) ViewModel.MarkInitialized();
                         TryRestoreSelection();
+                        RefreshFilterButtonStyles();
                     }
                     break;
                 case nameof(ViewModel.StatusText):
@@ -183,6 +184,9 @@ public sealed partial class MainWindow : Window
                     break;
                 case nameof(ViewModel.DcDllFileName):
                     SyncDcDllPickerText();
+                    break;
+                case nameof(ViewModel.FilterMode):
+                    RefreshFilterButtonStyles();
                     break;
             }
         });
@@ -748,8 +752,15 @@ public sealed partial class MainWindow : Window
     {
         if (sender is not Button btn) return;
         ViewModel.SetFilterCommand.Execute(btn.Tag as string ?? "Detected");
+        RefreshFilterButtonStyles();
+    }
 
-        // Style buttons based on active filter set
+    /// <summary>
+    /// Syncs filter tab button styles to match the current ActiveFilters set.
+    /// Called after SetFilter and also when FilterMode changes (e.g. on restore).
+    /// </summary>
+    private void RefreshFilterButtonStyles()
+    {
         var active   = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipActiveBrush]).Color;
         var inactive = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipDefaultBrush]).Color;
         var activeFg   = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.TextPrimaryBrush]).Color;
