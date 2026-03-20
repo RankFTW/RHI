@@ -99,7 +99,7 @@
         <Grid Grid.Row="1">
 
             <!-- Loading overlay -->
-            <StackPanel x:Name="LoadingPanel" VerticalAlignment="Center" HorizontalAlignment="Center"
+            <StackPanel x:Name="LoadingPanel" x:FieldModifier="internal" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Spacing="16" Visibility="Visible" Canvas.ZIndex="10">
                 <ProgressRing x:Name="LoadingRing" IsActive="True" Width="48" Height="48"
                               Foreground="{StaticResource AccentBlueBrush}"/>
@@ -110,7 +110,7 @@
             </StackPanel>
 
             <!--  GAME VIEW PANEL  -->
-            <Grid x:Name="GameViewPanel" Visibility="Collapsed" Background="{StaticResource SurfaceBaseBrush}">
+            <Grid x:Name="GameViewPanel" x:FieldModifier="internal" Visibility="Collapsed" Background="{StaticResource SurfaceBaseBrush}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="300"/>  <!-- Sidebar -->
                     <ColumnDefinition Width="*"/>    <!-- Detail Panel -->
@@ -621,7 +621,7 @@
             </Grid>
 
             <!--  SETTINGS PANEL  -->
-            <Grid x:Name="SettingsPanel" Visibility="Collapsed" Background="{StaticResource SurfaceBaseBrush}">
+            <Grid x:Name="SettingsPanel" x:FieldModifier="internal" Visibility="Collapsed" Background="{StaticResource SurfaceBaseBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -719,7 +719,7 @@
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Preferences" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <ToggleSwitch x:Name="SkipUpdateToggle"
+                                <ToggleSwitch x:Name="SkipUpdateToggle" x:FieldModifier="internal"
                                               Header="Skip update check on launch"
                                               Toggled="SkipUpdateToggle_Toggled"
                                               OnContent="Disabled — RDXC will not check for updates"
@@ -727,7 +727,7 @@
                                               Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
                                            Text="When enabled, RDXC skips the automatic update check that runs on every launch."/>
-                                <ToggleSwitch x:Name="BetaOptInToggle"
+                                <ToggleSwitch x:Name="BetaOptInToggle" x:FieldModifier="internal"
                                               Header="Opt into Betas"
                                               Toggled="BetaOptInToggle_Toggled"
                                               OnContent="Enabled — RDXC will check for beta releases"
@@ -736,7 +736,7 @@
                                 <TextBlock TextWrapping="Wrap" FontSize="11"
                                            Foreground="{StaticResource InlineDescriptionBrush}"
                                            Text="When enabled, RDXC also checks for pre-release beta versions. Stable releases always take priority."/>
-                                <ToggleSwitch x:Name="VerboseLoggingToggle"
+                                <ToggleSwitch x:Name="VerboseLoggingToggle" x:FieldModifier="internal"
                                               Header="Verbose Logging"
                                               Toggled="VerboseLoggingToggle_Toggled"
                                               OnContent="Enabled — all activity logged to rdxc_log.txt"
@@ -792,7 +792,7 @@
                                         <TextBlock FontSize="20" FontWeight="Bold">
                                             <Run Text="RenoDX Commander" Foreground="{StaticResource AccentTealBrush}"/>
                                         </TextBlock>
-                                        <TextBlock x:Name="AboutVersionText" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                        <TextBlock x:Name="AboutVersionText" x:FieldModifier="internal" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                     </StackPanel>
                                 </StackPanel>
 

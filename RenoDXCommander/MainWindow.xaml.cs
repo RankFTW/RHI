@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using RenoDXCommander.Services;
 using Microsoft.UI.Xaml;
@@ -8,8 +7,6 @@ using Microsoft.UI.Xaml.Media;
 using RenoDXCommander.Models;
 using RenoDXCommander.ViewModels;
 using Windows.Storage.Pickers;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using WinRT.Interop;
 
 namespace RenoDXCommander;
@@ -26,6 +23,15 @@ public sealed partial class MainWindow : Window
 
     private readonly CardBuilder _cardBuilder;
     private readonly DetailPanelBuilder _detailPanelBuilder;
+    private readonly OverridesFlyoutBuilder _overridesFlyoutBuilder;
+    private readonly DialogService _dialogService;
+    private readonly SettingsHandler _settingsHandler;
+    private readonly InstallEventHandler _installEventHandler;
+    private readonly WindowStateManager _windowStateManager;
+    private readonly DragDropHandler _dragDropHandler;
+
+    /// <summary>Exposes the detail panel builder for extracted handler classes.</summary>
+    internal DetailPanelBuilder DetailPanelBuilderInstance => _detailPanelBuilder;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -33,6 +39,10 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         _cardBuilder = new CardBuilder(this);
         _detailPanelBuilder = new DetailPanelBuilder(this);
+        _overridesFlyoutBuilder = new OverridesFlyoutBuilder(this);
+        _dialogService = new DialogService(this);
+        _settingsHandler = new SettingsHandler(this);
+        _installEventHandler = new InstallEventHandler(this, PickFolderAsync);
         AuxInstallService.EnsureInisDir();       // create inis folder on first run
         AuxInstallService.EnsureReShadeStaging(); // create staging dir (DLLs downloaded by ReShadeUpdateService)
         Title = "RDXC - RenoDXCommander";
@@ -46,18 +56,12 @@ public sealed partial class MainWindow : Window
         // saved size+position from the previous session, if one exists.
         AppWindow.Resize(new Windows.Graphics.SizeInt32(DefaultWidth, DefaultHeight));
 
-        // Enforce minimum window size via Win32 subclass
-        _hwnd = WindowNative.GetWindowHandle(this);
-        _origWndProc = NativeInterop.GetWindowLongPtr(_hwnd, NativeInterop.GWLP_WNDPROC);
-        _wndProcDelegate = new NativeInterop.WndProcDelegate(WndProc);
-        NativeInterop.SetWindowLongPtr(_hwnd, NativeInterop.GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(_wndProcDelegate));
-
-        // Enable Win32 drag-and-drop (WM_DROPFILES) — required for unpackaged WinUI 3 apps
-        // where the OLE-based AllowDrop/DragOver/Drop events don't fire reliably.
-        NativeInterop.DragAcceptFiles(_hwnd, true);
-        // Allow drag messages through UIPI when running as admin
-        NativeInterop.ChangeWindowMessageFilterEx(_hwnd, NativeInterop.WM_DROPFILES, NativeInterop.MSGFLT_ALLOW, IntPtr.Zero);
-        NativeInterop.ChangeWindowMessageFilterEx(_hwnd, NativeInterop.WM_COPYGLOBALDATA, NativeInterop.MSGFLT_ALLOW, IntPtr.Zero);
+        // Enforce minimum window size and enable Win32 drag-and-drop via WindowStateManager
+        var hwnd = WindowNative.GetWindowHandle(this);
+        _dragDropHandler = new DragDropHandler(this);
+        _windowStateManager = new WindowStateManager(this, hwnd, _dragDropHandler);
+        _windowStateManager.InstallWndProcSubclass();
+        _windowStateManager.EnableDragAccept();
 
         // Set the title bar icon (unpackaged apps need this explicitly)
         AppWindow.SetIcon("icon.ico");
@@ -81,8 +85,8 @@ public sealed partial class MainWindow : Window
         // Restore window size & position after activation (ensure HWND is ready)
         this.Activated += MainWindow_Activated;
         ViewModel.SetDispatcher(DispatcherQueue);
-        ViewModel.ConfirmForeignDxgiOverwrite = ShowForeignDxgiConfirmDialogAsync;
-        ViewModel.ConfirmForeignWinmmOverwrite = ShowForeignWinmmConfirmDialogAsync;
+        ViewModel.ConfirmForeignDxgiOverwrite = _dialogService.ShowForeignDxgiConfirmDialogAsync;
+        ViewModel.ConfirmForeignWinmmOverwrite = _dialogService.ShowForeignWinmmConfirmDialogAsync;
         ViewModel.ShowShaderSelectionPicker = async (current) =>
             await ShaderPopupHelper.ShowAsync(Content.XamlRoot, ViewModel.ShaderPackServiceInstance, current, ShaderPopupHelper.PopupContext.Global);
         ViewModel.ShowPerGameShaderSelectionPicker = async (gameName, current) =>
@@ -110,7 +114,7 @@ public sealed partial class MainWindow : Window
         {
             // Only restore once
             this.Activated -= MainWindow_Activated;
-            TryRestoreWindowBounds();
+            _windowStateManager.TryRestoreWindowBounds();
         }
         catch { }
     }
@@ -125,7 +129,7 @@ public sealed partial class MainWindow : Window
             _detailPanelBuilder.CurrentDetailCard.PropertyChanged -= _detailPanelBuilder.DetailCard_PropertyChanged;
 
         ViewModel.SaveSettingsPublic(); // persist GridLayout and other settings
-        SaveWindowBounds();
+        _windowStateManager.SaveWindowBounds();
     }
 
     // ── ViewModel → UI sync ───────────────────────────────────────────────────────
@@ -280,199 +284,21 @@ public sealed partial class MainWindow : Window
     }
 
     private async Task<bool> ShowForeignDxgiConfirmDialogAsync(GameCardViewModel card, string dxgiPath)
-    {
-        var fileSize = new System.IO.FileInfo(dxgiPath).Length;
-        var sizeKB   = fileSize / 1024.0;
-
-        var dlg = new ContentDialog
-        {
-            Title               = "⚠ Unknown dxgi.dll Detected",
-            Content             = new TextBlock
-            {
-                TextWrapping = TextWrapping.Wrap,
-                Foreground   = Brush(ResourceKeys.AccentAmberBrush),
-                FontSize     = 13,
-                Text         = $"A dxgi.dll file was found in:\n{card.InstallPath}\n\n" +
-                               $"File size: {sizeKB:N0} KB\n\n" +
-                               "RDXC cannot identify this file as ReShade or Display Commander. " +
-                               "It may belong to another mod (e.g. DXVK, Special K, ENB).\n\n" +
-                               "Overwriting it may break the existing mod. Do you want to proceed?",
-            },
-            PrimaryButtonText   = "Overwrite",
-            CloseButtonText     = "Cancel",
-            XamlRoot            = Content.XamlRoot,
-            Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
-        };
-
-        var result = await dlg.ShowAsync();
-        return result == ContentDialogResult.Primary;
-    }
+        => await _dialogService.ShowForeignDxgiConfirmDialogAsync(card, dxgiPath);
 
     private async Task<bool> ShowForeignWinmmConfirmDialogAsync(GameCardViewModel card, string winmmPath)
-    {
-        var fileSize = new System.IO.FileInfo(winmmPath).Length;
-        var sizeKB   = fileSize / 1024.0;
-
-        var dlg = new ContentDialog
-        {
-            Title               = "⚠ Unknown winmm.dll Detected",
-            Content             = new TextBlock
-            {
-                TextWrapping = TextWrapping.Wrap,
-                Foreground   = Brush(ResourceKeys.AccentAmberBrush),
-                FontSize     = 13,
-                Text         = $"A winmm.dll file was found in:\n{card.InstallPath}\n\n" +
-                               $"File size: {sizeKB:N0} KB\n\n" +
-                               "RDXC cannot identify this file as Display Commander. " +
-                               "It may belong to another mod or DLL injector.\n\n" +
-                               "Overwriting it may break the existing mod. Do you want to proceed?",
-            },
-            PrimaryButtonText   = "Overwrite",
-            CloseButtonText     = "Cancel",
-            XamlRoot            = Content.XamlRoot,
-            Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
-        };
-
-        var result = await dlg.ShowAsync();
-        return result == ContentDialogResult.Primary;
-    }
+        => await _dialogService.ShowForeignWinmmConfirmDialogAsync(card, winmmPath);
 
     // ── Auto-Update ────────────────────────────────────────────────────────────
 
     private async Task CheckForAppUpdateAsync()
-    {
-        try
-        {
-            if (ViewModel.SkipUpdateCheck)
-            {
-                CrashReporter.Log("[MainWindow.CheckForAppUpdateAsync] Update check skipped (disabled in settings)");
-                return;
-            }
-
-            // Wait until the XamlRoot is available (window needs to be fully loaded for dialogs)
-            while (Content.XamlRoot == null)
-                await Task.Delay(200);
-
-            var updateInfo = await ViewModel.UpdateServiceInstance.CheckForUpdateAsync(ViewModel.BetaOptIn);
-            if (updateInfo == null) return; // up to date or check failed
-
-            // Show update dialog on UI thread
-            DispatcherQueue.TryEnqueue(async () =>
-            {
-                await ShowUpdateDialogAsync(updateInfo);
-            });
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.CheckForAppUpdateAsync] Update check error — {ex.Message}");
-        }
-    }
+        => await _dialogService.CheckForAppUpdateAsync();
 
     private async Task ShowUpdateDialogAsync(UpdateInfo updateInfo)
-    {
-        var dlg = new ContentDialog
-        {
-            Title   = "🔄 Update Available",
-            Content = new StackPanel
-            {
-                Spacing = 8,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        TextWrapping = TextWrapping.Wrap,
-                        Foreground   = Brush(ResourceKeys.TextSecondaryBrush),
-                        FontSize     = 14,
-                        Text         = $"A new version of RDXC is available!\n\n" +
-                                       $"Installed:  v{updateInfo.CurrentVersion}\n" +
-                                       $"Available:  v{updateInfo.DisplayVersion ?? updateInfo.RemoteVersion.ToString()}\n\n" +
-                                       "Would you like to update now?",
-                    },
-                },
-            },
-            PrimaryButtonText   = "Update Now",
-            CloseButtonText     = "Later",
-            XamlRoot            = Content.XamlRoot,
-            Background          = Brush(ResourceKeys.SurfaceRaisedBrush),
-        };
-
-        var result = await dlg.ShowAsync();
-        if (result != ContentDialogResult.Primary) return; // user chose "Later"
-
-        // User chose "Update Now" — show downloading dialog
-        await DownloadAndInstallUpdateAsync(updateInfo);
-    }
+        => await _dialogService.ShowUpdateDialogAsync(updateInfo);
 
     private async Task DownloadAndInstallUpdateAsync(UpdateInfo updateInfo)
-    {
-        // Create a non-dismissable progress dialog
-        var progressText = new TextBlock
-        {
-            Text         = "Starting download...",
-            TextWrapping = TextWrapping.Wrap,
-            Foreground   = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize     = 13,
-        };
-        var progressBar = new ProgressBar
-        {
-            Minimum = 0,
-            Maximum = 100,
-            Value   = 0,
-            Height  = 6,
-            IsIndeterminate = false,
-        };
-        var downloadDlg = new ContentDialog
-        {
-            Title   = "⬇ Downloading Update",
-            Content = new StackPanel
-            {
-                Spacing = 12,
-                Children = { progressText, progressBar },
-            },
-            XamlRoot   = Content.XamlRoot,
-            Background = Brush(ResourceKeys.SurfaceRaisedBrush),
-            // No buttons — dialog will be closed programmatically when download completes
-        };
-
-        // Show dialog non-blocking
-        var dialogTask = downloadDlg.ShowAsync();
-
-        var progress = new Progress<(string msg, double pct)>(p =>
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                progressText.Text = p.msg;
-                progressBar.Value = p.pct;
-            });
-        });
-
-        var installerPath = await ViewModel.UpdateServiceInstance.DownloadInstallerAsync(
-            updateInfo.DownloadUrl, progress);
-
-        if (string.IsNullOrEmpty(installerPath))
-        {
-            // Download failed — update dialog to show error with a Close button
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                progressText.Text = "❌ Download failed. Please try again later or download manually from GitHub.";
-                progressBar.Value = 0;
-                downloadDlg.CloseButtonText = "Close";
-            });
-            return;
-        }
-
-        // Close the progress dialog
-        downloadDlg.Hide();
-
-        // Launch installer and close RDXC
-        ViewModel.UpdateServiceInstance.LaunchInstallerAndExit(installerPath, () =>
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                this.Close();
-            });
-        });
-    }
+        => await _dialogService.DownloadAndInstallUpdateAsync(updateInfo);
 
     private void LayoutToggle_Click(object sender, RoutedEventArgs e)
     {
@@ -497,7 +323,7 @@ public sealed partial class MainWindow : Window
 
     // ── Card Grid rendering (Tasks 6.2–6.4) ──────────────────────────────────────
 
-    private void RebuildCardGrid()
+    internal void RebuildCardGrid()
     {
         CardGridPanel.Children.Clear();
         foreach (var card in ViewModel.DisplayedGames)
@@ -788,706 +614,9 @@ public sealed partial class MainWindow : Window
     }
 
     private void OpenOverridesFlyout(GameCardViewModel card, FrameworkElement anchor)
-    {
-        var gameName = card.GameName;
-        bool isLumaMode = ViewModel.IsLumaEnabled(gameName);
+        => _overridesFlyoutBuilder.OpenOverridesFlyout(card, anchor);
 
-        var panel = new StackPanel { Spacing = 8, Width = 560 };
 
-        // ── Title ──
-        panel.Children.Add(new TextBlock
-        {
-            Text = "Overrides",
-            FontSize = 13,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-        });
-
-        // ── Game name + Wiki name ──
-        var gameNameBox = new TextBox
-        {
-            Header = "Game name (editable)",
-            Text = gameName,
-            FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x1A, 0x20, 0x30)),
-            Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0xE2, 0xE8, 0xFF)),
-            BorderBrush = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x28, 0x32, 0x40)),
-            Padding = new Thickness(8, 4, 8, 4),
-        };
-        var wikiNameBox = new TextBox
-        {
-            Header = "Wiki mod name",
-            PlaceholderText = "Exact wiki name",
-            Text = ViewModel.GetNameMapping(gameName) ?? "",
-            FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x1A, 0x20, 0x30)),
-            Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0xE2, 0xE8, 0xFF)),
-            BorderBrush = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x28, 0x32, 0x40)),
-            Padding = new Thickness(8, 4, 8, 4),
-        };
-        var originalStoreName = ViewModel.GetOriginalStoreName(gameName);
-
-        // Mutable captured name so rename handler can update it for subsequent handlers
-        var capturedName = gameName;
-
-        var nameResetBtn = new Button
-        {
-            Content = "↩ Reset",
-            FontSize = 11,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            Padding = new Thickness(8, 4, 8, 4),
-            Background = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x1A, 0x20, 0x30)),
-            Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x6B, 0x7A, 0x8E)),
-            BorderBrush = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x28, 0x32, 0x40)),
-        };
-        ToolTipService.SetToolTip(nameResetBtn,
-            "Reset game name back to auto-detected and clear wiki name mapping.");
-        nameResetBtn.Click += (s, ev) =>
-        {
-            var resetName = (originalStoreName ?? gameName).Trim();
-            gameNameBox.Text = resetName;
-            wikiNameBox.Text = "";
-
-            // Persist wiki mapping removal
-            if (ViewModel.GetNameMapping(capturedName) != null)
-                ViewModel.RemoveNameMapping(capturedName);
-
-            // Persist rename back to original if name was changed
-            if (!resetName.Equals(capturedName, StringComparison.OrdinalIgnoreCase))
-            {
-                ViewModel.RenameGame(capturedName, resetName);
-                capturedName = resetName;
-                _pendingReselect = resetName;
-                DispatcherQueue.TryEnqueue(TryRestoreSelection);
-                card.NotifyAll();
-            }
-        };
-
-        var nameGrid = new Grid { ColumnSpacing = 8 };
-        nameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        nameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        nameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        Grid.SetColumn(gameNameBox, 0);
-        Grid.SetColumn(wikiNameBox, 1);
-        Grid.SetColumn(nameResetBtn, 2);
-        nameGrid.Children.Add(gameNameBox);
-        nameGrid.Children.Add(wikiNameBox);
-        nameGrid.Children.Add(nameResetBtn);
-        panel.Children.Add(nameGrid);
-        panel.Children.Add(MakeSeparator());
-
-        // ── Auto-save: Game name on Enter ──
-        gameNameBox.KeyDown += (s, e) =>
-        {
-            if (e.Key != Windows.System.VirtualKey.Enter) return;
-            var det = gameNameBox.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(det)) return;
-            if (det.Equals(capturedName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.RenameGame(capturedName, det);
-            _pendingReselect = det;
-            DispatcherQueue.TryEnqueue(TryRestoreSelection);
-            card.NotifyAll();
-            capturedName = det;
-        };
-
-        // ── Auto-save: Wiki name on Enter ──
-        wikiNameBox.KeyDown += (s, e) =>
-        {
-            if (e.Key != Windows.System.VirtualKey.Enter) return;
-            var key = wikiNameBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(key))
-            {
-                var existing = ViewModel.GetNameMapping(capturedName);
-                if (!key.Equals(existing, StringComparison.OrdinalIgnoreCase))
-                    ViewModel.AddNameMapping(capturedName, key);
-            }
-            else
-            {
-                if (ViewModel.GetNameMapping(capturedName) != null)
-                    ViewModel.RemoveNameMapping(capturedName);
-            }
-        };
-
-        // ── DC Mode + Shader Mode (side by side) ──
-        string? currentDcMode = ViewModel.GetPerGameDcModeOverride(gameName);
-        var globalDcLabel = ViewModel.DcModeEnabled ? $"On — {ViewModel.DcDllFileName}" : "Off";
-        var dcModeOptions = new[] { $"Global ({globalDcLabel})", "Off", "Custom" };
-        var dcModeCombo = new ComboBox
-        {
-            ItemsSource = dcModeOptions,
-            SelectedIndex = currentDcMode switch { "Off" => 1, "Custom" => 2, _ => 0 },
-            FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Header = "DC Mode",
-        };
-        ToolTipService.SetToolTip(dcModeCombo,
-            "Global = use the Settings DC Mode. Off = always use normal naming. " +
-            "Custom = use a custom DLL filename.");
-
-        // Subscribe to DcModeEnabled/DcDllFileName changes to keep the "Global (...)" label current
-        System.ComponentModel.PropertyChangedEventHandler dcModeLevelHandler = (sender, e) =>
-        {
-            if (e.PropertyName != "DcModeEnabled" && e.PropertyName != "DcDllFileName") return;
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                var updatedLabel = ViewModel.DcModeEnabled ? $"On — {ViewModel.DcDllFileName}" : "Off";
-                var updatedOptions = new[] { $"Global ({updatedLabel})", "Off", "Custom" };
-                var savedIndex = dcModeCombo.SelectedIndex;
-                dcModeCombo.ItemsSource = updatedOptions;
-                dcModeCombo.SelectedIndex = savedIndex;
-            });
-        };
-        ViewModel.PropertyChanged += dcModeLevelHandler;
-
-        // ── Auto-save: DC Mode on selection change ──
-        dcModeCombo.SelectionChanged += (s, e) =>
-        {
-            string? newDcMode = dcModeCombo.SelectedIndex switch { 1 => "Off", 2 => "Custom", _ => (string?)null };
-            var currentOverride = ViewModel.GetPerGameDcModeOverride(capturedName);
-            if (newDcMode != currentOverride)
-            {
-                var previousDcMode = currentOverride;
-                ViewModel.SetPerGameDcModeOverride(capturedName, newDcMode);
-                ViewModel.ApplyDcModeSwitchForCard(capturedName, previousDcMode);
-            }
-        };
-
-        string currentShaderMode = ViewModel.GetPerGameShaderMode(gameName);
-        bool isGlobalShaders = currentShaderMode != "Select";
-        var shaderToggle = new ToggleSwitch
-        {
-            Header = "Global Shaders",
-            IsOn = isGlobalShaders,
-            OnContent = "Using global shader selection",
-            OffContent = "Using per-game shader selection",
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-        };
-        ToolTipService.SetToolTip(shaderToggle,
-            "On = use the global shader selection from Settings. Off = pick specific shader packs for this game.");
-
-        var selectShadersBtn = new Button
-        {
-            Content = "Select Shaders",
-            FontSize = 12,
-            Padding = new Thickness(12, 7, 12, 7),
-            CornerRadius = new CornerRadius(8),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            IsEnabled = !isGlobalShaders,
-            Background = Brush(isGlobalShaders ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush),
-            Foreground = Brush(isGlobalShaders ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush),
-            BorderBrush = Brush(isGlobalShaders ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-        };
-        ToolTipService.SetToolTip(selectShadersBtn, "Choose which shader packs to use for this game");
-
-        shaderToggle.Toggled += (s, ev) =>
-        {
-            bool global = shaderToggle.IsOn;
-            selectShadersBtn.IsEnabled = !global;
-            selectShadersBtn.Background = Brush(global ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush);
-            selectShadersBtn.Foreground = Brush(global ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush);
-            selectShadersBtn.BorderBrush = Brush(global ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush);
-
-            // Auto-save: persist shader mode immediately
-            var newMode = global ? "Global" : "Select";
-            if (newMode != ViewModel.GetPerGameShaderMode(capturedName))
-            {
-                ViewModel.SetPerGameShaderMode(capturedName, newMode);
-                if (newMode == "Global")
-                    ViewModel.GameNameServiceInstance.PerGameShaderSelection.Remove(capturedName);
-                ViewModel.DeployShadersForCard(capturedName);
-            }
-        };
-
-        selectShadersBtn.Click += async (s, ev) =>
-        {
-            List<string>? current = ViewModel.GameNameServiceInstance.PerGameShaderSelection.TryGetValue(gameName, out var existing)
-                ? existing
-                : ViewModel.Settings.SelectedShaderPacks;
-            var result = await ViewModel.ShowPerGameShaderSelectionPicker?.Invoke(gameName, current)!;
-            if (result != null)
-            {
-                ViewModel.GameNameServiceInstance.PerGameShaderSelection[gameName] = result;
-                ViewModel.DeployShadersForCard(capturedName);
-            }
-        };
-
-        var modeGrid = new Grid { ColumnSpacing = 8 };
-        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        Grid.SetColumn(dcModeCombo, 0);
-        Grid.SetColumn(shaderToggle, 1);
-        modeGrid.Children.Add(dcModeCombo);
-        modeGrid.Children.Add(shaderToggle);
-        panel.Children.Add(modeGrid);
-        panel.Children.Add(selectShadersBtn);
-        panel.Children.Add(MakeSeparator());
-
-        // ── DLL naming override ──
-        bool isDllOverride = ViewModel.HasDllOverride(gameName);
-        var existingCfg = ViewModel.GetDllOverride(gameName);
-        bool is32Bit = card.Is32Bit;
-        var defaultRsName = is32Bit ? "ReShade32.dll" : "ReShade64.dll";
-        var defaultDcName = is32Bit ? "zzz_display_commander.addon32" : "zzz_display_commander.addon64";
-
-        var dllOverrideToggle = new ToggleSwitch
-        {
-            Header = "DLL naming override",
-            IsOn = isDllOverride,
-            IsEnabled = !isLumaMode,
-            OnContent = "Custom filenames enabled",
-            OffContent = "Using default filenames",
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-        };
-        ToolTipService.SetToolTip(dllOverrideToggle,
-            "Override the filenames ReShade and Display Commander are installed as. " +
-            "When enabled, existing RS/DC files are renamed to the custom filenames. " +
-            "The game is automatically excluded from DC Mode and Update All.");
-        var existingRsName = existingCfg?.ReShadeFileName ?? "";
-        var existingDcName = existingCfg?.DcFileName ?? "";
-        // Helper: rebuild one ComboBox's ItemsSource excluding the name chosen in the other box
-        bool _updatingDllItems = false;
-        void SyncDllNameItems(ComboBox box, ComboBox otherBox)
-        {
-            if (_updatingDllItems) return;
-            _updatingDllItems = true;
-            var otherSelected = (otherBox.SelectedItem as string ?? otherBox.Text ?? "").Trim();
-            var filtered = string.IsNullOrWhiteSpace(otherSelected)
-                ? DllOverrideConstants.CommonDllNames
-                : DllOverrideConstants.CommonDllNames.Where(n => !n.Equals(otherSelected, StringComparison.OrdinalIgnoreCase)).ToArray();
-            var currentSel = box.SelectedItem as string ?? box.Text;
-            box.ItemsSource = filtered;
-            if (!string.IsNullOrWhiteSpace(currentSel))
-            {
-                var match = filtered.FirstOrDefault(n => n.Equals(currentSel.Trim(), StringComparison.OrdinalIgnoreCase));
-                if (match != null) box.SelectedItem = match;
-                else box.Text = currentSel;
-            }
-            _updatingDllItems = false;
-        }
-
-        var rsNameBox = new ComboBox
-        {
-            IsEditable = true,
-            PlaceholderText = defaultRsName,
-            Header = "ReShade filename",
-            FontSize = 12,
-            IsEnabled = isDllOverride,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ItemsSource = DllOverrideConstants.CommonDllNames,
-        };
-        if (!string.IsNullOrEmpty(existingRsName))
-        {
-            if (DllOverrideConstants.CommonDllNames.Contains(existingRsName, StringComparer.OrdinalIgnoreCase))
-                rsNameBox.SelectedItem = DllOverrideConstants.CommonDllNames.First(n => n.Equals(existingRsName, StringComparison.OrdinalIgnoreCase));
-            else
-            {
-                var capturedRs = existingRsName;
-                rsNameBox.Loaded += (s, e) => rsNameBox.Text = capturedRs;
-            }
-        }
-        var dcNameBox = new ComboBox
-        {
-            IsEditable = true,
-            PlaceholderText = defaultDcName,
-            Header = "DC filename",
-            FontSize = 12,
-            IsEnabled = isDllOverride,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ItemsSource = DllOverrideConstants.CommonDllNames,
-        };
-        if (!string.IsNullOrEmpty(existingDcName))
-        {
-            if (DllOverrideConstants.CommonDllNames.Contains(existingDcName, StringComparer.OrdinalIgnoreCase))
-                dcNameBox.SelectedItem = DllOverrideConstants.CommonDllNames.First(n => n.Equals(existingDcName, StringComparison.OrdinalIgnoreCase));
-            else
-            {
-                var capturedDc = existingDcName;
-                dcNameBox.Loaded += (s, e) => dcNameBox.Text = capturedDc;
-            }
-        }
-        // Initial cross-filter so each box hides the other's current selection
-        SyncDllNameItems(dcNameBox, rsNameBox);
-        SyncDllNameItems(rsNameBox, dcNameBox);
-        dllOverrideToggle.Toggled += (s, ev) =>
-        {
-            rsNameBox.IsEnabled = dllOverrideToggle.IsOn;
-            dcNameBox.IsEnabled = dllOverrideToggle.IsOn;
-
-            // Auto-save: persist DLL override state immediately
-            bool nowOn = dllOverrideToggle.IsOn;
-            bool wasOn = ViewModel.HasDllOverride(capturedName);
-            if (nowOn == wasOn) return;
-            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
-            if (nowOn)
-            {
-                var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
-                var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-                var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-                var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-                ViewModel.EnableDllOverride(targetCard, rsName, dcName);
-            }
-            else
-            {
-                ViewModel.DisableDllOverride(targetCard);
-            }
-        };
-
-        var dllNameGrid = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 4, 0, 0) };
-        dllNameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        dllNameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        Grid.SetColumn(rsNameBox, 0);
-        Grid.SetColumn(dcNameBox, 1);
-        dllNameGrid.Children.Add(rsNameBox);
-        dllNameGrid.Children.Add(dcNameBox);
-
-        var dllGroupPanel = new StackPanel { Spacing = 4 };
-        dllGroupPanel.Children.Add(dllOverrideToggle);
-        dllGroupPanel.Children.Add(dllNameGrid);
-        var dllGroupBorder = new Border
-        {
-            Child = dllGroupPanel,
-            Background = Brush(ResourceKeys.SurfaceOverlayBrush),
-            BorderBrush = Brush(ResourceKeys.BorderSubtleBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(12, 10, 12, 12),
-        };
-        panel.Children.Add(dllGroupBorder);
-        panel.Children.Add(MakeSeparator());
-
-        // ── Auto-save: RS/DC name boxes on Enter ──
-        rsNameBox.KeyDown += (s, e) =>
-        {
-            if (e.Key != Windows.System.VirtualKey.Enter) return;
-            if (!dllOverrideToggle.IsOn) return;
-            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
-            var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
-            var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            SyncDllNameItems(dcNameBox, rsNameBox);
-        };
-        dcNameBox.KeyDown += (s, e) =>
-        {
-            if (e.Key != Windows.System.VirtualKey.Enter) return;
-            if (!dllOverrideToggle.IsOn) return;
-            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
-            var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
-            var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            SyncDllNameItems(rsNameBox, dcNameBox);
-        };
-        // ── Auto-save: RS/DC name boxes on dropdown selection ──
-        rsNameBox.SelectionChanged += (s, e) =>
-        {
-            if (_updatingDllItems) return;
-            if (!dllOverrideToggle.IsOn) return;
-            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
-            var rsName = rsNameBox.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(rsName)) return;
-            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            SyncDllNameItems(dcNameBox, rsNameBox);
-        };
-        dcNameBox.SelectionChanged += (s, e) =>
-        {
-            if (_updatingDllItems) return;
-            if (!dllOverrideToggle.IsOn) return;
-            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
-            var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
-            var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-            var dcName = dcNameBox.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(dcName)) return;
-            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            SyncDllNameItems(rsNameBox, dcNameBox);
-        };
-
-        // ── Global update inclusion + Wiki exclusion (inline row) ──
-        var rsToggle = new ToggleSwitch
-        {
-            Header = "ReShade",
-            IsOn = !ViewModel.IsUpdateAllExcludedReShade(gameName),
-            OnContent = "Yes",
-            OffContent = "No",
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 11,
-            MinWidth = 0,
-        };
-        var dcToggle = new ToggleSwitch
-        {
-            Header = "DC",
-            IsOn = !ViewModel.IsUpdateAllExcludedDc(gameName),
-            OnContent = "Yes",
-            OffContent = "No",
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 11,
-            MinWidth = 0,
-        };
-        var rdxToggle = new ToggleSwitch
-        {
-            Header = "RenoDX",
-            IsOn = !ViewModel.IsUpdateAllExcludedRenoDx(gameName),
-            OnContent = "Yes",
-            OffContent = "No",
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 11,
-            MinWidth = 0,
-        };
-
-        var rsBorder = new Border
-        {
-            Child = rsToggle,
-            BorderBrush = Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(8, 6, 8, 6),
-        };
-        var dcBorder = new Border
-        {
-            Child = dcToggle,
-            BorderBrush = Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(8, 6, 8, 6),
-        };
-        var rdxBorder = new Border
-        {
-            Child = rdxToggle,
-            BorderBrush = Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(8, 6, 8, 6),
-        };
-
-        var toggleRow = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 12,
-        };
-        toggleRow.Children.Add(rsBorder);
-        toggleRow.Children.Add(dcBorder);
-        toggleRow.Children.Add(rdxBorder);
-
-        // ── Auto-save: Update inclusion toggles ──
-        rsToggle.Toggled += (s, ev) =>
-        {
-            if (!rsToggle.IsOn != ViewModel.IsUpdateAllExcludedReShade(capturedName))
-                ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
-        };
-        dcToggle.Toggled += (s, ev) =>
-        {
-            if (!dcToggle.IsOn != ViewModel.IsUpdateAllExcludedDc(capturedName))
-                ViewModel.ToggleUpdateAllExclusionDc(capturedName);
-        };
-        rdxToggle.Toggled += (s, ev) =>
-        {
-            if (!rdxToggle.IsOn != ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
-                ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
-        };
-
-        var wikiExcludeToggle = new ToggleSwitch
-        {
-            Header = "Wiki exclusion",
-            IsOn = ViewModel.IsWikiExcluded(gameName),
-            OnContent = "Excluded from wiki lookups",
-            OffContent = "Included in wiki lookups",
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-        };
-        ToolTipService.SetToolTip(wikiExcludeToggle,
-            "When enabled, this game will not be looked up on the RenoDX wiki. " +
-            "Useful for games that share a name with an unrelated wiki entry.");
-
-        // ── Auto-save: Wiki exclusion toggle ──
-        wikiExcludeToggle.Toggled += (s, ev) =>
-        {
-            if (wikiExcludeToggle.IsOn != ViewModel.IsWikiExcluded(capturedName))
-                ViewModel.ToggleWikiExclusion(capturedName);
-        };
-
-        // Build inline row Grid: [Global update inclusion | divider | Wiki exclusion]
-        var inlineRowGrid = new Grid();
-        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        // Column 0: Global update inclusion
-        var leftSection = new StackPanel { Spacing = 0 };
-        leftSection.Children.Add(new TextBlock
-        {
-            Text = "Global update inclusion",
-            FontSize = 12,
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            Margin = new Thickness(0, 0, 0, 8),
-        });
-        leftSection.Children.Add(toggleRow);
-        Grid.SetColumn(leftSection, 0);
-
-        // Column 1: Vertical divider
-        var divider = new Border
-        {
-            Width = 1,
-            Background = Brush(ResourceKeys.BorderDefaultBrush),
-            VerticalAlignment = VerticalAlignment.Stretch,
-            Margin = new Thickness(12, 0, 12, 0),
-        };
-        Grid.SetColumn(divider, 1);
-
-        // Column 2: Wiki exclusion
-        var rightSection = new StackPanel { Spacing = 0 };
-        rightSection.Children.Add(wikiExcludeToggle);
-        Grid.SetColumn(rightSection, 2);
-
-        inlineRowGrid.Children.Add(leftSection);
-        inlineRowGrid.Children.Add(divider);
-        inlineRowGrid.Children.Add(rightSection);
-
-        panel.Children.Add(inlineRowGrid);
-        panel.Children.Add(MakeSeparator());
-
-        // ── Reset Overrides button ──
-        var resetOverridesBtn = new Button
-        {
-            Content = "Reset Overrides",
-            FontSize = 12,
-            Padding = new Thickness(16, 8, 16, 8),
-            Background = Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            CornerRadius = new CornerRadius(8),
-            Margin = new Thickness(0, 8, 0, 0),
-        };
-        resetOverridesBtn.Click += (s, ev) =>
-        {
-            // Reset all controls to defaults
-            gameNameBox.Text = originalStoreName ?? gameName;
-            wikiNameBox.Text = "";
-            dcModeCombo.SelectedIndex = 0;
-            shaderToggle.IsOn = true;
-            dllOverrideToggle.IsOn = false;
-            rsToggle.IsOn = true;
-            dcToggle.IsOn = true;
-            rdxToggle.IsOn = true;
-            wikiExcludeToggle.IsOn = false;
-
-            // Persist all reset values immediately
-            var resetName = (originalStoreName ?? gameName).Trim();
-            bool nameChanged = !resetName.Equals(capturedName, StringComparison.OrdinalIgnoreCase);
-            if (nameChanged && !string.IsNullOrWhiteSpace(resetName))
-            {
-                ViewModel.RenameGame(capturedName, resetName);
-                capturedName = resetName;
-            }
-
-            // Remove wiki mapping
-            if (ViewModel.GetNameMapping(capturedName) != null)
-                ViewModel.RemoveNameMapping(capturedName);
-
-            // DC mode → Global (null)
-            if (ViewModel.GetPerGameDcModeOverride(capturedName) != null)
-            {
-                var prev = ViewModel.GetPerGameDcModeOverride(capturedName);
-                ViewModel.SetPerGameDcModeOverride(capturedName, null);
-                ViewModel.ApplyDcModeSwitchForCard(capturedName, prev);
-            }
-
-            // Shader mode → Global
-            if (ViewModel.GetPerGameShaderMode(capturedName) != "Global")
-            {
-                ViewModel.SetPerGameShaderMode(capturedName, "Global");
-                ViewModel.GameNameServiceInstance.PerGameShaderSelection.Remove(capturedName);
-                ViewModel.DeployShadersForCard(capturedName);
-            }
-
-            // Disable DLL override
-            if (ViewModel.HasDllOverride(capturedName))
-            {
-                var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                if (targetCard != null)
-                    ViewModel.DisableDllOverride(targetCard);
-            }
-
-            // Include all in Update All
-            if (ViewModel.IsUpdateAllExcludedReShade(capturedName))
-                ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
-            if (ViewModel.IsUpdateAllExcludedDc(capturedName))
-                ViewModel.ToggleUpdateAllExclusionDc(capturedName);
-            if (ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
-                ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
-
-            // Disable wiki exclusion
-            if (ViewModel.IsWikiExcluded(capturedName))
-                ViewModel.ToggleWikiExclusion(capturedName);
-
-            CrashReporter.Log($"[MainWindow.OpenOverridesFlyout] Overrides reset for: {capturedName}");
-
-            // Only reselect/NotifyAll/RebuildCardGrid if game name actually changed
-            if (nameChanged)
-            {
-                _pendingReselect = capturedName;
-                DispatcherQueue.TryEnqueue(TryRestoreSelection);
-                card.NotifyAll();
-                if (ViewModel.IsGridLayout)
-                    RebuildCardGrid();
-            }
-        };
-        panel.Children.Add(resetOverridesBtn);
-
-        // Wrap in a ScrollViewer for long content
-        var scrollViewer = new ScrollViewer
-        {
-            Content = panel,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            MaxHeight = 800,
-        };
-
-        var flyoutStyle = new Style(typeof(FlyoutPresenter));
-        flyoutStyle.Setters.Add(new Setter(FlyoutPresenter.MaxWidthProperty, 640));
-        flyoutStyle.Setters.Add(new Setter(FlyoutPresenter.MaxHeightProperty, 800));
-
-        var flyout = new Flyout
-        {
-            Content = scrollViewer,
-            Placement = FlyoutPlacementMode.BottomEdgeAlignedRight,
-            FlyoutPresenterStyle = flyoutStyle,
-        };
-
-        // On flyout closed, clean up DcModeLevel subscription
-        flyout.Closed += (s, ev) =>
-        {
-            // Unsubscribe from DcModeLevel changes to avoid leaked subscriptions
-            ViewModel.PropertyChanged -= dcModeLevelHandler;
-        };
-
-        flyout.ShowAt(anchor);
-    }
 
     /// <summary>Scrolls the card grid to bring the given card into view and highlights it.</summary>
     private void ScrollToCard(GameCardViewModel target)
@@ -1505,143 +634,22 @@ public sealed partial class MainWindow : Window
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.NavigateToSettingsCommand.Execute(null);
-        GameViewPanel.Visibility = Visibility.Collapsed;
-        SettingsPanel.Visibility = Visibility.Visible;
-        LoadingPanel.Visibility = Visibility.Collapsed;
-        // Sync toggle state with ViewModel
-        SkipUpdateToggle.IsOn = ViewModel.SkipUpdateCheck;
-        BetaOptInToggle.IsOn = ViewModel.BetaOptIn;
-        VerboseLoggingToggle.IsOn = ViewModel.VerboseLogging;
-        AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  HDR mod manager by RankFTW";
-    }
+        => _settingsHandler.SettingsButton_Click(sender, e);
 
     private void SkipUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.SkipUpdateCheck = toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
+        => _settingsHandler.SkipUpdateToggle_Toggled(sender, e);
 
     private void BetaOptInToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.BetaOptIn = toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
+        => _settingsHandler.BetaOptInToggle_Toggled(sender, e);
 
     private void VerboseLoggingToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.VerboseLogging = toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    private static readonly string PatchNotesDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander");
+        => _settingsHandler.VerboseLoggingToggle_Toggled(sender, e);
 
     private async Task ShowPatchNotesIfNewVersionAsync()
-    {
-        try
-        {
-            // Wait until XamlRoot is ready
-            while (Content.XamlRoot == null)
-                await Task.Delay(200);
-
-            // Wait for UI to settle and any update dialog to finish
-            await Task.Delay(1500);
-
-            var current = ViewModel.UpdateServiceInstance.CurrentVersion;
-            var versionStr = $"{current.Major}.{current.Minor}.{current.Build}";
-            var markerFile = Path.Combine(PatchNotesDir, $"PatchNotes-{versionStr}.txt");
-
-            // Clean up markers from older versions
-            try
-            {
-                Directory.CreateDirectory(PatchNotesDir);
-                foreach (var old in Directory.EnumerateFiles(PatchNotesDir, "PatchNotes-*.txt"))
-                {
-                    if (!old.Equals(markerFile, StringComparison.OrdinalIgnoreCase))
-                    {
-                        try { File.Delete(old); } catch { }
-                    }
-                }
-            }
-            catch { }
-
-            // If marker exists, this version's notes have already been shown
-            if (File.Exists(markerFile)) return;
-
-            // Write the marker file FIRST — ensures we never show again
-            try
-            {
-                Directory.CreateDirectory(PatchNotesDir);
-                File.WriteAllText(markerFile, $"Patch notes shown for v{versionStr}");
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MainWindow.ShowPatchNotesIfNewVersionAsync] Failed to write patch notes marker — {ex.Message}");
-            }
-
-            DispatcherQueue.TryEnqueue(async () =>
-            {
-                try
-                {
-                    await ShowPatchNotesDialogAsync();
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[MainWindow.ShowPatchNotesIfNewVersionAsync] Patch notes dialog failed — {ex.Message}");
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.ShowPatchNotesIfNewVersionAsync] Patch notes check error — {ex.Message}");
-        }
-    }
+        => await _dialogService.ShowPatchNotesIfNewVersionAsync();
 
     private async Task ShowPatchNotesDialogAsync()
-    {
-        var notes = ViewModels.MainViewModel.GetRecentPatchNotes(3);
-
-        var markdown = new CommunityToolkit.WinUI.Controls.MarkdownTextBlock
-        {
-            Text = notes,
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-            UseEmphasisExtras = true,
-            UseListExtras = true,
-            UseTaskLists = true,
-        };
-
-        var scrollViewer = new ScrollViewer
-        {
-            MaxHeight = 500,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = markdown,
-        };
-
-        var dlg = new ContentDialog
-        {
-            Title              = "📋 Patch Notes — What's New",
-            Content            = scrollViewer,
-            CloseButtonText    = "Close",
-            XamlRoot           = Content.XamlRoot,
-            Background         = Brush(ResourceKeys.SurfaceToolbarBrush),
-        };
-
-        await dlg.ShowAsync();
-    }
+        => await _dialogService.ShowPatchNotesDialogAsync();
 
     private async void PatchNotesLink_Click(object sender, RoutedEventArgs e)
     {
@@ -1656,32 +664,13 @@ public sealed partial class MainWindow : Window
     }
 
     private void OpenLogsFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var logsDir = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "RenoDXCommander", "logs");
-        System.IO.Directory.CreateDirectory(logsDir);
-        CrashReporter.Log("[MainWindow.OpenLogsFolder_Click] User opened logs folder from About panel");
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logsDir) { UseShellExecute = true });
-    }
+        => _settingsHandler.OpenLogsFolder_Click(sender, e);
 
     private void OpenDownloadsFolder_Click(object sender, RoutedEventArgs e)
-    {
-        System.IO.Directory.CreateDirectory(ModInstallService.DownloadCacheDir);
-        CrashReporter.Log("[MainWindow.OpenDownloadsFolder_Click] User opened downloads cache folder from About panel");
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ModInstallService.DownloadCacheDir) { UseShellExecute = true });
-    }
+        => _settingsHandler.OpenDownloadsFolder_Click(sender, e);
 
     private void SettingsBack_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.NavigateToGameViewCommand.Execute(null);
-        SettingsPanel.Visibility = Visibility.Collapsed;
-        // Restore whichever panel was showing before Settings was opened
-        if (ViewModel.IsLoading)
-            LoadingPanel.Visibility = Visibility.Visible;
-        else
-            GameViewPanel.Visibility = Visibility.Visible;
-    }
+        => _settingsHandler.SettingsBack_Click(sender, e);
 
     private void DetailScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -1741,701 +730,14 @@ public sealed partial class MainWindow : Window
         ViewModel.AddManualGameCommand.Execute(game);
     }
 
-    // ── Drag-and-drop game add ────────────────────────────────────────────────
+    // ── Drag-and-drop (delegated to DragDropHandler) ────────────────────────────
 
     private void Grid_DragOver(object sender, DragEventArgs e)
-    {
-        if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
-        {
-            e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy;
-            e.DragUIOverride.Caption = "Drop to add game, install addon, or extract archive";
-            e.DragUIOverride.IsCaptionVisible = true;
-            e.DragUIOverride.IsGlyphVisible = true;
-        }
-    }
+        => _dragDropHandler.Grid_DragOver(sender, e);
 
-    private static readonly HashSet<string> ArchiveExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".zip", ".7z", ".rar", ".tar", ".gz", ".bz2", ".xz", ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz",
-    };
+    private void Grid_Drop(object sender, DragEventArgs e)
+        => _dragDropHandler.Grid_Drop(sender, e);
 
-    private async void Grid_Drop(object sender, DragEventArgs e)
-    {
-        if (!e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
-            return;
-
-        var items = await e.DataView.GetStorageItemsAsync();
-        foreach (var item in items)
-        {
-            if (item is not Windows.Storage.StorageFile file) continue;
-
-            var ext = file.FileType?.ToLowerInvariant() ?? "";
-
-            // Handle .addon64 / .addon32 files — install RenoDX addon to a game
-            if (ext is ".addon64" or ".addon32")
-            {
-                try
-                {
-                    await ProcessDroppedAddon(file.Path);
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[MainWindow.Grid_Drop] DragDrop addon error processing '{file.Path}' — {ex.Message}");
-                }
-                continue;
-            }
-
-            // Handle archive files — extract and look for .addon64/.addon32 inside
-            if (ArchiveExtensions.Contains(ext))
-            {
-                try
-                {
-                    await ProcessDroppedArchive(file.Path);
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[MainWindow.Grid_Drop] DragDrop archive error processing '{file.Path}' — {ex.Message}");
-                }
-                continue;
-            }
-
-            // Handle .exe files — add game
-            if (!ext.Equals(".exe", StringComparison.OrdinalIgnoreCase)) continue;
-
-            var exePath = file.Path;
-            CrashReporter.Log($"[MainWindow.Grid_Drop] Received exe '{exePath}'");
-
-            try
-            {
-                await ProcessDroppedExe(exePath);
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MainWindow.Grid_Drop] Error processing '{exePath}' — {ex.Message}");
-            }
-        }
-    }
-
-    private async Task ProcessDroppedExe(string exePath)
-    {
-        var exeDir  = Path.GetDirectoryName(exePath)!;
-        var exeName = Path.GetFileNameWithoutExtension(exePath);
-
-        // ── Determine the game root folder ────────────────────────────────────
-        // Walk up from the exe to find the likely game root.
-        // For Unreal: the exe is usually in GameRoot\Binaries\Win64 or \WinGDK
-        // For Unity: the exe is usually in the game root next to UnityPlayer.dll
-        // For others: the exe folder or its parent is the game root
-        var gameRoot = InferGameRoot(exeDir);
-        CrashReporter.Log($"[MainWindow.ProcessDroppedExe] Inferred game root '{gameRoot}' from exe dir '{exeDir}'");
-
-        // ── Detect engine and correct install path ────────────────────────────
-        var (installPath, engine) = ViewModel.GameDetectionServiceInstance.DetectEngineAndPath(gameRoot);
-
-        // ── Infer game name ───────────────────────────────────────────────────
-        var gameName = InferGameName(exePath, gameRoot, engine);
-        CrashReporter.Log($"[MainWindow.ProcessDroppedExe] Inferred name '{gameName}', engine={engine}");
-
-        // ── Check for duplicates (by install path or normalized name) ─────────
-        var normName = ViewModel.GameDetectionServiceInstance.NormalizeName(gameName);
-        var normInstall = installPath.TrimEnd(Path.DirectorySeparatorChar).ToLowerInvariant();
-
-        var existingCard = ViewModel.AllCards.FirstOrDefault(c =>
-            ViewModel.GameDetectionServiceInstance.NormalizeName(c.GameName) == normName
-            || (!string.IsNullOrEmpty(c.InstallPath)
-                && c.InstallPath.TrimEnd(Path.DirectorySeparatorChar)
-                    .Equals(normInstall, StringComparison.OrdinalIgnoreCase)));
-
-        if (existingCard != null)
-        {
-            var dupDialog = new ContentDialog
-            {
-                Title           = "Game Already Exists",
-                Content         = $"\"{existingCard.GameName}\" is already in your library at:\n{existingCard.InstallPath}",
-                CloseButtonText = "OK",
-                XamlRoot        = Content.XamlRoot,
-                Background      = Brush(ResourceKeys.SurfaceToolbarBrush),
-            };
-            await dupDialog.ShowAsync();
-            return;
-        }
-
-        // ── Confirm with user (allow name edit) ──────────────────────────────
-        var nameBox = new TextBox { Text = gameName, Width = 380 };
-        var engineLabel = engine switch
-        {
-            EngineType.Unreal       => "Unreal Engine",
-            EngineType.UnrealLegacy => "Unreal Engine (Legacy)",
-            EngineType.Unity        => "Unity",
-            _                       => "Unknown"
-        };
-
-        var confirmPanel = new StackPanel { Spacing = 8 };
-        confirmPanel.Children.Add(new TextBlock
-        {
-            Text = "Game name:", Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-        });
-        confirmPanel.Children.Add(nameBox);
-        confirmPanel.Children.Add(new TextBlock
-        {
-            Text = $"Engine: {engineLabel}\nInstall path: {installPath}",
-            TextWrapping = TextWrapping.Wrap,
-            Foreground   = Brush(ResourceKeys.TextTertiaryBrush),
-            FontSize     = 12, Margin = new Thickness(0, 6, 0, 0),
-        });
-
-        var confirmDialog = new ContentDialog
-        {
-            Title             = "➕ Add Dropped Game",
-            Content           = confirmPanel,
-            PrimaryButtonText = "Add Game",
-            CloseButtonText   = "Cancel",
-            XamlRoot          = Content.XamlRoot,
-            Background        = Brush(ResourceKeys.SurfaceToolbarBrush),
-        };
-        var result = await confirmDialog.ShowAsync();
-        if (result != ContentDialogResult.Primary) return;
-
-        var finalName = nameBox.Text.Trim();
-        if (string.IsNullOrEmpty(finalName)) return;
-
-        CrashReporter.Log($"[MainWindow.ProcessDroppedExe] Adding game '{finalName}' at '{installPath}'");
-        var game = new DetectedGame
-        {
-            Name = finalName, InstallPath = gameRoot, Source = "Manual", IsManuallyAdded = true
-        };
-        ViewModel.AddManualGameCommand.Execute(game);
-    }
-
-    /// <summary>
-    /// <summary>
-    /// Handles a dropped archive file (.zip, .7z, .rar, etc.) — extracts it using 7-Zip,
-    /// looks for .addon64/.addon32 files inside, and passes them to ProcessDroppedAddon.
-    /// </summary>
-    private async Task ProcessDroppedArchive(string archivePath)
-    {
-        var archiveName = Path.GetFileName(archivePath);
-        CrashReporter.Log($"[MainWindow.ProcessDroppedArchive] Received '{archiveName}'");
-
-        var sevenZipExe = App.Services.GetRequiredService<ISevenZipExtractor>().Find7ZipExe();
-        if (sevenZipExe == null)
-        {
-            var errDialog = new ContentDialog
-            {
-                Title = "7-Zip Not Found",
-                Content = "Cannot extract archive — 7-Zip was not found. Please reinstall RDXC.",
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot,
-            };
-            await errDialog.ShowAsync();
-            return;
-        }
-
-        // Extract entire archive to a temp directory
-        var tempDir = Path.Combine(Path.GetTempPath(), $"rdxc_archive_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempDir);
-
-        try
-        {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = sevenZipExe,
-                Arguments = $"x \"{archivePath}\" -o\"{tempDir}\" -y",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-
-            CrashReporter.Log($"[MainWindow.ProcessDroppedArchive] Extracting with {psi.FileName} {psi.Arguments}");
-
-            using var proc = System.Diagnostics.Process.Start(psi);
-            if (proc == null)
-            {
-                CrashReporter.Log("[MainWindow.ProcessDroppedArchive] Failed to start 7z process");
-                return;
-            }
-
-            // Read output asynchronously to prevent deadlock
-            var stdoutTask = proc.StandardOutput.ReadToEndAsync();
-            var stderrTask = proc.StandardError.ReadToEndAsync();
-            proc.WaitForExit(60_000); // 60 second timeout for large archives
-
-            var stderr = await stderrTask;
-            if (!string.IsNullOrWhiteSpace(stderr))
-                CrashReporter.Log($"[MainWindow.ProcessDroppedArchive] 7z stderr: {stderr}");
-
-            if (proc.ExitCode != 0)
-            {
-                CrashReporter.Log($"[MainWindow.ProcessDroppedArchive] 7z exit code {proc.ExitCode}");
-                var failDialog = new ContentDialog
-                {
-                    Title = "Archive Extraction Failed",
-                    Content = $"Failed to extract '{archiveName}'. The file may be corrupt or in an unsupported format.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.Content.XamlRoot,
-                };
-                await failDialog.ShowAsync();
-                return;
-            }
-
-            // Search for .addon64 and .addon32 files in the extracted contents
-            var addonFiles = Directory.GetFiles(tempDir, "*.addon64", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(tempDir, "*.addon32", SearchOption.AllDirectories))
-                .ToList();
-
-            if (addonFiles.Count == 0)
-            {
-                CrashReporter.Log($"[MainWindow.ProcessDroppedArchive] No addon files found in '{archiveName}'");
-                var noAddonDialog = new ContentDialog
-                {
-                    Title = "No Addon Found",
-                    Content = $"No .addon64 or .addon32 files were found inside '{archiveName}'.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.Content.XamlRoot,
-                };
-                await noAddonDialog.ShowAsync();
-                return;
-            }
-
-            CrashReporter.Log($"[MainWindow.ProcessDroppedArchive] Found {addonFiles.Count} addon file(s): [{string.Join(", ", addonFiles.Select(Path.GetFileName))}]");
-
-            // If multiple addons found, let the user pick; otherwise use the single one
-            string addonToInstall;
-            if (addonFiles.Count == 1)
-            {
-                addonToInstall = addonFiles[0];
-            }
-            else
-            {
-                // Show a picker dialog for multiple addons
-                var combo = new ComboBox
-                {
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    PlaceholderText = "Select addon to install...",
-                };
-                foreach (var af in addonFiles)
-                    combo.Items.Add(new ComboBoxItem { Content = Path.GetFileName(af), Tag = af });
-                combo.SelectedIndex = 0;
-
-                var pickDialog = new ContentDialog
-                {
-                    Title = $"Multiple Addons in '{archiveName}'",
-                    Content = combo,
-                    PrimaryButtonText = "Install",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = this.Content.XamlRoot,
-                };
-                if (await pickDialog.ShowAsync() != ContentDialogResult.Primary) return;
-                addonToInstall = (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? addonFiles[0];
-            }
-
-            // Pass the extracted addon to the existing install flow
-            await ProcessDroppedAddon(addonToInstall);
-        }
-        finally
-        {
-            // Clean up temp directory
-            try { Directory.Delete(tempDir, recursive: true); } catch { }
-        }
-    }
-
-    /// <summary>
-    /// Handles a dropped .addon64/.addon32 file — prompts the user to pick a game
-    /// and installs the addon to that game's folder after confirmation.
-    /// </summary>
-    private async Task ProcessDroppedAddon(string addonPath)
-    {
-        var addonFileName = Path.GetFileName(addonPath);
-        CrashReporter.Log($"[MainWindow.ProcessDroppedAddon] Received '{addonFileName}'");
-
-        // Build a list of all detected games to choose from
-        var cards = ViewModel.AllCards?.ToList() ?? new();
-        if (cards.Count == 0)
-        {
-            var noGamesDialog = new ContentDialog
-            {
-                Title = "No Games Available",
-                Content = "No games are currently detected. Add a game first.",
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot,
-            };
-            await noGamesDialog.ShowAsync();
-            return;
-        }
-
-        // Build a ComboBox for game selection
-        var combo = new ComboBox
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            PlaceholderText = "Select a game...",
-        };
-
-        // Sort alphabetically and populate
-        var sortedCards = cards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
-        foreach (var card in sortedCards)
-            combo.Items.Add(new ComboBoxItem { Content = card.GameName, Tag = card });
-
-        // Try to auto-select a game by matching addon filename to game names
-        // e.g. "renodx-re9requiem.addon64" might fuzzy-match a game with "requiem" in the name
-        var addonNameLower = Path.GetFileNameWithoutExtension(addonFileName).ToLowerInvariant();
-        for (int i = 0; i < sortedCards.Count; i++)
-        {
-            // Check if the addon name contains a significant part of the game name
-            string[] gameWords = sortedCards[i].GameName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (gameWords.Length >= 2)
-            {
-                bool matched = false;
-                foreach (var w in gameWords)
-                {
-                    if (w.Length > 3 && addonNameLower.Contains(w.ToLowerInvariant()))
-                    {
-                        matched = true;
-                        break;
-                    }
-                }
-                if (matched)
-                {
-                    combo.SelectedIndex = i;
-                    break;
-                }
-            }
-        }
-
-        var panel = new StackPanel { Spacing = 12 };
-        panel.Children.Add(new TextBlock
-        {
-            Text = $"Install {addonFileName} to a game folder.",
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = 13,
-            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-        });
-        panel.Children.Add(combo);
-
-        var pickDialog = new ContentDialog
-        {
-            Title = "📦 Install RenoDX Addon",
-            Content = panel,
-            PrimaryButtonText = "Next",
-            CloseButtonText = "Cancel",
-            XamlRoot = this.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var pickResult = await pickDialog.ShowAsync();
-        if (pickResult != ContentDialogResult.Primary) return;
-
-        if (combo.SelectedItem is not ComboBoxItem selected || selected.Tag is not GameCardViewModel targetCard)
-        {
-            var noSelection = new ContentDialog
-            {
-                Title = "No Game Selected",
-                Content = "Please select a game to install the addon to.",
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot,
-            };
-            await noSelection.ShowAsync();
-            return;
-        }
-
-        var gameName = targetCard.GameName;
-        var installPath = targetCard.InstallPath;
-
-        // Check for existing RenoDX addon files in the game folder
-        string? existingAddon = null;
-        try
-        {
-            var existing = Directory.GetFiles(installPath, "*.addon64")
-                .Concat(Directory.GetFiles(installPath, "*.addon32"))
-                .Where(f => !Path.GetFileName(f).StartsWith("zzz_display_commander", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            if (existing.Count > 0)
-                existingAddon = string.Join(", ", existing.Select(Path.GetFileName));
-        }
-        catch { }
-
-        // Confirmation dialog
-        var warningText = $"Are you sure you want to install {addonFileName} for {gameName}?";
-        if (!string.IsNullOrEmpty(existingAddon))
-            warningText += $"\n\nThis will replace the existing addon: {existingAddon}";
-        warningText += $"\n\nInstall path: {installPath}";
-
-        var confirmDialog = new ContentDialog
-        {
-            Title = "⚠ Confirm Addon Install",
-            Content = new TextBlock
-            {
-                Text = warningText,
-                TextWrapping = TextWrapping.Wrap,
-                FontSize = 13,
-            },
-            PrimaryButtonText = "Install",
-            CloseButtonText = "Cancel",
-            XamlRoot = this.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var confirmResult = await confirmDialog.ShowAsync();
-        if (confirmResult != ContentDialogResult.Primary) return;
-
-        // Remove existing RenoDX addon files (not DC addons)
-        try
-        {
-            var toRemove = Directory.GetFiles(installPath, "*.addon64")
-                .Concat(Directory.GetFiles(installPath, "*.addon32"))
-                .Where(f => !Path.GetFileName(f).StartsWith("zzz_display_commander", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            foreach (var f in toRemove)
-            {
-                CrashReporter.Log($"[MainWindow.ProcessDroppedAddon] Removing existing '{Path.GetFileName(f)}'");
-                File.Delete(f);
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.ProcessDroppedAddon] Failed to remove existing addons — {ex.Message}");
-        }
-
-        // Copy the addon file to the game folder
-        var destPath = Path.Combine(installPath, addonFileName);
-        try
-        {
-            File.Copy(addonPath, destPath, overwrite: true);
-            CrashReporter.Log($"[MainWindow.ProcessDroppedAddon] Installed '{addonFileName}' to '{installPath}'");
-
-            // Update card status
-            targetCard.Status = GameStatus.Installed;
-            targetCard.InstalledAddonFileName = addonFileName;
-            targetCard.NotifyAll();
-
-            var successDialog = new ContentDialog
-            {
-                Title = "✅ Addon Installed",
-                Content = $"{addonFileName} has been installed for {gameName}.",
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await successDialog.ShowAsync();
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.ProcessDroppedAddon] Install failed — {ex.Message}");
-            var errDialog = new ContentDialog
-            {
-                Title = "❌ Install Failed",
-                Content = $"Failed to install addon: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot,
-            };
-            await errDialog.ShowAsync();
-        }
-    }
-
-    /// <summary>
-    /// Walk up from the exe directory to find the game root.
-    /// Stops when we find a directory that looks like a game root.
-    /// For Unreal: recognises Binaries\Win64 structure (2 levels up).
-    /// For other games: checks for store markers (Steam, GOG, Epic, EA, Xbox)
-    /// and defaults to the exe's own directory if no markers are found.
-    /// </summary>
-    private static string InferGameRoot(string exeDir)
-    {
-        var dir = exeDir;
-
-        // If the exe is inside Binaries\Win64, Binaries\WinGDK, or Binaries\Win32,
-        // the game root is two levels up.
-        var dirName   = Path.GetFileName(dir) ?? "";
-        var parentDir = Path.GetDirectoryName(dir);
-        var parentName = parentDir != null ? Path.GetFileName(parentDir) ?? "" : "";
-
-        if (parentName.Equals("Binaries", StringComparison.OrdinalIgnoreCase)
-            && (dirName.Equals("Win64", StringComparison.OrdinalIgnoreCase)
-             || dirName.Equals("WinGDK", StringComparison.OrdinalIgnoreCase)
-             || dirName.Equals("Win32", StringComparison.OrdinalIgnoreCase)))
-        {
-            var grandparent = Path.GetDirectoryName(parentDir);
-            if (grandparent != null) return grandparent;
-        }
-
-        // Walk up looking for game root markers (max 3 levels).
-        // Check the exe's own directory first — most non-Unreal games have
-        // the exe right in the game root alongside store markers.
-        var current = dir;
-        for (int i = 0; i < 3 && current != null; i++)
-        {
-            if (LooksLikeGameRoot(current))
-                return current;
-            current = Path.GetDirectoryName(current);
-        }
-
-        // No markers found at all — the exe directory itself is the safest bet.
-        // Don't walk up further, as that risks hitting a library root or drive root.
-        return dir;
-    }
-
-    /// <summary>
-    /// Returns true if a directory looks like a game root based on store markers
-    /// or engine files. This is intentionally broad to catch Steam, GOG, Epic,
-    /// EA, Xbox, Ubisoft, Unity, and Unreal games.
-    /// </summary>
-    private static bool LooksLikeGameRoot(string dirPath)
-    {
-        try
-        {
-            // Steam markers
-            if (File.Exists(Path.Combine(dirPath, "steam_appid.txt"))
-             || File.Exists(Path.Combine(dirPath, "steam_api64.dll"))
-             || File.Exists(Path.Combine(dirPath, "steam_api.dll")))
-                return true;
-
-            // GOG markers — GOG games have goggame-*.dll, goglog.ini, gog.ico, etc.
-            if (File.Exists(Path.Combine(dirPath, "goglog.ini"))
-             || File.Exists(Path.Combine(dirPath, "gog.ico"))
-             || File.Exists(Path.Combine(dirPath, "goggame.sdb")))
-                return true;
-            // Also check for goggame-*.dll pattern
-            if (Directory.GetFiles(dirPath, "goggame-*.dll").Length > 0)
-                return true;
-
-            // Epic markers
-            if (Directory.Exists(Path.Combine(dirPath, ".egstore")))
-                return true;
-
-            // EA markers
-            if (File.Exists(Path.Combine(dirPath, "installerdata.xml"))
-             || File.Exists(Path.Combine(dirPath, "__Installer")))
-                return true;
-
-            // Xbox / Game Pass markers
-            if (File.Exists(Path.Combine(dirPath, "MicrosoftGame.config"))
-             || File.Exists(Path.Combine(dirPath, "appxmanifest.xml")))
-                return true;
-
-            // Ubisoft Connect markers
-            if (File.Exists(Path.Combine(dirPath, "uplay_install.state"))
-             || File.Exists(Path.Combine(dirPath, "upc.exe"))
-             || Directory.GetFiles(dirPath, "uplay_*.dll").Length > 0)
-                return true;
-
-            // Battle.net / Blizzard markers
-            if (File.Exists(Path.Combine(dirPath, ".build.info"))
-             || File.Exists(Path.Combine(dirPath, ".product.db"))
-             || File.Exists(Path.Combine(dirPath, "Blizzard Launcher.exe")))
-                return true;
-
-            // Rockstar Games Launcher markers
-            if (File.Exists(Path.Combine(dirPath, "PlayGTAV.exe"))
-             || File.Exists(Path.Combine(dirPath, "RockstarService.exe"))
-             || Directory.GetFiles(dirPath, "socialclub*.dll").Length > 0)
-                return true;
-
-            // Unity marker
-            if (File.Exists(Path.Combine(dirPath, "UnityPlayer.dll")))
-                return true;
-
-            // Unreal markers
-            if (Directory.Exists(Path.Combine(dirPath, "Binaries"))
-             || Directory.Exists(Path.Combine(dirPath, "Engine")))
-                return true;
-        }
-        catch { /* permission issues — skip silently */ }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Infer the game name from the exe and folder structure.
-    /// Priority:
-    ///   1. For Unreal: use the top-level folder name under game root (the "project" name)
-    ///   2. For Unity: use the exe name (typically matches the game name)
-    ///   3. Use the game root folder name
-    ///   4. Fallback to exe filename
-    /// Cleans up common suffixes like "-Win64-Shipping", "Shipping", etc.
-    /// </summary>
-    private static string InferGameName(string exePath, string gameRoot, EngineType engine)
-    {
-        var exeName     = Path.GetFileNameWithoutExtension(exePath);
-        var rootDirName = Path.GetFileName(gameRoot) ?? exeName;
-
-        if (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy)
-        {
-            // Unreal games: the exe is often "GameName-Win64-Shipping.exe"
-            // Strip the suffix to get the clean name
-            var cleanExe = CleanUnrealExeName(exeName);
-
-            // Sometimes the root folder is better (e.g. "Avowed" vs "Michigan-Win64-Shipping")
-            // Prefer root folder name if it looks like a proper name (has spaces or is short)
-            if (rootDirName.Contains(' ') || rootDirName.Contains('-'))
-                return CleanFolderName(rootDirName);
-
-            // Check for a content/game subfolder one level into root (common Xbox pattern)
-            try
-            {
-                var subdirs = Directory.GetDirectories(gameRoot)
-                    .Select(Path.GetFileName)
-                    .Where(d => d != null
-                        && !d.Equals("Binaries", StringComparison.OrdinalIgnoreCase)
-                        && !d.Equals("Engine", StringComparison.OrdinalIgnoreCase)
-                        && !d.Equals("Content", StringComparison.OrdinalIgnoreCase)
-                        && !d.StartsWith(".", StringComparison.Ordinal))
-                    .ToList();
-
-                // If there's one or two content folders, the first might be the game name
-                if (subdirs.Count > 0 && subdirs.Count <= 3)
-                {
-                    var candidate = subdirs.FirstOrDefault(d =>
-                        !string.IsNullOrEmpty(d)
-                        && !d.Equals("Saved", StringComparison.OrdinalIgnoreCase)
-                        && !d.Equals("Plugins", StringComparison.OrdinalIgnoreCase)
-                        && !d.Equals("Intermediate", StringComparison.OrdinalIgnoreCase));
-
-                    if (candidate != null && candidate.Length > 2)
-                        return CleanFolderName(candidate);
-                }
-            }
-            catch { }
-
-            return !string.IsNullOrEmpty(cleanExe) ? cleanExe : CleanFolderName(rootDirName);
-        }
-
-        if (engine == EngineType.Unity)
-        {
-            // Unity: exe name typically IS the game name
-            return CleanFolderName(exeName);
-        }
-
-        // Unknown engine: prefer root folder name, fall back to exe name
-        return CleanFolderName(rootDirName);
-    }
-
-    /// <summary>Strips common Unreal exe suffixes to get a clean game name.</summary>
-    private static string CleanUnrealExeName(string exeName)
-    {
-        // Common patterns: "GameName-Win64-Shipping", "GameName-WinGDK-Shipping",
-        // "GameNameShipping", "GameName-Win64-Test"
-        var cleaned = Regex.Replace(exeName, @"[_-]?(Win64|WinGDK|Win32)[_-]?Shipping$", "", RegexOptions.IgnoreCase);
-        cleaned = Regex.Replace(cleaned, @"[_-]?Shipping$", "", RegexOptions.IgnoreCase);
-        cleaned = Regex.Replace(cleaned, @"[_-]?(Win64|WinGDK|Win32)[_-]?Test$", "", RegexOptions.IgnoreCase);
-        cleaned = Regex.Replace(cleaned, @"[_-]?(Win64|WinGDK|Win32)$", "", RegexOptions.IgnoreCase);
-        return cleaned.Trim('-', '_', ' ');
-    }
-
-    /// <summary>
-    /// Cleans a folder or exe name into a presentable game name.
-    /// Replaces underscores and camelCase boundaries with spaces.
-    /// </summary>
-    private static string CleanFolderName(string name)
-    {
-        // Replace underscores and hyphens with spaces
-        var cleaned = name.Replace('_', ' ').Replace('-', ' ');
-        // Insert spaces before uppercase letters in camelCase (e.g. "HighOnLife" → "High On Life")
-        // but not for consecutive caps (e.g. "AFOP" stays "AFOP")
-        cleaned = Regex.Replace(cleaned, @"(?<=[a-z])(?=[A-Z])", " ");
-        // Collapse multiple spaces
-        cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
-        return cleaned;
-    }
 
     // ── Filter tabs ───────────────────────────────────────────────────────────────
 
@@ -2478,126 +780,37 @@ public sealed partial class MainWindow : Window
             card.ComponentExpanded = !card.ComponentExpanded;
     }
 
-    private async void CombinedInstallButton_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.Tag is not GameCardViewModel card) return;
-        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-        {
-            var folder = await PickFolderAsync();
-            if (folder == null) return;
-            card.InstallPath = folder;
-            ViewModel.SaveLibraryPublic();
-        }
-        // Chain: RenoDX → DC → ReShade (skip components that are N/A)
-        if (card.Mod?.SnapshotUrl != null)
-            await ViewModel.InstallModCommand.ExecuteAsync(card);
-        if (card.DcRowVisibility == Microsoft.UI.Xaml.Visibility.Visible)
-            await ViewModel.InstallDcCommand.ExecuteAsync(card);
-        if (card.ReShadeRowVisibility == Microsoft.UI.Xaml.Visibility.Visible)
-            await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
-    }
+    private void CombinedInstallButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.CombinedInstallButton_Click(sender, e);
 
-    private async void InstallButton_Click(object sender, RoutedEventArgs e)
-    {
+    private void InstallButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.InstallButton_Click(sender, e);
 
-        // If this is an external-only game, open the external URL instead
-        var checkCard = GetCardFromSender(sender);
-        if (checkCard?.IsExternalOnly == true)
-        {
-            ExternalLink_Click(sender, e);
-            return;
-        }
-        if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
-        await EnsurePathAndInstall(card, () => ViewModel.InstallModCommand.ExecuteAsync(card));
-    }
+    private void Install64Button_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.Install64Button_Click(sender, e);
 
-    private async void Install64Button_Click(object sender, RoutedEventArgs e)
-    {
-        var card = GetCardFromSender(sender);
-        if (card == null) return;
-        await EnsurePathAndInstall(card, () => ViewModel.InstallModCommand.ExecuteAsync(card));
-    }
-
-    private async void Install32Button_Click(object sender, RoutedEventArgs e)
-    {
-        var card = GetCardFromSender(sender);
-        if (card == null) return;
-        await EnsurePathAndInstall(card, () => ViewModel.InstallMod32Command.ExecuteAsync(card));
-    }
+    private void Install32Button_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.Install32Button_Click(sender, e);
 
     private async Task EnsurePathAndInstall(GameCardViewModel card, Func<Task> installAction)
-    {
-        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-        {
-            var folder = await PickFolderAsync();
-            if (folder == null) return;
-            card.InstallPath = folder;
-        }
-        await installAction();
-    }
+        => await _installEventHandler.EnsurePathAndInstall(card, installAction);
 
     private void UninstallButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (GetCardFromSender(sender) is { } card)
-            ViewModel.UninstallModCommand.Execute(card);
-    }
+        => _installEventHandler.UninstallButton_Click(sender, e);
 
-    private async void InstallRsButton_Click(object sender, RoutedEventArgs e)
-    {
-        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card == null) return;
-        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-        {
-            var folder = await PickFolderAsync();
-            if (folder == null) return;
-            card.InstallPath = folder;
-            ViewModel.SaveLibraryPublic();
-        }
-        await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
-    }
+    private void InstallRsButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.InstallRsButton_Click(sender, e);
 
     private void UninstallRsButton_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.Tag is GameCardViewModel card)
-        {
-            if (card.RequiresVulkanInstall)
-                ViewModel.UninstallVulkanReShadeCommand.Execute(card);
-            else
-                ViewModel.UninstallReShadeCommand.Execute(card);
-        }
-    }
+        => _installEventHandler.UninstallRsButton_Click(sender, e);
 
     // ── Shaders mode cycle handler ──────────────────────────────────────────
 
-    private async void ChooseShadersButton_Click(object sender, RoutedEventArgs e)
-    {
-        var result = await ShaderPopupHelper.ShowAsync(
-            Content.XamlRoot,
-            ViewModel.ShaderPackServiceInstance,
-            ViewModel.Settings.SelectedShaderPacks,
-            ShaderPopupHelper.PopupContext.Global);
+    private void ChooseShadersButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.ChooseShadersButton_Click(sender, e);
 
-        if (result != null)
-        {
-            ViewModel.Settings.SelectedShaderPacks = result;
-            ViewModel.SaveSettingsPublic();
-            ViewModel.DeployAllShaders();
-        }
-    }
-
-    private async void DeployDcModeButton_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new ContentDialog
-        {
-            Title             = "Deploy DC Mode",
-            Content           = "Apply DC Mode file changes across all installed games?",
-            PrimaryButtonText = "Continue",
-            CloseButtonText   = "Cancel",
-            XamlRoot          = Content.XamlRoot,
-        };
-        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
-            ViewModel.ApplyDcModeSwitch((wasEnabled: ViewModel.DcModeEnabled, wasDllFileName: ViewModel.DcDllFileName));
-    }
+    private void DeployDcModeButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.DeployDcModeButton_Click(sender, e);
 
     private bool _dcDllPickerIsTyping;
 
@@ -2659,128 +872,29 @@ public sealed partial class MainWindow : Window
     private async void UpdateAllDc_Click(object sender, RoutedEventArgs e)
         => await ViewModel.UpdateAllDcAsync();
 
-    private async void InstallDcButton_Click(object sender, RoutedEventArgs e)
-    {
-        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card == null) return;
-        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-        {
-            var folder = await PickFolderAsync();
-            if (folder == null) return;
-            card.InstallPath = folder;
-            ViewModel.SaveLibraryPublic();
-        }
-        await ViewModel.InstallDcCommand.ExecuteAsync(card);
-    }
+    private void InstallDcButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.InstallDcButton_Click(sender, e);
 
     private void UninstallDcButton_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.Tag is GameCardViewModel card)
-            ViewModel.UninstallDcCommand.Execute(card);
-    }
+        => _installEventHandler.UninstallDcButton_Click(sender, e);
 
     private void LumaToggle_Click(object sender, RoutedEventArgs e)
-    {
-        if (_detailPanelBuilder.CurrentDetailCard != null) ViewModel.ToggleLumaMode(_detailPanelBuilder.CurrentDetailCard);
-    }
+        => _installEventHandler.LumaToggle_Click(sender, e);
 
     private void SwitchToLumaButton_Click(object sender, RoutedEventArgs e)
-    {
-        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card != null) ViewModel.ToggleLumaMode(card);
-    }
+        => _installEventHandler.SwitchToLumaButton_Click(sender, e);
 
-    private async void InstallLumaButton_Click(object sender, RoutedEventArgs e)
-    {
-        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card != null) await ViewModel.InstallLumaAsync(card);
-    }
+    private void InstallLumaButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.InstallLumaButton_Click(sender, e);
 
     private void UninstallLumaButton_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.Tag is GameCardViewModel card)
-            ViewModel.UninstallLumaCommand.Execute(card);
-    }
+        => _installEventHandler.UninstallLumaButton_Click(sender, e);
 
     private void UeExtendedFlyoutItem_Click(object sender, RoutedEventArgs e)
-    {
-        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card == null) return;
+        => _installEventHandler.UeExtendedFlyoutItem_Click(sender, e);
 
-        ViewModel.ToggleUeExtended(card);
-
-        // Directly update the badge text based on the new state
-        string newLabel = card.UseUeExtended ? "UE Extended" : "Generic UE";
-        DetailGenericText.Text = newLabel;
-
-        // Update the UE button styling
-        if (card.UseUeExtended)
-        {
-            DetailUeExtendedBtn.Background = Brush(ResourceKeys.AccentGreenBgBrush);
-            DetailUeExtendedBtn.Foreground = Brush(ResourceKeys.AccentGreenBrush);
-            DetailUeExtendedBtn.BorderBrush = Brush(ResourceKeys.AccentGreenBorderBrush);
-        }
-        else
-        {
-            DetailUeExtendedBtn.Background = Brush(ResourceKeys.SurfaceOverlayBrush);
-            DetailUeExtendedBtn.Foreground = Brush(ResourceKeys.TextSecondaryBrush);
-            DetailUeExtendedBtn.BorderBrush = Brush(ResourceKeys.BorderStrongBrush);
-        }
-
-        // Update tooltip
-        ToolTipService.SetToolTip(DetailUeExtendedBtn,
-            card.UseUeExtended ? "Disable UE Extended" : "Enable UE Extended");
-
-        // Show inline message or warning dialog
-        if (card.UseUeExtended)
-        {
-            DetailRsMessage.Text = "⚡ UE-Extended enabled — check Discord to confirm this game is compatible.";
-            DetailRsMessage.Foreground = Brush(ResourceKeys.AccentPurpleBrush);
-            DetailRsMessage.Visibility = Visibility.Visible;
-            // Show compatibility warning dialog
-            _ = ShowUeExtendedWarningAsync(card);
-        }
-        else
-        {
-            DetailRsMessage.Text = "UE-Extended disabled.";
-            DetailRsMessage.Foreground = Brush(ResourceKeys.TextTertiaryBrush);
-            DetailRsMessage.Visibility = Visibility.Visible;
-        }
-    }
-
-    private async Task ShowUeExtendedWarningAsync(GameCardViewModel card)
-    {
-        try
-        {
-            while (Content.XamlRoot == null)
-                await Task.Delay(100);
-
-            var hasNotes = !string.IsNullOrWhiteSpace(card.Notes);
-            var notesHint = hasNotes
-                ? "\n\nCheck the Notes section for any additional compatibility information for this game."
-                : "\n\nNo specific notes are available for this game — check the RDXC Discord for community reports.";
-
-            var dlg = new ContentDialog
-            {
-                Title               = "⚠ UE-Extended Compatibility Warning",
-                Content             = new TextBlock
-                {
-                    TextWrapping = TextWrapping.Wrap,
-                    FontSize     = 13,
-                    Text         = "Not all Unreal Engine games are compatible with UE-Extended.\n\n" +
-                                   "UE-Extended uses a different injection method that works better " +
-                                   "with some games but may cause crashes or issues with others." +
-                                   notesHint,
-                },
-                PrimaryButtonText   = "OK, I understand",
-                XamlRoot            = Content.XamlRoot,
-                Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
-            };
-
-            await dlg.ShowAsync();
-        }
-        catch { }
-    }
+    internal async Task ShowUeExtendedWarningAsync(GameCardViewModel card)
+        => await _dialogService.ShowUeExtendedWarningAsync(card);
 
     private void HideButton_Click(object sender, RoutedEventArgs e)
     {
@@ -2831,7 +945,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void ExternalLink_Click(object sender, RoutedEventArgs e)
+    internal async void ExternalLink_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender);
         if (card == null) return;
@@ -2881,231 +995,12 @@ public sealed partial class MainWindow : Window
         catch { /* card may have been removed from visual tree */ }
     }
 
-    private async void NotesButton_Click(object sender, RoutedEventArgs e)
-    {
-        var card = GetCardFromSender(sender);
-        if (card == null) return;
-
-        var textColour = Brush(ResourceKeys.TextSecondaryBrush);
-        var linkColour = Brush(ResourceKeys.AccentBlueBrush);
-        var dimColour  = Brush(ResourceKeys.TextTertiaryBrush);
-
-        var outerPanel = new StackPanel { Spacing = 10 };
-
-        // ── Wiki status badge at top-left ─────────────────────────────────────────
-        var statusBg     = card.WikiStatusBadgeBackground;
-        var statusBorder = card.WikiStatusBadgeBorderBrush;
-        var statusFg     = card.WikiStatusBadgeForeground;
-        var statusBadge = new Border
-        {
-            CornerRadius    = new CornerRadius(6),
-            Padding         = new Thickness(10, 4, 10, 4),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            Background      = new SolidColorBrush(ParseColor(statusBg)),
-            BorderBrush     = new SolidColorBrush(ParseColor(statusBorder)),
-            BorderThickness = new Thickness(1),
-            Child = new TextBlock
-            {
-                Text       = card.WikiStatusLabel,
-                FontSize   = 12,
-                Foreground = new SolidColorBrush(ParseColor(statusFg)),
-            }
-        };
-        outerPanel.Children.Add(statusBadge);
-
-        // ── Luma info (when in Luma mode) ───────────────────────────────────────────
-        if (card.IsLumaMode && (card.LumaMod != null || !string.IsNullOrWhiteSpace(card.LumaNotes)))
-        {
-            var lumaLabel = card.LumaMod != null
-                ? $"Luma — {card.LumaMod.Status} {card.LumaMod.Author}"
-                : "Luma mode";
-            var lumaBadge = new Border
-            {
-                CornerRadius    = new CornerRadius(6),
-                Padding         = new Thickness(10, 4, 10, 4),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Background      = Brush(ResourceKeys.AccentGreenBgBrush),
-                BorderBrush     = Brush(ResourceKeys.AccentGreenBorderBrush),
-                BorderThickness = new Thickness(1),
-                Child = new TextBlock
-                {
-                    Text       = lumaLabel,
-                    FontSize   = 12,
-                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
-                }
-            };
-            outerPanel.Children.Add(lumaBadge);
-
-            var lumaNotesText = "";
-            if (card.LumaMod != null)
-            {
-                if (!string.IsNullOrWhiteSpace(card.LumaMod.SpecialNotes))
-                    lumaNotesText += card.LumaMod.SpecialNotes;
-                if (!string.IsNullOrWhiteSpace(card.LumaMod.FeatureNotes))
-                {
-                    if (lumaNotesText.Length > 0) lumaNotesText += "\n\n";
-                    lumaNotesText += card.LumaMod.FeatureNotes;
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(lumaNotesText))
-            {
-                outerPanel.Children.Add(new TextBlock
-                {
-                    Text         = lumaNotesText,
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground   = textColour,
-                    FontSize     = 13,
-                    LineHeight   = 22,
-                });
-            }
-
-            // ── Manifest Luma notes (supplement wiki notes) ──────────────────────
-            if (!string.IsNullOrWhiteSpace(card.LumaNotes))
-            {
-                if (!string.IsNullOrEmpty(card.LumaNotesUrl))
-                {
-                    var para = new Microsoft.UI.Xaml.Documents.Paragraph();
-                    para.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                    {
-                        Text       = card.LumaNotes,
-                        Foreground = textColour,
-                        FontSize   = 13,
-                    });
-                    para.Inlines.Add(new Microsoft.UI.Xaml.Documents.LineBreak());
-                    var link = new Microsoft.UI.Xaml.Documents.Hyperlink
-                    {
-                        NavigateUri = new Uri(card.LumaNotesUrl),
-                        Foreground  = linkColour,
-                    };
-                    link.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                    {
-                        Text     = card.LumaNotesUrlLabel ?? card.LumaNotesUrl,
-                        FontSize = 13,
-                    });
-                    para.Inlines.Add(link);
-                    var rtb = new RichTextBlock { IsTextSelectionEnabled = true };
-                    rtb.Blocks.Add(para);
-                    outerPanel.Children.Add(rtb);
-                }
-                else
-                {
-                    outerPanel.Children.Add(new TextBlock
-                    {
-                        Text         = card.LumaNotes,
-                        TextWrapping = TextWrapping.Wrap,
-                        Foreground   = textColour,
-                        FontSize     = 13,
-                        LineHeight   = 22,
-                    });
-                }
-            }
-
-            // Fallback if neither wiki nor manifest provided notes
-            if (string.IsNullOrWhiteSpace(lumaNotesText) && string.IsNullOrWhiteSpace(card.LumaNotes))
-            {
-                outerPanel.Children.Add(new TextBlock
-                {
-                    Text       = "No additional Luma notes for this game.",
-                    Foreground = dimColour,
-                    FontSize   = 13,
-                });
-            }
-        }
-        // ── Standard RenoDX notes ───────────────────────────────────────────────────
-        else if (!string.IsNullOrWhiteSpace(card.Notes))
-        {
-            if (!string.IsNullOrEmpty(card.NotesUrl))
-            {
-                var para = new Microsoft.UI.Xaml.Documents.Paragraph();
-                para.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                {
-                    Text       = card.Notes,
-                    Foreground = textColour,
-                    FontSize   = 13,
-                });
-                para.Inlines.Add(new Microsoft.UI.Xaml.Documents.LineBreak());
-                var link = new Microsoft.UI.Xaml.Documents.Hyperlink
-                {
-                    NavigateUri = new Uri(card.NotesUrl),
-                    Foreground  = linkColour,
-                };
-                link.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                {
-                    Text     = card.NotesUrlLabel ?? card.NotesUrl,
-                    FontSize = 13,
-                });
-                para.Inlines.Add(link);
-
-                var rtb = new RichTextBlock { IsTextSelectionEnabled = true };
-                rtb.Blocks.Add(para);
-                outerPanel.Children.Add(rtb);
-            }
-            else
-            {
-                outerPanel.Children.Add(new TextBlock
-                {
-                    Text         = card.Notes,
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground   = textColour,
-                    FontSize     = 13,
-                    LineHeight   = 22,
-                });
-            }
-        }
-        else
-        {
-            outerPanel.Children.Add(new TextBlock
-            {
-                Text       = "No additional notes for this game.",
-                Foreground = dimColour,
-                FontSize   = 13,
-            });
-        }
-
-        var scrollContent = new ScrollViewer
-        {
-            Content   = outerPanel,
-            MaxHeight = 440,
-            Padding   = new Thickness(0, 4, 12, 0),
-        };
-
-        var dialog = new ContentDialog
-        {
-            Title           = $"ℹ  {card.GameName}",
-            Content         = scrollContent,
-            CloseButtonText = "Close",
-            XamlRoot        = Content.XamlRoot,
-            Background      = Brush(ResourceKeys.SurfaceToolbarBrush),
-        };
-        await dialog.ShowAsync();
-    }
-
-    /// <summary>Creates a thin horizontal separator line for dialogs.</summary>
-    private static Border MakeSeparator() => new()
-    {
-        Height = 1,
-        Background = (SolidColorBrush)Application.Current.Resources[ResourceKeys.BorderSubtleBrush],
-        Margin = new Thickness(0, 2, 0, 2),
-    };
-
+    private void NotesButton_Click(object sender, RoutedEventArgs e)
+        => _dialogService.NotesButton_Click(sender, e);
 
     /// <summary>Looks up a SolidColorBrush from the merged theme resource dictionaries.</summary>
     private SolidColorBrush Brush(string key) =>
         (SolidColorBrush)Application.Current.Resources[key];
-
-    /// <summary>Parses a hex colour string like "#1C2848" into a Windows.UI.Color.</summary>
-    private static Windows.UI.Color ParseColor(string hex)
-    {
-        hex = hex.TrimStart('#');
-        byte a = 255;
-        int offset = 0;
-        if (hex.Length == 8) { a = Convert.ToByte(hex[..2], 16); offset = 2; }
-        byte r = Convert.ToByte(hex.Substring(offset, 2), 16);
-        byte g = Convert.ToByte(hex.Substring(offset + 2, 2), 16);
-        byte b = Convert.ToByte(hex.Substring(offset + 4, 2), 16);
-        return Windows.UI.Color.FromArgb(a, r, g, b);
-    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -3157,191 +1052,6 @@ public sealed partial class MainWindow : Window
         InitializeWithWindow.Initialize(picker, hwnd2);
         var folder = await picker.PickSingleFolderAsync();
         return folder?.Path;
-    }
-
-    // COM interop definitions moved to NativeInterop.cs
-
-    // Window persistence P/Invoke declarations moved to NativeInterop.cs
-
-    // WndProc subclass P/Invoke declarations moved to NativeInterop.cs
-
-    private IntPtr _hwnd;
-    private IntPtr _origWndProc;
-    private NativeInterop.WndProcDelegate? _wndProcDelegate; // prevent GC
-
-    private IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
-    {
-        if (msg == NativeInterop.WM_GETMINMAXINFO)
-        {
-            var dpi = NativeInterop.GetDpiForWindow(hWnd);
-            var scale = dpi / 96.0;
-            var mmi = Marshal.PtrToStructure<NativeInterop.MINMAXINFO>(lParam);
-            mmi.ptMinTrackSize = new System.Drawing.Point(
-                (int)(NativeInterop.MinWindowWidth * scale),
-                (int)(NativeInterop.MinWindowHeight * scale));
-            Marshal.StructureToPtr(mmi, lParam, false);
-            return IntPtr.Zero;
-        }
-
-        if (msg == NativeInterop.WM_DROPFILES)
-        {
-            HandleWin32Drop(wParam);
-            return IntPtr.Zero;
-        }
-
-        return NativeInterop.CallWindowProc(_origWndProc, hWnd, msg, wParam, lParam);
-    }
-
-    /// <summary>
-    /// Handles WM_DROPFILES from Win32 shell drag-and-drop.
-    /// Extracts file paths and routes them to the existing processing methods.
-    /// </summary>
-    private void HandleWin32Drop(IntPtr hDrop)
-    {
-        try
-        {
-            uint fileCount = NativeInterop.DragQueryFile(hDrop, 0xFFFFFFFF, null, 0);
-            var paths = new List<string>();
-
-            for (uint i = 0; i < fileCount; i++)
-            {
-                uint size = NativeInterop.DragQueryFile(hDrop, i, null, 0) + 1;
-                var buffer = new char[size];
-                NativeInterop.DragQueryFile(hDrop, i, buffer, size);
-                paths.Add(new string(buffer, 0, (int)(size - 1)));
-            }
-
-            NativeInterop.DragFinish(hDrop);
-
-            // Process on the UI thread
-            DispatcherQueue.TryEnqueue(async () =>
-            {
-                foreach (var path in paths)
-                {
-                    var ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
-
-                    if (ext is ".addon64" or ".addon32")
-                    {
-                        try { await ProcessDroppedAddon(path); }
-                        catch (Exception ex) { CrashReporter.Log($"[MainWindow.HandleWin32Drop] Addon error — {ex.Message}"); }
-                        continue;
-                    }
-
-                    if (ArchiveExtensions.Contains(ext))
-                    {
-                        try { await ProcessDroppedArchive(path); }
-                        catch (Exception ex) { CrashReporter.Log($"[MainWindow.HandleWin32Drop] Archive error — {ex.Message}"); }
-                        continue;
-                    }
-
-                    if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase))
-                    {
-                        try { await ProcessDroppedExe(path); }
-                        catch (Exception ex) { CrashReporter.Log($"[MainWindow.HandleWin32Drop] Exe error — {ex.Message}"); }
-                    }
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[MainWindow.HandleWin32Drop] Failed — {ex.Message}");
-        }
-    }
-
-    // GetDpiForWindow moved to NativeInterop.cs
-
-    // ── Window persistence (JSON-based, works for unpackaged WinUI 3 apps) ────────
-    // ApplicationData.Current.LocalSettings requires package identity and throws in
-    // unpackaged apps — so we use a plain JSON file in %LocalAppData% instead.
-    // Stores window bounds so the window remembers its last size/position.
-
-    private static readonly string _windowSettingsPath = System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "window_main.json");
-
-    // In-memory cache of window bounds (populated from file on first restore)
-    private (int X, int Y, int W, int H)? _windowBounds;
-
-    private void TryRestoreWindowBounds()
-    {
-        try
-        {
-            if (!System.IO.File.Exists(_windowSettingsPath)) return;
-            var json = System.IO.File.ReadAllText(_windowSettingsPath);
-            var doc  = System.Text.Json.JsonDocument.Parse(json).RootElement;
-
-            // Try unified bounds first (new format)
-            if (doc.TryGetProperty("X", out var ux) && doc.TryGetProperty("Y", out var uy) &&
-                doc.TryGetProperty("W", out var uw) && doc.TryGetProperty("H", out var uh))
-                _windowBounds = (ux.GetInt32(), uy.GetInt32(), uw.GetInt32(), uh.GetInt32());
-
-            // Legacy migration: old format stored FullX/FullY or CompactX/CompactY — prefer Compact (closest to new layout)
-            if (_windowBounds == null &&
-                doc.TryGetProperty("CompactX", out var cx) && doc.TryGetProperty("CompactY", out var cy) &&
-                doc.TryGetProperty("CompactW", out var cw) && doc.TryGetProperty("CompactH", out var ch))
-                _windowBounds = (cx.GetInt32(), cy.GetInt32(), cw.GetInt32(), ch.GetInt32());
-
-            if (_windowBounds == null &&
-                doc.TryGetProperty("FullX", out var fx) && doc.TryGetProperty("FullY", out var fy) &&
-                doc.TryGetProperty("FullW", out var fw) && doc.TryGetProperty("FullH", out var fh))
-                _windowBounds = (fx.GetInt32(), fy.GetInt32(), fw.GetInt32(), fh.GetInt32());
-
-            // Apply the bounds
-            if (_windowBounds is var (x, y, w, h) && w >= 400 && h >= 300 && w <= 7680 && h <= 4320)
-            {
-                var hwnd = WindowNative.GetWindowHandle(this);
-                NativeInterop.SetWindowPos(hwnd, IntPtr.Zero, x, y, w, h, 0x0040 /* SWP_NOZORDER */);
-            }
-        }
-        catch { }
-    }
-
-    /// <summary>Captures the current window rect into the in-memory cache.</summary>
-    private void CaptureCurrentBounds()
-    {
-        try
-        {
-            var hwnd = WindowNative.GetWindowHandle(this);
-            if (!NativeInterop.GetWindowRect(hwnd, out var r)) return;
-            var w = r.Right - r.Left;
-            var h = r.Bottom - r.Top;
-            if (w < 100 || h < 100) return;
-            _windowBounds = (r.Left, r.Top, w, h);
-        }
-        catch { }
-    }
-
-    /// <summary>Restores the cached window bounds, if available.</summary>
-    private void RestoreWindowBounds()
-    {
-        try
-        {
-            if (_windowBounds is var (x, y, w, h) && w >= 400 && h >= 300 && w <= 7680 && h <= 4320)
-            {
-                var hwnd = WindowNative.GetWindowHandle(this);
-                NativeInterop.SetWindowPos(hwnd, IntPtr.Zero, x, y, w, h, 0x0040 /* SWP_NOZORDER */);
-            }
-        }
-        catch { }
-    }
-
-    private void SaveWindowBounds()
-    {
-        try
-        {
-            // Capture final bounds
-            CaptureCurrentBounds();
-
-            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_windowSettingsPath)!);
-            var data = new Dictionary<string, int>();
-            if (_windowBounds is var (x, y, w, h))
-            {
-                data["X"] = x; data["Y"] = y; data["W"] = w; data["H"] = h;
-            }
-            var json = System.Text.Json.JsonSerializer.Serialize(data);
-            System.IO.File.WriteAllText(_windowSettingsPath, json);
-        }
-        catch { }
     }
 
     // ── Page visibility management ──────────────────────────────────────────────
