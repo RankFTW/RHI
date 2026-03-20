@@ -47,17 +47,6 @@ public class ModInstallService : IModInstallService
     };
 
     /// <summary>
-    /// URLs whose CDN does not serve a reliable Content-Length on HEAD requests.
-    /// For these, update detection downloads the file to a temp path and compares
-    /// its size (and optionally hash) against the stored install-time values.
-    /// </summary>
-    private static readonly HashSet<string> _downloadCheckUrls =
-        new(StringComparer.OrdinalIgnoreCase)
-    {
-        "https://marat569.github.io/renodx/renodx-ue-extended.addon64",
-    };
-
-    /// <summary>
     /// Returns the authoritative URL for a snapshot URL, substituting an override
     /// when the addon filename has a known alternative source.
     /// </summary>
@@ -252,7 +241,7 @@ public class ModInstallService : IModInstallService
 
         // For CDNs that don't serve reliable Content-Length on HEAD (e.g. marat569
         // github.io), fall back to a full download comparison.
-        if (_downloadCheckUrls.Contains(checkUrl))
+        if (ShouldUseDownloadCheck(checkUrl))
             return await CheckForUpdateByDownloadAsync(record, checkUrl, localFile);
 
         try
@@ -298,6 +287,30 @@ public class ModInstallService : IModInstallService
     // ── Download-based update detection ──────────────────────────────────────────
 
     /// <summary>
+    /// Determines whether the given URL should use download-based update detection
+    /// instead of HEAD Content-Length comparison. Returns <c>true</c> for any
+    /// <c>*.github.io</c> host, because GitHub Pages CDN may return compressed
+    /// transfer sizes or omit Content-Length entirely, making HEAD unreliable.
+    /// </summary>
+    /// <param name="url">The resolved snapshot URL to evaluate.</param>
+    /// <returns>
+    /// <c>true</c> if the URL is hosted on a <c>*.github.io</c> domain and should
+    /// be routed through <see cref="CheckForUpdateByDownloadAsync"/>; otherwise <c>false</c>.
+    /// </returns>
+    private static bool ShouldUseDownloadCheck(string url)
+    {
+        try
+        {
+            var host = new Uri(url).Host;
+            return host.EndsWith(".github.io", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// For CDNs where HEAD Content-Length is unreliable, downloads the remote file
     /// to a temp path and compares its size against the locally installed file.
     /// If a genuine update is detected, the downloaded file is moved into the
@@ -314,6 +327,16 @@ public class ModInstallService : IModInstallService
         try
         {
             Directory.CreateDirectory(DownloadCacheDir);
+
+            // Clean up any orphaned temp files from previous update checks for this addon
+            // (e.g. from crashes or process kills mid-check)
+            try
+            {
+                var addonName = Path.GetFileName(cacheFile);
+                foreach (var stale in Directory.EnumerateFiles(DownloadCacheDir, addonName + ".update*"))
+                    try { File.Delete(stale); } catch { /* best-effort */ }
+            }
+            catch { /* best-effort — don't block the update check */ }
 
             // Download the remote file to a temp path
             var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
@@ -333,9 +356,16 @@ public class ModInstallService : IModInstallService
 
             if (remoteSize == localSize)
             {
-                // No update — clean up temp, done
-                File.Delete(tempFile);
-                return false;
+                // Sizes match — compare hashes to catch same-size updates
+                var localHash  = await ComputeHashAsync(localFile);
+                var remoteHash = await ComputeHashAsync(tempFile);
+                if (localHash == remoteHash)
+                {
+                    // Identical content — no update
+                    File.Delete(tempFile);
+                    return false;
+                }
+                // Same size but different content — fall through to update path
             }
 
             // Real update detected — move temp into cache so install can reuse it

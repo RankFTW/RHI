@@ -12,6 +12,15 @@
 **DC DLL picker not waiting for Enter before renaming**
 - Fixed the editable DC DLL filename picker triggering file renames on every keystroke while typing a custom name. The picker now only commits the change when you press Enter, select from the dropdown, or leave the field. Applies to both the global and per-game pickers.
 
+**Update detection for clshortfuse.github.io mods**
+- Fixed mod update detection for all mods hosted on GitHub Pages (`*.github.io`), including the Generic Unity and Generic Unreal addons. These URLs were falling through to the HEAD Content-Length comparison path, which is unreliable on GitHub Pages because the CDN may return compressed transfer sizes. They are now routed through the download-based comparison path, matching the existing behavior for `marat569.github.io` mods.
+
+**Same-size mod updates not detected**
+- Fixed the download-based update check failing to detect updates when the new version of a mod has the same file size as the installed version. The check now compares SHA-256 hashes when file sizes match, so content changes are always detected regardless of size.
+
+**Orphaned temp files in download cache**
+- Fixed update check temp files (`.update_check_*.tmp`) accumulating in the download cache folder after crashes or interrupted checks. Stale temp files are now cleaned up automatically at the start of each update check.
+
 ---
 
 ## v1.5.2
