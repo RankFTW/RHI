@@ -31,8 +31,8 @@ Requires Windows 10/11 (x64) and [.NET 8 Desktop Runtime](https://dotnet.microso
 - **Graphics API detection** — scans game executables via PE header analysis to detect DirectX 11/12, Vulkan, and OpenGL. API badges shown on game cards.
 - **Vulkan ReShade support** — installs ReShade as a global Vulkan implicit layer for Vulkan-rendered games, with per-game INI and shader deployment
 - **One-click install/update/uninstall** for ReShade, Display Commander, RenoDX addons, and Luma Framework mods
-- **Version display** — installed ReShade and Display Commander version numbers shown directly on the component row
-- **DC Mode** (3 levels) — controls how Display Commander loads alongside ReShade for better compatibility
+- **Version display** — installed ReShade and Display Commander version numbers shown directly on the component row, including when DC Mode is active
+- **DC Mode** — On/Off toggle with a DLL filename picker controlling how Display Commander loads alongside ReShade
 - **Shader pack management** — 7 HDR shader packs with five deploy modes (Off, Minimum, All, User, Select) plus a per-game shader selection picker
 - **Auto-save overrides** — all per-game settings save immediately when changed, no Save button needed
 - **Per-game overrides** — DLL naming, shader mode/selection, DC mode, rendering path, wiki name mapping, wiki exclusion, per-component Update All inclusion, reset overrides

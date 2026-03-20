@@ -57,7 +57,6 @@ Games in Luma mode do not show a wiki status icon on the grid card.
 | **RDXC logo + title** | App branding |
 | **Refresh** | Rescan game library and fetch latest mod info. After the initial boot, refresh runs invisibly in the background — game cards stay visible throughout. |
 | **Update** | Update ReShade, Display Commander, and RenoDX for all eligible games in one click |
-| **Global Shaders** | Opens the shader selection picker to choose which shader packs to deploy globally. Selecting packs and clicking Deploy immediately syncs shaders to all installed game folders. |
 | **Help** | Flyout menu with Discord (opens the RDXC support channel) and Guide (opens the detailed guide) |
 | **View toggle** | Switch between Detail View and Grid View |
 | **Settings** | Navigate to the Settings page |
@@ -65,7 +64,7 @@ Games in Luma mode do not show a wiki status icon on the grid card.
 ### Game List Sidebar (Detail View)
 
 - **Search box** — filters games in real-time as you type. The ✕ clear button appears as soon as you start typing.
-- **Filter chips** — All Games, Favourites, Installed, Unreal, Unity, Other, RenoDX, Luma, Hidden. Engine and mod filters can be combined (e.g. Unreal + RenoDX shows Unreal games with RenoDX mods).
+- **Filter chips** — All Games, Favourites, Installed, Unreal, Unity, Other, RenoDX, Luma, Hidden. Engine and mod filters can be combined (e.g. Unreal + RenoDX shows Unreal games with RenoDX mods). Your selected filter is saved and automatically restored when you reopen the app.
 - **Game/installed counts** — how many games are visible and how many have mods installed
 - **Game list** — each entry shows a platform icon, game name, and a green dot if updates are available
 
@@ -79,7 +78,7 @@ When a game is selected, the detail panel shows:
 - **Graphics API badge** — shows detected rendering APIs (e.g. DX12, VLK, or multi-API combos like DX11/12 / VLK)
 - **Install path** in monospace text
 - **Components table** — ReShade, Display Commander, RenoDX, and Luma (when applicable), each with status, install/reinstall/update button, options menu, and uninstall button
-- **Version display** — installed ReShade and DC version numbers shown directly on the component row (e.g. `6.7.3`). Purple text with version number indicates an update is available; green text after updating.
+- **Version display** — installed ReShade and DC version numbers shown directly on the component row (e.g. `6.7.3`), including when DC Mode is active. Purple text with version number indicates an update is available; green text after updating.
 - **Rendering path toggle** — for dual-API games (DirectX + Vulkan), a toggle to choose which rendering path ReShade targets
 - **Vulkan ReShade status** — shows the ReShade version number with "(Vulkan)" underneath in green when Vulkan ReShade is active
 - **Overrides section** — all per-game settings inline with descriptions
@@ -103,7 +102,7 @@ Click **Settings** in the toolbar to open the Settings page. Click **← Back to
 
 | Section | Contents |
 |---------|----------|
-| **Display Commander Mode** | DC Mode selector (Off / Mode 1 / Mode 2) with inline explanation, plus Deploy DC Mode to All button |
+| **Display Commander Mode** | DC Mode On/Off toggle with DLL filename picker, plus Deploy DC Mode to All button |
 | **Add Game** | Manually add a game that wasn't automatically detected |
 | **Full Refresh** | Clears all caches and re-scans everything from disk |
 | **Preferences** | Skip Update Check toggle, Beta Opt-In toggle, Verbose Logging toggle — each with inline description |
@@ -217,7 +216,7 @@ The detail panel shows a Components section with up to four rows:
 
 ### Version Display
 
-The status label next to ReShade and Display Commander install buttons shows the installed version number (e.g. `6.7.3`) instead of just "Installed". Falls back to "Installed" if no version information is available. When an update is available, the text turns purple and shows the current version number. After updating, it switches to the new version in green.
+The status label next to ReShade and Display Commander install buttons shows the installed version number (e.g. `6.7.3`) instead of just "Installed", including when DC Mode is active. Falls back to "Installed" if no version information is available. When an update is available, the text turns purple and shows the current version number. After updating, it switches to the new version in green.
 
 ### Mod Author Badges
 
@@ -281,15 +280,16 @@ The `RDXC_VULKAN_FOOTPRINT` file controls shader deployment to Vulkan game folde
 
 ## DC Mode
 
-DC Mode controls how Display Commander loads alongside ReShade. Configure it on the Settings page.
+DC Mode controls how Display Commander loads alongside ReShade. Configure it on the Settings page using the On/Off toggle and DLL filename picker.
 
-| Mode | ReShade | DC Installed As |
-|------|---------|-----------------|
+| Setting | ReShade | DC Installed As |
+|---------|---------|-----------------|
 | **OFF** (default) | `dxgi.dll` in the game folder | `zzz_display_commander.addon64` |
-| **Mode 1** | Not in game folder — DC loads ReShade from shared folder | `dxgi.dll` |
-| **Mode 2** | Not in game folder — DC loads ReShade from shared folder | `winmm.dll` |
+| **ON** | Not in game folder — DC loads ReShade from shared folder | Selected DLL filename (e.g. `dxgi.dll`, `winmm.dll`, or any custom name) |
 
-When DC Mode is active, ReShade is synced to `%LOCALAPPDATA%\Programs\Display_Commander\Reshade\` and Display Commander loads it from there at runtime. Per-game ReShade installs are removed automatically. Individual games can override the global DC Mode via the Overrides section.
+The DLL filename picker lets you select from common proxy DLL names or type a custom filename. The picker only commits the change when you press Enter, select from the dropdown, or leave the field.
+
+When DC Mode is active, ReShade is synced to `%LOCALAPPDATA%\Programs\Display_Commander\Reshade\` and Display Commander loads it from there at runtime. Individual games can override the global DC Mode via the Overrides section with three options: Global, Off, and Custom. Custom lets you pick a per-game DLL filename independently of the global setting.
 
 ### Why DC Mode is Recommended
 
@@ -337,10 +337,6 @@ RDXC downloads and maintains 7 HDR shader packs, merged into a shared staging fo
 | [reshade-shaders](https://github.com/clshortfuse/reshade-shaders) | clshortfuse |
 | [potatoFX](https://github.com/CreepySasquatch/potatoFX) | CreepySasquatch |
 | [reshade-shaders (slim)](https://github.com/crosire/reshade-shaders/tree/slim) | crosire |
-
-### Global Shader Selection
-
-Click the **Global Shaders** button in the toolbar to open the shader selection picker. The picker lists all 7 available shader packs with checkboxes. Select the packs you want and click Deploy — shaders are immediately synced to all installed game folders. The selection is saved and restored across app restarts.
 
 ### Per-Game Shader Overrides
 
@@ -396,7 +392,7 @@ The Overrides section appears below Components in the detail panel. All controls
 | **↩ Reset** | Restore original name and clear wiki mapping |
 | **DLL naming override** | Custom filenames for ReShade and DC via dropdown combo boxes with common DLL suggestions (`dxgi.dll`, `d3d11.dll`, `dinput8.dll`, `version.dll`, `winmm.dll`, `d3d12.dll`, `xinput1_3.dll`, `msvcp140.dll`, `bink2w64.dll`, `d3d9.dll`). Dropdowns cross-filter so both can't use the same name. Existing installs are renamed in place — no reinstall needed. Takes priority over any manifest-defined DLL names. |
 | **Global update inclusion** | Three toggle switches (ReShade, DC, RenoDX) controlling whether the game is included in bulk updates for each component. All default to On. Legacy single-toggle settings are auto-migrated. |
-| **DC Mode** | Follow Global / Exclude (Off) / Force Mode 1 / Force Mode 2. Vulkan games default to Exclude (Off). |
+| **DC Mode** | Global / Exclude (Off) / Custom (with per-game DLL filename picker). Vulkan games default to Exclude (Off). |
 | **Shader Mode** | Global / Off / Minimum / All / User / Select. Select mode opens a picker to choose specific shader packs for this game. |
 | **Rendering Path** | For dual-API games: DirectX or Vulkan. Switching from DirectX to Vulkan triggers automatic cleanup of DX artifacts. |
 | **Wiki exclusion** | Exclude the game from wiki lookups |
@@ -491,7 +487,7 @@ Everything under `%LOCALAPPDATA%\RenoDXCommander\`:
 | `game_library.json` | Detected games, hidden list, manually added games |
 | `installed.json` | RenoDX mod install records |
 | `aux_installed.json` | ReShade and DC install records |
-| `settings.json` | All settings and per-game overrides |
+| `settings.json` | All settings, per-game overrides, and persisted filter mode |
 | `downloads\` | Cached downloads |
 | `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `ReShadePreset.ini`, `DisplayCommander.toml`) |
 | `reshade\` | Staged shader packs and custom shaders |
@@ -518,7 +514,7 @@ A new session log file is created every time RDXC starts, named with a timestamp
 | Games/mods out of sync | Settings → **Full Refresh** to clear all caches |
 | Drag-and-drop not working | Ensure RDXC is running. Drag-and-drop uses Win32 shell handling and works even as administrator. |
 | Vulkan ReShade not showing as installed | Check that `reshade.ini` exists in the game folder. The Vulkan layer must also be installed globally. |
-| Shaders missing after DC uninstall | Click **Refresh** or use **Global Shaders** — RDXC will detect the missing shaders and redeploy them. For Vulkan games, the footprint file is also restored. |
+| Shaders missing after DC uninstall | Click **Refresh** — RDXC will detect the missing shaders and redeploy them. For Vulkan games, the footprint file is also restored. |
 | Auto-update not triggering for beta | Ensure Beta Opt-In is enabled in Settings. The beta release on GitHub must have a parseable version in the title (e.g. "RDXC 1.5.3 beta 1") and the asset must be named `RDXC-Setup.exe`. |
 | Games showing as installed after manual file removal | Click **Refresh** — RDXC verifies files exist on disk and cleans up stale records. |
 | DLL override not applying from manifest | Click **Refresh** — manifest DLL overrides are applied on every refresh, renaming existing files to match. |
