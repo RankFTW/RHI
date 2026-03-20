@@ -46,6 +46,9 @@ public static class UIFactory
     /// </summary>
     public static Windows.UI.Color ParseColor(string hex)
     {
+        if (string.Equals(hex, "transparent", StringComparison.OrdinalIgnoreCase))
+            return Windows.UI.Color.FromArgb(0, 0, 0, 0);
+
         hex = hex.TrimStart('#');
         byte a = 255;
         int offset = 0;

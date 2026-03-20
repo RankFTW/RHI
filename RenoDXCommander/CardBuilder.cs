@@ -213,8 +213,13 @@ public class CardBuilder
             Foreground = UIFactory.GetBrush("#7AACDD"),
             BorderBrush = UIFactory.GetBrush("#2A4468"),
             CornerRadius = new CornerRadius(6),
-            Flyout = installFlyout,
         };
+
+        // Use SetAttachedFlyout + ShowAt so that flyout.Target is set to installBtn
+        // before the Opening event fires. Assigning Button.Flyout alone does not
+        // reliably populate Target in all WinUI 3 versions.
+        FlyoutBase.SetAttachedFlyout(installBtn, installFlyout);
+        installBtn.Click += (s, e) => FlyoutBase.ShowAttachedFlyout(installBtn);
 
         root.Children.Add(installBtn);
 

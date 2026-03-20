@@ -168,6 +168,115 @@ public class OverridesFlyoutBuilder
             "Global = use the Settings DC Mode. Off = always use normal naming. " +
             "Custom = use a custom DLL filename.");
 
+        // ── DC Mode Custom DLL filename selector ────────────────────────────────
+        var dcCustomDllSelector = new ComboBox
+        {
+            IsEditable = true,
+            ItemsSource = DllOverrideConstants.DcDllPickerNames,
+            PlaceholderText = "Select or type DLL filename",
+            Header = "DC Custom DLL filename",
+            FontSize = 12,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Visibility = dcModeCombo.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed,
+        };
+
+        // Pre-populate with saved filename when opening flyout for a game with DC Mode Custom
+        if (currentDcMode == "Custom")
+        {
+            var savedDllName = ViewModel.GetDcCustomDllFileName(gameName);
+            if (!string.IsNullOrWhiteSpace(savedDllName))
+            {
+                if (DllOverrideConstants.DcDllPickerNames.Contains(savedDllName, StringComparer.OrdinalIgnoreCase))
+                    dcCustomDllSelector.SelectedItem = DllOverrideConstants.DcDllPickerNames.First(n => n.Equals(savedDllName, StringComparison.OrdinalIgnoreCase));
+                else
+                {
+                    var capturedDll = savedDllName;
+                    dcCustomDllSelector.Loaded += (s, e) => dcCustomDllSelector.Text = capturedDll;
+                }
+            }
+        }
+
+        // Helper: rename the installed DC file to the chosen custom DLL filename
+        void RenameDcToCustom(string dllFileName)
+        {
+            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard?.DcRecord == null || string.IsNullOrEmpty(targetCard.InstallPath)) return;
+
+            var oldName = targetCard.DcRecord.InstalledAs;
+            if (string.IsNullOrEmpty(oldName)) return;
+            if (oldName.Equals(dllFileName, StringComparison.OrdinalIgnoreCase)) return;
+
+            var oldPath = Path.Combine(targetCard.InstallPath, oldName);
+            var newPath = Path.Combine(targetCard.InstallPath, dllFileName);
+            try
+            {
+                if (File.Exists(oldPath))
+                {
+                    if (File.Exists(newPath)) File.Delete(newPath);
+                    File.Move(oldPath, newPath);
+                    targetCard.DcRecord.InstalledAs = dllFileName;
+                    targetCard.DcInstalledFile = dllFileName;
+                    _crashReporter.Log($"[OverridesFlyoutBuilder] DC custom rename {targetCard.GameName}: {oldName} → {dllFileName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[OverridesFlyoutBuilder] DC custom rename failed for '{targetCard.GameName}' — {ex.Message}");
+                targetCard.DcActionMessage = $"❌ Rename failed: {ex.Message}";
+            }
+        }
+
+        // Track whether a selection change came from a real dropdown pick vs. text-match during typing
+        bool dcCustomDllPickerIsTyping = false;
+        bool dcCustomDllPickerJustCommitted = false;
+
+        dcCustomDllSelector.GotFocus += (s, e) => { dcCustomDllPickerIsTyping = true; dcCustomDllPickerJustCommitted = false; };
+        dcCustomDllSelector.LostFocus += (s, e) =>
+        {
+            dcCustomDllPickerIsTyping = false;
+            if (dcCustomDllPickerJustCommitted) { dcCustomDllPickerJustCommitted = false; return; }
+            // Commit on focus loss (e.g. user tabs away after typing a custom name)
+            var typed = dcCustomDllSelector.Text?.Trim();
+            var current = ViewModel.GetDcCustomDllFileName(capturedName);
+            if (!string.IsNullOrWhiteSpace(typed) && typed != current)
+            {
+                ViewModel.SetDcCustomDllFileName(capturedName, typed);
+                if (dcModeCombo.SelectedIndex == 2)
+                    RenameDcToCustom(typed);
+            }
+        };
+
+        // Auto-save: DC Custom DLL filename on dropdown selection (not during typing)
+        dcCustomDllSelector.SelectionChanged += (s, e) =>
+        {
+            if (dcCustomDllPickerIsTyping) return; // ignore text-match events while user is typing
+            var selected = dcCustomDllSelector.SelectedItem as string;
+            if (!string.IsNullOrWhiteSpace(selected))
+            {
+                ViewModel.SetDcCustomDllFileName(capturedName, selected);
+                if (dcModeCombo.SelectedIndex == 2)
+                    RenameDcToCustom(selected);
+            }
+        };
+
+        // Auto-save: DC Custom DLL filename on Enter key (TextSubmitted fires when user presses Enter)
+        dcCustomDllSelector.TextSubmitted += (sender, args) =>
+        {
+            var typed = args.Text?.Trim();
+            if (!string.IsNullOrWhiteSpace(typed))
+            {
+                dcCustomDllPickerIsTyping = true; // suppress SelectionChanged
+                dcCustomDllPickerJustCommitted = true;
+                ViewModel.SetDcCustomDllFileName(capturedName, typed);
+                if (dcModeCombo.SelectedIndex == 2)
+                    RenameDcToCustom(typed);
+                sender.SelectedItem = null; // clear stale selection so ComboBox doesn't revert
+                dcCustomDllPickerIsTyping = false;
+            }
+            args.Handled = true; // prevent ComboBox from overriding SelectedItem
+        };
+
         // Subscribe to DcModeEnabled/DcDllFileName changes to keep the "Global (...)" label current
         System.ComponentModel.PropertyChangedEventHandler dcModeLevelHandler = (sender, e) =>
         {
@@ -194,6 +303,19 @@ public class OverridesFlyoutBuilder
                 ViewModel.SetPerGameDcModeOverride(capturedName, newDcMode);
                 ViewModel.ApplyDcModeSwitchForCard(capturedName, previousDcMode);
             }
+
+            // When switching to DC Mode Custom with a DLL filename already set, rename
+            if (dcModeCombo.SelectedIndex == 2)
+            {
+                var dllName = dcCustomDllSelector.SelectedItem as string ?? dcCustomDllSelector.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(dllName))
+                    RenameDcToCustom(dllName);
+            }
+
+            // Toggle DC Mode Custom DLL selector visibility
+            dcCustomDllSelector.Visibility = dcModeCombo.SelectedIndex == 2
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         };
 
         string currentShaderMode = ViewModel.GetPerGameShaderMode(gameName);
@@ -257,15 +379,37 @@ public class OverridesFlyoutBuilder
             }
         };
 
-        var modeGrid = new Grid { ColumnSpacing = 8 };
+        var modeGrid = new Grid();
         modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        Grid.SetColumn(dcModeCombo, 0);
-        Grid.SetColumn(shaderToggle, 1);
-        modeGrid.Children.Add(dcModeCombo);
-        modeGrid.Children.Add(shaderToggle);
+
+        // Column 0: DC Mode combo + DC Mode Custom DLL selector
+        var dcModeColumn = new StackPanel { Spacing = 8 };
+        dcModeColumn.Children.Add(dcModeCombo);
+        dcModeColumn.Children.Add(dcCustomDllSelector);
+        Grid.SetColumn(dcModeColumn, 0);
+
+        // Column 1: Vertical divider
+        var modeDivider = new Border
+        {
+            Width = 1,
+            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Margin = new Thickness(12, 0, 12, 0),
+        };
+        Grid.SetColumn(modeDivider, 1);
+
+        // Column 2: Global Shaders toggle + Select Shaders button
+        var shaderColumn = new StackPanel { Spacing = 8 };
+        shaderColumn.Children.Add(shaderToggle);
+        shaderColumn.Children.Add(selectShadersBtn);
+        Grid.SetColumn(shaderColumn, 2);
+
+        modeGrid.Children.Add(dcModeColumn);
+        modeGrid.Children.Add(modeDivider);
+        modeGrid.Children.Add(shaderColumn);
         panel.Children.Add(modeGrid);
-        panel.Children.Add(selectShadersBtn);
         panel.Children.Add(UIFactory.MakeSeparator());
 
         // ── DLL naming override ──
@@ -657,6 +801,12 @@ public class OverridesFlyoutBuilder
                 ViewModel.SetPerGameDcModeOverride(capturedName, null);
                 ViewModel.ApplyDcModeSwitchForCard(capturedName, prev);
             }
+
+            // Clear DC Mode Custom DLL filename
+            ViewModel.SetDcCustomDllFileName(capturedName, null);
+            dcCustomDllSelector.SelectedItem = null;
+            dcCustomDllSelector.Text = "";
+            dcCustomDllSelector.Visibility = Visibility.Collapsed;
 
             // Shader mode → Global
             if (ViewModel.GetPerGameShaderMode(capturedName) != "Global")
