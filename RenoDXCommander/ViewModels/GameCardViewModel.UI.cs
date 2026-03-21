@@ -281,6 +281,10 @@ public partial class GameCardViewModel
     {
         get
         {
+            // Luma mode: show the Luma mod author instead of the RenoDX author
+            if (EffectiveLumaMode && LumaMod != null && !string.IsNullOrWhiteSpace(LumaMod.Author))
+                return LumaMod.Author.Split('&').Select(a => a.Trim()).Where(a => a.Length > 0).ToArray();
+
             // UE-Extended overrides everything — credit goes to Marat alone
             if (UseUeExtended || IsManifestUeExtended)
                 return new[] { "Marat" };

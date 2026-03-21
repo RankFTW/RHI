@@ -161,6 +161,9 @@ public partial class GameCardViewModel
         OnPropertyChanged(nameof(CardPrimaryActionLabel));
         OnPropertyChanged(nameof(HasExtraLinks));
         OnPropertyChanged(nameof(ExtraLinkVisibility));
+        // Author badge (switches between RenoDX and Luma author)
+        OnPropertyChanged(nameof(AuthorList));
+        OnPropertyChanged(nameof(HasAuthors));
     }
 
     partial void OnLumaStatusChanged(GameStatus value) => NotifyLumaStatusDependents();

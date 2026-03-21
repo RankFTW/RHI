@@ -365,6 +365,12 @@ public sealed partial class MainWindow : Window
             new Uri("https://github.com/RankFTW/rdxc-manifest?tab=readme-ov-file#renodx-commander--detailed-guide"));
     }
 
+    private void SupportKofi_Click(object sender, RoutedEventArgs e)
+    {
+        _ = Windows.System.Launcher.LaunchUriAsync(
+            new Uri("https://ko-fi.com/rankftw"));
+    }
+
     private async Task<bool> ShowForeignDxgiConfirmDialogAsync(GameCardViewModel card, string dxgiPath)
         => await _dialogService.ShowForeignDxgiConfirmDialogAsync(card, dxgiPath);
 

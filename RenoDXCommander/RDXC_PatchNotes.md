@@ -1,4 +1,4 @@
-## v1.5.3
+## v1.5.4
 
 ### New Features
 
@@ -21,6 +21,12 @@
 - RDXC now watches your Downloads folder (configurable in Settings) for new `renodx-*.addon64` / `.addon32` files and automatically prompts you to install them.
 - Double-clicking an addon file in Explorer opens RDXC and triggers the install flow. If RDXC is already running, the file is forwarded to the existing instance via named pipe.
 - Drag-and-drop, file association, and archive extraction all enforce the `renodx-` filename prefix to avoid triggering on unrelated addon files.
+
+**AddonPath support**
+- Addon installs (RenoDX and Display Commander) now respect the `AddonPath` setting in `reshade.ini`. If the `[ADDON]` section contains an `AddonPath=` line, addons are deployed to that folder instead of the game root. Relative paths are resolved against the game directory. Uninstall, update detection, and addon scanning all check the same path.
+
+**Ko-fi link in Help menu**
+- The Help flyout now includes a Ko-fi link.
 
 ### Bug Fixes
 

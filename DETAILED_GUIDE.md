@@ -57,7 +57,7 @@ Games in Luma mode do not show a wiki status icon on the grid card.
 | **RDXC logo + title** | App branding |
 | **Refresh** | Rescan game library and fetch latest mod info. After the initial boot, refresh runs invisibly in the background — game cards stay visible throughout. |
 | **Update** | Update ReShade, Display Commander, and RenoDX for all eligible games in one click |
-| **Help** | Flyout menu with Discord (opens the RDXC support channel) and Guide (opens the detailed guide) |
+| **Help** | Flyout menu with Discord (opens the RDXC support channel), Guide (opens the detailed guide), and Ko-fi (support link) |
 | **View toggle** | Switch between Detail View and Grid View |
 | **Settings** | Navigate to the Settings page |
 
@@ -164,6 +164,14 @@ RDXC supports drag-and-drop for multiple file types:
 
 Drag-and-drop works even when RDXC is running as administrator (UIPI bypass via `WM_DROPFILES`). File extensions are validated before any network or file activity.
 
+### Addon Auto-Detection
+
+RDXC watches your Downloads folder (configurable in Settings) for new `renodx-*.addon64` / `.addon32` files and automatically prompts you to install them. Double-clicking an addon file in Explorer opens RDXC and triggers the install flow. If RDXC is already running, the file is forwarded to the existing instance via named pipe. All entry points (watcher, drag-and-drop, file association, archive extraction) enforce the `renodx-` filename prefix to avoid triggering on unrelated addon files.
+
+### AddonPath Support
+
+Addon installs (RenoDX and Display Commander) respect the `AddonPath` setting in `reshade.ini`. If the `[ADDON]` section contains an `AddonPath=` line, addons are deployed to that folder instead of the game root. Relative paths are resolved against the game directory. Uninstall, update detection, and addon scanning all check the same resolved path.
+
 ---
 
 ## Graphics API Detection
@@ -220,7 +228,7 @@ The status label next to ReShade and Display Commander install buttons shows the
 
 ### Mod Author Badges
 
-Named mods from the RenoDX wiki display the mod author as a bordered badge on the detail panel info line. Multiple authors (e.g. "oopydoopy & Voosh") each get their own badge. Generic Unreal Engine mods show "ShortFuse", UE-Extended mods show "Marat", and generic Unity mods show "Voosh".
+Named mods from the RenoDX wiki display the mod author as a bordered badge on the detail panel info line. Multiple authors (e.g. "oopydoopy & Voosh") each get their own badge. Generic Unreal Engine mods show "ShortFuse", UE-Extended mods show "Marat", and generic Unity mods show "Voosh". Games in Luma mode show the Luma mod author from the Luma wiki (e.g. "Pumbo", "XgarhontX") in place of the RenoDX author.
 
 ### ReShade Detection Under Non-Standard Filenames
 
@@ -468,7 +476,7 @@ When Beta Opt-In is enabled in Settings, RDXC checks both the stable release (`R
 - Beta is only offered when its base version exceeds the latest stable, OR when the current app is already on a beta and a newer beta at the same base version is available
 - No update is offered if all candidates are at or below the current version
 
-The app encodes its beta status in the 4th component of the assembly version: `1.5.3.0` = stable, `1.5.3.1` = beta 1, `1.5.3.2` = beta 2, etc.
+The app encodes its beta status in the 4th component of the assembly version: `1.5.4.0` = stable, `1.5.4.1` = beta 1, `1.5.4.2` = beta 2, etc.
 
 ---
 
@@ -515,7 +523,7 @@ A new session log file is created every time RDXC starts, named with a timestamp
 | Drag-and-drop not working | Ensure RDXC is running. Drag-and-drop uses Win32 shell handling and works even as administrator. |
 | Vulkan ReShade not showing as installed | Check that `reshade.ini` exists in the game folder. The Vulkan layer must also be installed globally. |
 | Shaders missing after DC uninstall | Click **Refresh** — RDXC will detect the missing shaders and redeploy them. For Vulkan games, the footprint file is also restored. |
-| Auto-update not triggering for beta | Ensure Beta Opt-In is enabled in Settings. The beta release on GitHub must have a parseable version in the title (e.g. "RDXC 1.5.3 beta 1") and the asset must be named `RDXC-Setup.exe`. |
+| Auto-update not triggering for beta | Ensure Beta Opt-In is enabled in Settings. The beta release on GitHub must have a parseable version in the title (e.g. "RDXC 1.5.4 beta 1") and the asset must be named `RDXC-Setup.exe`. |
 | Games showing as installed after manual file removal | Click **Refresh** — RDXC verifies files exist on disk and cleans up stale records. |
 | DLL override not applying from manifest | Click **Refresh** — manifest DLL overrides are applied on every refresh, renaming existing files to match. |
 

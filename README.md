@@ -47,6 +47,11 @@ Requires Windows 10/11 (x64) and [.NET 8 Desktop Runtime](https://dotnet.microso
 - **Foreign DLL protection** — detects DXVK, Special K, ENB, etc. before overwriting
 - **Auto-update** — checks for new RDXC versions on launch with stable and beta channels
 - **Settings page** — DC Mode, shader mode, deploy actions, preferences, logs, about, and credits all in one place
+- **Addon auto-detection** — watches your Downloads folder for new `renodx-*.addon64` / `.addon32` files and prompts you to install them. Configurable watch folder in Settings.
+- **AddonPath support** — addon installs respect the `AddonPath` setting in `reshade.ini`, deploying addons to the configured folder instead of the game root
+- **Luma author badges** — games in Luma mode show the Luma mod author (from the Luma wiki) in place of the RenoDX author badge
+- **Filter mode persistence** — your selected filter tab is saved and automatically restored when you reopen the app
+- **Toolbar redesign** — consistent teal accent styling with grouped sections separated by vertical dividers. Update button lights up purple when updates are available.
 
 ---
 

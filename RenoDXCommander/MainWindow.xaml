@@ -79,6 +79,7 @@
                             <MenuFlyout Placement="Bottom">
                                 <MenuFlyoutItem Text="Discord" Click="SupportDiscord_Click"/>
                                 <MenuFlyoutItem Text="Guide" Click="SupportGuide_Click"/>
+                                <MenuFlyoutItem Text="Ko-fi" Click="SupportKofi_Click"/>
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>

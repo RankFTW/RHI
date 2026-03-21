@@ -4086,6 +4086,20 @@ public partial class MainViewModel : ObservableObject
         if (!Directory.Exists(installPath)) return null;
         try
         {
+            // Check the AddonPath subfolder from reshade.ini first
+            var addonSearchPath = ModInstallService.ResolveAddonSearchPath(installPath);
+            if (addonSearchPath != null && Directory.Exists(addonSearchPath))
+            {
+                if (mod?.AddonFileName != null && File.Exists(Path.Combine(addonSearchPath, mod.AddonFileName)))
+                    return mod.AddonFileName;
+                foreach (var ext in new[] { "*.addon64", "*.addon32" })
+                {
+                    var found = Directory.GetFiles(addonSearchPath, ext)
+                        .FirstOrDefault(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase));
+                    if (found != null) return Path.GetFileName(found);
+                }
+            }
+
             if (mod?.AddonFileName != null && File.Exists(Path.Combine(installPath, mod.AddonFileName)))
                 return mod.AddonFileName;
             // First try direct files in the folder
@@ -4160,6 +4174,20 @@ public partial class MainViewModel : ObservableObject
         if (!Directory.Exists(installPath)) return null;
         try
         {
+            // Check the AddonPath subfolder from reshade.ini first
+            var addonSearchPath = ModInstallService.ResolveAddonSearchPath(installPath);
+            if (addonSearchPath != null && Directory.Exists(addonSearchPath))
+            {
+                if (mod?.AddonFileName != null && File.Exists(Path.Combine(addonSearchPath, mod.AddonFileName)))
+                    return mod.AddonFileName;
+                foreach (var ext in new[] { "*.addon64", "*.addon32" })
+                {
+                    var found = Directory.GetFiles(addonSearchPath, ext)
+                        .FirstOrDefault(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase));
+                    if (found != null) return Path.GetFileName(found);
+                }
+            }
+
             if (mod?.AddonFileName != null && File.Exists(Path.Combine(installPath, mod.AddonFileName)))
                 return mod.AddonFileName;
             foreach (var ext in new[] { "*.addon64", "*.addon32" })

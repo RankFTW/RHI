@@ -498,16 +498,26 @@ public class DragDropHandler
         if (confirmResult != ContentDialogResult.Primary) return;
 
         // Remove existing RenoDX addon files (not DC addons)
+        // Check both the addon search path and the base install path
+        var addonDeployPath = ModInstallService.GetAddonDeployPath(installPath);
         try
         {
-            var toRemove = Directory.GetFiles(installPath, "*.addon64")
-                .Concat(Directory.GetFiles(installPath, "*.addon32"))
-                .Where(f => !Path.GetFileName(f).StartsWith("zzz_display_commander", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            foreach (var f in toRemove)
+            var searchPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { installPath };
+            if (!string.Equals(addonDeployPath, installPath, StringComparison.OrdinalIgnoreCase))
+                searchPaths.Add(addonDeployPath);
+
+            foreach (var searchDir in searchPaths)
             {
-                _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Removing existing '{Path.GetFileName(f)}'");
-                File.Delete(f);
+                if (!Directory.Exists(searchDir)) continue;
+                var toRemove = Directory.GetFiles(searchDir, "*.addon64")
+                    .Concat(Directory.GetFiles(searchDir, "*.addon32"))
+                    .Where(f => !Path.GetFileName(f).StartsWith("zzz_display_commander", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                foreach (var f in toRemove)
+                {
+                    _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Removing existing '{Path.GetFileName(f)}' from '{searchDir}'");
+                    File.Delete(f);
+                }
             }
         }
         catch (Exception ex)
@@ -515,12 +525,12 @@ public class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Failed to remove existing addons — {ex.Message}");
         }
 
-        // Copy the addon file to the game folder
-        var destPath = Path.Combine(installPath, addonFileName);
+        // Copy the addon file to the resolved addon folder
+        var destPath = Path.Combine(addonDeployPath, addonFileName);
         try
         {
             File.Copy(addonPath, destPath, overwrite: true);
-            _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Installed '{addonFileName}' to '{installPath}'");
+            _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Installed '{addonFileName}' to '{addonDeployPath}'");
 
             // Update card status
             targetCard.Status = GameStatus.Installed;

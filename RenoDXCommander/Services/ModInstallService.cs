@@ -89,7 +89,7 @@ public class ModInstallService : IModInstallService
                 $"Unsupported file type '{ext}' for {mod.Name}. Only .addon64 and .addon32 files are supported.");
         }
 
-        var destPath  = Path.Combine(gameInstallPath, fileName);
+        var destPath  = Path.Combine(GetAddonDeployPath(gameInstallPath), fileName);
         var cachePath = Path.Combine(DownloadCacheDir, fileName);
 
         // ── Step 1: get remote Content-Length (single HEAD) ───────────────────────
@@ -232,7 +232,12 @@ public class ModInstallService : IModInstallService
     {
         if (record.SnapshotUrl == null) return false;
 
-        var localFile = Path.Combine(record.InstallPath, record.AddonFileName);
+        var localFile = Path.Combine(GetAddonDeployPath(record.InstallPath), record.AddonFileName);
+        if (!File.Exists(localFile))
+        {
+            // Fallback: file may be in the base install path (pre-AddonPath)
+            localFile = Path.Combine(record.InstallPath, record.AddonFileName);
+        }
         if (!File.Exists(localFile)) return true;
 
         // Always resolve to the authoritative URL — handles records written before
@@ -391,8 +396,17 @@ public class ModInstallService : IModInstallService
 
     public void Uninstall(InstalledModRecord record)
     {
-        var filePath = Path.Combine(record.InstallPath, record.AddonFileName);
-        if (File.Exists(filePath)) File.Delete(filePath);
+        // Check addon search path first, then fall back to base install path
+        var addonDir = GetAddonDeployPath(record.InstallPath);
+        var filePath = Path.Combine(addonDir, record.AddonFileName);
+        if (File.Exists(filePath))
+            File.Delete(filePath);
+        else
+        {
+            // Fallback: file may have been installed before AddonPath was set
+            var fallback = Path.Combine(record.InstallPath, record.AddonFileName);
+            if (File.Exists(fallback)) File.Delete(fallback);
+        }
         // Cache copy intentionally kept for future reinstalls.
 
         var db = LoadDb();
@@ -460,4 +474,68 @@ public class ModInstallService : IModInstallService
 
     public static bool IsValidGameFolder(string path) =>
         Directory.Exists(path) && Directory.GetFiles(path, "*.exe").Length > 0;
+
+    // ── Addon search path resolution ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Reads the <c>[ADDON]</c> section of <c>reshade.ini</c> in the given game folder
+    /// and returns the resolved <c>AddonPath</c> directory if the key is present
+    /// and non-empty. Returns <c>null</c> if the key is absent, empty, or the INI
+    /// doesn't exist — callers should fall back to <paramref name="gameInstallPath"/>.
+    /// </summary>
+    /// <remarks>
+    /// Relative paths (e.g. <c>.\reshade-addons</c>) are resolved relative to
+    /// <paramref name="gameInstallPath"/>. Absolute paths are used as-is.
+    /// The directory is created if it doesn't already exist.
+    /// </remarks>
+    public static string? ResolveAddonSearchPath(string gameInstallPath)
+    {
+        try
+        {
+            var iniPath = Path.Combine(gameInstallPath, "reshade.ini");
+            if (!File.Exists(iniPath)) return null;
+
+            bool inAddon = false;
+            foreach (var rawLine in File.ReadLines(iniPath))
+            {
+                var line = rawLine.Trim();
+                if (line.StartsWith('['))
+                {
+                    inAddon = line.Equals("[ADDON]", StringComparison.OrdinalIgnoreCase);
+                    continue;
+                }
+                if (!inAddon) continue;
+
+                if (line.StartsWith("AddonPath", StringComparison.OrdinalIgnoreCase)
+                    && line.Contains('='))
+                {
+                    var value = line[(line.IndexOf('=') + 1)..].Trim();
+                    if (string.IsNullOrEmpty(value)) return null;
+
+                    // Resolve relative paths against the game folder
+                    var resolved = Path.IsPathRooted(value)
+                        ? value
+                        : Path.GetFullPath(Path.Combine(gameInstallPath, value));
+
+                    Directory.CreateDirectory(resolved);
+                    return resolved;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ModInstallService.ResolveAddonSearchPath] Failed to read reshade.ini in '{gameInstallPath}' — {ex.Message}");
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the directory where addon files should be deployed for the given game.
+    /// Checks <c>reshade.ini</c> for <c>AddonPath</c> first; falls back to
+    /// <paramref name="gameInstallPath"/> if not set.
+    /// </summary>
+    public static string GetAddonDeployPath(string gameInstallPath)
+    {
+        return ResolveAddonSearchPath(gameInstallPath) ?? gameInstallPath;
+    }
 }

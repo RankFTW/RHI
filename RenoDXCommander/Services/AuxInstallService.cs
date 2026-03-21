@@ -589,21 +589,45 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         var opposingName = opposingNames[0];
-        var destPath     = Path.Combine(installPath, destName);
+
+        // Resolve addon deploy path: if destName is an .addon64/.addon32 file and
+        // reshade.ini has AddonPath set, deploy there instead of the game root.
+        var destExt = Path.GetExtension(destName);
+        var isAddonFile = destExt.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
+                       || destExt.Equals(".addon32", StringComparison.OrdinalIgnoreCase);
+        var addonDeployDir = isAddonFile
+            ? ModInstallService.GetAddonDeployPath(installPath)
+            : installPath;
+        var destPath     = Path.Combine(addonDeployDir, destName);
 
         // ── Mode-switch cleanup ───────────────────────────────────────────────────
         // Remove all opposing-mode files that DC previously placed.
         // CRITICAL: never delete dxgi.dll if ReShade currently owns it.
         foreach (var oppName in opposingNames)
         {
-            var opposingPath = Path.Combine(installPath, oppName);
-            bool opposingBelongsToDc = existingDcRecord != null
-                && existingDcRecord.InstalledAs.Equals(oppName, StringComparison.OrdinalIgnoreCase);
-            bool opposingBelongsToRs = existingRsRecord != null
-                && existingRsRecord.InstalledAs.Equals(oppName, StringComparison.OrdinalIgnoreCase);
-            if (opposingBelongsToDc && !opposingBelongsToRs && File.Exists(opposingPath))
+            // Check both the base install path and the addon search path
+            var oppExt = Path.GetExtension(oppName);
+            var oppIsAddon = oppExt.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
+                          || oppExt.Equals(".addon32", StringComparison.OrdinalIgnoreCase);
+            var oppSearchDirs = new List<string> { installPath };
+            if (oppIsAddon)
             {
-                try { File.Delete(opposingPath); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallDcAsync] Failed to delete opposing file '{opposingPath}' — {ex.Message}"); }
+                var oppAddonDir = ModInstallService.GetAddonDeployPath(installPath);
+                if (!oppAddonDir.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+                    oppSearchDirs.Add(oppAddonDir);
+            }
+
+            foreach (var searchDir in oppSearchDirs)
+            {
+                var opposingPath = Path.Combine(searchDir, oppName);
+                bool opposingBelongsToDc = existingDcRecord != null
+                    && existingDcRecord.InstalledAs.Equals(oppName, StringComparison.OrdinalIgnoreCase);
+                bool opposingBelongsToRs = existingRsRecord != null
+                    && existingRsRecord.InstalledAs.Equals(oppName, StringComparison.OrdinalIgnoreCase);
+                if (opposingBelongsToDc && !opposingBelongsToRs && File.Exists(opposingPath))
+                {
+                    try { File.Delete(opposingPath); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallDcAsync] Failed to delete opposing file '{opposingPath}' — {ex.Message}"); }
+                }
             }
         }
 
@@ -894,7 +918,19 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
             return false;
         }
 
-        var localFile = Path.Combine(record.InstallPath, record.InstalledAs);
+        // Resolve addon search path for .addon64/.addon32 files
+        var ext = Path.GetExtension(record.InstalledAs);
+        var isAddon = ext.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
+                   || ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase);
+        var deployDir = isAddon
+            ? ModInstallService.GetAddonDeployPath(record.InstallPath)
+            : record.InstallPath;
+        var localFile = Path.Combine(deployDir, record.InstalledAs);
+        if (!File.Exists(localFile))
+        {
+            // Fallback: file may be in the base install path (pre-AddonPath)
+            localFile = Path.Combine(record.InstallPath, record.InstalledAs);
+        }
         if (!File.Exists(localFile))
         {
             CrashReporter.Log($"[AuxInstallService.CheckForUpdateAsync] [{record.AddonType}] {record.GameName}: local file missing — update needed");
@@ -1006,8 +1042,22 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
 
     public void Uninstall(AuxInstalledRecord record)
     {
-        var path = Path.Combine(record.InstallPath, record.InstalledAs);
-        if (File.Exists(path)) File.Delete(path);
+        // Resolve addon search path for .addon64/.addon32 files
+        var ext = Path.GetExtension(record.InstalledAs);
+        var isAddon = ext.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
+                   || ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase);
+        var deployDir = isAddon
+            ? ModInstallService.GetAddonDeployPath(record.InstallPath)
+            : record.InstallPath;
+        var path = Path.Combine(deployDir, record.InstalledAs);
+        if (File.Exists(path))
+            File.Delete(path);
+        else
+        {
+            // Fallback: file may be in the base install path (pre-AddonPath)
+            var fallback = Path.Combine(record.InstallPath, record.InstalledAs);
+            if (File.Exists(fallback)) File.Delete(fallback);
+        }
         RemoveRecord(record);
 
         // Restore any foreign DLL that was backed up when RDXC took over this slot.
@@ -1022,8 +1072,21 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     /// <inheritdoc />
     public void UninstallDllOnly(AuxInstalledRecord record)
     {
-        var path = Path.Combine(record.InstallPath, record.InstalledAs);
-        if (File.Exists(path)) File.Delete(path);
+        // Resolve addon search path for .addon64/.addon32 files
+        var ext = Path.GetExtension(record.InstalledAs);
+        var isAddon = ext.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
+                   || ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase);
+        var deployDir = isAddon
+            ? ModInstallService.GetAddonDeployPath(record.InstallPath)
+            : record.InstallPath;
+        var path = Path.Combine(deployDir, record.InstalledAs);
+        if (File.Exists(path))
+            File.Delete(path);
+        else
+        {
+            var fallback = Path.Combine(record.InstallPath, record.InstalledAs);
+            if (File.Exists(fallback)) File.Delete(fallback);
+        }
         RemoveRecord(record);
 
         // Restore any foreign DLL that was backed up when RDXC took over this slot.
