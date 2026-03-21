@@ -188,6 +188,11 @@ public sealed partial class MainWindow : Window
                 case nameof(ViewModel.FilterMode):
                     RefreshFilterButtonStyles();
                     break;
+                case nameof(ViewModel.AnyUpdateAvailable):
+                    UpdateBtn.Background  = UIFactory.GetBrush(ViewModel.UpdateAllBtnBackground);
+                    UpdateBtn.Foreground  = UIFactory.GetBrush(ViewModel.UpdateAllBtnForeground);
+                    UpdateBtn.BorderBrush = UIFactory.GetBrush(ViewModel.UpdateAllBtnBorder);
+                    break;
             }
         });
     }

@@ -46,23 +46,30 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <Button x:Name="RefreshBtn" Content="Refresh"
                             Click="RefreshButton_Click"
-                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
-                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Rescan game library and fetch latest mod info"/>
-                    <Button x:Name="UpdateBtn" Content="Update"
-                            Click="UpdateAllButton_Click"
-                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Update ReShade, Display Commander, and RenoDX for all games"/>
                     <Button x:Name="ChooseShadersBtn" Content="Global Shaders"
                             Click="ChooseShadersButton_Click"
-                            Background="{StaticResource SurfaceInputBrush}"
-                            Foreground="{StaticResource TextTertiaryBrush}"
-                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Choose which shader packs to deploy"/>
+
+                    <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
+
+                    <Button x:Name="UpdateBtn" Content="Update"
+                            Click="UpdateAllButton_Click"
+                            Background="{StaticResource SurfaceInputBrush}"
+                            Foreground="{StaticResource TextTertiaryBrush}"
+                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Update ReShade, Display Commander, and RenoDX for all games"/>
+
+                    <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
+
                     <Button x:Name="SupportBtn" Content="Help"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
@@ -75,20 +82,17 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
-
                     <Button x:Name="LayoutToggleBtn"
                             Content="{x:Bind ViewModel.LayoutToggleLabel, Mode=OneWay}"
                             Click="LayoutToggle_Click"
-                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
-                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Switch between detail and grid view"/>
-
-                    <!-- Settings button with update notification badge -->
                     <Button x:Name="SettingsBtn" Content="Settings"
                             Click="SettingsButton_Click"
-                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
-                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Open settings"/>
                 </StackPanel>

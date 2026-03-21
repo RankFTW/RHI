@@ -13,7 +13,20 @@
 - Per-game DC Mode overrides have been simplified to three options: Global, Off, and Custom. Custom lets you pick a per-game DLL filename independently of the global setting.
 - Legacy settings from previous versions are automatically migrated on first launch.
 
+**Toolbar redesign**
+- All toolbar buttons now share a consistent teal accent style. Buttons are grouped into three sections separated by vertical dividers: Refresh and Global Shaders | Update | Help, View toggle, and Settings.
+- The Update button is now dim by default and lights up purple when any game has an update available.
+
 ### Bug Fixes
+
+**Grid view install flyout not working**
+- Fixed the install/manage flyout on grid view cards being empty when clicked. The flyout now correctly shows all component rows (RS, DC, RDX, Luma) with install, reinstall, and uninstall buttons.
+
+**Grid view overrides flyout missing DC Custom DLL selector**
+- The per-game overrides flyout in grid view was missing the DC Custom DLL filename picker, the vertical divider between DC Mode and Shaders, and the three-column layout. These now match the detail view's overrides panel.
+
+**Grid view install flyout crash on external-only games**
+- Fixed a crash (`FormatException: Could not find any recognizable digits`) when opening the install flyout on games without a RenoDX wiki mod. The color parser now handles the `"transparent"` keyword.
 
 **ReShade version not shown in DC mode**
 - The ReShade status label now shows the installed version number even when DC mode is active, matching the behavior outside DC mode.
