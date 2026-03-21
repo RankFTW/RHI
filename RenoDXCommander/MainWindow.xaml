@@ -718,6 +718,32 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- ── Addon Watch Folder ─────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                           Text="RDXC watches this folder for .addon64/.addon32 files and offers to install them automatically. Defaults to your Downloads folder."/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox x:Name="AddonWatchFolderBox" x:FieldModifier="internal"
+                                             PlaceholderText="Downloads folder (default)"
+                                             FontSize="12" MinWidth="300"
+                                             Background="{StaticResource SurfaceInputBrush}"
+                                             Foreground="{StaticResource TextSecondaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"/>
+                                    <Button Content="Browse" Click="BrowseAddonWatchFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                    <Button Content="Reset" Click="ResetAddonWatchFolder_Click"
+                                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- ── Preferences ────────────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">

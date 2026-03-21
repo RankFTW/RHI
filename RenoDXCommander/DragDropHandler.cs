@@ -95,7 +95,8 @@ public class DragDropHandler
             }
 
             // Handle .addon64 / .addon32 files — install RenoDX addon to a game
-            if (ext is ".addon64" or ".addon32")
+            if (ext is ".addon64" or ".addon32"
+                && Path.GetFileName(file.Path).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
             {
                 try
                 {
@@ -297,9 +298,10 @@ public class DragDropHandler
                 return;
             }
 
-            // Search for .addon64 and .addon32 files in the extracted contents
+            // Search for renodx- prefixed .addon64 and .addon32 files in the extracted contents
             var addonFiles = Directory.GetFiles(tempDir, "*.addon64", SearchOption.AllDirectories)
                 .Concat(Directory.GetFiles(tempDir, "*.addon32", SearchOption.AllDirectories))
+                .Where(f => Path.GetFileName(f).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             if (addonFiles.Count == 0)

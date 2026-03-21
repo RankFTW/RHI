@@ -21,6 +21,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _verboseLogging;
     [ObservableProperty] private string _lastSeenVersion = "";
     [ObservableProperty] private List<string> _selectedShaderPacks = new();
+    [ObservableProperty] private string _addonWatchFolder = "";
 
     /// <summary>
     /// Optional callback invoked after any settings-specific property changes,
@@ -103,6 +104,9 @@ public partial class SettingsViewModel : ObservableObject
         {
             SelectedShaderPacks = new();
         }
+
+        if (s.TryGetValue("AddonWatchFolder", out var awfVal))
+            AddonWatchFolder = awfVal ?? "";
     }
 
     /// <summary>
@@ -117,6 +121,8 @@ public partial class SettingsViewModel : ObservableObject
         s["LastSeenVersion"]   = LastSeenVersion;
         s["ShaderDeployMode"]  = SelectedShaderPacks.Count > 0 ? "Select" : "Off";
         s["SelectedShaderPacks"] = JsonSerializer.Serialize(SelectedShaderPacks);
+        if (!string.IsNullOrWhiteSpace(AddonWatchFolder))
+            s["AddonWatchFolder"] = AddonWatchFolder;
     }
 
     public void LoadThemeAndDensity()

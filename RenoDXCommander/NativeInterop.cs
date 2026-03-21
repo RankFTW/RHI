@@ -137,4 +137,10 @@ internal static class NativeInterop
 
     internal const uint MSGFLT_ALLOW = 1;
     internal const uint WM_COPYGLOBALDATA = 0x0049;
+
+    // ── Window activation ───────────────────────────────────────────────────────
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
 }

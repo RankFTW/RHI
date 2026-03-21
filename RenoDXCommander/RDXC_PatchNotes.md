@@ -17,6 +17,11 @@
 - All toolbar buttons now share a consistent teal accent style. Buttons are grouped into three sections separated by vertical dividers: Refresh and Global Shaders | Update | Help, View toggle, and Settings.
 - The Update button is now dim by default and lights up purple when any game has an update available.
 
+**Addon auto-detection**
+- RDXC now watches your Downloads folder (configurable in Settings) for new `renodx-*.addon64` / `.addon32` files and automatically prompts you to install them.
+- Double-clicking an addon file in Explorer opens RDXC and triggers the install flow. If RDXC is already running, the file is forwarded to the existing instance via named pipe.
+- Drag-and-drop, file association, and archive extraction all enforce the `renodx-` filename prefix to avoid triggering on unrelated addon files.
+
 ### Bug Fixes
 
 **Grid view install flyout not working**

@@ -96,9 +96,48 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Single-instance check: if another RDXC is already running,
+        // forward the addon file path and exit immediately.
+        var cmdArgs = Environment.GetCommandLineArgs();
+        string? addonArg = null;
+        if (cmdArgs.Length > 1)
+        {
+            var ext = Path.GetExtension(cmdArgs[1]);
+            var fileName = Path.GetFileName(cmdArgs[1]);
+            if ((string.Equals(ext, ".addon64", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(ext, ".addon32", StringComparison.OrdinalIgnoreCase))
+                && fileName.StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
+                addonArg = cmdArgs[1];
+        }
+
+        if (!SingleInstanceService.TryAcquire())
+        {
+            // Another instance is running — forward the file and exit
+            if (addonArg != null)
+                SingleInstanceService.SendToRunningInstance(addonArg);
+            Environment.Exit(0);
+            return;
+        }
+
         CrashReporter.Log("[App.OnLaunched] Creating MainWindow");
         _window = Services.GetRequiredService<MainWindow>();
         _window.Activate();
         CrashReporter.Log("[App.OnLaunched] MainWindow activated");
+
+        // Start listening for file paths from subsequent instances
+        SingleInstanceService.StartListening();
+        SingleInstanceService.FileReceived += path =>
+        {
+            if (_window is MainWindow mw)
+                mw.DispatcherQueue.TryEnqueue(() => mw.HandleAddonFile(path));
+        };
+
+        // Handle addon file passed on first launch
+        if (addonArg != null)
+        {
+            CrashReporter.Log($"[App.OnLaunched] Addon file passed via command line: {addonArg}");
+            if (_window is MainWindow mw)
+                mw.HandleAddonFile(addonArg);
+        }
     }
 }

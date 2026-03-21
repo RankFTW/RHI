@@ -30,6 +30,7 @@ public sealed partial class MainWindow : Window
     private readonly InstallEventHandler _installEventHandler;
     private readonly WindowStateManager _windowStateManager;
     private readonly DragDropHandler _dragDropHandler;
+    private readonly AddonFileWatcher _addonFileWatcher;
 
     /// <summary>Exposes the detail panel builder for extracted handler classes.</summary>
     internal DetailPanelBuilder DetailPanelBuilderInstance => _detailPanelBuilder;
@@ -108,6 +109,18 @@ public sealed partial class MainWindow : Window
         CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.UpdateCheck");
         // Show patch notes on first launch after update
         ShowPatchNotesIfNewVersionAsync().SafeFireAndForget("MainWindow.PatchNotes");
+        // Register .addon64/.addon32 file associations (per-user, no admin)
+        FileAssociationService.Register(crashReporter);
+        // Watch Downloads folder for addon files
+        _addonFileWatcher = new AddonFileWatcher(crashReporter);
+        _addonFileWatcher.AddonFileDetected += path =>
+            DispatcherQueue.TryEnqueue(() => HandleAddonFile(path));
+        // Apply saved watch folder if configured
+        var savedFolder = ViewModel.Settings.AddonWatchFolder;
+        if (!string.IsNullOrWhiteSpace(savedFolder))
+            _addonFileWatcher.SetWatchPath(savedFolder);
+        else
+            _addonFileWatcher.Start();
         this.Closed += MainWindow_Closed;
     }
 
@@ -132,8 +145,37 @@ public sealed partial class MainWindow : Window
         if (_detailPanelBuilder.CurrentDetailCard != null)
             _detailPanelBuilder.CurrentDetailCard.PropertyChanged -= _detailPanelBuilder.DetailCard_PropertyChanged;
 
+        _addonFileWatcher.Dispose();
+        SingleInstanceService.Stop();
         ViewModel.SaveSettingsPublic(); // persist GridLayout and other settings
         _windowStateManager.SaveWindowBounds();
+    }
+
+    // ── Addon file handling (Downloads watcher + file association) ───────────────
+
+    /// <summary>
+    /// Handles an addon file detected by the Downloads watcher or passed via command-line.
+    /// Waits for initialization to complete, then delegates to the drag-drop handler.
+    /// </summary>
+    internal async void HandleAddonFile(string filePath)
+    {
+        try
+        {
+            _crashReporter.Log($"[MainWindow.HandleAddonFile] Processing '{Path.GetFileName(filePath)}'");
+
+            // Wait for game list to be populated before showing the picker
+            while (ViewModel.IsLoading)
+                await Task.Delay(200);
+
+            // Bring window to front
+            NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
+
+            await _dragDropHandler.ProcessDroppedAddon(filePath);
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.HandleAddonFile] Failed — {ex.Message}");
+        }
     }
 
     // ── ViewModel → UI sync ───────────────────────────────────────────────────────
@@ -210,6 +252,33 @@ public sealed partial class MainWindow : Window
     {
         _crashReporter.Log("[MainWindow.FullRefreshButton_Click] User clicked Full Refresh");
         _ = FullRefreshWithScrollRestore();
+    }
+
+    private async void BrowseAddonWatchFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var folderPath = await PickFolderAsync();
+            if (!string.IsNullOrEmpty(folderPath))
+            {
+                AddonWatchFolderBox.Text = folderPath;
+                ViewModel.Settings.AddonWatchFolder = folderPath;
+                _addonFileWatcher.SetWatchPath(folderPath);
+                ViewModel.SaveSettingsPublic();
+                _crashReporter.Log($"[MainWindow] Addon watch folder set to: {folderPath}");
+            }
+        }
+        catch (Exception ex) { _crashReporter.Log($"[MainWindow.BrowseAddonWatchFolder] {ex.Message}"); }
+    }
+
+    private void ResetAddonWatchFolder_Click(object sender, RoutedEventArgs e)
+    {
+        AddonWatchFolderBox.Text = "";
+        ViewModel.Settings.AddonWatchFolder = "";
+        var defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        _addonFileWatcher.SetWatchPath(defaultPath);
+        ViewModel.SaveSettingsPublic();
+        _crashReporter.Log("[MainWindow] Addon watch folder reset to default Downloads");
     }
 
     private async Task RefreshWithScrollRestore()

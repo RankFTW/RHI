@@ -31,6 +31,8 @@ public class SettingsHandler
         _window.BetaOptInToggle.IsOn = ViewModel.BetaOptIn;
         _window.VerboseLoggingToggle.IsOn = ViewModel.VerboseLogging;
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  HDR mod manager by RankFTW";
+        // Populate addon watch folder textbox
+        _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
