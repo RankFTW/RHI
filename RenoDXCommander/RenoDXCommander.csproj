@@ -16,8 +16,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationIcon>icon.ico</ApplicationIcon>
-    <AssemblyName>RenoDXCommander</AssemblyName>
-    <AssemblyTitle>RenoDXCommander</AssemblyTitle>
+    <AssemblyName>UltraPlusSupportTools</AssemblyName>
+    <AssemblyTitle>UPST</AssemblyTitle>
     <AssemblyVersion>1.5.5.0</AssemblyVersion>
     <FileVersion>1.5.5.0</FileVersion>
   </PropertyGroup>
@@ -60,7 +60,11 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
-    <Content Include="RDXC_PatchNotes.md">
+    <Content Include="ultra_limiter.addon64">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Include="UPST_PatchNotes.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>

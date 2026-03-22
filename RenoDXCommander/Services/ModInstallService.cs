@@ -21,11 +21,11 @@ public class ModInstallService : IModInstallService
 
     private static readonly string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "installed.json");
+        "UPST", "installed.json");
 
     public static readonly string DownloadCacheDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "downloads");
+        "UPST", "downloads");
 
     private readonly HttpClient _http;
 

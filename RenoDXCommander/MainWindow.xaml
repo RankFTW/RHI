@@ -6,7 +6,7 @@
     xmlns:vm="using:RenoDXCommander.ViewModels"
     xmlns:converters="using:RenoDXCommander.Converters"
     xmlns:controls="using:RenoDXCommander.Controls"
-    Title="RDXC - RenoDXCommander">
+    Title="UPST">
     <Grid Background="{StaticResource SurfaceBaseBrush}" AllowDrop="True" DragOver="Grid_DragOver" Drop="Grid_Drop">
         <Grid.Resources>
             <x:Double x:Key="CardItemWidth">390</x:Double>
@@ -36,9 +36,9 @@
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock FontSize="15" FontWeight="Bold">
-                            <Run Text="RDXC" Foreground="{StaticResource AccentTealBrush}"/>
+                            <Run Text="UPST" Foreground="{StaticResource AccentTealBrush}"/>
                         </TextBlock>
-                        <TextBlock Text="RenoDXCommander" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
+                        <TextBlock Text="Ultra+ Support Tool" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -472,6 +472,34 @@
                                     </Button>
                                 </Grid>
 
+                                <!-- Ultra Limiter row -->
+                                <Grid x:Name="DetailUlRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Ultra Limiter" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DetailUlStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
+                                               VerticalAlignment="Center"/>
+                                    <Button x:Name="DetailUlInstallBtn" x:FieldModifier="internal" Grid.Column="2"
+                                            Click="InstallUlButton_Click"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                            CornerRadius="8" FontSize="12" Height="32"/>
+                                    <Border Grid.Column="3"/>
+                                    <Button x:Name="DetailUlDeleteBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Click="UninstallUlButton_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Remove Ultra Limiter" Opacity="0" IsHitTestVisible="False">
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
+
                                 <!-- RenoDX row -->
                                 <Grid x:Name="DetailRdxRow" x:FieldModifier="internal" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
@@ -556,6 +584,11 @@
                                                  Maximum="100" Height="3" CornerRadius="2"
                                                  Foreground="{StaticResource AccentGreenDimBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
                                     <TextBlock x:Name="DetailDcMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentGreenDimBrush}"
+                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                                    <ProgressBar x:Name="DetailUlProgress" x:FieldModifier="internal" Visibility="Collapsed"
+                                                 Maximum="100" Height="3" CornerRadius="2"
+                                                 Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
+                                    <TextBlock x:Name="DetailUlMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentBlueBrush}"
                                                Visibility="Collapsed" TextWrapping="Wrap"/>
                                     <ProgressBar x:Name="DetailRdxProgress" x:FieldModifier="internal" Visibility="Collapsed"
                                                  Maximum="100" Height="3" CornerRadius="2"
@@ -743,7 +776,7 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="RDXC watches this folder for .addon64/.addon32 files and offers to install them automatically. Defaults to your Downloads folder."/>
+                                           Text="UPST watches this folder for .addon64/.addon32 files and offers to install them automatically. Defaults to your Downloads folder."/>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBox x:Name="AddonWatchFolderBox" x:FieldModifier="internal"
                                              PlaceholderText="Downloads folder (default)"
@@ -771,28 +804,28 @@
                                 <ToggleSwitch x:Name="SkipUpdateToggle" x:FieldModifier="internal"
                                               Header="Skip update check on launch"
                                               Toggled="SkipUpdateToggle_Toggled"
-                                              OnContent="Disabled — RDXC will not check for updates"
-                                              OffContent="Enabled — RDXC checks for updates on launch"
+                                              OnContent="Disabled — UPST will not check for updates"
+                                              OffContent="Enabled — UPST checks for updates on launch"
                                               Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="When enabled, RDXC skips the automatic update check that runs on every launch."/>
+                                           Text="When enabled, UPST skips the automatic update check that runs on every launch."/>
                                 <ToggleSwitch x:Name="BetaOptInToggle" x:FieldModifier="internal"
                                               Header="Opt into Betas"
                                               Toggled="BetaOptInToggle_Toggled"
-                                              OnContent="Enabled — RDXC will check for beta releases"
+                                              OnContent="Enabled — UPST will check for beta releases"
                                               OffContent="Disabled — stable releases only"
                                               Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11"
                                            Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="When enabled, RDXC also checks for pre-release beta versions. Stable releases always take priority."/>
+                                           Text="When enabled, UPST also checks for pre-release beta versions. Stable releases always take priority."/>
                                 <ToggleSwitch x:Name="VerboseLoggingToggle" x:FieldModifier="internal"
                                               Header="Verbose Logging"
                                               Toggled="VerboseLoggingToggle_Toggled"
-                                              OnContent="Enabled — all activity logged to rdxc_log.txt"
+                                              OnContent="Enabled — all activity logged to upst_log.txt"
                                               OffContent="Disabled — only crash/error reports saved"
                                               Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="When enabled, every action is logged to rdxc_log.txt for debugging. Disable for normal use."/>
+                                           Text="When enabled, every action is logged to upst_log.txt for debugging. Disable for normal use."/>
                             </StackPanel>
                         </Border>
 
@@ -820,13 +853,13 @@
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
                                 </StackPanel>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
-                                    Logs: <Run Text="%LocalAppData%\RenoDXCommander\logs\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                    Logs: <Run Text="%LocalAppData%\UPST\logs\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                 </TextBlock>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
-                                    Downloads: <Run Text="%LocalAppData%\RenoDXCommander\downloads\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                    Downloads: <Run Text="%LocalAppData%\UPST\downloads\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                 </TextBlock>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
-                                    ReShade staging: <Run Text="%LocalAppData%\RenoDXCommander\reshade\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                    ReShade staging: <Run Text="%LocalAppData%\UPST\reshade\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                 </TextBlock>
                             </StackPanel>
                         </Border>
@@ -856,7 +889,7 @@
                                 <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="14,10"
                                         BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="What RDXC does" FontSize="12" FontWeight="SemiBold"
+                                        <TextBlock Text="What UPST does" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                                    Visibility="{x:Bind ViewModel.DcLegacySettingsVisibility, Mode=OneWay}"
@@ -874,7 +907,7 @@
                                         <TextBlock Text="Disclaimer" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource AccentAmberBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="18">
-                                            <Run Text="RenoDX Commander is an unofficial third-party tool, "/>
+                                            <Run Text="UPST is an unofficial third-party tool, "/>
                                             <Run Text="not affiliated with or endorsed by the RenoDX project, Crosire, pmnoxx, or the Luma Framework."
                                                  FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
                                         </TextBlock>
@@ -894,7 +927,7 @@
                                         <TextBlock Text="Single-player only" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource AccentRedBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="RDXC installs ReShade with full addon support, which may be flagged by anti-cheat in online or multiplayer games. Uninstall ReShade before playing online."/>
+                                                   Text="UPST installs ReShade with full addon support, which may be flagged by anti-cheat in online or multiplayer games. Uninstall ReShade before playing online."/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -1041,7 +1074,7 @@
                                 <Border Background="{StaticResource SurfaceStatusBarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                                     <StackPanel Spacing="3">
                                         <TextBlock FontSize="12">
-                                            <Run Text="RenoDXCommander" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
+                                            <Run Text="UPST" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
                                             <Run Text=" by RankFTW" Foreground="{StaticResource TextTertiaryBrush}"/>
                                         </TextBlock>
                                         <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
@@ -1094,7 +1127,7 @@
                                     <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">RankFTW GitHub</TextBlock>
                                 </HyperlinkButton>
                                 <HyperlinkButton NavigateUri="https://ko-fi.com/rankftw" Padding="0">
-                                    <TextBlock Foreground="{StaticResource AccentRedBrush}" FontSize="12">Support RDXC on Ko-Fi</TextBlock>
+                                    <TextBlock Foreground="{StaticResource AccentRedBrush}" FontSize="12">Support UPST on Ko-Fi</TextBlock>
                                 </HyperlinkButton>
                             </StackPanel>
                         </Border>

@@ -25,7 +25,7 @@ public class ManifestService : IManifestService
 
     private static readonly string CachePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "manifest.json");
+        "UPST", "manifest.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

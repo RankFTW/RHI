@@ -1,10 +1,10 @@
-# RenoDX Commander (RDXC)
+# UPST
 
 A desktop manager for HDR game mods on Windows. Auto-detects your game libraries, installs ReShade, RenoDX, and Luma Framework mods — all in a few clicks. Legacy Display Commander support available via opt-in toggle.
 
-![RDXC Game View](screenshots/game_view.png)
+![UPST Game View](screenshots/game_view.png)
 
-> **⚠ Single-player only:** RDXC installs ReShade with full addon support, which may be flagged by anti-cheat in online/multiplayer games. Uninstall ReShade before playing online.
+> **⚠ Single-player only:** UPST installs ReShade with full addon support, which may be flagged by anti-cheat in online/multiplayer games. Uninstall ReShade before playing online.
 
 ---
 
@@ -18,7 +18,7 @@ Requires Windows 10/11 (x64) and [.NET 8 Desktop Runtime](https://dotnet.microso
 
 ## Quick Start
 
-1. **Run RDXC** — games are auto-detected from Steam, GOG, Epic, EA App, Ubisoft, Xbox/Game Pass, Battle.net, and Rockstar on every launch.
+1. **Run UPST** — games are auto-detected from Steam, GOG, Epic, EA App, Ubisoft, Xbox/Game Pass, Battle.net, and Rockstar on every launch.
 2. **Pick a game** from the sidebar. Use search or filter chips to narrow the list.
 3. **Install components** from the detail panel — ReShade, Display Commander, and RenoDX each have a one-click install button.
 4. **Launch the game**, press **Home** to open ReShade, go to **Add-ons**, and configure RenoDX.
@@ -44,9 +44,9 @@ Requires Windows 10/11 (x64) and [.NET 8 Desktop Runtime](https://dotnet.microso
 - **Remote manifest** — game-specific overrides updated server-side without app releases, including engine overrides, DLL name overrides, and API overrides
 - **UE-Extended & Native HDR** — automatic detection and addon assignment for Unreal Engine games
 - **Engine detection** — Unreal, Unity, and custom engine names detected and displayed with icons
-- **ReShadePreset.ini auto-deploy** — place a preset in the RDXC inis folder to have it copied to every game install automatically
+- **ReShadePreset.ini auto-deploy** — place a preset in the UPST inis folder to have it copied to every game install automatically
 - **Foreign DLL protection** — detects DXVK, Special K, ENB, etc. before overwriting
-- **Auto-update** — checks for new RDXC versions on launch with stable and beta channels
+- **Auto-update** — checks for new UPST versions on launch with stable and beta channels
 - **Settings page** — DC Mode, shader mode, deploy actions, preferences, logs, about, and credits all in one place
 - **Addon auto-detection** — watches your Downloads folder for new `renodx-*.addon64` / `.addon32` files and prompts you to install them. Configurable watch folder in Settings.
 - **AddonPath support** — addon installs respect the `AddonPath` setting in `reshade.ini`, deploying addons to the configured folder instead of the game root
@@ -61,7 +61,7 @@ Requires Windows 10/11 (x64) and [.NET 8 Desktop Runtime](https://dotnet.microso
 | Problem | Fix |
 |---------|-----|
 | Game not detected | Click **Add Game** in the toolbar or drag the game's `.exe` onto the window |
-| Xbox games missing | Click **Refresh** — RDXC uses the PackageManager API |
+| Xbox games missing | Click **Refresh** — UPST uses the PackageManager API |
 | ReShade not loading | Check the install path via 📁 — `dxgi.dll` must be next to the game exe |
 | Black screen (Unreal) | ReShade → Add-ons → RenoDX → set `R10G10B10A2_UNORM` to `output size` |
 | UE-Extended not working | Turn on in-game HDR — UE-Extended requires native HDR output |
@@ -83,7 +83,7 @@ For detailed documentation on DC Mode, shader packs, Luma Framework, per-game ov
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |
 
-> RDXC is an unofficial third-party tool, not affiliated with or endorsed by the RenoDX project, Crosire, pmnoxx, or the Luma Framework. All mod files are downloaded from their official sources at runtime and are not redistributed.
+> UPST is an unofficial third-party tool, not affiliated with or endorsed by the RenoDX project, Crosire, pmnoxx, or the Luma Framework. All mod files are downloaded from their official sources at runtime and are not redistributed.
 
 ---
 
@@ -91,8 +91,6 @@ For detailed documentation on DC Mode, shader packs, Luma Framework, per-game ov
 
 [RenoDX](https://github.com/clshortfuse/renodx) · [RenoDX Wiki](https://github.com/clshortfuse/renodx/wiki/Mods) · [ReShade](https://reshade.me) · [Display Commander](https://github.com/pmnoxx/display-commander) · [Luma Framework](https://github.com/Filoppi/Luma-Framework) · [Luma Mods List](https://github.com/Filoppi/Luma-Framework/wiki/Mods-List) · [HDR Guides](https://www.hdrmods.com)
 
-[RenoDX Discord](https://discord.gg/gF4GRJWZ2A) · [HDR Den Discord](https://discord.gg/k3cDruEQ) · [RDXC Support](https://discordapp.com/channels/1296187754979528747/1475173660686815374) · [Ultra+ Discord](https://discord.gg/pQtPYcdE)
+[RenoDX Discord](https://discord.gg/gF4GRJWZ2A) · [HDR Den Discord](https://discord.gg/k3cDruEQ) · [UPST Support](https://discordapp.com/channels/1296187754979528747/1475173660686815374) · [Ultra+ Discord](https://discord.gg/pQtPYcdE)
 
-[Support RDXC on Ko-Fi ☕](https://ko-fi.com/rankftw)
-
-
+[Support UPST on Ko-Fi ☕](https://ko-fi.com/rankftw)

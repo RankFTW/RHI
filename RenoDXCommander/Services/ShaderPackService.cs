@@ -699,7 +699,7 @@ public class ShaderPackService : IShaderPackService
         try
         {
             var req = new HttpRequestMessage(HttpMethod.Get, pack.Url);
-            req.Headers.Add("User-Agent", "RenoDXCommander");
+            req.Headers.Add("User-Agent", "UPST");
             req.Headers.Add("Accept", "application/vnd.github+json");
             var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode)
@@ -749,7 +749,7 @@ public class ShaderPackService : IShaderPackService
         try
         {
             var req = new HttpRequestMessage(HttpMethod.Head, pack.Url);
-            req.Headers.Add("User-Agent", "RenoDXCommander");
+            req.Headers.Add("User-Agent", "UPST");
             var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode) return "unknown";
             var etag = resp.Headers.ETag?.Tag;
@@ -1281,7 +1281,7 @@ public class ShaderPackService : IShaderPackService
 
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "settings.json");
+        "UPST", "settings.json");
 
     private string VersionKey(string packId) => $"ShaderPack_{packId}_Version";
 

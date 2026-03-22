@@ -48,7 +48,7 @@ public partial class App : Application
             };
 
             var client = new HttpClient(handler);
-            client.DefaultRequestHeaders.Add("User-Agent", "RenoDXCommander/2.0");
+            client.DefaultRequestHeaders.Add("User-Agent", "UPST/2.0");
             // Per-request timeout — generous enough for large files on slow connections.
             // Individual services can set per-request timeouts via CancellationTokenSource
             // if they need tighter control.
@@ -96,7 +96,10 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Single-instance check: if another RDXC is already running,
+        // ── One-time migration from legacy "RenoDXCommander" AppData folder ───────
+        MigrateLegacyAppData();
+
+        // Single-instance check: if another instance is already running,
         // forward the addon file path and exit immediately.
         var cmdArgs = Environment.GetCommandLineArgs();
         string? addonArg = null;
@@ -138,6 +141,57 @@ public partial class App : Application
             CrashReporter.Log($"[App.OnLaunched] Addon file passed via command line: {addonArg}");
             if (_window is MainWindow mw)
                 mw.HandleAddonFile(addonArg);
+        }
+    }
+
+    /// <summary>
+    /// Migrates the legacy %LocalAppData%\RenoDXCommander folder to %LocalAppData%\UPST.
+    /// Copies all contents then deletes the old folder. Runs once — subsequent launches
+    /// skip because the legacy folder no longer exists.
+    /// </summary>
+    private static void MigrateLegacyAppData()
+    {
+        try
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var legacyDir = Path.Combine(localAppData, "RenoDXCommander");
+            var newDir = Path.Combine(localAppData, "UPST");
+
+            if (!Directory.Exists(legacyDir))
+                return;
+
+            CrashReporter.Log($"[App.MigrateLegacyAppData] Migrating {legacyDir} → {newDir}");
+
+            // Copy all files and subdirectories to the new location
+            CopyDirectoryRecursive(legacyDir, newDir);
+
+            // Remove the legacy folder
+            Directory.Delete(legacyDir, recursive: true);
+
+            CrashReporter.Log("[App.MigrateLegacyAppData] Migration complete");
+        }
+        catch (Exception ex)
+        {
+            // Migration failure is non-fatal — the app will recreate files as needed
+            CrashReporter.Log($"[App.MigrateLegacyAppData] Migration failed — {ex.Message}");
+        }
+    }
+
+    private static void CopyDirectoryRecursive(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var destFile = Path.Combine(destDir, Path.GetFileName(file));
+            // Don't overwrite if the new folder already has the file (e.g. partial previous migration)
+            if (!File.Exists(destFile))
+                File.Copy(file, destFile);
+        }
+
+        foreach (var dir in Directory.GetDirectories(sourceDir))
+        {
+            CopyDirectoryRecursive(dir, Path.Combine(destDir, Path.GetFileName(dir)));
         }
     }
 }

@@ -280,6 +280,25 @@ public class DetailPanelBuilder
             _window.DetailDcDeleteBtn.IsHitTestVisible = dcShow;
         }
 
+        // Ultra Limiter row — hidden when in DC Legacy Mode or Luma mode
+        _window.DetailUlRow.Visibility = card.UlRowVisibility;
+        if (card.UlRowVisibility == Visibility.Visible)
+        {
+            _window.DetailUlStatus.Text = card.UlStatusText;
+            _window.DetailUlStatus.Foreground = UIFactory.GetBrush(card.UlStatusColor);
+            _window.DetailUlInstallBtn.Tag = card;
+            _window.DetailUlInstallBtn.Content = card.UlActionLabel;
+            _window.DetailUlInstallBtn.IsEnabled = card.IsUlNotInstalling;
+            _window.DetailUlInstallBtn.Background = UIFactory.GetBrush(card.UlBtnBackground);
+            _window.DetailUlInstallBtn.Foreground = UIFactory.GetBrush(card.UlBtnForeground);
+            _window.DetailUlInstallBtn.BorderBrush = UIFactory.GetBrush(card.UlBtnBorderBrush);
+            _window.DetailUlInstallBtn.BorderThickness = new Thickness(1);
+            _window.DetailUlDeleteBtn.Tag = card;
+            var ulShow = card.UlDeleteVisibility == Visibility.Visible;
+            _window.DetailUlDeleteBtn.Opacity = ulShow ? 1 : 0;
+            _window.DetailUlDeleteBtn.IsHitTestVisible = ulShow;
+        }
+
         // RenoDX row (also used for external-only / Discord link)
         bool showRdx = !isLumaMode;
         _window.DetailRdxRow.Visibility = showRdx ? Visibility.Visible : Visibility.Collapsed;
@@ -378,6 +397,10 @@ public class DetailPanelBuilder
         _window.DetailDcProgress.Value = card.DcProgress;
         _window.DetailDcMessage.Visibility = card.DcLegacyMode ? card.DcMessageVisibility : Visibility.Collapsed;
         _window.DetailDcMessage.Text = card.DcActionMessage;
+        _window.DetailUlProgress.Visibility = card.UlRowVisibility == Visibility.Visible ? card.UlProgressVisibility : Visibility.Collapsed;
+        _window.DetailUlProgress.Value = card.UlProgress;
+        _window.DetailUlMessage.Visibility = card.UlRowVisibility == Visibility.Visible ? card.UlMessageVisibility : Visibility.Collapsed;
+        _window.DetailUlMessage.Text = card.UlActionMessage;
         _window.DetailRdxProgress.Visibility = card.ProgressVisibility;
         _window.DetailRdxProgress.Value = card.InstallProgress;
         _window.DetailRdxMessage.Visibility = card.MessageVisibility;

@@ -18,7 +18,7 @@ public class DialogService
 
     private static readonly string PatchNotesDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander");
+        "UPST");
 
     public DialogService(MainWindow window)
     {
@@ -62,7 +62,7 @@ public class DialogService
                 FontSize     = 13,
                 Text         = $"A dxgi.dll file was found in:\n{card.InstallPath}\n\n" +
                                $"File size: {sizeKB:N0} KB\n\n" +
-                               "RDXC cannot identify this file as ReShade or Display Commander. " +
+                               "UPST cannot identify this file as ReShade or Display Commander. " +
                                "It may belong to another mod (e.g. DXVK, Special K, ENB).\n\n" +
                                "Overwriting it may break the existing mod. Do you want to proceed?",
             },
@@ -91,7 +91,7 @@ public class DialogService
                 FontSize     = 13,
                 Text         = $"A winmm.dll file was found in:\n{card.InstallPath}\n\n" +
                                $"File size: {sizeKB:N0} KB\n\n" +
-                               "RDXC cannot identify this file as Display Commander. " +
+                               "UPST cannot identify this file as Display Commander. " +
                                "It may belong to another mod or DLL injector.\n\n" +
                                "Overwriting it may break the existing mod. Do you want to proceed?",
             },

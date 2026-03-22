@@ -251,7 +251,7 @@ public class DragDropHandler
         }
 
         // Extract entire archive to a temp directory
-        var tempDir = Path.Combine(Path.GetTempPath(), $"rdxc_archive_{Guid.NewGuid():N}");
+        var tempDir = Path.Combine(Path.GetTempPath(), $"upst_archive_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
 
         try

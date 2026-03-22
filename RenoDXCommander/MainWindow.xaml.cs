@@ -48,7 +48,7 @@ public sealed partial class MainWindow : Window
         _installEventHandler = new InstallEventHandler(this, PickFolderAsync);
         AuxInstallService.EnsureInisDir();       // create inis folder on first run
         AuxInstallService.EnsureReShadeStaging(); // create staging dir (DLLs downloaded by ReShadeUpdateService)
-        Title = "RDXC - RenoDXCommander";
+        Title = "UPST";
         // Fire-and-forget: check/download Lilium HDR shaders in the background
         var shaderTask = ViewModel.ShaderPackServiceInstance.EnsureLatestAsync();
         shaderTask.SafeFireAndForget("MainWindow.ShaderPack");
@@ -495,6 +495,9 @@ public sealed partial class MainWindow : Window
             case "Luma":
                 await ViewModel.InstallLumaAsync(card);
                 break;
+            case "UL":
+                await ViewModel.InstallUlAsync(card);
+                break;
         }
     }
 
@@ -519,6 +522,9 @@ public sealed partial class MainWindow : Window
                 break;
             case "Luma":
                 ViewModel.UninstallLumaCommand.Execute(card);
+                break;
+            case "UL":
+                ViewModel.UninstallUl(card);
                 break;
         }
     }
@@ -973,6 +979,12 @@ public sealed partial class MainWindow : Window
 
     private void UninstallDcButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallDcButton_Click(sender, e);
+
+    private void InstallUlButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.InstallUlButton_Click(sender, e);
+
+    private void UninstallUlButton_Click(object sender, RoutedEventArgs e)
+        => _installEventHandler.UninstallUlButton_Click(sender, e);
 
     private void LumaToggle_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.LumaToggle_Click(sender, e);

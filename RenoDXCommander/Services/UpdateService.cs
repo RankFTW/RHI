@@ -7,14 +7,14 @@ using System.Text.RegularExpressions;
 namespace RenoDXCommander.Services;
 
 /// <summary>
-/// Checks GitHub Releases for a newer version of RDXC and downloads the installer if requested.
+/// Checks GitHub Releases for a newer version of UPST and downloads the installer if requested.
 /// </summary>
 public class UpdateService : IUpdateService
 {
     private readonly HttpClient _http;
 
     public UpdateService(HttpClient http) => _http = http;
-    // GitHub API endpoint for the "RDXC" release tag.
+    // GitHub API endpoint for the stable release tag.
     // Using the tags endpoint gives a single release object directly.
     private const string ReleaseApiUrl =
         "https://api.github.com/repos/RankFTW/RenoDXChecker/releases/tags/RDXC";
@@ -117,7 +117,7 @@ public class UpdateService : IUpdateService
     private async Task<(RdxcVersion version, string downloadUrl)?> FetchReleaseAsync(string apiUrl)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RDXC", CurrentVersion.ToString()));
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("UltraPlusST", CurrentVersion.ToString()));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 
         var response = await _http.SendAsync(request).ConfigureAwait(false);
@@ -180,7 +180,7 @@ public class UpdateService : IUpdateService
             progress?.Report(("Downloading update...", 0));
 
             var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
-            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RDXC", CurrentVersion.ToString()));
+            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("UltraPlusST", CurrentVersion.ToString()));
 
             var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
                 .ConfigureAwait(false);
@@ -235,7 +235,7 @@ public class UpdateService : IUpdateService
                 UseShellExecute = true,
             });
 
-            // Give the installer a moment to start, then close RDXC
+            // Give the installer a moment to start, then close the app
             closeApp();
         }
         catch (Exception ex)
@@ -246,7 +246,7 @@ public class UpdateService : IUpdateService
 
     /// <summary>
     /// Parses a version string from a release tag or name.
-    /// Handles formats like: "1.2.2", "v1.2.2", "RDXC-1.2.2", "RDXC 1.2.2", "RDXC v1.2.2" etc.
+    /// Handles formats like: "1.2.2", "v1.2.2", "UPST-1.2.2", "UPST 1.2.2", "UPST v1.2.2" etc.
     /// </summary>
     private Version? ParseVersion(string? input)
     {
@@ -272,7 +272,7 @@ public class UpdateInfo
 }
 
 /// <summary>
-/// Represents an RDXC version with optional beta suffix.
+/// Represents an UPST version with optional beta suffix.
 /// Examples: "1.4.8", "1.4.8-beta1", "1.4.8 beta 1"
 /// </summary>
 public readonly record struct RdxcVersion(int Major, int Minor, int Build, int? BetaNumber = null)
@@ -309,14 +309,14 @@ public readonly record struct RdxcVersion(int Major, int Minor, int Build, int? 
         return BetaNumber!.Value.CompareTo(other.BetaNumber!.Value);
     }
 
-    // Regex: optional leading text (e.g. "RDXC-", "v"), then Major.Minor.Build, optional beta suffix
+    // Regex: optional leading text (e.g. "HDRX-", "v"), then Major.Minor.Build, optional beta suffix
     private static readonly Regex VersionPattern = new(
         @"(\d+)\.(\d+)\.(\d+)(?:[\s-]*beta[\s-]*(\d+))?",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>
     /// Parses version strings such as "1.4.8", "1.4.8-beta1", "1.4.8 beta 1",
-    /// "v1.4.8-beta2", "RDXC-1.4.8-beta1". Returns false and logs when input is invalid.
+    /// "v1.4.8-beta2", "UPST-1.4.8-beta1". Returns false and logs when input is invalid.
     /// </summary>
     public static bool TryParse(string? input, out RdxcVersion version)
     {

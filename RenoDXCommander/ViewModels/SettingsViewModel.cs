@@ -14,7 +14,7 @@ public partial class SettingsViewModel : ObservableObject
     // Settings stored as JSON — ApplicationData.Current throws in unpackaged WinUI 3
     private static readonly string _settingsFilePath = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "settings.json");
+        "UPST", "settings.json");
 
     [ObservableProperty] private bool _skipUpdateCheck;
     [ObservableProperty] private bool _betaOptIn;

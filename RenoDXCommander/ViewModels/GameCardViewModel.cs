@@ -79,6 +79,13 @@ public partial class GameCardViewModel : ObservableObject
     // ── 32-bit mode ───────────────────────────────────────────────────────────────
     [ObservableProperty] private bool _is32Bit = false;
 
+    // ── Ultra Limiter state ──────────────────────────────────────────────────────
+    [ObservableProperty] private GameStatus _ulStatus  = GameStatus.NotInstalled;
+    [ObservableProperty] private bool       _ulIsInstalling;
+    [ObservableProperty] private double     _ulProgress;
+    [ObservableProperty] private string     _ulActionMessage = "";
+    [ObservableProperty] private string?    _ulInstalledFile;
+
     // ── DC Legacy Mode ────────────────────────────────────────────────────────────
     /// <summary>Runtime-only flag set by MainViewModel — controls DC feature visibility across the card.</summary>
     public bool DcLegacyMode { get; set; }
@@ -272,6 +279,22 @@ public partial class GameCardViewModel : ObservableObject
         NotifyOnce(nameof(LumaBadgeBackground));
         NotifyOnce(nameof(LumaBadgeForeground));
         NotifyOnce(nameof(LumaBadgeBorderBrush));
+
+        // ── Ultra Limiter: UlStatus dependents ───────────────────────────
+        NotifyOnce(nameof(UlStatusDot));
+        NotifyOnce(nameof(UlActionLabel));
+        NotifyOnce(nameof(UlDeleteVisibility));
+        NotifyOnce(nameof(UlStatusText));
+        NotifyOnce(nameof(UlStatusColor));
+        NotifyOnce(nameof(UlShortAction));
+        NotifyOnce(nameof(IsUlInstalled));
+        NotifyOnce(nameof(UlRowVisibility));
+        NotifyOnce(nameof(CardUlStatusDot));
+        NotifyOnce(nameof(CardUlInstallEnabled));
+
+        // ── Ultra Limiter: UlIsInstalling dependents ─────────────────────
+        NotifyOnce(nameof(UlProgressVisibility));
+        NotifyOnce(nameof(IsUlNotInstalling));
 
         // ── Vulkan / dual-API computed properties ────────────────────────
         NotifyOnce(nameof(IsVulkanOnly));

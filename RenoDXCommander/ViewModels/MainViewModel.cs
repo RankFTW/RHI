@@ -1809,14 +1809,14 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Reads the bundled RDXC_PatchNotes.md and extracts the last N version sections.
+    /// Reads the bundled UPST_PatchNotes.md and extracts the last N version sections.
     /// Each section starts with "## vX.Y.Z".
     /// </summary>
     public static string GetRecentPatchNotes(int count = 3)
     {
         try
         {
-            var path = Path.Combine(AppContext.BaseDirectory, "RDXC_PatchNotes.md");
+            var path = Path.Combine(AppContext.BaseDirectory, "UPST_PatchNotes.md");
             if (!File.Exists(path)) return "Patch notes file not found.";
 
             var lines = File.ReadAllLines(path);
@@ -2329,6 +2329,18 @@ public partial class MainViewModel : ObservableObject
                 card.RsBlockedByDcMode = false;
         }
 
+        // Ultra Limiter detection for manually added game
+        if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
+        {
+            var ulDeployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
+            if (File.Exists(Path.Combine(ulDeployPath, UltraLimiterFileName))
+                || File.Exists(Path.Combine(card.InstallPath, UltraLimiterFileName)))
+            {
+                card.UlStatus = GameStatus.Installed;
+                card.UlInstalledFile = UltraLimiterFileName;
+            }
+        }
+
         _allCards.Add(card);
         _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
         SaveLibrary();
@@ -2582,6 +2594,78 @@ public partial class MainViewModel : ObservableObject
         {
             card.DcActionMessage = $"❌ Uninstall failed: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallDc", ex, note: $"Game: {card.GameName}");
+        }
+    }
+
+    // ── Ultra Limiter commands ────────────────────────────────────────────────────
+
+    /// <summary>The bundled Ultra Limiter addon filename.</summary>
+    private const string UltraLimiterFileName = "ultra_limiter.addon64";
+
+    public async Task InstallUlAsync(GameCardViewModel card)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+        card.UlIsInstalling = true;
+        card.UlActionMessage = "Installing Ultra Limiter...";
+        card.UlProgress = 0;
+        try
+        {
+            await Task.Run(() =>
+            {
+                var sourcePath = Path.Combine(AppContext.BaseDirectory, UltraLimiterFileName);
+                if (!File.Exists(sourcePath))
+                    throw new FileNotFoundException($"Bundled {UltraLimiterFileName} not found at {sourcePath}");
+
+                var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
+                var destPath = Path.Combine(deployPath, UltraLimiterFileName);
+                File.Copy(sourcePath, destPath, overwrite: true);
+            });
+
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.UlInstalledFile = UltraLimiterFileName;
+                card.UlStatus = GameStatus.Installed;
+                card.UlActionMessage = "✅ Ultra Limiter installed!";
+                card.UlIsInstalling = false;
+                card.NotifyAll();
+            });
+        }
+        catch (Exception ex)
+        {
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.UlActionMessage = $"❌ Install failed: {ex.Message}";
+                card.UlIsInstalling = false;
+                card.NotifyAll();
+            });
+            _crashReporter.WriteCrashReport("InstallUl", ex, note: $"Game: {card.GameName}");
+        }
+    }
+
+    public void UninstallUl(GameCardViewModel card)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+        try
+        {
+            var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
+            var filePath = Path.Combine(deployPath, UltraLimiterFileName);
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+
+            // Also check the game folder directly if AddonPath was different
+            var directPath = Path.Combine(card.InstallPath, UltraLimiterFileName);
+            if (File.Exists(directPath))
+                File.Delete(directPath);
+
+            card.UlInstalledFile = null;
+            card.UlStatus = GameStatus.NotInstalled;
+            card.UlActionMessage = "Ultra Limiter removed.";
+            card.NotifyAll();
+        }
+        catch (Exception ex)
+        {
+            card.UlActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            _crashReporter.WriteCrashReport("UninstallUl", ex, note: $"Game: {card.GameName}");
         }
     }
 
@@ -4051,6 +4135,19 @@ public partial class MainViewModel : ObservableObject
 
             newCard.LumaFeatureEnabled = LumaFeatureEnabled;
             newCard.DcLegacyMode = DcLegacyMode;
+
+            // ── Ultra Limiter detection ────────────────────────────────────────────
+            if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            {
+                var ulDeployPath = ModInstallService.GetAddonDeployPath(installPath);
+                if (File.Exists(Path.Combine(ulDeployPath, UltraLimiterFileName))
+                    || File.Exists(Path.Combine(installPath, UltraLimiterFileName)))
+                {
+                    newCard.UlStatus = GameStatus.Installed;
+                    newCard.UlInstalledFile = UltraLimiterFileName;
+                }
+            }
+
             var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
             {

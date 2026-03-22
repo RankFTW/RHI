@@ -33,7 +33,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     // Staging folder: %LocalAppData%\RenoDXCommander\reshade\
     public static readonly string RsStagingDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "reshade");
+        "UPST", "reshade");
     public static string RsStagedPath64 => Path.Combine(RsStagingDir, RsStaged64);
     public static string RsStagedPath32 => Path.Combine(RsStagingDir, RsStaged32);
 
@@ -290,7 +290,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     // ── Infrastructure ────────────────────────────────────────────────────────────
     private static readonly string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "aux_installed.json");
+        "UPST", "aux_installed.json");
 
     // ── INI preset folder ─────────────────────────────────────────────────────────
     /// <summary>
@@ -300,7 +300,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     /// </summary>
     public static readonly string InisDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "inis");
+        "UPST", "inis");
 
     public static string RsIniPath => Path.Combine(InisDir, "reshade.ini");
     public static string RsVulkanIniPath => Path.Combine(InisDir, "reshade.vulkan.ini");

@@ -10,7 +10,7 @@ public static class VulkanFootprintService
 {
     public const string FootprintFileName = "RDXC_VULKAN_FOOTPRINT";
     public const string FootprintContent =
-        "Managed by RenoDXCommander — Vulkan ReShade footprint.\n"
+        "Managed by UPST — Vulkan ReShade footprint.\n"
       + "Do not delete this file while Vulkan ReShade is in use.";
 
     /// <summary>

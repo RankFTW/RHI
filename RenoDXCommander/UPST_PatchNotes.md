@@ -38,8 +38,8 @@
 - The Update button is now dim by default and lights up purple when any game has an update available.
 
 **Addon auto-detection**
-- RDXC now watches your Downloads folder (configurable in Settings) for new `renodx-*.addon64` / `.addon32` files and automatically prompts you to install them.
-- Double-clicking an addon file in Explorer opens RDXC and triggers the install flow. If RDXC is already running, the file is forwarded to the existing instance via named pipe.
+- UPST now watches your Downloads folder (configurable in Settings) for new `renodx-*.addon64` / `.addon32` files and automatically prompts you to install them.
+- Double-clicking an addon file in Explorer opens UPST and triggers the install flow. If UPST is already running, the file is forwarded to the existing instance via named pipe.
 - Drag-and-drop, file association, and archive extraction all enforce the `renodx-` filename prefix to avoid triggering on unrelated addon files.
 
 **AddonPath support**
@@ -113,7 +113,7 @@
 - Fixed the Update All ReShade batch operation incorrectly running the standard DX ReShade install path for Vulkan games, which copied a `dxgi.dll` into the game directory. Vulkan games are now excluded from Update All ReShade since they use the global implicit layer and don't have per-game DLLs.
 
 **ReShade "unable to save configuration" error**
-- Fixed ReShade showing "Unable to save configuration and/or current preset" errors for `reshade.ini` and `ReShadePreset.ini` in games where these files were deployed by RDXC. The INI writer was emitting a UTF-8 BOM (byte order mark) that ReShade's native parser cannot handle. INI files are now written as plain UTF-8 without BOM.
+- Fixed ReShade showing "Unable to save configuration and/or current preset" errors for `reshade.ini` and `ReShadePreset.ini` in games where these files were deployed by UPST. The INI writer was emitting a UTF-8 BOM (byte order mark) that ReShade's native parser cannot handle. INI files are now written as plain UTF-8 without BOM.
 
 ---
 
@@ -137,7 +137,7 @@
 ### New Features
 
 **Graphics API detection**
-- RDXC now scans game executables using PE header import table analysis to detect which graphics APIs a game uses: DirectX 11, DirectX 12, Vulkan, and OpenGL.
+- UPST now scans game executables using PE header import table analysis to detect which graphics APIs a game uses: DirectX 11, DirectX 12, Vulkan, and OpenGL.
 - API badges are displayed on game cards showing detected rendering paths (e.g. DX12, VLK).
 - Multi-exe scanning — all `.exe` files in the install directory and common subdirectories (bin, binaries, x64, win64, etc.) are scanned, so games like Baldur's Gate 3 with multiple executables are detected correctly.
 - Manifest API overrides — the remote manifest supports comma-separated API tags (e.g. `"DX12, VLK"`) for games like Red Dead Redemption 2 that load Vulkan dynamically and can't be detected via PE imports alone.
@@ -147,7 +147,7 @@
 - Only valid multi-API combos are shown: DX11/12 + VLK. Legacy APIs (OGL, DX9, DX10) only appear alone.
 
 **Vulkan ReShade support**
-- Full Vulkan implicit layer support for ReShade. RDXC can now install ReShade as a global Vulkan layer via the Windows registry (`HKLM\SOFTWARE\Khronos\Vulkan\ImplicitLayers`), enabling ReShade injection for Vulkan-rendered games.
+- Full Vulkan implicit layer support for ReShade. UPST can now install ReShade as a global Vulkan layer via the Windows registry (`HKLM\SOFTWARE\Khronos\Vulkan\ImplicitLayers`), enabling ReShade injection for Vulkan-rendered games.
 - Bundled `ReShade64.json` Vulkan layer manifest with correct `device_extensions` and `disable_environment` fields, deployed alongside the ReShade DLL.
 - Vulkan layer install/uninstall buttons on game cards for games with detected Vulkan support.
 - Dual-API game support — games detected with both DirectX and Vulkan show a rendering path toggle, allowing you to choose which path ReShade targets.
@@ -158,7 +158,7 @@
 - The 📋 INI button deploys both `reshade.ini` and `reshade.vulkan.ini` when a game has Vulkan support.
 
 **Vulkan ReShade footprint tracking**
-- RDXC now places a footprint file (`RDXC_VULKAN_FOOTPRINT`) in game folders when Vulkan ReShade is installed, enabling managed shader deployment to Vulkan games the same way it works for DLL-injected ReShade games.
+- UPST now places a footprint file (`RDXC_VULKAN_FOOTPRINT`) in game folders when Vulkan ReShade is installed, enabling managed shader deployment to Vulkan games the same way it works for DLL-injected ReShade games.
 - The footprint is automatically removed when Display Commander is installed and restored when DC is uninstalled from a Vulkan game.
 
 **Per-game Vulkan ReShade uninstall**
@@ -197,7 +197,7 @@
 - Saving is blocked if both names match.
 
 **Startup shader deployment**
-- On launch, RDXC now ensures shader packs are fully downloaded before syncing shaders to all installed game folders. Games with ReShade or DC installed will have the correct global or per-game shaders deployed automatically, even if they were installed by an older version that didn't deploy shaders.
+- On launch, UPST now ensures shader packs are fully downloaded before syncing shaders to all installed game folders. Games with ReShade or DC installed will have the correct global or per-game shaders deployed automatically, even if they were installed by an older version that didn't deploy shaders.
 
 **Wiki exclusion toggle**
 - A new per-game toggle in overrides lets you exclude a game from RenoDX wiki lookups, useful for games that share a name with an unrelated wiki entry.
@@ -206,7 +206,7 @@
 
 **Drag-and-drop not working**
 - Fixed drag-and-drop of game executables and archives not functioning in the unpackaged WinUI 3 app. Drag-and-drop now uses Win32 shell `WM_DROPFILES` handling.
-- Also added UIPI bypass so drag-and-drop works when RDXC is running as administrator.
+- Also added UIPI bypass so drag-and-drop works when UPST is running as administrator.
 
 **Shaders not deployed to game folders after Display Commander removal**
 - Games with ReShade installed but no Display Commander were left with an empty `reshade-shaders\` folder after DC was uninstalled. Refresh and Deploy Shaders now correctly detect this scenario and deploy shaders to the game folder.
@@ -271,7 +271,7 @@
 - Positioned on the left side opposite the Save Overrides button.
 
 **Per-session logging**
-- A new session log file is created every time RDXC starts, named with a timestamp (e.g. `session_2025-03-14_12-30-00.txt`).
+- A new session log file is created every time UPST starts, named with a timestamp (e.g. `session_2025-03-14_12-30-00.txt`).
 - All activity is logged to the session file automatically — no need to enable Verbose Logging first.
 - Old session logs are automatically pruned to keep a maximum of 10 on disk.
 
@@ -292,7 +292,7 @@
 ### Bug Fixes
 
 **ReShade not detected under non-standard filenames**
-- ReShade installations using non-standard DLL filenames (e.g. `d3d11.dll`, `dinput8.dll`, `version.dll`) were not detected by RDXC, showing the game as "Not Installed" and allowing a second ReShade DLL to be installed alongside the existing one. RDXC now scans all DLL files in the game folder using binary signature detection (`IsReShadeFileStrict`) as a fallback when the standard filename checks don't find ReShade.
+- ReShade installations using non-standard DLL filenames (e.g. `d3d11.dll`, `dinput8.dll`, `version.dll`) were not detected by UPST, showing the game as "Not Installed" and allowing a second ReShade DLL to be installed alongside the existing one. UPST now scans all DLL files in the game folder using binary signature detection (`IsReShadeFileStrict`) as a fallback when the standard filename checks don't find ReShade.
 
 **Old ReShade DLL not removed on reinstall with non-standard filename**
 - Clicking "Reinstall ReShade" on a game where ReShade was detected under a non-standard filename (e.g. `d3d11.dll`) installed a fresh `dxgi.dll` without removing the existing non-standard DLL, leaving two ReShade DLLs in the game folder. The reinstall flow now looks up the existing install record and deletes the old DLL when it differs from the new destination filename.
@@ -366,11 +366,11 @@
 
 **Games showing as installed after manual file removal**
 - After a full Refresh, games with ReShade, Display Commander, or RenoDX manually deleted from the game folder were still showing as installed in the UI.
-- RDXC now verifies that the installed file actually exists on disk when loading saved records. Stale records are automatically cleaned up and the correct status is shown immediately on the next Refresh.
+- UPST now verifies that the installed file actually exists on disk when loading saved records. Stale records are automatically cleaned up and the correct status is shown immediately on the next Refresh.
 
 **Manifest DLL name override not applying to existing installs**
 - The `dllNameOverrides` manifest field was only used as the filename for new installs. Games already installed under a different filename were not renamed when the manifest override was applied.
-- RDXC now renames existing ReShade and Display Commander files to match the manifest override on every Refresh, matching the behaviour of user-set DLL overrides.
+- UPST now renames existing ReShade and Display Commander files to match the manifest override on every Refresh, matching the behaviour of user-set DLL overrides.
 
 **Manifest DLL name override not visible in UI**
 - Games flagged via `dllNameOverrides` in the manifest were silently installing with the correct filename but the DLL naming override toggle in the Overrides section remained off, giving no indication anything was different.
@@ -388,7 +388,7 @@
 ### New Features
 
 **Drag-and-drop archive extraction**
-- Archives (.zip, .7z, .rar, .tar, .gz, .bz2, .xz) can now be dragged directly onto the RDXC window. The archive is extracted using the bundled 7-Zip, and any `.addon64` or `.addon32` files inside are automatically found and installed via the existing addon install flow.
+- Archives (.zip, .7z, .rar, .tar, .gz, .bz2, .xz) can now be dragged directly onto the UPST window. The archive is extracted using the bundled 7-Zip, and any `.addon64` or `.addon32` files inside are automatically found and installed via the existing addon install flow.
 - If multiple addon files are found inside an archive, a picker dialog lets you choose which one to install.
 - If no addon files are found, a clear message is shown.
 
@@ -477,13 +477,13 @@
 ### New Features
 
 **Battle.net game detection**
-- RDXC now automatically detects games installed via the Battle.net (Blizzard) launcher.
+- UPST now automatically detects games installed via the Battle.net (Blizzard) launcher.
 - Detection uses Windows Uninstall registry entries (filtering by Blizzard/Activision publisher), the Battle.net config file (`Battle.net.config`) for the default install path, and default folder scanning under `Program Files\Battle.net` and `Blizzard Entertainment`.
 - Battle.net games appear with a dedicated platform icon on game cards and in the compact mode game list.
 - Drag-and-drop exe detection now recognises Battle.net store markers (`.build.info`, `.product.db`).
 
 **Rockstar Games Launcher detection**
-- RDXC now automatically detects games installed via the Rockstar Games Launcher.
+- UPST now automatically detects games installed via the Rockstar Games Launcher.
 - Detection uses Windows Uninstall registry entries (filtering by Rockstar publisher), the launcher's `titles.dat` file for install paths, and default folder scanning under `Program Files\Rockstar Games`.
 - Rockstar games appear with a dedicated platform icon on game cards and in the compact mode game list.
 - Drag-and-drop exe detection now recognises Rockstar store markers (`PlayGTAV.exe`, `socialclub*.dll`).
@@ -493,8 +493,8 @@
 **Compact UI layout rework**
 - The top header bar (logo, title, search box) is now completely hidden in compact mode. The filter bar is the topmost bar.
 - The search box has been moved to the right-hand toolbar, placed below the About button.
-- The RDXC logo is displayed below the search box on the right toolbar.
-- The "RDXC RenoDXCommander" title text is no longer shown in compact mode.
+- The UPST logo is displayed below the search box on the right toolbar.
+- The "UPST" title text is no longer shown in compact mode.
 - The first game alphabetically is now auto-selected when entering compact mode, so the view is never empty on launch.
 
 **About panel version**
@@ -526,7 +526,7 @@
 ### New Features
 
 **Ubisoft Connect game detection**
-- RDXC now automatically detects games installed via Ubisoft Connect (formerly Uplay).
+- UPST now automatically detects games installed via Ubisoft Connect (formerly Uplay).
 - Detection uses registry keys, the launcher's `settings.yml` configuration, and default install folder scanning.
 - Ubisoft games appear with a dedicated platform icon on game cards and in the compact mode game list.
 - Drag-and-drop exe detection now recognises Ubisoft store markers (`uplay_install.state`, `uplay_*.dll`).

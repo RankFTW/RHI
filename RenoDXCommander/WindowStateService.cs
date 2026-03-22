@@ -15,7 +15,7 @@ public class WindowStateService
     // ── Window persistence (JSON-based, works for unpackaged WinUI 3 apps) ────────
     private static readonly string _windowSettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RenoDXCommander", "window_main.json");
+        "UPST", "window_main.json");
 
     // In-memory cache of window bounds (populated from file on first restore)
     private (int X, int Y, int W, int H)? _windowBounds;

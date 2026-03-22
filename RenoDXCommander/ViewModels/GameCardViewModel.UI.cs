@@ -66,7 +66,7 @@ public partial class GameCardViewModel
     public bool HasInfoIndicator => HasNotes || HasNameUrl;
 
     /// <summary>False when any component is currently installing — disables card install button.</summary>
-    public bool CanCardInstall => !IsInstalling && !RsIsInstalling && !DcIsInstalling && !IsLumaInstalling;
+    public bool CanCardInstall => !IsInstalling && !RsIsInstalling && !DcIsInstalling && !IsLumaInstalling && !UlIsInstalling;
 
     // ── Per-component install enabled (card install flyout) ───────────────────────
     public bool CardRdxInstallEnabled  => !IsInstalling && Mod?.SnapshotUrl != null && !IsExternalOnly;

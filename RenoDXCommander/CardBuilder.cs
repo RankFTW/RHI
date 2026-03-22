@@ -157,9 +157,12 @@ public class CardBuilder
         var rsDotPanel = UIFactory.MakeStatusDot("RS", card.CardRsStatusDot);
         var dcDotPanel = UIFactory.MakeStatusDot("DC", card.CardDcStatusDot);
         dcDotPanel.Visibility = card.DcLegacyMode ? Visibility.Visible : Visibility.Collapsed;
+        var ulDotPanel = UIFactory.MakeStatusDot("UL", card.CardUlStatusDot);
+        ulDotPanel.Visibility = card.UlRowVisibility;
         dotsPanel.Children.Add(rdxDotPanel);
         dotsPanel.Children.Add(rsDotPanel);
         dotsPanel.Children.Add(dcDotPanel);
+        dotsPanel.Children.Add(ulDotPanel);
 
         StackPanel? lumaDotPanel = null;
         if (card.CardLumaVisible)
@@ -337,19 +340,25 @@ public class CardBuilder
                             if (dcDotPanel.Children[0] is Microsoft.UI.Xaml.Shapes.Ellipse dcEllipse)
                                 dcEllipse.Fill = UIFactory.GetBrush(c.CardDcStatusDot);
                             break;
+                        case nameof(c.CardUlStatusDot):
+                            if (ulDotPanel.Children[0] is Microsoft.UI.Xaml.Shapes.Ellipse ulEllipse)
+                                ulEllipse.Fill = UIFactory.GetBrush(c.CardUlStatusDot);
+                            break;
                         case nameof(c.CardLumaStatusDot):
                             if (lumaDotPanel?.Children[0] is Microsoft.UI.Xaml.Shapes.Ellipse lumaEllipse)
                                 lumaEllipse.Fill = UIFactory.GetBrush(c.CardLumaStatusDot);
                             break;
                         case nameof(c.DcLegacyMode):
                             dcDotPanel.Visibility = c.DcLegacyMode ? Visibility.Visible : Visibility.Collapsed;
+                            ulDotPanel.Visibility = c.UlRowVisibility;
                             break;
                         case nameof(c.CardLumaVisible):
                             bool effectiveLuma = c.LumaFeatureEnabled && c.IsLumaMode;
-                            // Hide/show RDX/RS/DC dots based on Luma mode
+                            // Hide/show RDX/RS/DC/UL dots based on Luma mode
                             rdxDotPanel.Visibility = effectiveLuma ? Visibility.Collapsed : Visibility.Visible;
                             rsDotPanel.Visibility = effectiveLuma ? Visibility.Collapsed : Visibility.Visible;
                             dcDotPanel.Visibility = (!c.DcLegacyMode || effectiveLuma) ? Visibility.Collapsed : Visibility.Visible;
+                            ulDotPanel.Visibility = c.UlRowVisibility;
                             // Add/remove Luma dot
                             if (c.CardLumaVisible && lumaDotPanel == null)
                             {
@@ -436,6 +445,16 @@ public class CardBuilder
         dcRow.Visibility = card.DcRowVisibility;
         ApplyDcStatusLink(dcRow, card.IsDcInstalled);
         panel.Children.Add(dcRow);
+
+        // Ultra Limiter row
+        var ulRow = BuildComponentRow(card, "Ultra Limiter", "UL",
+            card.UlStatusText, card.UlStatusColor, card.UlShortAction,
+            card.IsUlNotInstalling, card.IsUlInstalled,
+            showCopyConfig: false, copyConfigVisible: false,
+            copyConfigTooltip: null,
+            btnBackground: card.UlBtnBackground, btnForeground: card.UlBtnForeground, btnBorderBrush: card.UlBtnBorderBrush);
+        ulRow.Visibility = card.UlRowVisibility;
+        panel.Children.Add(ulRow);
 
         // RenoDX row
         var rdxRow = BuildComponentRow(card, "RenoDX", "RDX",
@@ -544,6 +563,7 @@ public class CardBuilder
                     // Update row visibility
                     rsRow.Visibility = c.ReShadeRowVisibility;
                     dcRow.Visibility = c.DcRowVisibility;
+                    ulRow.Visibility = c.UlRowVisibility;
                     rdxRow.Visibility = c.RenoDxRowVisibility;
 
                     // Update each component row's status/buttons
@@ -554,6 +574,9 @@ public class CardBuilder
                         c.CardDcInstallEnabled, c.IsDcInstalled, c.DcIniExists,
                         c.DcBtnBackground, c.DcBtnForeground, c.DcBtnBorderBrush);
                     ApplyDcStatusLink(dcRow, c.IsDcInstalled);
+                    UpdateComponentRow(ulRow, c.UlStatusText, c.UlStatusColor, c.UlShortAction,
+                        c.IsUlNotInstalling, c.IsUlInstalled, false,
+                        c.UlBtnBackground, c.UlBtnForeground, c.UlBtnBorderBrush);
                     UpdateComponentRow(rdxRow, c.RdxStatusText, c.RdxStatusColor, c.RdxShortAction,
                         c.CardRdxInstallEnabled, c.IsRdxInstalled, false,
                         c.InstallBtnBackground, c.InstallBtnForeground, c.InstallBtnBorderBrush);
