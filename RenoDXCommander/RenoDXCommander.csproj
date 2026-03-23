@@ -18,8 +18,8 @@
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyName>UltraPlusSupportTools</AssemblyName>
     <AssemblyTitle>UPST</AssemblyTitle>
-    <AssemblyVersion>1.5.5.0</AssemblyVersion>
-    <FileVersion>1.5.5.0</FileVersion>
+    <AssemblyVersion>1.6.0.0</AssemblyVersion>
+    <FileVersion>1.6.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

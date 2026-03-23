@@ -174,19 +174,6 @@ public class GameInitializationService : IGameInitializationService
             foreach (var game in manifest.SixtyFourBitGames)
                 manifest64BitGames.Add(game);
 
-        if (manifest.DcModeOverrides != null)
-        {
-            foreach (var (key, value) in manifest.DcModeOverrides)
-            {
-                if (!gameNameService.PerGameDcModeOverride.ContainsKey(key))
-                {
-                    // Convert legacy int manifest values to new string format
-                    var converted = value switch { 0 => "Off", 1 => "Custom", 2 => "Custom", _ => "Global" };
-                    gameNameService.PerGameDcModeOverride[key] = converted;
-                }
-            }
-        }
-
         manifestBlacklist.Clear();
         if (manifest.Blacklist != null)
             foreach (var game in manifest.Blacklist)
@@ -221,7 +208,6 @@ public class GameInitializationService : IGameInitializationService
             $"+{manifest.NativeHdrGames?.Count ?? 0} NativeHDR, " +
             $"+{manifest.ThirtyTwoBitGames?.Count ?? 0} 32-bit, " +
             $"+{manifest.SixtyFourBitGames?.Count ?? 0} 64-bit, " +
-            $"+{manifest.DcModeOverrides?.Count ?? 0} DC overrides, " +
             $"+{manifest.Blacklist?.Count ?? 0} blacklisted, " +
             $"+{manifest.InstallPathOverrides?.Count ?? 0} path overrides, " +
             $"+{manifest.WikiStatusOverrides?.Count ?? 0} status overrides, " +

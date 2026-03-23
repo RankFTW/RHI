@@ -39,15 +39,12 @@ public class VersionDisplayPropertyTests
                 {
                     RsStatus = GameStatus.UpdateAvailable,
                     RsInstalledVersion = version,
-                    DcStatus = GameStatus.UpdateAvailable,
-                    DcInstalledVersion = version
                 };
 
                 string expectedText = version ?? "Update";
                 bool rsCorrect = card.RsStatusText == expectedText;
-                bool dcCorrect = card.DcStatusText == expectedText;
 
-                return rsCorrect && dcCorrect;
+                return rsCorrect;
             });
     }
 
@@ -65,14 +62,11 @@ public class VersionDisplayPropertyTests
                 {
                     RsStatus = GameStatus.UpdateAvailable,
                     RsInstalledVersion = version,
-                    DcStatus = GameStatus.UpdateAvailable,
-                    DcInstalledVersion = version
                 };
 
                 bool rsCorrect = card.RsStatusColor == "#B898E8";
-                bool dcCorrect = card.DcStatusColor == "#B898E8";
 
-                return rsCorrect && dcCorrect;
+                return rsCorrect;
             });
     }
 
@@ -90,16 +84,12 @@ public class VersionDisplayPropertyTests
                 {
                     RsStatus = GameStatus.Installed,
                     RsInstalledVersion = version,
-                    DcStatus = GameStatus.Installed,
-                    DcInstalledVersion = version
                 };
 
                 bool rsTextCorrect = card.RsStatusText == version;
-                bool dcTextCorrect = card.DcStatusText == version;
                 bool rsColorCorrect = card.RsStatusColor == "#5ECB7D";
-                bool dcColorCorrect = card.DcStatusColor == "#5ECB7D";
 
-                return rsTextCorrect && dcTextCorrect && rsColorCorrect && dcColorCorrect;
+                return rsTextCorrect && rsColorCorrect;
             });
     }
 }

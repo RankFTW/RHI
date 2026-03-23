@@ -16,17 +16,4 @@ public static class DllOverrideConstants
         "d3d9.dll",
     ];
 
-    public static readonly string[] DcDllPickerNames =
-    [
-        "dxgi.dll",    // first
-        "winmm.dll",   // second
-        "d3d11.dll",
-        "dinput8.dll",
-        "version.dll",
-        "d3d12.dll",
-        "xinput1_3.dll",
-        "msvcp140.dll",
-        "bink2w64.dll",
-        "d3d9.dll",
-    ];
 }

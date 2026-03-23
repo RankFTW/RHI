@@ -50,12 +50,11 @@ public partial class GameCardViewModel
             ? Visibility.Visible : Visibility.Collapsed;
 
     // ── Combined status for simplified card ──────────────────────────────────────
-    /// <summary>True when all 3 components that are relevant are installed (or N/A).</summary>
+    /// <summary>True when all components that are relevant are installed (or N/A).</summary>
     private bool AllInstalled => (Mod == null || Status == GameStatus.Installed || Status == GameStatus.UpdateAvailable)
-                              && (RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable || RsStatus == GameStatus.NotInstalled)
-                              && (DcStatus == GameStatus.Installed || DcStatus == GameStatus.UpdateAvailable || DcStatus == GameStatus.NotInstalled);
+                              && (RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable || RsStatus == GameStatus.NotInstalled);
 
-    private bool AnyInstalling => IsInstalling || RsIsInstalling || DcIsInstalling;
+    private bool AnyInstalling => IsInstalling || RsIsInstalling;
 
     /// <summary>Status dot: 🟢 all installed, 🟠 update available, ⚪ not installed.</summary>
     public string CombinedStatusDot => AnyUpdateAvailable ? "🟠"
@@ -69,10 +68,10 @@ public partial class GameCardViewModel
             if (AnyInstalling) return "Installing…";
             if (IsExternalOnly)
             {
-                // External-only: no RenoDX to install, only ReShade + DC
-                if (RsStatus == GameStatus.UpdateAvailable || DcStatus == GameStatus.UpdateAvailable) return "⬆  Update ReShade + DC";
-                if (RsStatus == GameStatus.Installed && DcStatus == GameStatus.Installed) return "↺  Reinstall ReShade + DC";
-                return "⬇  Install ReShade + DC";
+                // External-only: no RenoDX to install, only ReShade
+                if (RsStatus == GameStatus.UpdateAvailable) return "⬆  Update ReShade";
+                if (RsStatus == GameStatus.Installed) return "↺  Reinstall ReShade";
+                return "⬇  Install ReShade";
             }
             if (AnyUpdateAvailable) return "⬆  Update All";
             if (Status == GameStatus.Installed) return "↺  Reinstall All";
@@ -129,11 +128,10 @@ public partial class GameCardViewModel
     public string R7bLumaSwitchBorderThickness    => UeExtendedToggleVisibility == Visibility.Visible ? "0,1,0,1" : "0,1,1,1";
     public string R7bLumaSwitchMargin             => UeExtendedToggleVisibility == Visibility.Visible ? "0,0,1,0" : "0";
 
-    /// <summary>True when any component (RenoDX, ReShade, DC, Luma) is installed or has an update.</summary>
+    /// <summary>True when any component (RenoDX, ReShade, Luma) is installed or has an update.</summary>
     public bool IsManaged =>
         Status is GameStatus.Installed or GameStatus.UpdateAvailable ||
         RsStatus is GameStatus.Installed or GameStatus.UpdateAvailable ||
-        DcStatus is GameStatus.Installed or GameStatus.UpdateAvailable ||
         LumaStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
 
     // ── Per-component installed state (card install flyout uninstall visibility) ──
@@ -147,8 +145,7 @@ public partial class GameCardViewModel
 
     // Compact list item highlight — purple when any component has an update available
     private bool AnyUpdateAvailable => Status == GameStatus.UpdateAvailable
-                                    || RsStatus == GameStatus.UpdateAvailable
-                                    || DcStatus == GameStatus.UpdateAvailable;
+                                    || RsStatus == GameStatus.UpdateAvailable;
 
     // ── Targeted notification: Status changed ─────────────────────────────────────
     private void NotifyStatusDependents()

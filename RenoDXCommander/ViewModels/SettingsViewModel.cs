@@ -19,7 +19,6 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _skipUpdateCheck;
     [ObservableProperty] private bool _betaOptIn;
     [ObservableProperty] private bool _verboseLogging;
-    [ObservableProperty] private bool _dcLegacyMode;
     [ObservableProperty] private string _lastSeenVersion = "";
     [ObservableProperty] private List<string> _selectedShaderPacks = new();
     [ObservableProperty] private string _addonWatchFolder = "";
@@ -80,9 +79,6 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("VerboseLogging", out var vlVal))
             VerboseLogging = vlVal == "true";
 
-        if (s.TryGetValue("DcLegacyMode", out var dlmVal))
-            DcLegacyMode = dlmVal == "true";
-
         if (s.TryGetValue("LastSeenVersion", out var lsvVal))
             LastSeenVersion = lsvVal ?? "";
 
@@ -109,9 +105,13 @@ public partial class SettingsViewModel : ObservableObject
             SelectedShaderPacks = new();
         }
 
-        // Ensure Lilium is always present in the global shader selection
-        if (!SelectedShaderPacks.Contains("Lilium", StringComparer.OrdinalIgnoreCase))
-            SelectedShaderPacks.Add("Lilium");
+        // Ensure Lilium is included by default on fresh installs (no prior selection),
+        // but respect the user's choice if they previously saved a selection without it.
+        if (!wasSelectMode && SelectedShaderPacks.Count == 0)
+        {
+            if (!SelectedShaderPacks.Contains("Lilium", StringComparer.OrdinalIgnoreCase))
+                SelectedShaderPacks.Add("Lilium");
+        }
 
         if (s.TryGetValue("AddonWatchFolder", out var awfVal))
             AddonWatchFolder = awfVal ?? "";
@@ -126,7 +126,6 @@ public partial class SettingsViewModel : ObservableObject
         s["SkipUpdateCheck"]   = SkipUpdateCheck ? "true" : "false";
         s["BetaOptIn"]         = BetaOptIn ? "true" : "false";
         s["VerboseLogging"]    = VerboseLogging ? "true" : "false";
-        s["DcLegacyMode"]      = DcLegacyMode ? "true" : "false";
         s["LastSeenVersion"]   = LastSeenVersion;
         s["ShaderDeployMode"]  = SelectedShaderPacks.Count > 0 ? "Select" : "Off";
         s["SelectedShaderPacks"] = JsonSerializer.Serialize(SelectedShaderPacks);

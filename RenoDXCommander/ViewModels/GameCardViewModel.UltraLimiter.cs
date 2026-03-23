@@ -42,10 +42,9 @@ public partial class GameCardViewModel
     public bool CardUlInstallEnabled => !UlIsInstalling;
 
     /// <summary>
-    /// Ultra Limiter row is visible when NOT in DC Legacy Mode and NOT in Luma mode.
+    /// Ultra Limiter row is visible when NOT in Luma mode.
     /// </summary>
-    public Visibility UlRowVisibility => DcLegacyMode ? Visibility.Collapsed
-        : EffectiveLumaMode ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility UlRowVisibility => EffectiveLumaMode ? Visibility.Collapsed : Visibility.Visible;
 
     // ── Targeted notification: UlStatus changed ───────────────────────────────────
     private void NotifyUlStatusDependents()

@@ -346,63 +346,9 @@ public class AutoDetectBitnessPropertyTests : IDisposable
             });
     }
 
-    // ── Property 5: Display Commander DLL variant matches detected architecture ──
-    // Feature: auto-detect-bitness, Property 5: Display Commander DLL variant matches detected architecture
-    // Validates: Requirements 4.1, 4.2
-    [Property(MaxTest = 100)]
-    public Property DcDllVariant_MatchesDetectedArchitecture()
-    {
-        var gen = from is32Bit in Arb.Default.Bool().Generator
-                  from dcModeLevel in Gen.Elements(0, 1, 2)
-                  select (is32Bit, dcModeLevel);
+    // ── Property 5: Display Commander DLL variant test removed — DC functionality has been removed ──
 
-        return Prop.ForAll(
-            Arb.From(gen),
-            tuple =>
-            {
-                var (is32Bit, dcModeLevel) = tuple;
-
-                // Replicate the DC filename selection logic from AuxInstallService
-                string dcFileName = dcModeLevel switch
-                {
-                    1 => AuxInstallService.DcDxgiName,
-                    2 => AuxInstallService.DcWinmmName,
-                    _ => is32Bit ? AuxInstallService.DcNormalName32 : AuxInstallService.DcNormalName,
-                };
-
-                // When DC Mode is off (level 0), the filename must be architecture-specific
-                if (dcModeLevel == 0)
-                {
-                    string expected = is32Bit ? AuxInstallService.DcNormalName32 : AuxInstallService.DcNormalName;
-                    return (dcFileName == expected)
-                        .Label($"DC Mode 0, Is32Bit={is32Bit}: expected '{expected}' but got '{dcFileName}'");
-                }
-
-                // When DC Mode is on (1 or 2), filename is fixed regardless of architecture
-                string expectedFixed = dcModeLevel == 1 ? AuxInstallService.DcDxgiName : AuxInstallService.DcWinmmName;
-                return (dcFileName == expectedFixed)
-                    .Label($"DC Mode {dcModeLevel}: expected '{expectedFixed}' but got '{dcFileName}'");
-            });
-    }
-
-    // ── Property 6: ReShade DLL naming matches detected architecture under DC Mode ──
-    // Feature: auto-detect-bitness, Property 6: ReShade DLL naming matches detected architecture under DC Mode
-    // Validates: Requirements 4.3, 4.4
-    [Property(MaxTest = 100)]
-    public Property ReShaDllNaming_MatchesDetectedArchitectureUnderDcMode()
-    {
-        return Prop.ForAll(
-            Arb.From(Arb.Default.Bool().Generator),
-            is32Bit =>
-            {
-                // Under DC Mode, ReShade uses architecture-specific naming
-                string rsFileName = is32Bit ? AuxInstallService.RsDcModeName32 : AuxInstallService.RsDcModeName;
-                string expected = is32Bit ? "ReShade32.dll" : "ReShade64.dll";
-
-                return (rsFileName == expected)
-                    .Label($"Is32Bit={is32Bit}: expected '{expected}' but got '{rsFileName}'");
-            });
-    }
+    // ── Property 6: ReShade DLL naming under DC Mode test removed — DC functionality has been removed ──
 
     // ── Property 8: Manifest thirtyTwoBitGames field is parsed but ignored ────
     // Feature: auto-detect-bitness, Property 8: Manifest thirtyTwoBitGames field is parsed but ignored

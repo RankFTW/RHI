@@ -83,7 +83,6 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
     /// </summary>
     private GameCardViewModel CreateCard(
         string name,
-        GameStatus dcStatus = GameStatus.NotInstalled,
         GameStatus rsStatus = GameStatus.Installed)
     {
         var dir = Path.Combine(_tempRoot, name);
@@ -93,7 +92,6 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         {
             GameName = name,
             InstallPath = dir,
-            DcStatus = dcStatus,
             RsStatus = rsStatus,
             RsRecord = new AuxInstalledRecord
             {
@@ -118,7 +116,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
     public void UninstallReShade_DcInstalled_RemoveFromGameFolderCalled()
     {
         var tracker = new TrackingShaderPackService();
-        var card = CreateCard("GameWithDc", dcStatus: GameStatus.Installed, rsStatus: GameStatus.Installed);
+        var card = CreateCard("GameWithDc", rsStatus: GameStatus.Installed);
         var vm = CreateViewModelWithCards(tracker, new List<GameCardViewModel> { card });
 
         vm.UninstallReShade(card);
@@ -137,7 +135,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
     public void UninstallReShade_DcNotInstalled_RemoveFromGameFolderCalled()
     {
         var tracker = new TrackingShaderPackService();
-        var card = CreateCard("GameNoDc", dcStatus: GameStatus.NotInstalled, rsStatus: GameStatus.Installed);
+        var card = CreateCard("GameNoDc", rsStatus: GameStatus.Installed);
         var vm = CreateViewModelWithCards(tracker, new List<GameCardViewModel> { card });
 
         vm.UninstallReShade(card);
@@ -156,7 +154,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
     public void UninstallReShade_DcUpdateAvailable_RemoveFromGameFolderCalled()
     {
         var tracker = new TrackingShaderPackService();
-        var card = CreateCard("GameDcUpdate", dcStatus: GameStatus.UpdateAvailable, rsStatus: GameStatus.Installed);
+        var card = CreateCard("GameDcUpdate", rsStatus: GameStatus.Installed);
         var vm = CreateViewModelWithCards(tracker, new List<GameCardViewModel> { card });
 
         vm.UninstallReShade(card);
@@ -178,7 +176,6 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
 
         public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-        public void DeployToDcFolder() { }
         public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
 
         public void RemoveFromGameFolder(string gameDir)
@@ -189,15 +186,14 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
 
         public bool IsManagedByRdxc(string gameDir) => false;
         public void RestoreOriginalIfPresent(string gameDir) { }
-        public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null) { }
         public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null) { }
 
         public void SyncShadersToAllLocations(
-            IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
+            IEnumerable<(string installPath, bool rsInstalled, string? shaderModeOverride)> locations,
             IEnumerable<string>? selectedPackIds = null) { }
     }
 
-    // ── Minimal stubs (same pattern as DcModeSwitchNoShaderTests) ────────────
+    // ── Minimal stubs ────────────
 
     private class StubModInstallService : IModInstallService
     {
@@ -213,8 +209,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
 
     private class StubAuxInstallService : IAuxInstallService, IAuxFileService
     {
-        public Task<AuxInstalledRecord> InstallDcAsync(string gameName, string installPath, string? dllFileName, AuxInstalledRecord? existingDcRecord = null, AuxInstalledRecord? existingRsRecord = null, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IEnumerable<string>? selectedPackIds = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new AuxInstalledRecord());
-        public Task<AuxInstalledRecord> InstallReShadeAsync(string gameName, string installPath, bool dcMode, bool dcIsInstalled = false, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IEnumerable<string>? selectedPackIds = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new AuxInstalledRecord());
+        public Task<AuxInstalledRecord> InstallReShadeAsync(string gameName, string installPath, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IEnumerable<string>? selectedPackIds = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new AuxInstalledRecord());
         public Task<bool> CheckForUpdateAsync(AuxInstalledRecord record) => Task.FromResult(false);
         public void Uninstall(AuxInstalledRecord record) { }
         public void UninstallDllOnly(AuxInstalledRecord record) { }
@@ -223,21 +218,17 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         public void SaveAuxRecord(AuxInstalledRecord record) { }
         public void RemoveRecord(AuxInstalledRecord record) { }
         // IAuxFileService stubs
-        public void SyncReShadeToDisplayCommander() { }
         public bool EnsureReShadeStaging() => false;
         public AuxInstallService.DxgiFileType IdentifyDxgiFile(string filePath) => AuxInstallService.DxgiFileType.Unknown;
-        public AuxInstallService.WinmmFileType IdentifyWinmmFile(string filePath) => AuxInstallService.WinmmFileType.Unknown;
         public bool BackupForeignDll(string dllPath) => false;
         public void RestoreForeignDll(string dllPath) { }
         public bool IsReShadeFileStrict(string filePath) => false;
-        public bool IsDcFileStrict(string filePath) => false;
         public bool IsReShadeFile(string filePath) => false;
         public void EnsureInisDir() { }
         public void MergeRsIni(string gameDir) { }
         public void MergeRsVulkanIni(string gameDir) { }
         public void CopyRsIni(string gameDir) { }
         public void CopyRsPresetIniIfPresent(string gameDir) { }
-        public void CopyDcIni(string gameDir) { }
         public string? ReadInstalledVersion(string installPath, string fileName) => null;
         public bool CheckReShadeUpdateLocal(AuxInstalledRecord record) => false;
     }

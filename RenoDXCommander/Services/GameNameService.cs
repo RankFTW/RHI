@@ -22,10 +22,7 @@ public class GameNameService : IGameNameService
     private HashSet<string> _hiddenGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _favouriteGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _ueExtendedGames = new(StringComparer.OrdinalIgnoreCase);
-    private Dictionary<string, string> _perGameDcModeOverride = new(StringComparer.OrdinalIgnoreCase);
-    private Dictionary<string, string> _dcCustomDllFileNames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _updateAllExcludedReShade = new(StringComparer.OrdinalIgnoreCase);
-    private HashSet<string> _updateAllExcludedDc = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _updateAllExcludedRenoDx = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _perGameShaderMode = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, List<string>> _perGameShaderSelection = new(StringComparer.OrdinalIgnoreCase);
@@ -44,10 +41,7 @@ public class GameNameService : IGameNameService
     public HashSet<string> HiddenGames => _hiddenGames;
     public HashSet<string> FavouriteGames => _favouriteGames;
     public HashSet<string> UeExtendedGames => _ueExtendedGames;
-    public Dictionary<string, string> PerGameDcModeOverride => _perGameDcModeOverride;
-    public Dictionary<string, string> DcCustomDllFileNames => _dcCustomDllFileNames;
     public HashSet<string> UpdateAllExcludedReShade => _updateAllExcludedReShade;
-    public HashSet<string> UpdateAllExcludedDc => _updateAllExcludedDc;
     public HashSet<string> UpdateAllExcludedRenoDx => _updateAllExcludedRenoDx;
     public Dictionary<string, string> PerGameShaderMode => _perGameShaderMode;
     public Dictionary<string, List<string>> PerGameShaderSelection => _perGameShaderSelection;
@@ -79,18 +73,13 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> LoadNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        Action<bool> setDcModeEnabled,
-        Action<string> setDcDllFileName,
         Action<bool> setIsGridLayout,
         Action<string> setFilterMode)
     {
         _nameMappings              = new(StringComparer.OrdinalIgnoreCase);
         _wikiExclusions            = new(StringComparer.OrdinalIgnoreCase);
         _ueExtendedGames           = new(StringComparer.OrdinalIgnoreCase);
-        _perGameDcModeOverride     = new(StringComparer.OrdinalIgnoreCase);
-        _dcCustomDllFileNames      = new(StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedReShade  = new(StringComparer.OrdinalIgnoreCase);
-        _updateAllExcludedDc       = new(StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedRenoDx   = new(StringComparer.OrdinalIgnoreCase);
         _perGameShaderMode         = new(StringComparer.OrdinalIgnoreCase);
         _perGameShaderSelection    = new(StringComparer.OrdinalIgnoreCase);
@@ -133,145 +122,19 @@ public class GameNameService : IGameNameService
         _ueExtendedGames = new HashSet<string>(
             Load<List<string>>("UeExtendedGames", new()), StringComparer.OrdinalIgnoreCase);
 
-        // Load DcCustomDllFileNames early — migration needs it
-        _dcCustomDllFileNames = new(Load<Dictionary<string, string>>("DcCustomDllFileNames",
-            new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
-
-        // ── Global DC mode: migration from DcModeLevel → DcModeEnabled + DcDllFileName ──
-        if (s.ContainsKey("DcModeLevel"))
-        {
-            try
-            {
-                if (s.TryGetValue("DcModeLevel", out var levelStr) && int.TryParse(levelStr, out var level))
-                {
-                    switch (level)
-                    {
-                        case 0:
-                            setDcModeEnabled(false);
-                            setDcDllFileName("dxgi.dll");
-                            break;
-                        case 1:
-                            setDcModeEnabled(true);
-                            setDcDllFileName("dxgi.dll");
-                            break;
-                        case 2:
-                            setDcModeEnabled(true);
-                            setDcDllFileName("winmm.dll");
-                            break;
-                        default:
-                            setDcModeEnabled(false);
-                            setDcDllFileName("dxgi.dll");
-                            break;
-                    }
-                }
-                else
-                {
-                    // Unparseable DcModeLevel — default to disabled
-                    setDcModeEnabled(false);
-                    setDcDllFileName("dxgi.dll");
-                }
-                CrashReporter.Log("[GameNameService.LoadNameMappings] Migrated legacy DcModeLevel to DcModeEnabled + DcDllFileName");
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[GameNameService.LoadNameMappings] DcModeLevel migration failed — {ex.Message}");
-                setDcModeEnabled(false);
-                setDcDllFileName("dxgi.dll");
-            }
-        }
-        else
-        {
-            // Load new format
-            if (s.TryGetValue("DcModeEnabled", out var enabledStr) && bool.TryParse(enabledStr, out var enabled))
-                setDcModeEnabled(enabled);
-            if (s.TryGetValue("DcDllFileName", out var dllStr) && !string.IsNullOrWhiteSpace(dllStr))
-                setDcDllFileName(dllStr);
-            else
-                setDcDllFileName("dxgi.dll"); // default
-        }
-
-        // ── Per-game DC mode override: migration from Dict<string,int> → Dict<string,string> ──
-        try
-        {
-            // Try loading as new string format first
-            var pgdmDict = Load<Dictionary<string, string>?>("PerGameDcModeOverride", null);
-            if (pgdmDict != null)
-            {
-                _perGameDcModeOverride = new(pgdmDict, StringComparer.OrdinalIgnoreCase);
-            }
-            else
-            {
-                // Try loading as legacy int format
-                var legacyPgdm = Load<Dictionary<string, int>?>("PerGameDcModeOverride", null);
-                if (legacyPgdm != null)
-                {
-                    _perGameDcModeOverride = new(StringComparer.OrdinalIgnoreCase);
-                    foreach (var kv in legacyPgdm)
-                    {
-                        switch (kv.Value)
-                        {
-                            case 0:
-                                _perGameDcModeOverride[kv.Key] = "Off";
-                                break;
-                            case 1:
-                                _perGameDcModeOverride[kv.Key] = "Custom";
-                                if (!_dcCustomDllFileNames.ContainsKey(kv.Key))
-                                    _dcCustomDllFileNames[kv.Key] = "dxgi.dll";
-                                break;
-                            case 2:
-                                _perGameDcModeOverride[kv.Key] = "Custom";
-                                if (!_dcCustomDllFileNames.ContainsKey(kv.Key))
-                                    _dcCustomDllFileNames[kv.Key] = "winmm.dll";
-                                break;
-                            case 3:
-                                _perGameDcModeOverride[kv.Key] = "Custom";
-                                // Preserve existing DcCustomDllFileNames entry
-                                break;
-                            default:
-                                _perGameDcModeOverride[kv.Key] = "Global";
-                                break;
-                        }
-                    }
-                    CrashReporter.Log($"[GameNameService.LoadNameMappings] Migrated {legacyPgdm.Count} legacy per-game DC mode overrides");
-                }
-                else
-                {
-                    // Fallback: try legacy DcModeExcluded list
-                    var oldExcluded = Load<List<string>>("DcModeExcluded", new());
-                    _perGameDcModeOverride = new(StringComparer.OrdinalIgnoreCase);
-                    foreach (var name in oldExcluded) _perGameDcModeOverride[name] = "Off";
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[GameNameService.LoadNameMappings] PerGameDcModeOverride migration failed — {ex.Message}");
-            _perGameDcModeOverride = new(StringComparer.OrdinalIgnoreCase);
-        }
-
-        // If DcCustomDllFileNames entries exist for games with no per-game override, set override to "Custom"
-        foreach (var kv in _dcCustomDllFileNames)
-        {
-            if (!_perGameDcModeOverride.ContainsKey(kv.Key))
-                _perGameDcModeOverride[kv.Key] = "Custom";
-        }
-
         _updateAllExcludedReShade = new HashSet<string>(
             Load<List<string>>("UpdateAllExcludedReShade", new()), StringComparer.OrdinalIgnoreCase);
-        _updateAllExcludedDc = new HashSet<string>(
-            Load<List<string>>("UpdateAllExcludedDc", new()), StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedRenoDx = new HashSet<string>(
             Load<List<string>>("UpdateAllExcludedRenoDx", new()), StringComparer.OrdinalIgnoreCase);
 
-        // Legacy migration: if old key exists and all three new sets are empty, copy legacy entries into all three
+        // Legacy migration: if old key exists and new sets are empty, copy legacy entries
         var legacy = Load<List<string>>("UpdateAllExcluded", new());
         if (legacy.Count > 0 && _updateAllExcludedReShade.Count == 0
-            && _updateAllExcludedDc.Count == 0 && _updateAllExcludedRenoDx.Count == 0)
+            && _updateAllExcludedRenoDx.Count == 0)
         {
             foreach (var name in legacy)
             {
                 _updateAllExcludedReShade.Add(name);
-                _updateAllExcludedDc.Add(name);
                 _updateAllExcludedRenoDx.Add(name);
             }
         }
@@ -339,8 +202,6 @@ public class GameNameService : IGameNameService
     public void SaveNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        bool dcModeEnabled,
-        string dcDllFileName,
         bool isGridLayout,
         bool isLoadingSettings,
         string filterMode)
@@ -356,13 +217,14 @@ public class GameNameService : IGameNameService
                 s["NameMappings"]    = JsonSerializer.Serialize(_nameMappings);
                 s["WikiExclusions"]  = JsonSerializer.Serialize(_wikiExclusions.ToList());
                 s["UeExtendedGames"] = JsonSerializer.Serialize(_ueExtendedGames.ToList());
-                s["DcModeEnabled"]   = dcModeEnabled.ToString();
-                s["DcDllFileName"]   = dcDllFileName;
                 s.Remove("DcModeLevel");
-                s["PerGameDcModeOverride"]  = JsonSerializer.Serialize(_perGameDcModeOverride);
-                s["DcCustomDllFileNames"]   = JsonSerializer.Serialize(_dcCustomDllFileNames);
+                s.Remove("DcModeEnabled");
+                s.Remove("DcDllFileName");
+                s.Remove("PerGameDcModeOverride");
+                s.Remove("DcCustomDllFileNames");
+                s.Remove("UpdateAllExcludedDc");
+                s.Remove("DcLegacyMode");
                 s["UpdateAllExcludedReShade"] = JsonSerializer.Serialize(_updateAllExcludedReShade.ToList());
-                s["UpdateAllExcludedDc"]      = JsonSerializer.Serialize(_updateAllExcludedDc.ToList());
                 s["UpdateAllExcludedRenoDx"]  = JsonSerializer.Serialize(_updateAllExcludedRenoDx.ToList());
                 s.Remove("UpdateAllExcluded");
                 s["PerGameShaderMode"]    = JsonSerializer.Serialize(_perGameShaderMode);
@@ -467,10 +329,7 @@ public class GameNameService : IGameNameService
         MigrateHashSet(_favouriteGames, oldName, newName);
         MigrateHashSet(_wikiExclusions, oldName, newName);
         MigrateHashSet(_ueExtendedGames, oldName, newName);
-        MigrateDict(_perGameDcModeOverride, oldName, newName);
-        MigrateDict(_dcCustomDllFileNames, oldName, newName);
         MigrateHashSet(_updateAllExcludedReShade, oldName, newName);
-        MigrateHashSet(_updateAllExcludedDc, oldName, newName);
         MigrateHashSet(_updateAllExcludedRenoDx, oldName, newName);
         MigrateHashSet(_lumaEnabledGames, oldName, newName);
         MigrateHashSet(_lumaDisabledGames, oldName, newName);
@@ -500,13 +359,7 @@ public class GameNameService : IGameNameService
             _installer.SaveRecordPublic(card.InstalledRecord);
         }
 
-        // Update persisted aux records (DC / ReShade)
-        if (card?.DcRecord != null)
-        {
-            _auxInstaller.RemoveRecord(card.DcRecord);
-            card.DcRecord.GameName = newName;
-            _auxInstaller.SaveAuxRecord(card.DcRecord);
-        }
+        // Update persisted aux records (ReShade)
         if (card?.RsRecord != null)
         {
             _auxInstaller.RemoveRecord(card.RsRecord);

@@ -5,28 +5,18 @@ using RenoDXCommander.Models;
 namespace RenoDXCommander.Services;
 
 /// <summary>
-/// Installs and manages Display Commander and ReShade for each game.
+/// Installs and manages ReShade for each game.
 /// Maintains its own DB (aux_installed.json) separate from RenoDX records.
 /// Caches downloaded files in the same downloads folder as RenoDX.
 /// </summary>
 public class AuxInstallService : IAuxInstallService, IAuxFileService
 {
     // ── URLs & filenames ──────────────────────────────────────────────────────────
-    public const string DcUrl        = "https://github.com/pmnoxx/display-commander/releases/download/latest_build/zzz_display_commander.addon64";
-    public const string DcUrl32      = "https://github.com/pmnoxx/display-commander/releases/download/latest_build/zzz_display_commander.addon32";
-    public const string DcCacheFile  = "zzz_display_commander.addon64";
-    public const string DcCacheFile32 = "zzz_display_commander.addon32";
-    public const string DcNormalName = "zzz_display_commander.addon64";
-    public const string DcNormalName32 = "zzz_display_commander.addon32";
-    public const string DcDxgiName   = "dxgi.dll";
-    public const string DcWinmmName  = "winmm.dll";
 
     // ReShade is bundled alongside the app exe
     // On first install the DLLs are copied into the staging folder and used from there.
     // If the staging copies are deleted, they are restored from the app bundle automatically.
-    public const string RsNormalName  = "dxgi.dll";       // install name when DC Mode OFF
-    public const string RsDcModeName  = "ReShade64.dll";  // install name when DC Mode ON (64-bit)
-    public const string RsDcModeName32 = "ReShade32.dll"; // install name when DC Mode ON (32-bit)
+    public const string RsNormalName  = "dxgi.dll";       // standard install name
     public const string RsStaged64    = "ReShade64.dll";  // filename inside staging folder
     public const string RsStaged32    = "ReShade32.dll";
 
@@ -36,40 +26,6 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
         "UPST", "reshade");
     public static string RsStagedPath64 => Path.Combine(RsStagingDir, RsStaged64);
     public static string RsStagedPath32 => Path.Combine(RsStagingDir, RsStaged32);
-
-    // Display Commander ReShade folder: %LOCALAPPDATA%\Programs\Display_Commander\Reshade
-    public static readonly string DcReShadeFolderPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Programs", "Display_Commander", "Reshade");
-
-    /// <summary>
-    /// Copies ReShade64.dll and ReShade32.dll from the RDXC staging folder to the
-    /// Display Commander Reshade folder. Only copies if the staged file is newer
-    /// than the existing file or if the target file does not exist.
-    /// Called on startup and after DC Mode deploy.
-    /// </summary>
-    public static void SyncReShadeToDisplayCommander()
-    {
-        try
-        {
-            Directory.CreateDirectory(DcReShadeFolderPath);
-            SyncSingleDll(RsStagedPath64, Path.Combine(DcReShadeFolderPath, RsStaged64));
-            SyncSingleDll(RsStagedPath32, Path.Combine(DcReShadeFolderPath, RsStaged32));
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[AuxInstallService.SyncReShadeToDisplayCommander] Failed — {ex.Message}");
-        }
-    }
-
-    private static void SyncSingleDll(string sourcePath, string destPath)
-    {
-        if (!File.Exists(sourcePath)) return;
-        if (File.Exists(destPath) &&
-            File.GetLastWriteTimeUtc(destPath) >= File.GetLastWriteTimeUtc(sourcePath))
-            return;
-        File.Copy(sourcePath, destPath, overwrite: true);
-    }
 
     /// <summary>
     /// Ensures the staged ReShade DLLs exist. The DLLs are downloaded from reshade.me
@@ -85,16 +41,11 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     /// <summary>
     /// Classifies what a dxgi.dll file is based on its content.
     /// </summary>
-    public enum DxgiFileType { Unknown, ReShade, DisplayCommander }
-
-    /// <summary>
-    /// Classifies what a winmm.dll file is based on its content.
-    /// </summary>
-    public enum WinmmFileType { Unknown, DisplayCommander }
+    public enum DxgiFileType { Unknown, ReShade }
 
     /// <summary>
     /// Identifies what type of dxgi.dll is at the given path.
-    /// Uses strict checks: exact size match against known staged/cached binaries,
+    /// Uses strict checks: exact size match against known staged binaries,
     /// and binary string scanning for definitive markers.
     /// Returns Unknown unless there is positive evidence — never guesses based on size alone.
     /// </summary>
@@ -102,27 +53,9 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     {
         if (!File.Exists(filePath)) return DxgiFileType.Unknown;
 
-        // Check DC first — DC is built on ReShade and contains ReShade markers,
-        // so IsReShadeFileStrict would also match DC binaries. DC markers are
-        // more specific (display_commander / DisplayCommander), so check them first.
-        if (IsDcFileStrict(filePath))      return DxgiFileType.DisplayCommander;
         if (IsReShadeFileStrict(filePath)) return DxgiFileType.ReShade;
 
         return DxgiFileType.Unknown;
-    }
-
-    /// <summary>
-    /// Identifies what type of winmm.dll is at the given path.
-    /// Uses strict checks identical to dxgi.dll identification.
-    /// Returns Unknown unless there is positive evidence it belongs to Display Commander.
-    /// </summary>
-    public static WinmmFileType IdentifyWinmmFile(string filePath)
-    {
-        if (!File.Exists(filePath)) return WinmmFileType.Unknown;
-
-        if (IsDcFileStrict(filePath)) return WinmmFileType.DisplayCommander;
-
-        return WinmmFileType.Unknown;
     }
 
     // ── Foreign DLL backup / restore ──────────────────────────────────────────
@@ -141,8 +74,6 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
         bool isForeign;
         if (name.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))
             isForeign = IdentifyDxgiFile(dllPath) == DxgiFileType.Unknown;
-        else if (name.Equals("winmm.dll", StringComparison.OrdinalIgnoreCase))
-            isForeign = IdentifyWinmmFile(dllPath) == WinmmFileType.Unknown;
         else
             return false;
 
@@ -226,41 +157,6 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     }
 
     /// <summary>
-    /// Strict DC check: exact size match against cached DC binaries,
-    /// OR binary scan for DC-specific strings. Never guesses based on size alone.
-    /// </summary>
-    public static bool IsDcFileStrict(string filePath)
-    {
-        if (!File.Exists(filePath)) return false;
-        var fileSize = new FileInfo(filePath).Length;
-
-        // Exact size match against cached DC files
-        try
-        {
-            var dc64Cache = Path.Combine(DownloadCacheDir, DcCacheFile);
-            var dc32Cache = Path.Combine(DownloadCacheDir, DcCacheFile32);
-            if (File.Exists(dc64Cache) && fileSize == new FileInfo(dc64Cache).Length)
-                return true;
-            if (File.Exists(dc32Cache) && fileSize == new FileInfo(dc32Cache).Length)
-                return true;
-        }
-        catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.IsDcFileStrict] Cache size check failed for '{filePath}' — {ex.Message}"); }
-
-        // Binary string scan for DC-specific markers
-        try
-        {
-            var bytes = File.ReadAllBytes(filePath);
-            var text = System.Text.Encoding.ASCII.GetString(bytes);
-            if (text.Contains("display_commander", StringComparison.OrdinalIgnoreCase) ||
-                text.Contains("DisplayCommander", StringComparison.Ordinal))
-                return true;
-        }
-        catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.IsDcFileStrict] Binary scan failed for '{filePath}' — {ex.Message}"); }
-
-        return false;
-    }
-
-    /// <summary>
     /// Returns true if the file at <paramref name="filePath"/> is a ReShade DLL.
     /// Uses exact size match against staged copies first, then binary string scan.
     /// Falls back to a 2 MB size threshold ONLY if neither staged copies nor
@@ -284,7 +180,6 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     }
 
     // Keys used in AuxInstalledRecord.AddonType
-    public const string TypeDc      = "DisplayCommander";
     public const string TypeReShade = "ReShade";
 
     // ── Infrastructure ────────────────────────────────────────────────────────────
@@ -296,7 +191,6 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     /// <summary>
     /// User-placed preset config files live here.
     /// Place reshade.ini here to enable the 📋 INI button on the ReShade row.
-    /// Place DisplayCommander.toml here to enable the 📋 INI button on the DC row.
     /// </summary>
     public static readonly string InisDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -305,7 +199,6 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     public static string RsIniPath => Path.Combine(InisDir, "reshade.ini");
     public static string RsVulkanIniPath => Path.Combine(InisDir, "reshade.vulkan.ini");
     public static string RsPresetIniPath => Path.Combine(InisDir, "ReShadePreset.ini");
-    public static string DcIniPath => Path.Combine(InisDir, "DisplayCommander.toml");
 
     /// <summary>
     /// Ensures the inis directory exists and seeds the default reshade.ini if missing.
@@ -536,14 +429,6 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
         }
     }
 
-    /// <summary>Copies DisplayCommander.toml from the inis folder to the given game directory.</summary>
-    public static void CopyDcIni(string gameDir)
-    {
-        if (!File.Exists(DcIniPath))
-            throw new FileNotFoundException("DisplayCommander.toml not found in inis folder.", DcIniPath);
-        File.Copy(DcIniPath, Path.Combine(gameDir, "DisplayCommander.toml"), overwrite: true);
-    }
-
     public static readonly string DownloadCacheDir = ModInstallService.DownloadCacheDir;
 
     private readonly HttpClient _http;
@@ -555,211 +440,11 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
         _shaderPackService = shaderPackService;
     }
 
-    // ── Install — Display Commander ───────────────────────────────────────────────
-
-    public async Task<AuxInstalledRecord> InstallDcAsync(
-        string gameName,
-        string installPath,
-        string? dllFileName,
-        AuxInstalledRecord? existingDcRecord = null,
-        AuxInstalledRecord? existingRsRecord = null,
-        string? shaderModeOverride = null,
-        bool use32Bit = false,
-        string? filenameOverride = null,
-        IEnumerable<string>? selectedPackIds = null,
-        IProgress<(string message, double percent)>? progress = null)
-    {
-        Directory.CreateDirectory(DownloadCacheDir);
-
-        var activeUrl    = use32Bit ? DcUrl32       : DcUrl;
-        var cachePath    = Path.Combine(DownloadCacheDir, use32Bit ? DcCacheFile32 : DcCacheFile);
-        var normalName   = use32Bit ? DcNormalName32 : DcNormalName;
-        var destName     = !string.IsNullOrWhiteSpace(filenameOverride)
-            ? filenameOverride
-            : dllFileName != null
-                ? dllFileName
-                : normalName;
-
-        // Collect all known DC filenames except the chosen destName to clean up old mode files.
-        var allKnownDcNames = DllOverrideConstants.DcDllPickerNames
-            .Append(DcNormalName)
-            .Append(DcNormalName32);
-        var opposingNames = allKnownDcNames
-            .Where(n => !n.Equals(destName, StringComparison.OrdinalIgnoreCase))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        var opposingName = opposingNames[0];
-
-        // Resolve addon deploy path: if destName is an .addon64/.addon32 file and
-        // reshade.ini has AddonPath set, deploy there instead of the game root.
-        var destExt = Path.GetExtension(destName);
-        var isAddonFile = destExt.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
-                       || destExt.Equals(".addon32", StringComparison.OrdinalIgnoreCase);
-        var addonDeployDir = isAddonFile
-            ? ModInstallService.GetAddonDeployPath(installPath)
-            : installPath;
-        var destPath     = Path.Combine(addonDeployDir, destName);
-
-        // ── Mode-switch cleanup ───────────────────────────────────────────────────
-        // Remove all opposing-mode files that DC previously placed.
-        // CRITICAL: never delete dxgi.dll if ReShade currently owns it.
-        foreach (var oppName in opposingNames)
-        {
-            // Check both the base install path and the addon search path
-            var oppExt = Path.GetExtension(oppName);
-            var oppIsAddon = oppExt.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
-                          || oppExt.Equals(".addon32", StringComparison.OrdinalIgnoreCase);
-            var oppSearchDirs = new List<string> { installPath };
-            if (oppIsAddon)
-            {
-                var oppAddonDir = ModInstallService.GetAddonDeployPath(installPath);
-                if (!oppAddonDir.Equals(installPath, StringComparison.OrdinalIgnoreCase))
-                    oppSearchDirs.Add(oppAddonDir);
-            }
-
-            foreach (var searchDir in oppSearchDirs)
-            {
-                var opposingPath = Path.Combine(searchDir, oppName);
-                bool opposingBelongsToDc = existingDcRecord != null
-                    && existingDcRecord.InstalledAs.Equals(oppName, StringComparison.OrdinalIgnoreCase);
-                bool opposingBelongsToRs = existingRsRecord != null
-                    && existingRsRecord.InstalledAs.Equals(oppName, StringComparison.OrdinalIgnoreCase);
-                if (opposingBelongsToDc && !opposingBelongsToRs && File.Exists(opposingPath))
-                {
-                    try { File.Delete(opposingPath); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallDcAsync] Failed to delete opposing file '{opposingPath}' — {ex.Message}"); }
-                }
-            }
-        }
-
-        // ── HEAD for remote size ──────────────────────────────────────────────────
-        long? remoteSize = null;
-        try
-        {
-            var head = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, activeUrl));
-            if (head.IsSuccessStatusCode)
-                remoteSize = head.Content.Headers.ContentLength;
-        }
-        catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallDcAsync] HEAD request failed for DC URL '{activeUrl}' — {ex.Message}"); }
-        // Use Range GET to discover total size from Content-Range header.
-        if (!remoteSize.HasValue)
-        {
-            try
-            {
-                var rangeReq = new HttpRequestMessage(HttpMethod.Get, activeUrl);
-                rangeReq.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, 0);
-                var rangeResp = await _http.SendAsync(rangeReq, HttpCompletionOption.ResponseHeadersRead);
-                if (rangeResp.Content.Headers.ContentRange?.Length is long totalLen)
-                    remoteSize = totalLen;
-                rangeResp.Dispose();
-            }
-            catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallDcAsync] Range GET failed for DC URL '{activeUrl}' — {ex.Message}"); }
-        }
-
-        // ── Back up foreign DLL at destination ──────────────────────────────────
-        BackupForeignDll(destPath);
-
-        // ── Cache check ───────────────────────────────────────────────────────────
-        bool usedCache = false;
-        if (File.Exists(cachePath))
-        {
-            var cacheSize = new FileInfo(cachePath).Length;
-            if (!remoteSize.HasValue || remoteSize.Value == cacheSize)
-            {
-                progress?.Report(("Installing Display Commander from cache...", 50));
-                File.Copy(cachePath, destPath, overwrite: true);
-                usedCache = true;
-                progress?.Report(("Display Commander installed!", 100));
-            }
-        }
-
-        // ── Download ──────────────────────────────────────────────────────────────
-        if (!usedCache)
-        {
-            progress?.Report(("Downloading Display Commander...", 0));
-            var response = await _http.GetAsync(activeUrl, HttpCompletionOption.ResponseHeadersRead);
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Display Commander download failed: {response.StatusCode}");
-
-            remoteSize ??= response.Content.Headers.ContentLength;
-            var total      = remoteSize ?? -1L;
-            long downloaded = 0;
-            var buffer     = new byte[1024 * 1024]; // 1 MB
-            var tempPath   = cachePath + ".tmp";
-
-            using (var net  = await response.Content.ReadAsStreamAsync())
-            using (var file = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
-            {
-                int read;
-                while ((read = await net.ReadAsync(buffer)) > 0)
-                {
-                    await file.WriteAsync(buffer.AsMemory(0, read));
-                    downloaded += read;
-                    if (total > 0)
-                        progress?.Report(($"Downloading DC... {downloaded / 1024} KB",
-                                          (double)downloaded / total * 100));
-                }
-            }
-
-            if (File.Exists(cachePath)) File.Delete(cachePath);
-            File.Move(tempPath, cachePath);
-            if (!remoteSize.HasValue)
-                remoteSize = new FileInfo(cachePath).Length;
-
-            File.Copy(cachePath, destPath, overwrite: true);
-        }
-
-        // ── Deploy reshade.ini ────────────────────────────────────────────────────
-        // DC Mode installs need a reshade.ini just like standalone ReShade installs,
-        // so addon settings, search paths, and overlay bindings are configured.
-        if (File.Exists(RsIniPath))
-        {
-            try { MergeRsIni(installPath); }
-            catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallDcAsync] reshade.ini merge failed — {ex.Message}"); }
-        }
-        // Deploy ReShadePreset.ini alongside reshade.ini when the user has placed one in the inis folder.
-        CopyRsPresetIniIfPresent(installPath);
-
-        // ── Shader deployment ─────────────────────────────────────────────────────
-        // Deploy shaders locally to the game folder only when the game is in
-        // DC Mode (dllFileName is non-null). When dllFileName is null, DC is an
-        // addon alongside ReShade, so ReShade manages shader deployment independently.
-        if (dllFileName != null)
-        {
-            var packList = selectedPackIds?.ToList();
-            CrashReporter.Log($"[AuxInstallService.InstallDcAsync] Shader deploy: dllFileName={dllFileName}, packs={packList?.Count ?? -1} ({string.Join(",", packList ?? [])})");
-            _shaderPackService.SyncGameFolder(installPath, packList);
-        }
-        else
-        {
-            CrashReporter.Log($"[AuxInstallService.InstallDcAsync] Shader deploy skipped: dllFileName=null");
-        }
-
-        var record = new AuxInstalledRecord
-        {
-            GameName       = gameName,
-            InstallPath    = installPath,
-            AddonType      = TypeDc,
-            InstalledAs    = destName,
-            SourceUrl      = activeUrl,
-            RemoteFileSize = remoteSize,
-            InstalledAt    = DateTime.UtcNow,
-        };
-        SaveRecord(record);
-        return record;
-    }
-
     // ── Install — ReShade ─────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Scrapes reshade.me to find the latest addon-support installer URL.
-    /// Returns the fallback URL if parsing fails so installs never hard-error.
-    /// </summary>
 
     public async Task<AuxInstalledRecord> InstallReShadeAsync(
         string gameName,
         string installPath,
-        bool dcMode,
-        bool dcIsInstalled = false,
         string? shaderModeOverride = null,
         bool use32Bit = false,
         string? filenameOverride = null,
@@ -768,14 +453,9 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     {
         Directory.CreateDirectory(DownloadCacheDir);
 
-        // 32-bit mode: install as dxgi.dll (same name) but from the 32-bit DLL.
-        // DC Mode ON + 32-bit: install as ReShade32.dll.
-        // DC Mode ON + 64-bit: install as ReShade64.dll.
         var destName = !string.IsNullOrWhiteSpace(filenameOverride)
             ? filenameOverride
-            : dcMode
-                ? (use32Bit ? RsDcModeName32 : RsDcModeName)
-                : RsNormalName;
+            : RsNormalName;
         var destPath = Path.Combine(installPath, destName);
 
         // ── Record-aware cleanup: remove old non-standard DLL if InstalledAs differs ─
@@ -787,17 +467,6 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
             if (File.Exists(oldPath))
                 try { File.Delete(oldPath); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] Failed to delete old RS file '{oldPath}' — {ex.Message}"); }
             RestoreForeignDll(oldPath);
-        }
-
-        // Remove the opposing-mode ReShade file if DC Mode is OFF
-        // (when OFF, old DC-mode ReShade64.dll/ReShade32.dll can be safely replaced).
-        // Never touch dxgi.dll here — it may belong to DC.
-        if (!dcMode)
-        {
-            var rsOldPath64 = Path.Combine(installPath, RsDcModeName);
-            if (File.Exists(rsOldPath64)) try { File.Delete(rsOldPath64); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] Failed to delete old RS file '{rsOldPath64}' — {ex.Message}"); }
-            var rsOldPath32 = Path.Combine(installPath, RsDcModeName32);
-            if (File.Exists(rsOldPath32)) try { File.Delete(rsOldPath32); } catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] Failed to delete old RS file '{rsOldPath32}' — {ex.Message}"); }
         }
 
         // ── Ensure staged DLLs exist (downloaded from reshade.me) ────────────────
@@ -818,10 +487,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
         progress?.Report(("Installing ReShade...", 80));
         File.Copy(rsStagedPath, destPath, overwrite: true);
 
-        // Deploy reshade.ini alongside the DLL for standalone installs.
-        // DC Mode blocking in the UI prevents this method from being called
-        // when DC mode is active (unless overridden), so the ini always goes
-        // to the game folder here. Manual 📋 button can overwrite it later.
+        // Deploy reshade.ini alongside the DLL.
         if (File.Exists(RsIniPath))
             MergeRsIni(installPath);
         // Deploy ReShadePreset.ini alongside reshade.ini when the user has placed one in the inis folder.
@@ -830,9 +496,9 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
         progress?.Report(("ReShade installed!", 100));
 
         // ── Shader deployment ─────────────────────────────────────────────────────
-        // Always deploy shaders locally to the game folder, regardless of DC mode
-        // or DC installation status. Uses Sync (prune + deploy) so switching shader
-        // selections properly removes files from the previous selection.
+        // Always deploy shaders locally to the game folder.
+        // Uses Sync (prune + deploy) so switching shader selections properly
+        // removes files from the previous selection.
         _shaderPackService.SyncGameFolder(installPath, selectedPackIds);
 
         var record = new AuxInstalledRecord
@@ -854,12 +520,9 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     // ── Version reading ───────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Reads the product version string from an installed ReShade or Display Commander file.
-    /// Returns a short human-readable version string (e.g. "6.7.3" or "0.12.461") or null
+    /// Reads the product version string from an installed ReShade file.
+    /// Returns a short human-readable version string (e.g. "6.7.3") or null
     /// if the file doesn't exist or has no version info.
-    /// For ReShade DLLs this is the ProductVersion from the PE resource (e.g. "6.7.3").
-    /// For Display Commander addon files this is also the ProductVersion (e.g. "0.12.461.2731",
-    /// trimmed to 3 parts for display: "0.12.461").
     /// </summary>
     public static string? ReadInstalledVersion(string installPath, string fileName)
     {
@@ -871,7 +534,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
             var ver  = info.ProductVersion?.Trim();
             if (string.IsNullOrEmpty(ver)) return null;
 
-            // Trim build number for DC: "0.12.461.2731" → "0.12.461"
+            // Trim build number: "0.12.461.2731" → "0.12.461"
             // ReShade already ships as "6.7.3" (3 parts), so this is a no-op for it.
             var parts = ver.Split('.');
             if (parts.Length > 3)
@@ -979,8 +642,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
                 CrashReporter.Log($"[AuxInstallService.CheckForUpdateAsync] [{record.AddonType}] {record.GameName}: falling back to download comparison (remoteSize={remoteSize}, localSize={localSize})");
                 try
                 {
-                    var cacheName = record.InstalledAs.Contains("32", StringComparison.Ordinal)
-                        ? DcCacheFile32 : DcCacheFile;
+                    var cacheName = record.InstalledAs;
                     var tempPath = Path.Combine(DownloadCacheDir, cacheName + $".update-check-{Guid.NewGuid():N}");
                     Directory.CreateDirectory(DownloadCacheDir);
 
@@ -1064,7 +726,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
         RestoreForeignDll(path);
 
         // If a user-owned reshade-shaders folder was renamed to reshade-shaders-original
-        // when we deployed ours, restore it now that RS/DC has been uninstalled.
+        // when we deployed ours, restore it now that RS has been uninstalled.
         if (!string.IsNullOrEmpty(record.InstallPath))
             _shaderPackService.RestoreOriginalIfPresent(record.InstallPath);
     }
@@ -1093,7 +755,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
         RestoreForeignDll(path);
 
         // NOTE: intentionally does NOT call RestoreOriginalIfPresent —
-        // this variant is used by DC mode switching where shaders must stay untouched.
+        // this variant is used when shaders must stay untouched.
     }
 
     // ── DB ────────────────────────────────────────────────────────────────────────
@@ -1151,21 +813,17 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     }
 
     // ── IAuxFileService explicit implementations ──────────────────────────────
-    void IAuxFileService.SyncReShadeToDisplayCommander() => SyncReShadeToDisplayCommander();
     bool IAuxFileService.EnsureReShadeStaging() => EnsureReShadeStaging();
     DxgiFileType IAuxFileService.IdentifyDxgiFile(string filePath) => IdentifyDxgiFile(filePath);
-    WinmmFileType IAuxFileService.IdentifyWinmmFile(string filePath) => IdentifyWinmmFile(filePath);
     bool IAuxFileService.BackupForeignDll(string dllPath) => BackupForeignDll(dllPath);
     void IAuxFileService.RestoreForeignDll(string dllPath) => RestoreForeignDll(dllPath);
     bool IAuxFileService.IsReShadeFileStrict(string filePath) => IsReShadeFileStrict(filePath);
-    bool IAuxFileService.IsDcFileStrict(string filePath) => IsDcFileStrict(filePath);
     bool IAuxFileService.IsReShadeFile(string filePath) => IsReShadeFile(filePath);
     void IAuxFileService.EnsureInisDir() => EnsureInisDir();
     void IAuxFileService.MergeRsIni(string gameDir) => MergeRsIni(gameDir);
     void IAuxFileService.MergeRsVulkanIni(string gameDir) => MergeRsVulkanIni(gameDir);
     void IAuxFileService.CopyRsIni(string gameDir) => CopyRsIni(gameDir);
     void IAuxFileService.CopyRsPresetIniIfPresent(string gameDir) => CopyRsPresetIniIfPresent(gameDir);
-    void IAuxFileService.CopyDcIni(string gameDir) => CopyDcIni(gameDir);
     string? IAuxFileService.ReadInstalledVersion(string installPath, string fileName) => ReadInstalledVersion(installPath, fileName);
     bool IAuxFileService.CheckReShadeUpdateLocal(AuxInstalledRecord record) => CheckReShadeUpdateLocal(record);
 }

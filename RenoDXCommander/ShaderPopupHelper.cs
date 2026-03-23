@@ -106,13 +106,7 @@ public static class ShaderPopupHelper
                     IsChecked = selected.Contains(id),
                 };
 
-                // In Global context, Lilium is always selected and locked
-                if (context == PopupContext.Global
-                    && id.Equals("Lilium", StringComparison.OrdinalIgnoreCase))
-                {
-                    cb.IsChecked = true;
-                    cb.IsEnabled = false;
-                }
+                // Lilium is no longer locked — users can untick it in Global context
                 checkBoxes.Add((id, cb));
                 panel.Children.Add(cb);
             }
@@ -146,13 +140,6 @@ public static class ShaderPopupHelper
         {
             if (box.IsChecked == true)
                 confirmed.Add(id);
-        }
-
-        // In Global context, ensure Lilium is always included
-        if (context == PopupContext.Global
-            && !confirmed.Contains("Lilium", StringComparer.OrdinalIgnoreCase))
-        {
-            confirmed.Insert(0, "Lilium");
         }
 
         return confirmed;

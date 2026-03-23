@@ -115,31 +115,11 @@ public class DllOverrideService : IDllOverrideService
             catch (Exception ex) { CrashReporter.Log($"[DllOverrideService.EnableDllOverride] Failed to rename RS file for '{name}' — {ex.Message}"); }
         }
 
-        // Rename existing DC to the custom filename
-        if (card.DcRecord != null && !string.IsNullOrEmpty(card.InstallPath))
-        {
-            var oldPath = Path.Combine(card.InstallPath, card.DcRecord.InstalledAs);
-            var newPath = Path.Combine(card.InstallPath, dcFileName);
-            try
-            {
-                if (File.Exists(oldPath) && !oldPath.Equals(newPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (File.Exists(newPath)) File.Delete(newPath);
-                    File.Move(oldPath, newPath);
-                    card.DcRecord.InstalledAs = dcFileName;
-                    _auxInstaller.SaveAuxRecord(card.DcRecord);
-                    card.DcInstalledFile = dcFileName;
-                }
-            }
-            catch (Exception ex) { CrashReporter.Log($"[DllOverrideService.EnableDllOverride] Failed to rename DC file for '{name}' — {ex.Message}"); }
-        }
-
         SetDllOverride(name, reshadeFileName, dcFileName);
         // User is explicitly enabling — clear any manifest opt-out for this game
         _manifestDllOverrideOptOuts.Remove(name);
         card.DllOverrideEnabled = true;
         card.ExcludeFromUpdateAllReShade = true;
-        card.ExcludeFromUpdateAllDc = true;
         card.ExcludeFromUpdateAllRenoDx = true;
         card.NotifyAll();
     }
@@ -181,28 +161,6 @@ public class DllOverrideService : IDllOverrideService
             catch (Exception ex) { CrashReporter.Log($"[DllOverrideService.UpdateDllOverrideNames] Failed to rename RS file for '{name}' — {ex.Message}"); }
         }
 
-        // Rename DC if filename changed
-        if (!string.IsNullOrEmpty(oldCfg.DcFileName)
-            && !oldCfg.DcFileName.Equals(newDcName, StringComparison.OrdinalIgnoreCase))
-        {
-            var oldPath = Path.Combine(installPath, oldCfg.DcFileName);
-            var newPath = Path.Combine(installPath, newDcName);
-            try
-            {
-                if (File.Exists(oldPath) && !File.Exists(newPath))
-                {
-                    File.Move(oldPath, newPath);
-                    if (card.DcRecord != null)
-                    {
-                        card.DcRecord.InstalledAs = newDcName;
-                        _auxInstaller.SaveAuxRecord(card.DcRecord);
-                        card.DcInstalledFile = newDcName;
-                    }
-                }
-            }
-            catch (Exception ex) { CrashReporter.Log($"[DllOverrideService.UpdateDllOverrideNames] Failed to rename DC file for '{name}' — {ex.Message}"); }
-        }
-
         SetDllOverride(name, newRsName, newDcName);
         card.NotifyAll();
     }
@@ -216,16 +174,11 @@ public class DllOverrideService : IDllOverrideService
         var cfg = GetDllOverride(name);
         if (cfg != null && !string.IsNullOrEmpty(card.InstallPath))
         {
-            // Remove the custom-named files
+            // Remove the custom-named ReShade file
             if (!string.IsNullOrWhiteSpace(cfg.ReShadeFileName))
             {
                 var rsPath = Path.Combine(card.InstallPath, cfg.ReShadeFileName);
                 try { if (File.Exists(rsPath)) File.Delete(rsPath); } catch (Exception ex) { CrashReporter.Log($"[DllOverrideService.DisableDllOverride] Failed to delete RS file '{rsPath}' — {ex.Message}"); }
-            }
-            if (!string.IsNullOrWhiteSpace(cfg.DcFileName))
-            {
-                var dcPath = Path.Combine(card.InstallPath, cfg.DcFileName);
-                try { if (File.Exists(dcPath)) File.Delete(dcPath); } catch (Exception ex) { CrashReporter.Log($"[DllOverrideService.DisableDllOverride] Failed to delete DC file '{dcPath}' — {ex.Message}"); }
             }
         }
 
@@ -240,7 +193,6 @@ public class DllOverrideService : IDllOverrideService
         RemoveDllOverride(name);
         card.DllOverrideEnabled = false;
         card.RsStatus = GameStatus.NotInstalled;
-        card.DcStatus = GameStatus.NotInstalled;
         card.NotifyAll();
     }
 

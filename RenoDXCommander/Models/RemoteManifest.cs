@@ -28,9 +28,6 @@ public class RemoteManifest
     [JsonPropertyName("gameNotes")]
     public Dictionary<string, GameNoteEntry>? GameNotes { get; set; }
 
-    [JsonPropertyName("dcModeOverrides")]
-    public Dictionary<string, int>? DcModeOverrides { get; set; }
-
     [JsonPropertyName("forceExternalOnly")]
     public Dictionary<string, ForceExternalEntry>? ForceExternalOnly { get; set; }
 

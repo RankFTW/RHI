@@ -49,7 +49,6 @@ public class CardInstallActionsPropertyTests
                     IsExternalOnly = isExternalOnly,
                     LumaFeatureEnabled = lumaFeatureEnabled,
                     IsLumaMode = isLumaMode,
-                    DcLegacyMode = true, // DC features visible for this test
                     Mod = mod
                 };
                 card.LumaMod = lumaMod;
@@ -57,7 +56,6 @@ public class CardInstallActionsPropertyTests
                 // Read actual visibility from ViewModel computed properties
                 bool rdxVisible = card.RenoDxRowVisibility == Visibility.Visible;
                 bool rsVisible = card.ReShadeRowVisibility == Visibility.Visible;
-                bool dcVisible = card.DcRowVisibility == Visibility.Visible;
                 bool lumaVisible = card.CardLumaVisible;
 
                 // Derived conditions
@@ -66,32 +64,24 @@ public class CardInstallActionsPropertyTests
 
                 if (effectiveLumaMode)
                 {
-                    // When in effective Luma mode: RDX, RS, DC rows are hidden.
-                    // Luma is visible only when LumaMod is present (CardLumaVisible).
-                    // "Install All" is always present (not a row visibility property).
                     bool rdxHidden = !rdxVisible;
                     bool rsHidden = !rsVisible;
-                    bool dcHidden = !dcVisible;
                     bool lumaCorrect = lumaVisible == (lumaMod != null);
-                    return rdxHidden && rsHidden && dcHidden && lumaCorrect;
+                    return rdxHidden && rsHidden && lumaCorrect;
                 }
                 else if (isExternalOnly)
                 {
-                    // When IsExternalOnly (and not Luma mode): RDX hidden; RS and DC visible
                     bool rdxHidden = !rdxVisible;
                     bool rsShown = rsVisible;
-                    bool dcShown = dcVisible;
-                    bool lumaCorrect = !lumaVisible; // Not in Luma mode, so Luma dot not visible
-                    return rdxHidden && rsShown && dcShown && lumaCorrect;
+                    bool lumaCorrect = !lumaVisible;
+                    return rdxHidden && rsShown && lumaCorrect;
                 }
                 else
                 {
-                    // Otherwise: RDX, RS, DC all visible; Luma visible if CardLumaVisible
                     bool rdxShown = rdxVisible;
                     bool rsShown = rsVisible;
-                    bool dcShown = dcVisible;
                     bool lumaCorrect = lumaVisible == (lumaFeatureEnabled && isLumaMode && lumaMod != null);
-                    return rdxShown && rsShown && dcShown && lumaCorrect;
+                    return rdxShown && rsShown && lumaCorrect;
                 }
             });
     }
@@ -110,26 +100,23 @@ public class CardInstallActionsPropertyTests
 
         var genState = from rdxStatus in genStatus
                        from rsStatus in genStatus
-                       from dcStatus in genStatus
                        from lumaStatus in genStatus
                        from isInstalling in Arb.Default.Bool().Generator
                        from rsIsInstalling in Arb.Default.Bool().Generator
-                       from dcIsInstalling in Arb.Default.Bool().Generator
                        from isLumaInstalling in Arb.Default.Bool().Generator
-                       from rsBlockedByDcMode in Arb.Default.Bool().Generator
                        from hasMod in Arb.Default.Bool().Generator
                        from hasLumaMod in Arb.Default.Bool().Generator
-                       select (rdxStatus, rsStatus, dcStatus, lumaStatus,
-                               isInstalling, rsIsInstalling, dcIsInstalling, isLumaInstalling,
-                               rsBlockedByDcMode, hasMod, hasLumaMod);
+                       select (rdxStatus, rsStatus, lumaStatus,
+                               isInstalling, rsIsInstalling, isLumaInstalling,
+                               hasMod, hasLumaMod);
 
         return Prop.ForAll(
             Arb.From(genState),
             (tuple) =>
             {
-                var (rdxStatus, rsStatus, dcStatus, lumaStatus,
-                     isInstalling, rsIsInstalling, dcIsInstalling, isLumaInstalling,
-                     rsBlockedByDcMode, hasMod, hasLumaMod) = tuple;
+                var (rdxStatus, rsStatus, lumaStatus,
+                     isInstalling, rsIsInstalling, isLumaInstalling,
+                     hasMod, hasLumaMod) = tuple;
 
                 var mod = hasMod ? new GameMod { Name = "TestMod", SnapshotUrl = "https://example.com/mod.zip" } : null;
                 var lumaMod = hasLumaMod ? new LumaMod { Name = "TestLuma", DownloadUrl = "https://example.com/luma.zip" } : null;
@@ -138,13 +125,10 @@ public class CardInstallActionsPropertyTests
                 {
                     Status = rdxStatus,
                     RsStatus = rsStatus,
-                    DcStatus = dcStatus,
                     LumaStatus = lumaStatus,
                     IsInstalling = isInstalling,
                     RsIsInstalling = rsIsInstalling,
-                    DcIsInstalling = dcIsInstalling,
                     IsLumaInstalling = isLumaInstalling,
-                    RsBlockedByDcMode = rsBlockedByDcMode,
                     Mod = mod,
                 };
                 card.LumaMod = lumaMod;
@@ -163,35 +147,17 @@ public class CardInstallActionsPropertyTests
                 bool rdxColorOk = card.RdxStatusColor == expectedRdxColor;
 
                 // ── RS status text and color ──
-                bool isDcInstalled = dcStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
-                string expectedRsText = rsBlockedByDcMode
-                    ? (isDcInstalled ? "Installed" : "DC Mode")
-                    : rsIsInstalling ? "Installing…"
+                string expectedRsText = rsIsInstalling ? "Installing…"
                     : rsStatus == GameStatus.UpdateAvailable ? "Update"
                     : rsStatus == GameStatus.Installed       ? "Installed"
                     : "Ready";
-                string expectedRsColor = rsBlockedByDcMode
-                    ? (isDcInstalled ? "#5ECB7D" : "#6B7A8E")
-                    : rsIsInstalling ? "#D4A856"
+                string expectedRsColor = rsIsInstalling ? "#D4A856"
                     : rsStatus == GameStatus.UpdateAvailable ? "#B898E8"
                     : rsStatus == GameStatus.Installed       ? "#5ECB7D"
                     : "#A0AABB";
 
                 bool rsTextOk = card.RsStatusText == expectedRsText;
                 bool rsColorOk = card.RsStatusColor == expectedRsColor;
-
-                // ── DC status text and color ──
-                string expectedDcText = dcIsInstalling ? "Installing…"
-                    : dcStatus == GameStatus.UpdateAvailable ? "Update"
-                    : dcStatus == GameStatus.Installed       ? "Installed"
-                    : "Ready";
-                string expectedDcColor = dcIsInstalling ? "#D4A856"
-                    : dcStatus == GameStatus.UpdateAvailable ? "#B898E8"
-                    : dcStatus == GameStatus.Installed       ? "#5ECB7D"
-                    : "#A0AABB";
-
-                bool dcTextOk = card.DcStatusText == expectedDcText;
-                bool dcColorOk = card.DcStatusColor == expectedDcColor;
 
                 // ── Luma action label ──
                 string expectedLumaLabel = isLumaInstalling ? "Installing..."
@@ -201,28 +167,24 @@ public class CardInstallActionsPropertyTests
                 bool lumaLabelOk = card.LumaActionLabel == expectedLumaLabel;
 
                 // ── CanCardInstall: false when any component is installing ──
-                bool expectedCanCardInstall = !isInstalling && !rsIsInstalling && !dcIsInstalling && !isLumaInstalling;
+                bool expectedCanCardInstall = !isInstalling && !rsIsInstalling && !isLumaInstalling;
                 bool canCardInstallOk = card.CanCardInstall == expectedCanCardInstall;
 
                 // ── Per-component install enabled ──
                 bool expectedRdxEnabled = !isInstalling && mod?.SnapshotUrl != null && !card.IsExternalOnly;
                 bool rdxEnabledOk = card.CardRdxInstallEnabled == expectedRdxEnabled;
 
-                bool expectedRsEnabled = !rsIsInstalling && !rsBlockedByDcMode;
+                bool expectedRsEnabled = !rsIsInstalling;
                 bool rsEnabledOk = card.CardRsInstallEnabled == expectedRsEnabled;
-
-                bool expectedDcEnabled = !dcIsInstalling;
-                bool dcEnabledOk = card.CardDcInstallEnabled == expectedDcEnabled;
 
                 bool expectedLumaEnabled = !isLumaInstalling && lumaMod?.DownloadUrl != null;
                 bool lumaEnabledOk = card.CardLumaInstallEnabled == expectedLumaEnabled;
 
                 return rdxTextOk && rdxColorOk
                     && rsTextOk && rsColorOk
-                    && dcTextOk && dcColorOk
                     && lumaLabelOk
                     && canCardInstallOk
-                    && rdxEnabledOk && rsEnabledOk && dcEnabledOk && lumaEnabledOk;
+                    && rdxEnabledOk && rsEnabledOk && lumaEnabledOk;
             });
     }
 
@@ -240,30 +202,27 @@ public class CardInstallActionsPropertyTests
 
         var genState = from rdxStatus in genStatus
                        from rsStatus in genStatus
-                       from dcStatus in genStatus
                        from lumaStatus in genStatus
                        from lumaFeatureEnabled in Arb.Default.Bool().Generator
                        from isLumaMode in Arb.Default.Bool().Generator
                        from lumaMod in GenNullableLuma
-                       select (rdxStatus, rsStatus, dcStatus, lumaStatus,
+                       select (rdxStatus, rsStatus, lumaStatus,
                                lumaFeatureEnabled, isLumaMode, lumaMod);
 
         return Prop.ForAll(
             Arb.From(genState),
             (tuple) =>
             {
-                var (rdxStatus, rsStatus, dcStatus, lumaStatus,
+                var (rdxStatus, rsStatus, lumaStatus,
                      lumaFeatureEnabled, isLumaMode, lumaMod) = tuple;
 
                 var card = new GameCardViewModel
                 {
                     Status = rdxStatus,
                     RsStatus = rsStatus,
-                    DcStatus = dcStatus,
                     LumaStatus = lumaStatus,
                     LumaFeatureEnabled = lumaFeatureEnabled,
                     IsLumaMode = isLumaMode,
-                    DcLegacyMode = true, // DC features visible for this test
                 };
                 card.LumaMod = lumaMod;
 
@@ -272,45 +231,31 @@ public class CardInstallActionsPropertyTests
                 // Verify IsXxxInstalled computed properties
                 bool rdxInstalled = rdxStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
                 bool rsInstalled = rsStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
-                bool dcInstalled = dcStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
                 bool lumaInstalled = lumaStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
 
                 bool rdxInstalledOk = card.IsRdxInstalled == rdxInstalled;
                 bool rsInstalledOk = card.IsRsInstalled == rsInstalled;
-                bool dcInstalledOk = card.IsDcInstalled == dcInstalled;
                 bool lumaInstalledOk = card.IsLumaInstalled == lumaInstalled;
 
-                // Uninstall ✕ visibility: component installed AND its row is visible.
-                // Row visibility is governed by EffectiveLumaMode and IsExternalOnly:
-                //   - RDX/RS/DC rows hidden when EffectiveLumaMode is true
-                //   - Luma row visible only when CardLumaVisible (LumaFeatureEnabled && IsLumaMode && LumaMod != null)
                 bool rdxRowVisible = card.RenoDxRowVisibility == Visibility.Visible;
                 bool rsRowVisible = card.ReShadeRowVisibility == Visibility.Visible;
-                bool dcRowVisible = card.DcRowVisibility == Visibility.Visible;
                 bool lumaRowVisible = card.CardLumaVisible;
 
                 bool expectedRdxUninstallVisible = rdxInstalled && rdxRowVisible;
                 bool expectedRsUninstallVisible = rsInstalled && rsRowVisible;
-                bool expectedDcUninstallVisible = dcInstalled && dcRowVisible;
                 bool expectedLumaUninstallVisible = lumaInstalled && lumaRowVisible;
 
-                // Cross-check row visibility against mode rules
-                // Note: RDX row is also hidden when IsExternalOnly, but this test
-                // does not vary IsExternalOnly (defaults to false), so the check is simpler.
                 bool rdxRowOk = rdxRowVisible == (!effectiveLumaMode && !card.IsExternalOnly);
                 bool rsRowOk = rsRowVisible == !effectiveLumaMode;
-                bool dcRowOk = dcRowVisible == !effectiveLumaMode;
                 bool lumaRowOk = lumaRowVisible == (effectiveLumaMode && lumaMod != null);
 
-                // Verify the ViewModel's IsXxxInstalled + row visibility produce correct uninstall state
                 bool rdxUninstallOk = (card.IsRdxInstalled && rdxRowVisible) == expectedRdxUninstallVisible;
                 bool rsUninstallOk = (card.IsRsInstalled && rsRowVisible) == expectedRsUninstallVisible;
-                bool dcUninstallOk = (card.IsDcInstalled && dcRowVisible) == expectedDcUninstallVisible;
                 bool lumaUninstallOk = (card.IsLumaInstalled && lumaRowVisible) == expectedLumaUninstallVisible;
 
-                return rdxInstalledOk && rsInstalledOk && dcInstalledOk && lumaInstalledOk
-                    && rdxRowOk && rsRowOk && dcRowOk && lumaRowOk
-                    && rdxUninstallOk && rsUninstallOk && dcUninstallOk && lumaUninstallOk;
+                return rdxInstalledOk && rsInstalledOk && lumaInstalledOk
+                    && rdxRowOk && rsRowOk && lumaRowOk
+                    && rdxUninstallOk && rsUninstallOk && lumaUninstallOk;
             });
     }
 
@@ -355,27 +300,16 @@ public class CardInstallActionsPropertyTests
                 bool firstRsIni = cards[0].RsIniExists;
                 bool allAgreeRsIni = cards.All(c => c.RsIniExists == firstRsIni);
 
-                // All cards must agree on DcIniExists (it's a global file check)
-                bool firstDcIni = cards[0].DcIniExists;
-                bool allAgreeDcIni = cards.All(c => c.DcIniExists == firstDcIni);
-
-                // Copy config rule: RS 📋 visible iff RsIniExists, DC 📋 visible iff DcIniExists
-                // The ViewModel exposes RsIniExists/DcIniExists as the visibility driver.
+                // Copy config rule: RS 📋 visible iff RsIniExists
                 bool rsCopyRuleOk = cards.All(c => c.RsIniExists == firstRsIni);
-                bool dcCopyRuleOk = cards.All(c => c.DcIniExists == firstDcIni);
 
                 // RDX and Luma never have copy config buttons.
-                // There are no RdxIniExists or LumaIniExists properties on the ViewModel —
-                // the design explicitly states RDX and Luma rows SHALL NOT include a 📋 button.
-                // We verify this by confirming the ViewModel has no such properties:
-                // GameCardViewModel only exposes RsIniExists and DcIniExists.
-                // As a runtime check, we verify the type does not have these properties.
                 var vmType = typeof(GameCardViewModel);
                 bool noRdxIniProp = vmType.GetProperty("RdxIniExists") == null;
                 bool noLumaIniProp = vmType.GetProperty("LumaIniExists") == null;
 
-                return allAgreeRsIni && allAgreeDcIni
-                    && rsCopyRuleOk && dcCopyRuleOk
+                return allAgreeRsIni
+                    && rsCopyRuleOk
                     && noRdxIniProp && noLumaIniProp;
             });
     }

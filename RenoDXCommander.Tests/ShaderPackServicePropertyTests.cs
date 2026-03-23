@@ -282,42 +282,18 @@ public class ShaderPackServicePropertyTests : IDisposable
         });
     }
 
-    private HashSet<string> SnapshotDcFolder()
-    {
-        var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (Directory.Exists(ShaderPackService.DcShadersDir))
-            foreach (var f in Directory.EnumerateFiles(ShaderPackService.DcShadersDir, "*", SearchOption.AllDirectories))
-                files.Add(f);
-        if (Directory.Exists(ShaderPackService.DcTexturesDir))
-            foreach (var f in Directory.EnumerateFiles(ShaderPackService.DcTexturesDir, "*", SearchOption.AllDirectories))
-                files.Add(f);
-        return files;
-    }
+    // ── Property 3: Game-local shaders via SyncGameFolder ──
 
-    private void CleanupDcFolder(HashSet<string> preExisting)
-    {
-        if (Directory.Exists(ShaderPackService.DcShadersDir))
-            foreach (var f in Directory.EnumerateFiles(ShaderPackService.DcShadersDir, "*", SearchOption.AllDirectories))
-                if (!preExisting.Contains(f))
-                    try { File.Delete(f); } catch { }
-        if (Directory.Exists(ShaderPackService.DcTexturesDir))
-            foreach (var f in Directory.EnumerateFiles(ShaderPackService.DcTexturesDir, "*", SearchOption.AllDirectories))
-                if (!preExisting.Contains(f))
-                    try { File.Delete(f); } catch { }
-    }
-
-    // ── Property 3: DC mode preserves game-local shaders via SyncGameFolder ──
-
-    // Feature: local-shader-deployment, Property 3: DC mode preserves game-local shaders
+    // Feature: local-shader-deployment, Property 3: Game-local shaders via SyncGameFolder
     /// <summary>
     /// **Validates: Requirements 8.1, 8.3, 8.4**
     ///
-    /// For any game location where dcInstalled is true and dcMode is true,
+    /// For any game location where rsInstalled is true,
     /// after SyncShadersToAllLocations processes it, the game-local
     /// reshade-shaders folder SHALL exist with shaders deployed via SyncGameFolder.
     /// </summary>
     [Property(MaxTest = 30)]
-    public Property DcMode_PreservesGameLocalShaders_ViaSyncGameFolder()
+    public Property GameLocalShaders_ViaSyncGameFolder()
     {
         var gen = from packIds in GenNonEmptyPackSelection()
                   from state in GenDcFolderState()
@@ -335,8 +311,8 @@ public class ShaderPackServicePropertyTests : IDisposable
             {
                 var locations = new[]
                 {
-                    (installPath: gameDir, dcInstalled: true, rsInstalled: true,
-                     dcMode: true, shaderModeOverride: (string?)null)
+                    (installPath: gameDir, rsInstalled: true,
+                     shaderModeOverride: (string?)null)
                 };
                 _service.SyncShadersToAllLocations(locations, packIds);
 
@@ -348,62 +324,6 @@ public class ShaderPackServicePropertyTests : IDisposable
                     return false.Label($"Managed marker file missing (packs={packIds.Length}, state={state})");
 
                 return true.Label($"OK: packs={packIds.Length}, state={state}");
-            }
-            finally
-            {
-                try { Directory.Delete(gameDir, recursive: true); } catch { }
-            }
-        });
-    }
-
-    // ── Property 4: DC mode deploys locally, never to DC global folder ──────────
-
-    // Feature: local-shader-deployment, Property 4: DC folder is never synced
-    /// <summary>
-    /// **Validates: Requirements 8.1, 8.2**
-    /// </summary>
-    [Property(MaxTest = 30)]
-    public Property DcMode_NeverSyncsToDcGlobalFolder()
-    {
-        var gen = from packIds in GenNonEmptyPackSelection()
-                  from suffix in Gen.Choose(1, 999999)
-                  select (packIds, suffix);
-
-        return Prop.ForAll(gen.ToArbitrary(), tuple =>
-        {
-            var (packIds, suffix) = tuple;
-
-            var preExisting = SnapshotDcFolder();
-
-            var gameDir = Path.Combine(_tempRoot, $"game_dc4_{suffix}");
-            Directory.CreateDirectory(gameDir);
-
-            try
-            {
-                var locations = new[]
-                {
-                    (installPath: gameDir, dcInstalled: true, rsInstalled: true,
-                     dcMode: true, shaderModeOverride: (string?)null)
-                };
-                _service.SyncShadersToAllLocations(locations, packIds);
-
-                var postFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                if (Directory.Exists(ShaderPackService.DcShadersDir))
-                    foreach (var f in Directory.EnumerateFiles(ShaderPackService.DcShadersDir, "*", SearchOption.AllDirectories))
-                        postFiles.Add(f);
-                if (Directory.Exists(ShaderPackService.DcTexturesDir))
-                    foreach (var f in Directory.EnumerateFiles(ShaderPackService.DcTexturesDir, "*", SearchOption.AllDirectories))
-                        postFiles.Add(f);
-
-                var newFiles = postFiles.Except(preExisting, StringComparer.OrdinalIgnoreCase).ToList();
-                if (newFiles.Count > 0)
-                    return false.Label($"DC global folder received {newFiles.Count} new files — should be zero");
-
-                var rsDir = Path.Combine(gameDir, ShaderPackService.GameReShadeShaders);
-                if (!Directory.Exists(rsDir))
-                    return false.Label($"Game-local reshade-shaders folder missing");
-
-                return true.Label($"OK: packs={packIds.Length}");
             }
             finally
             {
@@ -439,8 +359,8 @@ public class ShaderPackServicePropertyTests : IDisposable
             {
                 var locations = new[]
                 {
-                    (installPath: gameDir, dcInstalled: false, rsInstalled: true,
-                     dcMode: false, shaderModeOverride: (string?)null)
+                    (installPath: gameDir, rsInstalled: true,
+                     shaderModeOverride: (string?)null)
                 };
                 _service.SyncShadersToAllLocations(locations, packIds);
 
@@ -646,12 +566,12 @@ public class ShaderPackServicePropertyTests : IDisposable
         });
     }
 
-    // Feature: reshade-vulkan-shader-deploy, Property 7: Idempotent sync (DC mode)
+    // Feature: reshade-vulkan-shader-deploy, Property 7: Idempotent sync (via SyncShadersToAllLocations)
     /// <summary>
     /// **Validates: Requirements 7.1, 7.2**
     /// </summary>
     [Property(MaxTest = 30)]
-    public Property IdempotentSync_DcModeTwice_ProducesSameState()
+    public Property IdempotentSync_SyncAllLocationsTwice_ProducesSameState()
     {
         var gen = from packIds in GenNonEmptyPackSelection()
                   from dcState in GenDcFolderState()
@@ -662,36 +582,29 @@ public class ShaderPackServicePropertyTests : IDisposable
         {
             var (packIds, dcState, suffix) = tuple;
 
-            var preExisting = SnapshotDcFolder();
-            var gameDir = SetupGameDirForDc($"p7dc_{suffix}_{dcState}", dcState, hasOriginal: false);
+            var gameDir = SetupGameDirForDc($"p7all_{suffix}_{dcState}", dcState, hasOriginal: false);
 
             try
             {
                 var locations = new[]
                 {
-                    (installPath: gameDir, dcInstalled: true, rsInstalled: true,
-                     dcMode: true, shaderModeOverride: (string?)null)
+                    (installPath: gameDir, rsInstalled: true,
+                     shaderModeOverride: (string?)null)
                 };
 
                 _service.SyncShadersToAllLocations(locations, packIds);
                 var gameSnapshot1 = SnapshotDirectory(gameDir);
-                var dcSnapshot1 = SnapshotDirectory(ShaderPackService.DcReshadeDir);
 
                 _service.SyncShadersToAllLocations(locations, packIds);
                 var gameSnapshot2 = SnapshotDirectory(gameDir);
-                var dcSnapshot2 = SnapshotDirectory(ShaderPackService.DcReshadeDir);
 
                 if (!SnapshotsEqual(gameSnapshot1, gameSnapshot2))
-                    return false.Label($"Game folder snapshots differ after two DC-mode syncs (dcState={dcState})");
-
-                if (!SnapshotsEqual(dcSnapshot1, dcSnapshot2))
-                    return false.Label($"DC global folder snapshots differ after two DC-mode syncs (dcState={dcState})");
+                    return false.Label($"Game folder snapshots differ after two syncs (dcState={dcState})");
 
                 return true.Label($"OK: packs={packIds.Length}, dcState={dcState}");
             }
             finally
             {
-                CleanupDcFolder(preExisting);
                 try { Directory.Delete(gameDir, recursive: true); } catch { }
             }
         });

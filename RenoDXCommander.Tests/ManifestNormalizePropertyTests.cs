@@ -36,8 +36,7 @@ public class ManifestNormalizePropertyTests
 
     private static readonly Gen<ManifestDllNames> GenDllNames =
         from reshade in Gen.Elements("d3d9.dll", "dxgi.dll", null)
-        from dc in Gen.Elements("winmm.dll", null)
-        select new ManifestDllNames { ReShade = reshade, Dc = dc };
+        select new ManifestDllNames { ReShade = reshade };
 
     /// <summary>
     /// Generates a RemoteManifest with randomly null dictionary properties.
@@ -46,7 +45,6 @@ public class ManifestNormalizePropertyTests
         from version in Gen.Choose(1, 10)
         from wikiNames in GenNullableDict(Gen.Elements("Override A", "Override B"))
         from gameNotes in GenNullableDict(GenGameNote)
-        from dcModes in GenNullableDict(Gen.Choose(0, 3))
         from forceExt in GenNullableDict(GenForceExternal)
         from installPaths in GenNullableDict(Gen.Elements(@"C:\Games", @"D:\Steam"))
         from wikiStatus in GenNullableDict(Gen.Elements("Working", "Broken", "Partial"))
@@ -59,7 +57,6 @@ public class ManifestNormalizePropertyTests
             Version = version,
             WikiNameOverrides = wikiNames,
             GameNotes = gameNotes,
-            DcModeOverrides = dcModes,
             ForceExternalOnly = forceExt,
             InstallPathOverrides = installPaths,
             WikiStatusOverrides = wikiStatus,
@@ -92,7 +89,6 @@ public class ManifestNormalizePropertyTests
                 var nullProps = new List<string>();
                 if (manifest.WikiNameOverrides is null) nullProps.Add("WikiNameOverrides");
                 if (manifest.GameNotes is null) nullProps.Add("GameNotes");
-                if (manifest.DcModeOverrides is null) nullProps.Add("DcModeOverrides");
                 if (manifest.ForceExternalOnly is null) nullProps.Add("ForceExternalOnly");
                 if (manifest.InstallPathOverrides is null) nullProps.Add("InstallPathOverrides");
                 if (manifest.WikiStatusOverrides is null) nullProps.Add("WikiStatusOverrides");

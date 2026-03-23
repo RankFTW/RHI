@@ -32,7 +32,6 @@ public class StaticServiceInterfaceStructureTests
         var methods = typeof(IAuxFileService).GetMethods(BindingFlags.Public | BindingFlags.Instance);
         var methodNames = methods.Select(m => m.Name).ToHashSet();
 
-        Assert.DoesNotContain("InstallDcAsync", methodNames);
         Assert.DoesNotContain("InstallReShadeAsync", methodNames);
         Assert.DoesNotContain("Uninstall", methodNames);
     }
@@ -153,15 +152,13 @@ public class StaticServiceInterfaceStructureTests
             => Array.Empty<(string, string, ShaderPackService.PackCategory)>();
         public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-        public void DeployToDcFolder() { }
         public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
         public void RemoveFromGameFolder(string gameDir) { }
         public bool IsManagedByRdxc(string gameDir) => false;
         public void RestoreOriginalIfPresent(string gameDir) { }
-        public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null) { }
         public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null) { }
         public void SyncShadersToAllLocations(
-            IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
+            IEnumerable<(string installPath, bool rsInstalled, string? shaderModeOverride)> locations,
             IEnumerable<string>? selectedPackIds = null) { }
     }
 }

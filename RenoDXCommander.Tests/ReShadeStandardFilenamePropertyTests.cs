@@ -6,19 +6,20 @@ using Xunit;
 namespace RenoDXCommander.Tests;
 
 /// <summary>
-/// Property-based tests verifying that <c>InstallReShadeAsync</c> always deploys
-/// shaders locally via <c>SyncGameFolder</c>.
+/// Property-based test verifying that InstallReShadeAsync always produces a standard
+/// filename (dxgi.dll or the DLL override) and never ReShade64.dll or ReShade32.dll.
 ///
-/// **Validates: Requirements 9.1, 9.2, 9.3, 9.4**
+/// Feature: dc-removal, Property 7: ReShade installs as standard filename
+/// **Validates: Requirements 12.2**
 /// </summary>
 [Collection("StaticShaderMode")]
-public class InstallReShadeLocalDeployPropertyTests : IDisposable
+public class ReShadeStandardFilenamePropertyTests : IDisposable
 {
     private readonly string _tempRoot;
 
-    public InstallReShadeLocalDeployPropertyTests()
+    public ReShadeStandardFilenamePropertyTests()
     {
-        _tempRoot = Path.Combine(Path.GetTempPath(), "RdxcRsDeploy_" + Guid.NewGuid().ToString("N")[..8]);
+        _tempRoot = Path.Combine(Path.GetTempPath(), "RdxcRsFilename_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempRoot);
 
         // Ensure staged ReShade DLLs exist (InstallReShadeAsync copies from these)
@@ -35,23 +36,37 @@ public class InstallReShadeLocalDeployPropertyTests : IDisposable
         try { Directory.Delete(_tempRoot, recursive: true); } catch { }
     }
 
-    // ── Property: InstallReShadeAsync always calls SyncGameFolder ─
+    /// <summary>
+    /// Known DLL override filenames that games may use instead of dxgi.dll.
+    /// </summary>
+    private static readonly string[] OverrideNames =
+    [
+        "d3d11.dll",
+        "dinput8.dll",
+        "version.dll",
+        "winmm.dll",
+    ];
 
     /// <summary>
-    /// **Validates: Requirements 9.1, 9.2, 9.3, 9.4**
-    ///
-    /// For any game install, <c>InstallReShadeAsync</c> SHALL call <c>SyncGameFolder</c>
-    /// with the game's install path.
+    /// Generator that produces (use32Bit, filenameOverride) combinations.
+    /// filenameOverride is null (standard dxgi.dll) or one of the known override names.
     /// </summary>
-    [Property(MaxTest = 20)]
-    public Property InstallReShadeAsync_AlwaysDeploysLocally()
-    {
-        var gen = from suffix in Gen.Choose(1, 999999)
-                  select suffix;
+    private static readonly Gen<(bool Use32Bit, string? FilenameOverride)> GenConfig =
+        from use32Bit in Arb.Generate<bool>()
+        from hasOverride in Arb.Generate<bool>()
+        from overrideIdx in Gen.Choose(0, OverrideNames.Length - 1)
+        let filenameOverride = hasOverride ? OverrideNames[overrideIdx] : null
+        select (use32Bit, filenameOverride);
 
-        return Prop.ForAll(gen.ToArbitrary(), suffix =>
+    // ── Property 7: ReShade installs as standard filename ─────────────────────
+    // Feature: dc-removal, Property 7: ReShade installs as standard filename
+    // **Validates: Requirements 12.2**
+    [Property(MaxTest = 100)]
+    public Property InstallReShadeAsync_NeverUsesReShade64OrReShade32()
+    {
+        return Prop.ForAll(GenConfig.ToArbitrary(), config =>
         {
-            var installPath = Path.Combine(_tempRoot, $"game_{suffix}");
+            var installPath = Path.Combine(_tempRoot, $"game_{Guid.NewGuid():N}");
             Directory.CreateDirectory(installPath);
 
             var tracker = new TrackingShaderPackService();
@@ -61,20 +76,23 @@ public class InstallReShadeLocalDeployPropertyTests : IDisposable
 
             try
             {
-                sut.InstallReShadeAsync(
+                var record = sut.InstallReShadeAsync(
                     gameName: "TestGame",
-                    installPath: installPath).GetAwaiter().GetResult();
+                    installPath: installPath,
+                    use32Bit: config.Use32Bit,
+                    filenameOverride: config.FilenameOverride).GetAwaiter().GetResult();
 
-                if (!tracker.SyncGameFolderCalled)
-                    return false.Label(
-                        $"SyncGameFolder was NOT called");
+                var installedAs = record.InstalledAs;
 
-                if (tracker.SyncGameFolderDir != installPath)
-                    return false.Label(
-                        $"SyncGameFolder called with wrong path: expected '{installPath}', " +
-                        $"got '{tracker.SyncGameFolderDir}'");
+                var isReShade64 = string.Equals(installedAs, "ReShade64.dll", StringComparison.OrdinalIgnoreCase);
+                var isReShade32 = string.Equals(installedAs, "ReShade32.dll", StringComparison.OrdinalIgnoreCase);
 
-                return true.Label("OK");
+                var expectedName = !string.IsNullOrWhiteSpace(config.FilenameOverride)
+                    ? config.FilenameOverride
+                    : AuxInstallService.RsNormalName;
+
+                return (!isReShade64 && !isReShade32)
+                    .Label($"InstalledAs was '{installedAs}' (use32Bit={config.Use32Bit}, override={config.FilenameOverride ?? "null"}) — expected '{expectedName}', must never be ReShade64.dll or ReShade32.dll");
             }
             finally
             {
@@ -87,9 +105,6 @@ public class InstallReShadeLocalDeployPropertyTests : IDisposable
 
     private class TrackingShaderPackService : IShaderPackService
     {
-        public bool SyncGameFolderCalled { get; private set; }
-        public string? SyncGameFolderDir { get; private set; }
-
         public IReadOnlyList<(string Id, string DisplayName, ShaderPackService.PackCategory Category)> AvailablePacks { get; } =
             new List<(string, string, ShaderPackService.PackCategory)>();
 
@@ -100,11 +115,7 @@ public class InstallReShadeLocalDeployPropertyTests : IDisposable
         public bool IsManagedByRdxc(string gameDir) => false;
         public void RestoreOriginalIfPresent(string gameDir) { }
 
-        public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null)
-        {
-            SyncGameFolderCalled = true;
-            SyncGameFolderDir = gameDir;
-        }
+        public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null) { }
 
         public void SyncShadersToAllLocations(
             IEnumerable<(string installPath, bool rsInstalled, string? shaderModeOverride)> locations,

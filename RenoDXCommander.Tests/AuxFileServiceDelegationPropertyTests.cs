@@ -73,28 +73,6 @@ public class AuxFileServiceDelegationPropertyTests
 
     // Feature: static-service-interfaces, Property 3: IAuxFileService delegation equivalence
     /// <summary>
-    /// For any file path string, calling IsDcFileStrict through the IAuxFileService
-    /// instance returns the same bool as calling the static method directly.
-    /// **Validates: Requirements 4.2, 8.2**
-    /// </summary>
-    [Property(MaxTest = 100)]
-    public Property IsDcFileStrict_Instance_Equals_Static()
-    {
-        return Prop.ForAll(Arb.Default.NonNull<string>(), nonNullPath =>
-        {
-            var path = nonNullPath.Get;
-            var svc = CreateService();
-
-            var instanceResult = svc.IsDcFileStrict(path);
-            var staticResult = AuxInstallService.IsDcFileStrict(path);
-
-            return (instanceResult == staticResult)
-                .Label($"Instance returned {instanceResult}, static returned {staticResult} for path '{path}'");
-        });
-    }
-
-    // Feature: static-service-interfaces, Property 3: IAuxFileService delegation equivalence
-    /// <summary>
     /// For any file path string, calling IsReShadeFile through the IAuxFileService
     /// instance returns the same bool as calling the static method directly.
     /// **Validates: Requirements 4.2, 8.2**
@@ -152,15 +130,13 @@ public class AuxFileServiceDelegationPropertyTests
 
         public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-        public void DeployToDcFolder() { }
         public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
         public void RemoveFromGameFolder(string gameDir) { }
         public bool IsManagedByRdxc(string gameDir) => false;
         public void RestoreOriginalIfPresent(string gameDir) { }
-        public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null) { }
         public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null) { }
         public void SyncShadersToAllLocations(
-            IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
+            IEnumerable<(string installPath, bool rsInstalled, string? shaderModeOverride)> locations,
             IEnumerable<string>? selectedPackIds = null) { }
     }
 }

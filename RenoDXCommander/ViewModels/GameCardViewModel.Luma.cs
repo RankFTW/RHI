@@ -112,7 +112,6 @@ public partial class GameCardViewModel
         // Row visibility
         OnPropertyChanged(nameof(RenoDxRowVisibility));
         OnPropertyChanged(nameof(ReShadeRowVisibility));
-        OnPropertyChanged(nameof(DcRowVisibility));
         // Combined card
         OnPropertyChanged(nameof(CombinedRowVisibility));
         OnPropertyChanged(nameof(ComponentExpandVisibility));
@@ -145,7 +144,6 @@ public partial class GameCardViewModel
         // Row visibility
         OnPropertyChanged(nameof(RenoDxRowVisibility));
         OnPropertyChanged(nameof(ReShadeRowVisibility));
-        OnPropertyChanged(nameof(DcRowVisibility));
         // Combined card
         OnPropertyChanged(nameof(CombinedRowVisibility));
         OnPropertyChanged(nameof(ComponentExpandVisibility));

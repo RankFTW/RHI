@@ -15,8 +15,6 @@ public sealed partial class MainWindow : Window
 {
     public MainViewModel ViewModel { get; }
 
-    public string[] DcDllPickerNames => DllOverrideConstants.DcDllPickerNames;
-
     // Sensible default — used on first launch before any saved size exists
     private const int DefaultWidth  = 1280;
     private const int DefaultHeight = 1000;
@@ -91,7 +89,6 @@ public sealed partial class MainWindow : Window
         this.Activated += MainWindow_Activated;
         ViewModel.SetDispatcher(DispatcherQueue);
         ViewModel.ConfirmForeignDxgiOverwrite = _dialogService.ShowForeignDxgiConfirmDialogAsync;
-        ViewModel.ConfirmForeignWinmmOverwrite = _dialogService.ShowForeignWinmmConfirmDialogAsync;
         ViewModel.ShowShaderSelectionPicker = async (current) =>
             await ShaderPopupHelper.ShowAsync(Content.XamlRoot, ViewModel.ShaderPackServiceInstance, current, ShaderPopupHelper.PopupContext.Global);
         ViewModel.ShowPerGameShaderSelectionPicker = async (gameName, current) =>
@@ -100,8 +97,6 @@ public sealed partial class MainWindow : Window
         GameList.ItemsSource = ViewModel.DisplayedGames;
         // Apply initial visibility
         UpdatePageVisibility();
-        // Sync DcDllPicker text once the ComboBox is loaded
-        DcDllPicker.Loaded += (_, _) => SyncDcDllPickerText();
         // Always show the ✕ clear button on search box
         SearchBox.Loaded += (_, _) => VisualStateManager.GoToState(SearchBox, "ButtonVisible", false);
         ViewModel.InitializeAsync().SafeFireAndForget("MainWindow.Init");
@@ -225,9 +220,6 @@ public sealed partial class MainWindow : Window
                     HiddenCountText.Text = ViewModel.HiddenCount > 0
                         ? $"· {ViewModel.HiddenCount} hidden" : "";
                     break;
-                case nameof(ViewModel.DcDllFileName):
-                    SyncDcDllPickerText();
-                    break;
                 case nameof(ViewModel.FilterMode):
                     RefreshFilterButtonStyles();
                     break;
@@ -338,21 +330,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void DcIniButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
-        try
-        {
-            AuxInstallService.CopyDcIni(card.InstallPath);
-            card.DcActionMessage = "✅ DisplayCommander.toml copied to game folder.";
-        }
-        catch (Exception ex)
-        {
-            card.DcActionMessage = $"❌ {ex.Message}";
-        }
-    }
-
     private void SupportDiscord_Click(object sender, RoutedEventArgs e)
     {
         _ = Windows.System.Launcher.LaunchUriAsync(
@@ -373,9 +350,6 @@ public sealed partial class MainWindow : Window
 
     private async Task<bool> ShowForeignDxgiConfirmDialogAsync(GameCardViewModel card, string dxgiPath)
         => await _dialogService.ShowForeignDxgiConfirmDialogAsync(card, dxgiPath);
-
-    private async Task<bool> ShowForeignWinmmConfirmDialogAsync(GameCardViewModel card, string winmmPath)
-        => await _dialogService.ShowForeignWinmmConfirmDialogAsync(card, winmmPath);
 
     // ── Auto-Update ────────────────────────────────────────────────────────────
 
@@ -489,9 +463,6 @@ public sealed partial class MainWindow : Window
             case "RS":
                 await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
                 break;
-            case "DC":
-                await ViewModel.InstallDcCommand.ExecuteAsync(card);
-                break;
             case "Luma":
                 await ViewModel.InstallLumaAsync(card);
                 break;
@@ -516,9 +487,6 @@ public sealed partial class MainWindow : Window
                     ViewModel.UninstallVulkanReShadeCommand.Execute(card);
                 else
                     ViewModel.UninstallReShadeCommand.Execute(card);
-                break;
-            case "DC":
-                ViewModel.UninstallDcCommand.Execute(card);
                 break;
             case "Luma":
                 ViewModel.UninstallLumaCommand.Execute(card);
@@ -552,21 +520,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    internal void CardCopyDcToml_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
-        try
-        {
-            AuxInstallService.CopyDcIni(card.InstallPath);
-            card.DcActionMessage = "✅ DisplayCommander.toml copied to game folder.";
-        }
-        catch (Exception ex)
-        {
-            card.DcActionMessage = $"❌ {ex.Message}";
-        }
-    }
-
     // ── Card action button handlers (Task 6.4) ───────────────────────────────────
 
     internal async void CardInstallButton_Click(object sender, RoutedEventArgs e)
@@ -588,11 +541,9 @@ public sealed partial class MainWindow : Window
                 card.InstallPath = folder;
                 ViewModel.SaveLibraryPublic();
             }
-            // Chain: RenoDX → DC → ReShade (skip components that are N/A)
+            // Chain: RenoDX → ReShade (skip components that are N/A)
             if (card.Mod?.SnapshotUrl != null)
                 await ViewModel.InstallModCommand.ExecuteAsync(card);
-            if (ViewModel.DcLegacyMode && card.DcRowVisibility == Visibility.Visible)
-                await ViewModel.InstallDcCommand.ExecuteAsync(card);
             if (card.ReShadeRowVisibility == Visibility.Visible)
                 await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
         }
@@ -910,58 +861,11 @@ public sealed partial class MainWindow : Window
     private void ChooseShadersButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.ChooseShadersButton_Click(sender, e);
 
-    private void DeployDcModeButton_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.DeployDcModeButton_Click(sender, e);
-
-    private bool _dcDllPickerIsTyping;
-
-    /// <summary>
-    /// Syncs the DcDllPicker ComboBox text/selection to match ViewModel.DcDllFileName.
-    /// Called on init and when the property changes from external sources.
-    /// </summary>
-    private void SyncDcDllPickerText()
-    {
-        var value = ViewModel.DcDllFileName;
-        _dcDllPickerIsTyping = true; // suppress SelectionChanged while we sync
-        // If the value matches a dropdown item, select it; otherwise clear selection and set text
-        var match = DcDllPickerNames.FirstOrDefault(n => n.Equals(value, StringComparison.OrdinalIgnoreCase));
-        if (match != null)
-            DcDllPicker.SelectedItem = match;
-        else
-        {
-            DcDllPicker.SelectedItem = null;
-            DcDllPicker.Text = value;
-        }
-        _dcDllPickerIsTyping = false;
-    }
-
-    private void DcDllPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_dcDllPickerIsTyping) return;
-        if (sender is ComboBox combo && combo.SelectedItem is string selected && !string.IsNullOrWhiteSpace(selected))
-            ViewModel.DcDllFileName = selected;
-    }
-
-    private void DcDllPicker_TextSubmitted(ComboBox sender, ComboBoxTextSubmittedEventArgs e)
-    {
-        var typed = e.Text?.Trim();
-        if (!string.IsNullOrWhiteSpace(typed))
-        {
-            _dcDllPickerIsTyping = true; // suppress SelectionChanged side-effects
-            ViewModel.DcDllFileName = typed;
-            sender.SelectedItem = null; // clear stale selection so ComboBox doesn't revert
-            _dcDllPickerIsTyping = false;
-        }
-        e.Handled = true;
-    }
-
     // ── Update All handlers ──────────────────────────────────────────────────
 
     private async void UpdateAllButton_Click(object sender, RoutedEventArgs e)
     {
         await ViewModel.UpdateAllReShadeAsync();
-        if (ViewModel.DcLegacyMode)
-            await ViewModel.UpdateAllDcAsync();
         await ViewModel.UpdateAllRenoDxAsync();
     }
 
@@ -971,20 +875,18 @@ public sealed partial class MainWindow : Window
     private async void UpdateAllReShade_Click(object sender, RoutedEventArgs e)
         => await ViewModel.UpdateAllReShadeAsync();
 
-    private async void UpdateAllDc_Click(object sender, RoutedEventArgs e)
-        => await ViewModel.UpdateAllDcAsync();
-
-    private void InstallDcButton_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.InstallDcButton_Click(sender, e);
-
-    private void UninstallDcButton_Click(object sender, RoutedEventArgs e)
-        => _installEventHandler.UninstallDcButton_Click(sender, e);
-
     private void InstallUlButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallUlButton_Click(sender, e);
 
     private void UninstallUlButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallUlButton_Click(sender, e);
+
+    private async void DetailUlStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (ViewModel.SelectedGame?.UlStatus == Models.GameStatus.Installed)
+            await Windows.System.Launcher.LaunchUriAsync(
+                new Uri("https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide"));
+    }
 
     private void LumaToggle_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.LumaToggle_Click(sender, e);

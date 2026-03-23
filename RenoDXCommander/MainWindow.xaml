@@ -437,41 +437,6 @@
                                     </Button>
                                 </Grid>
 
-                                <!-- Display Commander row -->
-                                <Grid x:Name="DetailDcRow" x:FieldModifier="internal" ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="120"/>
-                                        <ColumnDefinition Width="80"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="36"/>
-                                        <ColumnDefinition Width="36"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Display Commander" FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="DetailDcStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
-                                               VerticalAlignment="Center"/>
-                                    <Button x:Name="DetailDcInstallBtn" x:FieldModifier="internal" Grid.Column="2"
-                                            Click="InstallDcButton_Click"
-                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                            CornerRadius="8" FontSize="12" Height="32"/>
-                                    <Button x:Name="DetailDcIniBtn" x:FieldModifier="internal" Grid.Column="3"
-                                            Click="DcIniButton_Click"
-                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Copy DisplayCommander.toml">
-                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
-                                    </Button>
-                                    <Button x:Name="DetailDcDeleteBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="UninstallDcButton_Click"
-                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
-                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Remove Display Commander" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
-                                    </Button>
-                                </Grid>
-
                                 <!-- Ultra Limiter row -->
                                 <Grid x:Name="DetailUlRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
                                     <Grid.ColumnDefinitions>
@@ -484,7 +449,8 @@
                                     <TextBlock Grid.Column="0" Text="Ultra Limiter" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="DetailUlStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
-                                               VerticalAlignment="Center"/>
+                                               VerticalAlignment="Center"
+                                               PointerPressed="DetailUlStatus_PointerPressed"/>
                                     <Button x:Name="DetailUlInstallBtn" x:FieldModifier="internal" Grid.Column="2"
                                             Click="InstallUlButton_Click"
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
@@ -580,11 +546,7 @@
                                                  Foreground="{StaticResource AccentTealDimBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
                                     <TextBlock x:Name="DetailRsMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource TextTertiaryBrush}"
                                                Visibility="Collapsed" TextWrapping="Wrap"/>
-                                    <ProgressBar x:Name="DetailDcProgress" x:FieldModifier="internal" Visibility="Collapsed"
-                                                 Maximum="100" Height="3" CornerRadius="2"
-                                                 Foreground="{StaticResource AccentGreenDimBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
-                                    <TextBlock x:Name="DetailDcMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentGreenDimBrush}"
-                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+
                                     <ProgressBar x:Name="DetailUlProgress" x:FieldModifier="internal" Visibility="Collapsed"
                                                  Maximum="100" Height="3" CornerRadius="2"
                                                  Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
@@ -683,57 +645,6 @@
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
                                 HorizontalAlignment="Center">
-
-                        <!-- ── DC Legacy Mode Toggle ──────────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="DC Legacy Mode" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Display Commander is no longer available for new downloads. Enable this toggle to restore legacy DC support if you are an existing DC user."/>
-                                <ToggleSwitch x:Name="DcLegacyModeToggle"
-                                              IsOn="{x:Bind ViewModel.DcLegacyMode, Mode=TwoWay}"
-                                              OnContent="Enabled — DC features visible"
-                                              OffContent="Disabled — DC features hidden"
-                                              Header="DC Legacy Mode"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ── DC Mode Settings ──────────────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                Visibility="{x:Bind ViewModel.DcLegacySettingsVisibility, Mode=OneWay}">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Display Commander Mode" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Toggle Display Commander mode On or Off. When On, choose which DLL filename DC uses to load alongside ReShade. The DLL picker lets you select from common proxy DLL names or type a custom one."/>
-                                <ToggleSwitch x:Name="DcModeToggle"
-                                              IsOn="{x:Bind ViewModel.DcModeEnabled, Mode=TwoWay}"
-                                              OnContent="On" OffContent="Off"
-                                              Header="Display Commander Mode"/>
-                                <ComboBox x:Name="DcDllPicker"
-                                          IsEditable="True"
-                                          ItemsSource="{x:Bind DcDllPickerNames}"
-                                          SelectionChanged="DcDllPicker_SelectionChanged"
-                                          TextSubmitted="DcDllPicker_TextSubmitted"
-                                          Visibility="{x:Bind ViewModel.DcDllPickerVisibility, Mode=OneWay}"
-                                          PlaceholderText="Select or type DLL filename"
-                                          Header="DLL Filename"
-                                          HorizontalAlignment="Stretch"/>
-                                <Button x:Name="DeployDcModeBtn" Content="Deploy DC Mode to All"
-                                        Click="DeployDcModeButton_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"
-                                        ToolTipService.ToolTip="Apply the current DC Mode (On/Off + DLL filename) to all installed games"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="Applies the current DC Mode (On/Off and DLL filename) to all games that have ReShade and Display Commander installed."/>
-                            </StackPanel>
-                        </Border>
 
                         <!-- ── Add Game ───────────────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
@@ -872,17 +783,13 @@
                                     <Image Source="icon.ico" Width="48" Height="48"/>
                                     <StackPanel VerticalAlignment="Center" Spacing="4">
                                         <TextBlock FontSize="20" FontWeight="Bold">
-                                            <Run Text="RenoDX Commander" Foreground="{StaticResource AccentTealBrush}"/>
+                                            <Run Text="Ultra Plus Support Tools" Foreground="{StaticResource AccentTealBrush}"/>
                                         </TextBlock>
                                         <TextBlock x:Name="AboutVersionText" x:FieldModifier="internal" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                     </StackPanel>
                                 </StackPanel>
 
                                 <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="20"
-                                           Visibility="{x:Bind ViewModel.DcLegacySettingsVisibility, Mode=OneWay}"
-                                           Text="A desktop manager for HDR game mods on Windows. Auto-detects your game libraries and installs ReShade, Display Commander, RenoDX, and Luma Framework mods in a few clicks."/>
-                                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="20"
-                                           Visibility="{x:Bind ViewModel.DcLegacyHiddenVisibility, Mode=OneWay}"
                                            Text="A desktop manager for HDR game mods on Windows. Auto-detects your game libraries and installs ReShade, RenoDX, and Luma Framework mods in a few clicks."/>
 
                                 <!-- What it does -->
@@ -892,10 +799,6 @@
                                         <TextBlock Text="What UPST does" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Visibility="{x:Bind ViewModel.DcLegacySettingsVisibility, Mode=OneWay}"
-                                                   Text="Scans Steam, GOG, Epic, EA App, Ubisoft, Xbox/Game Pass, Battle.net, and Rockstar for installed games. Provides one-click install, update, and uninstall for ReShade, Display Commander, RenoDX addons, and Luma Framework mods. Manages shader packs, per-game overrides, and DC Mode configuration."/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Visibility="{x:Bind ViewModel.DcLegacyHiddenVisibility, Mode=OneWay}"
                                                    Text="Scans Steam, GOG, Epic, EA App, Ubisoft, Xbox/Game Pass, Battle.net, and Rockstar for installed games. Provides one-click install, update, and uninstall for ReShade, RenoDX addons, and Luma Framework mods. Manages shader packs and per-game overrides."/>
                                     </StackPanel>
                                 </Border>
@@ -912,10 +815,6 @@
                                                  FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
                                         </TextBlock>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Visibility="{x:Bind ViewModel.DcLegacySettingsVisibility, Mode=OneWay}"
-                                                   Text="All mod files are fetched directly from their official sources and are not modified. RenoDX addons come from official GitHub snapshots. Display Commander is downloaded from pmnoxx's GitHub releases. ReShade with full addon support is downloaded from reshade.me. 7-Zip is bundled under the LGPL licence for archive extraction."/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Visibility="{x:Bind ViewModel.DcLegacyHiddenVisibility, Mode=OneWay}"
                                                    Text="All mod files are fetched directly from their official sources and are not modified. RenoDX addons come from official GitHub snapshots. ReShade with full addon support is downloaded from reshade.me. 7-Zip is bundled under the LGPL licence for archive extraction."/>
                                     </StackPanel>
                                 </Border>
@@ -970,23 +869,6 @@
                                                    Text="Post-processing injection framework. Downloaded with full addon support from reshade.me and cached locally. Copyright © Crosire."/>
                                         <HyperlinkButton NavigateUri="https://reshade.me" Padding="0,2,0,0" FontSize="11">
                                             <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="reshade.me  ·  github.com/crosire/reshade"/>
-                                        </HyperlinkButton>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- Display Commander -->
-                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                        Visibility="{x:Bind ViewModel.DcLegacySettingsVisibility, Mode=OneWay}">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock FontSize="12">
-                                            <Run Text="Display Commander" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                            <Run Text=" by pmnoxx" Foreground="{StaticResource TextTertiaryBrush}"/>
-                                            <Run Text="  ·  Source-available" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
-                                        </TextBlock>
-                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
-                                                   Text="ReShade addon for display, window, and audio management. Downloaded from official GitHub releases."/>
-                                        <HyperlinkButton NavigateUri="https://github.com/pmnoxx/display-commander" Padding="0,2,0,0" FontSize="11">
-                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/pmnoxx/display-commander"/>
                                         </HyperlinkButton>
                                     </StackPanel>
                                 </Border>
@@ -1109,10 +991,6 @@
                                 </HyperlinkButton>
                                 <HyperlinkButton NavigateUri="https://reshade.me" Padding="0">
                                     <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">ReShade — reshade.me</TextBlock>
-                                </HyperlinkButton>
-                                <HyperlinkButton NavigateUri="https://github.com/pmnoxx/display-commander" Padding="0"
-                                                Visibility="{x:Bind ViewModel.DcLegacySettingsVisibility, Mode=OneWay}">
-                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">Display Commander — github.com/pmnoxx/display-commander</TextBlock>
                                 </HyperlinkButton>
                                 <HyperlinkButton NavigateUri="https://github.com/Filoppi/Luma-Framework" Padding="0">
                                     <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">Luma Framework — github.com/Filoppi/Luma-Framework</TextBlock>

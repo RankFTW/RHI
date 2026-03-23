@@ -29,17 +29,8 @@ public interface IGameNameService
     /// <summary>Games with UE extended mode enabled.</summary>
     HashSet<string> UeExtendedGames { get; }
 
-    /// <summary>Per-game Display Commander mode override. Values: "Global", "Off", "Custom" (absent key = "Global").</summary>
-    Dictionary<string, string> PerGameDcModeOverride { get; }
-
-    /// <summary>Per-game DC Mode Custom DLL filenames. Key = game name, Value = custom DLL filename.</summary>
-    Dictionary<string, string> DcCustomDllFileNames { get; }
-
     /// <summary>Games excluded from batch ReShade updates.</summary>
     HashSet<string> UpdateAllExcludedReShade { get; }
-
-    /// <summary>Games excluded from batch Display Commander updates.</summary>
-    HashSet<string> UpdateAllExcludedDc { get; }
 
     /// <summary>Games excluded from batch RenoDX updates.</summary>
     HashSet<string> UpdateAllExcludedRenoDx { get; }
@@ -74,8 +65,6 @@ public interface IGameNameService
     Dictionary<string, string> LoadNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        Action<bool> setDcModeEnabled,
-        Action<string> setDcDllFileName,
         Action<bool> setIsGridLayout,
         Action<string> setFilterMode);
 
@@ -83,8 +72,6 @@ public interface IGameNameService
     void SaveNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        bool dcModeEnabled,
-        string dcDllFileName,
         bool isGridLayout,
         bool isLoadingSettings,
         string filterMode);

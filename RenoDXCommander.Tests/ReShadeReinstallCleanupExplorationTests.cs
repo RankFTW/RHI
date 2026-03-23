@@ -98,12 +98,10 @@ public class ReShadeReinstallCleanupExplorationTests : IDisposable
 
                 // ── Act ──────────────────────────────────────────────────────
 
-                // Call InstallReShadeAsync with dcMode=false → destName = "dxgi.dll"
+                // Call InstallReShadeAsync → destName = "dxgi.dll"
                 var resultRecord = _service.InstallReShadeAsync(
                     gameName,
-                    gameFolder,
-                    dcMode: false,
-                    dcIsInstalled: false).GetAwaiter().GetResult();
+                    gameFolder).GetAwaiter().GetResult();
 
                 // Track the new record for cleanup
                 _seededRecords.Add(resultRecord);

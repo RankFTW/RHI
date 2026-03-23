@@ -26,7 +26,6 @@ public partial class GameCardViewModel
     {
         get
         {
-            if (RsBlockedByDcMode) return "DC Mode — ReShade managed globally";
             if (RsIsInstalling) return "Installing...";
             if (RequiresVulkanInstall)
             {
@@ -42,9 +41,9 @@ public partial class GameCardViewModel
     }
 
     // Background colours for RS buttons (purple tint when update available, blue otherwise)
-    public string RsBtnBackground  => RsBlockedByDcMode ? "#1E242C" : RsStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string RsBtnForeground  => RsBlockedByDcMode ? "#6B7A8E" : RsStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
-    public string RsBtnBorderBrush => RsBlockedByDcMode ? "#283240" : RsStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
+    public string RsBtnBackground  => RsStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
+    public string RsBtnForeground  => RsStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
+    public string RsBtnBorderBrush => RsStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     public Visibility RsProgressVisibility => RsIsInstalling ? Visibility.Visible : Visibility.Collapsed;
     public Visibility RsMessageVisibility  => string.IsNullOrEmpty(RsActionMessage) ? Visibility.Collapsed : Visibility.Visible;
@@ -53,15 +52,11 @@ public partial class GameCardViewModel
                                                ? Visibility.Visible : Visibility.Collapsed;
 
     // Component table: RS short status text + short action labels
-    public string RsStatusText => RsBlockedByDcMode
-        ? (IsDcInstalled ? (RsInstalledVersion ?? "Installed") : "DC Mode")
-        : RsIsInstalling ? "Installing…"
+    public string RsStatusText => RsIsInstalling ? "Installing…"
         : RsStatus == GameStatus.UpdateAvailable ? (RsInstalledVersion ?? "Update")
         : RsStatus == GameStatus.Installed       ? (RsInstalledVersion ?? "Installed")
         : "Ready";
-    public string RsStatusColor => RsBlockedByDcMode
-        ? (IsDcInstalled ? "#5ECB7D" : "#6B7A8E")
-        : RsIsInstalling ? "#D4A856"
+    public string RsStatusColor => RsIsInstalling ? "#D4A856"
         : RsStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : RsStatus == GameStatus.Installed       ? "#5ECB7D"
         : "#A0AABB";
@@ -73,7 +68,6 @@ public partial class GameCardViewModel
     {
         get
         {
-            if (RsBlockedByDcMode) return "DC Mode";
             if (RsIsInstalling) return "…";
             if (RequiresVulkanInstall)
             {
@@ -88,7 +82,7 @@ public partial class GameCardViewModel
         }
     }
 
-    public bool IsRsNotInstalling => !RsIsInstalling && !RsBlockedByDcMode;
+    public bool IsRsNotInstalling => !RsIsInstalling;
     public bool IsRsInstalled   => RsStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
 
     // ── Dynamic corner radius for RS install buttons ─────────────────────────────
@@ -169,16 +163,4 @@ public partial class GameCardViewModel
     partial void OnRsStatusChanged(GameStatus value) => NotifyRsStatusDependents();
     partial void OnRsIsInstallingChanged(bool value) => NotifyRsIsInstallingDependents();
     partial void OnRsActionMessageChanged(string value) => OnPropertyChanged(nameof(RsMessageVisibility));
-    partial void OnRsBlockedByDcModeChanged(bool value)
-    {
-        OnPropertyChanged(nameof(IsRsNotInstalling));
-        OnPropertyChanged(nameof(RsActionLabel));
-        OnPropertyChanged(nameof(RsBtnBackground));
-        OnPropertyChanged(nameof(RsBtnForeground));
-        OnPropertyChanged(nameof(RsBtnBorderBrush));
-        OnPropertyChanged(nameof(RsStatusText));
-        OnPropertyChanged(nameof(RsStatusColor));
-        OnPropertyChanged(nameof(RsShortAction));
-        OnPropertyChanged(nameof(CardRsInstallEnabled));
-    }
 }

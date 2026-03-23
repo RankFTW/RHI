@@ -32,11 +32,9 @@ public class InstallEventHandler
             card.InstallPath = folder;
             ViewModel.SaveLibraryPublic();
         }
-        // Chain: RenoDX → DC → ReShade (skip components that are N/A)
+        // Chain: RenoDX → ReShade (skip components that are N/A)
         if (card.Mod?.SnapshotUrl != null)
             await ViewModel.InstallModCommand.ExecuteAsync(card);
-        if (ViewModel.DcLegacyMode && card.DcRowVisibility == Visibility.Visible)
-            await ViewModel.InstallDcCommand.ExecuteAsync(card);
         if (card.ReShadeRowVisibility == Visibility.Visible)
             await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
     }
@@ -110,26 +108,6 @@ public class InstallEventHandler
         }
     }
 
-    public async void InstallDcButton_Click(object sender, RoutedEventArgs e)
-    {
-        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card == null) return;
-        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-        {
-            var folder = await _pickFolderAsync(null);
-            if (folder == null) return;
-            card.InstallPath = folder;
-            ViewModel.SaveLibraryPublic();
-        }
-        await ViewModel.InstallDcCommand.ExecuteAsync(card);
-    }
-
-    public void UninstallDcButton_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.Tag is GameCardViewModel card)
-            ViewModel.UninstallDcCommand.Execute(card);
-    }
-
     public async void InstallUlButton_Click(object sender, RoutedEventArgs e)
     {
         var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
@@ -160,20 +138,6 @@ public class InstallEventHandler
     {
         if ((sender as FrameworkElement)?.Tag is GameCardViewModel card)
             ViewModel.UninstallLumaCommand.Execute(card);
-    }
-
-    public async void DeployDcModeButton_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new ContentDialog
-        {
-            Title             = "Deploy DC Mode",
-            Content           = "Apply DC Mode file changes across all installed games?",
-            PrimaryButtonText = "Continue",
-            CloseButtonText   = "Cancel",
-            XamlRoot          = _window.Content.XamlRoot,
-        };
-        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
-            ViewModel.ApplyDcModeSwitch((wasEnabled: ViewModel.DcModeEnabled, wasDllFileName: ViewModel.DcDllFileName));
     }
 
     public async void ChooseShadersButton_Click(object sender, RoutedEventArgs e)

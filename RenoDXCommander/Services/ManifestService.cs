@@ -155,8 +155,6 @@ public class ManifestService : IManifestService
             m.WikiNameOverrides = new Dictionary<string, string>(m.WikiNameOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.GameNotes != null)
             m.GameNotes = new Dictionary<string, GameNoteEntry>(m.GameNotes, StringComparer.OrdinalIgnoreCase);
-        if (m.DcModeOverrides != null)
-            m.DcModeOverrides = new Dictionary<string, int>(m.DcModeOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.ForceExternalOnly != null)
             m.ForceExternalOnly = new Dictionary<string, ForceExternalEntry>(m.ForceExternalOnly, StringComparer.OrdinalIgnoreCase);
         if (m.InstallPathOverrides != null)

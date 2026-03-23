@@ -45,7 +45,6 @@ public class GridViewBugExplorationTests
         from source in GenSource
         from rdxStatus in GenStatus
         from rsStatus in GenStatus
-        from dcStatus in GenStatus
         from isFav in Arb.Default.Bool().Generator
         from is32Bit in Arb.Default.Bool().Generator
         select new GameCardViewModel
@@ -54,7 +53,6 @@ public class GridViewBugExplorationTests
             Source = source,
             Status = rdxStatus,
             RsStatus = rsStatus,
-            DcStatus = dcStatus,
             IsFavourite = isFav,
             Is32Bit = is32Bit,
             InstallPath = @"C:\Games\" + name,
@@ -164,17 +162,7 @@ public class GridViewBugExplorationTests
 
     /// <summary>
     /// Models whether the overrides flyout panel contains a dcCustomDllSelector ComboBox.
-    ///
-    /// In the production code, no ComboBox with Header == "DC Custom DLL filename" is created.
-    /// The reference implementation (DetailPanelBuilder) creates one populated with
-    /// DllOverrideConstants.DcDllPickerNames.
-    /// </summary>
-    private static bool OverridesFlyoutHasDcCustomDllSelector()
-    {
-        // After fix: OverridesFlyoutBuilder.OpenOverridesFlyout creates a dcCustomDllSelector
-        // ComboBox populated with DllOverrideConstants.DcDllPickerNames.
-        return true; // Fixed: production code now has DC custom DLL selector
-    }
+    /// DC Custom DLL selector helper removed — DC functionality has been removed.
 
     /// <summary>
     /// Property 1 (Bug 2a): For any GameCardViewModel, the overrides flyout modeGrid
@@ -223,30 +211,6 @@ public class GridViewBugExplorationTests
     }
 
     /// <summary>
-    /// Property 1 (Bug 2c): For any GameCardViewModel, the overrides flyout panel
-    /// should contain a ComboBox with Header == "DC Custom DLL filename" populated with
-    /// DllOverrideConstants.DcDllPickerNames.
-    ///
-    /// This test FAILS on unfixed code because no such ComboBox exists.
-    ///
-    /// **Validates: Requirements 1.2**
+    /// Property 1 (Bug 2c): DC Custom DLL selector test removed — DC functionality has been removed.
     /// </summary>
-    [Property(MaxTest = 50)]
-    public Property OverridesFlyout_ShouldHaveDcCustomDllSelector()
-    {
-        return Prop.ForAll(
-            Arb.From(GenCard),
-            card =>
-            {
-                bool hasSelector = OverridesFlyoutHasDcCustomDllSelector();
-
-                // Also verify the expected data source exists
-                bool dcDllPickerNamesExist = DllOverrideConstants.DcDllPickerNames.Length > 0;
-
-                return (hasSelector && dcDllPickerNamesExist)
-                    .Label($"Game='{card.GameName}': panel should contain a ComboBox with " +
-                           $"Header='DC Custom DLL filename' populated with DcDllPickerNames " +
-                           $"(hasSelector={hasSelector}, dcDllPickerNamesExist={dcDllPickerNamesExist})");
-            });
-    }
 }

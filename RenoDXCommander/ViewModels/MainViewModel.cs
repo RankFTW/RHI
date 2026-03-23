@@ -64,41 +64,13 @@ public partial class MainViewModel : ObservableObject
         get => _settingsViewModel.VerboseLogging;
         set => _settingsViewModel.VerboseLogging = value;
     }
-    public bool DcLegacyMode
-    {
-        get => _settingsViewModel.DcLegacyMode;
-        set
-        {
-            if (_settingsViewModel.DcLegacyMode != value)
-            {
-                _settingsViewModel.DcLegacyMode = value;
-                OnPropertyChanged(nameof(DcLegacyMode));
-                OnDcLegacyModeChanged();
-            }
-        }
-    }
     public string LastSeenVersion
     {
         get => _settingsViewModel.LastSeenVersion;
         set => _settingsViewModel.LastSeenVersion = value;
     }
 
-    [ObservableProperty] private bool _dcModeEnabled;
-    [ObservableProperty] private string _dcDllFileName = "dxgi.dll";
-
-    public Visibility DcDllPickerVisibility =>
-        DcModeEnabled ? Visibility.Visible : Visibility.Collapsed;
-
-    public Visibility DcLegacySettingsVisibility =>
-        DcLegacyMode ? Visibility.Visible : Visibility.Collapsed;
-
-    public Visibility DcLegacyHiddenVisibility =>
-        DcLegacyMode ? Visibility.Collapsed : Visibility.Visible;
-
-    public string UpdateButtonTooltip =>
-        DcLegacyMode
-            ? "Update ReShade, Display Commander, and RenoDX for all games"
-            : "Update ReShade and RenoDX for all games";
+    public string UpdateButtonTooltip => "Update ReShade and RenoDX for all games";
 
     [ObservableProperty] private bool _lumaFeatureEnabled = true;
 
@@ -137,12 +109,6 @@ public partial class MainViewModel : ObservableObject
     /// Returns true if the user confirms overwrite, false to cancel.
     /// </summary>
     public Func<GameCardViewModel, string, Task<bool>>? ConfirmForeignDxgiOverwrite { get; set; }
-
-    /// <summary>
-    /// Async callback set by the UI layer. Called when a foreign winmm.dll is detected.
-    /// Returns true if the user confirms overwrite, false to cancel.
-    /// </summary>
-    public Func<GameCardViewModel, string, Task<bool>>? ConfirmForeignWinmmOverwrite { get; set; }
 
     /// <summary>
     /// Async callback set by the UI layer. Called when a Vulkan install is requested
@@ -199,8 +165,8 @@ public partial class MainViewModel : ObservableObject
     public Func<string, List<string>?, Task<List<string>?>>? ShowPerGameShaderSelectionPicker { get; set; }
 
     /// <summary>Guard flag — true while LoadNameMappings is running so that
-    /// property-change handlers (DcModeEnabled, DcDllFileName, etc.) don't
-    /// call SaveNameMappings before all fields have been loaded.</summary>
+    /// property-change handlers don't call SaveNameMappings before all fields
+    /// have been loaded.</summary>
     private bool _isLoadingSettings
     {
         get => _settingsViewModel.IsLoadingSettings;
@@ -224,12 +190,11 @@ public partial class MainViewModel : ObservableObject
                     bool rsInstalled = card.RequiresVulkanInstall
                         ? VulkanFootprintService.Exists(card.InstallPath)
                         : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
-                    bool dcInstalled = card.DcStatus == GameStatus.Installed || card.DcStatus == GameStatus.UpdateAvailable;
 
                     // Resolve effective selection: per-game override wins, otherwise global
                     var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
 
-                    if (rsInstalled || dcInstalled)
+                    if (rsInstalled)
                     {
                         _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection);
                     }
@@ -257,12 +222,11 @@ public partial class MainViewModel : ObservableObject
                 bool rsInstalled = card.RequiresVulkanInstall
                     ? VulkanFootprintService.Exists(card.InstallPath)
                     : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
-                bool dcInstalled = card.DcStatus == GameStatus.Installed || card.DcStatus == GameStatus.UpdateAvailable;
 
                 // Resolve effective selection: per-game override wins, otherwise global
                 var effectiveSelection = ResolveShaderSelection(gameName, card.ShaderModeOverride);
 
-                if (rsInstalled || dcInstalled)
+                if (rsInstalled)
                 {
                     _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection);
                 }
@@ -454,37 +418,6 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     private HashSet<string> _manifestWikiUnlinks = new(StringComparer.OrdinalIgnoreCase);
 
-    partial void OnDcModeEnabledChanged(bool oldValue, bool newValue)
-    {
-        OnPropertyChanged(nameof(DcDllPickerVisibility));
-        if (_isLoadingSettings) return;
-        SaveNameMappings();
-        ApplyDcModeSwitch((wasEnabled: oldValue, wasDllFileName: DcDllFileName));
-    }
-
-    private void OnDcLegacyModeChanged()
-    {
-        OnPropertyChanged(nameof(DcLegacySettingsVisibility));
-        OnPropertyChanged(nameof(DcLegacyHiddenVisibility));
-        OnPropertyChanged(nameof(UpdateButtonTooltip));
-        foreach (var card in _allCards)
-        {
-            card.DcLegacyMode = DcLegacyMode;
-            card.NotifyAll();
-        }
-        if (!_isLoadingSettings)
-        {
-            SaveNameMappings();
-            DispatcherQueue?.TryEnqueue(() => { _ = InitializeAsync(forceRescan: false); });
-        }
-    }
-
-    partial void OnDcDllFileNameChanged(string oldValue, string newValue)
-    {
-        if (_isLoadingSettings) return;
-        SaveNameMappings();
-        ApplyDcModeSwitch((wasEnabled: DcModeEnabled, wasDllFileName: oldValue));
-    }
 
     /// <summary>
     /// Renames installed ReShade and Display Commander files to match any manifest DLL name
@@ -507,16 +440,13 @@ public partial class MainViewModel : ObservableObject
             var manifestNames = GetManifestDllNames(card.GameName);
             if (manifestNames == null) continue;
 
-            // Determine effective filenames — fall back to current installed name when manifest field is empty
+            // Determine effective filename — fall back to current installed name when manifest field is empty
             var effectiveRs = !string.IsNullOrEmpty(manifestNames.ReShade)
                 ? manifestNames.ReShade
-                : (card.RsRecord?.InstalledAs ?? (card.Is32Bit ? AuxInstallService.RsDcModeName32 : AuxInstallService.RsDcModeName));
-            var effectiveDc = !string.IsNullOrEmpty(manifestNames.Dc)
-                ? manifestNames.Dc
-                : (card.DcRecord?.InstalledAs ?? (card.Is32Bit ? AuxInstallService.DcNormalName32 : AuxInstallService.DcNormalName));
+                : (card.RsRecord?.InstalledAs ?? AuxInstallService.RsNormalName);
 
             // ── Inject into _dllOverrides so the UI toggle turns on and filenames appear ──
-            SetDllOverride(card.GameName, effectiveRs, effectiveDc);
+            SetDllOverride(card.GameName, effectiveRs, "");
             _manifestDllOverrideGames.Add(card.GameName);
             card.DllOverrideEnabled = true;
 
@@ -543,277 +473,6 @@ public partial class MainViewModel : ObservableObject
                     _crashReporter.Log($"[MainViewModel.ApplyManifestDllRenames] RS rename failed for '{card.GameName}' — {ex.Message}");
                 }
             }
-
-            // ── Display Commander rename ─────────────────────────────────────────
-            if (card.DcRecord != null
-                && !card.DcRecord.InstalledAs.Equals(effectiveDc, StringComparison.OrdinalIgnoreCase))
-            {
-                var oldPath = Path.Combine(card.InstallPath, card.DcRecord.InstalledAs);
-                var newPath = Path.Combine(card.InstallPath, effectiveDc);
-                try
-                {
-                    if (File.Exists(oldPath))
-                    {
-                        if (File.Exists(newPath)) File.Delete(newPath);
-                        File.Move(oldPath, newPath);
-                        card.DcRecord.InstalledAs = effectiveDc;
-                        _auxInstaller.SaveAuxRecord(card.DcRecord);
-                        card.DcInstalledFile = effectiveDc;
-                        _crashReporter.Log($"[MainViewModel.ApplyManifestDllRenames] DC {card.GameName}: {Path.GetFileName(oldPath)} → {effectiveDc}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _crashReporter.Log($"[MainViewModel.ApplyManifestDllRenames] DC rename failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Renames installed DC files across all games to match the current effective DC mode.
-    /// Called after toggling DC mode or changing the global DLL filename so that a subsequent
-    /// Refresh picks up the new naming.
-    ///
-    /// Shader transitions:
-    ///   Off → On  → deploy shaders
-    ///   On  → Off → remove shaders and restore originals
-    ///   On  → On (DLL change only) → DLL rename only, no shader action (Requirement 10.3)
-    /// </summary>
-    public void ApplyDcModeSwitch((bool wasEnabled, string wasDllFileName) previous)
-    {
-        // When DC Legacy Mode is off, skip all DC operations and ensure
-        // RsBlockedByDcMode is false on every card (Requirement 8.3).
-        if (!DcLegacyMode)
-        {
-            foreach (var card in _allCards)
-            {
-                card.RsBlockedByDcMode = false;
-                card.NotifyAll();
-            }
-            return;
-        }
-
-        foreach (var card in _allCards)
-        {
-            if (card.DllOverrideEnabled) continue;
-            if (card.IsLumaMode) continue;
-            if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath)) continue;
-
-            // Resolve the new effective DC mode for this game
-            var (newEnabled, newDllFileName) = ResolveEffectiveDcMode(card.GameName, card);
-
-            // Update RS blocked flag
-            card.RsBlockedByDcMode = newEnabled;
-
-            // ── Uninstall RDXC-installed ReShade DLL when DC mode is active ──
-            // DC Mode reads ReShade from the DC AppData folder instead of game folders.
-            // Use UninstallDllOnly to avoid touching shader folders (Requirement 5.1, 5.3).
-            if (newEnabled && card.RsRecord != null)
-            {
-                try
-                {
-                    _auxInstaller.UninstallDllOnly(card.RsRecord);
-                    _crashReporter.Log($"[MainViewModel.ApplyDcModeSwitch] Uninstalled ReShade from {card.GameName}");
-                }
-                catch (Exception ex)
-                {
-                    _crashReporter.Log($"[MainViewModel.ApplyDcModeSwitch] RS uninstall failed for '{card.GameName}' — {ex.Message}");
-                }
-                card.RsRecord           = null;
-                card.RsInstalledFile    = null;
-                card.RsInstalledVersion = null;
-                card.RsStatus = GameStatus.NotInstalled;
-            }
-
-            // ── DC file rename ──
-            string? dcOldName = card.DcRecord?.InstalledAs;
-            string? dcNewName = card.DcRecord != null ? newDllFileName : null;
-
-            bool dcNeedsRename = dcOldName != null && dcNewName != null
-                && !dcOldName.Equals(dcNewName, StringComparison.OrdinalIgnoreCase)
-                && File.Exists(Path.Combine(card.InstallPath, dcOldName));
-
-            if (dcNeedsRename)
-                RenameFile(card, isRs: false, dcOldName!, dcNewName!);
-
-            // ── Shader transitions based on effective enabled change ──
-            // Determine previous effective enabled state for this card.
-            // Per-game overrides are unchanged by a global switch, so we only need to
-            // check whether the card was previously enabled vs now.
-            // Requirements: 3.1, 3.2, 3.3, 10.1, 10.2, 10.3
-            bool wasEnabled = previous.wasEnabled;
-            // Cards with per-game overrides are unaffected by global changes —
-            // recompute their previous state from the override itself.
-            var perGameOverride = GetPerGameDcModeOverride(card.GameName);
-            if (perGameOverride == "Off")
-                wasEnabled = false;
-            else if (perGameOverride == "Custom")
-                wasEnabled = true;
-            else if (card.RequiresVulkanInstall && perGameOverride == null)
-                wasEnabled = false;
-
-            try
-            {
-                if (!wasEnabled && newEnabled && card.DcRecord != null)
-                {
-                    // Off → On with DC installed: deploy shaders
-                    _shaderPackService.SyncGameFolder(card.InstallPath,
-                        ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
-                }
-                else if (wasEnabled && !newEnabled)
-                {
-                    // On → Off: remove shaders and restore originals
-                    _shaderPackService.RemoveFromGameFolder(card.InstallPath);
-                    _shaderPackService.RestoreOriginalIfPresent(card.InstallPath);
-                }
-                // Both On (DLL change only) or both Off → no shader action (Requirement 10.3)
-            }
-            catch (Exception ex)
-            {
-                _crashReporter.Log($"[MainViewModel.ApplyDcModeSwitch] Shader transition failed for '{card.GameName}' — {ex.Message}");
-            }
-
-            card.NotifyAll();
-        }
-
-        // Sync ReShade DLLs to DC folder whenever DC mode is deployed
-        AuxInstallService.SyncReShadeToDisplayCommander();
-    }
-
-    /// <summary>
-    /// Applies DC Mode file renames for a single game card (by name).
-    /// Called when the user saves a per-game DC Mode override so changes take
-    /// effect immediately without requiring a full Refresh.
-    /// </summary>
-    public void ApplyDcModeSwitchForCard(string gameName, string? previousPerGameDcMode)
-    {
-        var card = _allCards.FirstOrDefault(c =>
-            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card == null) return;
-        if (card.DllOverrideEnabled) return;
-        if (card.IsLumaMode) return;
-        if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath)) return;
-
-        // Resolve the new effective DC mode for this game
-        var (newEnabled, newDllFileName) = ResolveEffectiveDcMode(card.GameName, card);
-
-        // Update RS blocked flag
-        card.RsBlockedByDcMode = newEnabled;
-
-        // Uninstall RDXC-installed ReShade DLL when DC mode is active for this game.
-        // Use UninstallDllOnly to avoid touching shader folders (Requirement 5.2, 5.4).
-        if (newEnabled && card.RsRecord != null)
-        {
-            try
-            {
-                _auxInstaller.UninstallDllOnly(card.RsRecord);
-                _crashReporter.Log($"[MainViewModel.ApplyDcModeSwitchForCard] Uninstalled ReShade from {card.GameName}");
-            }
-            catch (Exception ex)
-            {
-                _crashReporter.Log($"[MainViewModel.ApplyDcModeSwitchForCard] RS uninstall failed for '{card.GameName}' — {ex.Message}");
-            }
-            card.RsRecord           = null;
-            card.RsInstalledFile    = null;
-            card.RsInstalledVersion = null;
-            card.RsStatus = GameStatus.NotInstalled;
-        }
-
-        // DC file rename
-        string? dcOldName = card.DcRecord?.InstalledAs;
-        string? dcNewName = card.DcRecord != null ? newDllFileName : null;
-
-        bool dcNeedsRename = dcOldName != null && dcNewName != null
-            && !dcOldName.Equals(dcNewName, StringComparison.OrdinalIgnoreCase)
-            && File.Exists(Path.Combine(card.InstallPath, dcOldName));
-
-        if (dcNeedsRename)
-            RenameFile(card, isRs: false, dcOldName!, dcNewName!);
-
-        // ── Shader transitions based on effective enabled change ──
-        // Determine previous effective enabled state from the previous per-game override.
-        // Requirements: 3.4, 3.5, 3.6, 10.1, 10.2, 10.3
-        bool wasEnabled;
-        if (previousPerGameDcMode == "Off")
-            wasEnabled = false;
-        else if (previousPerGameDcMode == "Custom")
-            wasEnabled = true;
-        else // "Global" or null — was following global setting
-        {
-            if (card.RequiresVulkanInstall && previousPerGameDcMode == null)
-                wasEnabled = false;
-            else
-                wasEnabled = DcModeEnabled;
-        }
-
-        try
-        {
-            if (!wasEnabled && newEnabled && card.DcRecord != null)
-            {
-                // Off → On with DC installed: deploy shaders
-                _shaderPackService.SyncGameFolder(card.InstallPath,
-                    ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
-            }
-            else if (wasEnabled && !newEnabled)
-            {
-                // On → Off: remove shaders and restore originals
-                _shaderPackService.RemoveFromGameFolder(card.InstallPath);
-                _shaderPackService.RestoreOriginalIfPresent(card.InstallPath);
-            }
-            // Both On (DLL change only) or both Off → no shader action (Requirement 10.3)
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.ApplyDcModeSwitchForCard] Shader transition failed for '{card.GameName}' — {ex.Message}");
-        }
-
-        card.NotifyAll();
-    }
-
-    /// <summary>Renames a single DC or ReShade file for a game card during a DC Mode switch.
-    /// Foreign DLLs at the destination are backed up to <c>.original</c>; foreign
-    /// DLLs that were previously displaced are restored when the slot is vacated.</summary>
-    private void RenameFile(GameCardViewModel card, bool isRs, string oldName, string newName)
-    {
-        var oldPath = Path.Combine(card.InstallPath, oldName);
-        var newPath = Path.Combine(card.InstallPath, newName);
-        var label = isRs ? "RS" : "DC";
-
-        try
-        {
-            // Back up any foreign DLL sitting in the destination slot
-            // (e.g. a third-party dxgi.dll or winmm.dll) instead of deleting it.
-            if (File.Exists(newPath))
-            {
-                if (!AuxInstallService.BackupForeignDll(newPath))
-                    File.Delete(newPath);   // known RDXC file — safe to remove
-            }
-
-            File.Move(oldPath, newPath);
-
-            // Restore any previously-backed-up foreign DLL now that we've
-            // vacated the old slot (e.g. switching DC from dxgi.dll → winmm.dll
-            // frees dxgi.dll for the original owner).
-            AuxInstallService.RestoreForeignDll(oldPath);
-
-            if (isRs)
-            {
-                card.RsRecord!.InstalledAs = newName;
-                card.RsInstalledFile = newName;
-                _auxInstaller.SaveAuxRecord(card.RsRecord);
-            }
-            else
-            {
-                card.DcRecord!.InstalledAs = newName;
-                card.DcInstalledFile = newName;
-                _auxInstaller.SaveAuxRecord(card.DcRecord);
-            }
-            _crashReporter.Log($"[MainViewModel.RenameFile] {label} {card.GameName}: {oldName} → {newName}");
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[MainViewModel.RenameFile] {label} rename failed for '{card.GameName}' — {ex.Message}");
         }
     }
 
@@ -832,81 +491,9 @@ public partial class MainViewModel : ObservableObject
         if (newValue != null) newValue.IsSelected = true;
     }
 
-    public string? GetPerGameDcModeOverride(string gameName)
-        => _perGameDcModeOverride.TryGetValue(gameName, out var v) ? v : null;
-
-    public void SetPerGameDcModeOverride(string gameName, string? mode)
-    {
-        if (mode != null)
-            _perGameDcModeOverride[gameName] = mode;
-        else
-            _perGameDcModeOverride.Remove(gameName);
-        SaveNameMappings();
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card != null) { card.PerGameDcMode = mode; card.NotifyAll(); }
-    }
-
-    /// <summary>Returns the persisted DC Mode Custom DLL filename for a game, or null if none set.</summary>
-    public string? GetDcCustomDllFileName(string gameName)
-        => _dcCustomDllFileNames.TryGetValue(gameName, out var v) ? v : null;
-
-    /// <summary>Sets or removes the DC Mode Custom DLL filename for a game.</summary>
-    public void SetDcCustomDllFileName(string gameName, string? fileName)
-    {
-        if (!string.IsNullOrWhiteSpace(fileName))
-            _dcCustomDllFileNames[gameName] = fileName;
-        else
-            _dcCustomDllFileNames.Remove(gameName);
-        SaveNameMappings();
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card != null) { card.DcCustomDllFileName = fileName; card.NotifyAll(); }
-    }
-
-    /// <summary>
-    /// Resolves the effective DC mode (enabled flag + DLL filename) for a game,
-    /// walking the resolution chain: DLL override / Luma → per-game Custom → per-game Off →
-    /// Global/absent → Vulkan check → global enabled check → manifest override → global DLL filename.
-    /// </summary>
-    public (bool enabled, string dllFileName) ResolveEffectiveDcMode(string gameName, GameCardViewModel card)
-    {
-        // DLL override takes full precedence
-        if (card.DllOverrideEnabled) return (false, "");
-        if (card.IsLumaMode) return (false, "");
-
-        var perGameOverride = _gameNameService.PerGameDcModeOverride.TryGetValue(gameName, out var v) ? v : null;
-
-        if (perGameOverride == "Off")
-            return (false, card.Is32Bit ? AuxInstallService.DcNormalName32 : AuxInstallService.DcNormalName);
-
-        if (perGameOverride == "Custom")
-        {
-            var customDll = GetDcCustomDllFileName(gameName);
-            return (true, !string.IsNullOrWhiteSpace(customDll) ? customDll : "dxgi.dll");
-        }
-
-        // "Global" or absent
-        if (card.RequiresVulkanInstall && perGameOverride == null)
-            return (false, card.Is32Bit ? AuxInstallService.DcNormalName32 : AuxInstallService.DcNormalName);
-
-        if (!DcModeEnabled)
-            return (false, card.Is32Bit ? AuxInstallService.DcNormalName32 : AuxInstallService.DcNormalName);
-
-        // Global DC mode is on — check manifest override
-        var manifestDll = GetManifestDllNames(gameName)?.Dc;
-        if (!string.IsNullOrWhiteSpace(manifestDll) && perGameOverride != "Custom")
-            return (true, manifestDll);
-
-        return (true, DcDllFileName);
-    }
-
     /// <summary>Games for which the user has toggled UE-Extended ON.</summary>
     private HashSet<string> _ueExtendedGames => _gameNameService.UeExtendedGames;
-    /// <summary>Per-game DC Mode overrides. Key = game name, Value = "Global", "Off", or "Custom". Absent = follow global.</summary>
-    private Dictionary<string, string> _perGameDcModeOverride => _gameNameService.PerGameDcModeOverride;
-    /// <summary>Per-game DC Mode Custom DLL filenames. Key = game name, Value = custom DLL filename.</summary>
-    private Dictionary<string, string> _dcCustomDllFileNames => _gameNameService.DcCustomDllFileNames;
     private HashSet<string> _updateAllExcludedReShade => _gameNameService.UpdateAllExcludedReShade;
-    private HashSet<string> _updateAllExcludedDc => _gameNameService.UpdateAllExcludedDc;
     private HashSet<string> _updateAllExcludedRenoDx => _gameNameService.UpdateAllExcludedRenoDx;
     private Dictionary<string, string> _perGameShaderMode => _gameNameService.PerGameShaderMode;
     /// <summary>Per-game Vulkan rendering path preferences. Key = game name, Value = "DirectX" or "Vulkan".</summary>
@@ -1421,7 +1008,6 @@ public partial class MainViewModel : ObservableObject
 
     public bool AnyUpdateAvailable =>
         _allCards.Any(c => c.Status    == GameStatus.UpdateAvailable ||
-                           c.DcStatus  == GameStatus.UpdateAvailable ||
                            c.RsStatus  == GameStatus.UpdateAvailable);
 
     // Button colours — purple when updates available, dim when idle
@@ -1431,7 +1017,6 @@ public partial class MainViewModel : ObservableObject
 
 
     public bool IsUpdateAllExcludedReShade(string gameName) => _updateAllExcludedReShade.Contains(gameName);
-    public bool IsUpdateAllExcludedDc(string gameName) => _updateAllExcludedDc.Contains(gameName);
     public bool IsUpdateAllExcludedRenoDx(string gameName) => _updateAllExcludedRenoDx.Contains(gameName);
 
     public void ToggleUpdateAllExclusionReShade(string gameName)
@@ -1441,15 +1026,6 @@ public partial class MainViewModel : ObservableObject
         SaveNameMappings();
         var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
         if (card != null) card.ExcludeFromUpdateAllReShade = set.Contains(gameName);
-    }
-
-    public void ToggleUpdateAllExclusionDc(string gameName)
-    {
-        var set = _gameNameService.UpdateAllExcludedDc;
-        if (!set.Remove(gameName)) set.Add(gameName);
-        SaveNameMappings();
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card != null) card.ExcludeFromUpdateAllDc = set.Contains(gameName);
     }
 
     public void ToggleUpdateAllExclusionRenoDx(string gameName)
@@ -1468,8 +1044,6 @@ public partial class MainViewModel : ObservableObject
             _gameNameService.LoadNameMappings(
                 _dllOverrideService,
                 _settingsViewModel,
-                val => DcModeEnabled = val,
-                val => DcDllFileName = val,
                 grid => IsGridLayout = grid,
                 val => _filterViewModel.RestoreFilterMode(val));
             _crashReporter.Log("[MainViewModel.LoadNameMappings] Delegated to GameNameService");
@@ -1873,8 +1447,6 @@ public partial class MainViewModel : ObservableObject
         _gameNameService.SaveNameMappings(
             _dllOverrideService,
             _settingsViewModel,
-            DcModeEnabled,
-            DcDllFileName,
             IsGridLayout,
             _isLoadingSettings,
             _filterViewModel.FilterMode);
@@ -1970,7 +1542,6 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     public async Task RefreshAsync()
     {
-        ApplyDcModeSwitch((wasEnabled: DcModeEnabled, wasDllFileName: DcDllFileName));
         await InitializeAsync(forceRescan: true);
     }
 
@@ -1982,7 +1553,6 @@ public partial class MainViewModel : ObservableObject
         _resolvedPathCache.Clear();
         _addonFileCache.Clear();
         _bitnessCache.Clear();
-        ApplyDcModeSwitch((wasEnabled: DcModeEnabled, wasDllFileName: DcDllFileName));
         await InitializeAsync(forceRescan: true);
     }
 
@@ -2220,9 +1790,6 @@ public partial class MainViewModel : ObservableObject
         }
 
         var auxRecordsManual = _auxInstaller.LoadAll();
-        var dcRecManual = auxRecordsManual.FirstOrDefault(r =>
-            r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-            r.AddonType == AuxInstallService.TypeDc);
         var rsRecManual = auxRecordsManual.FirstOrDefault(r =>
             r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
             r.AddonType == AuxInstallService.TypeReShade);
@@ -2232,11 +1799,6 @@ public partial class MainViewModel : ObservableObject
         {
             _auxInstaller.RemoveRecord(rsRecManual);
             rsRecManual = null;
-        }
-        if (dcRecManual != null && !File.Exists(Path.Combine(dcRecManual.InstallPath, dcRecManual.InstalledAs)))
-        {
-            _auxInstaller.RemoveRecord(dcRecManual);
-            dcRecManual = null;
         }
 
         // Detect bitness for the manually added game
@@ -2288,10 +1850,7 @@ public partial class MainViewModel : ObservableObject
             UseUeExtended          = useUeExt,
             IsNativeHdrGame        = isNativeHdr,
             IsManifestUeExtended   = useUeExt && !isNativeHdr,
-            PerGameDcMode          = _perGameDcModeOverride.TryGetValue(game.Name, out var pgdmM) ? pgdmM : null,
-            DcCustomDllFileName    = _dcCustomDllFileNames.TryGetValue(game.Name, out var dcDllM) ? dcDllM : null,
             ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
-            ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(game.Name),
             ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
             ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smO) ? smO : null,
             Is32Bit                = ResolveIs32Bit(game.Name, manualMachine),
@@ -2299,17 +1858,10 @@ public partial class MainViewModel : ObservableObject
             DetectedApis           = _DetectAllApisForCard(scanPath, game.Name),
             VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(game.Name, out var vrpManual) ? vrpManual : "DirectX",
             LumaFeatureEnabled     = LumaFeatureEnabled,
-            DcLegacyMode           = DcLegacyMode,
-            DcRecord        = dcRecManual,
-            DcStatus        = dcRecManual != null ? GameStatus.Installed : GameStatus.NotInstalled,
-            DcInstalledFile = dcRecManual?.InstalledAs,
-            DcInstalledVersion = dcRecManual != null ? AuxInstallService.ReadInstalledVersion(dcRecManual.InstallPath, dcRecManual.InstalledAs) : null,
             RsRecord        = rsRecManual,
             RsStatus        = rsRecManual != null ? GameStatus.Installed : GameStatus.NotInstalled,
             RsInstalledFile = rsRecManual?.InstalledAs,
             RsInstalledVersion = rsRecManual != null ? AuxInstallService.ReadInstalledVersion(rsRecManual.InstallPath, rsRecManual.InstalledAs) : null,
-            RsBlockedByDcMode = !_dllOverrides.ContainsKey(game.Name)
-                                 && (_perGameDcModeOverride.ContainsKey(game.Name) ? pgdmM != "Off" : DcModeEnabled),
         };
 
         card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
@@ -2322,11 +1874,6 @@ public partial class MainViewModel : ObservableObject
             card.RsInstalledVersion = rsIniExists
                 ? AuxInstallService.ReadInstalledVersion(VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName)
                 : null;
-
-            // Vulkan games default to DC mode off unless the user or manifest
-            // explicitly set a per-game DC mode override.
-            if (card.PerGameDcMode == null)
-                card.RsBlockedByDcMode = false;
         }
 
         // Ultra Limiter detection for manually added game
@@ -2440,163 +1987,6 @@ public partial class MainViewModel : ObservableObject
         _filterViewModel.UpdateCounts();
     }
 
-    // ── Display Commander commands ────────────────────────────────────────────────
-
-    [RelayCommand]
-    public async Task InstallDcAsync(GameCardViewModel? card)
-    {
-        if (card == null) return;
-        if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath))
-        {
-            card.DcActionMessage = "No install path — use 📁 to pick the game folder.";
-            return;
-        }
-
-        // Resolve effective DC mode using the canonical resolution method
-        var (effectiveDcOn, resolvedDllFileName) = ResolveEffectiveDcMode(card.GameName, card);
-        if (effectiveDcOn)
-        {
-            var dxgiPath = Path.Combine(card.InstallPath, "dxgi.dll");
-            if (File.Exists(dxgiPath))
-            {
-                var fileType = AuxInstallService.IdentifyDxgiFile(dxgiPath);
-                if (fileType == AuxInstallService.DxgiFileType.Unknown)
-                {
-                    // Ask the UI for confirmation via async callback
-                    if (ConfirmForeignDxgiOverwrite != null)
-                    {
-                        var confirmed = await ConfirmForeignDxgiOverwrite(card, dxgiPath);
-                        if (!confirmed)
-                        {
-                            card.DcActionMessage = "⚠ Skipped — unknown dxgi.dll found. Use Overrides to proceed.";
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        card.DcActionMessage = "⚠ Skipped — unknown dxgi.dll found.";
-                        return;
-                    }
-                }
-            }
-        }
-
-        // Check for foreign winmm.dll before overwriting (when target DLL is winmm.dll)
-        var targetDll = effectiveDcOn ? resolvedDllFileName : "";
-        if (effectiveDcOn && targetDll.Equals("winmm.dll", StringComparison.OrdinalIgnoreCase))
-        {
-            var winmmPath = Path.Combine(card.InstallPath, "winmm.dll");
-            if (File.Exists(winmmPath))
-            {
-                var fileType = AuxInstallService.IdentifyWinmmFile(winmmPath);
-                if (fileType == AuxInstallService.WinmmFileType.Unknown)
-                {
-                    if (ConfirmForeignWinmmOverwrite != null)
-                    {
-                        var confirmed = await ConfirmForeignWinmmOverwrite(card, winmmPath);
-                        if (!confirmed)
-                        {
-                            card.DcActionMessage = "⚠ Skipped — unknown winmm.dll found. Use Overrides to proceed.";
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        card.DcActionMessage = "⚠ Skipped — unknown winmm.dll found.";
-                        return;
-                    }
-                }
-            }
-        }
-
-        card.DcIsInstalling  = true;
-        card.DcActionMessage = "Starting DC download...";
-        try
-        {
-            var progress = new Progress<(string msg, double pct)>(p =>
-            {
-                card.DcActionMessage = p.msg;
-                card.DcProgress      = p.pct;
-            });
-            var record = await _auxInstaller.InstallDcAsync(card.GameName, card.InstallPath, effectiveDcOn ? resolvedDllFileName : null,
-                existingDcRecord: card.DcRecord,
-                existingRsRecord: card.RsRecord,
-                shaderModeOverride: card.ShaderModeOverride,
-                use32Bit:         card.Is32Bit,
-                filenameOverride: card.DllOverrideEnabled
-                    ? (GetDllOverride(card.GameName)?.DcFileName)
-                    : null,
-                selectedPackIds:  ResolveShaderSelection(card.GameName, card.ShaderModeOverride),
-                progress:         progress);
-
-            // DC manages shaders globally — remove the per-game Vulkan footprint so
-            // RDXC no longer treats this folder as a standalone Vulkan ReShade install.
-            VulkanFootprintService.Delete(card.InstallPath);
-
-            DispatcherQueue?.TryEnqueue(() =>
-            {
-                card.DcRecord           = record;
-                card.DcInstalledFile    = record.InstalledAs;
-                card.DcInstalledVersion = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.InstalledAs);
-                card.DcStatus           = GameStatus.Installed;
-                card.DcActionMessage    = "✅ Display Commander installed!";
-                card.NotifyAll();
-            });
-        }
-        catch (Exception ex)
-        {
-            card.DcActionMessage = $"❌ DC Failed: {ex.Message}";
-            _crashReporter.WriteCrashReport("InstallDcAsync", ex, note: $"Game: {card.GameName}");
-        }
-        finally { card.DcIsInstalling = false; }
-    }
-
-    [RelayCommand]
-    public void UninstallDc(GameCardViewModel? card)
-    {
-        if (card?.DcRecord == null) return;
-        try
-        {
-            // Compute effective DC mode to decide whether to remove shaders
-            var effectiveDcOn = !card.DllOverrideEnabled && !card.IsLumaMode
-                && !(card.RequiresVulkanInstall && card.PerGameDcMode == null)
-                && (card.PerGameDcMode == "Custom" || (card.PerGameDcMode is null or "Global" && DcModeEnabled));
-
-            if (effectiveDcOn && !string.IsNullOrEmpty(card.InstallPath))
-            {
-                try
-                {
-                    _shaderPackService.RemoveFromGameFolder(card.InstallPath);
-                }
-                catch (Exception shaderEx)
-                {
-                    _crashReporter.Log($"[UninstallDc] Shader removal failed for '{card.GameName}': {shaderEx.Message}");
-                }
-            }
-
-            _auxInstaller.Uninstall(card.DcRecord);
-            card.DcRecord           = null;
-            card.DcInstalledFile    = null;
-            card.DcInstalledVersion = null;
-            card.DcStatus           = GameStatus.NotInstalled;
-            card.DcActionMessage    = "Display Commander removed.";
-
-            // Restore Vulkan footprint so shader deployment resumes for Vulkan games
-            if (card.RequiresVulkanInstall && !string.IsNullOrEmpty(card.InstallPath)
-                && File.Exists(Path.Combine(card.InstallPath, "reshade.ini")))
-            {
-                VulkanFootprintService.Create(card.InstallPath);
-            }
-
-            card.NotifyAll();
-        }
-        catch (Exception ex)
-        {
-            card.DcActionMessage = $"❌ Uninstall failed: {ex.Message}";
-            _crashReporter.WriteCrashReport("UninstallDc", ex, note: $"Game: {card.GameName}");
-        }
-    }
-
     // ── Ultra Limiter commands ────────────────────────────────────────────────────
 
     /// <summary>The bundled Ultra Limiter addon filename.</summary>
@@ -2676,16 +2066,6 @@ public partial class MainViewModel : ObservableObject
     {
         if (card == null) return;
 
-        // Block ReShade install when DC mode is active for this game
-        var effectiveDcOn = !card.DllOverrideEnabled
-            && !(card.RequiresVulkanInstall && card.PerGameDcMode == null)
-            && (card.PerGameDcMode == "Custom" || (card.PerGameDcMode is null or "Global" && DcModeEnabled));
-        if (effectiveDcOn)
-        {
-            card.RsActionMessage = "🚫 ReShade cannot be installed while DC Mode is active.";
-            return;
-        }
-
         if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath))
         {
             card.RsActionMessage = "No install path — use 📁 to pick the game folder.";
@@ -2699,10 +2079,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        // Check for foreign dxgi.dll before overwriting (when DC mode is OFF, ReShade installs as dxgi.dll)
-        var effectiveDcModeRs = !card.DllOverrideEnabled
-            && (card.PerGameDcMode == "Custom" || (card.PerGameDcMode is null or "Global" && DcModeEnabled));
-        if (!effectiveDcModeRs)
+        // Check for foreign dxgi.dll before overwriting
         {
             var dxgiPath = Path.Combine(card.InstallPath, "dxgi.dll");
             if (File.Exists(dxgiPath))
@@ -2737,8 +2114,7 @@ public partial class MainViewModel : ObservableObject
                 card.RsActionMessage = p.msg;
                 card.RsProgress      = p.pct;
             });
-            var record = await _auxInstaller.InstallReShadeAsync(card.GameName, card.InstallPath, effectiveDcModeRs,
-                dcIsInstalled:  card.DcStatus == GameStatus.Installed,
+            var record = await _auxInstaller.InstallReShadeAsync(card.GameName, card.InstallPath,
                 shaderModeOverride: card.ShaderModeOverride,
                 use32Bit:       card.Is32Bit,
                 filenameOverride: card.DllOverrideEnabled
@@ -3026,20 +2402,6 @@ public partial class MainViewModel : ObservableObject
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.ToggleLumaMode] ReShade uninstall failed — {ex.Message}"); }
             }
-
-            // Remove DC if installed (Luma mode hides DC entirely)
-            if (card.DcRecord != null)
-            {
-                try
-                {
-                    _auxInstaller.Uninstall(card.DcRecord);
-                    card.DcRecord           = null;
-                    card.DcInstalledFile    = null;
-                    card.DcInstalledVersion = null;
-                    card.DcStatus = GameStatus.NotInstalled;
-                }
-                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.ToggleLumaMode] DC uninstall failed — {ex.Message}"); }
-            }
         }
         else
         {
@@ -3184,22 +2546,7 @@ public partial class MainViewModel : ObservableObject
     public async Task UpdateAllReShadeAsync()
     {
         await _updateOrchestrationService.UpdateAllReShadeAsync(
-            _allCards, _dllOverrideService, DcModeEnabled, DispatcherQueue,
-            () =>
-            {
-                HasUpdatesAvailable = AnyUpdateAvailable;
-                OnPropertyChanged(nameof(AnyUpdateAvailable));
-                OnPropertyChanged(nameof(UpdateAllBtnBackground));
-                OnPropertyChanged(nameof(UpdateAllBtnForeground));
-                OnPropertyChanged(nameof(UpdateAllBtnBorder));
-            },
-            shaderResolver: ResolveShaderSelection);
-    }
-
-    public async Task UpdateAllDcAsync()
-    {
-        await _updateOrchestrationService.UpdateAllDcAsync(
-            _allCards, _dllOverrideService, ResolveEffectiveDcMode, DispatcherQueue,
+            _allCards, _dllOverrideService, DispatcherQueue,
             () =>
             {
                 HasUpdatesAvailable = AnyUpdateAvailable;
@@ -3223,9 +2570,6 @@ public partial class MainViewModel : ObservableObject
         _crashReporter.Log($"[MainViewModel.InitializeAsync] Started (forceRescan={forceRescan})");
         try
         {
-            // One-time migration: rename legacy DC AppData shader folders to .old
-            // so Display Commander does not load stale global shaders. (Req 2.1, 2.2)
-            ShaderPackService.MigrateLegacyDcShaders();
 
             var savedLib = _gameLibraryService.Load();
             List<DetectedGame> detectedGames;
@@ -3274,7 +2618,7 @@ public partial class MainViewModel : ObservableObject
                 try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
                 try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
                 try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
-                // rsTask + SyncReShadeToDisplayCommander deferred until after cards display
+                // rsTask deferred until after cards display
 
                 var wikiResult = !wikiFetchFailed ? await wikiTask : default;
                 _allMods      = wikiResult.Mods ?? new();
@@ -3324,7 +2668,7 @@ public partial class MainViewModel : ObservableObject
                 try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
                 try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
                 try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
-                // rsTask + SyncReShadeToDisplayCommander deferred until after cards display
+                // rsTask deferred until after cards display
 
                 var wikiResult2 = !wikiFetchFailed ? await wikiTask : default;
                 _allMods      = wikiResult2.Mods ?? new();
@@ -3365,9 +2709,9 @@ public partial class MainViewModel : ObservableObject
             // Snapshot update statuses from old cards so they survive the rebuild.
             // The background CheckForUpdatesAsync will re-verify, but this avoids
             // a visual gap where the update badge disappears until the network check completes.
-            var prevUpdateStatus = new Dictionary<string, (GameStatus mod, GameStatus dc, GameStatus rs)>(StringComparer.OrdinalIgnoreCase);
+            var prevUpdateStatus = new Dictionary<string, (GameStatus mod, GameStatus rs)>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in _allCards)
-                prevUpdateStatus[c.GameName] = (c.Status, c.DcStatus, c.RsStatus);
+                prevUpdateStatus[c.GameName] = (c.Status, c.RsStatus);
 
             SubStatusText = "Matching mods and checking install status...";
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
@@ -3384,8 +2728,6 @@ public partial class MainViewModel : ObservableObject
                 {
                     if (prev.mod == GameStatus.UpdateAvailable && c.Status == GameStatus.Installed)
                         c.Status = GameStatus.UpdateAvailable;
-                    if (prev.dc == GameStatus.UpdateAvailable && c.DcStatus == GameStatus.Installed)
-                        c.DcStatus = GameStatus.UpdateAvailable;
                     if (prev.rs == GameStatus.UpdateAvailable && c.RsStatus == GameStatus.Installed)
                         c.RsStatus = GameStatus.UpdateAvailable;
                 }
@@ -3424,9 +2766,8 @@ public partial class MainViewModel : ObservableObject
             {
                 try
                 {
-                    // Wait for ReShade staging to finish, then sync to DC folder
+                    // Wait for ReShade staging to finish
                     await rsTask;
-                    AuxInstallService.SyncReShadeToDisplayCommander();
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Deferred ReShade sync failed — {ex.Message}"); }
 
@@ -3447,11 +2788,10 @@ public partial class MainViewModel : ObservableObject
                         bool rsInstalled = card.RequiresVulkanInstall
                             ? VulkanFootprintService.Exists(card.InstallPath)
                             : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
-                        bool dcInstalled = card.DcStatus == GameStatus.Installed || card.DcStatus == GameStatus.UpdateAvailable;
 
                         var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
 
-                        if (rsInstalled || dcInstalled)
+                        if (rsInstalled)
                         {
                             _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection);
                         }
@@ -3869,9 +3209,6 @@ public partial class MainViewModel : ObservableObject
             }
 
             // Look up aux records for this game
-            var dcRec = auxRecords.FirstOrDefault(r =>
-                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-                r.AddonType == AuxInstallService.TypeDc);
             var rsRec = auxRecords.FirstOrDefault(r =>
                 r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
                 r.AddonType == AuxInstallService.TypeReShade);
@@ -3883,165 +3220,57 @@ public partial class MainViewModel : ObservableObject
                 _auxInstaller.RemoveRecord(rsRec);
                 rsRec = null;
             }
-            if (dcRec != null && !File.Exists(Path.Combine(dcRec.InstallPath, dcRec.InstalledAs)))
-            {
-                _auxInstaller.RemoveRecord(dcRec);
-                dcRec = null;
-            }
 
-            // ── Disk detection for ReShade & Display Commander ────────────────────
+            // ── Disk detection for ReShade ────────────────────────────────────────
             // If no DB record exists, scan disk for the known filenames so that
             // manually installed or previously installed instances are shown correctly.
-            //
-            // dxgi.dll is AMBIGUOUS — both ReShade (DC Mode OFF) and DC (DC Mode ON) use it.
-            // We use strict positive identification (binary string scan + exact size match
-            // against staged/cached copies) to classify it. Files that cannot be positively
-            // identified as ReShade or DC are left alone — no record is created.
             if (rsRec == null)
             {
-                // ReShade64.dll (DC Mode ON, 64-bit) is unambiguous — always ReShade.
-                var rs64Path = Path.Combine(installPath, AuxInstallService.RsDcModeName);
-                if (File.Exists(rs64Path))
+                // dxgi.dll — only attribute to ReShade if positively identified as ReShade
+                var dxgiPath = Path.Combine(installPath, AuxInstallService.RsNormalName);
+                if (File.Exists(dxgiPath) && AuxInstallService.IsReShadeFile(dxgiPath))
                 {
                     rsRec = new AuxInstalledRecord
                     {
                         GameName    = game.Name,
                         InstallPath = installPath,
                         AddonType   = AuxInstallService.TypeReShade,
-                        InstalledAs = AuxInstallService.RsDcModeName,
-                        InstalledAt = File.GetLastWriteTimeUtc(rs64Path),
-                    };
-                }
-                else
-                {
-                    // ReShade32.dll (DC Mode ON, 32-bit) is also unambiguous — always ReShade.
-                    var rs32Path = Path.Combine(installPath, AuxInstallService.RsDcModeName32);
-                    if (File.Exists(rs32Path))
-                    {
-                        rsRec = new AuxInstalledRecord
-                        {
-                            GameName    = game.Name,
-                            InstallPath = installPath,
-                            AddonType   = AuxInstallService.TypeReShade,
-                            InstalledAs = AuxInstallService.RsDcModeName32,
-                            InstalledAt = File.GetLastWriteTimeUtc(rs32Path),
-                        };
-                    }
-                    else
-                    {
-                        // dxgi.dll — only attribute to ReShade if positively identified as ReShade
-                        // AND not identified as Display Commander (DC is built on ReShade and
-                        // contains ReShade markers, so IsReShadeFile alone is not sufficient).
-                        var dxgiPath = Path.Combine(installPath, AuxInstallService.RsNormalName);
-                        if (File.Exists(dxgiPath) && AuxInstallService.IsReShadeFile(dxgiPath)
-                            && !AuxInstallService.IsDcFileStrict(dxgiPath))
-                        {
-                            rsRec = new AuxInstalledRecord
-                            {
-                                GameName    = game.Name,
-                                InstallPath = installPath,
-                                AddonType   = AuxInstallService.TypeReShade,
-                                InstalledAs = AuxInstallService.RsNormalName,
-                                InstalledAt = File.GetLastWriteTimeUtc(dxgiPath),
-                            };
-                        }
-                        else
-                        {
-                            // Content-based fallback: scan known proxy DLL names for ReShade binary signatures.
-                            // ReShade can only inject via specific Windows system DLL proxies, so we only
-                            // check those names rather than every DLL in the folder.
-                            try
-                            {
-                                foreach (var proxyName in DllOverrideConstants.CommonDllNames)
-                                {
-                                    // Skip filenames already checked above
-                                    if (proxyName.Equals(AuxInstallService.RsDcModeName, StringComparison.OrdinalIgnoreCase) ||
-                                        proxyName.Equals(AuxInstallService.RsDcModeName32, StringComparison.OrdinalIgnoreCase) ||
-                                        proxyName.Equals(AuxInstallService.RsNormalName, StringComparison.OrdinalIgnoreCase))
-                                        continue;
-
-                                    // Skip Display Commander file to avoid false attribution
-                                    if (dcRec?.InstalledAs != null &&
-                                        proxyName.Equals(dcRec.InstalledAs, StringComparison.OrdinalIgnoreCase))
-                                        continue;
-
-                                    var candidatePath = Path.Combine(installPath, proxyName);
-                                    if (!File.Exists(candidatePath))
-                                        continue;
-
-                                    if (AuxInstallService.IsReShadeFileStrict(candidatePath)
-                                        && !AuxInstallService.IsDcFileStrict(candidatePath))
-                                    {
-                                        rsRec = new AuxInstalledRecord
-                                        {
-                                            GameName    = game.Name,
-                                            InstallPath = installPath,
-                                            AddonType   = AuxInstallService.TypeReShade,
-                                            InstalledAs = proxyName,
-                                            InstalledAt = File.GetLastWriteTimeUtc(candidatePath),
-                                        };
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (Exception) { /* Permission or IO errors — skip gracefully */ }
-                        }
-                    }
-                }
-            }
-            if (dcRec == null)
-            {
-                // zzz_display_commander.addon64 is unambiguous — always DC (normal mode).
-                var dxgiPath = Path.Combine(installPath, AuxInstallService.DcNormalName);
-                if (File.Exists(dxgiPath))
-                {
-                    dcRec = new AuxInstalledRecord
-                    {
-                        GameName    = game.Name,
-                        InstallPath = installPath,
-                        AddonType   = AuxInstallService.TypeDc,
-                        InstalledAs = AuxInstallService.DcNormalName,
-                        SourceUrl   = AuxInstallService.DcUrl,
-                        RemoteFileSize = new FileInfo(dxgiPath).Length,
+                        InstalledAs = AuxInstallService.RsNormalName,
                         InstalledAt = File.GetLastWriteTimeUtc(dxgiPath),
                     };
                 }
                 else
                 {
-                    // dxgi.dll (DC Mode 1) — only attribute to DC if positively identified as DC.
-                    // A dxgi.dll that is neither ReShade nor DC is foreign (e.g. DXVK, Special K) — leave it alone.
-                    var dcDxgiPath = Path.Combine(installPath, AuxInstallService.DcDxgiName);
-                    if (File.Exists(dcDxgiPath) && AuxInstallService.IsDcFileStrict(dcDxgiPath))
+                    // Content-based fallback: scan known proxy DLL names for ReShade binary signatures.
+                    // ReShade can only inject via specific Windows system DLL proxies, so we only
+                    // check those names rather than every DLL in the folder.
+                    try
                     {
-                        dcRec = new AuxInstalledRecord
+                        foreach (var proxyName in DllOverrideConstants.CommonDllNames)
                         {
-                            GameName    = game.Name,
-                            InstallPath = installPath,
-                            AddonType   = AuxInstallService.TypeDc,
-                            InstalledAs = AuxInstallService.DcDxgiName,
-                            SourceUrl   = AuxInstallService.DcUrl,
-                            RemoteFileSize = new FileInfo(dcDxgiPath).Length,
-                            InstalledAt = File.GetLastWriteTimeUtc(dcDxgiPath),
-                        };
-                    }
-                    else
-                    {
-                        // winmm.dll (DC Mode 2) — only attribute to DC if positively identified.
-                        var dcWinmmPath = Path.Combine(installPath, AuxInstallService.DcWinmmName);
-                        if (File.Exists(dcWinmmPath) && AuxInstallService.IsDcFileStrict(dcWinmmPath))
-                        {
-                            dcRec = new AuxInstalledRecord
+                            // Skip filenames already checked above
+                            if (proxyName.Equals(AuxInstallService.RsNormalName, StringComparison.OrdinalIgnoreCase))
+                                continue;
+
+                            var candidatePath = Path.Combine(installPath, proxyName);
+                            if (!File.Exists(candidatePath))
+                                continue;
+
+                            if (AuxInstallService.IsReShadeFileStrict(candidatePath))
                             {
-                                GameName    = game.Name,
-                                InstallPath = installPath,
-                                AddonType   = AuxInstallService.TypeDc,
-                                InstalledAs = AuxInstallService.DcWinmmName,
-                                SourceUrl   = AuxInstallService.DcUrl,
-                                RemoteFileSize = new FileInfo(dcWinmmPath).Length,
-                                InstalledAt = File.GetLastWriteTimeUtc(dcWinmmPath),
-                            };
+                                rsRec = new AuxInstalledRecord
+                                {
+                                    GameName    = game.Name,
+                                    InstallPath = installPath,
+                                    AddonType   = AuxInstallService.TypeReShade,
+                                    InstalledAs = proxyName,
+                                    InstalledAt = File.GetLastWriteTimeUtc(candidatePath),
+                                };
+                                break;
+                            }
                         }
                     }
+                    catch (Exception) { /* Permission or IO errors — skip gracefully */ }
                 }
             }
 
@@ -4089,10 +3318,7 @@ public partial class MainViewModel : ObservableObject
                                          ? "https://discord.gg/gF4GRJWZ2A"
                                          : effectiveMod?.DiscordUrl,
                 NameUrl                = effectiveMod?.NameUrl,
-                PerGameDcMode          = _perGameDcModeOverride.TryGetValue(game.Name, out var pgdmBc) ? pgdmBc : null,
-                DcCustomDllFileName    = _dcCustomDllFileNames.TryGetValue(game.Name, out var dcDllBc) ? dcDllBc : null,
                 ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
-                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(game.Name),
                 ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
                 ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smBc) ? smBc : null,
                 Is32Bit                = ResolveIs32Bit(game.Name, detectedMachine),
@@ -4102,16 +3328,10 @@ public partial class MainViewModel : ObservableObject
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 IsNativeHdrGame        = isNativeHdr,
                 IsManifestUeExtended   = useUeExt && !isNativeHdr,
-                DcRecord               = dcRec,
-                DcStatus               = dcRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
-                DcInstalledFile        = dcRec?.InstalledAs,
-                DcInstalledVersion     = dcRec != null ? AuxInstallService.ReadInstalledVersion(dcRec.InstallPath, dcRec.InstalledAs) : null,
                 RsRecord               = rsRec,
                 RsStatus               = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
                 RsInstalledFile        = rsRec?.InstalledAs,
                 RsInstalledVersion     = rsRec != null ? AuxInstallService.ReadInstalledVersion(rsRec.InstallPath, rsRec.InstalledAs) : null,
-                RsBlockedByDcMode      = !_dllOverrides.ContainsKey(game.Name)
-                                           && (_perGameDcModeOverride.ContainsKey(game.Name) ? pgdmBc != "Off" : DcModeEnabled),
             });
 
             // ── Luma matching ──────────────────────────────────────────────────────
@@ -4126,15 +3346,9 @@ public partial class MainViewModel : ObservableObject
                 newCard.RsInstalledVersion = rsIniExists
                     ? AuxInstallService.ReadInstalledVersion(VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName)
                     : null;
-
-                // Vulkan games default to DC mode off unless the user or manifest
-                // explicitly set a per-game DC mode override.
-                if (newCard.PerGameDcMode == null)
-                    newCard.RsBlockedByDcMode = false;
             }
 
             newCard.LumaFeatureEnabled = LumaFeatureEnabled;
-            newCard.DcLegacyMode = DcLegacyMode;
 
             // ── Ultra Limiter detection ────────────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))

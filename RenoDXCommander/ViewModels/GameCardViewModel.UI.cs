@@ -30,7 +30,6 @@ public partial class GameCardViewModel
     public string CardRsStatusDot   => RequiresVulkanInstall
         ? (RsIsInstalling ? "#2196F3" : IsLayerInstalledFunc() ? "#4CAF50" : "#5A6880")
         : StatusDotColor(RsStatus, RsIsInstalling);
-    public string CardDcStatusDot   => StatusDotColor(DcStatus, DcIsInstalling);
     public string CardLumaStatusDot => StatusDotColor(LumaStatus, IsLumaInstalling);
 
     /// <summary>True when the Luma status dot should be visible on the card grid.</summary>
@@ -53,7 +52,6 @@ public partial class GameCardViewModel
                 // Any component has an update available → show update icon
                 if (effectiveStatus == GameStatus.UpdateAvailable
                     || RsStatus == GameStatus.UpdateAvailable
-                    || DcStatus == GameStatus.UpdateAvailable
                     || LumaStatus == GameStatus.UpdateAvailable)
                     return "⬆  Manage";
                 return "↺  Manage";
@@ -66,12 +64,11 @@ public partial class GameCardViewModel
     public bool HasInfoIndicator => HasNotes || HasNameUrl;
 
     /// <summary>False when any component is currently installing — disables card install button.</summary>
-    public bool CanCardInstall => !IsInstalling && !RsIsInstalling && !DcIsInstalling && !IsLumaInstalling && !UlIsInstalling;
+    public bool CanCardInstall => !IsInstalling && !RsIsInstalling && !IsLumaInstalling && !UlIsInstalling;
 
     // ── Per-component install enabled (card install flyout) ───────────────────────
     public bool CardRdxInstallEnabled  => !IsInstalling && Mod?.SnapshotUrl != null && !IsExternalOnly;
-    public bool CardRsInstallEnabled   => !RsIsInstalling && !RsBlockedByDcMode;
-    public bool CardDcInstallEnabled   => !DcIsInstalling;
+    public bool CardRsInstallEnabled   => !RsIsInstalling;
     public bool CardLumaInstallEnabled => !IsLumaInstalling && LumaMod?.DownloadUrl != null;
 
     private void NotifySidebarProps()
@@ -222,8 +219,7 @@ public partial class GameCardViewModel
                                                       ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DualBitInstallVisibility   => Visibility.Collapsed;
     public Visibility UpdateBadgeVisibility      => (Status == GameStatus.UpdateAvailable
-                                                      || RsStatus == GameStatus.UpdateAvailable
-                                                      || DcStatus == GameStatus.UpdateAvailable)
+                                                      || RsStatus == GameStatus.UpdateAvailable)
                                                       ? Visibility.Visible : Visibility.Collapsed;
     public Visibility IsHiddenVisibility         => IsHidden ? Visibility.Visible : Visibility.Collapsed;
     public Visibility IsNotHiddenVisibility      => IsHidden ? Visibility.Collapsed : Visibility.Visible;

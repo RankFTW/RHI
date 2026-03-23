@@ -1,7 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.UI.Xaml;
 using RenoDXCommander.Models;
-using RenoDXCommander.Services;
 
 namespace RenoDXCommander.ViewModels;
 
@@ -31,17 +29,6 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private GameMod? _mod;
     [ObservableProperty] private bool _useUeExtended;
 
-    // ── Display Commander state ──────────────────────────────────────────────────
-    [ObservableProperty] private GameStatus _dcStatus  = GameStatus.NotInstalled;
-    [ObservableProperty] private bool       _dcIsInstalling;
-    [ObservableProperty] private double     _dcProgress;
-    [ObservableProperty] private string     _dcActionMessage = "";
-    [ObservableProperty] private string?    _dcInstalledFile;
-    [ObservableProperty] private string?    _dcInstalledVersion;
-    /// <summary>Per-game custom DLL filename when DC Mode Custom (PerGameDcMode == 3) is selected.</summary>
-    [ObservableProperty] private string?    _dcCustomDllFileName;
-    public AuxInstalledRecord? DcRecord { get; set; }
-
     // ── ReShade state ─────────────────────────────────────────────────────────────
     [ObservableProperty] private GameStatus _rsStatus  = GameStatus.NotInstalled;
     [ObservableProperty] private bool       _rsIsInstalling;
@@ -66,12 +53,7 @@ public partial class GameCardViewModel : ObservableObject
     public string EngineHint    { get; set; } = "";
     public GraphicsApiType GraphicsApi { get; set; } = GraphicsApiType.Unknown;
     public string? NameUrl      { get; set; }
-    /// <summary>Per-game DC Mode override: null = follow global, "Off" = force off, "Global" = follow global, "Custom" = per-game DLL.</summary>
-    public string? PerGameDcMode        { get; set; }
-    /// <summary>True when any per-game DC Mode override is set (game does not follow global toggle).</summary>
-    public bool DcModeExcluded       => PerGameDcMode != null;
     public bool ExcludeFromUpdateAllReShade { get; set; }
-    public bool ExcludeFromUpdateAllDc      { get; set; }
     public bool ExcludeFromUpdateAllRenoDx  { get; set; }
     /// <summary>Per-game shader selection override: null = follow global selection.</summary>
     public string? ShaderModeOverride { get; set; }
@@ -85,14 +67,6 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private double     _ulProgress;
     [ObservableProperty] private string     _ulActionMessage = "";
     [ObservableProperty] private string?    _ulInstalledFile;
-
-    // ── DC Legacy Mode ────────────────────────────────────────────────────────────
-    /// <summary>Runtime-only flag set by MainViewModel — controls DC feature visibility across the card.</summary>
-    public bool DcLegacyMode { get; set; }
-
-    // ── DC Mode ReShade blocking ──────────────────────────────────────────────────
-    /// <summary>True when DC Mode is active for this game — ReShade install is blocked on the card.</summary>
-    [ObservableProperty] private bool _rsBlockedByDcMode;
 
     // ── DLL Naming Override ─────────────────────────────────────────────────────
     [ObservableProperty] private bool _dllOverrideEnabled = false;
@@ -189,31 +163,6 @@ public partial class GameCardViewModel : ObservableObject
         // ── RenoDX: IsInstalling dependents ───────────────────────────────────
         NotifyOnce(nameof(ProgressVisibility));
 
-        // ── Display Commander: DcStatus dependents ────────────────────────────
-        NotifyOnce(nameof(DcStatusDot));
-        NotifyOnce(nameof(DcActionLabel));
-        NotifyOnce(nameof(DcBtnBackground));
-        NotifyOnce(nameof(DcBtnForeground));
-        NotifyOnce(nameof(DcBtnBorderBrush));
-        NotifyOnce(nameof(DcDeleteVisibility));
-        NotifyOnce(nameof(DcInstalledVisible));
-        NotifyOnce(nameof(DcStatusText));
-        NotifyOnce(nameof(DcStatusColor));
-        NotifyOnce(nameof(DcShortAction));
-        NotifyOnce(nameof(DcInstallCornerRadius));
-        NotifyOnce(nameof(DcInstallBorderThickness));
-        NotifyOnce(nameof(DcInstallMargin));
-        NotifyOnce(nameof(DcIniCornerRadius));
-        NotifyOnce(nameof(DcIniBorderThickness));
-        NotifyOnce(nameof(DcIniMargin));
-        NotifyOnce(nameof(IsDcInstalled));
-        NotifyOnce(nameof(CardDcStatusDot));
-        NotifyOnce(nameof(CardDcInstallEnabled));
-
-        // ── Display Commander: DcIsInstalling dependents ──────────────────────
-        NotifyOnce(nameof(DcProgressVisibility));
-        NotifyOnce(nameof(IsDcNotInstalling));
-
         // ── ReShade: RsStatus dependents ──────────────────────────────────────
         NotifyOnce(nameof(RsStatusDot));
         NotifyOnce(nameof(RsActionLabel));
@@ -266,8 +215,6 @@ public partial class GameCardViewModel : ObservableObject
         NotifyOnce(nameof(R7bLumaSwitchMargin));
         NotifyOnce(nameof(RenoDxRowVisibility));
         NotifyOnce(nameof(ReShadeRowVisibility));
-        NotifyOnce(nameof(DcRowVisibility));
-        NotifyOnce(nameof(DcLegacyMode));
         NotifyOnce(nameof(InstalledFileLabelVisible));
         NotifyOnce(nameof(WikiStatusIcon));
         NotifyOnce(nameof(WikiStatusIconVisible));
@@ -329,8 +276,6 @@ public partial class GameCardViewModel : ObservableObject
         NotifyOnce(nameof(ComponentDetailVisibility));
         NotifyOnce(nameof(ExpandChevron));
         NotifyOnce(nameof(RsIniExists));
-        NotifyOnce(nameof(DcIniExists));
-        NotifyOnce(nameof(RsBlockedByDcMode));
         NotifyOnce(nameof(IsLumaAvailable));
         NotifyOnce(nameof(HasInfoIndicator));
     }

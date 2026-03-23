@@ -1,5 +1,4 @@
 using Microsoft.UI;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -17,14 +16,12 @@ namespace RenoDXCommander;
 public class OverridesFlyoutBuilder
 {
     private readonly MainWindow _window;
-    private readonly DispatcherQueue _dispatcherQueue;
     private readonly ICrashReporter _crashReporter;
 
     public OverridesFlyoutBuilder(MainWindow window, ICrashReporter crashReporter)
     {
         _window = window;
         _crashReporter = crashReporter;
-        _dispatcherQueue = window.DispatcherQueue;
     }
 
     /// <summary>
@@ -152,181 +149,7 @@ public class OverridesFlyoutBuilder
             }
         };
 
-        // ── DC Mode + Shader Mode (side by side) ──
-        ComboBox? dcModeCombo = null;
-        ComboBox? dcCustomDllSelector = null;
-        System.ComponentModel.PropertyChangedEventHandler? dcModeLevelHandler = null;
-
-        if (card.DcLegacyMode)
-        {
-        string? currentDcMode = ViewModel.GetPerGameDcModeOverride(gameName);
-        var globalDcLabel = ViewModel.DcModeEnabled ? $"On — {ViewModel.DcDllFileName}" : "Off";
-        var dcModeOptions = new[] { $"Global ({globalDcLabel})", "Off", "Custom" };
-        dcModeCombo = new ComboBox
-        {
-            ItemsSource = dcModeOptions,
-            SelectedIndex = currentDcMode switch { "Off" => 1, "Custom" => 2, _ => 0 },
-            FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Header = "DC Mode",
-        };
-        ToolTipService.SetToolTip(dcModeCombo,
-            "Global = use the Settings DC Mode. Off = always use normal naming. " +
-            "Custom = use a custom DLL filename.");
-
-        // ── DC Mode Custom DLL filename selector ────────────────────────────────
-        dcCustomDllSelector = new ComboBox
-        {
-            IsEditable = true,
-            ItemsSource = DllOverrideConstants.DcDllPickerNames,
-            PlaceholderText = "Select or type DLL filename",
-            Header = "DC Custom DLL filename",
-            FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Visibility = dcModeCombo.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed,
-        };
-
-        // Pre-populate with saved filename when opening flyout for a game with DC Mode Custom
-        if (currentDcMode == "Custom")
-        {
-            var savedDllName = ViewModel.GetDcCustomDllFileName(gameName);
-            if (!string.IsNullOrWhiteSpace(savedDllName))
-            {
-                if (DllOverrideConstants.DcDllPickerNames.Contains(savedDllName, StringComparer.OrdinalIgnoreCase))
-                    dcCustomDllSelector.SelectedItem = DllOverrideConstants.DcDllPickerNames.First(n => n.Equals(savedDllName, StringComparison.OrdinalIgnoreCase));
-                else
-                {
-                    var capturedDll = savedDllName;
-                    dcCustomDllSelector.Loaded += (s, e) => dcCustomDllSelector.Text = capturedDll;
-                }
-            }
-        }
-
-        // Helper: rename the installed DC file to the chosen custom DLL filename
-        void RenameDcToCustom(string dllFileName)
-        {
-            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard?.DcRecord == null || string.IsNullOrEmpty(targetCard.InstallPath)) return;
-
-            var oldName = targetCard.DcRecord.InstalledAs;
-            if (string.IsNullOrEmpty(oldName)) return;
-            if (oldName.Equals(dllFileName, StringComparison.OrdinalIgnoreCase)) return;
-
-            var oldPath = Path.Combine(targetCard.InstallPath, oldName);
-            var newPath = Path.Combine(targetCard.InstallPath, dllFileName);
-            try
-            {
-                if (File.Exists(oldPath))
-                {
-                    if (File.Exists(newPath)) File.Delete(newPath);
-                    File.Move(oldPath, newPath);
-                    targetCard.DcRecord.InstalledAs = dllFileName;
-                    targetCard.DcInstalledFile = dllFileName;
-                    _crashReporter.Log($"[OverridesFlyoutBuilder] DC custom rename {targetCard.GameName}: {oldName} → {dllFileName}");
-                }
-            }
-            catch (Exception ex)
-            {
-                _crashReporter.Log($"[OverridesFlyoutBuilder] DC custom rename failed for '{targetCard.GameName}' — {ex.Message}");
-                targetCard.DcActionMessage = $"❌ Rename failed: {ex.Message}";
-            }
-        }
-
-        // Track whether a selection change came from a real dropdown pick vs. text-match during typing
-        bool dcCustomDllPickerIsTyping = false;
-        bool dcCustomDllPickerJustCommitted = false;
-
-        dcCustomDllSelector.GotFocus += (s, e) => { dcCustomDllPickerIsTyping = true; dcCustomDllPickerJustCommitted = false; };
-        dcCustomDllSelector.LostFocus += (s, e) =>
-        {
-            dcCustomDllPickerIsTyping = false;
-            if (dcCustomDllPickerJustCommitted) { dcCustomDllPickerJustCommitted = false; return; }
-            // Commit on focus loss (e.g. user tabs away after typing a custom name)
-            var typed = dcCustomDllSelector.Text?.Trim();
-            var current = ViewModel.GetDcCustomDllFileName(capturedName);
-            if (!string.IsNullOrWhiteSpace(typed) && typed != current)
-            {
-                ViewModel.SetDcCustomDllFileName(capturedName, typed);
-                if (dcModeCombo.SelectedIndex == 2)
-                    RenameDcToCustom(typed);
-            }
-        };
-
-        // Auto-save: DC Custom DLL filename on dropdown selection (not during typing)
-        dcCustomDllSelector.SelectionChanged += (s, e) =>
-        {
-            if (dcCustomDllPickerIsTyping) return; // ignore text-match events while user is typing
-            var selected = dcCustomDllSelector.SelectedItem as string;
-            if (!string.IsNullOrWhiteSpace(selected))
-            {
-                ViewModel.SetDcCustomDllFileName(capturedName, selected);
-                if (dcModeCombo.SelectedIndex == 2)
-                    RenameDcToCustom(selected);
-            }
-        };
-
-        // Auto-save: DC Custom DLL filename on Enter key (TextSubmitted fires when user presses Enter)
-        dcCustomDllSelector.TextSubmitted += (sender, args) =>
-        {
-            var typed = args.Text?.Trim();
-            if (!string.IsNullOrWhiteSpace(typed))
-            {
-                dcCustomDllPickerIsTyping = true; // suppress SelectionChanged
-                dcCustomDllPickerJustCommitted = true;
-                ViewModel.SetDcCustomDllFileName(capturedName, typed);
-                if (dcModeCombo.SelectedIndex == 2)
-                    RenameDcToCustom(typed);
-                sender.SelectedItem = null; // clear stale selection so ComboBox doesn't revert
-                dcCustomDllPickerIsTyping = false;
-            }
-            args.Handled = true; // prevent ComboBox from overriding SelectedItem
-        };
-
-        // Subscribe to DcModeEnabled/DcDllFileName changes to keep the "Global (...)" label current
-        var localDcModeCombo = dcModeCombo;
-        dcModeLevelHandler = (sender, e) =>
-        {
-            if (e.PropertyName != "DcModeEnabled" && e.PropertyName != "DcDllFileName") return;
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                var updatedLabel = ViewModel.DcModeEnabled ? $"On — {ViewModel.DcDllFileName}" : "Off";
-                var updatedOptions = new[] { $"Global ({updatedLabel})", "Off", "Custom" };
-                var savedIndex = localDcModeCombo.SelectedIndex;
-                localDcModeCombo.ItemsSource = updatedOptions;
-                localDcModeCombo.SelectedIndex = savedIndex;
-            });
-        };
-        ViewModel.PropertyChanged += dcModeLevelHandler;
-
-        // ── Auto-save: DC Mode on selection change ──
-        dcModeCombo.SelectionChanged += (s, e) =>
-        {
-            string? newDcMode = dcModeCombo.SelectedIndex switch { 1 => "Off", 2 => "Custom", _ => (string?)null };
-            var currentOverride = ViewModel.GetPerGameDcModeOverride(capturedName);
-            if (newDcMode != currentOverride)
-            {
-                var previousDcMode = currentOverride;
-                ViewModel.SetPerGameDcModeOverride(capturedName, newDcMode);
-                ViewModel.ApplyDcModeSwitchForCard(capturedName, previousDcMode);
-            }
-
-            // When switching to DC Mode Custom with a DLL filename already set, rename
-            if (dcModeCombo.SelectedIndex == 2)
-            {
-                var dllName = dcCustomDllSelector.SelectedItem as string ?? dcCustomDllSelector.Text?.Trim();
-                if (!string.IsNullOrWhiteSpace(dllName))
-                    RenameDcToCustom(dllName);
-            }
-
-            // Toggle DC Mode Custom DLL selector visibility
-            dcCustomDllSelector.Visibility = dcModeCombo.SelectedIndex == 2
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-        };
-
-        } // end if (card.DcLegacyMode)
-
+        // ── Shader Mode ──
         string currentShaderMode = ViewModel.GetPerGameShaderMode(gameName);
         bool isGlobalShaders = currentShaderMode != "Select";
         var shaderToggle = new ToggleSwitch
@@ -388,56 +211,11 @@ public class OverridesFlyoutBuilder
             }
         };
 
-        if (card.DcLegacyMode)
-        {
-        var modeGrid = new Grid();
-        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-        // Column 0: DC Mode combo + DC Mode Custom DLL selector
-        var dcModeColumn = new StackPanel { Spacing = 8 };
-        dcModeColumn.Children.Add(dcModeCombo);
-        dcModeColumn.Children.Add(dcCustomDllSelector);
-        Grid.SetColumn(dcModeColumn, 0);
-
-        // Column 1: Vertical divider
-        var modeDivider = new Border
-        {
-            Width = 1,
-            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            VerticalAlignment = VerticalAlignment.Stretch,
-            Margin = new Thickness(12, 0, 12, 0),
-        };
-        Grid.SetColumn(modeDivider, 1);
-
-        // Column 2: Global Shaders toggle + Select Shaders button
-        var shaderColumn = new StackPanel { Spacing = 8 };
-        shaderColumn.Children.Add(shaderToggle);
-        shaderColumn.Children.Add(selectShadersBtn);
-        Grid.SetColumn(shaderColumn, 2);
-
-        modeGrid.Children.Add(dcModeColumn);
-        modeGrid.Children.Add(modeDivider);
-        modeGrid.Children.Add(shaderColumn);
-        panel.Children.Add(modeGrid);
-        }
-        else
-        {
-        // DC Legacy Mode off — show only shader controls
-        var shaderColumn = new StackPanel { Spacing = 8 };
-        shaderColumn.Children.Add(shaderToggle);
-        shaderColumn.Children.Add(selectShadersBtn);
-        panel.Children.Add(shaderColumn);
-        }
-        panel.Children.Add(UIFactory.MakeSeparator());
-
         // ── DLL naming override ──
         bool isDllOverride = ViewModel.HasDllOverride(gameName);
         var existingCfg = ViewModel.GetDllOverride(gameName);
         bool is32Bit = card.Is32Bit;
         var defaultRsName = is32Bit ? "ReShade32.dll" : "ReShade64.dll";
-        var defaultDcName = is32Bit ? "zzz_display_commander.addon32" : "zzz_display_commander.addon64";
 
         var dllOverrideToggle = new ToggleSwitch
         {
@@ -450,32 +228,10 @@ public class OverridesFlyoutBuilder
             FontSize = 12,
         };
         ToolTipService.SetToolTip(dllOverrideToggle,
-            "Override the filenames ReShade and Display Commander are installed as. " +
-            "When enabled, existing RS/DC files are renamed to the custom filenames. " +
-            "The game is automatically excluded from DC Mode and Update All.");
+            "Override the filename ReShade is installed as. " +
+            "When enabled, existing RS files are renamed to the custom filename.");
         var existingRsName = existingCfg?.ReShadeFileName ?? "";
-        var existingDcName = existingCfg?.DcFileName ?? "";
-        // Helper: rebuild one ComboBox's ItemsSource excluding the name chosen in the other box
-        bool _updatingDllItems = false;
-        void SyncDllNameItems(ComboBox box, ComboBox otherBox)
-        {
-            if (_updatingDllItems) return;
-            _updatingDllItems = true;
-            var otherSelected = (otherBox.SelectedItem as string ?? otherBox.Text ?? "").Trim();
-            var filtered = string.IsNullOrWhiteSpace(otherSelected)
-                ? DllOverrideConstants.CommonDllNames
-                : DllOverrideConstants.CommonDllNames.Where(n => !n.Equals(otherSelected, StringComparison.OrdinalIgnoreCase)).ToArray();
-            var currentSel = box.SelectedItem as string ?? box.Text;
-            box.ItemsSource = filtered;
-            if (!string.IsNullOrWhiteSpace(currentSel))
-            {
-                var match = filtered.FirstOrDefault(n => n.Equals(currentSel.Trim(), StringComparison.OrdinalIgnoreCase));
-                if (match != null) box.SelectedItem = match;
-                else box.Text = currentSel;
-            }
-            _updatingDllItems = false;
-        }
-
+        // Initial filter for RS name box
         var rsNameBox = new ComboBox
         {
             IsEditable = true,
@@ -496,34 +252,9 @@ public class OverridesFlyoutBuilder
                 rsNameBox.Loaded += (s, e) => rsNameBox.Text = capturedRs;
             }
         }
-        var dcNameBox = new ComboBox
-        {
-            IsEditable = true,
-            PlaceholderText = defaultDcName,
-            Header = "DC filename",
-            FontSize = 12,
-            IsEnabled = isDllOverride,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ItemsSource = DllOverrideConstants.CommonDllNames,
-            Visibility = card.DcLegacyMode ? Visibility.Visible : Visibility.Collapsed,
-        };
-        if (!string.IsNullOrEmpty(existingDcName))
-        {
-            if (DllOverrideConstants.CommonDllNames.Contains(existingDcName, StringComparer.OrdinalIgnoreCase))
-                dcNameBox.SelectedItem = DllOverrideConstants.CommonDllNames.First(n => n.Equals(existingDcName, StringComparison.OrdinalIgnoreCase));
-            else
-            {
-                var capturedDc = existingDcName;
-                dcNameBox.Loaded += (s, e) => dcNameBox.Text = capturedDc;
-            }
-        }
-        // Initial cross-filter so each box hides the other's current selection
-        SyncDllNameItems(dcNameBox, rsNameBox);
-        SyncDllNameItems(rsNameBox, dcNameBox);
         dllOverrideToggle.Toggled += (s, ev) =>
         {
             rsNameBox.IsEnabled = dllOverrideToggle.IsOn;
-            dcNameBox.IsEnabled = dllOverrideToggle.IsOn;
 
             // Auto-save: persist DLL override state immediately
             bool nowOn = dllOverrideToggle.IsOn;
@@ -536,9 +267,7 @@ public class OverridesFlyoutBuilder
             {
                 var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
                 var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-                var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-                var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-                ViewModel.EnableDllOverride(targetCard, rsName, dcName);
+                ViewModel.EnableDllOverride(targetCard, rsName, "");
             }
             else
             {
@@ -546,30 +275,41 @@ public class OverridesFlyoutBuilder
             }
         };
 
-        var dllNameGrid = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 4, 0, 0) };
-        dllNameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        dllNameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        Grid.SetColumn(rsNameBox, 0);
-        Grid.SetColumn(dcNameBox, 1);
-        dllNameGrid.Children.Add(rsNameBox);
-        dllNameGrid.Children.Add(dcNameBox);
+        // ── Inline row: [Global Shaders + Select btn | divider | DLL override + RS name] ──
+        var modeGrid = new Grid { ColumnSpacing = 0 };
+        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        modeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        var dllGroupPanel = new StackPanel { Spacing = 4 };
-        dllGroupPanel.Children.Add(dllOverrideToggle);
-        dllGroupPanel.Children.Add(dllNameGrid);
-        var dllGroupBorder = new Border
+        // Left: shader toggle + select button
+        var shaderColumn = new StackPanel { Spacing = 8 };
+        shaderColumn.Children.Add(shaderToggle);
+        shaderColumn.Children.Add(selectShadersBtn);
+        Grid.SetColumn(shaderColumn, 0);
+
+        // Center: vertical divider
+        var modeDivider = new Border
         {
-            Child = dllGroupPanel,
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(12, 10, 12, 12),
+            Width = 1,
+            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Margin = new Thickness(12, 0, 12, 0),
         };
-        panel.Children.Add(dllGroupBorder);
+        Grid.SetColumn(modeDivider, 1);
+
+        // Right: DLL override toggle + RS name combo
+        var dllColumn = new StackPanel { Spacing = 4 };
+        dllColumn.Children.Add(dllOverrideToggle);
+        dllColumn.Children.Add(rsNameBox);
+        Grid.SetColumn(dllColumn, 2);
+
+        modeGrid.Children.Add(shaderColumn);
+        modeGrid.Children.Add(modeDivider);
+        modeGrid.Children.Add(dllColumn);
+        panel.Children.Add(modeGrid);
         panel.Children.Add(UIFactory.MakeSeparator());
 
-        // ── Auto-save: RS/DC name boxes on Enter ──
+        // ── Auto-save: RS name box on Enter ──
         rsNameBox.KeyDown += (s, e) =>
         {
             if (e.Key != Windows.System.VirtualKey.Enter) return;
@@ -579,57 +319,18 @@ public class OverridesFlyoutBuilder
             if (targetCard == null) return;
             var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
             var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            SyncDllNameItems(dcNameBox, rsNameBox);
+            ViewModel.UpdateDllOverrideNames(targetCard, rsName, "");
         };
-        dcNameBox.KeyDown += (s, e) =>
-        {
-            if (e.Key != Windows.System.VirtualKey.Enter) return;
-            if (!dllOverrideToggle.IsOn) return;
-            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
-            var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
-            var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            SyncDllNameItems(rsNameBox, dcNameBox);
-        };
-        // ── Auto-save: RS/DC name boxes on dropdown selection ──
+        // ── Auto-save: RS name box on dropdown selection ──
         rsNameBox.SelectionChanged += (s, e) =>
         {
-            if (_updatingDllItems) return;
             if (!dllOverrideToggle.IsOn) return;
             var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
                 c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
             if (targetCard == null) return;
             var rsName = rsNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(rsName)) return;
-            var dcText = dcNameBox.SelectedItem as string ?? dcNameBox.Text;
-            var dcName = !string.IsNullOrWhiteSpace(dcText) ? dcText.Trim() : dcNameBox.PlaceholderText;
-            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            SyncDllNameItems(dcNameBox, rsNameBox);
-        };
-        dcNameBox.SelectionChanged += (s, e) =>
-        {
-            if (_updatingDllItems) return;
-            if (!dllOverrideToggle.IsOn) return;
-            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
-            var rsText = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
-            var rsName = !string.IsNullOrWhiteSpace(rsText) ? rsText.Trim() : rsNameBox.PlaceholderText;
-            var dcName = dcNameBox.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(dcName)) return;
-            if (rsName.Equals(dcName, StringComparison.OrdinalIgnoreCase)) return;
-            ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            SyncDllNameItems(rsNameBox, dcNameBox);
+            ViewModel.UpdateDllOverrideNames(targetCard, rsName, "");
         };
 
         // ── Global update inclusion + Wiki exclusion (inline row) ──
@@ -637,16 +338,6 @@ public class OverridesFlyoutBuilder
         {
             Header = "ReShade",
             IsOn = !ViewModel.IsUpdateAllExcludedReShade(gameName),
-            OnContent = "Yes",
-            OffContent = "No",
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 11,
-            MinWidth = 0,
-        };
-        var dcToggle = new ToggleSwitch
-        {
-            Header = "DC",
-            IsOn = !ViewModel.IsUpdateAllExcludedDc(gameName),
             OnContent = "Yes",
             OffContent = "No",
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -672,14 +363,6 @@ public class OverridesFlyoutBuilder
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(8, 6, 8, 6),
         };
-        var dcBorder = new Border
-        {
-            Child = dcToggle,
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(8, 6, 8, 6),
-        };
         var rdxBorder = new Border
         {
             Child = rdxToggle,
@@ -695,8 +378,6 @@ public class OverridesFlyoutBuilder
             Spacing = 12,
         };
         toggleRow.Children.Add(rsBorder);
-        if (card.DcLegacyMode)
-            toggleRow.Children.Add(dcBorder);
         toggleRow.Children.Add(rdxBorder);
 
         // ── Auto-save: Update inclusion toggles ──
@@ -704,11 +385,6 @@ public class OverridesFlyoutBuilder
         {
             if (!rsToggle.IsOn != ViewModel.IsUpdateAllExcludedReShade(capturedName))
                 ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
-        };
-        dcToggle.Toggled += (s, ev) =>
-        {
-            if (!dcToggle.IsOn != ViewModel.IsUpdateAllExcludedDc(capturedName))
-                ViewModel.ToggleUpdateAllExclusionDc(capturedName);
         };
         rdxToggle.Toggled += (s, ev) =>
         {
@@ -740,7 +416,7 @@ public class OverridesFlyoutBuilder
         var inlineRowGrid = new Grid();
         inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         // Column 0: Global update inclusion
         var leftSection = new StackPanel { Spacing = 0 };
@@ -795,11 +471,9 @@ public class OverridesFlyoutBuilder
             // Reset all controls to defaults
             gameNameBox.Text = originalStoreName ?? gameName;
             wikiNameBox.Text = "";
-            if (dcModeCombo != null) dcModeCombo.SelectedIndex = 0;
             shaderToggle.IsOn = true;
             dllOverrideToggle.IsOn = false;
             rsToggle.IsOn = true;
-            dcToggle.IsOn = true;
             rdxToggle.IsOn = true;
             wikiExcludeToggle.IsOn = false;
 
@@ -815,23 +489,6 @@ public class OverridesFlyoutBuilder
             // Remove wiki mapping
             if (ViewModel.GetNameMapping(capturedName) != null)
                 ViewModel.RemoveNameMapping(capturedName);
-
-            // DC mode → Global (null)
-            if (ViewModel.GetPerGameDcModeOverride(capturedName) != null)
-            {
-                var prev = ViewModel.GetPerGameDcModeOverride(capturedName);
-                ViewModel.SetPerGameDcModeOverride(capturedName, null);
-                ViewModel.ApplyDcModeSwitchForCard(capturedName, prev);
-            }
-
-            // Clear DC Mode Custom DLL filename
-            ViewModel.SetDcCustomDllFileName(capturedName, null);
-            if (dcCustomDllSelector != null)
-            {
-                dcCustomDllSelector.SelectedItem = null;
-                dcCustomDllSelector.Text = "";
-                dcCustomDllSelector.Visibility = Visibility.Collapsed;
-            }
 
             // Shader mode → Global
             if (ViewModel.GetPerGameShaderMode(capturedName) != "Global")
@@ -853,8 +510,6 @@ public class OverridesFlyoutBuilder
             // Include all in Update All
             if (ViewModel.IsUpdateAllExcludedReShade(capturedName))
                 ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
-            if (ViewModel.IsUpdateAllExcludedDc(capturedName))
-                ViewModel.ToggleUpdateAllExclusionDc(capturedName);
             if (ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
                 ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
 
@@ -893,14 +548,6 @@ public class OverridesFlyoutBuilder
             Content = scrollViewer,
             Placement = FlyoutPlacementMode.BottomEdgeAlignedRight,
             FlyoutPresenterStyle = flyoutStyle,
-        };
-
-        // On flyout closed, clean up DcModeLevel subscription
-        flyout.Closed += (s, ev) =>
-        {
-            // Unsubscribe from DcModeLevel changes to avoid leaked subscriptions
-            if (dcModeLevelHandler != null)
-                ViewModel.PropertyChanged -= dcModeLevelHandler;
         };
 
         flyout.ShowAt(anchor);

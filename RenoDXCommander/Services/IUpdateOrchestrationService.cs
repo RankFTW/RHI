@@ -5,7 +5,7 @@ namespace RenoDXCommander.Services;
 
 /// <summary>
 /// Defines the contract for batch update workflows: updating all RenoDX mods,
-/// ReShade, Display Commander, and checking for available updates.
+/// ReShade, and checking for available updates.
 /// </summary>
 public interface IUpdateOrchestrationService
 {
@@ -32,18 +32,6 @@ public interface IUpdateOrchestrationService
     Task UpdateAllReShadeAsync(
         IReadOnlyList<GameCardViewModel> allCards,
         IDllOverrideService dllOverrideService,
-        bool dcModeEnabled,
-        Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
-        Action notifyUpdateState,
-        Func<string, string?, IEnumerable<string>?>? shaderResolver = null);
-
-    /// <summary>
-    /// Batch-updates all eligible Display Commander installations.
-    /// </summary>
-    Task UpdateAllDcAsync(
-        IReadOnlyList<GameCardViewModel> allCards,
-        IDllOverrideService dllOverrideService,
-        Func<string, GameCardViewModel, (bool enabled, string dllFileName)> dcModeResolver,
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
         Action notifyUpdateState,
         Func<string, string?, IEnumerable<string>?>? shaderResolver = null);

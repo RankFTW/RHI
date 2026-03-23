@@ -146,7 +146,7 @@ public class CardBuilder
             root.Children.Add(apiBadge);
         }
 
-        // ── Status row: RS/DC/RDX status dots with labels, conditionally Luma, wiki status icon ──
+        // ── Status row: RS/RDX status dots with labels, conditionally Luma, wiki status icon ──
         var statusRow = new Grid();
         statusRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // dots
         statusRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // wiki icon
@@ -155,13 +155,10 @@ public class CardBuilder
 
         var rdxDotPanel = UIFactory.MakeStatusDot("RDX", card.CardRdxStatusDot);
         var rsDotPanel = UIFactory.MakeStatusDot("RS", card.CardRsStatusDot);
-        var dcDotPanel = UIFactory.MakeStatusDot("DC", card.CardDcStatusDot);
-        dcDotPanel.Visibility = card.DcLegacyMode ? Visibility.Visible : Visibility.Collapsed;
         var ulDotPanel = UIFactory.MakeStatusDot("UL", card.CardUlStatusDot);
         ulDotPanel.Visibility = card.UlRowVisibility;
         dotsPanel.Children.Add(rdxDotPanel);
         dotsPanel.Children.Add(rsDotPanel);
-        dotsPanel.Children.Add(dcDotPanel);
         dotsPanel.Children.Add(ulDotPanel);
 
         StackPanel? lumaDotPanel = null;
@@ -336,10 +333,6 @@ public class CardBuilder
                             if (rsDotPanel.Children[0] is Microsoft.UI.Xaml.Shapes.Ellipse rsEllipse)
                                 rsEllipse.Fill = UIFactory.GetBrush(c.CardRsStatusDot);
                             break;
-                        case nameof(c.CardDcStatusDot):
-                            if (dcDotPanel.Children[0] is Microsoft.UI.Xaml.Shapes.Ellipse dcEllipse)
-                                dcEllipse.Fill = UIFactory.GetBrush(c.CardDcStatusDot);
-                            break;
                         case nameof(c.CardUlStatusDot):
                             if (ulDotPanel.Children[0] is Microsoft.UI.Xaml.Shapes.Ellipse ulEllipse)
                                 ulEllipse.Fill = UIFactory.GetBrush(c.CardUlStatusDot);
@@ -348,16 +341,11 @@ public class CardBuilder
                             if (lumaDotPanel?.Children[0] is Microsoft.UI.Xaml.Shapes.Ellipse lumaEllipse)
                                 lumaEllipse.Fill = UIFactory.GetBrush(c.CardLumaStatusDot);
                             break;
-                        case nameof(c.DcLegacyMode):
-                            dcDotPanel.Visibility = c.DcLegacyMode ? Visibility.Visible : Visibility.Collapsed;
-                            ulDotPanel.Visibility = c.UlRowVisibility;
-                            break;
                         case nameof(c.CardLumaVisible):
                             bool effectiveLuma = c.LumaFeatureEnabled && c.IsLumaMode;
-                            // Hide/show RDX/RS/DC/UL dots based on Luma mode
+                            // Hide/show RDX/RS/UL dots based on Luma mode
                             rdxDotPanel.Visibility = effectiveLuma ? Visibility.Collapsed : Visibility.Visible;
                             rsDotPanel.Visibility = effectiveLuma ? Visibility.Collapsed : Visibility.Visible;
-                            dcDotPanel.Visibility = (!c.DcLegacyMode || effectiveLuma) ? Visibility.Collapsed : Visibility.Visible;
                             ulDotPanel.Visibility = c.UlRowVisibility;
                             // Add/remove Luma dot
                             if (c.CardLumaVisible && lumaDotPanel == null)
@@ -382,7 +370,7 @@ public class CardBuilder
 
     /// <summary>
     /// Builds the install flyout content panel with per-component rows.
-    /// Each row has: component name, status text (colored), install button, copy config 📋 (RS/DC only), uninstall ✕.
+    /// Each row has: component name, status text (colored), install button, copy config 📋 (RS only), uninstall ✕.
     /// </summary>
     public StackPanel BuildInstallFlyoutContent(GameCardViewModel card)
     {
@@ -435,17 +423,6 @@ public class CardBuilder
         rsRow.Visibility = card.ReShadeRowVisibility;
         panel.Children.Add(rsRow);
 
-        // Display Commander row
-        var dcRow = BuildComponentRow(card, "DC", "DC",
-            card.DcStatusText, card.DcStatusColor, card.DcShortAction,
-            card.CardDcInstallEnabled, card.IsDcInstalled,
-            showCopyConfig: true, copyConfigVisible: card.DcIniExists,
-            copyConfigTooltip: "Copy DisplayCommander.toml",
-            btnBackground: card.DcBtnBackground, btnForeground: card.DcBtnForeground, btnBorderBrush: card.DcBtnBorderBrush);
-        dcRow.Visibility = card.DcRowVisibility;
-        ApplyDcStatusLink(dcRow, card.IsDcInstalled);
-        panel.Children.Add(dcRow);
-
         // Ultra Limiter row
         var ulRow = BuildComponentRow(card, "Ultra Limiter", "UL",
             card.UlStatusText, card.UlStatusColor, card.UlShortAction,
@@ -453,6 +430,19 @@ public class CardBuilder
             showCopyConfig: false, copyConfigVisible: false,
             copyConfigTooltip: null,
             btnBackground: card.UlBtnBackground, btnForeground: card.UlBtnForeground, btnBorderBrush: card.UlBtnBorderBrush);
+        // Make UL status text a clickable link to the Ultra Limiter guide
+        var ulStatusBlock = ulRow.Children.OfType<TextBlock>().FirstOrDefault(t => t.Tag as string == "StatusText");
+        if (ulStatusBlock != null)
+        {
+            if (card.IsUlInstalled)
+                ulStatusBlock.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
+            ulStatusBlock.PointerPressed += async (s, e) =>
+            {
+                if (card.IsUlInstalled)
+                    await Windows.System.Launcher.LaunchUriAsync(
+                        new Uri("https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide"));
+            };
+        }
         ulRow.Visibility = card.UlRowVisibility;
         panel.Children.Add(ulRow);
 
@@ -562,7 +552,6 @@ public class CardBuilder
 
                     // Update row visibility
                     rsRow.Visibility = c.ReShadeRowVisibility;
-                    dcRow.Visibility = c.DcRowVisibility;
                     ulRow.Visibility = c.UlRowVisibility;
                     rdxRow.Visibility = c.RenoDxRowVisibility;
 
@@ -570,13 +559,15 @@ public class CardBuilder
                     UpdateComponentRow(rsRow, c.RsStatusText, c.RsStatusColor, c.RsShortAction,
                         c.CardRsInstallEnabled, c.IsRsInstalled, c.RsIniExists,
                         c.RsBtnBackground, c.RsBtnForeground, c.RsBtnBorderBrush);
-                    UpdateComponentRow(dcRow, c.DcStatusText, c.DcStatusColor, c.DcShortAction,
-                        c.CardDcInstallEnabled, c.IsDcInstalled, c.DcIniExists,
-                        c.DcBtnBackground, c.DcBtnForeground, c.DcBtnBorderBrush);
-                    ApplyDcStatusLink(dcRow, c.IsDcInstalled);
                     UpdateComponentRow(ulRow, c.UlStatusText, c.UlStatusColor, c.UlShortAction,
                         c.IsUlNotInstalling, c.IsUlInstalled, false,
                         c.UlBtnBackground, c.UlBtnForeground, c.UlBtnBorderBrush);
+                    // Keep UL status underline in sync
+                    var ulSb = ulRow.Children.OfType<TextBlock>().FirstOrDefault(t => t.Tag as string == "StatusText");
+                    if (ulSb != null)
+                        ulSb.TextDecorations = c.IsUlInstalled
+                            ? Windows.UI.Text.TextDecorations.Underline
+                            : Windows.UI.Text.TextDecorations.None;
                     UpdateComponentRow(rdxRow, c.RdxStatusText, c.RdxStatusColor, c.RdxShortAction,
                         c.CardRdxInstallEnabled, c.IsRdxInstalled, false,
                         c.InstallBtnBackground, c.InstallBtnForeground, c.InstallBtnBorderBrush);
@@ -680,8 +671,6 @@ public class CardBuilder
         copyBtn.DataContext = componentTag;
         if (componentTag == "RS")
             copyBtn.Click += _window.CardCopyRsIni_Click;
-        else if (componentTag == "DC")
-            copyBtn.Click += _window.CardCopyDcToml_Click;
         if (copyConfigTooltip != null)
             ToolTipService.SetToolTip(copyBtn, copyConfigTooltip);
         Grid.SetColumn(copyBtn, 3);
@@ -751,40 +740,6 @@ public class CardBuilder
                 }
             }
         }
-    }
-
-    private static readonly Uri _dcCommitUri = new("https://github.com/pmnoxx/display-commander/commit/main");
-
-    /// <summary>
-    /// Styles the DC row's status TextBlock as a clickable link when installed.
-    /// </summary>
-    private static void ApplyDcStatusLink(Grid row, bool isInstalled)
-    {
-        foreach (var child in row.Children)
-        {
-            if (child is TextBlock tb && tb.Tag as string == "StatusText")
-            {
-                if (isInstalled)
-                {
-                    tb.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
-                    tb.PointerPressed -= DcStatusLink_PointerPressed;
-                    tb.PointerPressed += DcStatusLink_PointerPressed;
-                    ToolTipService.SetToolTip(tb, "Version information");
-                }
-                else
-                {
-                    tb.TextDecorations = Windows.UI.Text.TextDecorations.None;
-                    tb.PointerPressed -= DcStatusLink_PointerPressed;
-                    ToolTipService.SetToolTip(tb, null);
-                }
-                break;
-            }
-        }
-    }
-
-    private static void DcStatusLink_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-    {
-        _ = Windows.System.Launcher.LaunchUriAsync(_dcCommitUri);
     }
 
 }

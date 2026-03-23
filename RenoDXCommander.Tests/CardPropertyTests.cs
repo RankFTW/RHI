@@ -36,15 +36,14 @@ public class CardPropertyTests
                       from source in GenSource
                       from rdxStatus in GenStatus
                       from rsStatus in GenStatus
-                      from dcStatus in GenStatus
                       from isFav in Arb.Default.Bool().Generator
-                      select (name, source, rdxStatus, rsStatus, dcStatus, isFav);
+                      select (name, source, rdxStatus, rsStatus, isFav);
 
         return Prop.ForAll(
             Arb.From(genCard),
             (tuple) =>
             {
-                var (name, source, rdxStatus, rsStatus, dcStatus, isFavourite) = tuple;
+                var (name, source, rdxStatus, rsStatus, isFavourite) = tuple;
 
                 var card = new GameCardViewModel
                 {
@@ -52,7 +51,6 @@ public class CardPropertyTests
                     Source = source,
                     Status = rdxStatus,
                     RsStatus = rsStatus,
-                    DcStatus = dcStatus,
                     IsFavourite = isFavourite,
                     Notes = "Some notes"
                 };
@@ -64,10 +62,9 @@ public class CardPropertyTests
                 // 3.1: Source icon identifier is present
                 bool hasSourceIcon = !string.IsNullOrEmpty(card.SourceIcon);
 
-                // 3.2: Status dot colors are present for RDX, RS, DC
+                // 3.2: Status dot colors are present for RDX, RS
                 bool hasRdxDot = !string.IsNullOrEmpty(card.CardRdxStatusDot);
                 bool hasRsDot = !string.IsNullOrEmpty(card.CardRsStatusDot);
-                bool hasDcDot = !string.IsNullOrEmpty(card.CardDcStatusDot);
 
                 // 3.5: Primary action label is present
                 bool hasActionLabel = !string.IsNullOrEmpty(card.CardPrimaryActionLabel);
@@ -78,7 +75,7 @@ public class CardPropertyTests
                 // 3.7: Info indicator is true when HasNotes or HasNameUrl
                 bool infoCorrect = card.HasInfoIndicator == (card.HasNotes || card.HasNameUrl);
 
-                return hasName && hasSourceIcon && hasRdxDot && hasRsDot && hasDcDot
+                return hasName && hasSourceIcon && hasRdxDot && hasRsDot
                     && hasActionLabel && favouriteCorrect && infoCorrect;
             });
     }
@@ -198,20 +195,17 @@ public class CardPropertyTests
                 {
                     Status = status,
                     RsStatus = status,
-                    DcStatus = status,
                     LumaStatus = status,
                     IsInstalling = false,
                     RsIsInstalling = false,
-                    DcIsInstalling = false,
                     IsLumaInstalling = false
                 };
 
                 string rdx = card.CardRdxStatusDot;
                 string rs = card.CardRsStatusDot;
-                string dc = card.CardDcStatusDot;
                 string luma = card.CardLumaStatusDot;
 
-                return rdx == rs && rs == dc && dc == luma;
+                return rdx == rs && rs == luma;
             });
     }
 
@@ -314,25 +308,23 @@ public class CardPropertyTests
     {
         var genFlags = from rdx in Arb.Default.Bool().Generator
                        from rs in Arb.Default.Bool().Generator
-                       from dc in Arb.Default.Bool().Generator
                        from luma in Arb.Default.Bool().Generator
-                       select (rdx, rs, dc, luma);
+                       select (rdx, rs, luma);
 
         return Prop.ForAll(
             Arb.From(genFlags),
             (tuple) =>
             {
-                var (rdxInstalling, rsInstalling, dcInstalling, lumaInstalling) = tuple;
+                var (rdxInstalling, rsInstalling, lumaInstalling) = tuple;
 
                 var card = new GameCardViewModel
                 {
                     IsInstalling = rdxInstalling,
                     RsIsInstalling = rsInstalling,
-                    DcIsInstalling = dcInstalling,
                     IsLumaInstalling = lumaInstalling
                 };
 
-                bool anyInstalling = rdxInstalling || rsInstalling || dcInstalling || lumaInstalling;
+                bool anyInstalling = rdxInstalling || rsInstalling || lumaInstalling;
 
                 // When any component is installing, CanCardInstall must be false
                 // When nothing is installing, CanCardInstall must be true
@@ -356,58 +348,6 @@ public class CardPropertyTests
             });
     }
 
-    // Feature: multi-card-layout, Property 9: Override changes reflect in card computed properties
-    // Validates: Requirements 4.4
-    [Property(MaxTest = 100)]
-    public Property OverrideRoundTrip_PerGameDcMode()
-    {
-        var genDcMode = Gen.OneOf<string?>(
-            Gen.Constant<string?>(null),
-            Gen.Constant<string?>("Off"),
-            Gen.Constant<string?>("Custom"),
-            Gen.Constant<string?>("Global")
-        );
-
-        return Prop.ForAll(
-            Arb.From(genDcMode),
-            (string? dcMode) =>
-            {
-                var card = new GameCardViewModel();
-                card.PerGameDcMode = dcMode;
-
-                // Round-trip: value read back matches what was set
-                bool roundTrip = card.PerGameDcMode == dcMode;
-
-                // DcModeExcluded reflects whether an override is set
-                bool excludedCorrect = card.DcModeExcluded == (dcMode != null);
-
-                return roundTrip && excludedCorrect;
-            });
-    }
-
-    // Feature: multi-card-layout, Property 9: Override changes reflect in card computed properties
-    // Validates: Requirements 4.4
-    [Property(MaxTest = 100)]
-    public Property OverrideRoundTrip_ShaderModeOverride()
-    {
-        var genShaderMode = Gen.OneOf(
-            Gen.Constant<string?>(null),
-            Gen.Constant<string?>("Off"),
-            Gen.Constant<string?>("Minimum"),
-            Gen.Constant<string?>("All"),
-            Gen.Constant<string?>("User")
-        );
-
-        return Prop.ForAll(
-            Arb.From(genShaderMode),
-            (string? shaderMode) =>
-            {
-                var card = new GameCardViewModel();
-                card.ShaderModeOverride = shaderMode;
-                return card.ShaderModeOverride == shaderMode;
-            });
-    }
-
     // Feature: separate-override-toggles, Property 1: Per-component exclusion independence
     // Validates: Requirements 1.2
     [Property(MaxTest = 100)]
@@ -416,15 +356,12 @@ public class CardPropertyTests
         return Prop.ForAll(
             Arb.From(Arb.Default.Bool().Generator),
             Arb.From(Arb.Default.Bool().Generator),
-            Arb.From(Arb.Default.Bool().Generator),
-            (bool rs, bool dc, bool rdx) =>
+            (bool rs, bool rdx) =>
             {
                 var card = new GameCardViewModel();
                 card.ExcludeFromUpdateAllReShade = rs;
-                card.ExcludeFromUpdateAllDc = dc;
                 card.ExcludeFromUpdateAllRenoDx = rdx;
                 return card.ExcludeFromUpdateAllReShade == rs
-                    && card.ExcludeFromUpdateAllDc == dc
                     && card.ExcludeFromUpdateAllRenoDx == rdx;
             });
     }

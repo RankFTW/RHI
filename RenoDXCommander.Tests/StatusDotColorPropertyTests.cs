@@ -19,27 +19,23 @@ public class StatusDotColorPropertyTests
 
     /// <summary>
     /// Generates a GameCardViewModel with arbitrary status and installing flags
-    /// for all four components (RenoDX, ReShade, Display Commander, Luma).
+    /// for three components (RenoDX, ReShade, Luma).
     /// </summary>
     private static readonly Gen<GameCardViewModel> GenCard =
         from rdxStatus in GenStatus
         from rsStatus in GenStatus
-        from dcStatus in GenStatus
         from lumaStatus in GenStatus
         from isInstalling in Arb.Default.Bool().Generator
         from rsInstalling in Arb.Default.Bool().Generator
-        from dcInstalling in Arb.Default.Bool().Generator
         from lumaInstalling in Arb.Default.Bool().Generator
         select new GameCardViewModel
         {
             GameName = "TestGame",
             Status = rdxStatus,
             RsStatus = rsStatus,
-            DcStatus = dcStatus,
             LumaStatus = lumaStatus,
             IsInstalling = isInstalling,
             RsIsInstalling = rsInstalling,
-            DcIsInstalling = dcInstalling,
             IsLumaInstalling = lumaInstalling,
             EngineHint = ""
         };
@@ -66,7 +62,6 @@ public class StatusDotColorPropertyTests
 
                 Check(nameof(card.CardRdxStatusDot), card.CardRdxStatusDot);
                 Check(nameof(card.CardRsStatusDot), card.CardRsStatusDot);
-                Check(nameof(card.CardDcStatusDot), card.CardDcStatusDot);
                 Check(nameof(card.CardLumaStatusDot), card.CardLumaStatusDot);
 
                 return (errors.Count == 0)

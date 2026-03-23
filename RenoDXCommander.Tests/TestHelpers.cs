@@ -74,8 +74,7 @@ internal static class TestHelpers
 
     private class StubAuxInstallService : IAuxInstallService, IAuxFileService
     {
-        public Task<AuxInstalledRecord> InstallDcAsync(string gameName, string installPath, string? dllFileName, AuxInstalledRecord? existingDcRecord = null, AuxInstalledRecord? existingRsRecord = null, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IEnumerable<string>? selectedPackIds = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new AuxInstalledRecord());
-        public Task<AuxInstalledRecord> InstallReShadeAsync(string gameName, string installPath, bool dcMode, bool dcIsInstalled = false, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IEnumerable<string>? selectedPackIds = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new AuxInstalledRecord());
+        public Task<AuxInstalledRecord> InstallReShadeAsync(string gameName, string installPath, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IEnumerable<string>? selectedPackIds = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new AuxInstalledRecord());
         public Task<bool> CheckForUpdateAsync(AuxInstalledRecord record) => Task.FromResult(false);
         public void Uninstall(AuxInstalledRecord record) { }
         public void UninstallDllOnly(AuxInstalledRecord record) { }
@@ -84,21 +83,17 @@ internal static class TestHelpers
         public void SaveAuxRecord(AuxInstalledRecord record) { }
         public void RemoveRecord(AuxInstalledRecord record) { }
         // IAuxFileService stubs
-        public void SyncReShadeToDisplayCommander() { }
         public bool EnsureReShadeStaging() => false;
         public AuxInstallService.DxgiFileType IdentifyDxgiFile(string filePath) => AuxInstallService.DxgiFileType.Unknown;
-        public AuxInstallService.WinmmFileType IdentifyWinmmFile(string filePath) => AuxInstallService.WinmmFileType.Unknown;
         public bool BackupForeignDll(string dllPath) => false;
         public void RestoreForeignDll(string dllPath) { }
         public bool IsReShadeFileStrict(string filePath) => false;
-        public bool IsDcFileStrict(string filePath) => false;
         public bool IsReShadeFile(string filePath) => false;
         public void EnsureInisDir() { }
         public void MergeRsIni(string gameDir) { }
         public void MergeRsVulkanIni(string gameDir) { }
         public void CopyRsIni(string gameDir) { }
         public void CopyRsPresetIniIfPresent(string gameDir) { }
-        public void CopyDcIni(string gameDir) { }
         public string? ReadInstalledVersion(string installPath, string fileName) => null;
         public bool CheckReShadeUpdateLocal(AuxInstalledRecord record) => false;
     }
@@ -158,9 +153,6 @@ internal static class TestHelpers
         /// <summary>Records each call to SyncGameFolder with its parameters.</summary>
         public List<(string GameDir, IEnumerable<string>? SelectedPackIds)> SyncGameFolderCalls { get; } = new();
 
-        /// <summary>Records each call to SyncDcFolder with its parameters.</summary>
-        public List<IEnumerable<string>?> SyncDcFolderCalls { get; } = new();
-
         /// <summary>Records each call to RemoveFromGameFolder with the gameDir argument.</summary>
         public List<string> RemoveFromGameFolderCalls { get; } = new();
 
@@ -170,16 +162,13 @@ internal static class TestHelpers
         public IReadOnlyList<(string Id, string DisplayName, ShaderPackService.PackCategory Category)> AvailablePacks { get; } = new List<(string, string, ShaderPackService.PackCategory)>();
         public string? GetPackDescription(string packId) => null;
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
-        public void DeployToDcFolder() { }
         public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
         public void RemoveFromGameFolder(string gameDir) => RemoveFromGameFolderCalls.Add(gameDir);
         public bool IsManagedByRdxc(string gameDir) => false;
         public void RestoreOriginalIfPresent(string gameDir) => RestoreOriginalIfPresentCalls.Add(gameDir);
-        public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null)
-            => SyncDcFolderCalls.Add(selectedPackIds);
         public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null)
             => SyncGameFolderCalls.Add((gameDir, selectedPackIds));
-        public void SyncShadersToAllLocations(IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations, IEnumerable<string>? selectedPackIds = null) { }
+        public void SyncShadersToAllLocations(IEnumerable<(string installPath, bool rsInstalled, string? shaderModeOverride)> locations, IEnumerable<string>? selectedPackIds = null) { }
     }
 
     private class StubLumaService : ILumaService

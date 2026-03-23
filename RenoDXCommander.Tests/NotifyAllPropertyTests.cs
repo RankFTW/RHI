@@ -35,11 +35,9 @@ public class NotifyAllPropertyTests
         from path in GenPath
         from rdxStatus in GenStatus
         from rsStatus in GenStatus
-        from dcStatus in GenStatus
         from lumaStatus in GenStatus
         from isInstalling in Arb.Default.Bool().Generator
         from rsInstalling in Arb.Default.Bool().Generator
-        from dcInstalling in Arb.Default.Bool().Generator
         from lumaInstalling in Arb.Default.Bool().Generator
         from isFav in Arb.Default.Bool().Generator
         from isHidden in Arb.Default.Bool().Generator
@@ -55,11 +53,9 @@ public class NotifyAllPropertyTests
             InstallPath = path,
             Status = rdxStatus,
             RsStatus = rsStatus,
-            DcStatus = dcStatus,
             LumaStatus = lumaStatus,
             IsInstalling = isInstalling,
             RsIsInstalling = rsInstalling,
-            DcIsInstalling = dcInstalling,
             IsLumaInstalling = lumaInstalling,
             IsFavourite = isFav,
             IsHidden = isHidden,
@@ -132,7 +128,6 @@ public class NotifyAllPropertyTests
                 Read(nameof(card.CardBorderBrush), () => card.CardBorderBrush);
                 Read(nameof(card.CardRdxStatusDot), () => card.CardRdxStatusDot);
                 Read(nameof(card.CardRsStatusDot), () => card.CardRsStatusDot);
-                Read(nameof(card.CardDcStatusDot), () => card.CardDcStatusDot);
                 Read(nameof(card.CardLumaStatusDot), () => card.CardLumaStatusDot);
                 Read(nameof(card.CardLumaVisible), () => card.CardLumaVisible);
                 Read(nameof(card.CardPrimaryActionLabel), () => card.CardPrimaryActionLabel);
@@ -140,7 +135,6 @@ public class NotifyAllPropertyTests
                 Read(nameof(card.CanCardInstall), () => card.CanCardInstall);
                 Read(nameof(card.CardRdxInstallEnabled), () => card.CardRdxInstallEnabled);
                 Read(nameof(card.CardRsInstallEnabled), () => card.CardRsInstallEnabled);
-                Read(nameof(card.CardDcInstallEnabled), () => card.CardDcInstallEnabled);
                 Read(nameof(card.CardLumaInstallEnabled), () => card.CardLumaInstallEnabled);
                 Read(nameof(card.WikiStatusLabel), () => card.WikiStatusLabel);
                 Read(nameof(card.WikiStatusIcon), () => card.WikiStatusIcon);
@@ -247,29 +241,6 @@ public class NotifyAllPropertyTests
                 Read(nameof(card.RsIniBorderThickness), () => card.RsIniBorderThickness);
                 Read(nameof(card.RsIniMargin), () => card.RsIniMargin);
                 Read(nameof(card.ReShadeRowVisibility), () => card.ReShadeRowVisibility);
-
-                // ── Display Commander computed properties ───────────────────────
-                Read(nameof(card.DcStatusDot), () => card.DcStatusDot);
-                Read(nameof(card.DcActionLabel), () => card.DcActionLabel);
-                Read(nameof(card.DcBtnBackground), () => card.DcBtnBackground);
-                Read(nameof(card.DcBtnForeground), () => card.DcBtnForeground);
-                Read(nameof(card.DcBtnBorderBrush), () => card.DcBtnBorderBrush);
-                Read(nameof(card.DcProgressVisibility), () => card.DcProgressVisibility);
-                Read(nameof(card.DcInstalledVisible), () => card.DcInstalledVisible);
-                Read(nameof(card.DcDeleteVisibility), () => card.DcDeleteVisibility);
-                Read(nameof(card.DcStatusText), () => card.DcStatusText);
-                Read(nameof(card.DcStatusColor), () => card.DcStatusColor);
-                Read(nameof(card.DcShortAction), () => card.DcShortAction);
-                Read(nameof(card.IsDcNotInstalling), () => card.IsDcNotInstalling);
-                Read(nameof(card.IsDcInstalled), () => card.IsDcInstalled);
-                Read(nameof(card.DcInstallCornerRadius), () => card.DcInstallCornerRadius);
-                Read(nameof(card.DcInstallBorderThickness), () => card.DcInstallBorderThickness);
-                Read(nameof(card.DcInstallMargin), () => card.DcInstallMargin);
-                Read(nameof(card.DcIniExists), () => card.DcIniExists);
-                Read(nameof(card.DcIniCornerRadius), () => card.DcIniCornerRadius);
-                Read(nameof(card.DcIniBorderThickness), () => card.DcIniBorderThickness);
-                Read(nameof(card.DcIniMargin), () => card.DcIniMargin);
-                Read(nameof(card.DcRowVisibility), () => card.DcRowVisibility);
 
                 // ── Luma computed properties ───────────────────────────────────
                 Read(nameof(card.IsLumaAvailable), () => card.IsLumaAvailable);

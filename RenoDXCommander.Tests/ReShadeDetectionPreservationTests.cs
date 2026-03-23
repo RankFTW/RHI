@@ -52,7 +52,7 @@ public class ReShadeDetectionPreservationTests : IDisposable
     [Property(MaxTest = 3)]
     public Property StandardFilename_ReShade_IsDetected()
     {
-        var standardNames = new[] { "ReShade64.dll", "ReShade32.dll", "dxgi.dll" };
+        var standardNames = new[] { "dxgi.dll" };
         var genName = Gen.Elements(standardNames);
 
         return Prop.ForAll(

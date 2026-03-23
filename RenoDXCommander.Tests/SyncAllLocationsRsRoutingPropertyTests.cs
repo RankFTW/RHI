@@ -76,34 +76,32 @@ public class SyncAllLocationsRsRoutingPropertyTests : IDisposable
     /// <summary>
     /// **Validates: Requirements 8.1, 8.4**
     ///
-    /// For any game location tuple where <c>rsInstalled=true</c>, regardless of
-    /// <c>dcInstalled</c> or <c>dcMode</c>, <c>SyncShadersToAllLocations</c>
+    /// For any game location tuple where <c>rsInstalled=true</c>,
+    /// <c>SyncShadersToAllLocations</c>
     /// SHALL call <c>SyncGameFolder</c> with the game's install path — verified
     /// by the presence of the RDXC-managed <c>reshade-shaders</c> folder with
     /// the managed marker file.
     /// </summary>
     [Property(MaxTest = 100)]
-    public Property RsInstalled_AlwaysGetsSyncGameFolder_RegardlessOfDcStatus()
+    public Property RsInstalled_AlwaysGetsSyncGameFolder()
     {
-        var gen = from dcInstalled in Arb.Default.Bool().Generator
-                  from dcMode in Arb.Default.Bool().Generator
-                  from packIds in GenNonEmptyPackSelection()
+        var gen = from packIds in GenNonEmptyPackSelection()
                   from suffix in Gen.Choose(1, 999999)
-                  select (dcInstalled, dcMode, packIds, suffix);
+                  select (packIds, suffix);
 
         return Prop.ForAll(gen.ToArbitrary(), tuple =>
         {
-            var (dcInstalled, dcMode, packIds, suffix) = tuple;
+            var (packIds, suffix) = tuple;
 
-            var gameDir = Path.Combine(_tempRoot, $"game_{suffix}_{dcInstalled}_{dcMode}");
+            var gameDir = Path.Combine(_tempRoot, $"game_{suffix}");
             Directory.CreateDirectory(gameDir);
 
             try
             {
                 var locations = new[]
                 {
-                    (installPath: gameDir, dcInstalled, rsInstalled: true,
-                     dcMode, shaderModeOverride: (string?)null)
+                    (installPath: gameDir, rsInstalled: true,
+                     shaderModeOverride: (string?)null)
                 };
 
                 _service.SyncShadersToAllLocations(locations, packIds);
@@ -112,15 +110,15 @@ public class SyncAllLocationsRsRoutingPropertyTests : IDisposable
                 if (!Directory.Exists(rsDir))
                     return false.Label(
                         $"reshade-shaders folder missing — SyncGameFolder was not called " +
-                        $"(dcInstalled={dcInstalled}, dcMode={dcMode}, packs={packIds.Length})");
+                        $"(packs={packIds.Length})");
 
                 var markerPath = Path.Combine(rsDir, "Managed by RDXC.txt");
                 if (!File.Exists(markerPath))
                     return false.Label(
                         $"Managed marker missing — SyncGameFolder did not complete deployment " +
-                        $"(dcInstalled={dcInstalled}, dcMode={dcMode}, packs={packIds.Length})");
+                        $"(packs={packIds.Length})");
 
-                return true.Label($"OK: dcInstalled={dcInstalled}, dcMode={dcMode}, packs={packIds.Length}");
+                return true.Label($"OK: packs={packIds.Length}");
             }
             finally
             {

@@ -116,9 +116,7 @@ public class ReShadeReinstallCleanupPreservationTests : IDisposable
 
                 // ── Act ──────────────────────────────────────────────────────
                 var resultRecord = _service.InstallReShadeAsync(
-                    gameName, gameFolder,
-                    dcMode: false,
-                    dcIsInstalled: false).GetAwaiter().GetResult();
+                    gameName, gameFolder).GetAwaiter().GetResult();
 
                 _seededRecords.Add(resultRecord);
 
@@ -142,7 +140,7 @@ public class ReShadeReinstallCleanupPreservationTests : IDisposable
     /// Property 2b: For standard-filename reinstalls where InstalledAs matches
     /// destName, the file is overwritten in place with no orphaned DLLs.
     ///
-    /// Observed on UNFIXED code: When InstalledAs = "dxgi.dll" and dcMode=false
+    /// Observed on UNFIXED code: When InstalledAs = "dxgi.dll"
     /// (destName = "dxgi.dll"), File.Copy overwrites the existing dxgi.dll.
     /// No extra files are created or deleted.
     ///
@@ -182,9 +180,7 @@ public class ReShadeReinstallCleanupPreservationTests : IDisposable
 
                 // ── Act ──────────────────────────────────────────────────────
                 var resultRecord = _service.InstallReShadeAsync(
-                    gameName, gameFolder,
-                    dcMode: false,
-                    dcIsInstalled: false).GetAwaiter().GetResult();
+                    gameName, gameFolder).GetAwaiter().GetResult();
 
                 _seededRecords.Add(resultRecord);
 
@@ -203,20 +199,20 @@ public class ReShadeReinstallCleanupPreservationTests : IDisposable
             });
     }
 
-    // ── Property 2c: Hardcoded cleanup of ReShade64/32.dll when DC Mode OFF ──────
+    // ── Property 2c: Hardcoded cleanup of ReShade64/32.dll ──────
 
     /// <summary>
-    /// Property 2c: When InstalledAs is "ReShade64.dll" or "ReShade32.dll" and
-    /// dcMode=false, the hardcoded cleanup block deletes those files before
+    /// Property 2c: When InstalledAs is "ReShade64.dll" or "ReShade32.dll",
+    /// the hardcoded cleanup block deletes those files before
     /// installing dxgi.dll. This is existing correct behavior.
     ///
     /// Observed on UNFIXED code: The hardcoded cleanup (lines 693-699) deletes
-    /// ReShade64.dll and ReShade32.dll when dcMode=false, then dxgi.dll is installed.
+    /// ReShade64.dll and ReShade32.dll, then dxgi.dll is installed.
     ///
     /// **Validates: Requirements 3.1, 3.5**
     /// </summary>
     [Property(MaxTest = 2)]
-    public Property HardcodedCleanup_ReShade64And32_DeletedWhenDcModeOff()
+    public Property HardcodedCleanup_ReShade64And32_Deleted()
     {
         var genHardcodedName = Gen.Elements("ReShade64.dll", "ReShade32.dll");
 
@@ -249,9 +245,7 @@ public class ReShadeReinstallCleanupPreservationTests : IDisposable
 
                 // ── Act ──────────────────────────────────────────────────────
                 var resultRecord = _service.InstallReShadeAsync(
-                    gameName, gameFolder,
-                    dcMode: false,
-                    dcIsInstalled: false).GetAwaiter().GetResult();
+                    gameName, gameFolder).GetAwaiter().GetResult();
 
                 _seededRecords.Add(resultRecord);
 
@@ -305,9 +299,7 @@ public class ReShadeReinstallCleanupPreservationTests : IDisposable
 
                 // ── Act ──────────────────────────────────────────────────────
                 var resultRecord = _service.InstallReShadeAsync(
-                    gameName, gameFolder,
-                    dcMode: false,
-                    dcIsInstalled: false).GetAwaiter().GetResult();
+                    gameName, gameFolder).GetAwaiter().GetResult();
 
                 _seededRecords.Add(resultRecord);
 

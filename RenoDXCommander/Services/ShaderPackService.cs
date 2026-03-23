@@ -27,12 +27,6 @@ public class ShaderPackService : IShaderPackService
     public static readonly string ShadersDir = Path.Combine(AuxInstallService.RsStagingDir, "Shaders");
     public static readonly string TexturesDir = Path.Combine(AuxInstallService.RsStagingDir, "Textures");
 
-    public static readonly string DcReshadeDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Programs", "Display_Commander", "Reshade");
-    public static readonly string DcShadersDir = Path.Combine(DcReshadeDir, "Shaders");
-    public static readonly string DcTexturesDir = Path.Combine(DcReshadeDir, "Textures");
-
     // User-defined custom shaders — placed by the user, never auto-downloaded
     public static readonly string CustomDir = Path.Combine(AuxInstallService.RsStagingDir, "Custom");
     public static readonly string CustomShadersDir = Path.Combine(CustomDir, "Shaders");
@@ -932,19 +926,22 @@ public class ShaderPackService : IShaderPackService
 
     // ── Deployment helpers ────────────────────────────────────────────────────────
 
-    public void DeployToDcFolder()
-    {
-        CrashReporter.Log("[ShaderPackService.DeployToDcFolder] No-op — local-only shader deployment");
-    }
-
     /// <summary>
     /// One-time startup migration: renames legacy Shaders and Textures folders
     /// inside the DC AppData folder to *.old so Display Commander no longer loads
     /// stale global shaders. Skips the rename when the .old target already exists.
     /// Never throws — errors are logged via CrashReporter.
     /// </summary>
+    [Obsolete("DC has been removed. This migration is retained for one release cycle to clean up existing installs.")]
     public static void MigrateLegacyDcShaders()
-        => MigrateLegacyDcShaders(DcShadersDir, DcTexturesDir);
+    {
+        var dcReshadeDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Programs", "Display_Commander", "Reshade");
+        MigrateLegacyDcShaders(
+            Path.Combine(dcReshadeDir, "Shaders"),
+            Path.Combine(dcReshadeDir, "Textures"));
+    }
 
     /// <summary>
     /// Testable overload that accepts explicit directory paths.
@@ -1094,13 +1091,6 @@ public class ShaderPackService : IShaderPackService
         }
     }
 
-    /// <summary>
-    /// Synchronises the DC global Reshade folder to exactly match the current selection.
-    /// </summary>
-    public void SyncDcFolder(IEnumerable<string>? selectedPackIds = null)
-    {
-        CrashReporter.Log("[ShaderPackService.SyncDcFolder] No-op — local-only shader deployment");
-    }
 
 
     /// <summary>
@@ -1167,7 +1157,7 @@ public class ShaderPackService : IShaderPackService
     /// otherwise the passed-in <paramref name="selectedPackIds"/> is used.
     /// </summary>
     public void SyncShadersToAllLocations(
-        IEnumerable<(string installPath, bool dcInstalled, bool rsInstalled, bool dcMode, string? shaderModeOverride)> locations,
+        IEnumerable<(string installPath, bool rsInstalled, string? shaderModeOverride)> locations,
         IEnumerable<string>? selectedPackIds = null)
     {
         foreach (var loc in locations)

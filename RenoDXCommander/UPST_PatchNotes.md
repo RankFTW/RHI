@@ -1,3 +1,34 @@
+## v1.6.0
+
+### New Features
+
+**Ultra Limiter support**
+- UPST can now install and manage the Ultra Limiter addon (`ultra_limiter.addon64`). A new UL component row appears in the install flyout and detail panel alongside RenoDX, ReShade, and Luma, with install, reinstall, and uninstall buttons, status dot, and progress indicator.
+- Ultra Limiter is automatically detected in game folders on refresh.
+- The UL row is hidden when a game is in Luma mode.
+
+**Lilium shader pack now optional in global selection**
+- The Lilium HDR shader pack is no longer locked in the global shader picker. You can now untick it if you don't want it deployed globally. Lilium is still selected by default on fresh installs.
+
+### Changes
+
+**Display Commander removed**
+- All Display Commander functionality has been removed from the codebase. DC install/uninstall, DC Mode toggle, DC DLL picker, DC per-game overrides, DC shader deployment, DC update operations, DC status indicators, and all DC-related UI elements have been stripped. This simplifies the app and reduces code surface significantly.
+- ReShade is now always installed as the standard filename (`dxgi.dll` or the DLL override name) — the DC-mode filenames (`ReShade64.dll` / `ReShade32.dll`) are no longer used.
+- The DC Legacy Mode toggle in Settings has been removed.
+
+**Overrides layout redesign**
+- The Global Shaders toggle and DLL naming override are now displayed side-by-side on the same row with a vertical divider, in both the detail view overrides panel and the grid view overrides flyout.
+- The Global update inclusion and Wiki exclusion row now uses equal-width columns so the vertical divider sits centered.
+
+**Rebranded to UPST**
+- The app has been rebranded from RenoDX Commander (RDXC) to Ultra Plus Support Tools (UPST). The executable, window title, settings directory, and all user-facing references now use the UPST name.
+
+**Obsolete specs cleaned up**
+- The `dc-legacy-toggle` and `dc-mode-redesign` spec directories have been removed.
+
+---
+
 ## v1.5.5
 
 ### New Features

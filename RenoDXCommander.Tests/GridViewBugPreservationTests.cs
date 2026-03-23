@@ -39,7 +39,6 @@ public class GridViewBugPreservationTests
         from source in GenSource
         from rdxStatus in GenStatus
         from rsStatus in GenStatus
-        from dcStatus in GenStatus
         from lumaStatus in GenStatus
         from isFav in Arb.Default.Bool().Generator
         from is32Bit in Arb.Default.Bool().Generator
@@ -54,7 +53,6 @@ public class GridViewBugPreservationTests
             Source = source,
             Status = rdxStatus,
             RsStatus = rsStatus,
-            DcStatus = dcStatus,
             LumaStatus = lumaStatus,
             IsFavourite = isFav,
             Is32Bit = is32Bit,
