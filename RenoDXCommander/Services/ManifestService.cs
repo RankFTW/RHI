@@ -25,7 +25,7 @@ public class ManifestService : IManifestService
 
     private static readonly string CachePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "manifest.json");
+        "RHI", "manifest.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -171,5 +171,9 @@ public class ManifestService : IManifestService
             m.DllNameOverrides = new Dictionary<string, ManifestDllNames>(m.DllNameOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.GraphicsApiOverrides != null)
             m.GraphicsApiOverrides = new Dictionary<string, string>(m.GraphicsApiOverrides, StringComparer.OrdinalIgnoreCase);
+        if (m.DonationUrls != null)
+            m.DonationUrls = new Dictionary<string, string>(m.DonationUrls, StringComparer.OrdinalIgnoreCase);
+        if (m.AuthorDisplayNames != null)
+            m.AuthorDisplayNames = new Dictionary<string, string>(m.AuthorDisplayNames, StringComparer.OrdinalIgnoreCase);
     }
 }

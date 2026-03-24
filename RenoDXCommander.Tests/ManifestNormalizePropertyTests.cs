@@ -52,6 +52,8 @@ public class ManifestNormalizePropertyTests
         from lumaNotes in GenNullableDict(GenGameNote)
         from engineOvr in GenNullableDict(Gen.Elements("Unreal", "Unity", "Source 2"))
         from dllOvr in GenNullableDict(GenDllNames)
+        from donationUrls in GenNullableDict(Gen.Elements("https://ko-fi.com/a", "https://ko-fi.com/b"))
+        from authorNames in GenNullableDict(Gen.Elements("Jon", "Marat"))
         select new RemoteManifest
         {
             Version = version,
@@ -64,6 +66,8 @@ public class ManifestNormalizePropertyTests
             LumaGameNotes = lumaNotes,
             EngineOverrides = engineOvr,
             DllNameOverrides = dllOvr,
+            DonationUrls = donationUrls,
+            AuthorDisplayNames = authorNames,
         };
 
     // ── Property 10: ManifestService.Normalize handles null dictionaries ──────────
@@ -96,6 +100,8 @@ public class ManifestNormalizePropertyTests
                 if (manifest.LumaGameNotes is null) nullProps.Add("LumaGameNotes");
                 if (manifest.EngineOverrides is null) nullProps.Add("EngineOverrides");
                 if (manifest.DllNameOverrides is null) nullProps.Add("DllNameOverrides");
+                if (manifest.DonationUrls is null) nullProps.Add("DonationUrls");
+                if (manifest.AuthorDisplayNames is null) nullProps.Add("AuthorDisplayNames");
 
                 return (caught is null)
                     .Label($"Threw {caught?.GetType().Name}: {caught?.Message} " +

@@ -23,7 +23,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     // Staging folder: %LocalAppData%\RenoDXCommander\reshade\
     public static readonly string RsStagingDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "reshade");
+        "RHI", "reshade");
     public static string RsStagedPath64 => Path.Combine(RsStagingDir, RsStaged64);
     public static string RsStagedPath32 => Path.Combine(RsStagingDir, RsStaged32);
 
@@ -185,7 +185,7 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     // ── Infrastructure ────────────────────────────────────────────────────────────
     private static readonly string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "aux_installed.json");
+        "RHI", "aux_installed.json");
 
     // ── INI preset folder ─────────────────────────────────────────────────────────
     /// <summary>
@@ -194,12 +194,12 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     /// </summary>
     public static readonly string InisDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "inis");
+        "RHI", "inis");
 
     public static string RsIniPath => Path.Combine(InisDir, "reshade.ini");
     public static string RsVulkanIniPath => Path.Combine(InisDir, "reshade.vulkan.ini");
     public static string RsPresetIniPath => Path.Combine(InisDir, "ReShadePreset.ini");
-    public static string UlIniPath => Path.Combine(InisDir, "ultra_limiter.ini");
+    public static string UlIniPath => Path.Combine(InisDir, "relimiter.ini");
 
     /// <summary>
     /// Ensures the inis directory exists and seeds the default reshade.ini if missing.
@@ -246,20 +246,20 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
             }
         }
 
-        // Seed bundled ultra_limiter.ini if the user doesn't already have one
+        // Seed bundled relimiter.ini if the user doesn't already have one
         if (!File.Exists(UlIniPath))
         {
-            var bundledUl = Path.Combine(AppContext.BaseDirectory, "ultra_limiter.ini");
+            var bundledUl = Path.Combine(AppContext.BaseDirectory, "relimiter.ini");
             if (File.Exists(bundledUl))
             {
                 try
                 {
                     File.Copy(bundledUl, UlIniPath, overwrite: false);
-                    CrashReporter.Log("[AuxInstallService.EnsureInisDir] Seeded default ultra_limiter.ini from bundle");
+                    CrashReporter.Log("[AuxInstallService.EnsureInisDir] Seeded default relimiter.ini from bundle");
                 }
                 catch (Exception ex)
                 {
-                    CrashReporter.Log($"[AuxInstallService.EnsureInisDir] Failed to seed ultra_limiter.ini — {ex.Message}");
+                    CrashReporter.Log($"[AuxInstallService.EnsureInisDir] Failed to seed relimiter.ini — {ex.Message}");
                 }
             }
         }
@@ -377,14 +377,14 @@ public class AuxInstallService : IAuxInstallService, IAuxFileService
     }
 
     /// <summary>
-    /// Copies ultra_limiter.ini from the inis folder to the game directory (addon deploy path).
+    /// Copies relimiter.ini from the inis folder to the game directory (addon deploy path).
     /// </summary>
     public static void CopyUlIni(string gameInstallPath)
     {
         if (!File.Exists(UlIniPath))
-            throw new FileNotFoundException("ultra_limiter.ini not found in inis folder.", UlIniPath);
+            throw new FileNotFoundException("relimiter.ini not found in inis folder.", UlIniPath);
         var deployPath = ModInstallService.GetAddonDeployPath(gameInstallPath);
-        File.Copy(UlIniPath, Path.Combine(deployPath, "ultra_limiter.ini"), overwrite: true);
+        File.Copy(UlIniPath, Path.Combine(deployPath, "relimiter.ini"), overwrite: true);
     }
 
     // ── INI parsing / writing helpers ─────────────────────────────────────────────

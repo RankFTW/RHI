@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace RenoDXCommander.Services;
 
 /// <summary>
-/// Checks GitHub Releases for a newer version of UPST and downloads the installer if requested.
+/// Checks GitHub Releases for a newer version of RHI and downloads the installer if requested.
 /// </summary>
 public class UpdateService : IUpdateService
 {
@@ -15,16 +15,18 @@ public class UpdateService : IUpdateService
 
     public UpdateService(HttpClient http) => _http = http;
     // GitHub API endpoint for the stable release tag.
-    // Using the tags endpoint gives a single release object directly.
+    // Check the RHI repo first, fall back to legacy RDXC repo.
     private const string ReleaseApiUrl =
+        "https://api.github.com/repos/RankFTW/RHI/releases/tags/RHI";
+    private const string LegacyReleaseApiUrl =
         "https://api.github.com/repos/RankFTW/RenoDXChecker/releases/tags/RDXC";
 
     // GitHub API endpoint for the "RDXC-BETA" release tag.
     private const string BetaReleaseApiUrl =
         "https://api.github.com/repos/RankFTW/RenoDXChecker/releases/tags/RDXC-BETA";
 
-    // The asset filename to download when updating.
-    private const string InstallerFileName = "RDXC-Setup.exe";
+    // The asset filenames to look for when updating (checked in order).
+    private static readonly string[] InstallerFileNames = ["RHI-Setup.exe", "RDXC-Setup.exe"];
 
     /// <summary>
     /// Returns the current app version from the assembly metadata (set via .csproj AssemblyVersion).
@@ -42,8 +44,13 @@ public class UpdateService : IUpdateService
     {
         try
         {
-            // Always fetch the stable release
+            // Always fetch the stable release — try RHI repo first, fall back to legacy RDXC
             var stable = await FetchReleaseAsync(ReleaseApiUrl).ConfigureAwait(false);
+            if (stable == null)
+            {
+                CrashReporter.Log("[UpdateService.CheckForUpdateAsync] RHI endpoint returned nothing, trying legacy RDXC...");
+                stable = await FetchReleaseAsync(LegacyReleaseApiUrl).ConfigureAwait(false);
+            }
 
             // Fetch beta release only when opted in; failure is non-fatal
             (RdxcVersion version, string downloadUrl)? beta = null;
@@ -117,7 +124,7 @@ public class UpdateService : IUpdateService
     private async Task<(RdxcVersion version, string downloadUrl)?> FetchReleaseAsync(string apiUrl)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("UltraPlusST", CurrentVersion.ToString()));
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RHI", CurrentVersion.ToString()));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 
         var response = await _http.SendAsync(request).ConfigureAwait(false);
@@ -142,25 +149,29 @@ public class UpdateService : IUpdateService
             return null;
         }
 
-        // Find the installer asset download URL
+        // Find the installer asset download URL (check RHI-Setup.exe first, then legacy RDXC)
         string? downloadUrl = null;
         if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
         {
-            foreach (var asset in assets.EnumerateArray())
+            foreach (var installerName in InstallerFileNames)
             {
-                var assetName = asset.TryGetProperty("name", out var n) ? n.GetString() : null;
-                if (string.Equals(assetName, InstallerFileName, StringComparison.OrdinalIgnoreCase))
+                foreach (var asset in assets.EnumerateArray())
                 {
-                    downloadUrl = asset.TryGetProperty("browser_download_url", out var url)
-                        ? url.GetString() : null;
-                    break;
+                    var assetName = asset.TryGetProperty("name", out var n) ? n.GetString() : null;
+                    if (string.Equals(assetName, installerName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        downloadUrl = asset.TryGetProperty("browser_download_url", out var url)
+                            ? url.GetString() : null;
+                        break;
+                    }
                 }
+                if (!string.IsNullOrEmpty(downloadUrl)) break;
             }
         }
 
         if (string.IsNullOrEmpty(downloadUrl))
         {
-            CrashReporter.Log($"[UpdateService.FetchReleaseAsync] Version {version.ToDisplayString()} found but no '{InstallerFileName}' asset");
+            CrashReporter.Log($"[UpdateService.FetchReleaseAsync] Version {version.ToDisplayString()} found but no installer asset (tried {string.Join(", ", InstallerFileNames)})");
             return null;
         }
 
@@ -180,14 +191,17 @@ public class UpdateService : IUpdateService
             progress?.Report(("Downloading update...", 0));
 
             var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
-            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("UltraPlusST", CurrentVersion.ToString()));
+            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RHI", CurrentVersion.ToString()));
 
             var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
                 .ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             var totalBytes = response.Content.Headers.ContentLength ?? -1;
-            var tempPath = Path.Combine(Path.GetTempPath(), InstallerFileName);
+            // Derive the installer filename from the download URL, falling back to RHI-Setup.exe
+            var fileName = Path.GetFileName(new Uri(downloadUrl).LocalPath);
+            if (string.IsNullOrEmpty(fileName)) fileName = InstallerFileNames[0];
+            var tempPath = Path.Combine(Path.GetTempPath(), fileName);
 
             await using var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None,
@@ -246,7 +260,7 @@ public class UpdateService : IUpdateService
 
     /// <summary>
     /// Parses a version string from a release tag or name.
-    /// Handles formats like: "1.2.2", "v1.2.2", "UPST-1.2.2", "UPST 1.2.2", "UPST v1.2.2" etc.
+    /// Handles formats like: "1.2.2", "v1.2.2", "RHI-1.2.2", "RHI 1.2.2", "RHI v1.2.2" etc.
     /// </summary>
     private Version? ParseVersion(string? input)
     {
@@ -272,7 +286,7 @@ public class UpdateInfo
 }
 
 /// <summary>
-/// Represents an UPST version with optional beta suffix.
+/// Represents a RHI version with optional beta suffix.
 /// Examples: "1.4.8", "1.4.8-beta1", "1.4.8 beta 1"
 /// </summary>
 public readonly record struct RdxcVersion(int Major, int Minor, int Build, int? BetaNumber = null)
@@ -316,7 +330,7 @@ public readonly record struct RdxcVersion(int Major, int Minor, int Build, int? 
 
     /// <summary>
     /// Parses version strings such as "1.4.8", "1.4.8-beta1", "1.4.8 beta 1",
-    /// "v1.4.8-beta2", "UPST-1.4.8-beta1". Returns false and logs when input is invalid.
+    /// "v1.4.8-beta2", "RHI-1.4.8-beta1". Returns false and logs when input is invalid.
     /// </summary>
     public static bool TryParse(string? input, out RdxcVersion version)
     {

@@ -200,7 +200,7 @@ public class GridViewBugPreservationTests
             DllNamingOverrideHasRsNameBox: true,
             DllNamingOverrideHasDcNameBox: true,
             HasGlobalUpdateInclusionToggles: true,
-            GlobalUpdateToggleCount: 3, // RS, DC, RDX
+            GlobalUpdateToggleCount: 4, // RS, RDX, UL
             HasWikiExclusionToggle: true,
             HasResetOverridesButton: true);
     }
@@ -245,7 +245,7 @@ public class GridViewBugPreservationTests
                                      && structure.DllNamingOverrideHasRsNameBox
                                      && structure.DllNamingOverrideHasDcNameBox;
                 bool updateTogglesOk = structure.HasGlobalUpdateInclusionToggles
-                                       && structure.GlobalUpdateToggleCount == 3;
+                                       && structure.GlobalUpdateToggleCount == 4;
                 bool wikiExclusionOk = structure.HasWikiExclusionToggle;
                 bool resetBtnOk = structure.HasResetOverridesButton;
 

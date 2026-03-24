@@ -70,7 +70,7 @@ public partial class MainViewModel : ObservableObject
         set => _settingsViewModel.LastSeenVersion = value;
     }
 
-    public string UpdateButtonTooltip => "Update ReShade and RenoDX for all games";
+    public string UpdateButtonTooltip => "Update ReShade, RenoDX, and ReLimiter for all games";
 
     [ObservableProperty] private bool _lumaFeatureEnabled = true;
 
@@ -495,6 +495,7 @@ public partial class MainViewModel : ObservableObject
     private HashSet<string> _ueExtendedGames => _gameNameService.UeExtendedGames;
     private HashSet<string> _updateAllExcludedReShade => _gameNameService.UpdateAllExcludedReShade;
     private HashSet<string> _updateAllExcludedRenoDx => _gameNameService.UpdateAllExcludedRenoDx;
+    private HashSet<string> _updateAllExcludedUl => _gameNameService.UpdateAllExcludedUl;
     private Dictionary<string, string> _perGameShaderMode => _gameNameService.PerGameShaderMode;
     /// <summary>Per-game Vulkan rendering path preferences. Key = game name, Value = "DirectX" or "Vulkan".</summary>
     private Dictionary<string, string> _vulkanRenderingPaths => _gameNameService.VulkanRenderingPaths;
@@ -1008,7 +1009,8 @@ public partial class MainViewModel : ObservableObject
 
     public bool AnyUpdateAvailable =>
         _allCards.Any(c => c.Status    == GameStatus.UpdateAvailable ||
-                           c.RsStatus  == GameStatus.UpdateAvailable);
+                           c.RsStatus  == GameStatus.UpdateAvailable ||
+                           c.UlStatus  == GameStatus.UpdateAvailable);
 
     // Button colours — purple when updates available, dim when idle
     public string UpdateAllBtnBackground => AnyUpdateAvailable ? "#201838" : "#1E242C";
@@ -1018,6 +1020,7 @@ public partial class MainViewModel : ObservableObject
 
     public bool IsUpdateAllExcludedReShade(string gameName) => _updateAllExcludedReShade.Contains(gameName);
     public bool IsUpdateAllExcludedRenoDx(string gameName) => _updateAllExcludedRenoDx.Contains(gameName);
+    public bool IsUpdateAllExcludedUl(string gameName) => _updateAllExcludedUl.Contains(gameName);
 
     public void ToggleUpdateAllExclusionReShade(string gameName)
     {
@@ -1035,6 +1038,15 @@ public partial class MainViewModel : ObservableObject
         SaveNameMappings();
         var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
         if (card != null) card.ExcludeFromUpdateAllRenoDx = set.Contains(gameName);
+    }
+
+    public void ToggleUpdateAllExclusionUl(string gameName)
+    {
+        var set = _gameNameService.UpdateAllExcludedUl;
+        if (!set.Remove(gameName)) set.Add(gameName);
+        SaveNameMappings();
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        if (card != null) card.ExcludeFromUpdateAllUl = set.Contains(gameName);
     }
     private void LoadNameMappings()
     {
@@ -1383,14 +1395,14 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Reads the bundled UPST_PatchNotes.md and extracts the last N version sections.
+    /// Reads the bundled RHI_PatchNotes.md and extracts the last N version sections.
     /// Each section starts with "## vX.Y.Z".
     /// </summary>
     public static string GetRecentPatchNotes(int count = 3)
     {
         try
         {
-            var path = Path.Combine(AppContext.BaseDirectory, "UPST_PatchNotes.md");
+            var path = Path.Combine(AppContext.BaseDirectory, "RHI_PatchNotes.md");
             if (!File.Exists(path)) return "Patch notes file not found.";
 
             var lines = File.ReadAllLines(path);
@@ -1852,6 +1864,7 @@ public partial class MainViewModel : ObservableObject
             IsManifestUeExtended   = useUeExt && !isNativeHdr,
             ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
             ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
+            ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
             ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smO) ? smO : null,
             Is32Bit                = ResolveIs32Bit(game.Name, manualMachine),
             GraphicsApi            = DetectGraphicsApi(scanPath, engine, game.Name),
@@ -1876,15 +1889,18 @@ public partial class MainViewModel : ObservableObject
                 : null;
         }
 
-        // Ultra Limiter detection for manually added game
+        // ReLimiter detection for manually added game
         if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
         {
             var ulDeployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
             if (File.Exists(Path.Combine(ulDeployPath, UltraLimiterFileName))
-                || File.Exists(Path.Combine(card.InstallPath, UltraLimiterFileName)))
+                || File.Exists(Path.Combine(card.InstallPath, UltraLimiterFileName))
+                || File.Exists(Path.Combine(ulDeployPath, LegacyUltraLimiterFileName))
+                || File.Exists(Path.Combine(card.InstallPath, LegacyUltraLimiterFileName)))
             {
                 card.UlStatus = GameStatus.Installed;
                 card.UlInstalledFile = UltraLimiterFileName;
+                card.UlInstalledVersion = ReadUlInstalledVersion();
             }
         }
 
@@ -1987,33 +2003,34 @@ public partial class MainViewModel : ObservableObject
         _filterViewModel.UpdateCounts();
     }
 
-    // ── Ultra Limiter commands ────────────────────────────────────────────────────
+    // ── ReLimiter commands ────────────────────────────────────────────────────
 
-    private const string UltraLimiterFileName = "ultra_limiter.addon64";
-    private const string UltraLimiterDownloadUrl =
-        "https://github.com/RankFTW/Ultra-Limiter/releases/download/Ultra_Limiter/ultra_limiter.addon64";
+    private const string UltraLimiterFileName = "relimiter.addon64";
+    private const string LegacyUltraLimiterFileName = "ultra_limiter.addon64";
+    private const string UltraLimiterReleasesApiUrl =
+        "https://api.github.com/repos/RankFTW/Ultra-Limiter/releases/latest";
 
     private static readonly string UlCachePath = Path.Combine(
         ModInstallService.DownloadCacheDir, UltraLimiterFileName);
 
     private static readonly string UlMetaPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "ul_meta.json");
+        "RHI", "ul_meta.json");
 
     /// <summary>
-    /// Downloads Ultra Limiter from GitHub (or uses cache) and deploys to the game folder.
+    /// Downloads ReLimiter from GitHub (or uses cache) and deploys to the game folder.
     /// Stores file size + SHA-256 hash for update detection.
     /// </summary>
     public async Task InstallUlAsync(GameCardViewModel card)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return;
         card.UlIsInstalling = true;
-        card.UlActionMessage = "Downloading Ultra Limiter...";
+        card.UlActionMessage = "Downloading ReLimiter...";
         card.UlProgress = 0;
         try
         {
-            // Force fresh download on reinstall/update
-            if (card.UlStatus == GameStatus.Installed || card.UlStatus == GameStatus.UpdateAvailable)
+            // Force fresh download on reinstall (but not update — the check already cached the new file)
+            if (card.UlStatus == GameStatus.Installed)
             {
                 if (File.Exists(UlCachePath)) File.Delete(UlCachePath);
             }
@@ -2032,11 +2049,22 @@ public partial class MainViewModel : ObservableObject
             var destPath = Path.Combine(deployPath, UltraLimiterFileName);
             File.Copy(UlCachePath, destPath, overwrite: true);
 
+            // Remove legacy ultra_limiter.addon64 if present
+            var legacyPath = Path.Combine(deployPath, LegacyUltraLimiterFileName);
+            if (File.Exists(legacyPath)) File.Delete(legacyPath);
+            var legacyDirect = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName);
+            if (File.Exists(legacyDirect)) File.Delete(legacyDirect);
+
+            // Save version metadata after successful install
+            if (!string.IsNullOrEmpty(_latestUlVersion))
+                SaveUlMeta(_latestUlVersion);
+
             DispatcherQueue?.TryEnqueue(() =>
             {
                 card.UlInstalledFile = UltraLimiterFileName;
+                card.UlInstalledVersion = _latestUlVersion?.TrimStart('v', 'V');
                 card.UlStatus = GameStatus.Installed;
-                card.UlActionMessage = "✅ Ultra Limiter installed!";
+                card.UlActionMessage = "✅ ReLimiter installed!";
                 card.UlIsInstalling = false;
                 card.NotifyAll();
             });
@@ -2054,8 +2082,8 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Downloads Ultra Limiter to the cache directory if not already present.
-    /// Also saves size + hash metadata for future update detection.
+    /// Downloads ReLimiter to the cache directory if not already present.
+    /// Fetches the latest release info from GitHub if not already cached from an update check.
     /// </summary>
     private async Task EnsureUlCachedAsync(IProgress<(string msg, double pct)>? progress = null)
     {
@@ -2065,11 +2093,23 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        // If we don't have a download URL yet (fresh install, not from update check), fetch it
+        if (string.IsNullOrEmpty(_latestUlDownloadUrl))
+        {
+            await FetchLatestUlReleaseInfoAsync();
+        }
+
+        var url = _latestUlDownloadUrl;
+        if (string.IsNullOrEmpty(url))
+        {
+            throw new InvalidOperationException("Could not determine ReLimiter download URL from GitHub releases.");
+        }
+
         Directory.CreateDirectory(ModInstallService.DownloadCacheDir);
         var tempPath = UlCachePath + ".tmp";
 
         progress?.Report(("Downloading...", 0));
-        var resp = await _http.GetAsync(UltraLimiterDownloadUrl, HttpCompletionOption.ResponseHeadersRead);
+        var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         resp.EnsureSuccessStatusCode();
 
         var total = resp.Content.Headers.ContentLength ?? -1L;
@@ -2092,25 +2132,62 @@ public partial class MainViewModel : ObservableObject
         if (File.Exists(UlCachePath)) File.Delete(UlCachePath);
         File.Move(tempPath, UlCachePath);
 
-        // Save metadata for update detection
-        SaveUlMeta(UlCachePath);
+        // Save version metadata for update detection
+        if (!string.IsNullOrEmpty(_latestUlVersion))
+            SaveUlMeta(_latestUlVersion);
         progress?.Report(("Downloaded!", 100));
     }
 
-    /// <summary>Computes and persists UL file size + SHA-256 hash.</summary>
-    private static void SaveUlMeta(string filePath)
+    /// <summary>
+    /// Fetches the latest UL release info (version + download URL) from GitHub.
+    /// Populates _latestUlVersion and _latestUlDownloadUrl.
+    /// </summary>
+    private async Task FetchLatestUlReleaseInfoAsync()
     {
         try
         {
-            var info = new FileInfo(filePath);
-            using var sha = System.Security.Cryptography.SHA256.Create();
-            using var stream = File.OpenRead(filePath);
-            var hash = Convert.ToHexString(sha.ComputeHash(stream));
+            using var apiReq = new HttpRequestMessage(HttpMethod.Get, UltraLimiterReleasesApiUrl);
+            apiReq.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+            apiReq.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
 
+            var apiResp = await _http.SendAsync(apiReq, HttpCompletionOption.ResponseContentRead);
+            if (!apiResp.IsSuccessStatusCode) return;
+
+            var json = await apiResp.Content.ReadAsStringAsync();
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+            if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))
+                _latestUlVersion = tagEl.GetString();
+
+            if (doc.RootElement.TryGetProperty("assets", out var assets))
+            {
+                foreach (var asset in assets.EnumerateArray())
+                {
+                    if (asset.TryGetProperty("name", out var name) &&
+                        name.GetString()?.Equals(UltraLimiterFileName, StringComparison.OrdinalIgnoreCase) == true &&
+                        asset.TryGetProperty("browser_download_url", out var urlEl))
+                    {
+                        _latestUlDownloadUrl = urlEl.GetString();
+                        break;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[FetchLatestUlReleaseInfoAsync] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>Persists UL installed version to the meta file.</summary>
+    private static void SaveUlMeta(string version)
+    {
+        try
+        {
+            var cleanVersion = version.TrimStart('v', 'V');
             var meta = new Dictionary<string, object>
             {
-                ["FileSize"] = info.Length,
-                ["FileHash"] = hash,
+                ["InstalledVersion"] = cleanVersion,
                 ["UpdatedAt"] = DateTime.UtcNow.ToString("o"),
             };
 
@@ -2124,68 +2201,184 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Checks if a newer Ultra Limiter is available by downloading the remote file
-    /// and comparing size + hash against the cached version.
-    /// Returns true if an update is available.
-    /// </summary>
-    public async Task<bool> CheckUlUpdateAsync()
+    /// <summary>Reads the installed UL version from the meta file, or null if not found.</summary>
+    private static string? ReadUlInstalledVersion()
     {
-        if (!File.Exists(UlCachePath) || !File.Exists(UlMetaPath)) return false;
-
         try
         {
+            if (!File.Exists(UlMetaPath)) return null;
             var metaJson = File.ReadAllText(UlMetaPath);
             var meta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(metaJson);
-            if (meta == null) return false;
-
-            var storedSize = meta.TryGetValue("FileSize", out var sizeEl) ? sizeEl.GetInt64() : -1L;
-            var storedHash = meta.TryGetValue("FileHash", out var hashEl) ? hashEl.GetString() : null;
-
-            // Download remote file to temp and compare
-            var tempPath = UlCachePath + $".update_check_{Guid.NewGuid():N}.tmp";
-            try
-            {
-                var resp = await _http.GetAsync(UltraLimiterDownloadUrl, HttpCompletionOption.ResponseHeadersRead);
-                if (!resp.IsSuccessStatusCode) return false;
-
-                using (var net = await resp.Content.ReadAsStreamAsync())
-                using (var file = File.Create(tempPath))
-                {
-                    var buf = new byte[1024 * 1024];
-                    int read;
-                    while ((read = await net.ReadAsync(buf)) > 0)
-                        await file.WriteAsync(buf.AsMemory(0, read));
-                }
-
-                var remoteSize = new FileInfo(tempPath).Length;
-                using var sha = System.Security.Cryptography.SHA256.Create();
-                using var stream = File.OpenRead(tempPath);
-                var remoteHash = Convert.ToHexString(sha.ComputeHash(stream));
-
-                if (remoteSize == storedSize && remoteHash.Equals(storedHash, StringComparison.OrdinalIgnoreCase))
-                {
-                    File.Delete(tempPath);
-                    return false; // no update
-                }
-
-                // Update available — move temp into cache
-                if (File.Exists(UlCachePath)) File.Delete(UlCachePath);
-                File.Move(tempPath, UlCachePath);
-                SaveUlMeta(UlCachePath);
-
-                _crashReporter.Log($"[MainViewModel.CheckUlUpdateAsync] UL update detected ({storedSize} → {remoteSize} bytes)");
-                return true;
-            }
-            finally
-            {
-                if (File.Exists(tempPath)) try { File.Delete(tempPath); } catch { }
-            }
+            if (meta != null && meta.TryGetValue("InstalledVersion", out var verEl))
+                return verEl.GetString()?.TrimStart('v', 'V');
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[MainViewModel.CheckUlUpdateAsync] UL update check failed — {ex.Message}");
+            CrashReporter.Log($"[MainViewModel.ReadUlInstalledVersion] Failed — {ex.Message}");
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if a newer ReLimiter is available by comparing the latest GitHub
+    /// release tag version against the locally installed version from meta.
+    /// Returns true if an update is available.
+    /// </summary>
+    public async Task<bool> CheckUlUpdateAsync(List<GameCardViewModel> cards)
+    {
+        _crashReporter.Log($"[CheckUlUpdateAsync] Starting");
+
+        // ── Read installed version from meta ──────────────────────────────
+        var installedVersion = ReadUlInstalledVersion();
+        bool anyInstalled = cards.Any(c => c.UlStatus == GameStatus.Installed);
+
+        if (installedVersion == null && !anyInstalled)
+        {
+            _crashReporter.Log("[CheckUlUpdateAsync] No UL installed and no meta — skipping");
             return false;
+        }
+
+        // If UL is installed but no version in meta (legacy install), treat as needing update
+        if (installedVersion == null && anyInstalled)
+        {
+            _crashReporter.Log("[CheckUlUpdateAsync] UL installed but no version in meta — treating as update needed");
+        }
+
+        try
+        {
+            // ── Fetch latest release from GitHub API ──────────────────────
+            using var apiReq = new HttpRequestMessage(HttpMethod.Get, UltraLimiterReleasesApiUrl);
+            apiReq.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+            apiReq.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
+
+            var apiResp = await _http.SendAsync(apiReq, HttpCompletionOption.ResponseContentRead);
+            if (!apiResp.IsSuccessStatusCode)
+            {
+                _crashReporter.Log($"[CheckUlUpdateAsync] API returned {(int)apiResp.StatusCode}");
+                return false;
+            }
+
+            var json = await apiResp.Content.ReadAsStringAsync();
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+            // Get the tag name (version)
+            string? remoteVersion = null;
+            if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))
+                remoteVersion = tagEl.GetString();
+
+            if (string.IsNullOrEmpty(remoteVersion))
+            {
+                _crashReporter.Log("[CheckUlUpdateAsync] No tag_name in latest release");
+                return false;
+            }
+
+            // Get the download URL for the addon file from assets
+            string? downloadUrl = null;
+            if (doc.RootElement.TryGetProperty("assets", out var assets))
+            {
+                foreach (var asset in assets.EnumerateArray())
+                {
+                    if (asset.TryGetProperty("name", out var name) &&
+                        name.GetString()?.Equals(UltraLimiterFileName, StringComparison.OrdinalIgnoreCase) == true &&
+                        asset.TryGetProperty("browser_download_url", out var urlEl))
+                    {
+                        downloadUrl = urlEl.GetString();
+                        break;
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(downloadUrl))
+            {
+                _crashReporter.Log("[CheckUlUpdateAsync] No matching asset found in latest release");
+                return false;
+            }
+
+            _crashReporter.Log($"[CheckUlUpdateAsync] Remote version={remoteVersion}, installed={installedVersion ?? "(none)"}");
+
+            // ── Compare versions ──────────────────────────────────────────
+            if (installedVersion != null && !IsNewerVersion(remoteVersion, installedVersion))
+            {
+                _crashReporter.Log("[CheckUlUpdateAsync] No update (installed is current)");
+                return false;
+            }
+
+            // ── Update available — store remote info and pre-cache ────────
+            _latestUlVersion = remoteVersion;
+            _latestUlDownloadUrl = downloadUrl;
+            _crashReporter.Log($"[CheckUlUpdateAsync] Update available: {installedVersion ?? "(none)"} → {remoteVersion}");
+
+            await PreCacheRemoteUlAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[CheckUlUpdateAsync] Failed — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Compares two version strings (e.g. "1.0.0" vs "1.0.1").
+    /// Returns true if <paramref name="remote"/> is newer than <paramref name="installed"/>.
+    /// Strips leading 'v' if present.
+    /// </summary>
+    private static bool IsNewerVersion(string remote, string installed)
+    {
+        static Version? Parse(string s)
+        {
+            s = s.TrimStart('v', 'V').Trim();
+            return Version.TryParse(s, out var v) ? v : null;
+        }
+
+        var r = Parse(remote);
+        var i = Parse(installed);
+        if (r == null || i == null) return !string.Equals(remote, installed, StringComparison.OrdinalIgnoreCase);
+        return r > i;
+    }
+
+    // Cached latest release info from the update check
+    private string? _latestUlVersion;
+    private string? _latestUlDownloadUrl;
+
+    /// <summary>URL to the GitHub release page for the latest UL version, or null if unknown.</summary>
+    public string? LatestUlReleasePageUrl => _latestUlVersion != null
+        ? $"https://github.com/RankFTW/Ultra-Limiter/releases/tag/{_latestUlVersion}"
+        : null;
+
+    /// <summary>Downloads the remote UL file into the cache using the URL from the latest release.</summary>
+    private async Task PreCacheRemoteUlAsync()
+    {
+        try
+        {
+            var url = _latestUlDownloadUrl;
+            if (string.IsNullOrEmpty(url))
+            {
+                _crashReporter.Log("[PreCacheRemoteUlAsync] No download URL available");
+                return;
+            }
+
+            var tempPath = UlCachePath + ".precache.tmp";
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
+            var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
+            if (!resp.IsSuccessStatusCode) return;
+
+            using (var net = await resp.Content.ReadAsStreamAsync())
+            using (var file = File.Create(tempPath))
+            {
+                var buf = new byte[1024 * 1024];
+                int read;
+                while ((read = await net.ReadAsync(buf)) > 0)
+                    await file.WriteAsync(buf.AsMemory(0, read));
+            }
+
+            if (File.Exists(UlCachePath)) File.Delete(UlCachePath);
+            File.Move(tempPath, UlCachePath);
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[PreCacheRemoteUlAsync] Failed — {ex.Message}");
         }
     }
 
@@ -2204,9 +2397,16 @@ public partial class MainViewModel : ObservableObject
             if (File.Exists(directPath))
                 File.Delete(directPath);
 
+            // Remove legacy ultra_limiter.addon64 if present
+            var legacyPath = Path.Combine(deployPath, LegacyUltraLimiterFileName);
+            if (File.Exists(legacyPath)) File.Delete(legacyPath);
+            var legacyDirect = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName);
+            if (File.Exists(legacyDirect)) File.Delete(legacyDirect);
+
             card.UlInstalledFile = null;
+            card.UlInstalledVersion = null;
             card.UlStatus = GameStatus.NotInstalled;
-            card.UlActionMessage = "Ultra Limiter removed.";
+            card.UlActionMessage = "ReLimiter removed.";
             card.NotifyAll();
         }
         catch (Exception ex)
@@ -2715,6 +2915,27 @@ public partial class MainViewModel : ObservableObject
             shaderResolver: ResolveShaderSelection);
     }
 
+    public async Task UpdateAllUlAsync()
+    {
+        var ulCards = _allCards.Where(c => c.UlStatus == GameStatus.UpdateAvailable && !c.IsHidden && !c.ExcludeFromUpdateAllUl).ToList();
+        if (ulCards.Count == 0) return;
+
+        foreach (var card in ulCards)
+        {
+            try { await InstallUlAsync(card); }
+            catch (Exception ex) { _crashReporter.Log($"[UpdateAllUlAsync] Failed for '{card.GameName}': {ex.Message}"); }
+        }
+
+        DispatcherQueue?.TryEnqueue(() =>
+        {
+            HasUpdatesAvailable = AnyUpdateAvailable;
+            OnPropertyChanged(nameof(AnyUpdateAvailable));
+            OnPropertyChanged(nameof(UpdateAllBtnBackground));
+            OnPropertyChanged(nameof(UpdateAllBtnForeground));
+            OnPropertyChanged(nameof(UpdateAllBtnBorder));
+        });
+    }
+
     // ── Init ──
 
     public async Task InitializeAsync(bool forceRescan = false)
@@ -2852,6 +3073,10 @@ public partial class MainViewModel : ObservableObject
 
             // Apply remote manifest data before building cards (local user overrides take priority)
             ApplyManifest(_manifest);
+
+            // Merge manifest-provided author donation URLs and display names
+            if (_manifest != null)
+                GameCardViewModel.MergeManifestAuthorData(_manifest.DonationUrls, _manifest.AuthorDisplayNames);
 
             // Apply manifest-driven wiki status overrides to mod list
             ApplyManifestStatusOverrides();
@@ -2994,16 +3219,23 @@ public partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(UpdateAllBtnBorder));
             });
 
-        // Check Ultra Limiter for updates (single global check, applies to all cards with UL installed)
+        // Check ReLimiter for updates (single global check, applies to all cards with UL installed)
         try
         {
-            var ulUpdateAvailable = await CheckUlUpdateAsync().ConfigureAwait(false);
+            var ulUpdateAvailable = await CheckUlUpdateAsync(cards).ConfigureAwait(false);
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] UL update result: {ulUpdateAvailable}, cards with UL installed: {cards.Count(c => c.UlStatus == GameStatus.Installed)}");
             if (ulUpdateAvailable)
             {
                 DispatcherQueue?.TryEnqueue(() =>
                 {
                     foreach (var card in cards.Where(c => c.UlStatus == GameStatus.Installed))
                         card.UlStatus = GameStatus.UpdateAvailable;
+
+                    HasUpdatesAvailable = AnyUpdateAvailable;
+                    OnPropertyChanged(nameof(AnyUpdateAvailable));
+                    OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                    OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                    OnPropertyChanged(nameof(UpdateAllBtnBorder));
                 });
             }
         }
@@ -3495,6 +3727,7 @@ public partial class MainViewModel : ObservableObject
                 NameUrl                = effectiveMod?.NameUrl,
                 ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
                 ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
+                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
                 ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smBc) ? smBc : null,
                 Is32Bit                = ResolveIs32Bit(game.Name, detectedMachine),
                 GraphicsApi            = DetectGraphicsApi(installPath, engine, game.Name),
@@ -3525,15 +3758,18 @@ public partial class MainViewModel : ObservableObject
 
             newCard.LumaFeatureEnabled = LumaFeatureEnabled;
 
-            // ── Ultra Limiter detection ────────────────────────────────────────────
+            // ── ReLimiter detection ────────────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
             {
                 var ulDeployPath = ModInstallService.GetAddonDeployPath(installPath);
                 if (File.Exists(Path.Combine(ulDeployPath, UltraLimiterFileName))
-                    || File.Exists(Path.Combine(installPath, UltraLimiterFileName)))
+                    || File.Exists(Path.Combine(installPath, UltraLimiterFileName))
+                    || File.Exists(Path.Combine(ulDeployPath, LegacyUltraLimiterFileName))
+                    || File.Exists(Path.Combine(installPath, LegacyUltraLimiterFileName)))
                 {
                     newCard.UlStatus = GameStatus.Installed;
                     newCard.UlInstalledFile = UltraLimiterFileName;
+                    newCard.UlInstalledVersion = ReadUlInstalledVersion();
                 }
             }
 

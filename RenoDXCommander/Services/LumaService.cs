@@ -16,11 +16,11 @@ public class LumaService : ILumaService
 
     private static readonly string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "luma_installed.json");
+        "RHI", "luma_installed.json");
 
     private static readonly string DownloadCacheDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "downloads");
+        "RHI", "downloads");
 
     private readonly HttpClient _http;
     private readonly ShaderPackService _shaderPackService;

@@ -69,7 +69,8 @@
     "Greedfall: The Dying World": "Silk Engine",
 	"Satisfactory": "Unreal",
     "Terraria": "Scrungus Engine",
-	"The Elder Scrolls III: Morrowind": "Creation Engine"
+	"The Elder Scrolls III: Morrowind": "Creation Engine",
+	"Crimson Desert": "BlackSpace Engine"
   },
   "graphicsApiOverrides": {
 	"Baldur's Gate 3": "DX12, VLK",
@@ -79,10 +80,12 @@
 	"Red Dead Redemption 2": "DX12, VLK",
 	"The Witcher 3: Wild Hunt": "DX12",
 	"The Witcher 3: Wild Hunt - Game of the Year Edition": "DX12",	
-	"Dying Light": "DX11"
+	"Dying Light": "DX11",
+	"Doom: The Dark Ages": "VLK"
   },
   "dllNameOverrides": {
-	"The Elder Scrolls III: Morrowind": { "reshade": "opengl32.dll", "dc": "" }
+	"The Elder Scrolls III: Morrowind": { "reshade": "opengl32.dll", "dc": "" },
+	"Terraria": { "reshade": "dbghelp.dll", "dc": "" }
   },
   "wikiNameOverrides": {	
 	"Assassin's Creed": "Assassin's Creed™: Director's Cut Edition",
@@ -113,7 +116,6 @@
     "Nobody Wants to Die": "✅"
   },
   "wikiUnlinks": [
-    "Avatar: Frontiers of Pandora",
 	"Dead Island",
     "Elin",
     "Northern Journey",
@@ -125,7 +127,8 @@
     "Resident Evil",
     "Spark the Electric Jester 3",
     "XF Extreme Formula",
-	"Stardew Valley"
+	"Stardew Valley",
+	"Call of Duty®: Modern Warfare®"
   ],
   "installPathOverrides": {
     "Batman: Arkham Asylum GOTY Edition": "Binaries",
@@ -139,7 +142,9 @@
 	"Project Motor Racing": "x64",
 	"The Witcher 3: Wild Hunt": "bin\\x64_dx12",
 	"The Witcher 3: Wild Hunt - Game of the Year Edition": "bin\\x64_dx12",
-	"Hades II": "Ship"
+	"Hades II": "Ship",
+	"Crimson Desert": "bin64",
+	"SILENT HILL 2": "SHProto\\Binaries\\Win64"
   },
   "snapshotOverrides": {
 	"Assassin's Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
@@ -150,7 +155,8 @@
     "Jedi Fallen Order": "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64",
     "Terraria": "https://clshortfuse.github.io/renodx/renodx-terraria.addon32"
   },
-  "dcModeOverrides": {
+  "dcModeOverrides": {	
+	"Terraria": 0
   },
   "forceExternalOnly": {
     "Cyberpunk 2077": {
@@ -245,7 +251,7 @@
       "notesUrlLabel": "Download the latest version of REFramework here."
     },
     "Terraria": {
-      "notes": "⚠️ Terraria defaults to DC Mode 2 due to the game having issues with loading ReShade on its own. Display Commander is required in this title.",
+      "notes": "⚠️ ReShade must be named dbghelp.dll, this is done automatically when installed using RDXC",
       "notesUrl": null,
       "notesUrlLabel": null
     },
@@ -286,5 +292,19 @@
       "notesUrl": "https://www.nexusmods.com/finalfantasy7remake/mods/1974",
       "notesUrlLabel": "Final Fantasy VII Remake Nexus"
     }
+  },
+  "authorDisplayNames": {
+    "oopydoopy": "Jon"
+  },
+  "donationUrls": {
+    "ShortFuse": "https://ko-fi.com/shortfuse",
+    "Jon": "https://ko-fi.com/kickfister",
+    "Forge": "https://ko-fi.com/forge87682",
+    "Voosh": "https://ko-fi.com/notvoosh",
+    "Musa": "https://ko-fi.com/musaqh",
+    "Pumbo": "https://ko-fi.com/pumbo",
+    "Nukem": "https://ko-fi.com/nukem9",
+    "Lilium": "https://ko-fi.com/endlesslyflowering",
+    "Bit Viper": "https://ko-fi.com/bitviper"
   }
 }

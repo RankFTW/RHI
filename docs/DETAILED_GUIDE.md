@@ -1,6 +1,6 @@
-# UPST — Detailed Guide
+# RHI — Detailed Guide
 
-This document covers everything UPST does in depth. For a quick overview, see the [README](../README.md).
+This document covers everything RHI does in depth. For a quick overview, see the [README](../README.md).
 
 ---
 
@@ -14,7 +14,7 @@ This document covers everything UPST does in depth. For a quick overview, see th
 - [Vulkan ReShade Support](#vulkan-reshade-support)
 - [Foreign DLL Protection](#foreign-dll-protection)
 - [UE-Extended & Native HDR](#ue-extended--native-hdr)
-- [Ultra Limiter](#ultra-limiter)
+- [ReLimiter](#ultra-limiter)
 - [Shader Packs](#shader-packs)
 - [Luma Framework](#luma-framework)
 - [Per-Game Overrides](#per-game-overrides)
@@ -31,11 +31,11 @@ This document covers everything UPST does in depth. For a quick overview, see th
 
 ## Layout
 
-UPST offers two view modes — Detail View and Grid View — plus a global Settings page. UPST remembers its window size and position across restarts.
+RHI offers two view modes — Detail View and Grid View — plus a global Settings page. RHI remembers its window size and position across restarts.
 
 ### Detail View
 
-The default layout with a game list sidebar on the left and a detail panel on the right. UPST remembers which view you were last using and restores it on launch.
+The default layout with a game list sidebar on the left and a detail panel on the right. RHI remembers which view you were last using and restores it on launch.
 
 ### Grid View
 
@@ -43,7 +43,7 @@ An alternative card-based layout showing all games as a grid of cards. Toggle be
 
 - Game name and platform icon
 - Graphics API badge (e.g. DX12, VLK, DX11/12 / VLK)
-- Installation status dots for RenoDX (RDX), ReShade (RS), and Ultra Limiter (UL)
+- Installation status dots for RenoDX (RDX), ReShade (RS), and ReLimiter (UL)
 - Wiki status icon
 - Update-available highlight border
 - A Manage popout for quick access to install/uninstall/override controls without switching to Detail View
@@ -54,16 +54,16 @@ Games in Luma mode do not show a wiki status icon on the grid card.
 
 | Control | Function |
 |---------|----------|
-| **UPST logo + title** | App branding |
+| **RHI logo + title** | App branding |
 | **Refresh** | Rescan game library and fetch latest mod info. After the initial boot, refresh runs invisibly in the background — game cards stay visible throughout. |
 | **Update** | Update ReShade and RenoDX for all eligible games in one click |
-| **Help** | Flyout menu with Discord (opens the UPST support channel), Guide (opens the detailed guide), and Ko-fi (support link) |
+| **Help** | Flyout menu with Discord (opens the RHI support channel), Guide (opens the detailed guide), and Ko-fi (support link) |
 | **View toggle** | Switch between Detail View and Grid View |
 | **Settings** | Navigate to the Settings page |
 ### Game List Sidebar (Detail View)
 
 - **Search box** — filters games in real-time as you type. The X clear button appears as soon as you start typing.
-- **Filter chips** — All Games, Favourites, Installed, Unreal, Unity, Other, RenoDX, Luma, Hidden. Engine and mod filters can be combined (e.g. Unreal + RenoDX shows Unreal games with RenoDX mods). Your selected filter is saved and automatically restored when you reopen the app.
+- **Filter chips** — All Games, Favourites, Installed, Unreal, Unity, Other, RenoDX, Luma, Hidden. The Installed filter shows games with ReShade installed. Engine and mod filters can be combined (e.g. Unreal + RenoDX shows Unreal games with RenoDX mods). Your selected filter is saved and automatically restored when you reopen the app.
 - **Game/installed counts** — how many games are visible and how many have mods installed
 - **Game list** — each entry shows a platform icon, game name, and a green dot if updates are available
 
@@ -76,7 +76,7 @@ When a game is selected, the detail panel shows:
 - **Game name** with badges for platform source, engine type (including custom engine names from the manifest), wiki status, mod author(s), UE-Extended / Native HDR
 - **Graphics API badge** — shows detected rendering APIs (e.g. DX12, VLK, or multi-API combos like DX11/12 / VLK)
 - **Install path** in monospace text
-- **Components table** — ReShade, Ultra Limiter, RenoDX, and Luma (when applicable), each with status, install/reinstall/update button, options menu, and uninstall button
+- **Components table** — ReShade, ReLimiter, RenoDX, and Luma (when applicable), each with status, install/reinstall/update button, options menu, and uninstall button
 - **Rendering path toggle** — for dual-API games (DirectX + Vulkan), a toggle to choose which rendering path ReShade targets
 - **Vulkan ReShade status** — shows the ReShade version number with "(Vulkan)" underneath in green when Vulkan ReShade is active
 - **Overrides section** — all per-game settings inline with descriptions
@@ -112,7 +112,7 @@ All settings apply immediately — no separate save action required.
 
 ## Game Detection
 
-UPST re-scans all stores on every launch and merges newly installed games into its cached library automatically.
+RHI re-scans all stores on every launch and merges newly installed games into its cached library automatically.
 
 | Store | Detection Method |
 |-------|-----------------|
@@ -129,7 +129,7 @@ Games on a disconnected drive are preserved in the cache until the drive is reco
 
 ### Engine Detection
 
-UPST detects game engines automatically:
+RHI detects game engines automatically:
 
 | Engine | Detection Method |
 |--------|-----------------|
@@ -141,16 +141,16 @@ Custom engine names display with a dedicated engine icon. `"Unreal"` and `"Unity
 
 ### 32-bit / 64-bit Detection
 
-UPST automatically detects whether a game is 32-bit or 64-bit by examining the PE header of the game executable. The remote manifest can override this with `thirtyTwoBitGames` and `sixtyFourBitGames` flags, which take priority over auto-detection.
+RHI automatically detects whether a game is 32-bit or 64-bit by examining the PE header of the game executable. The remote manifest can override this with `thirtyTwoBitGames` and `sixtyFourBitGames` flags, which take priority over auto-detection.
 
 ### Adding Games Manually
 
 - **Add Game** button (on the Settings page) — enter the game name and pick the install folder.
-- **Drag and drop** — drag a game's `.exe` onto the UPST window. UPST detects the engine type (Unreal, Unity, or Unknown), infers the game root folder by recognising store markers and engine layouts, and guesses the game name from folder structure. A confirmation dialog lets you edit the name before adding. Added games appear in their correct alphabetical position immediately.
+- **Drag and drop** — drag a game's `.exe` onto the RHI window. RHI detects the engine type (Unreal, Unity, or Unknown), infers the game root folder by recognising store markers and engine layouts, and guesses the game name from folder structure. A confirmation dialog lets you edit the name before adding. Added games appear in their correct alphabetical position immediately.
 
 ### Drag-and-Drop
 
-UPST supports drag-and-drop for multiple file types:
+RHI supports drag-and-drop for multiple file types:
 
 | File Type | Behaviour |
 |-----------|-----------|
@@ -158,20 +158,20 @@ UPST supports drag-and-drop for multiple file types:
 | **`.addon64` / `.addon32`** | Opens an install dialog with a game picker (auto-selects based on filename). If the filename doesn't match any game, the picker defaults to the currently selected game in the sidebar. |
 | **Archives** (`.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`) | Extracted using bundled 7-Zip. Any addon files inside are found and offered for install. If multiple addons are found, a picker dialog lets you choose. |
 
-Drag-and-drop works even when UPST is running as administrator (UIPI bypass via `WM_DROPFILES`). File extensions are validated before any network or file activity.
+Drag-and-drop works even when RHI is running as administrator (UIPI bypass via `WM_DROPFILES`). File extensions are validated before any network or file activity.
 
 ### Addon Auto-Detection
 
-UPST watches your Downloads folder (configurable in Settings) for new `renodx-*.addon64` / `.addon32` files and automatically prompts you to install them. Double-clicking an addon file in Explorer opens UPST and triggers the install flow. If UPST is already running, the file is forwarded to the existing instance via named pipe. All entry points (watcher, drag-and-drop, file association, archive extraction) enforce the `renodx-` filename prefix to avoid triggering on unrelated addon files.
+RHI watches your Downloads folder (configurable in Settings) for new `renodx-*.addon64` / `.addon32` files and automatically prompts you to install them. Double-clicking an addon file in Explorer opens RHI and triggers the install flow. If RHI is already running, the file is forwarded to the existing instance via named pipe. All entry points (watcher, drag-and-drop, file association, archive extraction) enforce the `renodx-` filename prefix to avoid triggering on unrelated addon files.
 
 ### AddonPath Support
 
-Addon installs (RenoDX and Ultra Limiter) respect the `AddonPath` setting in `reshade.ini`. If the `[ADDON]` section contains an `AddonPath=` line, addons are deployed to that folder instead of the game root. Relative paths are resolved against the game directory. Uninstall, update detection, and addon scanning all check the same resolved path.
+Addon installs (RenoDX and ReLimiter) respect the `AddonPath` setting in `reshade.ini`. If the `[ADDON]` section contains an `AddonPath=` line, addons are deployed to that folder instead of the game root. Relative paths are resolved against the game directory. Uninstall, update detection, and addon scanning all check the same resolved path.
 ---
 
 ## Graphics API Detection
 
-UPST scans game executables using PE header import table analysis to detect which graphics APIs a game uses.
+RHI scans game executables using PE header import table analysis to detect which graphics APIs a game uses.
 
 ### Detected APIs
 
@@ -213,7 +213,7 @@ The detail panel shows a Components section with up to four rows:
 | Row | Component | Controls |
 |-----|-----------|----------|
 | **ReShade** | ReShade | Install / Reinstall / Update — menu (Copy INI) — Uninstall |
-| **Ultra Limiter** | Ultra Limiter | Install / Reinstall / Update — Copy INI — Uninstall |
+| **ReLimiter** | ReLimiter | Install / Reinstall / Update — Copy INI — Uninstall |
 | **RenoDX** | RenoDX Mod | Install / Reinstall / Update — UE Extended options — Uninstall |
 | **Luma** | Luma Framework | Install / Uninstall (shown only in Luma mode) |
 
@@ -232,11 +232,11 @@ ReShade installations using non-standard DLL filenames (e.g. `d3d11.dll`, `dinpu
 
 ## Vulkan ReShade Support
 
-UPST provides full Vulkan implicit layer support for ReShade, enabling ReShade injection for Vulkan-rendered games without per-game DLL injection.
+RHI provides full Vulkan implicit layer support for ReShade, enabling ReShade injection for Vulkan-rendered games without per-game DLL injection.
 
 ### How It Works
 
-1. **Global Vulkan layer** — UPST installs ReShade as a Vulkan implicit layer via the Windows registry (`HKLM\SOFTWARE\Khronos\Vulkan\ImplicitLayers`). This makes ReShade available to all Vulkan games system-wide.
+1. **Global Vulkan layer** — RHI installs ReShade as a Vulkan implicit layer via the Windows registry (`HKLM\SOFTWARE\Khronos\Vulkan\ImplicitLayers`). This makes ReShade available to all Vulkan games system-wide.
 2. **Layer manifest** — A bundled `ReShade64.json` manifest with correct `device_extensions` and `disable_environment` fields is deployed alongside the ReShade DLL to `C:\ProgramData\ReShade\`.
 3. **Per-game INI** — A dedicated `reshade.vulkan.ini` with Vulkan-tuned depth buffer settings is deployed to each game folder.
 4. **Footprint file** — An `RDXC_VULKAN_FOOTPRINT` marker file is placed in the game folder to enable managed shader deployment.
@@ -275,7 +275,7 @@ The `RDXC_VULKAN_FOOTPRINT` file controls shader deployment to Vulkan game folde
 
 ## Foreign DLL Protection
 
-When installing ReShade as `dxgi.dll`, UPST checks whether an existing file belongs to another tool (DXVK, Special K, ENB, etc.) using binary signature scanning. The scan matches on `reshade.me` or `crosire` strings unique to the actual ReShade binary, and rejects files over 15 MB as too large to be ReShade. This prevents tools like OptiScaler from being misidentified.
+When installing ReShade as `dxgi.dll`, RHI checks whether an existing file belongs to another tool (DXVK, Special K, ENB, etc.) using binary signature scanning. The scan matches on `reshade.me` or `crosire` strings unique to the actual ReShade binary, and rejects files over 15 MB as too large to be ReShade. This prevents tools like OptiScaler from being misidentified.
 
 If the existing file is unidentified, a confirmation dialog asks whether to overwrite. During Update All, foreign files are silently skipped.
 
@@ -288,17 +288,17 @@ Unreal Engine games with native HDR are automatically assigned UE-Extended via t
 The UE-Extended toggle now appears for every Unreal Engine game that does not have a named mod on the RenoDX wiki, not just games explicitly listed in the manifest. A compatibility warning dialog pops up when enabling UE-Extended, advising that not all games are compatible and to check the Notes section for any game-specific information.
 ---
 
-## Ultra Limiter
+## ReLimiter
 
-[Ultra Limiter](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide) is an optional per-game component downloaded from GitHub on demand. See the linked comprehensive feature guide for full details on what Ultra Limiter does and all available settings.
+[ReLimiter](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide) is an optional per-game component downloaded from GitHub on demand. See the linked comprehensive feature guide for full details on what ReLimiter does and all available settings.
 
 ### Install / Reinstall / Uninstall
 
-Ultra Limiter can be installed, reinstalled, or uninstalled on a per-game basis from the Components table in the detail panel. The addon file (`ultra_limiter.addon64`) is downloaded from its GitHub release when first needed and cached locally.
+ReLimiter can be installed, reinstalled, or uninstalled on a per-game basis from the Components table in the detail panel. The addon file (`relimiter.addon64`) is downloaded from its GitHub release when first needed and cached locally.
 
 ### INI Configuration
 
-UPST bundles a default `ultra_limiter.ini` that is seeded to the UPST inis folder (`%LOCALAPPDATA%\UPST\inis\`) on first launch if one doesn't already exist. A copy button on the Ultra Limiter component row copies this INI to the game folder, matching the existing ReShade INI workflow. You can customise the INI in the inis folder and it will be used for all future copies.
+RHI bundles a default `relimiter.ini` that is seeded to the RHI inis folder (`%LOCALAPPDATA%\RHI\inis\`) on first launch if one doesn't already exist. A copy button on the ReLimiter component row copies this INI to the game folder, matching the existing ReShade INI workflow. You can customise the INI in the inis folder and it will be used for all future copies.
 
 ### Update Detection
 
@@ -313,16 +313,16 @@ A coloured status dot indicates the current state:
 | **Green** | Installed and up to date |
 | **Orange** | Update available |
 
-The Ultra Limiter status dot is hidden when a game is in Luma mode.
+The ReLimiter status dot is hidden when a game is in Luma mode.
 
 ### Feature Guide Link
 
-When Ultra Limiter is installed, the status label shows a clickable "Installed" link that opens the [Ultra Limiter comprehensive feature guide](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide) in the browser.
+When ReLimiter is installed, the status label shows a clickable "Installed" link that opens the [ReLimiter comprehensive feature guide](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide) in the browser.
 ---
 
 ## Shader Packs
 
-UPST downloads and maintains a comprehensive collection of 37+ ReShade shader packs, merged into a shared staging folder and deployed per-game. This includes all shader packs from the official ReShade installer plus additional community packs.
+RHI downloads and maintains a comprehensive collection of 37+ ReShade shader packs, merged into a shared staging folder and deployed per-game. This includes all shader packs from the official ReShade installer plus additional community packs.
 
 ### Categories
 
@@ -347,16 +347,16 @@ Per-game shader overrides in both Detail View and Grid View allow different game
 
 User-owned shader folders are preserved by renaming to `reshade-shaders-original` before deployment and restored when the shader mode is set to Off or when Vulkan ReShade is uninstalled.
 
-Custom shaders: `%LOCALAPPDATA%\UPST\reshade\Custom\Shaders\` and `\Textures\`.
+Custom shaders: `%LOCALAPPDATA%\RHI\reshade\Custom\Shaders\` and `\Textures\`.
 
 ### Startup Shader Deployment
 
-On launch, UPST ensures shader packs are fully downloaded before syncing shaders to all installed game folders. Games with ReShade installed will have the correct global or per-game shaders deployed automatically, even if they were installed by an older version that didn't deploy shaders.
+On launch, RHI ensures shader packs are fully downloaded before syncing shaders to all installed game folders. Games with ReShade installed will have the correct global or per-game shaders deployed automatically, even if they were installed by an older version that didn't deploy shaders.
 ---
 
 ## Luma Framework
 
-[Luma Framework](https://github.com/Filoppi/Luma-Framework) by Pumbo (Filoppi) is a DX11 modding framework adding HDR support via the ReShade addon system. UPST detects Luma-compatible games and shows a toggle badge in the detail panel. Luma badges appear on all eligible game cards by default.
+[Luma Framework](https://github.com/Filoppi/Luma-Framework) by Pumbo (Filoppi) is a DX11 modding framework adding HDR support via the ReShade addon system. RHI detects Luma-compatible games and shows a toggle badge in the detail panel. Luma badges appear on all eligible game cards by default.
 
 ### How Luma Mode Works
 
@@ -390,15 +390,15 @@ The Overrides section appears below Components in the detail panel. All controls
 
 ## INI Presets
 
-UPST bundles default INI files seeded on first launch. They are deployed alongside their respective components on every install using a merge strategy — template keys always take precedence, but any game-specific settings not in the template (e.g. addon configs, effect toggles, custom keybinds) are preserved.
+RHI bundles default INI files seeded on first launch. They are deployed alongside their respective components on every install using a merge strategy — template keys always take precedence, but any game-specific settings not in the template (e.g. addon configs, effect toggles, custom keybinds) are preserved.
 
-Config files in `%LOCALAPPDATA%\UPST\inis\`:
+Config files in `%LOCALAPPDATA%\RHI\inis\`:
 
 | File | Copied When |
 |------|-------------|
 | `reshade.ini` | Every ReShade install, or via copy button on the ReShade row. Merged into existing INI if present. |
 | `reshade.vulkan.ini` | Deployed alongside `reshade.ini` for Vulkan games. Contains depth buffer preprocessor definitions tuned for Vulkan rendering. |
-| `ultra_limiter.ini` | Via copy button on the Ultra Limiter row. Copied to the game folder (or AddonPath) as-is. |
+| `relimiter.ini` | Via copy button on the ReLimiter row. Copied to the game folder (or AddonPath) as-is. |
 | `ReShadePreset.ini` | Automatically alongside `reshade.ini` if the file exists in the inis folder |
 
 To use a custom ReShade preset, place your `ReShadePreset.ini` in the inis folder. It will be copied to every new game install automatically.
@@ -409,7 +409,7 @@ The INI copy button on the ReShade row deploys both `reshade.ini` and `reshade.v
 
 ## Remote Manifest
 
-UPST fetches a remote manifest from GitHub on every launch, providing game-specific overrides without app updates. The manifest is fetched from the GitHub API with a `raw.githubusercontent.com` fallback, and cached locally for offline use.
+RHI fetches a remote manifest from GitHub on every launch, providing game-specific overrides without app updates. The manifest is fetched from the GitHub API with a `raw.githubusercontent.com` fallback, and cached locally for offline use.
 
 ### Manifest Fields
 
@@ -443,11 +443,11 @@ The **Update** button in the toolbar updates ReShade and RenoDX across all eligi
 
 ## Auto-Update
 
-UPST checks for new versions on launch by querying the GitHub Releases API. Disable via Settings > Preferences > Skip update check on launch.
+RHI checks for new versions on launch by querying the GitHub Releases API. Disable via Settings > Preferences > Skip update check on launch.
 
 ### Stable and Beta Channels
 
-When Beta Opt-In is enabled in Settings, UPST checks both the stable release (`RDXC` tag) and the beta release (`RDXC-BETA` tag). The version resolver determines which update to offer:
+When Beta Opt-In is enabled in Settings, RHI checks both the stable release (`RDXC` tag) and the beta release (`RDXC-BETA` tag). The version resolver determines which update to offer:
 
 - Stable always wins over beta at the same or higher base version
 - Beta is only offered when its base version exceeds the latest stable, OR when the current app is already on a beta and a newer beta at the same base version is available
@@ -459,27 +459,27 @@ The app encodes its beta status in the 4th component of the assembly version: `1
 
 ## Patch Notes
 
-UPST shows a patch notes dialog on first launch after an update, displaying the most recent version changes in a scrollable markdown view.
+RHI shows a patch notes dialog on first launch after an update, displaying the most recent version changes in a scrollable markdown view.
 ---
 
 ## Data Storage
 
-Everything under `%LOCALAPPDATA%\UPST\`:
+Everything under `%LOCALAPPDATA%\RHI\`:
 
 | Path | Contents |
 |------|---------|
 | `game_library.json` | Detected games, hidden list, manually added games |
 | `installed.json` | RenoDX mod install records |
-| `aux_installed.json` | ReShade and Ultra Limiter install records |
+| `aux_installed.json` | ReShade and ReLimiter install records |
 | `settings.json` | All settings, per-game overrides, and persisted filter mode |
 | `downloads\` | Cached downloads |
-| `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `ultra_limiter.ini`, `ReShadePreset.ini`) |
+| `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `relimiter.ini`, `ReShadePreset.ini`) |
 | `reshade\` | Staged shader packs and custom shaders |
 | `logs\` | Session logs (timestamped, max 10 kept) and crash reports |
 
 ### Session Logging
 
-A new session log file is created every time UPST starts, named with a timestamp (e.g. `session_2025-03-14_12-30-00.txt`). All activity is logged to the session file automatically — no need to enable Verbose Logging first. Old session logs are automatically pruned to keep a maximum of 10 on disk. The Verbose Logging toggle in Settings enables additional detail in log entries.
+A new session log file is created every time RHI starts, named with a timestamp (e.g. `session_2025-03-14_12-30-00.txt`). All activity is logged to the session file automatically — no need to enable Verbose Logging first. Old session logs are automatically pruned to keep a maximum of 10 on disk. The Verbose Logging toggle in Settings enables additional detail in log entries.
 
 ---
 
@@ -488,19 +488,19 @@ A new session log file is created every time UPST starts, named with a timestamp
 | Problem | Fix |
 |---------|-----|
 | Game not detected | Click **Add Game** on the Settings page or drag the game's `.exe` onto the window |
-| Xbox games missing | Click **Refresh** — UPST uses the PackageManager API |
+| Xbox games missing | Click **Refresh** — RHI uses the PackageManager API |
 | ReShade not loading | Check the install path — `dxgi.dll` must be next to the game exe |
-| ReShade not detected | If using a non-standard DLL name, UPST should detect it via binary signature scanning. Try **Refresh**. |
+| ReShade not detected | If using a non-standard DLL name, RHI should detect it via binary signature scanning. Try **Refresh**. |
 | Black screen (Unreal) | ReShade > Add-ons > RenoDX > set `R10G10B10A2_UNORM` to `output size` |
 | UE-Extended not working | Turn on in-game HDR — UE-Extended requires native HDR output |
 | Downloads failing | Click **Refresh**, or clear cache from Settings > Open Downloads Cache |
 | Foreign DLL blocking install | Choose **Overwrite** in the dialog, or cancel to keep the existing file |
 | Games/mods out of sync | Settings > **Full Refresh** to clear all caches |
-| Drag-and-drop not working | Ensure UPST is running. Drag-and-drop uses Win32 shell handling and works even as administrator. |
+| Drag-and-drop not working | Ensure RHI is running. Drag-and-drop uses Win32 shell handling and works even as administrator. |
 | Vulkan ReShade not showing as installed | Check that `reshade.ini` exists in the game folder. The Vulkan layer must also be installed globally. |
-| Shaders missing after uninstall | Click **Refresh** — UPST will detect the missing shaders and redeploy them. For Vulkan games, the footprint file is also restored. |
+| Shaders missing after uninstall | Click **Refresh** — RHI will detect the missing shaders and redeploy them. For Vulkan games, the footprint file is also restored. |
 | Auto-update not triggering for beta | Ensure Beta Opt-In is enabled in Settings. The beta release on GitHub must have a parseable version in the title and the asset must be named `RDXC-Setup.exe`. |
-| Games showing as installed after manual file removal | Click **Refresh** — UPST verifies files exist on disk and cleans up stale records. |
+| Games showing as installed after manual file removal | Click **Refresh** — RHI verifies files exist on disk and cleans up stale records. |
 | DLL override not applying from manifest | Click **Refresh** — manifest DLL overrides are applied on every refresh, renaming existing files to match. |
 
 ---
@@ -512,7 +512,7 @@ A new session log file is created every time UPST starts, named with a timestamp
 | [ReShade](https://reshade.me) | Crosire | [BSD 3-Clause](https://github.com/crosire/reshade/blob/main/LICENSE.md) |
 | [RenoDX](https://github.com/clshortfuse/renodx) | clshortfuse & contributors | [MIT](https://github.com/clshortfuse/renodx/blob/main/LICENSE) |
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
-| [Ultra Limiter](https://github.com/RankFTW/Ultra-Limiter) | RankFTW | Source-available |
+| [ReLimiter](https://github.com/RankFTW/Ultra-Limiter) | RankFTW | Source-available |
 | [HtmlAgilityPack](https://github.com/zzzprojects/html-agility-pack) | ZZZ Projects Inc. | [MIT](https://github.com/zzzprojects/html-agility-pack/blob/master/LICENSE) |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | Microsoft / .NET Foundation | [MIT](https://github.com/CommunityToolkit/dotnet/blob/main/License.md) |
 | [SharpCompress](https://github.com/adamhathcock/sharpcompress) | Adam Hathcock | [MIT](https://github.com/adamhathcock/sharpcompress/blob/master/LICENSE.txt) |

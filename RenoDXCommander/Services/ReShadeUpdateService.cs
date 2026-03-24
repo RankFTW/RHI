@@ -12,7 +12,7 @@ public class ReShadeUpdateService : IReShadeUpdateService
 {
     private static readonly string CacheDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "reshade");
+        "RHI", "reshade");
 
     private static readonly string VersionFile = Path.Combine(CacheDir, "reshade_version.txt");
 

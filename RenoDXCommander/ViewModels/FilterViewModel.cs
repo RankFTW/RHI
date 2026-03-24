@@ -186,12 +186,11 @@ public partial class FilterViewModel : ObservableObject
             // Favourites tab: show favourited games (even if hidden)
             if (filters.Contains("Favourites")) return c.IsFavourite;
 
-            // Installed tab: show games with RenoDX OR Luma installed (not DC/ReShade only)
+            // Installed tab: show games with ReShade installed
             if (filters.Contains("Installed"))
             {
-                bool rdxInstalled  = c.Status == GameStatus.Installed || c.Status == GameStatus.UpdateAvailable;
-                bool lumaInstalled = c.LumaStatus == GameStatus.Installed || c.LumaStatus == GameStatus.UpdateAvailable;
-                return (rdxInstalled || lumaInstalled) && !c.IsHidden;
+                bool rsInstalled = c.RsStatus == GameStatus.Installed || c.RsStatus == GameStatus.UpdateAvailable;
+                return rsInstalled && !c.IsHidden;
             }
 
             // "Detected" (All Games): show everything except hidden

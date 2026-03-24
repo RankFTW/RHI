@@ -251,7 +251,7 @@ public class DragDropHandler
         }
 
         // Extract entire archive to a temp directory
-        var tempDir = Path.Combine(Path.GetTempPath(), $"upst_archive_{Guid.NewGuid():N}");
+        var tempDir = Path.Combine(Path.GetTempPath(), $"RHI_archive_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
 
         try
@@ -481,7 +481,9 @@ public class DragDropHandler
         {
             var existing = Directory.GetFiles(installPath, "*.addon64")
                 .Concat(Directory.GetFiles(installPath, "*.addon32"))
-                .Where(f => !Path.GetFileName(f).StartsWith("zzz_display_commander", StringComparison.OrdinalIgnoreCase))
+                .Where(f => !Path.GetFileName(f).StartsWith("zzz_display_commander", StringComparison.OrdinalIgnoreCase)
+                         && !Path.GetFileName(f).StartsWith("relimiter", StringComparison.OrdinalIgnoreCase)
+                         && !Path.GetFileName(f).StartsWith("ultra_limiter", StringComparison.OrdinalIgnoreCase))
                 .ToList();
             if (existing.Count > 0)
                 existingAddon = string.Join(", ", existing.Select(Path.GetFileName));
@@ -526,7 +528,9 @@ public class DragDropHandler
                 if (!Directory.Exists(searchDir)) continue;
                 var toRemove = Directory.GetFiles(searchDir, "*.addon64")
                     .Concat(Directory.GetFiles(searchDir, "*.addon32"))
-                    .Where(f => !Path.GetFileName(f).StartsWith("zzz_display_commander", StringComparison.OrdinalIgnoreCase))
+                    .Where(f => !Path.GetFileName(f).StartsWith("zzz_display_commander", StringComparison.OrdinalIgnoreCase)
+                             && !Path.GetFileName(f).StartsWith("relimiter", StringComparison.OrdinalIgnoreCase)
+                             && !Path.GetFileName(f).StartsWith("ultra_limiter", StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 foreach (var f in toRemove)
                 {

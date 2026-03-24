@@ -103,11 +103,13 @@ public class DetailPanelBuilder
         {
             foreach (var author in card.AuthorList)
             {
+                var donationUrl = GameCardViewModel.GetAuthorDonationUrl(author);
                 var textBlock = new TextBlock
                 {
                     Text = author,
                     FontSize = 11,
                     Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush),
+                    TextDecorations = donationUrl != null ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None,
                 };
                 var badge = new Border
                 {
@@ -119,6 +121,11 @@ public class DetailPanelBuilder
                     VerticalAlignment = VerticalAlignment.Center,
                     Child = textBlock,
                 };
+                if (donationUrl != null)
+                {
+                    badge.PointerPressed += async (s, e) =>
+                        await Windows.System.Launcher.LaunchUriAsync(new Uri(donationUrl));
+                }
                 _window.DetailAuthorBadgePanel.Children.Add(badge);
             }
             _window.DetailAuthorBadgePanel.Visibility = Visibility.Visible;
@@ -226,6 +233,9 @@ public class DetailPanelBuilder
                 // Standard DX ReShade install path
                 _window.DetailRsStatus.Text = card.RsStatusText;
                 _window.DetailRsStatus.Foreground = UIFactory.GetBrush(card.RsStatusColor);
+                _window.DetailRsStatus.TextDecorations = card.IsRsInstalled
+                    ? Windows.UI.Text.TextDecorations.Underline
+                    : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRsInstallBtn.Tag = card;
                 _window.DetailRsInstallBtn.Content = card.RsActionLabel;
                 _window.DetailRsInstallBtn.IsEnabled = card.IsRsNotInstalling;
@@ -243,7 +253,7 @@ public class DetailPanelBuilder
             }
         }
 
-        // Ultra Limiter row — hidden when in Luma mode
+        // ReLimiter row — hidden when in Luma mode
         _window.DetailUlRow.Visibility = card.UlRowVisibility;
         if (card.UlRowVisibility == Visibility.Visible)
         {
@@ -278,6 +288,9 @@ public class DetailPanelBuilder
             {
                 _window.DetailRdxStatus.Text = card.IsRdxInstalled ? "Installed" : "";
                 _window.DetailRdxStatus.Foreground = UIFactory.GetBrush("#5ECB7D");
+                _window.DetailRdxStatus.TextDecorations = card.IsRdxInstalled
+                    ? Windows.UI.Text.TextDecorations.Underline
+                    : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxInstallBtn.Content = card.ExternalDisplayLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = true;
                 _window.DetailRdxInstallBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
@@ -293,6 +306,9 @@ public class DetailPanelBuilder
             {
                 _window.DetailRdxStatus.Text = card.RdxStatusText;
                 _window.DetailRdxStatus.Foreground = UIFactory.GetBrush(card.RdxStatusColor);
+                _window.DetailRdxStatus.TextDecorations = card.IsRdxInstalled
+                    ? Windows.UI.Text.TextDecorations.Underline
+                    : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxInstallBtn.Content = card.InstallActionLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.CanInstall;
                 _window.DetailRdxInstallBtn.Background = UIFactory.GetBrush(card.InstallBtnBackground);
@@ -774,6 +790,16 @@ public class DetailPanelBuilder
             FontSize = 11,
             MinWidth = 0,
         };
+        var ulToggle = new ToggleSwitch
+        {
+            Header = "ReLimiter",
+            IsOn = !_window.ViewModel.IsUpdateAllExcludedUl(gameName),
+            OnContent = "Yes",
+            OffContent = "No",
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 11,
+            MinWidth = 0,
+        };
 
         var rsBorder = new Border
         {
@@ -791,6 +817,14 @@ public class DetailPanelBuilder
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(8, 6, 8, 6),
         };
+        var ulBorder = new Border
+        {
+            Child = ulToggle,
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(8, 6, 8, 6),
+        };
 
         var toggleRow = new StackPanel
         {
@@ -799,6 +833,7 @@ public class DetailPanelBuilder
         };
         toggleRow.Children.Add(rsBorder);
         toggleRow.Children.Add(rdxBorder);
+        toggleRow.Children.Add(ulBorder);
 
         // ── Auto-save: Update inclusion toggles ──────────────────────────────────
         rsToggle.Toggled += (s, ev) =>
@@ -810,6 +845,11 @@ public class DetailPanelBuilder
         {
             if (!rdxToggle.IsOn != _window.ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
                 _window.ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
+        };
+        ulToggle.Toggled += (s, ev) =>
+        {
+            if (!ulToggle.IsOn != _window.ViewModel.IsUpdateAllExcludedUl(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionUl(capturedName);
         };
 
         var wikiExcludeToggle = new ToggleSwitch
@@ -931,6 +971,8 @@ public class DetailPanelBuilder
                 _window.ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
             if (_window.ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
                 _window.ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
+            if (_window.ViewModel.IsUpdateAllExcludedUl(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionUl(capturedName);
 
             // Disable wiki exclusion
             if (_window.ViewModel.IsWikiExcluded(capturedName))

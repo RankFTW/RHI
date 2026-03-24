@@ -6,7 +6,7 @@ namespace RenoDXCommander.Services;
 
 /// <summary>
 /// Captures unhandled exceptions and operational log entries, writing structured
-/// crash reports to %LocalAppData%\UPST\logs\.
+/// crash reports to %LocalAppData%\RHI\logs\.
 ///
 /// Call CrashReporter.Log() at key points throughout the app so each crash file
 /// contains a breadcrumb trail of what was happening before the crash.
@@ -26,7 +26,7 @@ public static class CrashReporter
 
     private static readonly string LogDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "logs");
+        "RHI", "logs");
 
     /// <summary>Maximum number of crash/error log files kept on disk.</summary>
     private const int MaxLogFiles = 10;
@@ -54,7 +54,7 @@ public static class CrashReporter
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             SessionLogPath = Path.Combine(LogDir, $"session_{timestamp}.txt");
             File.WriteAllText(SessionLogPath,
-                $"═══ UPST v{AppVersion} — Session started {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
+                $"═══ RHI v{AppVersion} — Session started {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
                 Encoding.UTF8);
         }
         catch { SessionLogPath = Path.Combine(LogDir, "session_fallback.txt"); }
@@ -83,7 +83,7 @@ public static class CrashReporter
     /// Log a short message describing what the app is currently doing.
     /// These entries are included in crash reports to show the sequence of events
     /// leading up to the crash. When verbose logging is enabled, the entry is also
-    /// appended to upst_log.txt on disk.
+    /// appended to RHI_log.txt on disk.
     /// </summary>
     public static void Log(string message)
     {

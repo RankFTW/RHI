@@ -354,6 +354,16 @@ public class OverridesFlyoutBuilder
             FontSize = 11,
             MinWidth = 0,
         };
+        var ulToggle = new ToggleSwitch
+        {
+            Header = "ReLimiter",
+            IsOn = !ViewModel.IsUpdateAllExcludedUl(gameName),
+            OnContent = "Yes",
+            OffContent = "No",
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 11,
+            MinWidth = 0,
+        };
 
         var rsBorder = new Border
         {
@@ -371,6 +381,14 @@ public class OverridesFlyoutBuilder
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(8, 6, 8, 6),
         };
+        var ulBorder = new Border
+        {
+            Child = ulToggle,
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(8, 6, 8, 6),
+        };
 
         var toggleRow = new StackPanel
         {
@@ -379,6 +397,7 @@ public class OverridesFlyoutBuilder
         };
         toggleRow.Children.Add(rsBorder);
         toggleRow.Children.Add(rdxBorder);
+        toggleRow.Children.Add(ulBorder);
 
         // ── Auto-save: Update inclusion toggles ──
         rsToggle.Toggled += (s, ev) =>
@@ -390,6 +409,11 @@ public class OverridesFlyoutBuilder
         {
             if (!rdxToggle.IsOn != ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
                 ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
+        };
+        ulToggle.Toggled += (s, ev) =>
+        {
+            if (!ulToggle.IsOn != ViewModel.IsUpdateAllExcludedUl(capturedName))
+                ViewModel.ToggleUpdateAllExclusionUl(capturedName);
         };
 
         var wikiExcludeToggle = new ToggleSwitch
@@ -475,6 +499,7 @@ public class OverridesFlyoutBuilder
             dllOverrideToggle.IsOn = false;
             rsToggle.IsOn = true;
             rdxToggle.IsOn = true;
+            ulToggle.IsOn = true;
             wikiExcludeToggle.IsOn = false;
 
             // Persist all reset values immediately
@@ -512,6 +537,8 @@ public class OverridesFlyoutBuilder
                 ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
             if (ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
                 ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
+            if (ViewModel.IsUpdateAllExcludedUl(capturedName))
+                ViewModel.ToggleUpdateAllExclusionUl(capturedName);
 
             // Disable wiki exclusion
             if (ViewModel.IsWikiExcluded(capturedName))

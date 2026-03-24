@@ -46,7 +46,7 @@ public sealed partial class MainWindow : Window
         _installEventHandler = new InstallEventHandler(this, PickFolderAsync);
         AuxInstallService.EnsureInisDir();       // create inis folder on first run
         AuxInstallService.EnsureReShadeStaging(); // create staging dir (DLLs downloaded by ReShadeUpdateService)
-        Title = "UPST";
+        Title = "RHI";
         // Fire-and-forget: check/download Lilium HDR shaders in the background
         var shaderTask = ViewModel.ShaderPackServiceInstance.EnsureLatestAsync();
         shaderTask.SafeFireAndForget("MainWindow.ShaderPack");
@@ -529,7 +529,7 @@ public sealed partial class MainWindow : Window
         try
         {
             AuxInstallService.CopyUlIni(card.InstallPath);
-            card.UlActionMessage = "✅ ultra_limiter.ini copied to game folder.";
+            card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
         }
         catch (Exception ex)
         {
@@ -887,6 +887,7 @@ public sealed partial class MainWindow : Window
     {
         await ViewModel.UpdateAllReShadeAsync();
         await ViewModel.UpdateAllRenoDxAsync();
+        await ViewModel.UpdateAllUlAsync();
     }
 
     private async void UpdateAllRenoDx_Click(object sender, RoutedEventArgs e)
@@ -908,7 +909,7 @@ public sealed partial class MainWindow : Window
         try
         {
             AuxInstallService.CopyUlIni(card.InstallPath);
-            card.UlActionMessage = "✅ ultra_limiter.ini copied to game folder.";
+            card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
         }
         catch (Exception ex)
         {
@@ -918,9 +919,32 @@ public sealed partial class MainWindow : Window
 
     private async void DetailUlStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
-        if (ViewModel.SelectedGame?.UlStatus == Models.GameStatus.Installed)
+        var card = ViewModel.SelectedGame;
+        if (card == null) return;
+
+        if (card.UlStatus == Models.GameStatus.UpdateAvailable && ViewModel.LatestUlReleasePageUrl != null)
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(ViewModel.LatestUlReleasePageUrl));
+        else if (card.UlStatus == Models.GameStatus.Installed || card.UlStatus == Models.GameStatus.UpdateAvailable)
             await Windows.System.Launcher.LaunchUriAsync(
                 new Uri("https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide"));
+    }
+
+    private async void DetailRsStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (ViewModel.SelectedGame?.RsStatus == Models.GameStatus.Installed)
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://reshade.me"));
+    }
+
+    private async void DetailRdxStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        var card = ViewModel.SelectedGame;
+        if (card?.IsRdxInstalled == true)
+        {
+            var url = !string.IsNullOrEmpty(card.NameUrl)
+                ? card.NameUrl
+                : "https://github.com/clshortfuse/renodx/wiki/Mods";
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+        }
     }
 
     private void LumaToggle_Click(object sender, RoutedEventArgs e)

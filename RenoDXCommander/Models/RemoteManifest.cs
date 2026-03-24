@@ -104,4 +104,20 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("graphicsApiOverrides")]
     public Dictionary<string, string>? GraphicsApiOverrides { get; set; }
+
+    /// <summary>
+    /// Author donation URLs keyed by display name.
+    /// Merged into the hardcoded dictionary at startup — manifest entries
+    /// take priority so links can be added/updated without a new build.
+    /// </summary>
+    [JsonPropertyName("donationUrls")]
+    public Dictionary<string, string>? DonationUrls { get; set; }
+
+    /// <summary>
+    /// Author display-name overrides keyed by wiki maintainer handle.
+    /// Merged into the hardcoded dictionary at startup.
+    /// Example: { "oopydoopy": "Jon" }
+    /// </summary>
+    [JsonPropertyName("authorDisplayNames")]
+    public Dictionary<string, string>? AuthorDisplayNames { get; set; }
 }

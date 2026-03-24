@@ -55,18 +55,20 @@ public partial class GameCardViewModel : ObservableObject
     public string? NameUrl      { get; set; }
     public bool ExcludeFromUpdateAllReShade { get; set; }
     public bool ExcludeFromUpdateAllRenoDx  { get; set; }
+    public bool ExcludeFromUpdateAllUl      { get; set; }
     /// <summary>Per-game shader selection override: null = follow global selection.</summary>
     public string? ShaderModeOverride { get; set; }
 
     // ── 32-bit mode ───────────────────────────────────────────────────────────────
     [ObservableProperty] private bool _is32Bit = false;
 
-    // ── Ultra Limiter state ──────────────────────────────────────────────────────
+    // ── ReLimiter state ──────────────────────────────────────────────────────
     [ObservableProperty] private GameStatus _ulStatus  = GameStatus.NotInstalled;
     [ObservableProperty] private bool       _ulIsInstalling;
     [ObservableProperty] private double     _ulProgress;
     [ObservableProperty] private string     _ulActionMessage = "";
     [ObservableProperty] private string?    _ulInstalledFile;
+    [ObservableProperty] private string?    _ulInstalledVersion;
 
     // ── DLL Naming Override ─────────────────────────────────────────────────────
     [ObservableProperty] private bool _dllOverrideEnabled = false;
@@ -227,7 +229,7 @@ public partial class GameCardViewModel : ObservableObject
         NotifyOnce(nameof(LumaBadgeForeground));
         NotifyOnce(nameof(LumaBadgeBorderBrush));
 
-        // ── Ultra Limiter: UlStatus dependents ───────────────────────────
+        // ── ReLimiter: UlStatus dependents ───────────────────────────
         NotifyOnce(nameof(UlStatusDot));
         NotifyOnce(nameof(UlActionLabel));
         NotifyOnce(nameof(UlDeleteVisibility));
@@ -239,7 +241,7 @@ public partial class GameCardViewModel : ObservableObject
         NotifyOnce(nameof(CardUlStatusDot));
         NotifyOnce(nameof(CardUlInstallEnabled));
 
-        // ── Ultra Limiter: UlIsInstalling dependents ─────────────────────
+        // ── ReLimiter: UlIsInstalling dependents ─────────────────────
         NotifyOnce(nameof(UlProgressVisibility));
         NotifyOnce(nameof(IsUlNotInstalling));
 

@@ -18,7 +18,7 @@ public class DialogService
 
     private static readonly string PatchNotesDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST");
+        "RHI");
 
     public DialogService(MainWindow window)
     {
@@ -62,7 +62,7 @@ public class DialogService
                 FontSize     = 13,
                 Text         = $"A dxgi.dll file was found in:\n{card.InstallPath}\n\n" +
                                $"File size: {sizeKB:N0} KB\n\n" +
-                               "UPST cannot identify this file as ReShade or Display Commander. " +
+                               "RHI cannot identify this file as ReShade or Display Commander. " +
                                "It may belong to another mod (e.g. DXVK, Special K, ENB).\n\n" +
                                "Overwriting it may break the existing mod. Do you want to proceed?",
             },
@@ -91,7 +91,7 @@ public class DialogService
                 FontSize     = 13,
                 Text         = $"A winmm.dll file was found in:\n{card.InstallPath}\n\n" +
                                $"File size: {sizeKB:N0} KB\n\n" +
-                               "UPST cannot identify this file as Display Commander. " +
+                               "RHI cannot identify this file as Display Commander. " +
                                "It may belong to another mod or DLL injector.\n\n" +
                                "Overwriting it may break the existing mod. Do you want to proceed?",
             },
@@ -343,7 +343,7 @@ public class DialogService
 
     private static readonly string DcWarningMarkerPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "DcRemovalWarningShown.txt");
+        "RHI", "DcRemovalWarningShown.txt");
 
     /// <summary>
     /// Shows a one-time warning that Display Commander is no longer supported
@@ -371,7 +371,7 @@ public class DialogService
                 {
                     var message = new TextBlock
                     {
-                        Text = "Display Commander is no longer supported by UPST.\n\n" +
+                        Text = "Display Commander is no longer supported by RHI.\n\n" +
                                "If you have any old Display Commander files installed in your game folders " +
                                "(e.g. zzz_display_commander.addon64), please remove them manually.\n\n" +
                                "You can use the Browse button on each game's screen to open the game folder " +

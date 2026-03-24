@@ -34,7 +34,7 @@ public class SettingsPersistenceNoDcKeysPropertyTests : IDisposable
 
     private static readonly string SettingsDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST");
+        "RHI");
 
     private static readonly string SettingsPath = Path.Combine(SettingsDir, "settings.json");
 

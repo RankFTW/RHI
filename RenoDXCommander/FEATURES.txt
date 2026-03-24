@@ -1,4 +1,4 @@
-Ultra Limiter — Feature Reference
+ReLimiter — Feature Reference
 ==================================
 
 Core Features
@@ -40,7 +40,7 @@ Pacing Presets
 UL-Exclusive Adaptive Features
 ------------------------------
 
-These features are unique to Ultra Limiter. Neither Special K nor Display
+These features are unique to ReLimiter. Neither Special K nor Display
 Commander implement any of them.
 
 1. Predictive Sleep

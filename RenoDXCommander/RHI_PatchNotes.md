@@ -1,3 +1,69 @@
+## v1.6.2
+
+### Highlights
+
+**Rebranded to ReShade HDR Installer (RHI)**
+- After much feedback and consideration, the app has been rebranded from Ultra Plus Support Tools (UPST) to ReShade HDR Installer (RHI). The executable, window title, settings directory, and all user-facing references now use the RHI name. Existing `%LocalAppData%\UPST` and `%LocalAppData%\RenoDXCommander` data folders are automatically migrated to `%LocalAppData%\RHI` on first launch — no manual action needed.
+
+**Clickable author donation links**
+- Mod author badges in the detail panel are now clickable links to the author's Ko-fi donation page. Supported authors: ShortFuse, Jon (oopydoopy), Forge, Voosh (NotVoosh), and Musa. Authors without a known donation page remain as regular non-clickable badges. If your donation link is missing, reach out on Discord and it will be added.
+
+**Ultra Limiter rebranded to ReLimiter**
+- All references to "Ultra Limiter" throughout the app have been renamed to "ReLimiter". The addon file is now `relimiter.addon64`. Existing `ultra_limiter.addon64` files in game folders are automatically replaced on update.
+
+### Bug Fixes
+
+**Grid view component row alignment**
+- Fixed the "ReLimiter" name and "Installed" / "Update" status text overlapping in the grid view install popout. The name column width has been increased so all three component rows (ReShade, ReLimiter, RenoDX) align consistently.
+
+**Drag-and-drop no longer deletes ReLimiter**
+- Installing a RenoDX addon via drag-and-drop or double-click no longer removes `relimiter.addon64` from the game folder. The addon cleanup now excludes ReLimiter files alongside Display Commander files.
+
+### Changes
+
+**Component status text now clickable**
+- The "Installed" status text for ReShade now links to [reshade.me](https://reshade.me). The "Installed" status text for RenoDX now links to the game's wiki page (or the mods list if no per-game page exists). ReLimiter's existing link to the feature guide is unchanged. Applies to both detail view and grid view popout.
+
+**Installed filter now shows ReShade games**
+- The Installed filter tab now shows games with ReShade installed, rather than games with RenoDX or Luma installed. This better reflects the typical workflow where ReShade is the base component that most users have deployed.
+
+**Auto-update now checks RHI repo**
+- The self-update check now looks for `RHI-Setup.exe` at the new `RankFTW/RHI` GitHub repo first, falling back to the legacy `RankFTW/RenoDXChecker` repo with `RDXC-Setup.exe` if the new endpoint has no release.
+
+**ReLimiter global update exclusion toggle**
+- A new "ReLimiter" toggle has been added to the per-game Global update inclusion section in both the detail view overrides panel and the grid view overrides flyout, alongside the existing ReShade and RenoDX toggles. When toggled off, the game is excluded from Update All for ReLimiter.
+- The update badge (green dot) in the sidebar now respects all three exclusion flags — if a component's update is excluded, it no longer contributes to the badge.
+- Reset Overrides now also resets the ReLimiter exclusion toggle back to included.
+
+---
+
+## v1.6.1
+
+### Bug Fixes
+
+**ReLimiter update detection fixed**
+- Fixed UL updates not being detected when a new version was published on GitHub. The update check was comparing the remote file against a metadata file that had already been overwritten with the new version's hash during a previous check, so it always reported "no update." The check now hashes the actual installed file from a game folder as the ground truth reference, ensuring updates are always detected regardless of metadata state.
+- Fixed a file locking bug where the SHA-256 stream was not disposed before the temp file cleanup, causing "file in use" errors in the session log.
+- Added a GitHub Releases API pre-check that detects size-only changes instantly without downloading the full file. When sizes match, the full download + hash comparison still runs to catch same-size content changes.
+- Cache-busting headers (`Cache-Control: no-cache`) are now sent on both the API and download requests to bypass GitHub CDN caching.
+
+**ReLimiter update badge in sidebar**
+- Games with a pending UL update now show the green update dot in the sidebar game list, matching the existing behavior for RenoDX and ReShade updates.
+
+**Update All button includes ReLimiter**
+- The global Update button now also updates ReLimiter for all games with a pending UL update. The tooltip has been updated to reflect this.
+- The Update All button now turns purple when UL updates are available, not just for RenoDX and ReShade updates.
+
+### Changes
+
+**ReLimiter update visuals**
+- The UL status dot stays green when an update is available (previously turned orange), keeping it consistent with the "still installed" state.
+- The UL status text now shows "Update" instead of "Update Available" for a cleaner look.
+- The UL update no longer overwrites the install metadata during the check — metadata is only updated when the user actually installs the update, so the update badge persists across app restarts until acted upon.
+- When the update check pre-caches the new file, clicking Update uses the cached file directly instead of re-downloading.
+
+---
+
 ## v1.6.0
 
 ### Highlights
@@ -5,17 +71,17 @@
 **Rebranded to UPST**
 - The app has been rebranded from RenoDX Commander (RDXC) to Ultra Plus Support Tools (UPST). The executable, window title, settings directory, and all user-facing references now use the UPST name.
 
-**Ultra Limiter support**
-- UPST can now install and manage the Ultra Limiter addon (`ultra_limiter.addon64`). A new UL component row appears in the install flyout and detail panel alongside RenoDX, ReShade, and Luma, with install, reinstall, and uninstall buttons, status dot, and progress indicator.
-- Ultra Limiter is automatically detected in game folders on refresh.
+**ReLimiter support**
+- UPST can now install and manage the ReLimiter addon (`relimiter.addon64`). A new UL component row appears in the install flyout and detail panel alongside RenoDX, ReShade, and Luma, with install, reinstall, and uninstall buttons, status dot, and progress indicator.
+- ReLimiter is automatically detected in game folders on refresh.
 - The UL row is hidden when a game is in Luma mode.
-- Ultra Limiter is downloaded from GitHub on demand rather than bundled with the app, keeping the install size smaller.
+- ReLimiter is downloaded from GitHub on demand rather than bundled with the app, keeping the install size smaller.
 - Update detection compares file size and SHA-256 hash against the remote release. When an update is available, the status dot turns orange and the button shows "Update".
-- For a full list of Ultra Limiter features and settings, see the [Ultra Limiter Feature Guide](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide).
-- A bundled `ultra_limiter.ini` is seeded to the UPST inis folder on first launch. A 📋 button on the Ultra Limiter row copies it to the game folder, matching the existing ReShade INI workflow.
+- For a full list of ReLimiter features and settings, see the [ReLimiter Feature Guide](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide).
+- A bundled `relimiter.ini` is seeded to the UPST inis folder on first launch. A 📋 button on the ReLimiter row copies it to the game folder, matching the existing ReShade INI workflow.
 
-**Ultra Limiter "Installed" link**
-- The green "Installed" text for Ultra Limiter is now a clickable link that opens the Ultra Limiter feature guide on GitHub.
+**ReLimiter "Installed" link**
+- The green "Installed" text for ReLimiter is now a clickable link that opens the ReLimiter feature guide on GitHub.
 
 **Display Commander removed**
 - All Display Commander functionality has been removed from the codebase. DC install/uninstall, DC Mode toggle, DC DLL picker, DC per-game overrides, DC shader deployment, DC update operations, DC status indicators, and all DC-related UI elements have been stripped.

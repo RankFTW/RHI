@@ -1,6 +1,6 @@
-# UPST — Detailed Guide
+# RHI — Detailed Guide
 
-This document covers everything UPST does in depth. For a quick overview, see the [README](README.md).
+This document covers everything RHI does in depth. For a quick overview, see the [README](README.md).
 
 ---
 

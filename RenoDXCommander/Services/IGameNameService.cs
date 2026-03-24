@@ -35,6 +35,9 @@ public interface IGameNameService
     /// <summary>Games excluded from batch RenoDX updates.</summary>
     HashSet<string> UpdateAllExcludedRenoDx { get; }
 
+    /// <summary>Games excluded from batch ReLimiter updates.</summary>
+    HashSet<string> UpdateAllExcludedUl { get; }
+
     /// <summary>Per-game shader mode settings.</summary>
     Dictionary<string, string> PerGameShaderMode { get; }
 

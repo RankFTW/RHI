@@ -24,6 +24,7 @@ public class GameNameService : IGameNameService
     private HashSet<string> _ueExtendedGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _updateAllExcludedReShade = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _updateAllExcludedRenoDx = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _updateAllExcludedUl = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _perGameShaderMode = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, List<string>> _perGameShaderSelection = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaEnabledGames = new(StringComparer.OrdinalIgnoreCase);
@@ -43,6 +44,7 @@ public class GameNameService : IGameNameService
     public HashSet<string> UeExtendedGames => _ueExtendedGames;
     public HashSet<string> UpdateAllExcludedReShade => _updateAllExcludedReShade;
     public HashSet<string> UpdateAllExcludedRenoDx => _updateAllExcludedRenoDx;
+    public HashSet<string> UpdateAllExcludedUl => _updateAllExcludedUl;
     public Dictionary<string, string> PerGameShaderMode => _perGameShaderMode;
     public Dictionary<string, List<string>> PerGameShaderSelection => _perGameShaderSelection;
     public HashSet<string> LumaEnabledGames => _lumaEnabledGames;
@@ -81,6 +83,7 @@ public class GameNameService : IGameNameService
         _ueExtendedGames           = new(StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedReShade  = new(StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedRenoDx   = new(StringComparer.OrdinalIgnoreCase);
+        _updateAllExcludedUl       = new(StringComparer.OrdinalIgnoreCase);
         _perGameShaderMode         = new(StringComparer.OrdinalIgnoreCase);
         _perGameShaderSelection    = new(StringComparer.OrdinalIgnoreCase);
         _gameRenames            = new(StringComparer.OrdinalIgnoreCase);
@@ -126,6 +129,8 @@ public class GameNameService : IGameNameService
             Load<List<string>>("UpdateAllExcludedReShade", new()), StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedRenoDx = new HashSet<string>(
             Load<List<string>>("UpdateAllExcludedRenoDx", new()), StringComparer.OrdinalIgnoreCase);
+        _updateAllExcludedUl = new HashSet<string>(
+            Load<List<string>>("UpdateAllExcludedUl", new()), StringComparer.OrdinalIgnoreCase);
 
         // Legacy migration: if old key exists and new sets are empty, copy legacy entries
         var legacy = Load<List<string>>("UpdateAllExcluded", new());
@@ -226,6 +231,7 @@ public class GameNameService : IGameNameService
                 s.Remove("DcLegacyMode");
                 s["UpdateAllExcludedReShade"] = JsonSerializer.Serialize(_updateAllExcludedReShade.ToList());
                 s["UpdateAllExcludedRenoDx"]  = JsonSerializer.Serialize(_updateAllExcludedRenoDx.ToList());
+                s["UpdateAllExcludedUl"]      = JsonSerializer.Serialize(_updateAllExcludedUl.ToList());
                 s.Remove("UpdateAllExcluded");
                 s["PerGameShaderMode"]    = JsonSerializer.Serialize(_perGameShaderMode);
                 s["PerGameShaderSelection"] = JsonSerializer.Serialize(_perGameShaderSelection);
@@ -331,6 +337,7 @@ public class GameNameService : IGameNameService
         MigrateHashSet(_ueExtendedGames, oldName, newName);
         MigrateHashSet(_updateAllExcludedReShade, oldName, newName);
         MigrateHashSet(_updateAllExcludedRenoDx, oldName, newName);
+        MigrateHashSet(_updateAllExcludedUl, oldName, newName);
         MigrateHashSet(_lumaEnabledGames, oldName, newName);
         MigrateHashSet(_lumaDisabledGames, oldName, newName);
 

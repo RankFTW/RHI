@@ -77,7 +77,7 @@ public class SettingsHandler
     {
         var logsDir = System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "UPST", "logs");
+            "RHI", "logs");
         System.IO.Directory.CreateDirectory(logsDir);
         CrashReporter.Log("[SettingsHandler.OpenLogsFolder_Click] User opened logs folder from About panel");
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logsDir) { UseShellExecute = true });

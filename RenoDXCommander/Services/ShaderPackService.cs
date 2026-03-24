@@ -693,7 +693,7 @@ public class ShaderPackService : IShaderPackService
         try
         {
             var req = new HttpRequestMessage(HttpMethod.Get, pack.Url);
-            req.Headers.Add("User-Agent", "UPST");
+            req.Headers.Add("User-Agent", "RHI");
             req.Headers.Add("Accept", "application/vnd.github+json");
             var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode)
@@ -743,7 +743,7 @@ public class ShaderPackService : IShaderPackService
         try
         {
             var req = new HttpRequestMessage(HttpMethod.Head, pack.Url);
-            req.Headers.Add("User-Agent", "UPST");
+            req.Headers.Add("User-Agent", "RHI");
             var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode) return "unknown";
             var etag = resp.Headers.ETag?.Tag;
@@ -890,7 +890,7 @@ public class ShaderPackService : IShaderPackService
     }
 
     /// <summary>
-    /// Writes the RDXC ownership marker into the reshade-shaders folder.
+    /// Writes the RHI ownership marker into the reshade-shaders folder.
     /// Call after creating the folder so future runs recognise it as ours.
     /// </summary>
     private void WriteMarker(string gameDir)
@@ -1271,7 +1271,7 @@ public class ShaderPackService : IShaderPackService
 
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "settings.json");
+        "RHI", "settings.json");
 
     private string VersionKey(string packId) => $"ShaderPack_{packId}_Version";
 

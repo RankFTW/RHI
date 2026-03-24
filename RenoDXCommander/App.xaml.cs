@@ -48,7 +48,7 @@ public partial class App : Application
             };
 
             var client = new HttpClient(handler);
-            client.DefaultRequestHeaders.Add("User-Agent", "UPST/2.0");
+            client.DefaultRequestHeaders.Add("User-Agent", "RHI/2.0");
             // Per-request timeout — generous enough for large files on slow connections.
             // Individual services can set per-request timeouts via CancellationTokenSource
             // if they need tighter control.
@@ -96,7 +96,7 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // ── One-time migration from legacy "RenoDXCommander" AppData folder ───────
+        // ── One-time migration from legacy AppData folders ───────
         MigrateLegacyAppData();
 
         // Single-instance check: if another instance is already running,
@@ -145,30 +145,29 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Migrates the legacy %LocalAppData%\RenoDXCommander folder to %LocalAppData%\UPST.
-    /// Copies all contents then deletes the old folder. Runs once — subsequent launches
-    /// skip because the legacy folder no longer exists.
+    /// Migrates legacy %LocalAppData% folders to %LocalAppData%\RHI.
+    /// Handles the original RenoDXCommander folder and the UPST folder.
+    /// Copies all contents then deletes the old folder. Runs once per legacy folder.
     /// </summary>
     private static void MigrateLegacyAppData()
     {
         try
         {
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var legacyDir = Path.Combine(localAppData, "RenoDXCommander");
-            var newDir = Path.Combine(localAppData, "UPST");
+            var newDir = Path.Combine(localAppData, "RHI");
 
-            if (!Directory.Exists(legacyDir))
-                return;
+            // Migrate from RenoDXCommander (oldest) first, then UPST
+            foreach (var legacyName in new[] { "RenoDXCommander", "UPST" })
+            {
+                var legacyDir = Path.Combine(localAppData, legacyName);
+                if (!Directory.Exists(legacyDir))
+                    continue;
 
-            CrashReporter.Log($"[App.MigrateLegacyAppData] Migrating {legacyDir} → {newDir}");
-
-            // Copy all files and subdirectories to the new location
-            CopyDirectoryRecursive(legacyDir, newDir);
-
-            // Remove the legacy folder
-            Directory.Delete(legacyDir, recursive: true);
-
-            CrashReporter.Log("[App.MigrateLegacyAppData] Migration complete");
+                CrashReporter.Log($"[App.MigrateLegacyAppData] Migrating {legacyDir} → {newDir}");
+                CopyDirectoryRecursive(legacyDir, newDir);
+                Directory.Delete(legacyDir, recursive: true);
+                CrashReporter.Log($"[App.MigrateLegacyAppData] Migration from {legacyName} complete");
+            }
         }
         catch (Exception ex)
         {

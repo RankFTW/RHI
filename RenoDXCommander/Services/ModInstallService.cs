@@ -21,11 +21,11 @@ public class ModInstallService : IModInstallService
 
     private static readonly string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "installed.json");
+        "RHI", "installed.json");
 
     public static readonly string DownloadCacheDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "UPST", "downloads");
+        "RHI", "downloads");
 
     private readonly HttpClient _http;
 

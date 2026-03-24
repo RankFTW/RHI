@@ -218,8 +218,9 @@ public partial class GameCardViewModel
                                                       && !EffectiveLumaMode)
                                                       ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DualBitInstallVisibility   => Visibility.Collapsed;
-    public Visibility UpdateBadgeVisibility      => (Status == GameStatus.UpdateAvailable
-                                                      || RsStatus == GameStatus.UpdateAvailable)
+    public Visibility UpdateBadgeVisibility      => ((Status == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllRenoDx)
+                                                      || (RsStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllReShade)
+                                                      || (UlStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllUl))
                                                       ? Visibility.Visible : Visibility.Collapsed;
     public Visibility IsHiddenVisibility         => IsHidden ? Visibility.Visible : Visibility.Collapsed;
     public Visibility IsNotHiddenVisibility      => IsHidden ? Visibility.Collapsed : Visibility.Visible;
@@ -262,6 +263,42 @@ public partial class GameCardViewModel
     {
         ["oopydoopy"] = "Jon",
     };
+
+    /// <summary>Donation page URLs keyed by display name (after resolution).</summary>
+    private static readonly Dictionary<string, string> AuthorDonationUrls =
+        new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["ShortFuse"] = "https://ko-fi.com/shortfuse",
+        ["Jon"]       = "https://ko-fi.com/kickfister",
+        ["Forge"]     = "https://ko-fi.com/forge87682",
+        ["Voosh"]     = "https://ko-fi.com/notvoosh",
+        ["Musa"]      = "https://ko-fi.com/musaqh",
+        ["Pumbo"]     = "https://ko-fi.com/pumbo",
+        ["Nukem"]     = "https://ko-fi.com/nukem9",
+        ["Lilium"]    = "https://ko-fi.com/endlesslyflowering",
+        ["Bit Viper"] = "https://ko-fi.com/bitviper",
+    };
+
+    /// <summary>Returns the donation URL for the given author display name, or null if none is known.</summary>
+    public static string? GetAuthorDonationUrl(string displayName) =>
+        AuthorDonationUrls.TryGetValue(displayName, out var url) ? url : null;
+
+    /// <summary>
+    /// Merges manifest-provided donation URLs and display-name overrides into the
+    /// hardcoded dictionaries. Manifest entries take priority over hardcoded ones.
+    /// </summary>
+    public static void MergeManifestAuthorData(
+        Dictionary<string, string>? donationUrls,
+        Dictionary<string, string>? displayNames)
+    {
+        if (displayNames != null)
+            foreach (var (key, value) in displayNames)
+                AuthorDisplayNames[key] = value;
+
+        if (donationUrls != null)
+            foreach (var (key, value) in donationUrls)
+                AuthorDonationUrls[key] = value;
+    }
 
     /// <summary>Resolves a single author segment to its display name.
     /// Strips parenthesised aliases (e.g. "oopydoopy (Jon)") before lookup.</summary>

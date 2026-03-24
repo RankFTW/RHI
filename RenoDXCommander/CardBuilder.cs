@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
+using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 
@@ -421,16 +422,29 @@ public class CardBuilder
             copyConfigTooltip: "Copy ReShade.ini & ReShadePreset.ini",
             btnBackground: card.RsBtnBackground, btnForeground: card.RsBtnForeground, btnBorderBrush: card.RsBtnBorderBrush);
         rsRow.Visibility = card.ReShadeRowVisibility;
+        // Make RS status text a clickable link to reshade.me
+        var rsStatusBlock = rsRow.Children.OfType<TextBlock>().FirstOrDefault(t => t.Tag as string == "StatusText");
+        if (rsStatusBlock != null)
+        {
+            if (card.IsRsInstalled)
+                rsStatusBlock.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
+            rsStatusBlock.PointerPressed += async (s, e) =>
+            {
+                if (card.IsRsInstalled)
+                    await Windows.System.Launcher.LaunchUriAsync(
+                        new Uri("https://reshade.me"));
+            };
+        }
         panel.Children.Add(rsRow);
 
-        // Ultra Limiter row
-        var ulRow = BuildComponentRow(card, "Ultra Limiter", "UL",
+        // ReLimiter row
+        var ulRow = BuildComponentRow(card, "ReLimiter", "UL",
             card.UlStatusText, card.UlStatusColor, card.UlShortAction,
             card.IsUlNotInstalling, card.IsUlInstalled,
             showCopyConfig: true, copyConfigVisible: card.UlIniExists,
-            copyConfigTooltip: "Copy ultra_limiter.ini to game folder",
+            copyConfigTooltip: "Copy relimiter.ini to game folder",
             btnBackground: card.UlBtnBackground, btnForeground: card.UlBtnForeground, btnBorderBrush: card.UlBtnBorderBrush);
-        // Make UL status text a clickable link to the Ultra Limiter guide
+        // Make UL status text a clickable link to the ReLimiter guide (or release page when update available)
         var ulStatusBlock = ulRow.Children.OfType<TextBlock>().FirstOrDefault(t => t.Tag as string == "StatusText");
         if (ulStatusBlock != null)
         {
@@ -438,7 +452,9 @@ public class CardBuilder
                 ulStatusBlock.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
             ulStatusBlock.PointerPressed += async (s, e) =>
             {
-                if (card.IsUlInstalled)
+                if (card.UlStatus == Models.GameStatus.UpdateAvailable && _window.ViewModel.LatestUlReleasePageUrl != null)
+                    await Windows.System.Launcher.LaunchUriAsync(new Uri(_window.ViewModel.LatestUlReleasePageUrl));
+                else if (card.IsUlInstalled)
                     await Windows.System.Launcher.LaunchUriAsync(
                         new Uri("https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide"));
             };
@@ -454,6 +470,23 @@ public class CardBuilder
             copyConfigTooltip: null,
             btnBackground: card.InstallBtnBackground, btnForeground: card.InstallBtnForeground, btnBorderBrush: card.InstallBtnBorderBrush);
         rdxRow.Visibility = card.RenoDxRowVisibility;
+        // Make RDX status text a clickable link to the RenoDX wiki page
+        var rdxStatusBlock = rdxRow.Children.OfType<TextBlock>().FirstOrDefault(t => t.Tag as string == "StatusText");
+        if (rdxStatusBlock != null)
+        {
+            if (card.IsRdxInstalled)
+                rdxStatusBlock.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
+            rdxStatusBlock.PointerPressed += async (s, e) =>
+            {
+                if (card.IsRdxInstalled)
+                {
+                    var url = !string.IsNullOrEmpty(card.NameUrl)
+                        ? card.NameUrl
+                        : "https://github.com/clshortfuse/renodx/wiki/Mods";
+                    await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+                }
+            };
+        }
         panel.Children.Add(rdxRow);
 
         // External/Discord row — shown when game is external-only (no wiki mod)
@@ -601,7 +634,7 @@ public class CardBuilder
         string? btnBackground = null, string? btnForeground = null, string? btnBorderBrush = null)
     {
         var row = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });  // name
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });  // name
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(75) });  // status
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // install btn
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });     // copy config
