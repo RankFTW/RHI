@@ -98,7 +98,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         IDllOverrideService dllOverrideService,
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
         Action notifyUpdateState,
-        Func<string, string?, IEnumerable<string>?>? shaderResolver = null)
+        Func<string, string?, IEnumerable<string>?>? shaderResolver = null,
+        Func<string, ManifestDllNames?>? manifestDllResolver = null)
     {
         var targets = UpdateAllEligible(allCards)
             .Where(c => !c.ExcludeFromUpdateAllReShade)
@@ -134,7 +135,9 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 });
                 var rsOverride = card.DllOverrideEnabled
                     ? dllOverrideService.GetDllOverride(card.GameName)?.ReShadeFileName
-                    : null;
+                    : (manifestDllResolver?.Invoke(card.GameName)?.ReShade is { Length: > 0 } mRs
+                        ? mRs
+                        : MainViewModel.ResolveAutoReShadeFilename(card.DetectedApis));
                 var record = await _auxInstaller.InstallReShadeAsync(
                     card.GameName, card.InstallPath,
                     shaderModeOverride: card.ShaderModeOverride,

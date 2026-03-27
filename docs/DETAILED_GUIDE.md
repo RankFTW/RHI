@@ -200,6 +200,16 @@ Game cards show all detected APIs for dual-API games. Only valid multi-API combi
 | DX10 + anything | DX10 shown alone | No |
 | OGL + anything | OGL shown alone | No |
 
+### Automatic ReShade DLL Naming
+
+Graphics API detection also drives automatic ReShade DLL naming. When no user or manifest DLL override is set, RHI uses the detected APIs to choose the correct ReShade filename:
+
+- **DX9 detected** → ReShade is installed as `d3d9.dll`
+- **OpenGL-only** → ReShade is installed as `opengl32.dll`
+- **All other cases** → ReShade is installed as `dxgi.dll` (default)
+
+See [Components > Automatic DLL Naming for OpenGL and DX9 Games](#automatic-dll-naming-for-opengl-and-dx9-games) for the full priority chain.
+
 ### Manifest API Overrides
 
 The remote manifest supports comma-separated API tags (e.g. `"DX12, VLK"`) for games like Red Dead Redemption 2 that load Vulkan dynamically and can't be detected via PE imports alone.
@@ -225,9 +235,28 @@ The status label next to the ReShade install button shows the installed version 
 
 Named mods from the RenoDX wiki display the mod author as a bordered badge on the detail panel info line. Multiple authors (e.g. "oopydoopy & Voosh") each get their own badge. Generic Unreal Engine mods show "ShortFuse", UE-Extended mods show "Marat", and generic Unity mods show "Voosh". Games in Luma mode show the Luma mod author from the Luma wiki (e.g. "Pumbo", "XgarhontX") in place of the RenoDX author.
 
+### Automatic DLL Naming for OpenGL and DX9 Games
+
+RHI automatically selects the correct ReShade DLL filename based on the game's detected graphics API:
+
+| Detected API | ReShade Filename |
+|--------------|-----------------|
+| DirectX 9 | `d3d9.dll` |
+| OpenGL only | `opengl32.dll` |
+| All other APIs | `dxgi.dll` (default) |
+
+DX9 takes precedence — if a game imports both `d3d9.dll` and `opengl32.dll`, ReShade is installed as `d3d9.dll`. OpenGL naming only applies when OpenGL is the sole detected API.
+
+The full priority chain for ReShade DLL naming is:
+
+1. **User DLL override** (set in Per-Game Overrides) — always wins
+2. **Manifest `dllNameOverrides`** — per-game overrides from the remote manifest
+3. **Automatic API-based naming** — DX9 → `d3d9.dll`, OpenGL-only → `opengl32.dll`
+4. **Default** — `dxgi.dll`
+
 ### ReShade Detection Under Non-Standard Filenames
 
-ReShade installations using non-standard DLL filenames (e.g. `d3d11.dll`, `dinput8.dll`, `version.dll`) are detected via binary signature scanning (`IsReShadeFileStrict`) as a fallback. Reinstalling correctly removes the old non-standard DLL before placing the new one.
+ReShade installations using non-standard DLL filenames (e.g. `d3d11.dll`, `dinput8.dll`, `version.dll`, `d3d9.dll`, `opengl32.dll`) are detected via binary signature scanning (`IsReShadeFileStrict`) as a fallback. Reinstalling correctly removes the old non-standard DLL before placing the new one.
 ---
 
 ## Vulkan ReShade Support
@@ -292,9 +321,20 @@ The UE-Extended toggle now appears for every Unreal Engine game that does not ha
 
 [ReLimiter](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide) is an optional per-game component downloaded from GitHub on demand. See the linked comprehensive feature guide for full details on what ReLimiter does and all available settings.
 
+### 32-bit and 64-bit Support
+
+ReLimiter supports both 32-bit and 64-bit games. RHI automatically selects the correct addon file based on the game's detected bitness:
+
+| Game Bitness | Addon File |
+|--------------|------------|
+| 64-bit | `relimiter.addon64` |
+| 32-bit | `relimiter.addon32` |
+
+Both variants are downloaded from the same GitHub releases endpoint and cached separately so they don't overwrite each other.
+
 ### Install / Reinstall / Uninstall
 
-ReLimiter can be installed, reinstalled, or uninstalled on a per-game basis from the Components table in the detail panel. The addon file (`relimiter.addon64`) is downloaded from its GitHub release when first needed and cached locally.
+ReLimiter can be installed, reinstalled, or uninstalled on a per-game basis from the Components table in the detail panel. The correct addon file (`relimiter.addon64` or `relimiter.addon32`) is selected automatically based on the game's bitness, downloaded from its GitHub release when first needed, and cached locally.
 
 ### INI Configuration
 
@@ -489,7 +529,7 @@ A new session log file is created every time RHI starts, named with a timestamp 
 |---------|-----|
 | Game not detected | Click **Add Game** on the Settings page or drag the game's `.exe` onto the window |
 | Xbox games missing | Click **Refresh** — RHI uses the PackageManager API |
-| ReShade not loading | Check the install path — `dxgi.dll` must be next to the game exe |
+| ReShade not loading | Check the install path — the ReShade DLL (`dxgi.dll`, `d3d9.dll`, or `opengl32.dll`) must be next to the game exe |
 | ReShade not detected | If using a non-standard DLL name, RHI should detect it via binary signature scanning. Try **Refresh**. |
 | Black screen (Unreal) | ReShade > Add-ons > RenoDX > set `R10G10B10A2_UNORM` to `output size` |
 | UE-Extended not working | Turn on in-game HDR — UE-Extended requires native HDR output |

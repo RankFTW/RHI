@@ -34,7 +34,8 @@ public interface IUpdateOrchestrationService
         IDllOverrideService dllOverrideService,
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
         Action notifyUpdateState,
-        Func<string, string?, IEnumerable<string>?>? shaderResolver = null);
+        Func<string, string?, IEnumerable<string>?>? shaderResolver = null,
+        Func<string, ManifestDllNames?>? manifestDllResolver = null);
 
     /// <summary>
     /// Checks all installed mods and aux components for available updates.

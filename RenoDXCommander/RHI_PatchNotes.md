@@ -1,3 +1,18 @@
+## v1.6.4
+
+### New Features
+
+**32-bit ReLimiter support**
+- RHI now installs the correct ReLimiter addon based on game bitness. 32-bit games receive `relimiter.addon32` and 64-bit games continue to use `relimiter.addon64`. Each variant is cached separately so installs don't interfere with each other.
+
+**Automatic OpenGL ReShade DLL naming**
+- Games detected with OpenGL as their only graphics API now have ReShade installed as `opengl32.dll` automatically, instead of the default `dxgi.dll`. User and manifest DLL overrides still take priority.
+
+**Automatic DX9 ReShade DLL naming**
+- Games detected with DirectX 9 now have ReShade installed as `d3d9.dll` automatically, instead of the default `dxgi.dll`. DX9 takes precedence when multiple APIs are detected. User and manifest DLL overrides still take priority.
+
+---
+
 ## v1.6.3
 
 ### Bug Fixes

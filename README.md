@@ -34,14 +34,15 @@ Requires Windows 10/11 (x64) and [.NET 8 Desktop Runtime](https://dotnet.microso
 ## Features
 
 - **8-store game detection** — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, Rockstar. New games appear automatically on every launch.
-- **Graphics API detection** — scans game executables via PE header analysis to detect DirectX 11/12, Vulkan, and OpenGL. API badges shown on game cards.
+- **Graphics API detection** — scans game executables via PE header analysis to detect DirectX 8/9/10/11/12, Vulkan, and OpenGL. API badges shown on game cards.
 - **Vulkan ReShade support** — installs ReShade as a global Vulkan implicit layer for Vulkan-rendered games, with per-game INI and shader deployment
 - **One-click install/update/uninstall** for ReShade, ReLimiter, RenoDX addons, and Luma Framework mods
-- **ReLimiter support** — install and manage the ReLimiter frame pacing addon per-game, downloaded from GitHub on demand with automatic update detection
+- **ReLimiter support** — install and manage the ReLimiter frame pacing addon per-game (32-bit and 64-bit), downloaded from GitHub on demand with automatic update detection. Automatically selects the correct addon based on game bitness.
 - **Version display** — installed ReShade version numbers shown directly on the component row
 - **Shader pack management** — 7 HDR shader packs with five deploy modes (Off, Minimum, All, User, Select) plus a per-game shader selection picker
 - **Auto-save overrides** — all per-game settings save immediately when changed, no Save button needed
 - **Per-game overrides** — DLL naming, shader mode/selection, rendering path, wiki name mapping, wiki exclusion, per-component Update All inclusion, reset overrides
+- **Automatic ReShade DLL naming** — installs ReShade as `opengl32.dll` for OpenGL-only games and `d3d9.dll` for DirectX 9 games, so ReShade loads correctly without manual DLL override configuration
 - **Seamless refresh** — after initial boot, refresh updates everything in the background without blanking the UI
 - **Startup shader deployment** — on launch, shaders are automatically synced to all installed game folders for backwards compatibility
 - **Drag-and-drop** — drop a game `.exe` to add it, drop an `.addon64`/`.addon32` to install it, or drop an archive to extract and install addons
@@ -66,7 +67,7 @@ Requires Windows 10/11 (x64) and [.NET 8 Desktop Runtime](https://dotnet.microso
 |---------|-----|
 | Game not detected | Click **Add Game** in Settings or drag the game's `.exe` onto the window |
 | Xbox games missing | Click **Refresh** — RHI uses the PackageManager API |
-| ReShade not loading | Check the install path via 📁 — `dxgi.dll` must be next to the game exe |
+| ReShade not loading | Check the install path via 📁 — the ReShade DLL (`dxgi.dll`, `opengl32.dll`, or `d3d9.dll`) must be next to the game exe |
 | Black screen (Unreal) | ReShade → Add-ons → RenoDX → set `R10G10B10A2_UNORM` to `output size` |
 | UE-Extended not working | Turn on in-game HDR — UE-Extended requires native HDR output |
 | Downloads failing | Click **Refresh**, or clear cache from Settings → Open Downloads Cache |

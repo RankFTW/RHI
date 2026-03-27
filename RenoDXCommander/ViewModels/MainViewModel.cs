@@ -1931,14 +1931,16 @@ public partial class MainViewModel : ObservableObject
         if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
         {
             var ulDeployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
-            if (File.Exists(Path.Combine(ulDeployPath, UltraLimiterFileName))
-                || File.Exists(Path.Combine(card.InstallPath, UltraLimiterFileName))
-                || File.Exists(Path.Combine(ulDeployPath, LegacyUltraLimiterFileName))
-                || File.Exists(Path.Combine(card.InstallPath, LegacyUltraLimiterFileName)))
+            var ulFileName = GetUlFileName(card.Is32Bit);
+            var legacyUlFileName = card.Is32Bit ? LegacyUltraLimiterFileName32 : LegacyUltraLimiterFileName;
+            if (File.Exists(Path.Combine(ulDeployPath, ulFileName))
+                || File.Exists(Path.Combine(card.InstallPath, ulFileName))
+                || File.Exists(Path.Combine(ulDeployPath, legacyUlFileName))
+                || File.Exists(Path.Combine(card.InstallPath, legacyUlFileName)))
             {
                 card.UlStatus = GameStatus.Installed;
-                card.UlInstalledFile = UltraLimiterFileName;
-                card.UlInstalledVersion = ReadUlInstalledVersion();
+                card.UlInstalledFile = ulFileName;
+                card.UlInstalledVersion = ReadUlInstalledVersion(card.Is32Bit);
             }
         }
 
@@ -2043,13 +2045,18 @@ public partial class MainViewModel : ObservableObject
 
     // ── ReLimiter commands ────────────────────────────────────────────────────
 
-    private const string UltraLimiterFileName = "relimiter.addon64";
+    private const string UltraLimiterFileName64 = "relimiter.addon64";
+    private const string UltraLimiterFileName32 = "relimiter.addon32";
     private const string LegacyUltraLimiterFileName = "ultra_limiter.addon64";
+    private const string LegacyUltraLimiterFileName32 = "ultra_limiter.addon32";
     private const string UltraLimiterReleasesApiUrl =
         "https://api.github.com/repos/RankFTW/Ultra-Limiter/releases/latest";
 
-    private static readonly string UlCachePath = Path.Combine(
-        ModInstallService.DownloadCacheDir, UltraLimiterFileName);
+    internal static string GetUlFileName(bool is32Bit) =>
+        is32Bit ? UltraLimiterFileName32 : UltraLimiterFileName64;
+
+    internal static string GetUlCachePath(bool is32Bit) =>
+        Path.Combine(ModInstallService.DownloadCacheDir, GetUlFileName(is32Bit));
 
     private static readonly string UlMetaPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -2070,11 +2077,11 @@ public partial class MainViewModel : ObservableObject
             // Force fresh download on reinstall (but not update — the check already cached the new file)
             if (card.UlStatus == GameStatus.Installed)
             {
-                if (File.Exists(UlCachePath)) File.Delete(UlCachePath);
+                if (File.Exists(GetUlCachePath(card.Is32Bit))) File.Delete(GetUlCachePath(card.Is32Bit));
             }
 
             // Download to cache if not already cached
-            await EnsureUlCachedAsync(new Progress<(string msg, double pct)>(p =>
+            await EnsureUlCachedAsync(card.Is32Bit, new Progress<(string msg, double pct)>(p =>
             {
                 DispatcherQueue?.TryEnqueue(() =>
                 {
@@ -2084,22 +2091,26 @@ public partial class MainViewModel : ObservableObject
             }));
 
             var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
-            var destPath = Path.Combine(deployPath, UltraLimiterFileName);
-            File.Copy(UlCachePath, destPath, overwrite: true);
+            var destPath = Path.Combine(deployPath, GetUlFileName(card.Is32Bit));
+            File.Copy(GetUlCachePath(card.Is32Bit), destPath, overwrite: true);
 
-            // Remove legacy ultra_limiter.addon64 if present
+            // Remove legacy ultra_limiter.addon64 / ultra_limiter.addon32 if present
             var legacyPath = Path.Combine(deployPath, LegacyUltraLimiterFileName);
             if (File.Exists(legacyPath)) File.Delete(legacyPath);
             var legacyDirect = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName);
             if (File.Exists(legacyDirect)) File.Delete(legacyDirect);
+            var legacyPath32 = Path.Combine(deployPath, LegacyUltraLimiterFileName32);
+            if (File.Exists(legacyPath32)) File.Delete(legacyPath32);
+            var legacyDirect32 = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName32);
+            if (File.Exists(legacyDirect32)) File.Delete(legacyDirect32);
 
             // Save version metadata after successful install
             if (!string.IsNullOrEmpty(_latestUlVersion))
-                SaveUlMeta(_latestUlVersion);
+                SaveUlMeta(_latestUlVersion, card.Is32Bit);
 
             DispatcherQueue?.TryEnqueue(() =>
             {
-                card.UlInstalledFile = UltraLimiterFileName;
+                card.UlInstalledFile = GetUlFileName(card.Is32Bit);
                 card.UlInstalledVersion = _latestUlVersion?.TrimStart('v', 'V');
                 card.UlStatus = GameStatus.Installed;
                 card.UlActionMessage = "✅ ReLimiter installed!";
@@ -2123,28 +2134,30 @@ public partial class MainViewModel : ObservableObject
     /// Downloads ReLimiter to the cache directory if not already present.
     /// Fetches the latest release info from GitHub if not already cached from an update check.
     /// </summary>
-    private async Task EnsureUlCachedAsync(IProgress<(string msg, double pct)>? progress = null)
+    private async Task EnsureUlCachedAsync(bool is32Bit, IProgress<(string msg, double pct)>? progress = null)
     {
-        if (File.Exists(UlCachePath))
+        if (File.Exists(GetUlCachePath(is32Bit)))
         {
             progress?.Report(("Installing from cache...", 50));
             return;
         }
 
         // If we don't have a download URL yet (fresh install, not from update check), fetch it
-        if (string.IsNullOrEmpty(_latestUlDownloadUrl))
+        var currentUrl = is32Bit ? _latestUlDownloadUrl32 : _latestUlDownloadUrl;
+        if (string.IsNullOrEmpty(currentUrl))
         {
-            await FetchLatestUlReleaseInfoAsync();
+            await FetchLatestUlReleaseInfoAsync(is32Bit);
+            currentUrl = is32Bit ? _latestUlDownloadUrl32 : _latestUlDownloadUrl;
         }
 
-        var url = _latestUlDownloadUrl;
+        var url = currentUrl;
         if (string.IsNullOrEmpty(url))
         {
             throw new InvalidOperationException("Could not determine ReLimiter download URL from GitHub releases.");
         }
 
         Directory.CreateDirectory(ModInstallService.DownloadCacheDir);
-        var tempPath = UlCachePath + ".tmp";
+        var tempPath = GetUlCachePath(is32Bit) + ".tmp";
 
         progress?.Report(("Downloading...", 0));
         var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
@@ -2167,12 +2180,12 @@ public partial class MainViewModel : ObservableObject
             }
         }
 
-        if (File.Exists(UlCachePath)) File.Delete(UlCachePath);
-        File.Move(tempPath, UlCachePath);
+        if (File.Exists(GetUlCachePath(is32Bit))) File.Delete(GetUlCachePath(is32Bit));
+        File.Move(tempPath, GetUlCachePath(is32Bit));
 
         // Save version metadata for update detection
         if (!string.IsNullOrEmpty(_latestUlVersion))
-            SaveUlMeta(_latestUlVersion);
+            SaveUlMeta(_latestUlVersion, is32Bit);
         progress?.Report(("Downloaded!", 100));
     }
 
@@ -2180,7 +2193,7 @@ public partial class MainViewModel : ObservableObject
     /// Fetches the latest UL release info (version + download URL) from GitHub.
     /// Populates _latestUlVersion and _latestUlDownloadUrl.
     /// </summary>
-    private async Task FetchLatestUlReleaseInfoAsync()
+    private async Task FetchLatestUlReleaseInfoAsync(bool is32Bit)
     {
         try
         {
@@ -2197,15 +2210,19 @@ public partial class MainViewModel : ObservableObject
             if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))
                 _latestUlVersion = tagEl.GetString();
 
+            var targetFileName = GetUlFileName(is32Bit);
             if (doc.RootElement.TryGetProperty("assets", out var assets))
             {
                 foreach (var asset in assets.EnumerateArray())
                 {
                     if (asset.TryGetProperty("name", out var name) &&
-                        name.GetString()?.Equals(UltraLimiterFileName, StringComparison.OrdinalIgnoreCase) == true &&
+                        name.GetString()?.Equals(targetFileName, StringComparison.OrdinalIgnoreCase) == true &&
                         asset.TryGetProperty("browser_download_url", out var urlEl))
                     {
-                        _latestUlDownloadUrl = urlEl.GetString();
+                        if (is32Bit)
+                            _latestUlDownloadUrl32 = urlEl.GetString();
+                        else
+                            _latestUlDownloadUrl = urlEl.GetString();
                         break;
                     }
                 }
@@ -2218,16 +2235,32 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>Persists UL installed version to the meta file.</summary>
-    private static void SaveUlMeta(string version)
+    private static void SaveUlMeta(string version, bool is32Bit)
     {
         try
         {
             var cleanVersion = version.TrimStart('v', 'V');
-            var meta = new Dictionary<string, object>
+
+            // Read existing meta to preserve the other bitness entry
+            Dictionary<string, object>? meta = null;
+            if (File.Exists(UlMetaPath))
             {
-                ["InstalledVersion"] = cleanVersion,
-                ["UpdatedAt"] = DateTime.UtcNow.ToString("o"),
-            };
+                try
+                {
+                    var existing = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                        File.ReadAllText(UlMetaPath));
+                    if (existing != null) meta = existing;
+                }
+                catch { /* corrupt file — start fresh */ }
+            }
+            meta ??= new Dictionary<string, object>();
+
+            var key = is32Bit ? "InstalledVersion32" : "InstalledVersion64";
+            meta[key] = cleanVersion;
+            meta["UpdatedAt"] = DateTime.UtcNow.ToString("o");
+
+            // Migrate: also write legacy key so older builds still work
+            meta["InstalledVersion"] = cleanVersion;
 
             Directory.CreateDirectory(Path.GetDirectoryName(UlMetaPath)!);
             File.WriteAllText(UlMetaPath, System.Text.Json.JsonSerializer.Serialize(meta,
@@ -2239,15 +2272,18 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Reads the installed UL version from the meta file, or null if not found.</summary>
-    private static string? ReadUlInstalledVersion()
+    /// <summary>Reads the installed UL version for the given bitness from the meta file, or null if not found.</summary>
+    private static string? ReadUlInstalledVersion(bool is32Bit)
     {
         try
         {
             if (!File.Exists(UlMetaPath)) return null;
             var metaJson = File.ReadAllText(UlMetaPath);
             var meta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(metaJson);
-            if (meta != null && meta.TryGetValue("InstalledVersion", out var verEl))
+            if (meta == null) return null;
+
+            var key = is32Bit ? "InstalledVersion32" : "InstalledVersion64";
+            if (meta.TryGetValue(key, out var verEl))
                 return verEl.GetString()?.TrimStart('v', 'V');
         }
         catch (Exception ex)
@@ -2266,9 +2302,29 @@ public partial class MainViewModel : ObservableObject
     {
         _crashReporter.Log($"[CheckUlUpdateAsync] Starting");
 
-        // ── Read installed version from meta ──────────────────────────────
-        var installedVersion = ReadUlInstalledVersion();
         bool anyInstalled = cards.Any(c => c.UlStatus == GameStatus.Installed);
+
+        // ── Determine which bitness variants are in use ───────────────────
+        bool needs64 = cards.Any(c => c.UlStatus == GameStatus.Installed && !c.Is32Bit);
+        bool needs32 = cards.Any(c => c.UlStatus == GameStatus.Installed && c.Is32Bit);
+
+        // If nothing is specifically installed yet (legacy/meta-only), default to 64-bit
+        if (!needs64 && !needs32)
+            needs64 = true;
+
+        // ── Read installed version from meta (use oldest across bitness variants) ──
+        var installedVersion64 = needs64 ? ReadUlInstalledVersion(false) : null;
+        var installedVersion32 = needs32 ? ReadUlInstalledVersion(true) : null;
+        var installedVersion = (installedVersion64, installedVersion32) switch
+        {
+            (null, null) => null,
+            (null, var v) => v,
+            (var v, null) => v,
+            // Use the older of the two so we trigger an update if either is behind
+            var (v64, v32) => (Version.TryParse(v64, out var ver64) && Version.TryParse(v32, out var ver32))
+                ? (ver64 <= ver32 ? v64 : v32)
+                : v64, // fallback to 64-bit if parsing fails
+        };
 
         if (installedVersion == null && !anyInstalled)
         {
@@ -2310,23 +2366,30 @@ public partial class MainViewModel : ObservableObject
                 return false;
             }
 
-            // Get the download URL for the addon file from assets
-            string? downloadUrl = null;
+            // Get the download URLs for both bitness variants from assets
+            string? downloadUrl64 = null;
+            string? downloadUrl32 = null;
             if (doc.RootElement.TryGetProperty("assets", out var assets))
             {
                 foreach (var asset in assets.EnumerateArray())
                 {
                     if (asset.TryGetProperty("name", out var name) &&
-                        name.GetString()?.Equals(UltraLimiterFileName, StringComparison.OrdinalIgnoreCase) == true &&
                         asset.TryGetProperty("browser_download_url", out var urlEl))
                     {
-                        downloadUrl = urlEl.GetString();
-                        break;
+                        var assetName = name.GetString();
+                        if (assetName?.Equals(UltraLimiterFileName64, StringComparison.OrdinalIgnoreCase) == true)
+                            downloadUrl64 = urlEl.GetString();
+                        else if (assetName?.Equals(UltraLimiterFileName32, StringComparison.OrdinalIgnoreCase) == true)
+                            downloadUrl32 = urlEl.GetString();
                     }
+
+                    if (downloadUrl64 != null && downloadUrl32 != null)
+                        break;
                 }
             }
 
-            if (string.IsNullOrEmpty(downloadUrl))
+            // Need at least one matching asset for the variants we care about
+            if ((needs64 && string.IsNullOrEmpty(downloadUrl64)) && (needs32 && string.IsNullOrEmpty(downloadUrl32)))
             {
                 _crashReporter.Log("[CheckUlUpdateAsync] No matching asset found in latest release");
                 return false;
@@ -2343,10 +2406,11 @@ public partial class MainViewModel : ObservableObject
 
             // ── Update available — store remote info and pre-cache ────────
             _latestUlVersion = remoteVersion;
-            _latestUlDownloadUrl = downloadUrl;
+            _latestUlDownloadUrl = downloadUrl64;
+            _latestUlDownloadUrl32 = downloadUrl32;
             _crashReporter.Log($"[CheckUlUpdateAsync] Update available: {installedVersion ?? "(none)"} → {remoteVersion}");
 
-            await PreCacheRemoteUlAsync();
+            await PreCacheRemoteUlAsync(needs64, needs32);
             return true;
         }
         catch (Exception ex)
@@ -2378,25 +2442,35 @@ public partial class MainViewModel : ObservableObject
     // Cached latest release info from the update check
     private string? _latestUlVersion;
     private string? _latestUlDownloadUrl;
+    private string? _latestUlDownloadUrl32;
 
     /// <summary>URL to the GitHub release page for the latest UL version, or null if unknown.</summary>
     public string? LatestUlReleasePageUrl => _latestUlVersion != null
         ? $"https://github.com/RankFTW/Ultra-Limiter/releases/tag/{_latestUlVersion}"
         : null;
 
-    /// <summary>Downloads the remote UL file into the cache using the URL from the latest release.</summary>
-    private async Task PreCacheRemoteUlAsync()
+    /// <summary>Downloads the remote UL file(s) into the cache using the URLs from the latest release.</summary>
+    private async Task PreCacheRemoteUlAsync(bool needs64, bool needs32)
+    {
+        if (needs64)
+            await PreCacheRemoteUlVariantAsync(false);
+        if (needs32)
+            await PreCacheRemoteUlVariantAsync(true);
+    }
+
+    /// <summary>Downloads a single bitness variant of the UL file into the cache.</summary>
+    private async Task PreCacheRemoteUlVariantAsync(bool is32Bit)
     {
         try
         {
-            var url = _latestUlDownloadUrl;
+            var url = is32Bit ? _latestUlDownloadUrl32 : _latestUlDownloadUrl;
             if (string.IsNullOrEmpty(url))
             {
-                _crashReporter.Log("[PreCacheRemoteUlAsync] No download URL available");
+                _crashReporter.Log($"[PreCacheRemoteUlAsync] No download URL available for {(is32Bit ? "32-bit" : "64-bit")}");
                 return;
             }
 
-            var tempPath = UlCachePath + ".precache.tmp";
+            var tempPath = GetUlCachePath(is32Bit) + ".precache.tmp";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
             var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
@@ -2411,12 +2485,12 @@ public partial class MainViewModel : ObservableObject
                     await file.WriteAsync(buf.AsMemory(0, read));
             }
 
-            if (File.Exists(UlCachePath)) File.Delete(UlCachePath);
-            File.Move(tempPath, UlCachePath);
+            if (File.Exists(GetUlCachePath(is32Bit))) File.Delete(GetUlCachePath(is32Bit));
+            File.Move(tempPath, GetUlCachePath(is32Bit));
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[PreCacheRemoteUlAsync] Failed — {ex.Message}");
+            _crashReporter.Log($"[PreCacheRemoteUlAsync] Failed ({(is32Bit ? "32-bit" : "64-bit")}) — {ex.Message}");
         }
     }
 
@@ -2426,12 +2500,12 @@ public partial class MainViewModel : ObservableObject
         try
         {
             var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
-            var filePath = Path.Combine(deployPath, UltraLimiterFileName);
+            var filePath = Path.Combine(deployPath, GetUlFileName(card.Is32Bit));
             if (File.Exists(filePath))
                 File.Delete(filePath);
 
             // Also check the game folder directly if AddonPath was different
-            var directPath = Path.Combine(card.InstallPath, UltraLimiterFileName);
+            var directPath = Path.Combine(card.InstallPath, GetUlFileName(card.Is32Bit));
             if (File.Exists(directPath))
                 File.Delete(directPath);
 
@@ -2440,6 +2514,12 @@ public partial class MainViewModel : ObservableObject
             if (File.Exists(legacyPath)) File.Delete(legacyPath);
             var legacyDirect = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName);
             if (File.Exists(legacyDirect)) File.Delete(legacyDirect);
+
+            // Remove legacy ultra_limiter.addon32 if present
+            var legacyPath32 = Path.Combine(deployPath, LegacyUltraLimiterFileName32);
+            if (File.Exists(legacyPath32)) File.Delete(legacyPath32);
+            var legacyDirect32 = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName32);
+            if (File.Exists(legacyDirect32)) File.Delete(legacyDirect32);
 
             card.UlInstalledFile = null;
             card.UlInstalledVersion = null;
@@ -2452,6 +2532,22 @@ public partial class MainViewModel : ObservableObject
             card.UlActionMessage = $"❌ Uninstall failed: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallUl", ex, note: $"Game: {card.GameName}");
         }
+    }
+
+    // ── ReShade helpers ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the ReShade DLL filename implied by the game's detected graphics APIs,
+    /// or <c>null</c> when the default <c>dxgi.dll</c> should be used.
+    /// DX9 takes precedence over OpenGL if both are present.
+    /// </summary>
+    internal static string? ResolveAutoReShadeFilename(HashSet<GraphicsApiType> detectedApis)
+    {
+        if (detectedApis.Contains(GraphicsApiType.DirectX9))
+            return "d3d9.dll";
+        if (detectedApis.Count == 1 && detectedApis.Contains(GraphicsApiType.OpenGL))
+            return "opengl32.dll";
+        return null; // fall through to default dxgi.dll
     }
 
     // ── ReShade commands ──────────────────────────────────────────────────────────
@@ -2514,7 +2610,9 @@ public partial class MainViewModel : ObservableObject
                 use32Bit:       card.Is32Bit,
                 filenameOverride: card.DllOverrideEnabled
                     ? (GetDllOverride(card.GameName)?.ReShadeFileName)
-                    : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs ? mRs : null),
+                    : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs
+                        ? mRs
+                        : ResolveAutoReShadeFilename(card.DetectedApis)),
                 selectedPackIds: ResolveShaderSelection(card.GameName, card.ShaderModeOverride),
                 progress:       progress);
             DispatcherQueue?.TryEnqueue(() =>
@@ -2950,7 +3048,8 @@ public partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(UpdateAllBtnForeground));
                 OnPropertyChanged(nameof(UpdateAllBtnBorder));
             },
-            shaderResolver: ResolveShaderSelection);
+            shaderResolver: ResolveShaderSelection,
+            manifestDllResolver: GetManifestDllNames);
     }
 
     public async Task UpdateAllUlAsync()
@@ -3800,14 +3899,16 @@ public partial class MainViewModel : ObservableObject
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
             {
                 var ulDeployPath = ModInstallService.GetAddonDeployPath(installPath);
-                if (File.Exists(Path.Combine(ulDeployPath, UltraLimiterFileName))
-                    || File.Exists(Path.Combine(installPath, UltraLimiterFileName))
-                    || File.Exists(Path.Combine(ulDeployPath, LegacyUltraLimiterFileName))
-                    || File.Exists(Path.Combine(installPath, LegacyUltraLimiterFileName)))
+                var ulFileName = GetUlFileName(newCard.Is32Bit);
+                var legacyUlFileName = newCard.Is32Bit ? LegacyUltraLimiterFileName32 : LegacyUltraLimiterFileName;
+                if (File.Exists(Path.Combine(ulDeployPath, ulFileName))
+                    || File.Exists(Path.Combine(installPath, ulFileName))
+                    || File.Exists(Path.Combine(ulDeployPath, legacyUlFileName))
+                    || File.Exists(Path.Combine(installPath, legacyUlFileName)))
                 {
                     newCard.UlStatus = GameStatus.Installed;
-                    newCard.UlInstalledFile = UltraLimiterFileName;
-                    newCard.UlInstalledVersion = ReadUlInstalledVersion();
+                    newCard.UlInstalledFile = ulFileName;
+                    newCard.UlInstalledVersion = ReadUlInstalledVersion(newCard.Is32Bit);
                 }
             }
 
