@@ -16,7 +16,7 @@ ReShade HDR Installer would not be possible without the hard work of the entire 
 
 ## Download
 
-Grab the latest installer from the [Releases page](https://github.com/RankFTW/RHI/releases).
+Grab the latest installer from the [Releases page](https://github.com/RankFTW/RenoDXChecker/releases).
 
 Requires Windows 10/11 (x64) and [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
 
