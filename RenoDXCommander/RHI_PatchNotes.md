@@ -13,6 +13,9 @@
 **Update dialog still said "RDXC"**
 - The self-update notification dialog now correctly says "A new version of RHI is available" instead of the old RDXC branding.
 
+**RenoDX DevKit addon deleted during mod install**
+- Installing a RenoDX mod via drag-and-drop or toggling off Luma mode was deleting `renodx-devkit.addon64` and `renodx-devkit.addon32` from the game folder. DevKit files are now exempt from addon cleanup.
+
 ### Changes
 
 **Overrides panel layout condensed to 3 rows**

@@ -13,7 +13,7 @@ This document covers everything RHI does in depth. For a quick overview, see the
 - [Components](#components)
 - [Vulkan ReShade Support](#vulkan-reshade-support)
 - [Foreign DLL Protection](#foreign-dll-protection)
-- [UE-Extended & Native HDR](#ue-extended--native-hdr)
+- [UE-Extended and Native HDR](#ue-extended-and-native-hdr)
 - [ReLimiter](#relimiter)
 - [Shader Packs](#shader-packs)
 - [Luma Framework](#luma-framework)
@@ -23,11 +23,12 @@ This document covers everything RHI does in depth. For a quick overview, see the
 - [Update All](#update-all)
 - [Auto-Update](#auto-update)
 - [Patch Notes](#patch-notes)
+- [Drag-and-Drop](#drag-and-drop)
+- [Addon Auto-Detection](#addon-auto-detection)
+- [AddonPath Support](#addonpath-support)
 - [Data Storage](#data-storage)
 - [Troubleshooting](#troubleshooting)
 - [Third-Party Components](#third-party-components)
-
-
 
 ---
 
@@ -73,9 +74,10 @@ Games in Luma mode do not show a wiki status icon on the grid card.
 
 When a game is selected:
 
-- **Game name** with badges for platform, engine type, wiki status, mod author(s), UE-Extended / Native HDR
+- **Game name** with badges for platform, engine type, wiki status, mod author(s), UE-Extended / Native HDR, and 32-bit indicator
 - **Graphics API badge** — detected rendering APIs
 - **Install path** in monospace text
+- **Installed addon filename** badge when a mod is installed
 - **Components table** — ReShade, ReLimiter, RenoDX, and Luma (when applicable), each with status, install/reinstall/update button, options menu, and uninstall button
 - **Rendering path toggle** — for dual-API games (DirectX + Vulkan)
 - **Overrides section** — all per-game settings inline
@@ -95,10 +97,10 @@ Click **Settings** in the toolbar. Click **Back to Games** to return.
 
 | Section | Contents |
 |---------|----------|
-| Add Game | Manually add a game that wasn't auto-detected |
-| Full Refresh | Clears all caches and re-scans everything from disk |
-| Preferences | Skip Update Check, Beta Opt-In, Verbose Logging toggles |
-| Crash & Error Logs | Open Logs Folder, Open Downloads Cache, ReShade staging path |
+| Add Game | Manually add a game that wasn't auto-detected. Enter the game name and pick the install folder. |
+| Full Refresh | Clears all caches and re-scans everything from disk. Use when games or mods appear out of sync. |
+| Preferences | Skip Update Check on Launch, Beta Opt-In, Verbose Logging, Custom Shaders toggle, Screenshot Path |
+| Crash and Error Logs | Open Logs Folder, Open Downloads Cache, ReShade staging path |
 | About | Version (read from assembly), description, disclaimer, single-player warning |
 | Credits | Third-party components with descriptions, licences, and links |
 
@@ -128,39 +130,27 @@ Games on a disconnected drive are preserved in the cache until the drive is reco
 | Engine | Detection Method |
 |--------|-----------------|
 | Unreal Engine | Presence of Unreal-specific files and folder structures |
+| Unreal (Legacy) | Unreal Engine 3 games identified by legacy folder layouts |
 | Unity | `UnityPlayer.dll`, `Mono` folder, `MonoBleedingEdge` folder, `il2cpp` folder, `GameAssembly.dll` |
-| Custom | Engine overrides from the remote manifest (e.g. `"Silk"`, `"Source 2"`, `"Creation Engine"`) |
+| RE Engine | RE Engine games detected for REFramework compatibility |
+| Custom | Engine overrides from the remote manifest (e.g. `"Silk Engine"`, `"Creation Engine"`, `"BlackSpace Engine"`) |
 
-Custom engine names display with a dedicated engine icon. `"Unreal"` and `"Unity"` overrides affect filter category and mod assignment; other strings are display-only and filter into Other.
+Special manifest engine values:
+- `"Unreal"` — treated as Unreal Engine (filters into Unreal, eligible for UE-Extended)
+- `"Unreal (Legacy)"` — treated as Unreal Engine 3 (filters into Unreal)
+- `"Unity"` — treated as Unity (filters into Unity, eligible for generic Unity addon)
+- Any other string is stored as-is and displayed in the engine badge. The game filters into Other.
+
+Custom engine names display with a dedicated engine icon.
 
 ### 32-bit / 64-bit Detection
 
-RHI detects whether a game is 32-bit or 64-bit by examining the PE header of the game executable. The remote manifest can override this with `thirtyTwoBitGames` and `sixtyFourBitGames` flags, which take priority over auto-detection.
+RHI detects whether a game is 32-bit or 64-bit by examining the PE header of the game executable. The remote manifest can override this with `thirtyTwoBitGames` and `sixtyFourBitGames` lists, which take priority over auto-detection.
 
 ### Adding Games Manually
 
 - **Add Game** button (Settings page) — enter the game name and pick the install folder
 - **Drag and drop** — drag a game's `.exe` onto the RHI window. RHI detects the engine type, infers the game root folder by recognising store markers and engine layouts, and guesses the game name from folder structure. A confirmation dialog lets you edit the name before adding.
-
-### Drag-and-Drop
-
-| File Type | Behaviour |
-|-----------|-----------|
-| Game `.exe` | Opens an add-game dialog with auto-detected engine and name |
-| `.addon64` / `.addon32` | Opens an install dialog with a game picker (auto-selects based on filename, falls back to currently selected game) |
-| Archives (`.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`) | Extracted using bundled 7-Zip. Addon files inside are found and offered for install. Multiple addons trigger a picker dialog. |
-
-Drag-and-drop works even when RHI is running as administrator (UIPI bypass via `WM_DROPFILES`). File extensions are validated before any network or file activity.
-
-### Addon Auto-Detection
-
-RHI watches your Downloads folder (configurable in Settings) for new `renodx-*.addon64` / `.addon32` files and prompts you to install them. Double-clicking an addon file in Explorer opens RHI and triggers the install flow. If RHI is already running, the file is forwarded to the existing instance via named pipe. All entry points enforce the `renodx-` filename prefix to avoid triggering on unrelated addon files.
-
-### AddonPath Support
-
-Addon installs (RenoDX and ReLimiter) respect the `AddonPath` setting in `reshade.ini`. If the `[ADDON]` section contains an `AddonPath=` line, addons are deployed to that folder instead of the game root. Relative paths are resolved against the game directory. Uninstall, update detection, and addon scanning all check the same resolved path.
-
-
 
 ---
 
@@ -210,7 +200,7 @@ See [Components > Automatic DLL Naming](#automatic-dll-naming-for-opengl-and-dx9
 
 ### Manifest API Overrides
 
-The remote manifest supports comma-separated API tags (e.g. `"DX12, VLK"`) for games like Red Dead Redemption 2 that load Vulkan dynamically and can't be detected via PE imports alone.
+The remote manifest supports comma-separated API tags (e.g. `"DX12, VLK"`) for games like Red Dead Redemption 2 that load Vulkan dynamically and can't be detected via PE imports alone. Valid tokens: `DX8`, `DX9`, `DX10`, `DX11`, `DX12`, `Vulkan`/`VLK`, `OpenGL`/`OGL`.
 
 ---
 
@@ -222,7 +212,7 @@ The detail panel shows a Components section with up to four rows:
 |-----|-----------|----------|
 | ReShade | ReShade | Install / Reinstall / Update — Copy INI — Uninstall |
 | ReLimiter | ReLimiter | Install / Reinstall / Update — Copy INI — Uninstall |
-| RenoDX | RenoDX Mod | Install / Reinstall / Update — UE Extended options — Uninstall |
+| RenoDX | RenoDX Mod | Install / Reinstall / Update — UE-Extended options — Uninstall |
 | Luma | Luma Framework | Install / Uninstall (shown only in Luma mode) |
 
 ### Version Display
@@ -231,7 +221,7 @@ The status label next to install buttons shows the installed version number (e.g
 
 ### Mod Author Badges
 
-Named mods from the RenoDX wiki display the mod author as a bordered badge on the detail panel info line. Multiple authors each get their own badge. Generic Unreal Engine mods show "ShortFuse", UE-Extended mods show "Marat", and generic Unity mods show "Voosh". Author badges are clickable links to Ko-fi donation pages where available. Games in Luma mode show the Luma mod author in place of the RenoDX author.
+Named mods from the RenoDX wiki display the mod author as a bordered badge on the detail panel info line. Multiple authors each get their own badge. Generic Unreal Engine mods show "ShortFuse", UE-Extended mods show "Marat", and generic Unity mods show "Voosh". Author badges are clickable links to Ko-fi donation pages where available. Games in Luma mode show the Luma mod author in place of the RenoDX author. Author display names can be overridden via the remote manifest (e.g. wiki handle `"oopydoopy"` displays as `"Jon"`).
 
 ### Clickable Status Links
 
@@ -258,7 +248,9 @@ The full priority chain for ReShade DLL naming:
 
 ### ReShade Detection Under Non-Standard Filenames
 
-ReShade installations using non-standard DLL filenames (e.g. `d3d11.dll`, `dinput8.dll`, `version.dll`, `d3d9.dll`, `opengl32.dll`) are detected via binary signature scanning as a fallback. Reinstalling correctly removes the old non-standard DLL before placing the new one.
+ReShade installations using non-standard DLL filenames (e.g. `d3d11.dll`, `dinput8.dll`, `version.dll`, `winmm.dll`, `d3d9.dll`, `opengl32.dll`) are detected via binary signature scanning as a fallback. The scan matches on `reshade.me` or `crosire` strings unique to the actual ReShade binary, and rejects files over 15 MB as too large to be ReShade. Reinstalling correctly removes the old non-standard DLL before placing the new one.
+
+Common DLL names available in the override dropdown: `dxgi.dll`, `d3d11.dll`, `dinput8.dll`, `version.dll`, `winmm.dll`, `d3d12.dll`, `xinput1_3.dll`, `msvcp140.dll`, `bink2w64.dll`, `d3d9.dll`.
 
 ---
 
@@ -291,15 +283,17 @@ An uninstall button appears for Vulkan games that have `reshade.ini` deployed. C
 
 When installing ReShade, RHI checks whether an existing DLL belongs to another tool (DXVK, Special K, ENB, etc.) using binary signature scanning. The scan matches on `reshade.me` or `crosire` strings unique to the actual ReShade binary, and rejects files over 15 MB as too large to be ReShade.
 
-If the existing file is unidentified, a confirmation dialog asks whether to overwrite. During Update All, foreign files are silently skipped.
+If the existing file is unidentified, a confirmation dialog asks whether to overwrite. During Update All, foreign files are silently skipped to avoid accidentally replacing third-party DLLs.
 
 ---
 
-## UE-Extended & Native HDR
+## UE-Extended and Native HDR
 
 Unreal Engine games with native HDR are automatically assigned UE-Extended via the remote manifest. These display "Extended UE Native HDR" as their engine badge. In-game HDR must be turned on for UE-Extended to work.
 
 The UE-Extended toggle appears for every Unreal Engine game that does not have a named mod on the RenoDX wiki. A compatibility warning dialog pops up when enabling UE-Extended, advising that not all games are compatible and to check the Notes section for game-specific information.
+
+Games on the `nativeHdrGames` list are flagged for native HDR support. Games on the `ueExtendedGames` list are marked for the UE-Extended addon. Both lists are maintained in the remote manifest and can be updated without an app release.
 
 ---
 
@@ -318,19 +312,19 @@ RHI automatically selects the correct addon file based on the game's detected bi
 
 Both variants are downloaded from the same GitHub releases endpoint and cached separately so they don't overwrite each other.
 
-### Install / Reinstall / Uninstall
+### Install / Update / Uninstall
 
-The correct addon file is selected automatically based on the game's bitness, downloaded from its GitHub release when first needed, and cached locally. Legacy `ultra_limiter.addon64` / `ultra_limiter.addon32` files are cleaned up automatically.
+The correct addon file is selected automatically based on the game's bitness, downloaded from its GitHub release when first needed, and cached locally. Legacy `ultra_limiter.addon64` / `ultra_limiter.addon32` files are cleaned up automatically during install.
 
 ### INI Configuration
 
-RHI bundles a default `relimiter.ini` seeded to `%LOCALAPPDATA%\RHI\inis\` on first launch. A copy button on the ReLimiter component row copies this INI to the game folder. Customise the INI in the inis folder and it will be used for all future copies.
+RHI bundles a default `relimiter.ini` seeded to `%LOCALAPPDATA%\RHI\inis\` on first launch. A copy button on the ReLimiter component row copies this INI to the game folder (or AddonPath if configured). Customise the INI in the inis folder and it will be used for all future copies.
 
 ### Update Detection
 
 Updates are detected by comparing the locally cached file against the remote release using both file size and SHA-256 hash. When a newer version is available, the status changes and the install button shows "Update". Version metadata is tracked per-bitness so 32-bit and 64-bit updates are independent.
 
-### Status Indicator
+### Status Indicators
 
 | Colour | Meaning |
 |--------|---------|
@@ -338,8 +332,6 @@ Updates are detected by comparing the locally cached file against the remote rel
 | Orange | Update available |
 
 The ReLimiter status dot is hidden when a game is in Luma mode.
-
-
 
 ---
 
@@ -366,9 +358,11 @@ Per-game shader overrides allow different games to use different subsets of shad
 
 User-owned shader folders are preserved by renaming to `reshade-shaders-original` before deployment and restored when the shader mode is set to Off or when Vulkan ReShade is uninstalled.
 
-Custom shaders: `%LOCALAPPDATA%\RHI\reshade\Custom\Shaders\` and `\Textures\`.
+### Custom Shaders
 
-### Startup Shader Deployment
+Place custom shaders in `%LOCALAPPDATA%\RHI\reshade\Custom\Shaders\` and textures in `%LOCALAPPDATA%\RHI\reshade\Custom\Textures\`. Enable the Custom Shaders toggle in Settings to include them in deployments.
+
+### Startup Deployment
 
 On launch, RHI ensures shader packs are fully downloaded before syncing shaders to all installed game folders. Games with ReShade installed will have the correct global or per-game shaders deployed automatically.
 
@@ -384,9 +378,15 @@ On launch, RHI ensures shader packs are fully downloaded before syncing shaders 
 - Installing Luma deploys the mod zip, `reshade.ini`, and Lilium HDR shaders.
 - Uninstalling or toggling off removes all Luma files.
 - The info popup shows Luma-specific notes from the wiki and remote manifest.
-- Games listed in the remote manifest automatically start in Luma mode on first detection.
+- Games listed in the remote manifest `lumaDefaultGames` automatically start in Luma mode on first detection.
 
-Luma downloads are restricted to trusted GitHub URLs under `https://github.com/Filoppi/`.
+### Trusted Downloads
+
+Luma downloads are restricted to trusted GitHub URLs under `https://github.com/Filoppi/`. This prevents arbitrary file downloads when installing Luma mods.
+
+### Luma Notes
+
+Luma-specific notes are sourced from both the Luma wiki and the remote manifest `lumaGameNotes` field. These notes appear in the info popup when a game is in Luma mode and provide game-specific setup instructions.
 
 ---
 
@@ -434,29 +434,40 @@ RHI fetches a remote manifest from GitHub on every launch, providing game-specif
 
 | Field | Effect |
 |-------|--------|
-| Blacklist | Excluded non-game apps |
-| Install path overrides | Correct wrong install paths |
-| Wiki name overrides | Map detected game name to wiki mod name |
-| Wiki status overrides | Force a specific wiki status icon |
-| Wiki unlinks | Ignore false fuzzy wiki matches, fall back to generic engine addon |
-| Game notes | Append or replace wiki notes |
-| Luma game notes | Luma-specific notes shown when game is in Luma mode |
-| Native HDR list | Auto-assign UE-Extended |
-| UE-Extended games list | Mark games for UE-Extended addon |
-| 32-bit / 64-bit flags | Override auto-detected bitness |
-| Engine overrides | Force a specific engine label |
-| DLL name overrides | Set ReShade install filename per game. User-set overrides take priority. |
-| API overrides | Comma-separated API tags for games that can't be detected via PE imports |
-| Snapshot URL overrides | Direct addon download URL when wiki lacks one |
-| Luma default games | Games that auto-start in Luma mode on first detection |
-| Author donation URLs | Ko-fi links for mod authors, updated without app releases |
-| Author display names | Override wiki maintainer handles with display names |
+| `blacklist` | Excluded non-game apps (e.g. Steamworks redistributables, launchers) |
+| `installPathOverrides` | Correct wrong install paths (e.g. `"Cyberpunk 2077": "bin\\x64"`) |
+| `wikiNameOverrides` | Map detected game name to wiki mod name |
+| `wikiStatusOverrides` | Force a specific wiki status icon for a game |
+| `wikiUnlinks` | Ignore false fuzzy wiki matches, fall back to generic engine addon |
+| `gameNotes` | Game-specific notes with optional URL and label, shown in the info popup |
+| `lumaGameNotes` | Luma-specific notes shown when game is in Luma mode |
+| `nativeHdrGames` | Auto-assign UE-Extended for Unreal games with native HDR |
+| `ueExtendedGames` | Mark games for the UE-Extended addon |
+| `thirtyTwoBitGames` | Override auto-detected bitness to 32-bit |
+| `sixtyFourBitGames` | Override auto-detected bitness to 64-bit |
+| `engineOverrides` | Force a specific engine label (e.g. `"Silk Engine"`, `"Creation Engine"`) |
+| `dllNameOverrides` | Set ReShade install filename per game. User-set overrides take priority. |
+| `graphicsApiOverrides` | Comma-separated API tags for games that can't be detected via PE imports |
+| `snapshotOverrides` | Direct addon download URL when wiki lacks one |
+| `lumaDefaultGames` | Games that auto-start in Luma mode on first detection |
+| `forceExternalOnly` | Redirect install to an external URL with a custom label (e.g. Discord) |
+| `dcModeOverrides` | Override the default DC mode for specific games |
+| `donationUrls` | Ko-fi links for mod authors, updated without app releases |
+| `authorDisplayNames` | Override wiki maintainer handles with display names |
 
 ---
 
 ## Update All
 
-The **Update** button in the toolbar updates ReShade, RenoDX, and ReLimiter across all eligible games in one click. Each component respects its own per-game inclusion toggle — a game excluded from ReShade updates can still receive RenoDX updates. Games with foreign DLLs are skipped. The button lights up purple when updates are available.
+The **Update** button in the toolbar updates ReShade, RenoDX, and ReLimiter across all eligible games in one click. The button lights up purple when updates are available.
+
+### Per-Component Toggles
+
+Each component respects its own per-game inclusion toggle — a game excluded from ReShade updates can still receive RenoDX updates. These toggles are set in the Per-Game Overrides section under "Global update inclusion".
+
+### Foreign DLL Skipping
+
+Games with foreign DLLs (non-ReShade files detected via binary signature scanning) are silently skipped during Update All to avoid accidentally replacing third-party DLLs like DXVK, Special K, or ENB.
 
 ---
 
@@ -478,7 +489,58 @@ The app encodes its beta status in the 4th component of the assembly version: `1
 
 ## Patch Notes
 
-RHI shows a patch notes dialog on first launch after an update, displaying the most recent version changes in a scrollable markdown view.
+RHI shows a patch notes dialog on first launch after an update, displaying the most recent version changes in a scrollable markdown view. The dialog can also be opened at any time from the Patch Notes link in the status bar.
+
+---
+
+## Drag-and-Drop
+
+RHI supports drag-and-drop for adding games and installing mods. Drag-and-drop works even when RHI is running as administrator (UIPI bypass via `WM_DROPFILES`).
+
+### Supported File Types
+
+| File Type | Behaviour |
+|-----------|-----------|
+| Game `.exe` | Opens an add-game dialog with auto-detected engine, inferred game root, and suggested name |
+| `.addon64` / `.addon32` | Opens an install dialog with a game picker (auto-selects based on filename, falls back to currently selected game) |
+| `.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`, `.tgz` | Extracted using bundled 7-Zip. Addon files inside are found and offered for install. Multiple addons trigger a picker dialog. |
+| URL (`.url` shortcut) | Parsed and processed as an addon download URL |
+
+### Extension Validation
+
+File extensions are validated before any network or file activity. Only the following extensions are accepted: `.exe`, `.addon64`, `.addon32`, `.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`, `.tgz`. Files with unrecognised extensions are silently skipped.
+
+---
+
+## Addon Auto-Detection
+
+RHI watches your Downloads folder for new addon files and prompts you to install them.
+
+### Downloads Folder Watching
+
+The default watch folder is the system Downloads directory. You can change it in Settings via the Browse button, or reset it to the default. RHI monitors for new `renodx-*.addon64` and `renodx-*.addon32` files appearing in the watched folder.
+
+### Named Pipe Forwarding
+
+Double-clicking an addon file in Explorer opens RHI and triggers the install flow. If RHI is already running, the file path is forwarded to the existing instance via a named pipe, avoiding duplicate instances.
+
+### Filename Prefix
+
+All entry points enforce the `renodx-` filename prefix to avoid triggering on unrelated addon files. Only files matching `renodx-*.addon64` or `renodx-*.addon32` are processed by the auto-detection system.
+
+---
+
+## AddonPath Support
+
+Addon installs (RenoDX and ReLimiter) respect the `AddonPath` setting in `reshade.ini`.
+
+### Path Resolution
+
+If the `[ADDON]` section of `reshade.ini` contains an `AddonPath=` line, addons are deployed to that folder instead of the game root. Relative paths are resolved against the game directory.
+
+### Affected Operations
+
+Uninstall, update detection, and addon scanning all check the same resolved AddonPath. This ensures that addons installed to a custom path are correctly detected, updated, and removed.
 
 ---
 
@@ -487,20 +549,24 @@ RHI shows a patch notes dialog on first launch after an update, displaying the m
 Everything under `%LOCALAPPDATA%\RHI\`:
 
 | Path | Contents |
-|------|---------|
+|------|----------|
 | `game_library.json` | Detected games, hidden list, manually added games |
-| `installed.json` | RenoDX mod install records |
-| `aux_installed.json` | ReShade and ReLimiter install records |
+| `installed.json` | RenoDX mod install records (game name, path, addon filename, hash, snapshot URL, remote file size) |
+| `aux_installed.json` | ReShade and ReLimiter install records (game name, path, addon type, installed filename, source URL) |
 | `settings.json` | All settings, per-game overrides, and persisted filter mode |
 | `ul_meta.json` | ReLimiter version metadata (per-bitness) |
 | `downloads\` | Cached downloads (separate files for 32-bit and 64-bit ReLimiter) |
-| `inis\` | Preset config files |
+| `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `relimiter.ini`, etc.) |
 | `reshade\` | Staged shader packs and custom shaders |
-| `logs\` | Session logs (timestamped, max 10 kept) and crash reports |
+| `logs\` | Session logs (timestamped) and crash reports |
 
 ### Session Logging
 
-A new session log file is created every time RHI starts, named with a timestamp (e.g. `session_2025-03-14_12-30-00.txt`). All activity is logged automatically. Old session logs are pruned to keep a maximum of 10 on disk. The Verbose Logging toggle in Settings enables additional detail.
+A new session log file is created every time RHI starts, named with a timestamp (e.g. `session_2025-03-14_12-30-00.txt`). All activity is logged automatically. The Verbose Logging toggle in Settings enables additional detail.
+
+### Log Pruning
+
+Old session logs are pruned to keep a maximum of 10 on disk. The oldest logs are deleted first when the limit is exceeded.
 
 ---
 
@@ -509,19 +575,19 @@ A new session log file is created every time RHI starts, named with a timestamp 
 | Problem | Fix |
 |---------|-----|
 | Game not detected | Click **Add Game** on the Settings page or drag the game's `.exe` onto the window |
-| Xbox games missing | Click **Refresh** — RHI uses the PackageManager API |
-| ReShade not loading | Check the install path — the ReShade DLL (`dxgi.dll`, `d3d9.dll`, or `opengl32.dll`) must be next to the game exe |
+| Xbox games missing | Click **Refresh** — RHI uses the PackageManager API which may need a moment |
+| ReShade not loading | Check the install path via 📁 — the ReShade DLL (`dxgi.dll`, `d3d9.dll`, or `opengl32.dll`) must be next to the game executable |
 | ReShade not detected | If using a non-standard DLL name, RHI should detect it via binary signature scanning. Try **Refresh**. |
-| Black screen (Unreal) | ReShade > Add-ons > RenoDX > set `R10G10B10A2_UNORM` to `output size` |
+| Black screen (Unreal) | In ReShade → Add-ons → RenoDX, set `R10G10B10A2_UNORM` to `output size` |
 | UE-Extended not working | Turn on in-game HDR — UE-Extended requires native HDR output |
-| Downloads failing | Click **Refresh**, or clear cache from Settings > Open Downloads Cache |
-| Foreign DLL blocking install | Choose **Overwrite** in the dialog, or cancel to keep the existing file |
-| Games/mods out of sync | Settings > **Full Refresh** to clear all caches |
-| Drag-and-drop not working | Ensure RHI is running. Drag-and-drop works even as administrator. |
+| Downloads failing | Click **Refresh**, or clear cache from Settings → Open Downloads Cache |
+| Foreign DLL blocking install | Choose **Overwrite** in the confirmation dialog, or cancel to keep the existing file |
+| Games/mods out of sync | Settings → **Full Refresh** to clear all caches and re-scan |
+| Drag-and-drop not working | Ensure RHI is running. Drag-and-drop works even as administrator (UIPI bypass). |
 | Vulkan ReShade not showing as installed | Check that `reshade.ini` exists in the game folder. The Vulkan layer must also be installed globally. |
-| Shaders missing after uninstall | Click **Refresh** — RHI will detect the missing shaders and redeploy them. |
-| Games showing as installed after manual file removal | Click **Refresh** — RHI verifies files exist on disk and cleans up stale records. |
-| DLL override not applying from manifest | Click **Refresh** — manifest DLL overrides are applied on every refresh. |
+| Shaders missing after uninstall | Click **Refresh** — RHI will detect the missing shaders and redeploy them |
+| Games showing as installed after manual file removal | Click **Refresh** — RHI verifies files exist on disk and cleans up stale records |
+| DLL override not applying from manifest | Click **Refresh** — manifest DLL overrides are applied on every refresh |
 
 ---
 
@@ -531,8 +597,9 @@ A new session log file is created every time RHI starts, named with a timestamp 
 |-----------|--------|---------|
 | [ReShade](https://reshade.me) | Crosire | [BSD 3-Clause](https://github.com/crosire/reshade/blob/main/LICENSE.md) |
 | [RenoDX](https://github.com/clshortfuse/renodx) | clshortfuse & contributors | [MIT](https://github.com/clshortfuse/renodx/blob/main/LICENSE) |
-| [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [ReLimiter](https://github.com/RankFTW/Ultra-Limiter) | RankFTW | Source-available |
+| [RE Framework](https://github.com/praydog/REFramework-nightly) | praydog | [MIT](https://github.com/praydog/REFramework/blob/master/LICENSE) |
+| [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [HtmlAgilityPack](https://github.com/zzzprojects/html-agility-pack) | ZZZ Projects Inc. | [MIT](https://github.com/zzzprojects/html-agility-pack/blob/master/LICENSE) |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | Microsoft / .NET Foundation | [MIT](https://github.com/CommunityToolkit/dotnet/blob/main/License.md) |
 | [SharpCompress](https://github.com/adamhathcock/sharpcompress) | Adam Hathcock | [MIT](https://github.com/adamhathcock/sharpcompress/blob/master/LICENSE.txt) |

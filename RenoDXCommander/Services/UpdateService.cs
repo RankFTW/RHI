@@ -14,8 +14,12 @@ public class UpdateService : IUpdateService
     private readonly HttpClient _http;
 
     public UpdateService(HttpClient http) => _http = http;
-    // GitHub API endpoint for the stable release tag.
-    // Check the RHI repo first, fall back to legacy RDXC repo.
+    // GitHub API endpoint for the latest release (new per-version tags like "RHI 1.6.7").
+    // This is the primary check — uses /releases/latest to find the newest release.
+    private const string LatestReleaseApiUrl =
+        "https://api.github.com/repos/RankFTW/RHI/releases/latest";
+
+    // Fallback: legacy tag-based endpoints for older releases.
     private const string ReleaseApiUrl =
         "https://api.github.com/repos/RankFTW/RHI/releases/tags/RHI";
     private const string LegacyReleaseApiUrl =
@@ -44,11 +48,16 @@ public class UpdateService : IUpdateService
     {
         try
         {
-            // Always fetch the stable release — try RHI repo first, fall back to legacy RDXC
-            var stable = await FetchReleaseAsync(ReleaseApiUrl).ConfigureAwait(false);
+            // Always fetch the stable release — try /releases/latest first, then tag-based fallbacks
+            var stable = await FetchReleaseAsync(LatestReleaseApiUrl).ConfigureAwait(false);
             if (stable == null)
             {
-                CrashReporter.Log("[UpdateService.CheckForUpdateAsync] RHI endpoint returned nothing, trying legacy RDXC...");
+                CrashReporter.Log("[UpdateService.CheckForUpdateAsync] /releases/latest returned nothing, trying RHI tag...");
+                stable = await FetchReleaseAsync(ReleaseApiUrl).ConfigureAwait(false);
+            }
+            if (stable == null)
+            {
+                CrashReporter.Log("[UpdateService.CheckForUpdateAsync] RHI tag returned nothing, trying legacy RDXC...");
                 stable = await FetchReleaseAsync(LegacyReleaseApiUrl).ConfigureAwait(false);
             }
 
