@@ -485,6 +485,46 @@ public sealed partial class MainWindow
     private void ApplyScreenshotPath_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyScreenshotPath_Click(sender, e);
 
+    private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var folder = await PickFolderAsync(ScreenshotPathBox.Text?.Trim());
+            if (!string.IsNullOrEmpty(folder))
+            {
+                ScreenshotPathBox.Text = folder;
+                ViewModel.Settings.ScreenshotPath = folder;
+                ViewModel.SaveSettingsPublic();
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.BrowseScreenshotPath_Click] Folder picker failed — {ex.Message}");
+        }
+    }
+
+    private void OpenScreenshotFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var path = ScreenshotPathBox.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(path) || !System.IO.Directory.Exists(path))
+        {
+            _crashReporter.Log($"[MainWindow.OpenScreenshotFolder_Click] Path does not exist: '{path}'");
+            return;
+        }
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.OpenScreenshotFolder_Click] Failed to open folder — {ex.Message}");
+        }
+    }
+
     private void SettingsBack_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.SettingsBack_Click(sender, e);
 

@@ -252,10 +252,12 @@ public partial class DetailPanelBuilder
             if (_currentDetailCard == null) return;
             UpdateDetailComponentRows(_currentDetailCard);
 
-            // Refresh 32-bit badge when bitness changes
+            // Refresh 32-bit / 64-bit badge when bitness changes
             if (e.PropertyName is "Is32Bit" or "Is32BitBadgeVisibility")
             {
                 _window.Detail32BitBadge.Visibility = _currentDetailCard.Is32Bit
+                    ? Visibility.Visible : Visibility.Collapsed;
+                _window.Detail64BitBadge.Visibility = !_currentDetailCard.Is32Bit
                     ? Visibility.Visible : Visibility.Collapsed;
             }
 

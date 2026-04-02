@@ -86,8 +86,9 @@ public partial class DetailPanelBuilder
         }
         else _window.DetailGenericBadge.Visibility = Visibility.Collapsed;
 
-        // 32-bit badge
+        // 32-bit / 64-bit badge
         _window.Detail32BitBadge.Visibility = card.Is32Bit ? Visibility.Visible : Visibility.Collapsed;
+        _window.Detail64BitBadge.Visibility = !card.Is32Bit ? Visibility.Visible : Visibility.Collapsed;
 
         // Wiki status badge
         var hasWikiLabel = !string.IsNullOrEmpty(card.WikiStatusLabel);

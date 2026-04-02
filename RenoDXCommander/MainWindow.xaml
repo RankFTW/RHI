@@ -364,6 +364,11 @@
                                     VerticalAlignment="Center" Visibility="Collapsed">
                                 <TextBlock Text="32-bit" FontSize="11" Foreground="{StaticResource AccentAmberBrush}"/>
                             </Border>
+                            <Border x:Name="Detail64BitBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
+                                    Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Visibility="Collapsed">
+                                <TextBlock Text="64-bit" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
+                            </Border>
 
                             <!-- Separator: platform → status -->
                             <Border x:Name="DetailSepPlatformStatus" x:FieldModifier="internal" Width="1" Background="{StaticResource BorderSubtleBrush}"
@@ -735,12 +740,31 @@
                                 <TextBlock TextWrapping="Wrap" FontSize="11"
                                            Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                            Text="Set a screenshot save path that will be written to all managed reshade.ini files."/>
-                                <TextBox x:Name="ScreenshotPathBox" x:FieldModifier="internal"
-                                         PlaceholderText="D:\Screenshots"
-                                         FontSize="12"
-                                         Background="{StaticResource SurfaceInputBrush}"
-                                         Foreground="{StaticResource TextSecondaryBrush}"
-                                         BorderBrush="{StaticResource BorderSubtleBrush}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Grid>
+                                        <TextBox x:Name="ScreenshotPathBox" x:FieldModifier="internal"
+                                                 PlaceholderText="D:\Screenshots"
+                                                 FontSize="12" MinWidth="300"
+                                                 Padding="12,8,36,8"
+                                                 Background="{StaticResource SurfaceInputBrush}"
+                                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                                 BorderBrush="{StaticResource BorderSubtleBrush}"/>
+                                        <Button Click="BrowseScreenshotPath_Click"
+                                                Background="Transparent" BorderThickness="0"
+                                                Padding="8,6" MinWidth="0" MinHeight="0"
+                                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                Margin="0,0,4,0"
+                                                ToolTipService.ToolTip="Pick a folder for screenshots">
+                                            <FontIcon Glyph="&#xED25;" FontSize="14"
+                                                      Foreground="{StaticResource TextTertiaryBrush}"/>
+                                        </Button>
+                                    </Grid>
+                                    <Button Content="Open" Click="OpenScreenshotFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"
+                                            ToolTipService.ToolTip="Open the screenshot folder in Explorer"/>
+                                </StackPanel>
                                 <ToggleSwitch x:Name="PerGameScreenshotToggle" x:FieldModifier="internal"
                                               Header="Per-Game Subfolder"
                                               OnContent="Enabled — each game gets its own subfolder"

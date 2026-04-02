@@ -1,3 +1,29 @@
+## v1.6.8
+
+### Bug Fixes
+
+**DLL naming override dropdown empty**
+- The DLL naming override dropdown in the detail panel overrides section was empty after the 1.6.7 layout refactor. The `ItemsSource` binding to the common DLL names list was accidentally dropped when the ComboBox was moved to the top row. The dropdown now shows all available filenames again.
+
+### Changes
+
+**Expanded DLL naming override list**
+- Added `d3d10.dll`, `opengl32.dll`, and `ddraw.dll` to the DLL naming override dropdown. The list now covers all standard ReShade API names and common proxy DLLs, ordered by usage: API names first (`dxgi.dll`, `d3d9.dll`, `d3d10.dll`, `d3d11.dll`, `d3d12.dll`, `opengl32.dll`), then proxy names (`dinput8.dll`, `version.dll`, `winmm.dll`, `ddraw.dll`), then edge cases.
+
+**Auto-update now checks /releases/latest first**
+- The self-update check now queries the GitHub `/releases/latest` endpoint on the RHI repo as the primary source, supporting the new per-version release tags (e.g. "RHI 1.6.8"). Falls back to the fixed `RHI` tag and then the legacy RDXC repo if needed.
+
+**64-bit badge on detail panel**
+- 64-bit games now show a "64-bit" badge on the detail panel info line, matching the existing "32-bit" badge for 32-bit games. The badge updates live when the bitness override is changed.
+
+**Graphics API override tooltip**
+- The "Graphics API" label in the overrides panel now has a tooltip explaining the priority rule: only one API drives the ReShade DLL filename at a time (DX11/12 → Vulkan → OpenGL → DX10 → DX9 → DX8), and user overrides take precedence over manifest and auto-detected values.
+
+**Screenshot folder Browse and Open buttons**
+- The screenshot path setting now has an inline folder icon inside the text box to open a folder picker, and an "Open" button to launch the configured screenshot folder in Explorer.
+
+---
+
 ## v1.6.7
 
 ### New Features

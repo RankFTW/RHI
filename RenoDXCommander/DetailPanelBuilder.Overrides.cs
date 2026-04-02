@@ -105,6 +105,7 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             IsEnabled = isDllOverride,
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            ItemsSource = DllOverrideConstants.CommonDllNames,
         };
         if (!string.IsNullOrEmpty(existingRsName))
         {
@@ -456,6 +457,12 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             Margin = new Thickness(0, 0, 0, 8),
         };
+        ToolTipService.SetToolTip(apiLabel,
+            "Override the detected graphics APIs for this game.\n\n" +
+            "Only one API drives ReShade's DLL filename at a time, even if multiple are selected.\n" +
+            "Priority: DX11/12 → Vulkan → OpenGL → DX10 → DX9 → DX8.\n\n" +
+            "User overrides set here take precedence over manifest and auto-detected values.\n" +
+            "Reset Overrides reverts to auto-detection.");
 
         // Each entry maps a display label to one or more GraphicsApiType enum names.
         // "DX11/DX12" is a combined toggle that controls both DirectX11 and DirectX12.
