@@ -1,4 +1,4 @@
-# RHI — RenoDX HDR Installer
+# RHI — ReShade HDR Installer
 
 RHI is a WinUI 3 desktop application for managing HDR mod installations on PC games. It auto-detects game libraries across eight storefronts, installs and updates ReShade, RenoDX, ReLimiter, RE Framework, and Luma Framework components, and keeps everything in sync — all from a single interface.
 
