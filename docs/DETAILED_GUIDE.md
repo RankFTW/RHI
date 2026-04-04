@@ -14,7 +14,7 @@ This document covers everything RHI does in depth. For a quick overview, see the
 - [Vulkan ReShade Support](#vulkan-reshade-support)
 - [Foreign DLL Protection](#foreign-dll-protection)
 - [UE-Extended and Native HDR](#ue-extended-and-native-hdr)
-- [ReLimiter](#relimiter)
+- [Frame Rate Limiters](#frame-rate-limiters)
 - [Shader Packs](#shader-packs)
 - [Luma Framework](#luma-framework)
 - [Per-Game Overrides](#per-game-overrides)
@@ -26,6 +26,7 @@ This document covers everything RHI does in depth. For a quick overview, see the
 - [Drag-and-Drop](#drag-and-drop)
 - [Addon Auto-Detection](#addon-auto-detection)
 - [AddonPath Support](#addonpath-support)
+- [Performance](#performance)
 - [Data Storage](#data-storage)
 - [Troubleshooting](#troubleshooting)
 - [Third-Party Components](#third-party-components)
@@ -34,7 +35,7 @@ This document covers everything RHI does in depth. For a quick overview, see the
 
 ## Layout
 
-RHI offers two view modes — Detail View and Grid View — plus a global Settings page. Window size and position are remembered across restarts.
+RHI offers two view modes — Detail View and Grid View — plus a global Settings page and an About page. Window size and position are remembered across restarts.
 
 ### Detail View
 
@@ -46,10 +47,12 @@ A card-based layout showing all games as a grid. Toggle between views with the v
 
 - Game name and platform icon
 - Graphics API badge (e.g. DX12, VLK, DX11/12 / VLK)
-- Installation status dots for RenoDX (RDX), ReShade (RS), and ReLimiter (UL)
+- Installation status dots for RenoDX (RDX), ReShade (RS), ReLimiter (UL), and Display Commander (DC)
 - Wiki status icon
 - Update-available highlight border
 - A Manage popout for quick access to install/uninstall/override controls
+
+The grid view card flyout matches the detail panel: same component order (ReShade → RenoDX → separator → ReLimiter → DC), mutual exclusion greying, and "Choose one from below" separator. The overrides flyout includes DC DLL override, DC update exclusion, bitness override, API override, and full Reset Overrides support.
 
 Games in Luma mode do not show a wiki status icon on the grid card.
 
@@ -58,15 +61,17 @@ Games in Luma mode do not show a wiki status icon on the grid card.
 | Control | Function |
 |---------|----------|
 | Refresh | Rescan game library and fetch latest mod info. After initial boot, runs invisibly in the background. |
-| Update | Update ReShade, RenoDX, and ReLimiter for all eligible games in one click |
-| Help | Flyout with Discord (RHI support channel), Guide (this document), and Ko-fi |
+| Update All | Update ReShade, RenoDX, ReLimiter, and Display Commander for all eligible games in one click. Lights up purple when updates are available. |
+| Help | Flyout with Discord (RHI support channel), Guide (this document), About page, and Ko-fi |
 | View toggle | Switch between Detail View and Grid View |
 | Settings | Navigate to the Settings page |
 
 ### Game List Sidebar (Detail View)
 
-- **Search box** — filters games in real-time as you type
-- **Filter chips** — All Games, Favourites, Installed, Unreal, Unity, Other, RenoDX, Luma, Hidden. Engine and mod filters can be combined. Your selected filter is saved and restored on reopen.
+- **Search box** — filters games in real-time as you type (placeholder: "Filter games...")
+- **Filter chips** — All Games, Favourites, Installed, Unreal, Unity, Other, RenoDX, Luma, Hidden, plus custom filter chips. Engine and mod filters can be combined. Your selected filter is saved and restored on reopen.
+- **Custom filter chips** — save any search query as a named filter chip by clicking the "+" button next to the search bar. Custom chips use a teal colour scheme to distinguish them from built-in chips. Right-click to delete. Saving a custom filter clears the search box and auto-activates the new chip.
+- **Universal keyword search** — matches across all game card properties: store, engine, graphics API (DX11, VLK, etc.), bitness, mod name, mod author, Luma mod name/author, Vulkan rendering path, and RE Engine/RE Framework games.
 - **Game/installed counts** — how many games are visible and how many have mods installed
 - **Game list** — each entry shows a platform icon, game name, and a green dot if updates are available
 
@@ -74,11 +79,11 @@ Games in Luma mode do not show a wiki status icon on the grid card.
 
 When a game is selected:
 
-- **Game name** with badges for platform, engine type, wiki status, mod author(s), UE-Extended / Native HDR, and 32-bit indicator
+- **Game name** with badges for platform, engine type, wiki status, mod author(s), UE-Extended / Native HDR, and 32-bit/64-bit indicator
 - **Graphics API badge** — detected rendering APIs
 - **Install path** in monospace text
 - **Installed addon filename** badge when a mod is installed
-- **Components table** — ReShade, ReLimiter, RenoDX, and Luma (when applicable), each with status, install/reinstall/update button, options menu, and uninstall button
+- **Components table** — ReShade → RenoDX → separator ("Choose one from below") → ReLimiter → Display Commander, and Luma (when applicable), each with status, install/reinstall/update button, options menu, and uninstall button
 - **Rendering path toggle** — for dual-API games (DirectX + Vulkan)
 - **Overrides section** — all per-game settings inline
 - **Utility buttons** — favourite, discussion link, game info/notes, hide/unhide, folder menu (open in Explorer, change install folder, reset/remove game)
@@ -87,7 +92,7 @@ When a game is selected:
 
 - **Status text** (left) — game count, installed count, or current operation
 - **Single-player warning** (centre)
-- **Patch Notes** (right) — opens a dialog showing recent changes
+- **Version number and Patch Notes** (right) — app version from assembly, plus a link that opens a dialog showing recent changes
 
 ---
 
@@ -98,13 +103,11 @@ Click **Settings** in the toolbar. Click **Back to Games** to return.
 | Section | Contents |
 |---------|----------|
 | Add Game | Manually add a game that wasn't auto-detected. Enter the game name and pick the install folder. |
-| Full Refresh | Clears all caches and re-scans everything from disk. Use when games or mods appear out of sync. |
-| Preferences | Skip Update Check on Launch, Beta Opt-In, Verbose Logging, Custom Shaders toggle, Screenshot Path |
+| Full Refresh | Clears all caches (including API detection caches) and re-scans everything from disk. Use when games or mods appear out of sync. |
+| Preferences | Skip Update Check on Launch, Beta Opt-In, Verbose Logging, Custom Shaders toggle, Screenshot Path (with Browse and Open buttons, optional per-game subfolder) |
 | Crash and Error Logs | Open Logs Folder, Open Downloads Cache, ReShade staging path |
-| About | Version (read from assembly), description, disclaimer, single-player warning |
-| Credits | Third-party components with descriptions, licences, and links |
 
-All settings apply immediately.
+All settings apply immediately. Informational content (app description, credits & acknowledgements, disclaimers, and links) is on the About page, accessible from the Help flyout.
 
 ---
 
@@ -206,14 +209,18 @@ The remote manifest supports comma-separated API tags (e.g. `"DX12, VLK"`) for g
 
 ## Components
 
-The detail panel shows a Components section with up to four rows:
+The detail panel shows a Components section with up to five rows, separated into two groups by a labeled divider ("Choose one from below"):
 
 | Row | Component | Controls |
 |-----|-----------|----------|
 | ReShade | ReShade | Install / Reinstall / Update — Copy INI — Uninstall |
-| ReLimiter | ReLimiter | Install / Reinstall / Update — Copy INI — Uninstall |
 | RenoDX | RenoDX Mod | Install / Reinstall / Update — UE-Extended options — Uninstall |
+| — | *separator* | "Choose one from below" |
+| ReLimiter | ReLimiter | Install / Reinstall / Update — Copy INI — Uninstall |
+| Display Commander | Display Commander | Install / Reinstall / Update — Copy INI — Uninstall |
 | Luma | Luma Framework | Install / Uninstall (shown only in Luma mode) |
+
+ReLimiter and Display Commander are mutually exclusive — only one frame rate limiter can be installed per game at a time. When one is installed, the other's install button is greyed out. Removing one re-enables the other.
 
 ### Version Display
 
@@ -228,6 +235,9 @@ Named mods from the RenoDX wiki display the mod author as a bordered badge on th
 - ReShade "Installed" → links to [reshade.me](https://reshade.me)
 - RenoDX "Installed" → links to the game's wiki page (or the mods list)
 - ReLimiter "Installed" → links to the [ReLimiter feature guide](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide)
+- Display Commander status text is underlined when installed (clickable link)
+
+Version numbers and author donation badges show a hand cursor on hover when they are clickable.
 
 ### Automatic DLL Naming for OpenGL and DX9 Games
 
@@ -297,11 +307,15 @@ Games on the `nativeHdrGames` list are flagged for native HDR support. Games on 
 
 ---
 
-## ReLimiter
+## Frame Rate Limiters
 
-[ReLimiter](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide) is an optional per-game frame pacing addon downloaded from GitHub on demand.
+RHI supports two frame rate limiters: [ReLimiter](https://github.com/RankFTW/Ultra-Limiter?tab=readme-ov-file#ultra-limiter--comprehensive-feature-guide) and Display Commander. They are mutually exclusive per game — only one can be installed at a time. When one is installed, the other's install button is greyed out. Removing one re-enables the other.
 
-### 32-bit and 64-bit Support
+### ReLimiter
+
+ReLimiter is an optional per-game frame pacing addon downloaded from GitHub on demand.
+
+#### 32-bit and 64-bit Support
 
 RHI automatically selects the correct addon file based on the game's detected bitness:
 
@@ -312,19 +326,19 @@ RHI automatically selects the correct addon file based on the game's detected bi
 
 Both variants are downloaded from the same GitHub releases endpoint and cached separately so they don't overwrite each other.
 
-### Install / Update / Uninstall
+#### Install / Update / Uninstall
 
 The correct addon file is selected automatically based on the game's bitness, downloaded from its GitHub release when first needed, and cached locally. Legacy `ultra_limiter.addon64` / `ultra_limiter.addon32` files are cleaned up automatically during install.
 
-### INI Configuration
+#### INI Configuration
 
 RHI bundles a default `relimiter.ini` seeded to `%LOCALAPPDATA%\RHI\inis\` on first launch. A copy button on the ReLimiter component row copies this INI to the game folder (or AddonPath if configured). Customise the INI in the inis folder and it will be used for all future copies.
 
-### Update Detection
+#### Update Detection
 
 Updates are detected by comparing the locally cached file against the remote release using both file size and SHA-256 hash. When a newer version is available, the status changes and the install button shows "Update". Version metadata is tracked per-bitness so 32-bit and 64-bit updates are independent.
 
-### Status Indicators
+#### Status Indicators
 
 | Colour | Meaning |
 |--------|---------|
@@ -332,6 +346,44 @@ Updates are detected by comparing the locally cached file against the remote rel
 | Orange | Update available |
 
 The ReLimiter status dot is hidden when a game is in Luma mode.
+
+### Display Commander
+
+Display Commander (DC) is an alternative frame rate limiter, using the LITE variant downloaded from GitHub on demand.
+
+#### 32-bit and 64-bit Support
+
+Like ReLimiter, DC automatically selects the correct file based on the game's detected bitness and caches 32-bit and 64-bit variants separately.
+
+#### Install / Update / Uninstall
+
+DC is installed with one click from the detail panel. The install respects mutual exclusion — if ReLimiter is already installed, the DC install button is disabled. Uninstalling DC re-enables the ReLimiter button.
+
+#### DLL Naming Override
+
+A dedicated DC filename override toggle lets you rename the DC addon file for specific games (e.g. to `winmm.dll` or `d3d9.dll`). This works independently from the ReShade DLL naming override. The DC dropdown is editable — you can type a custom DLL name and press Enter. Each dropdown (ReShade and DC) filters out the other component's current filename to prevent conflicts.
+
+The DC DLL naming resolution priority chain:
+
+1. **User DLL override** (set in Per-Game Overrides) — always wins
+2. **Manifest `dllNameOverrides`** (the `dc` field) — per-game overrides from the remote manifest
+3. **Default** — standard DC addon filename
+
+#### INI Configuration
+
+RHI bundles a default `DisplayCommander.ini` seeded to `%LOCALAPPDATA%\RHI\inis\` on first launch. A 📋 button on the DC component row (and in the card flyout) copies this INI to the game folder. Customise the INI in the inis folder and it will be used for all future copies.
+
+#### Update Detection
+
+DC is checked for updates on startup alongside other components. When an update is available, the sidebar badge and purple update styling appear. Update All now includes DC for eligible games.
+
+#### DC Detection on Game Scan
+
+RHI detects existing DC installations when scanning game folders, including files with custom DLL override names via tracking records. DC version is read from PE file info on scan (not just metadata) to avoid showing placeholder version strings.
+
+#### Global Update Exclusion
+
+A per-game DC update exclusion toggle in the overrides panel lets you pin a specific DC version on certain games, excluding them from Update All.
 
 ---
 
@@ -399,11 +451,13 @@ The Overrides section appears below Components in the detail panel. All controls
 | Game name (editable) | Rename the game — persists across Refresh and restarts |
 | Wiki mod name | Match to a different wiki entry (also applies to Luma matching) |
 | Reset | Restore original name and clear wiki mapping |
-| DLL naming override | Custom filenames for ReShade via dropdown combo boxes with common DLL suggestions. Existing installs are renamed in place — no reinstall needed. Takes priority over manifest DLL names. |
-| Global update inclusion | Three toggle switches (ReShade, RenoDX, ReLimiter) controlling whether the game is included in bulk updates. All default to On. |
+| Wiki exclusion | Exclude the game from wiki lookups |
+| DLL naming overrides | Independent toggle and dropdown for ReShade and Display Commander filenames. Existing installs are renamed in place — no reinstall needed. Each dropdown filters out the other component's current filename to prevent conflicts. The DC dropdown is editable (supports manual DLL names via Enter key). Dropdowns clear to placeholder text ("Select ReShade DLL name" / "Select DC DLL name") when the toggle is turned off. Turning off the ReShade override renames the file back to `dxgi.dll` instead of deleting it. |
+| Global update inclusion | Four toggle switches (ReShade, RenoDX, ReLimiter, Display Commander) in a 2×2 grid layout, controlling whether the game is included in bulk updates. All default to On. |
 | Shader Mode | Global / Off / Minimum / All / User / Select. Select mode opens a picker for specific shader packs. |
 | Rendering Path | For dual-API games: DirectX or Vulkan. Switching triggers automatic cleanup. |
-| Wiki exclusion | Exclude the game from wiki lookups |
+| Bitness override | Dropdown: Auto, 32-bit, or 64-bit. Overrides PE header auto-detection. |
+| Graphics API override | Dropdown: Auto, DirectX8, DirectX9, DirectX10, DX11/DX12, Vulkan, OpenGL. "Auto" uses the auto-detected value from PE header scanning. |
 | Reset Overrides | Reset all override settings back to defaults |
 
 ---
@@ -420,6 +474,7 @@ Config files in `%LOCALAPPDATA%\RHI\inis\`:
 | `reshade.vulkan.ini` | Alongside `reshade.ini` for Vulkan games. Vulkan-tuned depth buffer settings. |
 | `reshade.rdr2.ini` | Red Dead Redemption 2 only. Overlay key set to END to avoid keybind conflicts. |
 | `relimiter.ini` | Via copy button on the ReLimiter row. Copied to the game folder (or AddonPath) as-is. |
+| `DisplayCommander.ini` | Via 📋 button on the Display Commander row. Copied to the game folder (or AddonPath) as-is. |
 | `ReShadePreset.ini` | Automatically alongside `reshade.ini` if the file exists in the inis folder. |
 
 To use a custom ReShade preset, place your `ReShadePreset.ini` in the inis folder. It will be copied to every new game install automatically.
@@ -459,7 +514,7 @@ RHI fetches a remote manifest from GitHub on every launch, providing game-specif
 
 ## Update All
 
-The **Update** button in the toolbar updates ReShade, RenoDX, and ReLimiter across all eligible games in one click. The button lights up purple when updates are available.
+The **Update All** button in the toolbar updates ReShade, RenoDX, ReLimiter, and Display Commander across all eligible games in one click. The button lights up purple when updates are available.
 
 ### Per-Component Toggles
 
@@ -520,6 +575,10 @@ RHI watches your Downloads folder for new addon files and prompts you to install
 
 The default watch folder is the system Downloads directory. You can change it in Settings via the Browse button, or reset it to the default. RHI monitors for new `renodx-*.addon64` and `renodx-*.addon32` files appearing in the watched folder.
 
+### Archive Auto-Install
+
+The watch folder also detects `.zip`, `.7z`, and `.rar` archives containing "renodx" in the filename. When a matching archive appears (e.g. from a Nexus Mods download), RHI automatically extracts it using bundled 7-Zip, finds the addon files inside, and starts the install flow — no drag-and-drop needed.
+
 ### Named Pipe Forwarding
 
 Double-clicking an addon file in Explorer opens RHI and triggers the install flow. If RHI is already running, the file path is forwarded to the existing instance via a named pipe, avoiding duplicate instances.
@@ -544,6 +603,20 @@ Uninstall, update detection, and addon scanning all check the same resolved Addo
 
 ---
 
+## Performance
+
+RHI includes several optimisations to reduce startup and refresh times:
+
+- **Parallel shader pack checks** — `EnsureLatestAsync` uses `Task.WhenAll` instead of sequential foreach, cutting ~10 seconds from launch.
+- **Parallel game folder shader syncs** — game folder shader syncs run via `Task.WhenAll` instead of sequentially.
+- **Parallel card building** — game cards are constructed using `Parallel.ForEach` with `ConcurrentBag`.
+- **PE-level API cache** — `GraphicsApiDetector` caches `DetectAllApis` results to `%LOCALAPPDATA%\RHI\api_cache.json`, keyed by file path + last write time. Subsequent launches skip PE header scanning entirely.
+- **Game-level API cache** — `MainViewModel` caches full `DetectGraphicsApi` + `_DetectAllApisForCard` results to `%LOCALAPPDATA%\RHI\game_api_cache.json`, keyed by install path.
+- **WindowsApps skip** — `ScanAllExesInDir`, `DetectGraphicsApi`, and `_DetectAllApisForCard` return immediately for `\WindowsApps\` paths (always access-denied, wasted time on retries).
+- **Cache clearing** — Full Refresh (`forceRescan=true`) clears both API caches and rescans everything fresh.
+
+---
+
 ## Data Storage
 
 Everything under `%LOCALAPPDATA%\RHI\`:
@@ -552,11 +625,14 @@ Everything under `%LOCALAPPDATA%\RHI\`:
 |------|----------|
 | `game_library.json` | Detected games, hidden list, manually added games |
 | `installed.json` | RenoDX mod install records (game name, path, addon filename, hash, snapshot URL, remote file size) |
-| `aux_installed.json` | ReShade and ReLimiter install records (game name, path, addon type, installed filename, source URL) |
+| `aux_installed.json` | ReShade, ReLimiter, and Display Commander install records (game name, path, addon type, installed filename, source URL) |
 | `settings.json` | All settings, per-game overrides, and persisted filter mode |
 | `ul_meta.json` | ReLimiter version metadata (per-bitness) |
-| `downloads\` | Cached downloads (separate files for 32-bit and 64-bit ReLimiter) |
-| `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `relimiter.ini`, etc.) |
+| `dc_meta.json` | Display Commander version metadata |
+| `api_cache.json` | PE-level graphics API detection cache (keyed by file path + last write time) |
+| `game_api_cache.json` | Game-level API detection cache (keyed by install path) |
+| `downloads\` | Cached downloads (separate files for 32-bit and 64-bit ReLimiter and DC) |
+| `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `relimiter.ini`, `DisplayCommander.ini`, etc.) |
 | `reshade\` | Staged shader packs and custom shaders |
 | `logs\` | Session logs (timestamped) and crash reports |
 
@@ -598,6 +674,7 @@ Old session logs are pruned to keep a maximum of 10 on disk. The oldest logs are
 | [ReShade](https://reshade.me) | Crosire | [BSD 3-Clause](https://github.com/crosire/reshade/blob/main/LICENSE.md) |
 | [RenoDX](https://github.com/clshortfuse/renodx) | clshortfuse & contributors | [MIT](https://github.com/clshortfuse/renodx/blob/main/LICENSE) |
 | [ReLimiter](https://github.com/RankFTW/Ultra-Limiter) | RankFTW | Source-available |
+| [Display Commander](https://github.com/lobotomyx/display-commander) | lobotomyx | Source-available |
 | [RE Framework](https://github.com/praydog/REFramework-nightly) | praydog | [MIT](https://github.com/praydog/REFramework/blob/master/LICENSE) |
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [HtmlAgilityPack](https://github.com/zzzprojects/html-agility-pack) | ZZZ Projects Inc. | [MIT](https://github.com/zzzprojects/html-agility-pack/blob/master/LICENSE) |

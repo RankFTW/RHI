@@ -1180,6 +1180,22 @@
                                     </StackPanel>
                                 </Border>
 
+                                <!-- Display Commander -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="Display Commander" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by pmnox" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  Source-available" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="Frame rate limiter addon available as an alternative to ReLimiter. The LITE variant is downloaded from GitHub on demand."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/pmnoxx/display-commander" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/pmnoxx/display-commander"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
                                 <!-- Lazorr -->
                                 <Border Background="{StaticResource SurfaceStatusBarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                                     <StackPanel Spacing="3">
@@ -1237,6 +1253,9 @@
                                 </HyperlinkButton>
                                 <HyperlinkButton NavigateUri="https://github.com/Filoppi/Luma-Framework" Padding="0">
                                     <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">Luma Framework — github.com/Filoppi/Luma-Framework</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://github.com/pmnoxx/display-commander" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">Display Commander — github.com/pmnoxx/display-commander</TextBlock>
                                 </HyperlinkButton>
                                 <HyperlinkButton NavigateUri="https://www.hdrmods.com/" Padding="0">
                                     <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">Creepy's HDR Guides — hdrmods.com</TextBlock>

@@ -1,6 +1,6 @@
 # RHI — ReShade HDR Installer
 
-RHI is a WinUI 3 desktop application for managing HDR mod installations on PC games. It auto-detects game libraries across eight storefronts, installs and updates ReShade, RenoDX, ReLimiter, RE Framework, and Luma Framework components, and keeps everything in sync — all from a single interface.
+RHI is a WinUI 3 desktop application for managing HDR mod installations on PC games. It auto-detects game libraries across eight storefronts, installs and updates ReShade, RenoDX, ReLimiter, Display Commander, RE Framework, and Luma Framework components, and keeps everything in sync — all from a single interface.
 
 ![RHI](screenshots/game_view.png)
 
@@ -9,17 +9,20 @@ RHI is a WinUI 3 desktop application for managing HDR mod installations on PC ga
 ## Feature Highlights
 
 - **Auto-detection** — scans Steam, GOG, Epic Games, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, and Rockstar libraries on every launch
-- **One-click install** — install, update, or uninstall ReShade, RenoDX, ReLimiter, RE Framework, and Luma Framework with a single button
+- **One-click install** — install, update, or uninstall ReShade, RenoDX, ReLimiter, Display Commander, RE Framework, and Luma Framework with a single button
+- **Frame rate limiter choice** — ReLimiter and Display Commander are mutually exclusive per game; installing one disables the other
 - **Drag-and-drop** — drop a game `.exe`, addon file, archive, or URL to add games and install mods instantly
-- **Per-game overrides** — customise DLL naming, shader selection, rendering path, and component update preferences per game
-- **Update detection** — detect and apply component updates across all games with Update All
+- **Archive auto-install** — archives containing "renodx" in the filename (e.g. from Nexus Mods) are detected in your Downloads folder and installed automatically
+- **Per-game overrides** — customise DLL naming (independently for ReShade and DC), shader selection, rendering path, and component update preferences per game
+- **Update detection** — detect and apply component updates across all games with Update All (covers ReShade, RenoDX, ReLimiter, and Display Commander)
 - **Shader pack management** — deploy and sync 37+ shader packs (Essential, Recommended, Extra) across installed games
+- **Performance** — parallel shader downloads, parallel game folder syncs, and cached graphics API detection for fast startup
 
 ## Quick Start
 
 1. **Download and run RHI** — games are auto-detected from Steam, GOG, Epic Games, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, and Rockstar.
 2. **Select a game** from the sidebar. Use search or filter chips to narrow the list.
-3. **Install components** from the detail panel — ReShade, RenoDX, ReLimiter, and Luma Framework each have a one-click install button.
+3. **Install components** from the detail panel — ReShade, RenoDX, and a frame rate limiter (ReLimiter or Display Commander) each have a one-click install button.
 4. **Launch the game**, press **Home** to open the ReShade overlay, go to **Add-ons**, and configure RenoDX.
 
 ## Download & System Requirements
@@ -48,6 +51,7 @@ Grab the latest installer from the [GitHub Releases page](https://github.com/Ran
 | [ReShade](https://reshade.me) | Crosire | [BSD 3-Clause](https://github.com/crosire/reshade/blob/main/LICENSE.md) |
 | [RenoDX](https://github.com/clshortfuse/renodx) | clshortfuse & contributors | [MIT](https://github.com/clshortfuse/renodx/blob/main/LICENSE) |
 | [ReLimiter](https://github.com/RankFTW/Ultra-Limiter) | RankFTW | Source-available |
+| [Display Commander](https://github.com/lobotomyx/display-commander) | lobotomyx | Source-available |
 | [RE Framework](https://github.com/praydog/REFramework-nightly) | praydog | [MIT](https://github.com/praydog/REFramework/blob/master/LICENSE) |
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |

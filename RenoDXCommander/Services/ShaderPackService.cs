@@ -429,6 +429,14 @@ public partial class ShaderPackService : IShaderPackService
             IsMinimum   : false,
             Description : "Lighting, bloom, and atmospheric glow effects"
         ),
+        new(
+            Id          : "NNShaders",
+            DisplayName : "NN-Shaders by Sarenya",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/Sarenya/NN-Shaders/archive/refs/heads/main.zip",
+            IsMinimum   : false,
+            Description : "Neural network-based image processing shaders"
+        ),
     };
 
     // ── AvailablePacks ───────────────────────────────────────────────────────────
