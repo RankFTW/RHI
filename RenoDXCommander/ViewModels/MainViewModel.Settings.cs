@@ -199,6 +199,116 @@ public partial class MainViewModel
         }
     }
 
+    /// <summary>Returns the per-game addon mode override, or "Global" if no override set.</summary>
+    public string GetPerGameAddonMode(string gameName)
+        => _gameNameService.PerGameAddonMode.TryGetValue(gameName, out var mode) ? mode : "Global";
+
+    /// <summary>Sets the per-game addon mode override. "Global" removes the override and clears per-game selection.</summary>
+    public void SetPerGameAddonMode(string gameName, string mode)
+    {
+        if (mode == "Global")
+        {
+            _gameNameService.PerGameAddonMode.Remove(gameName);
+            // Discard per-game addon selection when reverting to global (Req 6.6)
+            _gameNameService.PerGameAddonSelection.Remove(gameName);
+        }
+        else
+            _gameNameService.PerGameAddonMode[gameName] = mode;
+        SaveNameMappings();
+    }
+
+    /// <summary>
+    /// Deploys addons for a single game card (by name).
+    /// Called after install/uninstall of ReShade, after addon selection changes,
+    /// and after global addon set changes. Mirrors DeployShadersForCard.
+    /// </summary>
+    public void DeployAddonsForCard(string gameName)
+    {
+        var card = _allCards.FirstOrDefault(c =>
+            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                bool rsInstalled = card.RequiresVulkanInstall
+                    ? VulkanFootprintService.Exists(card.InstallPath)
+                    : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
+
+                if (!rsInstalled) return;
+
+                bool is32Bit = card.Is32Bit;
+
+                string addonMode = GetPerGameAddonMode(gameName);
+                bool useGlobalSet = addonMode != "Select";
+
+                List<string>? selection = null;
+                if (useGlobalSet)
+                {
+                    selection = _settingsViewModel.EnabledGlobalAddons;
+                }
+                else
+                {
+                    _gameNameService.PerGameAddonSelection.TryGetValue(gameName, out selection);
+                }
+
+                _addonPackService.DeployAddonsForGame(gameName, card.InstallPath, is32Bit,
+                    useGlobalSet, selection);
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.DeployAddonsForCard] Failed for '{gameName}' — {ex.Message}");
+            }
+        });
+    }
+
+    /// <summary>
+    /// Deploys addons to all installed game locations.
+    /// Mirrors DeployAllShaders — runs on a background thread.
+    /// </summary>
+    public void DeployAllAddons()
+    {
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                foreach (var card in _allCards)
+                {
+                    if (string.IsNullOrEmpty(card.InstallPath)) continue;
+
+                    bool rsInstalled = card.RequiresVulkanInstall
+                        ? VulkanFootprintService.Exists(card.InstallPath)
+                        : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
+
+                    if (!rsInstalled) continue;
+
+                    bool is32Bit = card.Is32Bit;
+
+                    string addonMode = GetPerGameAddonMode(card.GameName);
+                    bool useGlobalSet = addonMode != "Select";
+
+                    List<string>? selection = null;
+                    if (useGlobalSet)
+                    {
+                        selection = _settingsViewModel.EnabledGlobalAddons;
+                    }
+                    else
+                    {
+                        _gameNameService.PerGameAddonSelection.TryGetValue(card.GameName, out selection);
+                    }
+
+                    _addonPackService.DeployAddonsForGame(card.GameName, card.InstallPath, is32Bit,
+                        useGlobalSet, selection);
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.DeployAllAddons] Failed — {ex.Message}");
+            }
+        });
+    }
+
     public bool AnyUpdateAvailable =>
         _allCards.Any(c =>
             !c.IsHidden && !c.DllOverrideEnabled
@@ -339,6 +449,9 @@ public partial class MainViewModel
 
     public string? GetNameMapping(string detectedName)
         => _gameNameService.GetNameMapping(detectedName);
+
+    public string? GetUserNameMapping(string detectedName)
+        => _gameNameService.GetUserNameMapping(detectedName);
 
     public void RemoveNameMapping(string detectedName)
     {

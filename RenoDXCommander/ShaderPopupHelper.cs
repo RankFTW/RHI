@@ -106,6 +106,20 @@ public static class ShaderPopupHelper
                     IsChecked = selected.Contains(id),
                 };
 
+                // Auto-select dependencies when this pack is checked
+                var capturedId = id;
+                cb.Checked += (s, ev) =>
+                {
+                    var required = shaderPackService.GetRequiredPacks(capturedId);
+                    foreach (var reqId in required)
+                    {
+                        var depBox = checkBoxes.FirstOrDefault(c =>
+                            c.Id.Equals(reqId, StringComparison.OrdinalIgnoreCase)).Box;
+                        if (depBox != null && depBox.IsChecked != true)
+                            depBox.IsChecked = true;
+                    }
+                };
+
                 // Lilium is no longer locked — users can untick it in Global context
                 checkBoxes.Add((id, cb));
                 panel.Children.Add(cb);

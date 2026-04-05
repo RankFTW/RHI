@@ -807,6 +807,52 @@ public sealed partial class MainWindow
     private void ChooseShadersButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.ChooseShadersButton_Click(sender, e);
 
+    private async void ReShadeAddonsButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Req 10.1–10.5: First-time warning dialog
+            if (!ViewModel.Settings.AddonWarningDismissed)
+            {
+                var warningDialog = new ContentDialog
+                {
+                    Title = "⚠ ReShade Addons",
+                    Content = new TextBlock
+                    {
+                        Text = "ReShade addons are advanced features intended for experienced users who understand what they are.\n\n" +
+                               "Addons can modify game rendering behaviour and may cause instability. " +
+                               "Only proceed if you are comfortable managing ReShade addons.",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        MaxWidth = 450,
+                    },
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = Content.XamlRoot,
+                };
+
+                var result = await warningDialog.ShowAsync();
+
+                if (result != ContentDialogResult.Primary)
+                    return; // Req 10.5: Cancel — don't persist flag, don't open manager
+
+                // Req 10.4: Persist dismissal flag so warning is not shown again
+                ViewModel.Settings.AddonWarningDismissed = true;
+                ViewModel.SaveSettingsPublic();
+            }
+
+            // Use the ViewModel's AddonPackService (initialized on startup)
+            var addonService = ViewModel.AddonPackServiceInstance;
+            await addonService.EnsureLatestAsync();
+            await AddonManagerDialog.ShowAsync(Content.XamlRoot, addonService,
+                ViewModel.Settings.EnabledGlobalAddons,
+                () => { ViewModel.SaveSettingsPublic(); ViewModel.DeployAllAddons(); });
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.ReShadeAddonsButton_Click] Failed — {ex.Message}");
+        }
+    }
+
     // ── Update All handlers ──────────────────────────────────────────────────
 
     private async void UpdateAllButton_Click(object sender, RoutedEventArgs e)

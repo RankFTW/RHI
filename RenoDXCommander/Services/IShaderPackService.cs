@@ -15,6 +15,12 @@ public interface IShaderPackService
     /// </summary>
     string? GetPackDescription(string packId);
 
+    /// <summary>
+    /// Returns the IDs of packs that the given pack requires (dependencies).
+    /// Returns empty if the pack has no dependencies.
+    /// </summary>
+    string[] GetRequiredPacks(string packId);
+
     Task EnsureLatestAsync(IProgress<string>? progress = null);
 
     void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null);

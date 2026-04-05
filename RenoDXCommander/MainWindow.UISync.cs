@@ -228,12 +228,6 @@ public sealed partial class MainWindow
     private async Task ShowPatchNotesIfNewVersionAsync()
         => await _dialogService.ShowPatchNotesIfNewVersionAsync();
 
-    private async Task ShowDcRemovalWarningAsync()
-        => await _dialogService.ShowDcRemovalWarningAsync();
-
-    private async Task ShowLegacyProgramFilesCleanupAsync()
-        => await _dialogService.ShowLegacyProgramFilesCleanupAsync();
-
     private async Task ShowPatchNotesDialogAsync()
         => await _dialogService.ShowPatchNotesDialogAsync();
 

@@ -25,6 +25,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _useCustomShaders;
     [ObservableProperty] private string _screenshotPath = "";
     [ObservableProperty] private bool _perGameScreenshotFolders;
+    [ObservableProperty] private bool _addonWarningDismissed;
+    [ObservableProperty] private List<string> _enabledGlobalAddons = new();
 
     /// <summary>
     /// Optional callback invoked after any settings-specific property changes,
@@ -127,6 +129,15 @@ public partial class SettingsViewModel : ObservableObject
 
         if (s.TryGetValue("PerGameScreenshotFolders", out var pgsfVal))
             PerGameScreenshotFolders = pgsfVal == "true";
+
+        if (s.TryGetValue("AddonWarningDismissed", out var awdVal))
+            AddonWarningDismissed = awdVal == "true";
+
+        if (s.TryGetValue("EnabledGlobalAddons", out var egaVal))
+        {
+            try { EnabledGlobalAddons = JsonSerializer.Deserialize<List<string>>(egaVal) ?? new(); }
+            catch { EnabledGlobalAddons = new(); }
+        }
     }
 
     /// <summary>
@@ -146,6 +157,8 @@ public partial class SettingsViewModel : ObservableObject
             s["AddonWatchFolder"] = AddonWatchFolder;
         s["ScreenshotPath"] = ScreenshotPath;
         s["PerGameScreenshotFolders"] = PerGameScreenshotFolders ? "true" : "false";
+        s["AddonWarningDismissed"] = AddonWarningDismissed ? "true" : "false";
+        s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);
     }
 
     public void LoadThemeAndDensity()

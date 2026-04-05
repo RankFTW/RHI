@@ -151,6 +151,7 @@ public class StaticServiceInterfaceStructureTests
         public IReadOnlyList<(string Id, string DisplayName, ShaderPackService.PackCategory Category)> AvailablePacks
             => Array.Empty<(string, string, ShaderPackService.PackCategory)>();
         public string? GetPackDescription(string packId) => null;
+        public string[] GetRequiredPacks(string packId) => Array.Empty<string>();
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
         public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
         public void RemoveFromGameFolder(string gameDir) { }

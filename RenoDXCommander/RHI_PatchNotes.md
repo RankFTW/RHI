@@ -1,3 +1,61 @@
+## v1.7.1
+
+### New Features
+
+**ReShade Addon Manager**
+- New "ReShade Addons" button in the main header opens a curated addon manager. Browse all available ReShade addons from the official list, toggle them on/off with a single switch. Toggling on downloads the addon automatically, toggling off disables deployment but keeps files cached for later use.
+
+**Global addon deployment**
+- Enabled addons are automatically deployed to every game with ReShade installed. When ReShade is installed on a new game, enabled addons are deployed there too. Addons are auto-updated on startup.
+
+**Per-game addon overrides**
+- Each game's override panel now has an Addons section with a Global toggle. Switch to per-game mode to pick exactly which addons to deploy for that game, independent of the global set.
+
+**RenoDX DevKit addon**
+- The RenoDX DevKit addon is always available in the addon manager alongside the official ReShade addons list.
+
+**First-time addon warning**
+- A one-time warning dialog explains that addons are advanced features before opening the addon manager for the first time.
+
+**Override panel layout change**
+- Bitness/API moved to the middle row, Shaders and Addons now share the bottom row for a cleaner layout.
+
+**QD-OLED APL Fixer shader pack**
+- Added the QD-OLED APL Fixer by mspeedo as a managed shader pack. This shader compensates for the aggressive ABL dimming on QD-OLED screens by applying a measured HDR brightness boost based on real APL behavior.
+
+### Bug Fixes
+
+**Graphics API override not applying on Game Pass and some Steam games**
+- The WindowsApps early-return in API detection was running before user overrides and manifest overrides, causing all Game Pass games to show Unknown API regardless of manifest data or user selections. User overrides and manifest overrides now take priority over the WindowsApps filesystem skip. The WindowsApps early-return now falls back to engine-type inference instead of returning Unknown.
+
+**API and bitness override not refreshing detail panel**
+- Changing the Graphics API or Bitness override in the overrides panel updated the card properties but didn't rebuild the detail panel. The ReShade install button stayed in DX mode even after switching to Vulkan. Both overrides now trigger a full detail panel rebuild so install buttons reflect the new state immediately.
+
+**Manifest wiki name overrides visible in overrides panel**
+- Wiki name mappings injected by the remote manifest (e.g., "Red Dead Redemption 2 (Vulkan)") were showing in the Wiki mod name text box, making it look like the user had set them. The box now only shows user-set mappings. Manifest mappings are hidden from the UI but still work internally for mod matching.
+
+**Reset removing manifest wiki name mappings**
+- Clicking Reset Overrides was deleting manifest-injected wiki name mappings from the settings file, breaking mod matching for games like Red Dead Redemption 2 until the next restart. Manifest-origin mappings are now protected from removal and excluded from settings persistence.
+
+**Vulkan ReShade status text styled as link**
+- The ReShade status text for Vulkan games showed "Not Installed" with an underline and hand cursor, making it look clickable. Fixed to show "Ready" in plain text matching the style of other components.
+
+### Changes
+
+**Strikethrough on mutually exclusive limiters**
+- When ReLimiter is installed, the Display Commander label, status, and install button text are shown with strikethrough styling, and vice versa. This makes it visually clear that only one frame rate limiter can be active per game.
+
+**Removed legacy startup dialogs**
+- The one-time Display Commander removal warning and legacy Program Files cleanup dialogs have been removed. These are no longer needed.
+
+**Shader pack dependencies**
+- Shader packs can now declare dependencies. Selecting Azen in the shader picker automatically selects smolbbsoop shaders (required by Azen). The dependency is one-way — deselecting smolbbsoop independently is still allowed.
+
+**Screenshot path applies to all ReShade INI variants**
+- The "Apply to all games" screenshot path button now also writes to reshade2.ini, reshade3.ini, and any other reshade*.ini files in game folders, not just reshade.ini.
+
+---
+
 ## v1.7.0
 
 ### New Features

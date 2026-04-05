@@ -44,7 +44,7 @@ public partial class DetailPanelBuilder
         {
             Header = "Wiki mod name",
             PlaceholderText = "Exact wiki name",
-            Text = _window.ViewModel.GetNameMapping(gameName) ?? "",
+            Text = _window.ViewModel.GetUserNameMapping(gameName) ?? "",
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -699,9 +699,13 @@ public partial class DetailPanelBuilder
                     targetCard.Is32Bit = _window.ViewModel.ResolveIs32Bit(capturedName, detectedMachine);
                 }
 
-                // Bitness changed — no need to update placeholder (it's always "Select ReShade DLL name")
+                // Update DLL naming section placeholder text to match new bitness
+                rsNameBox.PlaceholderText = targetCard.Is32Bit ? "ReShade32.dll" : "ReShade64.dll";
 
                 targetCard.NotifyAll();
+
+                // Rebuild the detail panel so install buttons reflect the new bitness
+                _window.RequestReselect(capturedName);
             }
         };
 
@@ -796,6 +800,10 @@ public partial class DetailPanelBuilder
                 targetCard.GraphicsApi = _window.ViewModel.DetectGraphicsApi(
                     targetCard.InstallPath, EngineType.Unknown, capturedName);
                 targetCard.NotifyAll();
+
+                // Rebuild the detail panel so install buttons reflect the new API
+                // (e.g., Vulkan games need the global layer install instead of per-game DLL)
+                _window.RequestReselect(capturedName);
             }
         };
 
@@ -938,43 +946,151 @@ public partial class DetailPanelBuilder
             Margin = new Thickness(12, 0, 12, 0),
         };
 
-        // ── Middle Row Grid (3 columns: Star | Auto | Star) ─────────────────
+        // ── Middle Row Grid (3 columns: Star | Auto | Star) — Bitness/API + Global update ──
         var middleRowGrid = new Grid { ColumnSpacing = 0 };
         middleRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         middleRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         middleRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        Grid.SetColumn(shaderColumn, 0);
+        Grid.SetColumn(bitnessPanel, 0);
         Grid.SetColumn(middleRowDivider, 1);
         Grid.SetColumn(globalUpdateColumn, 2);
 
-        middleRowGrid.Children.Add(shaderColumn);
+        middleRowGrid.Children.Add(bitnessPanel);
         middleRowGrid.Children.Add(middleRowDivider);
         middleRowGrid.Children.Add(globalUpdateColumn);
 
         _window.OverridesPanel.Children.Add(middleRowGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
-        // ── Bitness & API Row Grid (3 columns: Star | Auto divider | Star) ──
-        var bitnessApiGrid = new Grid { ColumnSpacing = 0 };
-        bitnessApiGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        bitnessApiGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        bitnessApiGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        // ── Bottom Row Grid (3 columns: Star | Auto divider | Star) — Shaders (left) ──
+        var bottomRowGrid = new Grid { ColumnSpacing = 0 };
+        bottomRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bottomRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        bottomRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        Grid.SetColumn(bitnessPanel, 0);
-        var bitnessApiDivider = new Border
+        Grid.SetColumn(shaderColumn, 0);
+        var bottomRowDivider = new Border
         {
             Width = 1,
             Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             VerticalAlignment = VerticalAlignment.Stretch,
             Margin = new Thickness(12, 0, 12, 0),
         };
-        Grid.SetColumn(bitnessApiDivider, 1);
+        Grid.SetColumn(bottomRowDivider, 1);
 
-        bitnessApiGrid.Children.Add(bitnessPanel);
-        bitnessApiGrid.Children.Add(bitnessApiDivider);
+        bottomRowGrid.Children.Add(shaderColumn);
+        bottomRowGrid.Children.Add(bottomRowDivider);
 
-        _window.OverridesPanel.Children.Add(bitnessApiGrid);
+        // ── Per-game Addon mode (right column of Bottom Row) ─────────────────
+        string currentAddonMode = _window.ViewModel.GetPerGameAddonMode(gameName);
+        bool isGlobalAddons = currentAddonMode != "Select";
+        var addonToggle = new ToggleSwitch
+        {
+            Header = "Global",
+            IsOn = isGlobalAddons,
+            OnContent = "On",
+            OffContent = "Off",
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 12,
+        };
+        ToolTipService.SetToolTip(addonToggle,
+            "On = use the global addon set for this game. Off = pick specific addons for this game.");
+
+        var selectAddonsBtn = new Button
+        {
+            Content = "Select Addons",
+            FontSize = 12,
+            Padding = new Thickness(12, 7, 12, 7),
+            CornerRadius = new CornerRadius(8),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsEnabled = !isGlobalAddons,
+            Background = UIFactory.Brush(isGlobalAddons ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(isGlobalAddons ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(isGlobalAddons ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+        };
+        ToolTipService.SetToolTip(selectAddonsBtn, "Choose which addons to deploy for this game");
+
+        addonToggle.Toggled += (s, ev) =>
+        {
+            bool global = addonToggle.IsOn;
+            selectAddonsBtn.IsEnabled = !global;
+            selectAddonsBtn.Background = UIFactory.Brush(global ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush);
+            selectAddonsBtn.Foreground = UIFactory.Brush(global ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush);
+            selectAddonsBtn.BorderBrush = UIFactory.Brush(global ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush);
+
+            // Auto-save: persist addon mode immediately
+            var newMode = global ? "Global" : "Select";
+            if (newMode != _window.ViewModel.GetPerGameAddonMode(capturedName))
+            {
+                _window.ViewModel.SetPerGameAddonMode(capturedName, newMode);
+                _window.ViewModel.DeployAddonsForCard(capturedName);
+            }
+        };
+
+        selectAddonsBtn.Click += async (s, ev) =>
+        {
+            List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameAddonSelection.TryGetValue(gameName, out var existingAddons)
+                ? existingAddons
+                : null;
+
+            // AddonPackService may not be wired into MainViewModel yet (Task 9.1).
+            // Access it via the exposed instance if available, otherwise show a placeholder message.
+            IAddonPackService? addonPackService = null;
+            var addonSvcProp = _window.ViewModel.GetType().GetProperty("AddonPackServiceInstance");
+            if (addonSvcProp != null)
+                addonPackService = addonSvcProp.GetValue(_window.ViewModel) as IAddonPackService;
+
+            if (addonPackService == null)
+            {
+                // Fallback: show info that addon service is not yet available
+                var infoDlg = new ContentDialog
+                {
+                    Title = "Select Addons",
+                    Content = new TextBlock
+                    {
+                        Text = "Addon service is not yet wired. Complete Task 9.1 to enable addon selection.",
+                        FontSize = 13,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                    },
+                    CloseButtonText = "OK",
+                    XamlRoot = _window.Content.XamlRoot,
+                    Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                };
+                await infoDlg.ShowAsync();
+                return;
+            }
+
+            var result = await AddonPopupHelper.ShowAsync(
+                _window.Content.XamlRoot,
+                addonPackService,
+                current,
+                AddonPopupHelper.PopupContext.PerGame);
+            if (result != null)
+            {
+                _window.ViewModel.GameNameServiceInstance.PerGameAddonSelection[gameName] = result;
+                _window.ViewModel.DeployAddonsForCard(capturedName);
+            }
+        };
+
+        var addonsLabel = new TextBlock
+        {
+            Text = "Addons",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            Margin = new Thickness(0, 0, 0, 8),
+        };
+
+        var addonColumn = new StackPanel { Spacing = 8 };
+        addonColumn.Children.Add(addonsLabel);
+        addonColumn.Children.Add(addonToggle);
+        addonColumn.Children.Add(selectAddonsBtn);
+        Grid.SetColumn(addonColumn, 2);
+
+        bottomRowGrid.Children.Add(addonColumn);
+
+        _window.OverridesPanel.Children.Add(bottomRowGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
         // ── Button row (Reset only — auto-save replaces Save button) ──────────
@@ -996,6 +1112,7 @@ public partial class DetailPanelBuilder
             wikiBox.Text = "";
             shaderToggle.IsOn = true;
             customShadersToggle.IsOn = false;
+            addonToggle.IsOn = true;
             if (renderPathCombo != null) renderPathCombo.SelectedItem = "DirectX";
             dllOverrideToggle.IsOn = false;
             dcDllToggle.IsOn = false;
@@ -1024,6 +1141,13 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.SetPerGameShaderMode(capturedName, "Global");
                 _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.Remove(capturedName);
                 _window.ViewModel.DeployShadersForCard(capturedName);
+            }
+
+            // Addon mode → Global
+            if (_window.ViewModel.GetPerGameAddonMode(capturedName) != "Global")
+            {
+                _window.ViewModel.SetPerGameAddonMode(capturedName, "Global");
+                _window.ViewModel.DeployAddonsForCard(capturedName);
             }
 
             // Disable DLL override

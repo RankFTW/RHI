@@ -153,6 +153,8 @@ public class GameInitializationService : IGameInitializationService
         {
             foreach (var (key, value) in manifest.WikiNameOverrides)
             {
+                // Always mark as manifest-origin so the UI hides it and saves exclude it
+                gameNameService.MarkManifestNameMapping(key);
                 if (!gameNameService.NameMappings.ContainsKey(key))
                     gameNameService.NameMappings[key] = value;
             }

@@ -47,6 +47,12 @@ public interface IGameNameService
     /// <summary>Per-game shader pack selections for Select mode. Key = game name, Value = list of selected pack IDs.</summary>
     Dictionary<string, List<string>> PerGameShaderSelection { get; }
 
+    /// <summary>Per-game addon mode settings. Key = game name, Value = "Global" or "Select".</summary>
+    Dictionary<string, string> PerGameAddonMode { get; }
+
+    /// <summary>Per-game addon selections for Select mode. Key = game name, Value = list of selected addon PackageNames.</summary>
+    Dictionary<string, List<string>> PerGameAddonSelection { get; }
+
     /// <summary>Games with Luma explicitly enabled.</summary>
     HashSet<string> LumaEnabledGames { get; }
 
@@ -97,6 +103,12 @@ public interface IGameNameService
 
     /// <summary>Returns the wiki key for a detected name, or null if not mapped.</summary>
     string? GetNameMapping(string detectedName);
+
+    /// <summary>Returns the user-set name mapping only (excludes manifest-injected mappings).</summary>
+    string? GetUserNameMapping(string detectedName);
+
+    /// <summary>Marks a name mapping key as manifest-origin (not user-set).</summary>
+    void MarkManifestNameMapping(string key);
 
     /// <summary>Removes the name mapping for a detected name (including normalized matches).</summary>
     void RemoveNameMapping(string detectedName);

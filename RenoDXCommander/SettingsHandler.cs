@@ -105,8 +105,13 @@ public class SettingsHandler
         {
             if (string.IsNullOrEmpty(card.InstallPath)) continue;
 
-            var iniPath = System.IO.Path.Combine(card.InstallPath, "reshade.ini");
-            if (!System.IO.File.Exists(iniPath)) continue;
+            // Find all reshade*.ini files (reshade.ini, reshade2.ini, reshade3.ini, etc.)
+            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
+                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (iniFiles.Count == 0) continue;
 
             try
             {
@@ -114,7 +119,10 @@ public class SettingsHandler
                     ? BuildSavePath(screenshotPath, card.GameName)
                     : screenshotPath;
 
-                AuxInstallService.ApplyScreenshotPath(iniPath, savePath);
+                foreach (var iniFile in iniFiles)
+                {
+                    AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
+                }
                 updatedCount++;
             }
             catch (Exception ex)

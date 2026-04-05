@@ -94,6 +94,7 @@ public class InstallReShadeLocalDeployPropertyTests : IDisposable
             new List<(string, string, ShaderPackService.PackCategory)>();
 
         public string? GetPackDescription(string packId) => null;
+        public string[] GetRequiredPacks(string packId) => Array.Empty<string>();
         public Task EnsureLatestAsync(IProgress<string>? progress = null) => Task.CompletedTask;
         public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null) { }
         public void RemoveFromGameFolder(string gameDir) { }

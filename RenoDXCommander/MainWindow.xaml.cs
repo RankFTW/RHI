@@ -57,6 +57,16 @@ public sealed partial class MainWindow : Window
         var shaderTask = ViewModel.ShaderPackServiceInstance.EnsureLatestAsync();
         shaderTask.SafeFireAndForget("MainWindow.ShaderPack");
         ViewModel.SetShaderPackReadyTask(shaderTask);
+        // Fire-and-forget: fetch addon list and check for updates in the background
+        Task.Run(async () =>
+        {
+            try
+            {
+                await ViewModel.AddonPackServiceInstance.EnsureLatestAsync();
+                await ViewModel.AddonPackServiceInstance.CheckAndUpdateAllAsync();
+            }
+            catch (Exception ex) { crashReporter.Log($"[MainWindow] Addon pack init failed — {ex.Message}"); }
+        }).SafeFireAndForget("MainWindow.AddonPack");
         _crashReporter.Log("[MainWindow.MainWindow] InitializeComponent complete");
         // Set a sensible default size immediately so the window isn't huge on first launch.
         // TryRestoreWindowBounds (called on Activated) will then override this with the
@@ -115,10 +125,6 @@ public sealed partial class MainWindow : Window
         CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.UpdateCheck");
         // Show patch notes on first launch after update
         ShowPatchNotesIfNewVersionAsync().SafeFireAndForget("MainWindow.PatchNotes");
-        // One-time DC removal warning (independent of patch notes)
-        ShowDcRemovalWarningAsync().SafeFireAndForget("MainWindow.DcRemovalWarning");
-        // One-time legacy Program Files cleanup
-        ShowLegacyProgramFilesCleanupAsync().SafeFireAndForget("MainWindow.LegacyCleanup");
         // Register .addon64/.addon32 file associations (per-user, no admin)
         FileAssociationService.Register(crashReporter);
         // Watch Downloads folder for addon files

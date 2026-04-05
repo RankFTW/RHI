@@ -70,7 +70,8 @@ public partial class ShaderPackService : IShaderPackService
         bool IsMinimum,    // true for packs included in the Lilium/minimum set
         string? AssetExt = null,  // GhRelease: required file extension of the release asset
         string? Description = null, // short description shown in the shader picker dialog
-        PackCategory Category = PackCategory.Extra // UI grouping
+        PackCategory Category = PackCategory.Extra, // UI grouping
+        string[]? Requires = null // IDs of packs that must also be selected when this pack is enabled
     );
 
     // Packs in order of download. IsMinimum=true → included in Minimum mode.
@@ -140,6 +141,15 @@ public partial class ShaderPackService : IShaderPackService
             IsMinimum   : false,
             Description : "Lightweight post-processing effects for low-end hardware",
             Category    : PackCategory.Recommended
+        ),
+        new(
+            Id          : "Azen",
+            DisplayName : "Azen by Zenteon",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/Zenteon/Azen/archive/refs/heads/main.zip",
+            IsMinimum   : false,
+            Description : "Zenteon's casual shader collection — experimental effects",
+            Requires    : new[] { "SmolbbsoopShaders" }
         ),
         new(
             Id          : "SweetFX",
@@ -350,14 +360,6 @@ public partial class ShaderPackService : IShaderPackService
             Description : "Global illumination, SSR, and path tracing effects"
         ),
         new(
-            Id          : "Azen",
-            DisplayName : "Azen by Zenteon",
-            Kind        : SourceKind.DirectUrl,
-            Url         : "https://github.com/Zenteon/Azen/archive/refs/heads/main.zip",
-            IsMinimum   : false,
-            Description : "Zenteon's casual shader collection — experimental effects"
-        ),
-        new(
             Id          : "GShadeShaders",
             DisplayName : "GShade-Shaders by Marot",
             Kind        : SourceKind.DirectUrl,
@@ -437,6 +439,14 @@ public partial class ShaderPackService : IShaderPackService
             IsMinimum   : false,
             Description : "Neural network-based image processing shaders"
         ),
+        new(
+            Id          : "QdOledAplFixer",
+            DisplayName : "QD-OLED APL Fixer by mspeedo",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/mspeedo/QD-OLED-APL-FIXER/archive/refs/heads/main.zip",
+            IsMinimum   : false,
+            Description : "HDR brightness boost to compensate for QD-OLED ABL dimming"
+        ),
     };
 
     // ── AvailablePacks ───────────────────────────────────────────────────────────
@@ -452,5 +462,11 @@ public partial class ShaderPackService : IShaderPackService
     /// </summary>
     public string? GetPackDescription(string packId) =>
         Packs.FirstOrDefault(p => p.Id == packId)?.Description;
+
+    /// <summary>
+    /// Returns the IDs of packs that the given pack requires (dependencies).
+    /// </summary>
+    public string[] GetRequiredPacks(string packId) =>
+        Packs.FirstOrDefault(p => p.Id == packId)?.Requires ?? Array.Empty<string>();
 }
 

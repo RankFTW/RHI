@@ -51,11 +51,13 @@ public partial class DetailPanelBuilder
                         VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
                     _window.DetailRsStatus.Text = (vulkanVersion ?? "Installed") + "\n(Vulkan)";
                     _window.DetailRsStatus.Foreground = UIFactory.GetBrush("#5ECB7D");
+                    _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
                 }
                 else
                 {
-                    _window.DetailRsStatus.Text = "Not Installed";
+                    _window.DetailRsStatus.Text = "Ready";
                     _window.DetailRsStatus.Foreground = UIFactory.GetBrush("#A0AABB");
+                    _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.None;
                 }
                 _window.DetailRsInstallBtn.Tag = card;
                 _window.DetailRsInstallBtn.Content = card.RsActionLabel;
@@ -100,13 +102,22 @@ public partial class DetailPanelBuilder
         _window.DetailUlRow.Visibility = card.UlRowVisibility;
         if (card.UlRowVisibility == Visibility.Visible)
         {
+            // Strikethrough the label and status when the other limiter (DC) is installed
+            var ulStrike = card.IsDcInstalled
+                ? Windows.UI.Text.TextDecorations.Strikethrough
+                : Windows.UI.Text.TextDecorations.None;
+            _window.DetailUlLabel.TextDecorations = ulStrike;
+
             _window.DetailUlStatus.Text = card.UlStatusText;
             _window.DetailUlStatus.Foreground = UIFactory.GetBrush(card.UlStatusColor);
             _window.DetailUlStatus.TextDecorations = card.IsUlInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
+                : card.IsDcInstalled ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailUlInstallBtn.Tag = card;
-            _window.DetailUlInstallBtn.Content = card.UlActionLabel;
+            _window.DetailUlInstallBtn.Content = card.IsDcInstalled
+                ? (object)new TextBlock { Text = card.UlActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
+                : card.UlActionLabel;
             _window.DetailUlInstallBtn.IsEnabled = card.UlInstallEnabled;
             _window.DetailUlInstallBtn.Background = UIFactory.GetBrush(card.UlBtnBackground);
             _window.DetailUlInstallBtn.Foreground = UIFactory.GetBrush(card.UlBtnForeground);
@@ -125,13 +136,22 @@ public partial class DetailPanelBuilder
         _window.DetailDcRow.Visibility = card.DcRowVisibility;
         if (card.DcRowVisibility == Visibility.Visible)
         {
+            // Strikethrough the label and status when the other limiter (UL) is installed
+            var dcStrike = card.IsUlInstalled
+                ? Windows.UI.Text.TextDecorations.Strikethrough
+                : Windows.UI.Text.TextDecorations.None;
+            _window.DetailDcLabel.TextDecorations = dcStrike;
+
             _window.DetailDcStatus.Text = card.DcStatusText;
             _window.DetailDcStatus.Foreground = UIFactory.GetBrush(card.DcStatusColor);
             _window.DetailDcStatus.TextDecorations = card.IsDcInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
+                : card.IsUlInstalled ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailDcInstallBtn.Tag = card;
-            _window.DetailDcInstallBtn.Content = card.DcActionLabel;
+            _window.DetailDcInstallBtn.Content = card.IsUlInstalled
+                ? (object)new TextBlock { Text = card.DcActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
+                : card.DcActionLabel;
             _window.DetailDcInstallBtn.IsEnabled = card.DcInstallEnabled;
             _window.DetailDcInstallBtn.Background = UIFactory.GetBrush(card.DcBtnBackground);
             _window.DetailDcInstallBtn.Foreground = UIFactory.GetBrush(card.DcBtnForeground);

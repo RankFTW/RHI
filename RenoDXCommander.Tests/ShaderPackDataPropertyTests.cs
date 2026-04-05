@@ -15,7 +15,7 @@ public class ShaderPackDataPropertyTests
 {
     private readonly ShaderPackService _service = new(new HttpClient());
 
-    /// <summary>All 43 expected pack Ids after adding ReShade installer packs.</summary>
+    /// <summary>All 44 expected pack Ids after adding ReShade installer packs.</summary>
     private static readonly string[] ExpectedPackIds =
     {
         "Lilium", "CrosireMaster", "PumboAutoHDR", "SmolbbsoopShaders", "MaxG2DSimpleHDR",
@@ -28,7 +28,8 @@ public class ShaderPackDataPropertyTests
         "iMMERSE", "VortShaders", "BXShade", "SHADERDECK",
         "METEOR", "AnnReShade", "ZenteonFX", "GShadeShaders",
         "PthoFX", "Anagrama", "BarbatosShaders", "BFBFX",
-        "Rendepth", "CropAndResize", "LumeniteFX", "Azen"
+        "Rendepth", "CropAndResize", "LumeniteFX", "Azen",
+        "NNShaders", "QdOledAplFixer"
     };
 
     // ── Helpers ───────────────────────────────────────────────────────────────────

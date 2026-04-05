@@ -17,6 +17,8 @@ public class GameNameService : IGameNameService
 
     // ── Persisted data ────────────────────────────────────────────────────────
     private Dictionary<string, string> _nameMappings = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Tracks which name mappings were injected by the remote manifest (not user-set).</summary>
+    private readonly HashSet<string> _manifestNameMappingKeys = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _gameRenames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _wikiExclusions = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _hiddenGames = new(StringComparer.OrdinalIgnoreCase);
@@ -28,6 +30,8 @@ public class GameNameService : IGameNameService
     private HashSet<string> _updateAllExcludedDc = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _perGameShaderMode = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, List<string>> _perGameShaderSelection = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, string> _perGameAddonMode = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<string>> _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaEnabledGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaDisabledGames = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _folderOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -51,6 +55,8 @@ public class GameNameService : IGameNameService
     public HashSet<string> UpdateAllExcludedDc => _updateAllExcludedDc;
     public Dictionary<string, string> PerGameShaderMode => _perGameShaderMode;
     public Dictionary<string, List<string>> PerGameShaderSelection => _perGameShaderSelection;
+    public Dictionary<string, string> PerGameAddonMode => _perGameAddonMode;
+    public Dictionary<string, List<string>> PerGameAddonSelection => _perGameAddonSelection;
     public HashSet<string> LumaEnabledGames => _lumaEnabledGames;
     public HashSet<string> LumaDisabledGames => _lumaDisabledGames;
     public Dictionary<string, string> FolderOverrides => _folderOverrides;
@@ -96,6 +102,8 @@ public class GameNameService : IGameNameService
         _updateAllExcludedDc       = new(StringComparer.OrdinalIgnoreCase);
         _perGameShaderMode         = new(StringComparer.OrdinalIgnoreCase);
         _perGameShaderSelection    = new(StringComparer.OrdinalIgnoreCase);
+        _perGameAddonMode          = new(StringComparer.OrdinalIgnoreCase);
+        _perGameAddonSelection     = new(StringComparer.OrdinalIgnoreCase);
         _gameRenames            = new(StringComparer.OrdinalIgnoreCase);
         _folderOverrides        = new(StringComparer.OrdinalIgnoreCase);
         _vulkanRenderingPaths   = new(StringComparer.OrdinalIgnoreCase);
@@ -177,6 +185,25 @@ public class GameNameService : IGameNameService
             }
         }
 
+        var pgamDict = Load<Dictionary<string, string>?>("PerGameAddonMode", null);
+        _perGameAddonMode = new(StringComparer.OrdinalIgnoreCase);
+        if (pgamDict != null)
+        {
+            foreach (var kv in pgamDict)
+                _perGameAddonMode[kv.Key] = kv.Value;
+        }
+
+        var pgasDict = Load<Dictionary<string, List<string>>?>("PerGameAddonSelection", null);
+        if (pgasDict != null)
+        {
+            _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in pgasDict)
+            {
+                if (_perGameAddonMode.ContainsKey(kv.Key))
+                    _perGameAddonSelection[kv.Key] = kv.Value;
+            }
+        }
+
         settingsViewModel.LoadSettingsFromDict(s);
 
         _lumaEnabledGames = new HashSet<string>(
@@ -248,7 +275,10 @@ public class GameNameService : IGameNameService
             try
             {
                 var s = SettingsViewModel.LoadSettingsFile();
-                s["NameMappings"]    = JsonSerializer.Serialize(_nameMappings);
+                s["NameMappings"]    = JsonSerializer.Serialize(
+                    _nameMappings
+                        .Where(kv => !_manifestNameMappingKeys.Contains(kv.Key))
+                        .ToDictionary(kv => kv.Key, kv => kv.Value));
                 s["WikiExclusions"]  = JsonSerializer.Serialize(_wikiExclusions.ToList());
                 s["UeExtendedGames"] = JsonSerializer.Serialize(_ueExtendedGames.ToList());
                 s.Remove("DcModeLevel");
@@ -264,6 +294,8 @@ public class GameNameService : IGameNameService
                 s.Remove("UpdateAllExcluded");
                 s["PerGameShaderMode"]    = JsonSerializer.Serialize(_perGameShaderMode);
                 s["PerGameShaderSelection"] = JsonSerializer.Serialize(_perGameShaderSelection);
+                s["PerGameAddonMode"]     = JsonSerializer.Serialize(_perGameAddonMode);
+                s["PerGameAddonSelection"] = JsonSerializer.Serialize(_perGameAddonSelection);
                 settingsViewModel.SaveSettingsToDict(s);
                 s["LumaEnabledGames"]   = JsonSerializer.Serialize(_lumaEnabledGames.ToList());
                 s["LumaDisabledGames"]  = JsonSerializer.Serialize(_lumaDisabledGames.ToList());
@@ -300,6 +332,8 @@ public class GameNameService : IGameNameService
     {
         if (string.IsNullOrWhiteSpace(detectedName) || string.IsNullOrWhiteSpace(wikiKey)) return;
         _nameMappings[detectedName] = wikiKey;
+        // User explicitly set this — remove manifest-origin mark so it persists to settings
+        _manifestNameMappingKeys.Remove(detectedName);
     }
 
     public string? GetNameMapping(string detectedName)
@@ -312,13 +346,33 @@ public class GameNameService : IGameNameService
         return null;
     }
 
+    /// <summary>Returns the user-set name mapping only (excludes manifest-injected mappings).</summary>
+    public string? GetUserNameMapping(string detectedName)
+    {
+        if (string.IsNullOrWhiteSpace(detectedName)) return null;
+        if (_manifestNameMappingKeys.Contains(detectedName)) return null;
+        if (_nameMappings.TryGetValue(detectedName, out var v)) return v;
+        var norm = _gameDetectionService.NormalizeName(detectedName);
+        foreach (var kv in _nameMappings)
+        {
+            if (_gameDetectionService.NormalizeName(kv.Key) == norm)
+                return _manifestNameMappingKeys.Contains(kv.Key) ? null : kv.Value;
+        }
+        return null;
+    }
+
+    /// <summary>Marks a name mapping key as manifest-origin (not user-set).</summary>
+    public void MarkManifestNameMapping(string key) => _manifestNameMappingKeys.Add(key);
+
     public void RemoveNameMapping(string detectedName)
     {
         if (string.IsNullOrWhiteSpace(detectedName)) return;
+        // Don't remove manifest-origin mappings — they're managed remotely
+        if (_manifestNameMappingKeys.Contains(detectedName)) return;
         _nameMappings.Remove(detectedName);
         var norm = _gameDetectionService.NormalizeName(detectedName);
         var toRemove = _nameMappings.Keys
-            .Where(k => _gameDetectionService.NormalizeName(k) == norm).ToList();
+            .Where(k => !_manifestNameMappingKeys.Contains(k) && _gameDetectionService.NormalizeName(k) == norm).ToList();
         foreach (var k in toRemove) _nameMappings.Remove(k);
     }
 
@@ -377,6 +431,8 @@ public class GameNameService : IGameNameService
         // Migrate game-name-keyed Dictionaries
         MigrateDict(_perGameShaderMode, oldName, newName);
         MigrateDict(_perGameShaderSelection, oldName, newName);
+        MigrateDict(_perGameAddonMode, oldName, newName);
+        MigrateDict(_perGameAddonSelection, oldName, newName);
         MigrateDict(_nameMappings, oldName, newName);
         MigrateDict(_bitnessOverrides, oldName, newName);
         MigrateDict(_apiOverrides, oldName, newName);

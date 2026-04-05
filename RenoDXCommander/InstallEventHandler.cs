@@ -198,6 +198,23 @@ public class InstallEventHandler
         }
     }
 
+    public async void ChooseAddonsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var addonService = ViewModel.AddonPackServiceInstance;
+        var currentSelection = addonService.DownloadedAddonNames.ToList();
+
+        var result = await AddonPopupHelper.ShowAsync(
+            _window.Content.XamlRoot,
+            addonService,
+            currentSelection,
+            AddonPopupHelper.PopupContext.Global);
+
+        if (result != null)
+        {
+            ViewModel.DeployAllAddons();
+        }
+    }
+
     public void LumaToggle_Click(object sender, RoutedEventArgs e)
     {
         if (_window.DetailPanelBuilderInstance.CurrentDetailCard != null)

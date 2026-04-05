@@ -57,6 +57,12 @@
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Choose which shader packs to deploy"/>
+                    <Button x:Name="ReShadeAddonsBtn" Content="ReShade Addons"
+                            Click="ReShadeAddonsButton_Click"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Browse and manage ReShade addons"/>
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
@@ -592,7 +598,7 @@
                                         <ColumnDefinition Width="36"/>
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="ReLimiter" FontSize="12"
+                                    <TextBlock x:Name="DetailUlLabel" x:FieldModifier="internal" Grid.Column="0" Text="ReLimiter" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="DetailUlStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
                                                VerticalAlignment="Center" HorizontalTextAlignment="Center"
@@ -629,7 +635,7 @@
                                         <ColumnDefinition Width="36"/>
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Display Commander" FontSize="12"
+                                    <TextBlock x:Name="DetailDcLabel" x:FieldModifier="internal" Grid.Column="0" Text="Display Commander" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="DetailDcStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
                                                VerticalAlignment="Center" HorizontalTextAlignment="Center"

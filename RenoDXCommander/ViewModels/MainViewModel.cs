@@ -29,6 +29,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IDllOverrideService _dllOverrideService;
     private readonly IGameNameService _gameNameService;
     private readonly IGameInitializationService _gameInitializationService;
+    private readonly IAddonPackService _addonPackService;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
     /// Awaited before the post-init shader sync so packs are available.
@@ -36,6 +37,7 @@ public partial class MainViewModel : ObservableObject
     private Task? _shaderPackReadyTask;
     public IUpdateService UpdateServiceInstance => _updateService;
     public IShaderPackService ShaderPackServiceInstance => _shaderPackService;
+    public IAddonPackService AddonPackServiceInstance => _addonPackService;
     public IGameDetectionService GameDetectionServiceInstance => _gameDetectionService;
     public SettingsViewModel Settings => _settingsViewModel;
     public FilterViewModel Filter => _filterViewModel;
@@ -396,6 +398,7 @@ public partial class MainViewModel : ObservableObject
         _dllOverrideService = dllOverrideService;
         _gameNameService = gameNameService;
         _gameInitializationService = gameInitializationService;
+        _addonPackService = new AddonPackService(http);
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();
         // Wire up DllOverrideService changes to trigger save

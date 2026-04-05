@@ -173,11 +173,6 @@ public partial class MainViewModel
     /// </summary>
     internal GraphicsApiType DetectGraphicsApi(string installPath, EngineType engine = EngineType.Unknown, string? gameName = null)
     {
-        // Skip WindowsApps — always access-denied, wastes time on retries
-        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
-            return GraphicsApiType.Unknown;
-
         // User API override takes top priority — derive primary API from the override set
         if (gameName != null && _apiOverrides.TryGetValue(gameName, out var apiOverrideList))
         {
@@ -198,7 +193,7 @@ public partial class MainViewModel
             return overrideSet.First();
         }
 
-        // Manifest override takes top priority (for games where auto-detection fails).
+        // Manifest override (for games where auto-detection fails).
         // Supports comma-separated values (e.g. "DX12, VLK") — returns the first
         // non-Vulkan API for the primary badge (prefers DX for display), falling
         // back to the first entry. The full set is handled by _DetectAllApisForCard.
@@ -212,6 +207,21 @@ public partial class MainViewModel
                 var primary = overrideApis.FirstOrDefault(a => a != GraphicsApiType.Vulkan && a != GraphicsApiType.OpenGL);
                 return primary != GraphicsApiType.Unknown ? primary : overrideApis.First();
             }
+        }
+
+        // Skip WindowsApps for filesystem scanning — always access-denied
+        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
+            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
+        {
+            // Last resort: infer from engine type for WindowsApps games
+            return engine switch
+            {
+                EngineType.Unreal       => GraphicsApiType.DirectX11,
+                EngineType.UnrealLegacy => GraphicsApiType.DirectX9,
+                EngineType.Unity        => GraphicsApiType.DirectX11,
+                EngineType.REEngine     => GraphicsApiType.DirectX12,
+                _                       => GraphicsApiType.Unknown,
+            };
         }
 
         // ── Game-level cache: skip all filesystem scanning if cached ──────────
@@ -318,11 +328,6 @@ public partial class MainViewModel
     /// </summary>
     internal HashSet<GraphicsApiType> _DetectAllApisForCard(string installPath, string? gameName = null)
     {
-        // Skip WindowsApps — always access-denied, wastes time on retries
-        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
-            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
-            return new HashSet<GraphicsApiType>();
-
         // User API override takes priority — return the override set instead of scanning
         if (gameName != null && _apiOverrides.TryGetValue(gameName, out var apiOverrideList))
         {
@@ -336,18 +341,25 @@ public partial class MainViewModel
             return overrideSet;
         }
 
+        // Manifest override — return manifest APIs if present (before filesystem scanning)
+        if (gameName != null && _manifest?.GraphicsApiOverrides != null
+            && _manifest.GraphicsApiOverrides.TryGetValue(gameName, out var manifestApiStr))
+        {
+            var manifestApis = GraphicsApiDetector.ParseApiStrings(manifestApiStr);
+            if (manifestApis.Count > 0)
+                return manifestApis;
+        }
+
+        // Skip WindowsApps for filesystem scanning — always access-denied
+        if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
+            || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
+            return new HashSet<GraphicsApiType>();
+
         var result = new HashSet<GraphicsApiType>();
 
         // ── Game-level cache: skip filesystem scanning if cached ──────────
         if (_gameApiCache.TryGetValue(installPath, out var cached))
             return cached.All;
-
-        // Manifest override — merge multi-API tags (e.g. "DX12, VLK")
-        if (gameName != null && _manifest?.GraphicsApiOverrides != null
-            && _manifest.GraphicsApiOverrides.TryGetValue(gameName, out var apiStr))
-        {
-            result.UnionWith(GraphicsApiDetector.ParseApiStrings(apiStr));
-        }
 
         // Scan all exes in the install directory
         ScanAllExesInDir(installPath, result);
