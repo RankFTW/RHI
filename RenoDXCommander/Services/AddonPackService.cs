@@ -357,7 +357,16 @@ public class AddonPackService : IAddonPackService
             }
         }
 
-        // 5. Remove stale addon files not in active selection
+        // 5. Remove stale addon files — only remove files that RHI's addon manager could have deployed.
+        // Build the set of all known addon filenames from the available packs list.
+        var knownAddonFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pack in _packs)
+        {
+            var sn = SanitizeFileName(pack.PackageName);
+            knownAddonFileNames.Add(sn + ".addon32");
+            knownAddonFileNames.Add(sn + ".addon64");
+        }
+
         try
         {
             foreach (var file in Directory.EnumerateFiles(installPath))
@@ -368,17 +377,23 @@ public class AddonPackService : IAddonPackService
                     continue;
 
                 var fileName = Path.GetFileName(file);
-                if (!deployedFileNames.Contains(fileName))
+
+                // Only touch files that match a known addon manager pack name
+                if (!knownAddonFileNames.Contains(fileName))
+                    continue;
+
+                // Don't remove files we just deployed
+                if (deployedFileNames.Contains(fileName))
+                    continue;
+
+                try
                 {
-                    try
-                    {
-                        File.Delete(file);
-                        CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Removed stale addon '{fileName}' from '{installPath}'.");
-                    }
-                    catch (Exception ex)
-                    {
-                        CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to remove stale addon '{fileName}' — {ex.Message}");
-                    }
+                    File.Delete(file);
+                    CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Removed stale addon '{fileName}' from '{installPath}'.");
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to remove stale addon '{fileName}' — {ex.Message}");
                 }
             }
         }

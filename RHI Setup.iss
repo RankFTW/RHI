@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "ReShade HDR Installer"
-#define MyAppVersion "1.6.6"
+#define MyAppVersion "1.7.2"
 #define MyAppPublisher "RankFTW"
 #define MyAppURL "www.github.com/rankftw"
 #define MyAppExeName "RHI.exe"

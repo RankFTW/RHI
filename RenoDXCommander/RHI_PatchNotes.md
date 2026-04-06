@@ -1,3 +1,12 @@
+## v1.7.2
+
+### Bug Fixes
+
+**Addon deployment deleting RenoDX mods, ReLimiter, and Display Commander**
+- The addon manager's stale file cleanup was removing any `.addon64`/`.addon32` file in game folders that wasn't in the enabled addon set — including RenoDX mods, ReLimiter, and Display Commander. Stale removal now only targets files that match a known addon from the official ReShade Addons.ini list. User-placed files and other managed components are never touched.
+
+---
+
 ## v1.7.1
 
 ### New Features
