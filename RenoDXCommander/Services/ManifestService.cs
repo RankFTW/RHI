@@ -17,11 +17,11 @@ public class ManifestService : IManifestService
     public ManifestService(HttpClient http) => _http = http;
     /// <summary>GitHub API endpoint — no CDN cache delay, reflects commits instantly.</summary>
     private const string GitHubApiUrl =
-        "https://api.github.com/repos/RankFTW/rdxc-manifest/contents/manifest.json";
+        "https://api.github.com/repos/RankFTW/RHI/contents/manifest.json";
 
     /// <summary>Fallback raw URL — uses GitHub CDN (may be up to ~5 min behind HEAD).</summary>
     private const string RawFallbackUrl =
-        "https://raw.githubusercontent.com/RankFTW/rdxc-manifest/main/manifest.json";
+        "https://raw.githubusercontent.com/RankFTW/RHI/main/manifest.json";
 
     private static readonly string CachePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
