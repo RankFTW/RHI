@@ -307,6 +307,12 @@ public partial class MainViewModel : ObservableObject
     public bool HasInitialized => _hasInitialized;
     public void MarkInitialized() => _hasInitialized = true;
 
+    /// <summary>
+    /// The game name that was selected when the app last closed.
+    /// Set from the saved library on startup; consumed by TryRestoreSelection.
+    /// </summary>
+    internal string? LastSelectedGameName { get; set; }
+
     // ── Forwarding properties — delegate to FilterViewModel, preserve UI bindings ──
     public string SearchQuery
     {
@@ -470,7 +476,11 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedGameChanged(GameCardViewModel? oldValue, GameCardViewModel? newValue)
     {
         if (oldValue != null) oldValue.IsSelected = false;
-        if (newValue != null) newValue.IsSelected = true;
+        if (newValue != null)
+        {
+            newValue.IsSelected = true;
+            LastSelectedGameName = newValue.GameName;
+        }
     }
 
     /// <summary>Games for which the user has toggled UE-Extended ON.</summary>

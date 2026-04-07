@@ -18,7 +18,7 @@ public partial class AuxInstallService
         IProgress<(string message, double percent)>? progress = null,
         string? screenshotSavePath = null)
     {
-        Directory.CreateDirectory(DownloadCacheDir);
+        Directory.CreateDirectory(DownloadPaths.Misc);
 
         var destName = !string.IsNullOrWhiteSpace(filenameOverride)
             ? filenameOverride
@@ -178,8 +178,8 @@ public partial class AuxInstallService
                 try
                 {
                     var cacheName = record.InstalledAs;
-                    var tempPath = Path.Combine(DownloadCacheDir, cacheName + $".update-check-{Guid.NewGuid():N}");
-                    Directory.CreateDirectory(DownloadCacheDir);
+                    var tempPath = Path.Combine(DownloadPaths.Misc, cacheName + $".update-check-{Guid.NewGuid():N}");
+                    Directory.CreateDirectory(DownloadPaths.Misc);
 
                     var response = await _http.GetAsync(record.SourceUrl);
                     if (response.IsSuccessStatusCode)
@@ -194,7 +194,7 @@ public partial class AuxInstallService
                         {
                             // Size differs — definite update. Move downloaded file to cache
                             // so the next install picks it up without re-downloading.
-                            var cachePath = Path.Combine(DownloadCacheDir, cacheName);
+                            var cachePath = Path.Combine(DownloadPaths.Misc, cacheName);
                             if (File.Exists(cachePath)) File.Delete(cachePath);
                             File.Move(tempPath, cachePath);
                             return true;
@@ -207,7 +207,7 @@ public partial class AuxInstallService
 
                         if (contentDiffers)
                         {
-                            var cachePath = Path.Combine(DownloadCacheDir, cacheName);
+                            var cachePath = Path.Combine(DownloadPaths.Misc, cacheName);
                             if (File.Exists(cachePath)) File.Delete(cachePath);
                             File.Move(tempPath, cachePath);
                             return true;

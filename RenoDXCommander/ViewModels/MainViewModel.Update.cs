@@ -402,14 +402,26 @@ public partial class MainViewModel
             var json = await apiResp.Content.ReadAsStringAsync();
             using var doc = System.Text.Json.JsonDocument.Parse(json);
 
-            // Get the tag name (version)
+            // Get the tag name (version) — DC uses a fixed "latest_build" tag,
+            // so extract the real version from the release body ("Version in binaries: X.Y.Z.W")
             string? remoteVersion = null;
             if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))
                 remoteVersion = tagEl.GetString();
 
+            // DC's tag is always "latest_build" which is useless for comparison.
+            // Parse the actual version from the release body text.
+            if (doc.RootElement.TryGetProperty("body", out var bodyEl))
+            {
+                var body = bodyEl.GetString() ?? "";
+                var versionMatch = System.Text.RegularExpressions.Regex.Match(
+                    body, @"Version in binaries:\s*([\d.]+)");
+                if (versionMatch.Success)
+                    remoteVersion = versionMatch.Groups[1].Value;
+            }
+
             if (string.IsNullOrEmpty(remoteVersion))
             {
-                _crashReporter.Log("[CheckDcUpdateAsync] No tag_name in latest release");
+                _crashReporter.Log("[CheckDcUpdateAsync] No version found in tag or release body");
                 return false;
             }
 

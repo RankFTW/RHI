@@ -18,4 +18,6 @@ public class SavedGameLibrary
     public Dictionary<string, string> AddonFileCache { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Maps resolvedPath (lower) → detected PE MachineType. Populated during game library scan, cleared on rescan.</summary>
     public Dictionary<string, MachineType> BitnessCache { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>The game name that was selected when the app last closed, used to restore selection on next launch.</summary>
+    public string? LastSelectedGame { get; set; }
 }

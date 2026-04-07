@@ -14,7 +14,8 @@ public interface IGameLibraryService
         Dictionary<string, string>? engineTypeCache = null,
         Dictionary<string, string>? resolvedPathCache = null,
         Dictionary<string, string>? addonFileCache = null,
-        Dictionary<string, MachineType>? bitnessCache = null);
+        Dictionary<string, MachineType>? bitnessCache = null,
+        string? lastSelectedGame = null);
 
     List<DetectedGame> ToDetectedGames(SavedGameLibrary lib);
 

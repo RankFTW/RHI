@@ -23,10 +23,6 @@ public class ModInstallService : IModInstallService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "installed.json");
 
-    public static readonly string DownloadCacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "downloads");
-
     private readonly HttpClient _http;
 
     public ModInstallService(HttpClient http) => _http = http;
@@ -75,7 +71,7 @@ public class ModInstallService : IModInstallService
         // used for both the HEAD size check and the actual download.
         var resolvedUrl = ResolveSnapshotUrl(mod.SnapshotUrl);
 
-        Directory.CreateDirectory(DownloadCacheDir);
+        Directory.CreateDirectory(DownloadPaths.RenoDX);
 
         var fileName  = Path.GetFileName(resolvedUrl);
 
@@ -90,7 +86,7 @@ public class ModInstallService : IModInstallService
         }
 
         var destPath  = Path.Combine(GetAddonDeployPath(gameInstallPath), fileName);
-        var cachePath = Path.Combine(DownloadCacheDir, fileName);
+        var cachePath = Path.Combine(DownloadPaths.RenoDX, fileName);
 
         // ── Step 1: get remote Content-Length (single HEAD) ───────────────────────
         long? remoteSize = null;
@@ -347,19 +343,19 @@ public class ModInstallService : IModInstallService
         string url,
         string localFile)
     {
-        var cacheFile = Path.Combine(DownloadCacheDir, Path.GetFileName(localFile));
+        var cacheFile = Path.Combine(DownloadPaths.RenoDX, Path.GetFileName(localFile));
         var tempFile  = cacheFile + $".update_check_{Guid.NewGuid():N}.tmp";
 
         try
         {
-            Directory.CreateDirectory(DownloadCacheDir);
+            Directory.CreateDirectory(DownloadPaths.RenoDX);
 
             // Clean up any orphaned temp files from previous update checks for this addon
             // (e.g. from crashes or process kills mid-check)
             try
             {
                 var addonName = Path.GetFileName(cacheFile);
-                foreach (var stale in Directory.EnumerateFiles(DownloadCacheDir, addonName + ".update*"))
+                foreach (var stale in Directory.EnumerateFiles(DownloadPaths.RenoDX, addonName + ".update*"))
                     try { File.Delete(stale); } catch { /* best-effort */ }
             }
             catch { /* best-effort — don't block the update check */ }

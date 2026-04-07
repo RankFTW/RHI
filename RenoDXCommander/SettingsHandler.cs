@@ -165,8 +165,8 @@ public class SettingsHandler
 
     public void OpenDownloadsFolder_Click(object sender, RoutedEventArgs e)
     {
-        System.IO.Directory.CreateDirectory(ModInstallService.DownloadCacheDir);
+        System.IO.Directory.CreateDirectory(DownloadPaths.Root);
         CrashReporter.Log("[SettingsHandler.OpenDownloadsFolder_Click] User opened downloads cache folder from About panel");
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ModInstallService.DownloadCacheDir) { UseShellExecute = true });
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(DownloadPaths.Root) { UseShellExecute = true });
     }
 }

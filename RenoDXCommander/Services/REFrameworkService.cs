@@ -47,9 +47,7 @@ public class REFrameworkService : IREFrameworkService
 
     // ── Paths ─────────────────────────────────────────────────────────────────────
 
-    private static readonly string CacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "downloads", "reframework");
+    private static readonly string CacheDir = Path.Combine(DownloadPaths.Root, "reframework");
 
     private static readonly string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

@@ -145,6 +145,7 @@ public partial class MainViewModel
                 _resolvedPathCache = savedLib.ResolvedPathCache ?? new(StringComparer.OrdinalIgnoreCase);
                 _addonFileCache    = savedLib.AddonFileCache    ?? new(StringComparer.OrdinalIgnoreCase);
                 _bitnessCache      = savedLib.BitnessCache      ?? new(StringComparer.OrdinalIgnoreCase);
+                LastSelectedGameName = savedLib.LastSelectedGame;
             }
 
             if (savedLib != null && !forceRescan)
@@ -1244,7 +1245,7 @@ public partial class MainViewModel
         }
 
         _gameLibraryService.Save(detectedGames, addonCache, _hiddenGames, _favouriteGames, _manualGames,
-            _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache);
+            _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache, LastSelectedGameName);
     }
 
     private static string FormatAge(DateTime utc)

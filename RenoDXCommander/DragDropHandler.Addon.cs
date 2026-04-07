@@ -429,9 +429,7 @@ public partial class DragDropHandler
         }
 
         // ── Step 3: Prepare download paths ────────────────────────────────────────
-        var cacheDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "RHI", "downloads");
+        var cacheDir = DownloadPaths.RenoDX;
         Directory.CreateDirectory(cacheDir);
 
         var tempPath = Path.Combine(cacheDir, filename + ".tmp");

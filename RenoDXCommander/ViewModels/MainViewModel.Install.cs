@@ -685,11 +685,10 @@ public partial class MainViewModel
         is32Bit ? UltraLimiterFileName32 : UltraLimiterFileName64;
 
     internal static string GetUlCachePath(bool is32Bit) =>
-        Path.Combine(ModInstallService.DownloadCacheDir, GetUlFileName(is32Bit));
+        Path.Combine(DownloadPaths.FrameLimiter, GetUlFileName(is32Bit));
 
     private static readonly string UlMetaPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "ul_meta.json");
+        DownloadPaths.FrameLimiter, "ul_meta.json");
 
     /// <summary>
     /// Downloads ReLimiter from GitHub (or uses cache) and deploys to the game folder.
@@ -791,7 +790,7 @@ public partial class MainViewModel
             throw new InvalidOperationException("Could not determine ReLimiter download URL from GitHub releases.");
         }
 
-        Directory.CreateDirectory(ModInstallService.DownloadCacheDir);
+        Directory.CreateDirectory(DownloadPaths.FrameLimiter);
         var tempPath = GetUlCachePath(is32Bit) + ".tmp";
 
         progress?.Report(("Downloading...", 0));
@@ -919,7 +918,7 @@ public partial class MainViewModel
         is32Bit ? DcFileName32 : DcFileName64;
 
     internal static string GetDcCachePath(bool is32Bit) =>
-        Path.Combine(ModInstallService.DownloadCacheDir, GetDcFileName(is32Bit));
+        Path.Combine(DownloadPaths.FrameLimiter, GetDcFileName(is32Bit));
 
     /// <summary>
     /// Resolves the effective DC filename for a game using the priority chain:
@@ -945,8 +944,7 @@ public partial class MainViewModel
     }
 
     private static readonly string DcMetaPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "dc_meta.json");
+        DownloadPaths.FrameLimiter, "dc_meta.json");
 
     /// <summary>
     /// Downloads Display Commander to the cache directory if not already present.
@@ -974,7 +972,7 @@ public partial class MainViewModel
             throw new InvalidOperationException("Could not determine Display Commander download URL from GitHub releases.");
         }
 
-        Directory.CreateDirectory(ModInstallService.DownloadCacheDir);
+        Directory.CreateDirectory(DownloadPaths.FrameLimiter);
         var tempPath = GetDcCachePath(is32Bit) + ".tmp";
 
         progress?.Report(("Downloading...", 0));
@@ -1024,9 +1022,19 @@ public partial class MainViewModel
             if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))
             {
                 var tag = tagEl.GetString();
-                // DC uses a fixed "latest_build" tag — try the release name for a real version
-                if (tag == "latest_build" && doc.RootElement.TryGetProperty("name", out var nameEl))
-                    _latestDcVersion = nameEl.GetString();
+                // DC uses a fixed "latest_build" tag — extract real version from release body
+                if (tag == "latest_build" && doc.RootElement.TryGetProperty("body", out var bodyEl))
+                {
+                    var body = bodyEl.GetString() ?? "";
+                    var versionMatch = System.Text.RegularExpressions.Regex.Match(
+                        body, @"Version in binaries:\s*([\d.]+)");
+                    if (versionMatch.Success)
+                        _latestDcVersion = versionMatch.Groups[1].Value;
+                    else if (doc.RootElement.TryGetProperty("name", out var nameEl))
+                        _latestDcVersion = nameEl.GetString();
+                    else
+                        _latestDcVersion = tag;
+                }
                 else
                     _latestDcVersion = tag;
             }

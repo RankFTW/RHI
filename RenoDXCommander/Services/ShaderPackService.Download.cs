@@ -51,7 +51,7 @@ public partial class ShaderPackService
         // Derive the expected cache path so we can check physical existence
         var ext = Path.GetExtension(new Uri(downloadUrl).AbsolutePath);
         if (string.IsNullOrEmpty(ext)) ext = ".zip";
-        var cachePath = Path.Combine(AuxInstallService.DownloadCacheDir, $"shaders_{pack.Id}{ext}");
+        var cachePath = Path.Combine(DownloadPaths.Shaders, $"shaders_{pack.Id}{ext}");
 
         var stored = LoadStoredVersion(pack.Id);
         var versionMatch = stored == versionToken && versionToken != "unknown";
@@ -71,7 +71,7 @@ public partial class ShaderPackService
         progress?.Report($"Downloading {pack.DisplayName}...");
         CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Downloading from {downloadUrl}");
 
-        Directory.CreateDirectory(AuxInstallService.DownloadCacheDir);
+        Directory.CreateDirectory(DownloadPaths.Shaders);
         var tempPath = cachePath + ".tmp";
 
         try

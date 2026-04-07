@@ -124,8 +124,8 @@ public class LiliumShaderService : ILiliumShaderService
             CrashReporter.Log($"[LiliumShaderService.EnsureLatestAsync] Downloading {assetName} from {downloadUrl}");
 
             // ── 4. Download the .7z into the downloads cache ─────────────────────
-            Directory.CreateDirectory(AuxInstallService.DownloadCacheDir);
-            var cachePath = Path.Combine(AuxInstallService.DownloadCacheDir, assetName);
+            Directory.CreateDirectory(DownloadPaths.Shaders);
+            var cachePath = Path.Combine(DownloadPaths.Shaders, assetName);
             var tempPath  = cachePath + ".tmp";
 
             try

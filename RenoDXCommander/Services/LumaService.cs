@@ -18,10 +18,6 @@ public class LumaService : ILumaService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "luma_installed.json");
 
-    private static readonly string DownloadCacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RHI", "downloads");
-
     private readonly HttpClient _http;
     private readonly ShaderPackService _shaderPackService;
     private readonly IAuxFileService _auxFileService;
@@ -268,10 +264,10 @@ public class LumaService : ILumaService
             throw new InvalidOperationException(
                 $"Blocked Luma download for {mod.Name}: URL does not originate from https://github.com/Filoppi/");
 
-        Directory.CreateDirectory(DownloadCacheDir);
+        Directory.CreateDirectory(DownloadPaths.Luma);
 
         var fileName = Path.GetFileName(new Uri(mod.DownloadUrl).LocalPath);
-        var cachePath = Path.Combine(DownloadCacheDir, "luma_" + fileName);
+        var cachePath = Path.Combine(DownloadPaths.Luma, "luma_" + fileName);
 
         // Download
         progress?.Report(("Downloading Luma mod...", 0));

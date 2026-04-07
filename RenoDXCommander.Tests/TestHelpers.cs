@@ -114,7 +114,7 @@ internal static class TestHelpers
     private class StubGameLibraryService : IGameLibraryService
     {
         public SavedGameLibrary? Load() => null;
-        public void Save(List<DetectedGame> games, Dictionary<string, bool> addonCache, HashSet<string> hiddenGames, HashSet<string> favouriteGames, List<DetectedGame> manualGames, Dictionary<string, string>? engineTypeCache = null, Dictionary<string, string>? resolvedPathCache = null, Dictionary<string, string>? addonFileCache = null, Dictionary<string, MachineType>? bitnessCache = null) { }
+        public void Save(List<DetectedGame> games, Dictionary<string, bool> addonCache, HashSet<string> hiddenGames, HashSet<string> favouriteGames, List<DetectedGame> manualGames, Dictionary<string, string>? engineTypeCache = null, Dictionary<string, string>? resolvedPathCache = null, Dictionary<string, string>? addonFileCache = null, Dictionary<string, MachineType>? bitnessCache = null, string? lastSelectedGame = null) { }
         public List<DetectedGame> ToDetectedGames(SavedGameLibrary lib) => new();
         public List<DetectedGame> ToManualGames(SavedGameLibrary lib) => new();
     }

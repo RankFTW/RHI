@@ -1,3 +1,26 @@
+## v1.7.5
+
+### Changes
+
+**Downloads folder reorganised into subdirectories**
+- The `%LocalAppData%\RHI\downloads\` folder is now organised into categorised subdirectories: `shaders/`, `renodx/`, `framelimiter/`, `luma/`, and `misc/`. Existing cached files are automatically migrated on first launch — no re-downloads needed. The migration is safe to interrupt and handles locked or duplicate files gracefully.
+
+**Drag-and-drop game auto-selects**
+- Dropping an .exe to add a game now automatically selects and scrolls to the new card, so you can interact with it immediately.
+
+**Remember last selected game**
+- RHI now remembers which game was selected when you close the app and restores that selection on next launch. If the game is no longer available, it falls back to the first game in the list.
+
+**Copy Report now pastes as a file**
+- The Copy Report button now saves a readable `.md` file and places it on the clipboard as a file attachment. Paste directly into Discord — no more wall of base64 text. Reports are also saved to `%LocalAppData%\RHI\reports\` for reference.
+
+### Bug Fixes
+
+**Display Commander update detection fixed**
+- DC uses a fixed `latest_build` GitHub tag that never changes, so version comparison was always returning "no update". RHI now extracts the real version number (e.g. `0.13.153.3324`) from the release body text, enabling proper update detection.
+
+---
+
 ## v1.7.4
 
 ### New Features

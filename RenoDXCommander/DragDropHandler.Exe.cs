@@ -96,6 +96,9 @@ public partial class DragDropHandler
             Name = finalName, InstallPath = gameRoot, Source = "Manual", IsManuallyAdded = true
         };
         ViewModel.AddManualGameCommand.Execute(game);
+
+        // Auto-select the newly added game so the user can interact with it immediately
+        _window.RequestReselect(finalName);
     }
 
     // ── Static helper methods (public for testability) ────────────────────────────

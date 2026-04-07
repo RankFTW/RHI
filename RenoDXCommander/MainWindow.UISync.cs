@@ -129,6 +129,22 @@ public sealed partial class MainWindow
             }
         }
 
+        // Restore last selected game from previous session
+        if (GameList.SelectedItem == null && ViewModel.LastSelectedGameName != null)
+        {
+            var lastMatch = ViewModel.DisplayedGames.FirstOrDefault(c =>
+                c.GameName.Equals(ViewModel.LastSelectedGameName, StringComparison.OrdinalIgnoreCase));
+            if (lastMatch != null)
+            {
+                GameList.SelectedItem = lastMatch;
+                GameList.ScrollIntoView(lastMatch);
+                ViewModel.LastSelectedGameName = null; // consumed
+                return;
+            }
+            // Game no longer available — clear and fall through to first-game default
+            ViewModel.LastSelectedGameName = null;
+        }
+
         // Auto-select first game if nothing is selected
         if (GameList.SelectedItem == null && ViewModel.DisplayedGames.Count > 0)
         {

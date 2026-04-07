@@ -243,8 +243,6 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
         }
     }
 
-    public static readonly string DownloadCacheDir = ModInstallService.DownloadCacheDir;
-
     private readonly HttpClient _http;
     private readonly IShaderPackService _shaderPackService;
 
