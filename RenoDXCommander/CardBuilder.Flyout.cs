@@ -411,7 +411,6 @@ public partial class CardBuilder
         // Uninstall ✕ button
         var uninstallBtn = new Button
         {
-            Content = "✕",
             Tag = card,
             FontSize = 11,
             Padding = new Thickness(4, 3, 4, 3),
@@ -423,6 +422,13 @@ public partial class CardBuilder
             Foreground = UIFactory.GetBrush("#E06060"),
             BorderBrush = UIFactory.GetBrush("#502838"),
             CornerRadius = new CornerRadius(4),
+            Content = new TextBlock
+            {
+                Text = "✕",
+                FontSize = 11,
+                Foreground = UIFactory.GetBrush("#E06060"),
+                HorizontalAlignment = HorizontalAlignment.Center,
+            },
         };
         uninstallBtn.DataContext = componentTag;
         uninstallBtn.Click += _window.CardComponentUninstall_Click;

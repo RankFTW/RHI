@@ -179,8 +179,6 @@ public partial class DetailPanelBuilder
 
         // Folder management buttons
         _window.DetailFolderBtn.Tag = card;
-        _window.DetailChangeFolderBtn.Tag = card;
-        _window.DetailRemoveGameBtn.Tag = card;
 
         // Luma badge toggle
         if (card.LumaBadgeVisibility == Visibility.Visible)

@@ -1093,15 +1093,74 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(bottomRowGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
+        // ── Manage row (Star | Auto divider | Star — matching overrides layout) ──
+        var manageRowGrid = new Grid { ColumnSpacing = 0 };
+        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var manageLeftColumn = new StackPanel { Spacing = 8 };
+
+        var changeFolderBtn = new Button
+        {
+            Content = "Change install folder",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Tag = card,
+        };
+        changeFolderBtn.Click += (s, ev) => _window.BrowseFolder_Click(s, ev);
+        manageLeftColumn.Children.Add(changeFolderBtn);
+
+        var removeGameBtn = new Button
+        {
+            Content = "Reset folder / Remove game",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Tag = card,
+        };
+        removeGameBtn.Click += (s, ev) => _window.RemoveManualGame_Click(s, ev);
+        manageLeftColumn.Children.Add(removeGameBtn);
+
+        Grid.SetColumn(manageLeftColumn, 0);
+        manageRowGrid.Children.Add(manageLeftColumn);
+
+        var manageDivider = new Border
+        {
+            Width = 1,
+            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Margin = new Thickness(12, 0, 12, 0),
+        };
+        Grid.SetColumn(manageDivider, 1);
+        manageRowGrid.Children.Add(manageDivider);
+
+        // Right column intentionally empty — reserved for future use
+        Grid.SetColumn(new StackPanel(), 2);
+
+        _window.OverridesPanel.Children.Add(manageRowGrid);
+        _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
+
         // ── Button row (Reset only — auto-save replaces Save button) ──────────
         var resetOverridesBtn = new Button
         {
             Content = "Reset Overrides",
             FontSize = 12,
             Padding = new Thickness(16, 8, 16, 8),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
@@ -1210,6 +1269,35 @@ public partial class DetailPanelBuilder
                 _window.RequestReselect(capturedName);
         };
 
-        _window.OverridesPanel.Children.Add(resetOverridesBtn);
+        var btnRow = new Grid { ColumnSpacing = 8 };
+        btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        Grid.SetColumn(resetOverridesBtn, 0);
+        btnRow.Children.Add(resetOverridesBtn);
+
+        var reportBtn = new Button
+        {
+            Content = "Copy Report",
+            FontSize = 12,
+            Padding = new Thickness(16, 8, 16, 8),
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+        };
+        reportBtn.Click += async (s, ev) =>
+        {
+            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard != null)
+                await GameReportEncoder.ShowAndCopyAsync(_window.Content.XamlRoot, targetCard, _window.ViewModel);
+        };
+        Grid.SetColumn(reportBtn, 2);
+        btnRow.Children.Add(reportBtn);
+
+        _window.OverridesPanel.Children.Add(btnRow);
     }
 }

@@ -1,3 +1,37 @@
+## v1.7.4
+
+### New Features
+
+**Copy Report button**
+- New "Copy Report" button in the overrides panel. Copies a diagnostic code to your clipboard that you can paste in Discord or a GitHub issue. Includes game info, installed components, overrides, and an optional note describing the problem.
+
+### Bug Fixes
+
+**Uninstall buttons appearing grey**
+- The ✕ remove buttons on component rows could appear grey instead of red until you hovered over them. Now always red when visible.
+
+**Update All tooltip missing Display Commander**
+- The Update All button tooltip now includes Display Commander in the list of components.
+
+**Addons left behind when ReShade is uninstalled**
+- Uninstalling ReShade now also removes any managed addons (screenshot tools, DevKit, etc.) from the game folder. Previously they were left behind with no ReShade to load them.
+
+**Addons not deployed when ReShade is installed**
+- Installing ReShade now automatically deploys your selected addons (global or per-game) to the game folder. Previously you had to refresh or toggle addons manually after installing ReShade.
+
+**Addons not synced on Refresh**
+- Clicking Refresh now syncs managed addons to all games with ReShade installed, matching how shader packs already worked.
+
+### Changes
+
+**Manage section merged into overrides panel**
+- The "Change install folder" and "Reset folder / Remove game" buttons have moved from a separate section into the overrides panel, keeping everything in one place.
+
+**Reset Overrides button now red**
+- The Reset Overrides button now uses red styling to match the other destructive actions.
+
+---
+
 ## v1.7.3
 
 ### Changes

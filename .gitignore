@@ -6,3 +6,5 @@ RenoDXCommander.Tests/bin
 RenoDXCommander.Tests/obj
 publish.bat
 downloads_tidyup.md
+
+tools/*.md

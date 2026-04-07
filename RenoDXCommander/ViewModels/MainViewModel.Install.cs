@@ -1271,6 +1271,9 @@ public partial class MainViewModel
                 card.RsActionMessage    = "✅ ReShade installed!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+
+                // Deploy managed addons now that ReShade is present
+                DeployAddonsForCard(card.GameName);
             });
         }
         catch (Exception ex)
@@ -1309,6 +1312,9 @@ public partial class MainViewModel
                     card.RsActionMessage = "✅ Vulkan ReShade installed!";
                     card.NotifyAll();
                     card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+
+                    // Deploy managed addons now that ReShade is present
+                    DeployAddonsForCard(card.GameName);
                 };
                 if (DispatchUiAction != null) DispatchUiAction(updateCard);
                 else DispatcherQueue?.TryEnqueue(() => updateCard());
@@ -1381,6 +1387,9 @@ public partial class MainViewModel
                 card.RsActionMessage = "✅ ReShade installed (Vulkan Layer)!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+
+                // Deploy managed addons now that ReShade is present
+                DeployAddonsForCard(card.GameName);
             };
             if (DispatchUiAction != null) DispatchUiAction(updateCard);
             else DispatcherQueue?.TryEnqueue(() => updateCard());
@@ -1403,6 +1412,11 @@ public partial class MainViewModel
             // Remove the RDXC-managed reshade-shaders folder BEFORE calling Uninstall.
             if (!string.IsNullOrEmpty(card.InstallPath))
                 _shaderPackService.RemoveFromGameFolder(card.InstallPath);
+
+            // Remove managed addons — they require ReShade to function
+            if (!string.IsNullOrEmpty(card.InstallPath))
+                _addonPackService.DeployAddonsForGame(card.GameName, card.InstallPath, card.Is32Bit,
+                    useGlobalSet: true, perGameSelection: new List<string>());
 
             _auxInstaller.Uninstall(card.RsRecord);
             card.RsRecord           = null;
@@ -1441,7 +1455,11 @@ public partial class MainViewModel
             // 4. Restore reshade-shaders-original if it exists
             _shaderPackService.RestoreOriginalIfPresent(card.InstallPath);
 
-            // 5. Update card status — do NOT touch the global Vulkan layer
+            // 5. Remove managed addons — they require ReShade to function
+            _addonPackService.DeployAddonsForGame(card.GameName, card.InstallPath, card.Is32Bit,
+                useGlobalSet: true, perGameSelection: new List<string>());
+
+            // 6. Update card status — do NOT touch the global Vulkan layer
             card.RsStatus        = GameStatus.NotInstalled;
             card.RsActionMessage = "✖ Vulkan ReShade removed.";
             card.NotifyAll();

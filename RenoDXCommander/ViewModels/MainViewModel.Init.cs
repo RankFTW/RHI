@@ -353,6 +353,29 @@ public partial class MainViewModel
                     await Task.WhenAll(syncTasks);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] SyncShaders failed — {ex.Message}"); }
+
+                // Deploy managed addons to all installed game locations
+                try
+                {
+                    var addonTasks = _allCards
+                        .Where(card => !string.IsNullOrEmpty(card.InstallPath))
+                        .Where(card => card.RequiresVulkanInstall
+                            ? VulkanFootprintService.Exists(card.InstallPath)
+                            : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable)
+                        .Select(card =>
+                        {
+                            string addonMode = GetPerGameAddonMode(card.GameName);
+                            bool useGlobalSet = addonMode != "Select";
+                            List<string>? selection = useGlobalSet
+                                ? _settingsViewModel.EnabledGlobalAddons
+                                : (_gameNameService.PerGameAddonSelection.TryGetValue(card.GameName, out var sel) ? sel : null);
+                            return Task.Run(() => _addonPackService.DeployAddonsForGame(
+                                card.GameName, card.InstallPath, card.Is32Bit, useGlobalSet, selection));
+                        });
+                    await Task.WhenAll(addonTasks);
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] SyncAddons failed — {ex.Message}"); }
+
                 finally
                 {
                     DispatcherQueue?.TryEnqueue(() => { SubStatusText = ""; });

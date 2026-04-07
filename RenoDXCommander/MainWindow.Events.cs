@@ -1015,7 +1015,7 @@ public sealed partial class MainWindow
             ViewModel.ToggleHideGameCommand.Execute(card);
     }
 
-    private async void BrowseFolder_Click(object sender, RoutedEventArgs e)
+    internal async void BrowseFolder_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender);
         if (card == null) return;
@@ -1041,7 +1041,7 @@ public sealed partial class MainWindow
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(card.InstallPath) { UseShellExecute = true });
     }
 
-    private void RemoveManualGame_Click(object sender, RoutedEventArgs e)
+    internal void RemoveManualGame_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender);
         if (card == null) return;

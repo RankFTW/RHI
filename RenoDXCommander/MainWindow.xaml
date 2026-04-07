@@ -467,7 +467,7 @@
                                             BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
                                             ToolTipService.ToolTip="Remove RE Framework" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
                                     </Button>
                                 </Grid>
 
@@ -504,7 +504,7 @@
                                             BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
                                             ToolTipService.ToolTip="Remove ReShade" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
                                     </Button>
                                 </Grid>
 
@@ -542,7 +542,7 @@
                                             BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
                                             ToolTipService.ToolTip="Remove RenoDX mod" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
                                     </Button>
                                 </Grid>
 
@@ -571,7 +571,7 @@
                                             BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
                                             ToolTipService.ToolTip="Remove Luma mod" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
                                     </Button>
                                 </Grid>
 
@@ -622,7 +622,7 @@
                                             BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
                                             ToolTipService.ToolTip="Remove ReLimiter" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
                                     </Button>
                                 </Grid>
 
@@ -659,7 +659,7 @@
                                             BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
                                             ToolTipService.ToolTip="Remove Display Commander" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
                                     </Button>
                                 </Grid>
 
@@ -715,38 +715,6 @@
                                 BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                 Padding="16,14" Visibility="Collapsed">
                             <StackPanel x:Name="OverridesPanel" x:FieldModifier="internal" Spacing="8"/>
-                        </Border>
-
-                        <!-- ── Game Management section ── -->
-                        <Border Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
-                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                Padding="16,14">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="Manage" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4"/>
-                                <Grid ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Button x:Name="DetailChangeFolderBtn" x:FieldModifier="internal" Grid.Column="0"
-                                            Click="BrowseFolder_Click"
-                                            Background="{StaticResource SurfaceOverlayBrush}"
-                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                            CornerRadius="8" FontSize="12" Height="32"
-                                            HorizontalAlignment="Stretch"
-                                            Content="Change install folder"/>
-                                    <Button x:Name="DetailRemoveGameBtn" x:FieldModifier="internal" Grid.Column="1"
-                                            Click="RemoveManualGame_Click"
-                                            Background="{StaticResource AccentRedBgBrush}"
-                                            Foreground="{StaticResource AccentRedBrush}"
-                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" FontSize="12" Height="32"
-                                            HorizontalAlignment="Stretch"
-                                            Content="Reset folder / Remove game"/>
-                                </Grid>
-                            </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
