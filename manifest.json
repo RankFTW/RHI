@@ -92,7 +92,8 @@
 	"The Elder Scrolls III: Morrowind": { "reshade": "opengl32.dll", "dc": "" },
 	"Terraria": { "reshade": "dbghelp.dll", "dc": "" },
 	"Borderlands: The Pre-Sequel": { "reshade": "d3d9.dll", "dc": "" },
-	"Ori and the Blind Forest: Definitive Edition": { "reshade": "dxgi.dll", "dc": "" }
+	"Ori and the Blind Forest: Definitive Edition": { "reshade": "dxgi.dll", "dc": "" },
+	"Aliens: Dark Descent": { "reshade": "dxgi.dll", "dc": "" }
   },
   "wikiNameOverrides": {	
 	"Assassin's Creed": "Assassin's Creed™: Director's Cut Edition",
