@@ -34,6 +34,7 @@ public partial class DialogService
             CloseButtonText     = "Cancel",
             XamlRoot            = _window.Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
+            RequestedTheme      = ElementTheme.Dark,
         };
 
         var result = await dlg.ShowAsync();
@@ -63,6 +64,7 @@ public partial class DialogService
             CloseButtonText     = "Cancel",
             XamlRoot            = _window.Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
+            RequestedTheme      = ElementTheme.Dark,
         };
 
         var result = await dlg.ShowAsync();
@@ -267,6 +269,7 @@ public partial class DialogService
             CloseButtonText = "Close",
             XamlRoot        = _window.Content.XamlRoot,
             Background      = Brush(ResourceKeys.SurfaceToolbarBrush),
+            RequestedTheme  = ElementTheme.Dark,
         };
         await dialog.ShowAsync();
     }
@@ -300,6 +303,7 @@ public partial class DialogService
                 PrimaryButtonText   = "OK, I understand",
                 XamlRoot            = _window.Content.XamlRoot,
                 Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
+                RequestedTheme      = ElementTheme.Dark,
             };
 
             await dlg.ShowAsync();

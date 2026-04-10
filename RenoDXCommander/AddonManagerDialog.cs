@@ -40,6 +40,7 @@ public static class AddonManagerDialog
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 MinWidth = 750,
+                RequestedTheme = ElementTheme.Dark,
             };
             await emptyDlg.ShowAsync();
             return;
@@ -68,6 +69,7 @@ public static class AddonManagerDialog
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             MinWidth = 750,
+            RequestedTheme = ElementTheme.Dark,
         };
 
         await dlg.ShowAsync();

@@ -480,9 +480,6 @@ public sealed partial class MainWindow
     private void SkipUpdateToggle_Toggled(object sender, RoutedEventArgs e)
         => _settingsHandler.SkipUpdateToggle_Toggled(sender, e);
 
-    private void BetaOptInToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.BetaOptInToggle_Toggled(sender, e);
-
     private void VerboseLoggingToggle_Toggled(object sender, RoutedEventArgs e)
         => _settingsHandler.VerboseLoggingToggle_Toggled(sender, e);
 
@@ -515,6 +512,12 @@ public sealed partial class MainWindow
 
     private void ApplyOverlayHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyOverlayHotkey_Click(sender, e);
+
+    private void UlHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        => _settingsHandler.UlHotkeyBox_PreviewKeyDown(sender, e);
+
+    private void ApplyUlOsdHotkey_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.ApplyUlOsdHotkey_Click(sender, e);
 
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
@@ -627,6 +630,7 @@ public sealed partial class MainWindow
             CloseButtonText = "Cancel",
             XamlRoot = Content.XamlRoot,
             Background = Brush(ResourceKeys.SurfaceToolbarBrush),
+            RequestedTheme = ElementTheme.Dark,
         };
 
         // Validate inline before closing the dialog
@@ -740,6 +744,7 @@ public sealed partial class MainWindow
             CloseButtonText     = "Cancel",
             XamlRoot            = Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceToolbarBrush),
+            RequestedTheme      = ElementTheme.Dark,
         };
         var result = await nameDialog.ShowAsync();
         if (result != ContentDialogResult.Primary) return;
@@ -836,6 +841,7 @@ public sealed partial class MainWindow
                     PrimaryButtonText = "Continue",
                     CloseButtonText = "Cancel",
                     XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
                 };
 
                 var result = await warningDialog.ShowAsync();

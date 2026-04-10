@@ -298,6 +298,26 @@ public partial class AuxInstallService
         }
     }
 
+    /// <summary>
+    /// Writes the osd_toggle_key value to the [FrameLimiter] section of a relimiter.ini file.
+    /// Format: [Ctrl+][Alt+][Shift+]KeyName (e.g. "Ctrl+F12", "F12")
+    /// </summary>
+    public static void ApplyUlOsdHotkey(string iniFilePath, string hotkeyValue)
+    {
+        var ini = File.Exists(iniFilePath)
+            ? ParseIni(File.ReadAllLines(iniFilePath))
+            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+        const string section = "FrameLimiter";
+
+        if (!ini.ContainsKey(section))
+            ini[section] = new OrderedDict();
+
+        ini[section]["osd_toggle_key"] = hotkeyValue;
+
+        WriteIni(iniFilePath, ini);
+    }
+
     // ── INI parsing / writing helpers ─────────────────────────────────────────────
 
     /// <summary>Simple alias for an ordered key-value dictionary (preserves insertion order).</summary>

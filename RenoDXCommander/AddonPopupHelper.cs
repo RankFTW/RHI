@@ -46,6 +46,7 @@ public static class AddonPopupHelper
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 MinWidth = 750,
+                RequestedTheme = ElementTheme.Dark,
             };
             await emptyDlg.ShowAsync();
             return null;
@@ -176,6 +177,7 @@ public static class AddonPopupHelper
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             MinWidth = 750,
+            RequestedTheme = ElementTheme.Dark,
         };
 
         var dialogResult = await dlg.ShowAsync();

@@ -42,15 +42,18 @@ Grab the latest installer from the [url=https://github.com/RankFTW/RenoDXChecker
 [*] [b]ReLimiter support[/b] — install and manage the ReLimiter frame pacing addon per-game, downloaded from GitHub on demand with automatic update detection.
 [*] [b]RE Framework support[/b] — one-click install, update, and uninstall of RE Framework for RE Engine games (Monster Hunter Wilds, Resident Evil series, Devil May Cry 5, Street Fighter 6, Dragon's Dogma 2, etc.). Each game downloads its own game-specific build.
 [*] [b]Version display[/b] — installed version numbers shown directly on component rows. DC version reads from PE file info on scan.
-[*] [b]Shader pack management[/b] — 40+ HDR shader packs with global and per-game shader selection, plus a Custom mode for user shader directories. Shader packs can declare dependencies (e.g. Azen auto-selects smolbbsoop shaders).
+[*] [b]Shader pack management[/b] — 41 HDR shader packs with global and per-game shader selection, plus a Custom mode for user shader directories. Shader packs can declare dependencies (e.g. Azen auto-selects smolbbsoop shaders).
 [*] [b]ReShade addon management[/b] — browse and toggle curated ReShade addons from the official list via the Addon Manager. Toggling on downloads the addon automatically, toggling off disables deployment but keeps files cached. Addons are auto-deployed when ReShade is installed, removed when ReShade is uninstalled, and synced on every Refresh. Per-game addon overrides let you customise which addons are active per game.
-[*] [b]ReShade preset deployment[/b] — place .ini preset files in the reshade-presets folder and deploy them to any game from the overrides panel.
+[*] [b]ReShade preset deployment[/b] — place .ini preset files in the reshade-presets folder and deploy them to any game from the overrides panel, or drag-and-drop a preset .ini onto RHI to deploy it with automatic shader pack installation.
+[*] [b]ReShade Without Addon Support[/b] — per-game toggle to switch from addon-enabled ReShade to standard ReShade. All addons are removed and rows dimmed; toggle back to restore.
+[*] [b]ReLimiter OSD hotkey[/b] — configure the ReLimiter overlay hotkey from the Settings page and apply it to all managed relimiter.ini files.
+[*] [b]Automatic INI deploy on first install[/b] — installing ReLimiter or Display Commander for the first time auto-copies the pre-configured INI from AppData to the game folder (only if not already present).
 [*] [b]Game report[/b] — Copy Report button in the overrides panel generates a diagnostic code for Discord or GitHub issues, showing detected vs corrected settings with an optional user note.
 [*] [b]Auto-save overrides[/b] — all per-game settings save immediately when changed, no Save button needed.
 [*] [b]Per-game overrides[/b] — DLL naming overrides (single toggle for both ReShade and DC), shader mode/selection, wiki name mapping, wiki exclusion, per-component Update All inclusion (ReShade, RenoDX, ReLimiter, DC in a 2×2 grid), bitness override, graphics API override, reset overrides.
 [*] [b]Seamless refresh[/b] — after initial boot, refresh updates everything in the background without blanking the UI.
 [*] [b]Startup shader deployment[/b] — on launch, shaders are automatically synced to all installed game folders in parallel for fast startup.
-[*] [b]Drag-and-drop[/b] — drop a game .exe to add it, drop an .addon64/.addon32 to install it, drop an archive to extract and install addons, or drop a Discord/browser URL link to download and install an addon.
+[*] [b]Drag-and-drop[/b] — drop a game .exe to add it, drop an .addon64/.addon32 to install it, drop an archive to extract and install addons, drop a preset .ini to deploy it with automatic shader install, or drop a Discord/browser URL link to download and install an addon.
 [*] [b]Archive auto-install[/b] — the watch folder detects .zip, .7z, and .rar archives containing "renodx" in the filename (e.g. from Nexus Mods downloads) and automatically extracts and installs the addon files inside.
 [*] [b]Remote manifest[/b] — game-specific overrides updated server-side without app releases, including engine overrides, DLL name overrides, API overrides, and DC mode overrides.
 [*] [b]UE-Extended / Native HDR[/b] — automatic detection and addon assignment for Unreal Engine games.

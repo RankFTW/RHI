@@ -38,6 +38,7 @@ public static class GameReportEncoder
             PrimaryButtonText = "Yes, continue",
             CloseButtonText = "Go back",
             XamlRoot = xamlRoot,
+            RequestedTheme = ElementTheme.Dark,
         };
 
         var gateResult = await gateDlg.ShowAsync();
@@ -75,6 +76,7 @@ public static class GameReportEncoder
             PrimaryButtonText = "Copy to Clipboard",
             CloseButtonText = "Cancel",
             XamlRoot = xamlRoot,
+            RequestedTheme = ElementTheme.Dark,
         };
 
         var result = await dlg.ShowAsync();

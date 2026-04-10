@@ -43,6 +43,7 @@ public static class ShaderPopupHelper
                 CloseButtonText   = "Cancel",
                 XamlRoot          = xamlRoot,
                 Background        = Brush(ResourceKeys.SurfaceOverlayBrush),
+                RequestedTheme    = ElementTheme.Dark,
                 MinWidth          = 750,
             };
 
@@ -141,6 +142,7 @@ public static class ShaderPopupHelper
             CloseButtonText   = "Cancel",
             XamlRoot          = xamlRoot,
             Background        = Brush(ResourceKeys.SurfaceOverlayBrush),
+            RequestedTheme    = ElementTheme.Dark,
             MinWidth          = 750,
         };
 

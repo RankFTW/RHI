@@ -1105,6 +1105,7 @@ public partial class DetailPanelBuilder
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
                     Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                    RequestedTheme = ElementTheme.Dark,
                 };
                 await infoDlg.ShowAsync();
                 return;

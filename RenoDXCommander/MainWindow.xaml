@@ -7,7 +7,7 @@
     xmlns:converters="using:RenoDXCommander.Converters"
     xmlns:controls="using:RenoDXCommander.Controls"
     Title="ReShade HDR Installer">
-    <Grid Background="{StaticResource SurfaceBaseBrush}" AllowDrop="True" DragOver="Grid_DragOver" Drop="Grid_Drop">
+    <Grid RequestedTheme="Dark" Background="{StaticResource SurfaceBaseBrush}" AllowDrop="True" DragOver="Grid_DragOver" Drop="Grid_Drop">
         <Grid.Resources>
             <x:Double x:Key="CardItemWidth">390</x:Double>
             <x:Double x:Key="CompactCardWidth">400</x:Double>
@@ -823,97 +823,135 @@
                             </Grid>
                         </Border>
 
-                        <!-- ── Screenshots & ReShade UI Hotkey ─────────────────────── -->
+                        <!-- ── Screenshots & Hotkeys ─────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <Grid ColumnSpacing="0">
+                            <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>  <!-- Row 0: Titles + descriptions -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 1: Path box + Open | ReShade key box -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 2: Per-Game toggle | ReShade Apply -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 3: (empty) | ReLimiter label + key -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 4: Screenshot Apply | ReLimiter Apply -->
+                                </Grid.RowDefinitions>
 
-                                <!-- Left: Screenshots (existing content, unchanged) -->
-                                <StackPanel Grid.Column="0" Spacing="8">
+                                <!-- ── Row 0: Titles + descriptions ── -->
+                                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
                                     <TextBlock Text="Screenshots" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                                Text="Set a screenshot save path that will be written to all managed reshade.ini files."/>
-                                    <Grid ColumnSpacing="8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid Grid.Column="0">
-                                            <TextBox x:Name="ScreenshotPathBox" x:FieldModifier="internal"
-                                                     PlaceholderText="D:\Screenshots"
-                                                     FontSize="12"
-                                                     Padding="12,8,36,8"
-                                                     Background="{StaticResource SurfaceInputBrush}"
-                                                     Foreground="{StaticResource TextSecondaryBrush}"
-                                                     BorderBrush="{StaticResource BorderSubtleBrush}"/>
-                                            <Button Click="BrowseScreenshotPath_Click"
-                                                    Background="Transparent" BorderThickness="0"
-                                                    Padding="8,6" MinWidth="0" MinHeight="0"
-                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
-                                                    Margin="0,0,4,0"
-                                                    ToolTipService.ToolTip="Pick a folder for screenshots">
-                                                <FontIcon Glyph="&#xED25;" FontSize="14"
-                                                          Foreground="{StaticResource TextTertiaryBrush}"/>
-                                            </Button>
-                                        </Grid>
-                                        <Button Grid.Column="1" Content="Open" Click="OpenScreenshotFolder_Click"
-                                                Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                                CornerRadius="8" Padding="12,6" FontSize="12"
-                                                ToolTipService.ToolTip="Open the screenshot folder in Explorer"/>
-                                    </Grid>
-                                    <ToggleSwitch x:Name="PerGameScreenshotToggle" x:FieldModifier="internal"
-                                                  Header="Per-Game Subfolder"
-                                                  OnContent="Enabled — each game gets its own subfolder"
-                                                  OffContent="Disabled — all screenshots in one folder"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                                    <Button x:Name="ApplyScreenshotPathBtn"
-                                            Content="Apply to All Games"
-                                            Click="ApplyScreenshotPath_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
                                 </StackPanel>
 
-                                <!-- Vertical divider -->
-                                <Border Grid.Column="1" Width="1"
+                                <Border Grid.Row="0" Grid.RowSpan="5" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch"
                                         Margin="12,0,12,0"/>
 
-                                <!-- Right: ReShade UI Hotkey -->
-                                <StackPanel Grid.Column="2" Spacing="8">
-                                    <TextBlock Text="ReShade UI Hotkey" FontSize="14" FontWeight="SemiBold"
+                                <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Hotkeys" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Set the key combination to toggle the ReShade overlay in-game."/>
-                                    <TextBox x:Name="HotkeyBox" x:FieldModifier="internal"
+                                               Text="ReShade overlay toggle key"/>
+                                </StackPanel>
+
+                                <!-- ── Row 1: Path box + Open | ReShade key box ── -->
+                                <Grid Grid.Row="1" Grid.Column="0" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="0">
+                                        <TextBox x:Name="ScreenshotPathBox" x:FieldModifier="internal"
+                                                 PlaceholderText="D:\Screenshots"
+                                                 FontSize="12"
+                                                 Padding="12,8,36,8"
+                                                 Background="{StaticResource SurfaceInputBrush}"
+                                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                                 BorderBrush="{StaticResource BorderSubtleBrush}"/>
+                                        <Button Click="BrowseScreenshotPath_Click"
+                                                Background="Transparent" BorderThickness="0"
+                                                Padding="8,6" MinWidth="0" MinHeight="0"
+                                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                Margin="0,0,4,0"
+                                                ToolTipService.ToolTip="Pick a folder for screenshots">
+                                            <FontIcon Glyph="&#xED25;" FontSize="14"
+                                                      Foreground="{StaticResource TextTertiaryBrush}"/>
+                                        </Button>
+                                    </Grid>
+                                    <Button Grid.Column="1" Content="Open" Click="OpenScreenshotFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"
+                                            ToolTipService.ToolTip="Open the screenshot folder in Explorer"/>
+                                </Grid>
+
+                                <TextBox Grid.Row="1" Grid.Column="2" x:Name="HotkeyBox" x:FieldModifier="internal"
+                                         PlaceholderText="Press a key..."
+                                         IsReadOnly="True"
+                                         FontSize="12"
+                                         Background="{StaticResource SurfaceInputBrush}"
+                                         Foreground="{StaticResource TextSecondaryBrush}"
+                                         BorderBrush="{StaticResource BorderSubtleBrush}"
+                                         PreviewKeyDown="HotkeyBox_PreviewKeyDown"/>
+
+                                <!-- ── Row 2: ReShade Apply (right only) ── -->
+                                <Button Grid.Row="2" Grid.Column="2" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
+                                        Content="Apply to All Games"
+                                        Click="ApplyOverlayHotkey_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"/>
+
+                                <!-- ── Row 3: Per-Game toggle | ReLimiter label + key ── -->
+                                <ToggleSwitch Grid.Row="3" Grid.Column="0" x:Name="PerGameScreenshotToggle" x:FieldModifier="internal"
+                                              Header="Per-Game Subfolder"
+                                              OnContent="Enabled — each game gets its own subfolder"
+                                              OffContent="Disabled — all screenshots in one folder"
+                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                              VerticalAlignment="Center"/>
+                                <StackPanel Grid.Row="3" Grid.Column="2" Spacing="4">
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="ReLimiter OSD toggle key"/>
+                                    <TextBox x:Name="UlHotkeyBox" x:FieldModifier="internal"
                                              PlaceholderText="Press a key..."
                                              IsReadOnly="True"
                                              FontSize="12"
                                              Background="{StaticResource SurfaceInputBrush}"
                                              Foreground="{StaticResource TextSecondaryBrush}"
                                              BorderBrush="{StaticResource BorderSubtleBrush}"
-                                             PreviewKeyDown="HotkeyBox_PreviewKeyDown"/>
-                                    <Button x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
-                                            Content="Apply to All Games"
-                                            Click="ApplyOverlayHotkey_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
+                                             PreviewKeyDown="UlHotkeyBox_PreviewKeyDown"/>
                                 </StackPanel>
+
+                                <!-- ── Row 4: Apply buttons ── -->
+                                <Button Grid.Row="4" Grid.Column="0" x:Name="ApplyScreenshotPathBtn"
+                                        Content="Apply to All Games"
+                                        Click="ApplyScreenshotPath_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
+
+                                <Button Grid.Row="4" Grid.Column="2" x:Name="ApplyUlHotkeyBtn" x:FieldModifier="internal"
+                                        Content="Apply to All Games"
+                                        Click="ApplyUlOsdHotkey_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
                             </Grid>
                         </Border>
 
@@ -928,18 +966,25 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Left: Custom Shaders -->
-                                <StackPanel Grid.Column="0" Spacing="8">
-                                    <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs. Files are sourced from %LocalAppData%\RHI\reshade\Custom\."/>
-                                    <ToggleSwitch x:Name="CustomShadersToggle" x:FieldModifier="internal"
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs. Files are sourced from %LocalAppData%\RHI\reshade\Custom\."/>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Row="1" x:Name="CustomShadersToggle" x:FieldModifier="internal"
                                                   Header="Use Custom Shaders"
                                                   Toggled="CustomShadersToggle_Toggled"
                                                   OnContent="Enabled — deploying from custom directories"
                                                   OffContent="Disabled — using shader packs"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                                </StackPanel>
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Margin="0,8,0,0"/>
+                                </Grid>
 
                                 <!-- Vertical divider -->
                                 <Border Grid.Column="1" Width="1"
@@ -948,11 +993,17 @@
                                         Margin="12,0,12,0"/>
 
                                 <!-- Right: Addon Watch Folder -->
-                                <StackPanel Grid.Column="2" Spacing="8">
-                                    <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                               Text="RHI watches this folder for RenoDX addon files (.addon64/.addon32) and archives containing them. Defaults to your Downloads folder."/>
-                                    <Grid ColumnSpacing="8">
+                                <Grid Grid.Column="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                                   Text="RHI watches this folder for RenoDX addon files (.addon64/.addon32) and archives containing them. Defaults to your Downloads folder."/>
+                                    </StackPanel>
+                                    <Grid Grid.Row="1" ColumnSpacing="8" Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -974,7 +1025,7 @@
                                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                                 CornerRadius="8" Padding="12,6" FontSize="12"/>
                                     </Grid>
-                                </StackPanel>
+                                </Grid>
                             </Grid>
                         </Border>
 
@@ -991,15 +1042,6 @@
                                               Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
                                            Text="When enabled, RHI skips the automatic update check that runs on every launch."/>
-                                <ToggleSwitch x:Name="BetaOptInToggle" x:FieldModifier="internal"
-                                              Header="Opt into Betas"
-                                              Toggled="BetaOptInToggle_Toggled"
-                                              OnContent="Enabled — RHI will check for beta releases"
-                                              OffContent="Disabled — stable releases only"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11"
-                                           Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="When enabled, RHI also checks for pre-release beta versions. Stable releases always take priority."/>
                                 <ToggleSwitch x:Name="VerboseLoggingToggle" x:FieldModifier="internal"
                                               Header="Verbose Logging"
                                               Toggled="VerboseLoggingToggle_Toggled"

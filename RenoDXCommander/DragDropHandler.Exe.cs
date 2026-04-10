@@ -46,6 +46,7 @@ public partial class DragDropHandler
                 CloseButtonText = "OK",
                 XamlRoot        = _window.Content.XamlRoot,
                 Background      = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
+                RequestedTheme  = ElementTheme.Dark,
             };
             await dupDialog.ShowAsync();
             return;
@@ -83,6 +84,7 @@ public partial class DragDropHandler
             CloseButtonText   = "Cancel",
             XamlRoot          = _window.Content.XamlRoot,
             Background        = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
+            RequestedTheme    = ElementTheme.Dark,
         };
         var result = await confirmDialog.ShowAsync();
         if (result != ContentDialogResult.Primary) return;

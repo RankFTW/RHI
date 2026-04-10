@@ -36,6 +36,7 @@ public partial class DragDropHandler
                 Content = "Cannot extract archive — 7-Zip was not found. Please reinstall RDXC.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
             };
             await errDialog.ShowAsync();
             return;
@@ -84,6 +85,7 @@ public partial class DragDropHandler
                     Content = $"Failed to extract '{archiveName}'. The file may be corrupt or in an unsupported format.",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
                 };
                 await failDialog.ShowAsync();
                 return;
@@ -104,6 +106,7 @@ public partial class DragDropHandler
                     Content = $"No .addon64 or .addon32 files were found inside '{archiveName}'.",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
                 };
                 await noAddonDialog.ShowAsync();
                 return;
@@ -136,6 +139,7 @@ public partial class DragDropHandler
                     PrimaryButtonText = "Install",
                     CloseButtonText = "Cancel",
                     XamlRoot = _window.Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
                 };
                 if (await pickDialog.ShowAsync() != ContentDialogResult.Primary) return;
                 addonToInstall = (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? addonFiles[0];
@@ -170,6 +174,7 @@ public partial class DragDropHandler
                 Content = "No games are currently detected. Add a game first.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
             };
             await noGamesDialog.ShowAsync();
             return;
@@ -258,6 +263,7 @@ public partial class DragDropHandler
                 Content = "Please select a game to install the addon to.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
             };
             await noSelection.ShowAsync();
             return;
@@ -365,6 +371,7 @@ public partial class DragDropHandler
                 Content = $"Failed to install addon: {ex.Message}",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
             };
             await errDialog.ShowAsync();
         }

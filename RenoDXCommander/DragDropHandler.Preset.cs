@@ -86,6 +86,7 @@ public partial class DragDropHandler
                 Content = "No games are currently detected. Add a game first.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
             };
             await noGamesDialog.ShowAsync();
             return;
@@ -145,6 +146,7 @@ public partial class DragDropHandler
                 Content = "Please select a game to install the preset to.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
             };
             await noSelection.ShowAsync();
             return;

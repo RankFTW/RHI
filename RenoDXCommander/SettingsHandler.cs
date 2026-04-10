@@ -104,6 +104,7 @@ public class SettingsHandler
     /// Accessible from the Apply handler (Task 6.3).
     /// </summary>
     internal string _currentHotkeyString = "36,0,0,0";
+    internal string _currentUlHotkeyString = "F12";
 
     public SettingsHandler(MainWindow window)
     {
@@ -120,7 +121,6 @@ public class SettingsHandler
         _window.LoadingPanel.Visibility = Visibility.Collapsed;
         // Sync toggle state with ViewModel
         _window.SkipUpdateToggle.IsOn = ViewModel.SkipUpdateCheck;
-        _window.BetaOptInToggle.IsOn = ViewModel.BetaOptIn;
         _window.VerboseLoggingToggle.IsOn = ViewModel.VerboseLogging;
         _window.CustomShadersToggle.IsOn = ViewModel.Settings.UseCustomShaders;
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  HDR mod manager by RankFTW";
@@ -132,6 +132,9 @@ public class SettingsHandler
         // Initialize hotkey display from persisted value (Req 2.4, 3.2)
         _currentHotkeyString = ViewModel.Settings.OverlayHotkey;
         _window.HotkeyBox.Text = FormatHotkeyDisplay(ViewModel.Settings.OverlayHotkey);
+        // Initialize ReLimiter OSD hotkey display
+        _currentUlHotkeyString = ViewModel.Settings.UlOsdHotkey;
+        _window.UlHotkeyBox.Text = ViewModel.Settings.UlOsdHotkey;
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
@@ -233,6 +236,7 @@ public class SettingsHandler
             Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
         };
         await dialog.ShowAsync();
     }
@@ -371,6 +375,111 @@ public class SettingsHandler
             Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await dialog.ShowAsync();
+    }
+
+    // ── ReLimiter OSD Hotkey ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Builds a ReLimiter-format hotkey string from VK code and modifiers.
+    /// Format: [Ctrl+][Alt+][Shift+]KeyName (e.g. "Ctrl+F12", "Alt+P", "F1")
+    /// </summary>
+    public static string BuildUlHotkeyString(int vk, bool shift, bool ctrl, bool alt)
+    {
+        var parts = new List<string>();
+        if (ctrl) parts.Add("Ctrl");
+        if (alt) parts.Add("Alt");
+        if (shift) parts.Add("Shift");
+        parts.Add(VkNames.TryGetValue(vk, out var name) ? name : $"0x{vk:X2}");
+        return string.Join("+", parts);
+    }
+
+    public void UlHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        var key = e.Key;
+
+        if (key == Windows.System.VirtualKey.Control ||
+            key == Windows.System.VirtualKey.Shift ||
+            key == Windows.System.VirtualKey.Menu ||
+            key == (Windows.System.VirtualKey)91 ||
+            key == (Windows.System.VirtualKey)92 ||
+            key == Windows.System.VirtualKey.LeftControl ||
+            key == Windows.System.VirtualKey.RightControl ||
+            key == Windows.System.VirtualKey.LeftShift ||
+            key == Windows.System.VirtualKey.RightShift ||
+            key == Windows.System.VirtualKey.LeftMenu ||
+            key == Windows.System.VirtualKey.RightMenu)
+        {
+            return;
+        }
+
+        int vk = (int)key;
+
+        bool shift = Microsoft.UI.Input.InputKeyboardSource
+            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        bool ctrl = Microsoft.UI.Input.InputKeyboardSource
+            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        bool alt = Microsoft.UI.Input.InputKeyboardSource
+            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        _currentUlHotkeyString = BuildUlHotkeyString(vk, shift, ctrl, alt);
+
+        if (sender is TextBox hotkeyBox)
+            hotkeyBox.Text = _currentUlHotkeyString;
+
+        e.Handled = true;
+    }
+
+    public async void ApplyUlOsdHotkey_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.Settings.UlOsdHotkey = _currentUlHotkeyString;
+        ViewModel.SaveSettingsPublic();
+
+        int updatedCount = 0;
+        foreach (var card in ViewModel.AllCards)
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) continue;
+
+            var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
+            var iniFile = Path.Combine(deployPath, "relimiter.ini");
+            if (!File.Exists(iniFile)) continue;
+
+            try
+            {
+                AuxInstallService.ApplyUlOsdHotkey(iniFile, _currentUlHotkeyString);
+                updatedCount++;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[SettingsHandler.ApplyUlOsdHotkey_Click] Failed for '{card.GameName}' — {ex.Message}");
+            }
+        }
+
+        // Also update the template in AppData
+        if (File.Exists(AuxInstallService.UlIniPath))
+        {
+            try
+            {
+                AuxInstallService.ApplyUlOsdHotkey(AuxInstallService.UlIniPath, _currentUlHotkeyString);
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[SettingsHandler.ApplyUlOsdHotkey_Click] Failed to update template — {ex.Message}");
+            }
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "ReLimiter OSD Hotkey",
+            Content = $"Updated {updatedCount} relimiter.ini file{(updatedCount == 1 ? "" : "s")}.",
+            CloseButtonText = "OK",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
         };
         await dialog.ShowAsync();
     }

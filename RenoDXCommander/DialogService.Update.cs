@@ -66,6 +66,7 @@ public partial class DialogService
             CloseButtonText     = "Later",
             XamlRoot            = _window.Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceRaisedBrush),
+            RequestedTheme      = ElementTheme.Dark,
         };
 
         var result = await dlg.ShowAsync();
@@ -103,6 +104,7 @@ public partial class DialogService
             },
             XamlRoot   = _window.Content.XamlRoot,
             Background = Brush(ResourceKeys.SurfaceRaisedBrush),
+            RequestedTheme = ElementTheme.Dark,
             // No buttons — dialog will be closed programmatically when download completes
         };
 
@@ -213,6 +215,7 @@ public partial class DialogService
     {
         var notes = MainViewModel.GetRecentPatchNotes(3);
 
+        var headingBrush = Brush(ResourceKeys.TextPrimaryBrush);
         var markdown = new CommunityToolkit.WinUI.Controls.MarkdownTextBlock
         {
             Text = notes,
@@ -224,11 +227,18 @@ public partial class DialogService
             UseTaskLists = true,
         };
 
+        // Wrap in a Grid with explicit dark theme to force heading colors
+        var markdownContainer = new Grid
+        {
+            RequestedTheme = ElementTheme.Dark,
+        };
+        markdownContainer.Children.Add(markdown);
+
         var scrollViewer = new ScrollViewer
         {
             MaxHeight = 500,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = markdown,
+            Content = markdownContainer,
         };
 
         var dlg = new ContentDialog
@@ -238,6 +248,7 @@ public partial class DialogService
             CloseButtonText    = "Close",
             XamlRoot           = _window.Content.XamlRoot,
             Background         = Brush(ResourceKeys.SurfaceToolbarBrush),
+            RequestedTheme     = ElementTheme.Dark,
         };
 
         await dlg.ShowAsync();

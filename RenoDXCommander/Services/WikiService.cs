@@ -273,6 +273,11 @@ public class WikiService : IWikiService
                 }
             }
 
+            // If only a 32-bit snapshot exists and no 64-bit, promote it to the primary URL
+            // so the install button works for 32-bit-only games (e.g. Terraria)
+            if (snapshotUrl == null && snapshotUrl32 != null)
+                snapshotUrl = snapshotUrl32;
+
             mods.Add(new GameMod
             {
                 Name = name, Maintainer = maintainer,

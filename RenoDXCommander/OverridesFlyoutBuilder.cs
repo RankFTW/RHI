@@ -116,6 +116,26 @@ public class OverridesFlyoutBuilder
         nameGrid.Children.Add(wikiNameBox);
         nameGrid.Children.Add(nameResetBtn);
         panel.Children.Add(nameGrid);
+
+        // ── Wiki exclusion toggle ──
+        var wikiExcludeToggle = new ToggleSwitch
+        {
+            IsOn = ViewModel.IsWikiExcluded(gameName),
+            OnContent = "Excluded from wiki lookups",
+            OffContent = "Included in wiki lookups",
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 11,
+        };
+        ToolTipService.SetToolTip(wikiExcludeToggle,
+            "When enabled, this game will not be looked up on the RenoDX wiki. " +
+            "Useful for games that share a name with an unrelated wiki entry.");
+        wikiExcludeToggle.Toggled += (s, ev) =>
+        {
+            if (wikiExcludeToggle.IsOn != ViewModel.IsWikiExcluded(capturedName))
+                ViewModel.ToggleWikiExclusion(capturedName);
+        };
+        panel.Children.Add(wikiExcludeToggle);
+
         panel.Children.Add(UIFactory.MakeSeparator());
 
         // ── Auto-save: Game name on Enter ──
@@ -569,6 +589,109 @@ public class OverridesFlyoutBuilder
         panel.Children.Add(modeGrid);
         panel.Children.Add(UIFactory.MakeSeparator());
 
+        // ── Per-game Addon mode ──
+        string currentAddonMode = ViewModel.GetPerGameAddonMode(gameName);
+        bool isGlobalAddons = currentAddonMode != "Select";
+        var addonToggle = new ToggleSwitch
+        {
+            Header = "Global Addons",
+            IsOn = isGlobalAddons,
+            OnContent = "Using global addon set",
+            OffContent = "Using per-game addon selection",
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 12,
+        };
+        ToolTipService.SetToolTip(addonToggle,
+            "On = use the global addon set for this game. Off = pick specific addons for this game.");
+
+        var selectAddonsBtn = new Button
+        {
+            Content = "Select Addons",
+            FontSize = 12,
+            Padding = new Thickness(12, 7, 12, 7),
+            CornerRadius = new CornerRadius(8),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsEnabled = !isGlobalAddons,
+            Background = UIFactory.Brush(isGlobalAddons ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(isGlobalAddons ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(isGlobalAddons ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+        };
+        ToolTipService.SetToolTip(selectAddonsBtn, "Choose which addons to deploy for this game");
+
+        addonToggle.Toggled += (s, ev) =>
+        {
+            bool global = addonToggle.IsOn;
+            selectAddonsBtn.IsEnabled = !global;
+            selectAddonsBtn.Background = UIFactory.Brush(global ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush);
+            selectAddonsBtn.Foreground = UIFactory.Brush(global ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush);
+            selectAddonsBtn.BorderBrush = UIFactory.Brush(global ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush);
+
+            var newMode = global ? "Global" : "Select";
+            if (newMode != ViewModel.GetPerGameAddonMode(capturedName))
+            {
+                ViewModel.SetPerGameAddonMode(capturedName, newMode);
+                ViewModel.DeployAddonsForCard(capturedName);
+            }
+        };
+
+        selectAddonsBtn.Click += async (s, ev) =>
+        {
+            List<string>? current = ViewModel.GameNameServiceInstance.PerGameAddonSelection.TryGetValue(gameName, out var existingAddons)
+                ? existingAddons
+                : null;
+
+            IAddonPackService? addonPackService = ViewModel.AddonPackServiceInstance;
+
+            if (addonPackService == null)
+            {
+                var infoDlg = new ContentDialog
+                {
+                    Title = "Select Addons",
+                    Content = new TextBlock
+                    {
+                        Text = "Addon service is not yet available.",
+                        FontSize = 13,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                    },
+                    CloseButtonText = "OK",
+                    XamlRoot = _window.Content.XamlRoot,
+                    Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                    RequestedTheme = ElementTheme.Dark,
+                };
+                await infoDlg.ShowAsync();
+                return;
+            }
+
+            var result = await AddonPopupHelper.ShowAsync(
+                _window.Content.XamlRoot,
+                addonPackService,
+                current,
+                AddonPopupHelper.PopupContext.PerGame);
+            if (result != null)
+            {
+                ViewModel.GameNameServiceInstance.PerGameAddonSelection[gameName] = result;
+                ViewModel.DeployAddonsForCard(capturedName);
+            }
+        };
+
+        // If normal ReShade is active, disable addon controls on initial build
+        if (card.UseNormalReShade)
+        {
+            addonToggle.IsOn = false;
+            addonToggle.IsEnabled = false;
+            selectAddonsBtn.IsEnabled = false;
+            selectAddonsBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+            selectAddonsBtn.Foreground = UIFactory.Brush(ResourceKeys.TextDisabledBrush);
+            selectAddonsBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+        }
+
+        var addonColumn = new StackPanel { Spacing = 8 };
+        addonColumn.Children.Add(addonToggle);
+        addonColumn.Children.Add(selectAddonsBtn);
+        panel.Children.Add(addonColumn);
+        panel.Children.Add(UIFactory.MakeSeparator());
+
         // ── Auto-save: RS name box on Enter ──
         rsNameBox.KeyDown += (s, e) =>
         {
@@ -848,30 +971,8 @@ public class OverridesFlyoutBuilder
                 ViewModel.ToggleUpdateAllExclusionDc(capturedName);
         };
 
-        var wikiExcludeToggle = new ToggleSwitch
-        {
-            Header = "Wiki exclusion",
-            IsOn = ViewModel.IsWikiExcluded(gameName),
-            OnContent = "Excluded from wiki lookups",
-            OffContent = "Included in wiki lookups",
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-        };
-        ToolTipService.SetToolTip(wikiExcludeToggle,
-            "When enabled, this game will not be looked up on the RenoDX wiki. " +
-            "Useful for games that share a name with an unrelated wiki entry.");
-
-        // ── Auto-save: Wiki exclusion toggle ──
-        wikiExcludeToggle.Toggled += (s, ev) =>
-        {
-            if (wikiExcludeToggle.IsOn != ViewModel.IsWikiExcluded(capturedName))
-                ViewModel.ToggleWikiExclusion(capturedName);
-        };
-
-        // Build inline row Grid: [Global update inclusion | divider | Wiki exclusion]
+        // Build inline row Grid: [Global update inclusion]
         var inlineRowGrid = new Grid();
-        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         inlineRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         // Column 0: Global update inclusion
@@ -886,41 +987,68 @@ public class OverridesFlyoutBuilder
         leftSection.Children.Add(toggleRow);
         Grid.SetColumn(leftSection, 0);
 
-        // Column 1: Vertical divider
-        var divider = new Border
-        {
-            Width = 1,
-            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            VerticalAlignment = VerticalAlignment.Stretch,
-            Margin = new Thickness(12, 0, 12, 0),
-        };
-        Grid.SetColumn(divider, 1);
-
-        // Column 2: Wiki exclusion
-        var rightSection = new StackPanel { Spacing = 0 };
-        rightSection.Children.Add(wikiExcludeToggle);
-        Grid.SetColumn(rightSection, 2);
-
         inlineRowGrid.Children.Add(leftSection);
-        inlineRowGrid.Children.Add(divider);
-        inlineRowGrid.Children.Add(rightSection);
 
         panel.Children.Add(inlineRowGrid);
         panel.Children.Add(UIFactory.MakeSeparator());
 
-        // ── Reset Overrides button ──
-        var resetOverridesBtn = new Button
+        // ── Manage row (Star | Auto divider | Star) ──
+        var manageRowGrid = new Grid { ColumnSpacing = 0 };
+        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var manageLeftColumn = new StackPanel { Spacing = 6 };
+
+        // ── Change install folder button ──
+        var changeFolderBtn = new Button
         {
-            Content = "Reset Overrides",
+            Content = "Change install folder",
             FontSize = 12,
-            Padding = new Thickness(16, 8, 16, 8),
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             BorderThickness = new Thickness(1),
-            HorizontalAlignment = HorizontalAlignment.Left,
             CornerRadius = new CornerRadius(8),
-            Margin = new Thickness(0, 8, 0, 0),
+            Tag = card,
+        };
+        changeFolderBtn.Click += (s, ev) => _window.BrowseFolder_Click(s, ev);
+        manageLeftColumn.Children.Add(changeFolderBtn);
+
+        // ── Reset folder / Remove game button ──
+        var removeGameBtn = new Button
+        {
+            Content = "Reset folder / Remove game",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Tag = card,
+        };
+        removeGameBtn.Click += (s, ev) => _window.RemoveManualGame_Click(s, ev);
+        manageLeftColumn.Children.Add(removeGameBtn);
+
+        // ── Reset Overrides button ──
+        // Forward-declare normalReShadeToggle so the reset handler can reference it
+        ToggleSwitch normalReShadeToggle = null!;
+
+        var resetOverridesBtn = new Button
+        {
+            Content = "Reset Overrides",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
         };
         resetOverridesBtn.Click += (s, ev) =>
         {
@@ -929,6 +1057,7 @@ public class OverridesFlyoutBuilder
             wikiNameBox.Text = "";
             shaderToggle.IsOn = true;
             customShadersToggle.IsOn = false;
+            addonToggle.IsOn = true;
             dllOverrideToggle.IsOn = false;
             rsToggle.IsOn = true;
             rdxToggle.IsOn = true;
@@ -957,6 +1086,13 @@ public class OverridesFlyoutBuilder
                 ViewModel.DeployShadersForCard(capturedName);
             }
 
+            // Addon mode → Global
+            if (ViewModel.GetPerGameAddonMode(capturedName) != "Global")
+            {
+                ViewModel.SetPerGameAddonMode(capturedName, "Global");
+                ViewModel.DeployAddonsForCard(capturedName);
+            }
+
             // Disable DLL override
             if (ViewModel.HasDllOverride(capturedName))
             {
@@ -980,6 +1116,15 @@ public class OverridesFlyoutBuilder
             if (ViewModel.IsWikiExcluded(capturedName))
                 ViewModel.ToggleWikiExclusion(capturedName);
 
+            // Reset Normal ReShade toggle
+            normalReShadeToggle.IsOn = false;
+            {
+                var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard != null && targetCard.UseNormalReShade)
+                    _ = ViewModel.SetUseNormalReShade(targetCard, false);
+            }
+
             // Reset bitness and API overrides
             bitnessCombo.SelectedItem = "Auto";
             ViewModel.SetBitnessOverride(capturedName, null);
@@ -997,24 +1142,153 @@ public class OverridesFlyoutBuilder
                     _window.RebuildCardGrid();
             }
         };
-        panel.Children.Add(resetOverridesBtn);
+        manageLeftColumn.Children.Add(resetOverridesBtn);
 
-        // Wrap in a ScrollViewer for long content
-        var scrollViewer = new ScrollViewer
+        // ── Copy Report button ──
+        var reportBtn = new Button
         {
-            Content = panel,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            MaxHeight = 800,
+            Content = "Copy Report",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
         };
+        reportBtn.Click += async (s, ev) =>
+        {
+            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard != null)
+                await GameReportEncoder.ShowAndCopyAsync(_window.Content.XamlRoot, targetCard, ViewModel);
+        };
+        manageLeftColumn.Children.Add(reportBtn);
 
+        Grid.SetColumn(manageLeftColumn, 0);
+        manageRowGrid.Children.Add(manageLeftColumn);
+
+        var manageDivider = new Border
+        {
+            Width = 1,
+            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Margin = new Thickness(12, 0, 12, 0),
+        };
+        Grid.SetColumn(manageDivider, 1);
+        manageRowGrid.Children.Add(manageDivider);
+
+        // ── Right column — ReShade preset selector + Normal ReShade toggle ──
+        var manageRightColumn = new StackPanel { Spacing = 6 };
+
+        var presetBtn = new Button
+        {
+            Content = "Select ReShade Preset",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+        };
+        ToolTipService.SetToolTip(presetBtn,
+            "Pick .ini preset files to copy to this game's folder. Place presets in the reshade-presets folder.");
+        presetBtn.Click += async (s, ev) =>
+        {
+            var selected = await PresetPopupHelper.ShowAsync(_window.Content.XamlRoot);
+            if (selected != null && selected.Count > 0)
+            {
+                var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard != null && !string.IsNullOrEmpty(targetCard.InstallPath))
+                {
+                    int count = PresetPopupHelper.DeployPresets(selected, targetCard.InstallPath);
+                    _crashReporter.Log($"[OverridesFlyoutBuilder] Deployed {count} preset(s) to '{capturedName}'");
+
+                    if (count > 0)
+                    {
+                        var shaderDialog = new ContentDialog
+                        {
+                            Title = "🔧 Install Shaders?",
+                            Content = "Also install the required shaders and textures?",
+                            PrimaryButtonText = "Yes",
+                            CloseButtonText = "No",
+                            XamlRoot = _window.Content.XamlRoot,
+                            RequestedTheme = ElementTheme.Dark,
+                        };
+
+                        var shaderResult = await shaderDialog.ShowAsync();
+                        if (shaderResult == ContentDialogResult.Primary)
+                        {
+                            var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
+                            ViewModel.ApplyPresetShaders(capturedName, presetPaths);
+                        }
+                    }
+                }
+            }
+        };
+        manageRightColumn.Children.Add(presetBtn);
+
+        // ── ReShade Without Addon Support toggle ──
+        normalReShadeToggle = new ToggleSwitch
+        {
+            Header = "ReShade Without Addon Support",
+            IsOn = card.UseNormalReShade,
+            OnContent = "On",
+            OffContent = "Off",
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 12,
+            IsEnabled = !isLumaMode,
+        };
+        ToolTipService.SetToolTip(normalReShadeToggle,
+            "When enabled, this game uses normal ReShade (without addon support). " +
+            "All managed addons will be removed and addon install buttons will be disabled.");
+        normalReShadeToggle.Toggled += async (s, ev) =>
+        {
+            var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+            if (targetCard == null) return;
+            if (normalReShadeToggle.IsOn != targetCard.UseNormalReShade)
+            {
+                await ViewModel.SetUseNormalReShade(targetCard, normalReShadeToggle.IsOn);
+
+                // When normal ReShade is enabled, force addon toggle off and disable it
+                if (normalReShadeToggle.IsOn)
+                {
+                    addonToggle.IsOn = false;
+                    addonToggle.IsEnabled = false;
+                    selectAddonsBtn.IsEnabled = false;
+                    selectAddonsBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+                    selectAddonsBtn.Foreground = UIFactory.Brush(ResourceKeys.TextDisabledBrush);
+                    selectAddonsBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+                }
+                else
+                {
+                    // Re-enable addon toggle when switching back to addon ReShade
+                    addonToggle.IsEnabled = true;
+                    addonToggle.IsOn = true;
+                }
+            }
+        };
+        manageRightColumn.Children.Add(normalReShadeToggle);
+
+        Grid.SetColumn(manageRightColumn, 2);
+        manageRowGrid.Children.Add(manageRightColumn);
+
+        panel.Children.Add(manageRowGrid);
+
+        // Style the flyout presenter to allow scrolling and set max dimensions
         var flyoutStyle = new Style(typeof(FlyoutPresenter));
         flyoutStyle.Setters.Add(new Setter(FlyoutPresenter.MaxWidthProperty, 640));
         flyoutStyle.Setters.Add(new Setter(FlyoutPresenter.MaxHeightProperty, 800));
+        flyoutStyle.Setters.Add(new Setter(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto));
 
         var flyout = new Flyout
         {
-            Content = scrollViewer,
+            Content = panel,
             Placement = FlyoutPlacementMode.BottomEdgeAlignedRight,
             FlyoutPresenterStyle = flyoutStyle,
         };

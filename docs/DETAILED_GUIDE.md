@@ -53,7 +53,7 @@ A card-based layout showing all games as a grid. Toggle between views with the v
 - Update-available highlight border
 - A Manage popout for quick access to install/uninstall/override controls
 
-The grid view card flyout matches the detail panel: same component order (ReShade → RenoDX → Luma (when applicable) → separator → ReLimiter → DC), mutual exclusion greying, and "Choose one from below" separator. The overrides flyout includes DC DLL override, DC update exclusion, bitness override, API override, and full Reset Overrides support.
+The grid view card flyout matches the detail panel: same component order (ReShade → RenoDX → Luma (when applicable) → separator → ReLimiter → DC), mutual exclusion greying, and "Choose one from below" separator. The overrides flyout includes addons section, preset selector, ReShade Without Addon Support toggle, DC DLL override, DC update exclusion, bitness override, API override, change folder, remove game, copy report, wiki exclusion toggle, and full Reset Overrides support.
 
 Games in Luma mode do not show a wiki status icon on the grid card.
 
@@ -105,7 +105,8 @@ Click **Settings** in the toolbar. Click **Back to Games** to return.
 |---------|----------|
 | Add Game | Manually add a game that wasn't auto-detected. Enter the game name and pick the install folder. |
 | Full Refresh | Clears all caches (including API detection caches) and re-scans everything from disk. Use when games or mods appear out of sync. |
-| Preferences | Skip Update Check on Launch, Beta Opt-In, Verbose Logging, Custom Shaders toggle, Screenshot Path (with Browse and Open buttons, optional per-game subfolder, Apply to All writes to all reshade*.ini variants) |
+| Preferences | Skip Update Check on Launch, Verbose Logging, Custom Shaders toggle, Screenshot Path (with Browse and Open buttons, optional per-game subfolder, Apply to All writes to all reshade*.ini variants) |
+| Hotkeys | ReShade UI Hotkey (capture key combo, applies to all reshade.ini files), ReLimiter OSD Hotkey (capture key combo in ReLimiter's native format, applies to all relimiter.ini files) |
 | Crash and Error Logs | Open Logs Folder, Open Downloads Cache, ReShade staging path |
 
 All settings apply immediately. Informational content (app description, credits & acknowledgements, disclaimers, and links) is on the About page, accessible from the Help flyout.
@@ -221,7 +222,7 @@ The detail panel shows a Components section with up to five rows, separated into
 | ReLimiter | ReLimiter | Install / Reinstall / Update — Copy INI — Uninstall |
 | Display Commander | Display Commander | Install / Reinstall / Update — Copy INI — Uninstall |
 
-ReLimiter and Display Commander are mutually exclusive — only one frame rate limiter can be installed per game at a time. When one is installed, the other's install button is greyed out. Removing one re-enables the other.
+ReLimiter and Display Commander are mutually exclusive — only one frame rate limiter can be installed per game at a time. When one is installed, the other's install button is greyed out and the row is visually dimmed, making the mutual exclusivity clear at a glance. Removing one re-enables the other.
 
 ### Version Display
 
@@ -335,6 +336,8 @@ The correct addon file is selected automatically based on the game's bitness, do
 
 RHI bundles a default `relimiter.ini` seeded to `%LOCALAPPDATA%\RHI\inis\` on first launch. A copy button on the ReLimiter component row copies this INI to the game folder (or AddonPath if configured). Customise the INI in the inis folder and it will be used for all future copies.
 
+Installing ReLimiter for the first time on a game automatically copies `relimiter.ini` from the AppData INI folder to the game directory. If the INI already exists in the game folder it is left untouched, so per-game customisations are never overwritten.
+
 #### Update Detection
 
 Updates are detected by comparing the locally cached file against the remote release using both file size and SHA-256 hash. When a newer version is available, the status changes and the install button shows "Update". Version metadata is tracked per-bitness so 32-bit and 64-bit updates are independent.
@@ -374,6 +377,8 @@ The DC DLL naming resolution priority chain:
 
 RHI bundles a default `DisplayCommander.ini` seeded to `%LOCALAPPDATA%\RHI\inis\` on first launch. A 📋 button on the DC component row (and in the card flyout) copies this INI to the game folder. Customise the INI in the inis folder and it will be used for all future copies.
 
+Installing Display Commander for the first time on a game automatically copies `DisplayCommander.ini` from the AppData INI folder to the game directory. If the INI already exists in the game folder it is left untouched, so per-game customisations are never overwritten.
+
 #### Update Detection
 
 DC is checked for updates on startup alongside other components. When an update is available, the sidebar badge and purple update styling appear. Update All now includes DC for eligible games.
@@ -390,7 +395,7 @@ A per-game DC update exclusion toggle in the overrides panel lets you pin a spec
 
 ## Shader Packs
 
-RHI downloads and maintains a collection of 40+ ReShade shader packs, merged into a shared staging folder and deployed per-game.
+RHI downloads and maintains a collection of 41 ReShade shader packs, merged into a shared staging folder and deployed per-game.
 
 ### Categories
 
@@ -523,6 +528,7 @@ The Overrides section appears below Components in the detail panel. All controls
 | Change install folder | Pick a different install folder for the game |
 | Reset folder / Remove game | Reset the install folder or remove a manually added game |
 | Select ReShade Preset | Deploy `.ini` preset files from the reshade-presets folder to the game |
+| ReShade Without Addon Support | Toggle to switch from addon-enabled ReShade to standard ReShade (without addon support). When enabled, all addons are removed, addon rows are dimmed and disabled, and the addon override toggle is locked off. Toggle back to restore addon ReShade and re-deploy addons. |
 
 ---
 
@@ -548,6 +554,8 @@ To use a custom ReShade preset, place your `ReShadePreset.ini` in the inis folde
 ## ReShade Presets
 
 Place `.ini` preset files in `%LOCALAPPDATA%\RHI\inis\reshade-presets\`. The "Select ReShade Preset" button in the overrides panel lists all files in this folder with checkboxes. Click "Deploy" to copy the selected presets to the game's install folder. If the folder is empty, the dialog offers to open it in Explorer.
+
+You can also drag and drop a ReShade preset `.ini` file directly onto the RHI window. RHI validates the file as a genuine ReShade preset, saves it to the presets folder, lets you pick a target game, and copies it to the game directory. After deploying, RHI offers to automatically resolve and install the shader packs required by the preset — parsing the `Techniques=` line, matching `.fx` files against known shader packs, switching the game to per-game shader mode, and deploying the matched packs. The same shader install prompt also appears when deploying presets from the existing preset selection dialog.
 
 ---
 
@@ -629,11 +637,12 @@ RHI supports drag-and-drop for adding games and installing mods. Drag-and-drop w
 | Game `.exe` | Opens an add-game dialog with auto-detected engine, inferred game root, and suggested name |
 | `.addon64` / `.addon32` | Opens an install dialog with a game picker (auto-selects based on filename, falls back to currently selected game) |
 | `.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`, `.tgz` | Extracted using bundled 7-Zip. Addon files inside are found and offered for install. Multiple addons trigger a picker dialog. |
+| ReShade preset `.ini` | Validated as a genuine ReShade preset, saved to the presets folder, and deployed to a chosen game. RHI then offers to auto-install required shader packs by parsing the `Techniques=` line and matching `.fx` files against known packs. |
 | URL (`.url` shortcut) | Parsed and processed as an addon download URL |
 
 ### Extension Validation
 
-File extensions are validated before any network or file activity. Only the following extensions are accepted: `.exe`, `.addon64`, `.addon32`, `.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`, `.tgz`. Files with unrecognised extensions are silently skipped.
+File extensions are validated before any network or file activity. Only the following extensions are accepted: `.exe`, `.addon64`, `.addon32`, `.ini`, `.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`, `.tgz`. Files with unrecognised extensions are silently skipped.
 
 ---
 

@@ -61,6 +61,7 @@ public static class PresetPopupHelper
                 CloseButtonText = "Cancel",
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+                RequestedTheme = ElementTheme.Dark,
                 MinWidth = 500,
             };
 
@@ -126,6 +127,7 @@ public static class PresetPopupHelper
             CloseButtonText = "Cancel",
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+            RequestedTheme = ElementTheme.Dark,
             MinWidth = 500,
         };
 

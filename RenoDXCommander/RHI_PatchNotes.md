@@ -11,6 +11,9 @@
 **ReShade overlay hotkey configuration**
 - New "ReShade UI Hotkey" section on the Settings page lets you capture a key combination (with Ctrl/Shift/Alt modifiers) and apply it to all managed reshade.ini files. The hotkey persists across restarts and is automatically written to newly deployed INI files. When set to the default Home key, RDR2 is skipped to preserve its template END key.
 
+**ReLimiter OSD hotkey configuration**
+- New "ReLimiter OSD Hotkey" section on the Settings page lets you set the key combination to toggle the ReLimiter overlay in-game. Uses ReLimiter's native format (e.g. Ctrl+F12, Alt+P). Applies to all relimiter.ini files in game folders and the AppData template so new installs inherit the setting.
+
 **ReShade Without Addon Support (per-game toggle)**
 - New toggle in the game overrides panel lets you switch individual games from addon-enabled ReShade to standard ReShade (without addon support). When enabled, all addons (RenoDX, ReLimiter, Display Commander, managed addon packs) are removed from the game folder, addon rows are dimmed and disabled, and the addon override toggle is locked off. Toggling back restores addon ReShade and re-deploys addons. The setting persists per-game across app restarts.
 
@@ -38,6 +41,12 @@
 
 **DC, ReLimiter, and RE Framework update status lost on refresh**
 - Display Commander, ReLimiter, and RE Framework update indicators weren't surviving a normal refresh — only RenoDX and ReShade statuses were being preserved when cards were rebuilt. A Full Refresh was needed to re-detect updates. All five components now carry their update status forward correctly.
+
+**Shader and preset picker dialogs unreadable in dark mode**
+- The root content grid was missing `RequestedTheme="Dark"`, so on PCs where Windows uses a non-dark theme, all WinUI controls (text boxes, combo boxes, toggles, checkboxes) inherited the system theme — dark text on dark backgrounds, light-colored input fields. Fixed by setting the dark theme on the root element so every control in the app inherits it. This also fixes the shader picker, preset picker, and all other dialogs.
+
+**32-bit-only RenoDX mods showing "No mod available"**
+- Games with only a 32-bit addon on the wiki (like Terraria, Sonic Generations, Tomb Raider 2013) were showing "No RenoDX mod available" because the wiki parser stored the `.addon32` URL separately and the UI only checked the 64-bit URL. The 32-bit URL is now promoted to the primary download when no 64-bit variant exists.
 
 ---
 
