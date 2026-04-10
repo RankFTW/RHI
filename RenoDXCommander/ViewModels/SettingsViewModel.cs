@@ -24,6 +24,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _addonWatchFolder = "";
     [ObservableProperty] private bool _useCustomShaders;
     [ObservableProperty] private string _screenshotPath = "";
+    [ObservableProperty] private string _overlayHotkey = "36,0,0,0";
     [ObservableProperty] private bool _perGameScreenshotFolders;
     [ObservableProperty] private bool _addonWarningDismissed;
     [ObservableProperty] private List<string> _enabledGlobalAddons = new();
@@ -127,6 +128,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("ScreenshotPath", out var spVal))
             ScreenshotPath = spVal ?? "";
 
+        if (s.TryGetValue("OverlayHotkey", out var ohVal))
+            OverlayHotkey = ohVal ?? "36,0,0,0";
+
         if (s.TryGetValue("PerGameScreenshotFolders", out var pgsfVal))
             PerGameScreenshotFolders = pgsfVal == "true";
 
@@ -156,6 +160,7 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(AddonWatchFolder))
             s["AddonWatchFolder"] = AddonWatchFolder;
         s["ScreenshotPath"] = ScreenshotPath;
+        s["OverlayHotkey"] = OverlayHotkey;
         s["PerGameScreenshotFolders"] = PerGameScreenshotFolders ? "true" : "false";
         s["AddonWarningDismissed"] = AddonWarningDismissed ? "true" : "false";
         s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);

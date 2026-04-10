@@ -9,7 +9,7 @@ public partial class AuxInstallService
     /// already in the game's INI that are not in the template are preserved untouched.
     /// If no reshade.ini exists in the game folder, the template is copied as-is.
     /// </summary>
-    public static void MergeRsIni(string gameDir, string? screenshotSavePath = null)
+    public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null)
     {
         if (!File.Exists(RsIniPath))
             throw new FileNotFoundException("reshade.ini not found in inis folder.", RsIniPath);
@@ -24,6 +24,10 @@ public partial class AuxInstallService
             // Apply screenshot path to the freshly copied file
             if (screenshotSavePath != null)
                 ApplyScreenshotPath(gamePath, screenshotSavePath);
+
+            // Apply overlay hotkey if non-default
+            if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
+                ApplyOverlayHotkey(gamePath, overlayHotkey);
             return;
         }
 
@@ -53,6 +57,10 @@ public partial class AuxInstallService
         // Apply screenshot path after merge
         if (screenshotSavePath != null)
             ApplyScreenshotPath(gamePath, screenshotSavePath);
+
+        // Apply overlay hotkey if non-default
+        if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
+            ApplyOverlayHotkey(gamePath, overlayHotkey);
     }
 
     /// <summary>
@@ -62,7 +70,7 @@ public partial class AuxInstallService
     /// reshade.ini if the Vulkan template doesn't exist.
     /// For Red Dead Redemption 2, uses the dedicated reshade.rdr2.ini template instead.
     /// </summary>
-    public static void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null)
+    public static void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null)
     {
         // Red Dead Redemption 2 uses a dedicated ini template
         string templatePath;
@@ -83,6 +91,10 @@ public partial class AuxInstallService
             // Apply screenshot path to the freshly copied file
             if (screenshotSavePath != null)
                 ApplyScreenshotPath(gamePath, screenshotSavePath);
+
+            // Apply overlay hotkey if non-default
+            if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
+                ApplyOverlayHotkey(gamePath, overlayHotkey);
             return;
         }
 
@@ -107,10 +119,14 @@ public partial class AuxInstallService
         // Apply screenshot path after merge
         if (screenshotSavePath != null)
             ApplyScreenshotPath(gamePath, screenshotSavePath);
+
+        // Apply overlay hotkey if non-default
+        if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
+            ApplyOverlayHotkey(gamePath, overlayHotkey);
     }
 
     /// <summary>Returns true if the game name matches Red Dead Redemption 2 (case-insensitive).</summary>
-    private static bool IsRdr2(string gameName) =>
+    internal static bool IsRdr2(string gameName) =>
         gameName.Contains("Red Dead Redemption 2", StringComparison.OrdinalIgnoreCase) ||
         gameName.Equals("RDR2", StringComparison.OrdinalIgnoreCase);
 
@@ -240,6 +256,46 @@ public partial class AuxInstallService
         ini[section]["SavePath"] = savePath;
 
         WriteIni(iniFilePath, ini);
+    }
+
+    // ── Overlay hotkey application ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Writes or updates the [INPUT] section in the given reshade*.ini file,
+    /// setting KeyOverlay to the specified value. All other sections/keys are preserved.
+    /// </summary>
+    public static void ApplyOverlayHotkey(string iniFilePath, string keyOverlayValue)
+    {
+        var ini = File.Exists(iniFilePath)
+            ? ParseIni(File.ReadAllLines(iniFilePath))
+            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+        const string section = "INPUT";
+
+        if (!ini.ContainsKey(section))
+            ini[section] = new OrderedDict();
+
+        ini[section]["KeyOverlay"] = keyOverlayValue;
+
+        WriteIni(iniFilePath, ini);
+    }
+
+    /// <summary>
+    /// Removes the KeyOverlay key from the [INPUT] section of the given reshade*.ini file,
+    /// allowing the game to fall back to its template default. If no [INPUT] section or
+    /// KeyOverlay key exists, the file is left unchanged.
+    /// </summary>
+    public static void RemoveOverlayHotkey(string iniFilePath)
+    {
+        if (!File.Exists(iniFilePath)) return;
+
+        var ini = ParseIni(File.ReadAllLines(iniFilePath));
+
+        if (ini.TryGetValue("INPUT", out var inputSection) && inputSection.ContainsKey("KeyOverlay"))
+        {
+            inputSection.Remove("KeyOverlay");
+            WriteIni(iniFilePath, ini);
+        }
     }
 
     // ── INI parsing / writing helpers ─────────────────────────────────────────────

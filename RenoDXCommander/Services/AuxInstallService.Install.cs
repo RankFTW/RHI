@@ -17,7 +17,8 @@ public partial class AuxInstallService
         IEnumerable<string>? selectedPackIds = null,
         IProgress<(string message, double percent)>? progress = null,
         string? screenshotSavePath = null,
-        bool useNormalReShade = false)
+        bool useNormalReShade = false,
+        string? overlayHotkey = null)
     {
         Directory.CreateDirectory(DownloadPaths.Misc);
 
@@ -71,7 +72,7 @@ public partial class AuxInstallService
 
         // Deploy reshade.ini alongside the DLL.
         if (File.Exists(RsIniPath))
-            MergeRsIni(installPath, screenshotSavePath);
+            MergeRsIni(installPath, screenshotSavePath, overlayHotkey);
         // Deploy ReShadePreset.ini alongside reshade.ini when the user has placed one in the inis folder.
         CopyRsPresetIniIfPresent(installPath);
 

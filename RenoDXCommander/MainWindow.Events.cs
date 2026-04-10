@@ -61,15 +61,16 @@ public sealed partial class MainWindow
         try
         {
             var screenshotPath = BuildScreenshotSavePath(card.GameName);
+            var overlayHotkey = ViewModel.Settings.OverlayHotkey;
             if (card.RequiresVulkanInstall)
             {
-                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath);
+                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
                 // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI)
                 ViewModel.DeployShadersForCard(card.GameName);
             }
             else
-                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath);
+                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
             bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
             card.RsActionMessage = presetDeployed
@@ -231,15 +232,16 @@ public sealed partial class MainWindow
         try
         {
             var screenshotPath = BuildScreenshotSavePath(card.GameName);
+            var overlayHotkey = ViewModel.Settings.OverlayHotkey;
             if (card.RequiresVulkanInstall)
             {
-                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath);
+                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
                 // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI)
                 ViewModel.DeployShadersForCard(card.GameName);
             }
             else
-                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath);
+                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
             card.RsActionMessage = "✅ reshade.ini merged into game folder.";
         }
         catch (Exception ex)
@@ -507,6 +509,12 @@ public sealed partial class MainWindow
 
     private void ApplyScreenshotPath_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyScreenshotPath_Click(sender, e);
+
+    private void HotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        => _settingsHandler.HotkeyBox_PreviewKeyDown(sender, e);
+
+    private void ApplyOverlayHotkey_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.ApplyOverlayHotkey_Click(sender, e);
 
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {

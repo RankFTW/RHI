@@ -447,6 +447,14 @@ public partial class ShaderPackService : IShaderPackService
             IsMinimum   : false,
             Description : "HDR brightness boost to compensate for QD-OLED ABL dimming"
         ),
+        new(
+            Id          : "GlamaryeFX",
+            DisplayName : "Glamarye Fast Effects by rj200",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/rj200/Glamarye_Fast_Effects_for_ReShade/archive/refs/heads/main.zip",
+            IsMinimum   : false,
+            Description : "Lightweight all-in-one: sharpening, AO, indirect lighting, and color correction in a single pass"
+        ),
     };
 
     // ── AvailablePacks ───────────────────────────────────────────────────────────

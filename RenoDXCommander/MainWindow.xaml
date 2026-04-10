@@ -764,132 +764,218 @@
                     <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
                                 HorizontalAlignment="Center">
 
-                        <!-- ── Add Game ───────────────────────────────────────────── -->
+                        <!-- ── Add Game & Full Refresh ─────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Add Game" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Manually add a game that wasn't automatically detected. You'll be asked to name it and select the game folder."/>
-                                <Button x:Name="AddGameBtn" Content="Add Game"
-                                        Click="AddGameButton_Click"
-                                        Background="{StaticResource AccentGreenBgBrush}" Foreground="{StaticResource AccentGreenBrush}"
-                                        BorderBrush="{StaticResource AccentGreenBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"
-                                        ToolTipService.ToolTip="Manually add a game folder"/>
-                            </StackPanel>
+                            <Grid ColumnSpacing="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: Add Game -->
+                                <Grid Grid.Column="0" RowSpacing="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Add Game" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Manually add a game that wasn't automatically detected. You'll be asked to name it and select the game folder."/>
+                                    </StackPanel>
+                                    <Button Grid.Row="1" x:Name="AddGameBtn" Content="Add Game"
+                                            Click="AddGameButton_Click"
+                                            Background="{StaticResource AccentGreenBgBrush}" Foreground="{StaticResource AccentGreenBrush}"
+                                            BorderBrush="{StaticResource AccentGreenBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"
+                                            ToolTipService.ToolTip="Manually add a game folder"/>
+                                </Grid>
+
+                                <!-- Vertical divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch"
+                                        Margin="12,0,12,0"/>
+
+                                <!-- Right: Full Refresh -->
+                                <Grid Grid.Column="2" RowSpacing="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Full Refresh" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                                   Text="Clears all caches and re-scans everything from disk. Use this if games or mods appear out of sync."/>
+                                    </StackPanel>
+                                    <Button Grid.Row="1" x:Name="FullRefreshBtn" Content="Full Refresh"
+                                            Click="FullRefreshButton_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"
+                                            ToolTipService.ToolTip="Full refresh — clears all caches and re-scans everything from disk"/>
+                                </Grid>
+                            </Grid>
                         </Border>
 
-                        <!-- ── Custom Shaders ──────────────────────────────────────── -->
+                        <!-- ── Screenshots & ReShade UI Hotkey ─────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs. Files are sourced from %LocalAppData%\RHI\reshade\Custom\."/>
-                                <ToggleSwitch x:Name="CustomShadersToggle" x:FieldModifier="internal"
-                                              Header="Use Custom Shaders"
-                                              Toggled="CustomShadersToggle_Toggled"
-                                              OnContent="Enabled — deploying from custom directories"
-                                              OffContent="Disabled — using shader packs"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                            </StackPanel>
+                            <Grid ColumnSpacing="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: Screenshots (existing content, unchanged) -->
+                                <StackPanel Grid.Column="0" Spacing="8">
+                                    <TextBlock Text="Screenshots" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Set a screenshot save path that will be written to all managed reshade.ini files."/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid Grid.Column="0">
+                                            <TextBox x:Name="ScreenshotPathBox" x:FieldModifier="internal"
+                                                     PlaceholderText="D:\Screenshots"
+                                                     FontSize="12"
+                                                     Padding="12,8,36,8"
+                                                     Background="{StaticResource SurfaceInputBrush}"
+                                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                                     BorderBrush="{StaticResource BorderSubtleBrush}"/>
+                                            <Button Click="BrowseScreenshotPath_Click"
+                                                    Background="Transparent" BorderThickness="0"
+                                                    Padding="8,6" MinWidth="0" MinHeight="0"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                    Margin="0,0,4,0"
+                                                    ToolTipService.ToolTip="Pick a folder for screenshots">
+                                                <FontIcon Glyph="&#xED25;" FontSize="14"
+                                                          Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            </Button>
+                                        </Grid>
+                                        <Button Grid.Column="1" Content="Open" Click="OpenScreenshotFolder_Click"
+                                                Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,6" FontSize="12"
+                                                ToolTipService.ToolTip="Open the screenshot folder in Explorer"/>
+                                    </Grid>
+                                    <ToggleSwitch x:Name="PerGameScreenshotToggle" x:FieldModifier="internal"
+                                                  Header="Per-Game Subfolder"
+                                                  OnContent="Enabled — each game gets its own subfolder"
+                                                  OffContent="Disabled — all screenshots in one folder"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
+                                    <Button x:Name="ApplyScreenshotPathBtn"
+                                            Content="Apply to All Games"
+                                            Click="ApplyScreenshotPath_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- Vertical divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch"
+                                        Margin="12,0,12,0"/>
+
+                                <!-- Right: ReShade UI Hotkey -->
+                                <StackPanel Grid.Column="2" Spacing="8">
+                                    <TextBlock Text="ReShade UI Hotkey" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Set the key combination to toggle the ReShade overlay in-game."/>
+                                    <TextBox x:Name="HotkeyBox" x:FieldModifier="internal"
+                                             PlaceholderText="Press a key..."
+                                             IsReadOnly="True"
+                                             FontSize="12"
+                                             Background="{StaticResource SurfaceInputBrush}"
+                                             Foreground="{StaticResource TextSecondaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"
+                                             PreviewKeyDown="HotkeyBox_PreviewKeyDown"/>
+                                    <Button x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
+                                            Content="Apply to All Games"
+                                            Click="ApplyOverlayHotkey_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+                            </Grid>
                         </Border>
 
-                        <!-- ── Screenshots ─────────────────────────────────────────── -->
+                        <!-- ── Custom Shaders & Addon Watch Folder ─────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Screenshots" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11"
-                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Set a screenshot save path that will be written to all managed reshade.ini files."/>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Grid>
-                                        <TextBox x:Name="ScreenshotPathBox" x:FieldModifier="internal"
-                                                 PlaceholderText="D:\Screenshots"
-                                                 FontSize="12" MinWidth="300"
-                                                 Padding="12,8,36,8"
+                            <Grid ColumnSpacing="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: Custom Shaders -->
+                                <StackPanel Grid.Column="0" Spacing="8">
+                                    <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs. Files are sourced from %LocalAppData%\RHI\reshade\Custom\."/>
+                                    <ToggleSwitch x:Name="CustomShadersToggle" x:FieldModifier="internal"
+                                                  Header="Use Custom Shaders"
+                                                  Toggled="CustomShadersToggle_Toggled"
+                                                  OnContent="Enabled — deploying from custom directories"
+                                                  OffContent="Disabled — using shader packs"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
+                                </StackPanel>
+
+                                <!-- Vertical divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch"
+                                        Margin="12,0,12,0"/>
+
+                                <!-- Right: Addon Watch Folder -->
+                                <StackPanel Grid.Column="2" Spacing="8">
+                                    <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="RHI watches this folder for RenoDX addon files (.addon64/.addon32) and archives containing them. Defaults to your Downloads folder."/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="AddonWatchFolderBox" x:FieldModifier="internal"
+                                                 Grid.Column="0"
+                                                 PlaceholderText="Downloads folder (default)"
+                                                 FontSize="12"
                                                  Background="{StaticResource SurfaceInputBrush}"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                  BorderBrush="{StaticResource BorderSubtleBrush}"/>
-                                        <Button Click="BrowseScreenshotPath_Click"
-                                                Background="Transparent" BorderThickness="0"
-                                                Padding="8,6" MinWidth="0" MinHeight="0"
-                                                HorizontalAlignment="Right" VerticalAlignment="Center"
-                                                Margin="0,0,4,0"
-                                                ToolTipService.ToolTip="Pick a folder for screenshots">
-                                            <FontIcon Glyph="&#xED25;" FontSize="14"
-                                                      Foreground="{StaticResource TextTertiaryBrush}"/>
-                                        </Button>
+                                        <Button Grid.Column="1" Content="Browse" Click="BrowseAddonWatchFolder_Click"
+                                                Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                        <Button Grid.Column="2" Content="Reset" Click="ResetAddonWatchFolder_Click"
+                                                Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,6" FontSize="12"/>
                                     </Grid>
-                                    <Button Content="Open" Click="OpenScreenshotFolder_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,6" FontSize="12"
-                                            ToolTipService.ToolTip="Open the screenshot folder in Explorer"/>
                                 </StackPanel>
-                                <ToggleSwitch x:Name="PerGameScreenshotToggle" x:FieldModifier="internal"
-                                              Header="Per-Game Subfolder"
-                                              OnContent="Enabled — each game gets its own subfolder"
-                                              OffContent="Disabled — all screenshots in one folder"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                                <Button x:Name="ApplyScreenshotPathBtn"
-                                        Content="Apply to All Games"
-                                        Click="ApplyScreenshotPath_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}"
-                                        Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ── Full Refresh ────────────────────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Full Refresh" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="Clears all caches and re-scans everything from disk. Use this if games or mods appear out of sync."/>
-                                <Button x:Name="FullRefreshBtn" Content="Full Refresh"
-                                        Click="FullRefreshButton_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"
-                                        ToolTipService.ToolTip="Full refresh — clears all caches and re-scans everything from disk"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ── Addon Watch Folder ─────────────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="RHI watches this folder for .addon64/.addon32 files and offers to install them automatically. Defaults to your Downloads folder."/>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBox x:Name="AddonWatchFolderBox" x:FieldModifier="internal"
-                                             PlaceholderText="Downloads folder (default)"
-                                             FontSize="12" MinWidth="300"
-                                             Background="{StaticResource SurfaceInputBrush}"
-                                             Foreground="{StaticResource TextSecondaryBrush}"
-                                             BorderBrush="{StaticResource BorderSubtleBrush}"/>
-                                    <Button Content="Browse" Click="BrowseAddonWatchFolder_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    <Button Content="Reset" Click="ResetAddonWatchFolder_Click"
-                                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
-                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                </StackPanel>
-                            </StackPanel>
+                            </Grid>
                         </Border>
 
                         <!-- ── Preferences ────────────────────────────────────────── -->

@@ -276,9 +276,9 @@ public partial class MainViewModel
             // Snapshot update statuses from old cards so they survive the rebuild.
             // The background CheckForUpdatesAsync will re-verify, but this avoids
             // a visual gap where the update badge disappears until the network check completes.
-            var prevUpdateStatus = new Dictionary<string, (GameStatus mod, GameStatus rs)>(StringComparer.OrdinalIgnoreCase);
+            var prevUpdateStatus = new Dictionary<string, (GameStatus mod, GameStatus rs, GameStatus dc, GameStatus ul, GameStatus refFw)>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in _allCards)
-                prevUpdateStatus[c.GameName] = (c.Status, c.RsStatus);
+                prevUpdateStatus[c.GameName] = (c.Status, c.RsStatus, c.DcStatus, c.UlStatus, c.RefStatus);
 
             SubStatusText = "Matching mods and checking install status...";
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
@@ -302,6 +302,12 @@ public partial class MainViewModel
                         c.Status = GameStatus.UpdateAvailable;
                     if (prev.rs == GameStatus.UpdateAvailable && c.RsStatus == GameStatus.Installed)
                         c.RsStatus = GameStatus.UpdateAvailable;
+                    if (prev.dc == GameStatus.UpdateAvailable && c.DcStatus == GameStatus.Installed)
+                        c.DcStatus = GameStatus.UpdateAvailable;
+                    if (prev.ul == GameStatus.UpdateAvailable && c.UlStatus == GameStatus.Installed)
+                        c.UlStatus = GameStatus.UpdateAvailable;
+                    if (prev.refFw == GameStatus.UpdateAvailable && c.RefStatus == GameStatus.Installed)
+                        c.RefStatus = GameStatus.UpdateAvailable;
                 }
             }
 

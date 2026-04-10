@@ -1,6 +1,15 @@
 ## v1.7.6
 
+### Highlights
+
+🎨 **ReShade preset drag-and-drop with automatic shader install** — Drag a preset `.ini` onto RHI and it'll validate it, deploy it to a game, and offer to automatically install the required shader packs. No more hunting for which packs a preset needs. We audited 30 popular presets across Elden Ring, Skyrim, Cyberpunk, GTA V, FFXIV, and more — RHI's 41 shader packs cover every freely-available shader out there.
+
+🔒 **ReShade Without Addon Support** — New per-game toggle to switch from addon-enabled ReShade to standard ReShade. All addons are cleanly removed and the rows dim out. Toggle back to restore everything.
+
 ### New Features
+
+**ReShade overlay hotkey configuration**
+- New "ReShade UI Hotkey" section on the Settings page lets you capture a key combination (with Ctrl/Shift/Alt modifiers) and apply it to all managed reshade.ini files. The hotkey persists across restarts and is automatically written to newly deployed INI files. When set to the default Home key, RDR2 is skipped to preserve its template END key.
 
 **ReShade Without Addon Support (per-game toggle)**
 - New toggle in the game overrides panel lets you switch individual games from addon-enabled ReShade to standard ReShade (without addon support). When enabled, all addons (RenoDX, ReLimiter, Display Commander, managed addon packs) are removed from the game folder, addon rows are dimmed and disabled, and the addon override toggle is locked off. Toggling back restores addon ReShade and re-deploys addons. The setting persists per-game across app restarts.
@@ -8,10 +17,16 @@
 **Automatic INI deploy on first install**
 - Installing ReLimiter or Display Commander to a game for the first time now automatically copies your pre-configured `relimiter.ini` or `DisplayCommander.ini` from the AppData INI folder to the game directory. If the INI already exists in the game folder it's left untouched, so per-game customisations are never overwritten. If the source INI doesn't exist or the copy fails, the install continues normally — no error, no interruption.
 
+**ReShade preset drag-and-drop with automatic shader install**
+- You can now drag and drop a ReShade preset `.ini` file onto the RHI window to install it. RHI validates the file as a genuine ReShade preset, saves it to the presets folder, lets you pick a target game, and copies it to the game directory. After deploying, RHI offers to automatically resolve and install the shader packs required by the preset — parsing the `Techniques=` line, matching `.fx` files against known shader packs, switching the game to per-game shader mode, and deploying the matched packs. The same shader install prompt also appears when deploying presets from the existing preset selection dialog. A new Glamarye Fast Effects pack was added after auditing 30 popular presets — RHI's 41 shader packs now cover every freely-distributable shader used by real-world presets.
+
 **Mutual-exclusion dimming for ReLimiter / Display Commander**
 - When ReLimiter is installed, the Display Commander row is now visually dimmed (and vice versa), making the mutual exclusivity between the two much clearer at a glance.
 
 ### Changes
+
+**Settings page layout redesign**
+- Settings sections are now grouped into two-column layouts with vertical dividers: Add Game / Full Refresh, Screenshots / ReShade UI Hotkey, and Custom Shaders / Addon Watch Folder. Reduces scrolling and makes the page more compact.
 
 **Preset folder path is now a clickable link**
 - The presets folder path in the "Select ReShade Presets" dialog is now a hyperlink that opens the folder in Explorer when clicked.
@@ -20,6 +35,9 @@
 
 **Last selected game not restored on launch**
 - The "remember last selected game" feature was broken — the saved selection was being overwritten by auto-select during init, and the library wasn't being saved on app close. Both issues are now fixed.
+
+**DC, ReLimiter, and RE Framework update status lost on refresh**
+- Display Commander, ReLimiter, and RE Framework update indicators weren't surviving a normal refresh — only RenoDX and ReShade statuses were being preserved when cards were rebuilt. A Full Refresh was needed to re-detect updates. All five components now carry their update status forward correctly.
 
 ---
 

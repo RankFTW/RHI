@@ -1275,7 +1275,8 @@ public partial class MainViewModel
                         : ResolveAutoReShadeFilename(card.DetectedApis)),
                 selectedPackIds: ResolveShaderSelection(card.GameName, card.ShaderModeOverride),
                 progress:       progress,
-                screenshotSavePath: BuildScreenshotSavePath(card.GameName));
+                screenshotSavePath: BuildScreenshotSavePath(card.GameName),
+                overlayHotkey: _settingsViewModel.OverlayHotkey);
             DispatcherQueue?.TryEnqueue(() =>
             {
                 card.RsRecord           = record;
@@ -1311,7 +1312,7 @@ public partial class MainViewModel
             card.RsActionMessage = "Installing Vulkan ReShade...";
             try
             {
-                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName));
+                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey);
                 AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
                 VulkanFootprintService.Create(card.InstallPath);
                 _shaderPackService.SyncGameFolder(card.InstallPath,
@@ -1376,7 +1377,7 @@ public partial class MainViewModel
             await Task.Run(() => InstallLayerAction());
 
             // 4. Deploy reshade.vulkan.ini (as reshade.ini) to game directory
-            AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName));
+            AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey);
 
             // 5. Deploy ReShadePreset.ini if present
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
@@ -1865,7 +1866,8 @@ public partial class MainViewModel
                     selectedPackIds: ResolveShaderSelection(card.GameName, card.ShaderModeOverride),
                     progress: progress,
                     screenshotSavePath: BuildScreenshotSavePath(card.GameName),
-                    useNormalReShade: true);
+                    useNormalReShade: true,
+                    overlayHotkey: _settingsViewModel.OverlayHotkey);
 
                 // 5. Add to persisted set, update card
                 _normalReShadeGames.Add(card.GameName);
@@ -1939,7 +1941,8 @@ public partial class MainViewModel
                     selectedPackIds: ResolveShaderSelection(card.GameName, card.ShaderModeOverride),
                     progress: progress,
                     screenshotSavePath: BuildScreenshotSavePath(card.GameName),
-                    useNormalReShade: false);
+                    useNormalReShade: false,
+                    overlayHotkey: _settingsViewModel.OverlayHotkey);
 
                 // 3. Re-deploy addons per game's addon selection
                 _normalReShadeGames.Remove(card.GameName);

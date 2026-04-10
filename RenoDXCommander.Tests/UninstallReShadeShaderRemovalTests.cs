@@ -212,7 +212,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
 
     private class StubAuxInstallService : IAuxInstallService, IAuxFileService
     {
-        public Task<AuxInstalledRecord> InstallReShadeAsync(string gameName, string installPath, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IEnumerable<string>? selectedPackIds = null, IProgress<(string, double)>? progress = null, string? screenshotSavePath = null, bool useNormalReShade = false) => Task.FromResult(new AuxInstalledRecord());
+        public Task<AuxInstalledRecord> InstallReShadeAsync(string gameName, string installPath, string? shaderModeOverride = null, bool use32Bit = false, string? filenameOverride = null, IEnumerable<string>? selectedPackIds = null, IProgress<(string, double)>? progress = null, string? screenshotSavePath = null, bool useNormalReShade = false, string? overlayHotkey = null) => Task.FromResult(new AuxInstalledRecord());
         public Task<bool> CheckForUpdateAsync(AuxInstalledRecord record) => Task.FromResult(false);
         public void Uninstall(AuxInstalledRecord record) { }
         public void UninstallDllOnly(AuxInstalledRecord record) { }
@@ -228,8 +228,8 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         public bool IsReShadeFileStrict(string filePath) => false;
         public bool IsReShadeFile(string filePath) => false;
         public void EnsureInisDir() { }
-        public void MergeRsIni(string gameDir, string? screenshotSavePath = null) { }
-        public void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null) { }
+        public void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null) { }
+        public void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null) { }
         public void CopyRsIni(string gameDir) { }
         public void CopyRsPresetIniIfPresent(string gameDir) { }
         public string? ReadInstalledVersion(string installPath, string fileName) => null;
