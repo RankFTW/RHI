@@ -2,9 +2,9 @@
 
 ### Highlights
 
-🎨 **ReShade preset drag-and-drop with automatic shader install** — Drag a preset `.ini` onto RHI and it'll validate it, deploy it to a game, and offer to automatically install the required shader packs. No more hunting for which packs a preset needs. We audited 30 popular presets across Elden Ring, Skyrim, Cyberpunk, GTA V, FFXIV, and more — RHI's 41 shader packs cover every freely-available shader out there.
+**ReShade preset drag-and-drop with automatic shader install** — Drag a preset `.ini` onto RHI and it'll validate it, deploy it to a game, and offer to automatically install the required shader packs. No more hunting for which packs a preset needs. We audited 30 popular presets across Elden Ring, Skyrim, Cyberpunk, GTA V, FFXIV, and more — RHI's 41 shader packs cover every freely-available shader out there.
 
-🔒 **ReShade Without Addon Support** — New per-game toggle to switch from addon-enabled ReShade to standard ReShade. All addons are cleanly removed and the rows dim out. Toggle back to restore everything.
+**ReShade Without Addon Support** — New per-game toggle to switch from addon-enabled ReShade to standard ReShade. All addons are cleanly removed and the rows dim out. Toggle back to restore everything.
 
 ### New Features
 
