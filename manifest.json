@@ -91,10 +91,13 @@
   },
   "dllNameOverrides": {
 	"The Elder Scrolls III: Morrowind": { "reshade": "opengl32.dll", "dc": "" },
-	"Terraria": { "reshade": "dbghelp.dll", "dc": "" },
+	"Terraria": { "reshade": "d3d9.dll", "dc": "" },
 	"Borderlands: The Pre-Sequel": { "reshade": "d3d9.dll", "dc": "" },
 	"Ori and the Blind Forest: Definitive Edition": { "reshade": "dxgi.dll", "dc": "" },
 	"Aliens: Dark Descent": { "reshade": "dxgi.dll", "dc": "" }
+  },
+  "gacSymlinkGames": {
+	"Terraria": "C:\\Windows\\Microsoft.NET\\assembly\\GAC_32\\Microsoft.Xna.Framework.Graphics\\v4.0_4.0.0.0__842cf8be1de50553"
   },
   "wikiNameOverrides": {	
 	"Assassin's Creed": "Assassin's Creed™: Director's Cut Edition",
