@@ -281,7 +281,7 @@
       "notesUrlLabel": "Download the latest version of REFramework here."
     },
     "Terraria": {
-      "notes": "⚠️ ReShade must be named dbghelp.dll, this is done automatically when installed using RDXC",
+      "notes": "⚠️ Terraria requires admin privileges to install ReShade. RHI creates a symlink in the GAC directory, which needs elevated permissions. If the install fails, try running RHI as administrator.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
