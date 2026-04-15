@@ -1,3 +1,20 @@
+## v1.7.8
+
+### Changes
+
+**Deploy button disabled when no presets selected**
+- The Deploy button in the preset picker is now greyed out until at least one preset is ticked.
+
+**DLSS Fix addon filename preserved on deploy**
+- The DLSS Fix addon now deploys to game folders using its original filename (`renodx-dlssfix.addon64`) instead of being renamed, which is required for it to work correctly.
+
+**Terraria install note updated**
+- The game note for Terraria now mentions that admin privileges are required for ReShade installation due to GAC symlink creation.
+
+**Manifest overrides for Nexus and PCGW**
+- Added manual Nexus Mods URL overrides for games where automatic name matching fails (Deadly Premonition 2, Dying Light: The Beast, Echoes of the End, Horizon Forbidden West, Morrowind, The Sinking City Remastered, Tunguska: The Visitation, X4: Timelines).
+- Added PCGW URL override for The Sinking City Remastered.
+
 ## v1.7.7
 
 ### New Features

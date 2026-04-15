@@ -139,12 +139,20 @@ public static class PresetPopupHelper
             Title = "Select ReShade Presets",
             Content = scrollViewer,
             PrimaryButtonText = "Deploy",
+            IsPrimaryButtonEnabled = false,
             CloseButtonText = "Cancel",
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             RequestedTheme = ElementTheme.Dark,
             MinWidth = 500,
         };
+
+        // Enable Deploy only when at least one preset is ticked
+        foreach (var (_, box) in checkBoxes)
+        {
+            box.Checked += (s, e) => dlg.IsPrimaryButtonEnabled = checkBoxes.Any(cb => cb.Box.IsChecked == true);
+            box.Unchecked += (s, e) => dlg.IsPrimaryButtonEnabled = checkBoxes.Any(cb => cb.Box.IsChecked == true);
+        }
 
         var result = await dlg.ShowAsync();
         if (result != ContentDialogResult.Primary)

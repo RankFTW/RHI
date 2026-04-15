@@ -8,4 +8,5 @@ public record AddonEntry(
     string? DownloadUrl32,
     string? DownloadUrl64,
     string? RepositoryUrl,
-    string? EffectInstallPath);
+    string? EffectInstallPath,
+    string? DeployFileName = null);

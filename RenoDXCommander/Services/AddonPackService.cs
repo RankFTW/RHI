@@ -47,7 +47,8 @@ public class AddonPackService : IAddonPackService
         DownloadUrl32: null,
         DownloadUrl64: "https://github.com/clshortfuse/renodx/releases/download/snapshot/renodx-dlssfix.addon64",
         RepositoryUrl: "https://github.com/clshortfuse/renodx/wiki/Mods#unreal-engine-",
-        EffectInstallPath: null);
+        EffectInstallPath: null,
+        DeployFileName: "renodx-dlssfix");
 
     public AddonPackService(HttpClient http) => _http = http;
 
@@ -359,16 +360,21 @@ public class AddonPackService : IAddonPackService
                 continue;
             }
 
-            var destFile = Path.Combine(installPath, safeName + bitnessExt);
+            // Use DeployFileName if the entry specifies one, otherwise use the sanitized package name
+            var entry = _packs.FirstOrDefault(e =>
+                e.PackageName.Equals(packageName, StringComparison.OrdinalIgnoreCase));
+            var deployName = entry?.DeployFileName ?? safeName;
+
+            var destFile = Path.Combine(installPath, deployName + bitnessExt);
             try
             {
                 File.Copy(stagingFile, destFile, overwrite: true);
-                deployedFileNames.Add(safeName + bitnessExt);
-                CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployed '{safeName}{bitnessExt}' to '{installPath}'.");
+                deployedFileNames.Add(deployName + bitnessExt);
+                CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployed '{deployName}{bitnessExt}' to '{installPath}'.");
             }
             catch (Exception ex)
             {
-                CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to copy '{safeName}{bitnessExt}' — {ex.Message}");
+                CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to copy '{deployName}{bitnessExt}' — {ex.Message}");
             }
         }
 
@@ -380,6 +386,12 @@ public class AddonPackService : IAddonPackService
             var sn = SanitizeFileName(pack.PackageName);
             knownAddonFileNames.Add(sn + ".addon32");
             knownAddonFileNames.Add(sn + ".addon64");
+            // Also track DeployFileName variants so they aren't removed as stale
+            if (!string.IsNullOrEmpty(pack.DeployFileName))
+            {
+                knownAddonFileNames.Add(pack.DeployFileName + ".addon32");
+                knownAddonFileNames.Add(pack.DeployFileName + ".addon64");
+            }
         }
 
         try
