@@ -25,7 +25,8 @@
     "Muckingham Files 3",
     "Muckingham Files 4",
     "Pool Party - Summer",
-    "Winter 2023 Seasonal Pack"
+    "Winter 2023 Seasonal Pack",
+	"Wallpaper Engine"
   ],
   "nativeHdrGames": [
     "Alone in the Dark",
@@ -75,7 +76,8 @@
 	"Crimson Desert": "BlackSpace Engine",
 	"Control": "Northlight Engine",
 	"Control Ultimate Edition": "Northlight Engine",
-	"Monster Hunter Stories 3: Twisted Reflection": "RE Engine"
+	"Monster Hunter Stories 3: Twisted Reflection": "RE Engine",
+	"Resident Evil Village": "RE Engine"	
   },
   "graphicsApiOverrides": {
 	"Baldur's Gate 3": "DX12, VLK",
@@ -91,10 +93,13 @@
   },
   "dllNameOverrides": {
 	"The Elder Scrolls III: Morrowind": { "reshade": "opengl32.dll", "dc": "" },
-	"Terraria": { "reshade": "dbghelp.dll", "dc": "" },
+	"Terraria": { "reshade": "d3d9.dll", "dc": "" },
 	"Borderlands: The Pre-Sequel": { "reshade": "d3d9.dll", "dc": "" },
 	"Ori and the Blind Forest: Definitive Edition": { "reshade": "dxgi.dll", "dc": "" },
 	"Aliens: Dark Descent": { "reshade": "dxgi.dll", "dc": "" }
+  },
+  "gacSymlinkGames": {
+	"Terraria": "C:\\Windows\\Microsoft.NET\\assembly\\GAC_32\\Microsoft.Xna.Framework.Graphics\\v4.0_4.0.0.0__842cf8be1de50553"
   },
   "wikiNameOverrides": {	
 	"Assassin's Creed": "Assassin's Creed™: Director's Cut Edition",
@@ -122,7 +127,9 @@
 	"Borderlands 2": "Borderlands 2 & The Pre-Sequel",
 	"Dying Light": "Dying Light",
 	"Total War: WARHAMMER III": "Total War: Warhammer 3",
-	"God of War": "God of War (2018)"
+	"God of War": "God of War (2018)",
+    "Deus Ex: Human Revolution - Director's Cut": "Deus Ex: Human Revolution",
+	"Terraria": "Terraria"
   },
   "wikiStatusOverrides": {
     "Code Vein II": "✅",	
@@ -145,7 +152,8 @@
 	"Stardew Valley",
 	"Call of Duty®: Modern Warfare®",
 	"MIO: Memories in Orbit",
-	"Dead by Daylight"
+	"Dead by Daylight",
+	"REANIMAL"
   ],
   "installPathOverrides": {
     "Batman: Arkham Asylum GOTY Edition": "Binaries",
@@ -170,7 +178,8 @@
 	"Indiana Jones and the Great Circle": "",
 	"Borderlands: The Pre-Sequel": "Binaries\\Win32",
 	"Hades": "x64",
-	"Deus Ex - Mankind Divided": "retail"
+	"Deus Ex - Mankind Divided": "retail",
+  "Five Nights at Freddy's: Security Breach": "fnaf9\\Binaries\\Win64"
   },
   "snapshotOverrides": {
 	"Assassin's Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
@@ -178,8 +187,7 @@
     "CODE VEIN II": "https://marat569.github.io/renodx/renodx-codevein2.addon64",
     "Far Cry 2": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
     "Far Cry 3": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
-    "Jedi Fallen Order": "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64",
-    "Terraria": "https://clshortfuse.github.io/renodx/renodx-terraria.addon32"
+    "Jedi Fallen Order": "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64"    
   },
   "dcModeOverrides": {		
   },
@@ -276,7 +284,7 @@
       "notesUrlLabel": "Download the latest version of REFramework here."
     },
     "Terraria": {
-      "notes": "⚠️ ReShade must be named dbghelp.dll, this is done automatically when installed using RDXC",
+      "notes": "⚠️ Terraria requires admin privileges to install ReShade. RHI creates a symlink in the GAC directory, which needs elevated permissions. If the install fails, try running RHI as administrator.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
@@ -289,6 +297,11 @@
       "notes": "⚠️ You must run the game once in order to create the correct directories for ReShade/RenoDX to work.\nAfter running the game once click Refresh and make sure directory is detected as /tModLoader/dotnet before installing anything",
       "notesUrl": null,
       "notesUrlLabel": null
+    },
+	"REANIMAL": {
+      "notes": "REANIMAL has had native HDR added, developed by Pumbo",
+      "notesUrl": "https://store.steampowered.com/news/app/2129530/view/520870020121624916?l=english",
+      "notesUrlLabel": "Native HDR added"
     }
   },
   "lumaDefaultGames": [
@@ -327,5 +340,24 @@
     "Lilium": "https://ko-fi.com/endlesslyflowering",
     "Bit Viper": "https://ko-fi.com/bitviper",
 	"Ritsu": "https://ko-fi.com/ritsucecil"
+  },
+  "nexusUrlOverrides": {
+    "Deadly Premonition 2": "https://www.nexusmods.com/games/deadlypremonition2ablessingindisguise",
+    "Dying Light: The Beast Restored Land": "https://www.nexusmods.com/games/dyinglightthebeast",
+    "Echoes of the End: Enhanced Edition": "https://www.nexusmods.com/games/echoesoftheend",
+    "Horizon Forbidden West™ Complete Edition": "https://www.nexusmods.com/games/horizonforbiddenwest",
+    "The Elder Scrolls III: Morrowind": "https://www.nexusmods.com/games/morrowind",
+    "The Sinking City Remastered": "https://www.nexusmods.com/games/thesinkingcity",
+    "Tunguska: The Visitation - Final Cut": "https://www.nexusmods.com/games/tunguskathevisitation",
+    "X4: Timelines": "https://www.nexusmods.com/games/x4foundations",
+    "Silent Hill 2": "https://www.nexusmods.com/games/silenthill2",
+	"The Elder Scrolls IV: Oblivion Remastered": "https://www.nexusmods.com/games/oblivionremastered",
+	"The Witcher 3: Wild Hunt": "https://www.nexusmods.com/games/witcher3",
+	"DEATH STRANDING DIRECTOR'S CUT": "https://www.nexusmods.com/games/deathstranding"
+  },
+  "steamAppIdOverrides": {
+  },
+  "pcgwUrlOverrides": {
+    "The Sinking City Remastered": "https://www.pcgamingwiki.com/wiki/The_Sinking_City_Remastered"
   }
 }
