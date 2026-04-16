@@ -152,7 +152,8 @@
 	"Stardew Valley",
 	"Call of Duty®: Modern Warfare®",
 	"MIO: Memories in Orbit",
-	"Dead by Daylight"
+	"Dead by Daylight",
+	"REANIMAL"
   ],
   "installPathOverrides": {
     "Batman: Arkham Asylum GOTY Edition": "Binaries",
@@ -296,6 +297,11 @@
       "notes": "⚠️ You must run the game once in order to create the correct directories for ReShade/RenoDX to work.\nAfter running the game once click Refresh and make sure directory is detected as /tModLoader/dotnet before installing anything",
       "notesUrl": null,
       "notesUrlLabel": null
+    },
+	"REANIMAL": {
+      "notes": "REANIMAL has had native HDR added, developed by Pumbo"
+      "notesUrl": "https://store.steampowered.com/news/app/2129530/view/520870020121624916?l=english",
+      "notesUrlLabel": "Native HDR added"
     }
   },
   "lumaDefaultGames": [
