@@ -131,6 +131,7 @@ public partial class MainViewModel
             Task rsTask = Task.CompletedTask; // hoisted so we can defer the await until after cards display
             Task normalRsTask = Task.CompletedTask; // hoisted so we can defer the await until after cards display
             Task osTask = Task.CompletedTask; // hoisted so we can defer the await until after cards display
+            Task dlssTask = Task.CompletedTask; // hoisted so we can defer the await until after cards display
 
             // Start Nexus Mods + PCGW initialization early (network I/O, runs in parallel with other fetches)
             var nexusInitTask = Task.Run(async () => {
@@ -184,6 +185,10 @@ public partial class MainViewModel
                     try { await _optiScalerService.EnsureStagingAsync(); }
                     catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler staging task failed — {ex.Message}"); }
                 });
+                dlssTask         = Task.Run(async () => {
+                    try { await _optiScalerService.EnsureDlssStagingAsync(); }
+                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
+                });
 
                 // Await detection first — this never needs network
                 var freshGamesResult = await detectTask;
@@ -194,6 +199,7 @@ public partial class MainViewModel
                 try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
                 // rsTask deferred until after cards display
                 // osTask deferred until after cards display
+                // dlssTask deferred until after cards display
 
                 var wikiResult = !wikiFetchFailed ? await wikiTask : default;
                 _allMods      = wikiResult.Mods ?? new();
@@ -243,6 +249,10 @@ public partial class MainViewModel
                     try { await _optiScalerService.EnsureStagingAsync(); }
                     catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler staging task failed — {ex.Message}"); }
                 });
+                dlssTask         = Task.Run(async () => {
+                    try { await _optiScalerService.EnsureDlssStagingAsync(); }
+                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
+                });
 
                 // Await detection first — this never needs network
                 detectedGames = await detectTask;
@@ -253,6 +263,7 @@ public partial class MainViewModel
                 try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
                 // rsTask deferred until after cards display
                 // osTask deferred until after cards display
+                // dlssTask deferred until after cards display
 
                 var wikiResult2 = !wikiFetchFailed ? await wikiTask : default;
                 _allMods      = wikiResult2.Mods ?? new();
@@ -368,13 +379,14 @@ public partial class MainViewModel
             // These are not needed for card display, so we run them after the UI is ready.
             // rsTask (ReShade download/staging) was started earlier but not awaited.
             // osTask (OptiScaler download/staging) was started earlier but not awaited.
+            // dlssTask (DLSS DLL download/staging) was started earlier but not awaited.
             // _shaderPackReadyTask (shader pack download) was started in MainWindow constructor.
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    // Wait for ReShade staging and OptiScaler staging to finish in parallel
-                    await Task.WhenAll(rsTask, normalRsTask, osTask);
+                    // Wait for ReShade staging, OptiScaler staging, and DLSS staging to finish in parallel
+                    await Task.WhenAll(rsTask, normalRsTask, osTask, dlssTask);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Deferred ReShade sync failed — {ex.Message}"); }
 

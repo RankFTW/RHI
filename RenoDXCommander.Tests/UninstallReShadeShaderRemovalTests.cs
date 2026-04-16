@@ -340,6 +340,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         public Task EnsureStagingAsync(IProgress<(string message, double percent)>? progress = null) => Task.CompletedTask;
         public Task CheckForUpdateAsync() => Task.CompletedTask;
         public void ClearStaging() { }
+        public Task EnsureDlssStagingAsync(IProgress<(string message, double percent)>? progress = null) => Task.CompletedTask;
         public Task<AuxInstalledRecord?> InstallAsync(GameCardViewModel card, IProgress<(string message, double percent)>? progress = null, string gpuType = "NVIDIA", bool dlssInputs = true, string? hotkey = null) => Task.FromResult<AuxInstalledRecord?>(null);
         public void Uninstall(GameCardViewModel card) { }
         public Task UpdateAsync(GameCardViewModel card, IProgress<(string message, double percent)>? progress = null) => Task.CompletedTask;

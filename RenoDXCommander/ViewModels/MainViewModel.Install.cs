@@ -1243,22 +1243,29 @@ public partial class MainViewModel
             var dxgiPath = Path.Combine(card.InstallPath, "dxgi.dll");
             if (File.Exists(dxgiPath))
             {
-                var fileType = AuxInstallService.IdentifyDxgiFile(dxgiPath);
-                if (fileType == AuxInstallService.DxgiFileType.Unknown)
+                // Skip the warning entirely if OptiScaler is installed for this game —
+                // the dxgi.dll is OptiScaler's and ReShade will be deployed as ReShade64.dll
+                var osRecord = _auxInstaller.FindRecord(card.GameName, card.InstallPath, OptiScalerService.AddonType);
+                if (osRecord == null)
                 {
-                    if (ConfirmForeignDxgiOverwrite != null)
+                    var fileType = AuxInstallService.IdentifyDxgiFile(dxgiPath);
+                    // Skip the warning for known managed files (ReShade, OptiScaler)
+                    if (fileType == AuxInstallService.DxgiFileType.Unknown)
                     {
-                        var confirmed = await ConfirmForeignDxgiOverwrite(card, dxgiPath);
-                        if (!confirmed)
+                        if (ConfirmForeignDxgiOverwrite != null)
                         {
-                            card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll found. Use Overrides to proceed.";
+                            var confirmed = await ConfirmForeignDxgiOverwrite(card, dxgiPath);
+                            if (!confirmed)
+                            {
+                                card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll found. Use Overrides to proceed.";
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll found.";
                             return;
                         }
-                    }
-                    else
-                    {
-                        card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll found.";
-                        return;
                     }
                 }
             }

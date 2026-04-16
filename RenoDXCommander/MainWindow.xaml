@@ -1082,6 +1082,7 @@
                                     <RowDefinition Height="Auto"/>  <!-- Row 0: Titles + descriptions -->
                                     <RowDefinition Height="Auto"/>  <!-- Row 1: GPU combo | OS hotkey combo -->
                                     <RowDefinition Height="Auto"/>  <!-- Row 2: DLSS toggle | OS Apply -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 3: Compatibility link -->
                                 </Grid.RowDefinitions>
 
                                 <!-- ── Row 0: Titles + descriptions ── -->
@@ -1093,7 +1094,7 @@
                                                Text="Configure GPU type and DLSS input settings for OptiScaler installations."/>
                                 </StackPanel>
 
-                                <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="1"
+                                <Border Grid.Row="0" Grid.RowSpan="4" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch"
                                         Margin="12,0,12,0"/>
@@ -1168,6 +1169,14 @@
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                         CornerRadius="8" Padding="12,7" FontSize="12"
                                         HorizontalAlignment="Stretch"/>
+
+                                <HyperlinkButton Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+                                                 Content="OptiScaler Compatibility List"
+                                                 NavigateUri="https://github.com/optiscaler/OptiScaler/wiki/Compatibility-List"
+                                                 FontSize="12"
+                                                 Foreground="{StaticResource AccentBlueBrush}"
+                                                 HorizontalAlignment="Left"
+                                                 Padding="0,4"/>
                             </Grid>
                         </Border>
 

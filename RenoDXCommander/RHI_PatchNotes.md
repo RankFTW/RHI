@@ -1,3 +1,27 @@
+## v1.7.9 Beta 3
+
+### New Features
+
+**DLSS auto-download (Super Resolution, Ray Reconstruction, Frame Generation)**
+- The latest NVIDIA DLSS Super Resolution (`nvngx_dlss.dll`), Ray Reconstruction (`nvngx_dlssd.dll`), and Frame Generation (`nvngx_dlssg.dll`) DLLs are now automatically downloaded and staged to `%LOCALAPPDATA%\RHI\dlss/` on startup. Sourced from the DLSS Swapper manifest (hosted on GitHub with Cloudflare R2 CDN downloads).
+- Every OptiScaler install now deploys all three DLLs directly to the game folder, enabling DLSS upscaling, Ray Reconstruction, and DLSS-FG in OptiScaler even for games that don't ship with them. Game originals are backed up to `.original` and restored on uninstall.
+- All DLLs are also updated in game folders during OptiScaler updates.
+- Each DLL has independent version tracking and auto-updates on each app launch.
+
+### Changes
+
+- Vulkan games now automatically use `winmm.dll` as the OptiScaler DLL filename instead of `dxgi.dll`, matching OptiScaler's Vulkan requirements. User and manifest overrides still take priority.
+- OptiScaler FPS overlay hotkey (`FpsShortcutKey`), FPS overlay cycle hotkey (`FpsCycleShortcutKey`), and Frame Generation hotkey (`FGShortcutKey`) are now unbound by default (`-1`) in the bundled INI templates, preventing keybind conflicts with games.
+- Added "OptiScaler Compatibility List" link in the OptiScaler Settings section on the Settings page, linking to the community-maintained compatibility wiki.
+
+### Bug Fixes
+
+- Fixed "Unknown dxgi.dll Detected" warning appearing when installing ReShade after OptiScaler. The foreign DLL check now skips the warning when an OptiScaler tracking record exists for the game.
+- Fixed ReShade not being deleted when uninstalling after OptiScaler was removed. OptiScaler's uninstall now skips restoring the `.original` backup for the main DLL when ReShade will be renamed to that filename, preventing the game's original from blocking the rename.
+- Fixed ReShade being renamed to `opengl32.dll` instead of `dxgi.dll` on OptiScaler uninstall for games with both DX12 and OpenGL detected. The API priority order now checks DX11/DX12 first, then DX9, then OpenGL.
+
+---
+
 ## v1.7.9 Beta 2
 
 ### New Features

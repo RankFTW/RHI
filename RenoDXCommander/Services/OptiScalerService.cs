@@ -52,6 +52,23 @@ public class OptiScalerService : IOptiScalerService
     private static readonly string OptiPatcherVersionPath = Path.Combine(OptiPatcherStagingDir, "version.txt");
     private static readonly string OptiPatcherFileName = "OptiPatcher.asi";
 
+    // ── DLSS DLL staging constants ────────────────────────────────────────────
+    /// <summary>
+    /// DLSS Swapper manifest hosted on GitHub — contains structured records with
+    /// direct download URLs for every known DLSS DLL version.
+    /// </summary>
+    private const string DlssManifestUrl =
+        "https://raw.githubusercontent.com/beeradmoore/dlss-swapper-manifest-builder/main/manifest.json";
+    private static readonly string DlssStagingDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "dlss");
+    private static readonly string DlssVersionPath = Path.Combine(DlssStagingDir, "version.txt");
+    private static readonly string DlssdVersionPath = Path.Combine(DlssStagingDir, "version_dlssd.txt");
+    private static readonly string DlssgVersionPath = Path.Combine(DlssStagingDir, "version_dlssg.txt");
+    private const string DlssDllFileName = "nvngx_dlss.dll";
+    private const string DlssdDllFileName = "nvngx_dlssd.dll";
+    private const string DlssgDllFileName = "nvngx_dlssg.dll";
+
     /// <summary>
     /// Maps friendly key names (used in the Settings UI) to Windows Virtual Key Code
     /// hex strings (used by OptiScaler's ShortcutKey= INI setting).
@@ -745,6 +762,491 @@ public class OptiScalerService : IOptiScalerService
         }
     }
 
+    // ── DLSS DLL staging and update ───────────────────────────────────────────
+
+    /// <summary>
+    /// Downloads the latest nvngx_dlss.dll from the DLSS Swapper manifest to the staging folder.
+    /// The manifest is a JSON file hosted on GitHub that contains structured records with
+    /// direct download URLs (Cloudflare R2 CDN) for every known DLSS DLL version.
+    /// No-op if staging is already valid and up to date.
+    /// </summary>
+    public async Task EnsureDlssStagingAsync(IProgress<(string message, double percent)>? progress = null)
+    {
+        try
+        {
+            progress?.Report(("Checking DLSS release...", 0));
+
+            // ── 1. Fetch manifest from GitHub ────────────────────────────────
+            string manifestJson;
+            try
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, DlssManifestUrl);
+                req.Headers.Add("User-Agent", "RHI");
+                var resp = await _http.SendAsync(req);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Manifest fetch returned {resp.StatusCode}");
+                    return;
+                }
+                manifestJson = await resp.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Manifest fetch failed — {ex.Message}");
+                return;
+            }
+
+            // ── 2. Parse manifest — find the latest stable non-dev DLSS record ──
+            string? latestVersion = null;
+            string? downloadUrl = null;
+            string? md5Hash = null;
+            try
+            {
+                using var doc = JsonDocument.Parse(manifestJson);
+                if (doc.RootElement.TryGetProperty("dlss", out var dlssArray))
+                {
+                    // Records are ordered oldest-first; find the latest non-dev stable entry
+                    foreach (var record in dlssArray.EnumerateArray())
+                    {
+                        // Skip dev files (larger debug builds not intended for end users)
+                        if (record.TryGetProperty("is_dev_file", out var isDevEl) && isDevEl.GetBoolean())
+                            continue;
+
+                        var version = record.TryGetProperty("version", out var vEl) ? vEl.GetString() : null;
+                        var url = record.TryGetProperty("download_url", out var urlEl) ? urlEl.GetString() : null;
+                        var hash = record.TryGetProperty("md5_hash", out var hashEl) ? hashEl.GetString() : null;
+
+                        if (!string.IsNullOrEmpty(version) && !string.IsNullOrEmpty(url))
+                        {
+                            latestVersion = version;
+                            downloadUrl = url;
+                            md5Hash = hash;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Failed to parse manifest — {ex.Message}");
+                return;
+            }
+
+            if (latestVersion == null || downloadUrl == null)
+            {
+                CrashReporter.Log("[OptiScalerService.EnsureDlssStagingAsync] No stable DLSS record found in manifest");
+                return;
+            }
+
+            // ── 3. Check if already up to date ──────────────────────────────
+            var cachedVersion = File.Exists(DlssVersionPath)
+                ? File.ReadAllText(DlssVersionPath).Trim()
+                : null;
+            var stagedDll = Path.Combine(DlssStagingDir, DlssDllFileName);
+
+            bool dlssUpToDate = cachedVersion != null
+                && string.Equals(cachedVersion, latestVersion, StringComparison.Ordinal)
+                && File.Exists(stagedDll);
+
+            // ── 4. Download DLSS SR if needed ────────────────────────────────
+            Directory.CreateDirectory(DlssStagingDir);
+
+            if (dlssUpToDate)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS SR already up to date ({latestVersion})");
+            }
+            else
+            {
+                progress?.Report(($"Downloading DLSS {latestVersion}...", 20));
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Downloading DLSS {latestVersion} from {downloadUrl}");
+            var tempZip = Path.Combine(DlssStagingDir, $"dlss_{latestVersion}.zip.tmp");
+            try
+            {
+                var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                if (!dlResp.IsSuccessStatusCode)
+                {
+                    CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Download failed ({dlResp.StatusCode})");
+                    return;
+                }
+
+                var total = dlResp.Content.Headers.ContentLength ?? -1L;
+                long downloaded = 0;
+                var buf = new byte[512 * 1024]; // 512 KB
+
+                using (var net = await dlResp.Content.ReadAsStreamAsync())
+                using (var file = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 512 * 1024, useAsync: true))
+                {
+                    int read;
+                    while ((read = await net.ReadAsync(buf)) > 0)
+                    {
+                        await file.WriteAsync(buf.AsMemory(0, read));
+                        downloaded += read;
+                        if (total > 0)
+                        {
+                            var pct = 20 + (double)downloaded / total * 50; // 20–70%
+                            progress?.Report(($"Downloading DLSS... {downloaded / 1024} KB / {total / 1024} KB", pct));
+                        }
+                    }
+                }
+
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Downloaded {downloaded} bytes");
+            }
+            catch (Exception ex)
+            {
+                if (File.Exists(tempZip)) try { File.Delete(tempZip); } catch { }
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Download exception — {ex.Message}");
+                return;
+            }
+
+            // ── 5. Extract nvngx_dlss.dll from the zip ──────────────────────
+            progress?.Report(("Extracting DLSS DLL...", 75));
+            try
+            {
+                using var archive = SharpCompress.Archives.ArchiveFactory.Open(tempZip);
+                var dllEntry = archive.Entries.FirstOrDefault(e =>
+                    !e.IsDirectory &&
+                    Path.GetFileName(e.Key ?? "").Equals(DlssDllFileName, StringComparison.OrdinalIgnoreCase));
+
+                if (dllEntry == null)
+                {
+                    CrashReporter.Log("[OptiScalerService.EnsureDlssStagingAsync] nvngx_dlss.dll not found in zip");
+                    return;
+                }
+
+                using (var entryStream = dllEntry.OpenEntryStream())
+                using (var outFile = new FileStream(stagedDll, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await entryStream.CopyToAsync(outFile);
+                }
+
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Extracted {DlssDllFileName} ({new FileInfo(stagedDll).Length} bytes)");
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Extraction failed — {ex.Message}");
+                return;
+            }
+            finally
+            {
+                if (File.Exists(tempZip)) try { File.Delete(tempZip); } catch { }
+            }
+
+            // ── Write DLSS SR version ────────────────────────────────────────
+            try
+            {
+                File.WriteAllText(DlssVersionPath, latestVersion);
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS SR version written: {latestVersion}");
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Failed to write DLSS SR version — {ex.Message}");
+            }
+            } // end of DLSS SR download else block
+
+            // ── 6. Download and extract DLSS-D (Ray Reconstruction) ──────────
+            // Uses its own version tracking so it can update independently.
+            progress?.Report(("Checking DLSS Ray Reconstruction...", 78));
+            try
+            {
+                string? dlssdVersion = null;
+                string? dlssdDownloadUrl = null;
+
+                using var dlssdDoc = JsonDocument.Parse(manifestJson);
+                if (dlssdDoc.RootElement.TryGetProperty("dlss_d", out var dlssdArray))
+                {
+                    foreach (var record in dlssdArray.EnumerateArray())
+                    {
+                        if (record.TryGetProperty("is_dev_file", out var isDevEl) && isDevEl.GetBoolean())
+                            continue;
+                        var version = record.TryGetProperty("version", out var vEl) ? vEl.GetString() : null;
+                        var url = record.TryGetProperty("download_url", out var urlEl) ? urlEl.GetString() : null;
+                        if (!string.IsNullOrEmpty(version) && !string.IsNullOrEmpty(url))
+                        {
+                            dlssdVersion = version;
+                            dlssdDownloadUrl = url;
+                        }
+                    }
+                }
+
+                // Check if DLSS-D is already up to date
+                var cachedDlssdVersion = File.Exists(DlssdVersionPath)
+                    ? File.ReadAllText(DlssdVersionPath).Trim()
+                    : null;
+                var dlssdDestPath = Path.Combine(DlssStagingDir, DlssdDllFileName);
+                bool dlssdUpToDate = cachedDlssdVersion != null
+                    && dlssdVersion != null
+                    && string.Equals(cachedDlssdVersion, dlssdVersion, StringComparison.Ordinal)
+                    && File.Exists(dlssdDestPath);
+
+                if (dlssdUpToDate)
+                {
+                    CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS-D already up to date ({dlssdVersion})");
+                }
+                else if (dlssdDownloadUrl != null)
+                {
+                    progress?.Report(($"Downloading DLSS Ray Reconstruction {dlssdVersion}...", 80));
+                    CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Downloading DLSS-D {dlssdVersion} from {dlssdDownloadUrl}");
+
+                    var tempDlssdZip = Path.Combine(DlssStagingDir, $"dlssd_{dlssdVersion}.zip.tmp");
+                    try
+                    {
+                        var dlssdResp = await _http.GetAsync(dlssdDownloadUrl);
+                        if (dlssdResp.IsSuccessStatusCode)
+                        {
+                            var dlssdBytes = await dlssdResp.Content.ReadAsByteArrayAsync();
+                            await File.WriteAllBytesAsync(tempDlssdZip, dlssdBytes);
+
+                            using var dlssdArchive = SharpCompress.Archives.ArchiveFactory.Open(tempDlssdZip);
+                            var dlssdEntry = dlssdArchive.Entries.FirstOrDefault(e =>
+                                !e.IsDirectory &&
+                                Path.GetFileName(e.Key ?? "").Equals(DlssdDllFileName, StringComparison.OrdinalIgnoreCase));
+
+                            if (dlssdEntry != null)
+                            {
+                                using var entryStream = dlssdEntry.OpenEntryStream();
+                                using var outFile = new FileStream(dlssdDestPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                                await entryStream.CopyToAsync(outFile);
+                                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Extracted {DlssdDllFileName} v{dlssdVersion} ({new FileInfo(dlssdDestPath).Length} bytes)");
+
+                                // Write DLSS-D version
+                                File.WriteAllText(DlssdVersionPath, dlssdVersion!);
+                                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS-D version written: {dlssdVersion}");
+                            }
+                            else
+                            {
+                                CrashReporter.Log("[OptiScalerService.EnsureDlssStagingAsync] nvngx_dlssd.dll not found in zip");
+                            }
+                        }
+                        else
+                        {
+                            CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS-D download failed ({dlssdResp.StatusCode})");
+                        }
+                    }
+                    finally
+                    {
+                        if (File.Exists(tempDlssdZip)) try { File.Delete(tempDlssdZip); } catch { }
+                    }
+                }
+                else
+                {
+                    CrashReporter.Log("[OptiScalerService.EnsureDlssStagingAsync] No stable DLSS-D record found in manifest");
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS-D staging failed — {ex.Message}");
+            }
+
+            // ── 7. Download and extract DLSS-G (Frame Generation) ────────────
+            progress?.Report(("Checking DLSS Frame Generation...", 90));
+            try
+            {
+                string? dlssgVersion = null;
+                string? dlssgDownloadUrl = null;
+
+                using var dlssgDoc = JsonDocument.Parse(manifestJson);
+                if (dlssgDoc.RootElement.TryGetProperty("dlss_g", out var dlssgArray))
+                {
+                    foreach (var record in dlssgArray.EnumerateArray())
+                    {
+                        if (record.TryGetProperty("is_dev_file", out var isDevEl) && isDevEl.GetBoolean())
+                            continue;
+                        var version = record.TryGetProperty("version", out var vEl) ? vEl.GetString() : null;
+                        var url = record.TryGetProperty("download_url", out var urlEl) ? urlEl.GetString() : null;
+                        if (!string.IsNullOrEmpty(version) && !string.IsNullOrEmpty(url))
+                        {
+                            dlssgVersion = version;
+                            dlssgDownloadUrl = url;
+                        }
+                    }
+                }
+
+                var cachedDlssgVersion = File.Exists(DlssgVersionPath)
+                    ? File.ReadAllText(DlssgVersionPath).Trim()
+                    : null;
+                var dlssgDestPath = Path.Combine(DlssStagingDir, DlssgDllFileName);
+                bool dlssgUpToDate = cachedDlssgVersion != null
+                    && dlssgVersion != null
+                    && string.Equals(cachedDlssgVersion, dlssgVersion, StringComparison.Ordinal)
+                    && File.Exists(dlssgDestPath);
+
+                if (dlssgUpToDate)
+                {
+                    CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS-G already up to date ({dlssgVersion})");
+                }
+                else if (dlssgDownloadUrl != null)
+                {
+                    progress?.Report(($"Downloading DLSS Frame Generation {dlssgVersion}...", 92));
+                    CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Downloading DLSS-G {dlssgVersion} from {dlssgDownloadUrl}");
+
+                    var tempDlssgZip = Path.Combine(DlssStagingDir, $"dlssg_{dlssgVersion}.zip.tmp");
+                    try
+                    {
+                        var dlssgResp = await _http.GetAsync(dlssgDownloadUrl);
+                        if (dlssgResp.IsSuccessStatusCode)
+                        {
+                            var dlssgBytes = await dlssgResp.Content.ReadAsByteArrayAsync();
+                            await File.WriteAllBytesAsync(tempDlssgZip, dlssgBytes);
+
+                            using var dlssgArchive = SharpCompress.Archives.ArchiveFactory.Open(tempDlssgZip);
+                            var dlssgEntry = dlssgArchive.Entries.FirstOrDefault(e =>
+                                !e.IsDirectory &&
+                                Path.GetFileName(e.Key ?? "").Equals(DlssgDllFileName, StringComparison.OrdinalIgnoreCase));
+
+                            if (dlssgEntry != null)
+                            {
+                                using var entryStream = dlssgEntry.OpenEntryStream();
+                                using var outFile = new FileStream(dlssgDestPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                                await entryStream.CopyToAsync(outFile);
+                                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Extracted {DlssgDllFileName} v{dlssgVersion} ({new FileInfo(dlssgDestPath).Length} bytes)");
+
+                                File.WriteAllText(DlssgVersionPath, dlssgVersion!);
+                                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS-G version written: {dlssgVersion}");
+                            }
+                            else
+                            {
+                                CrashReporter.Log("[OptiScalerService.EnsureDlssStagingAsync] nvngx_dlssg.dll not found in zip");
+                            }
+                        }
+                        else
+                        {
+                            CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS-G download failed ({dlssgResp.StatusCode})");
+                        }
+                    }
+                    finally
+                    {
+                        if (File.Exists(tempDlssgZip)) try { File.Delete(tempDlssgZip); } catch { }
+                    }
+                }
+                else
+                {
+                    CrashReporter.Log("[OptiScalerService.EnsureDlssStagingAsync] No stable DLSS-G record found in manifest");
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] DLSS-G staging failed — {ex.Message}");
+            }
+
+            progress?.Report(("DLSS staging ready", 100));
+            CrashReporter.Log("[OptiScalerService.EnsureDlssStagingAsync] Staging complete");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.EnsureDlssStagingAsync] Unexpected error — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Checks the DLSS Swapper manifest for a newer DLSS version than the staged one.
+    /// Returns true if an update is available.
+    /// </summary>
+    public async Task<bool> CheckDlssUpdateAsync()
+    {
+        try
+        {
+            string manifestJson;
+            try
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, DlssManifestUrl);
+                req.Headers.Add("User-Agent", "RHI");
+                var resp = await _http.SendAsync(req);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    CrashReporter.Log($"[OptiScalerService.CheckDlssUpdateAsync] Manifest fetch returned {resp.StatusCode}");
+                    return false;
+                }
+                manifestJson = await resp.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.CheckDlssUpdateAsync] Manifest fetch failed — {ex.Message}");
+                return false;
+            }
+
+            string? remoteVersion = null;
+            try
+            {
+                using var doc = JsonDocument.Parse(manifestJson);
+                if (doc.RootElement.TryGetProperty("dlss", out var dlssArray))
+                {
+                    foreach (var record in dlssArray.EnumerateArray())
+                    {
+                        if (record.TryGetProperty("is_dev_file", out var isDevEl) && isDevEl.GetBoolean())
+                            continue;
+                        var version = record.TryGetProperty("version", out var vEl) ? vEl.GetString() : null;
+                        if (!string.IsNullOrEmpty(version))
+                            remoteVersion = version;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.CheckDlssUpdateAsync] Failed to parse manifest — {ex.Message}");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(remoteVersion))
+            {
+                CrashReporter.Log("[OptiScalerService.CheckDlssUpdateAsync] No version found in manifest");
+                return false;
+            }
+
+            var cachedVersion = File.Exists(DlssVersionPath)
+                ? File.ReadAllText(DlssVersionPath).Trim()
+                : null;
+            var hasUpdate = !string.Equals(cachedVersion, remoteVersion, StringComparison.Ordinal);
+
+            CrashReporter.Log($"[OptiScalerService.CheckDlssUpdateAsync] Cached={cachedVersion ?? "(none)"}, Remote={remoteVersion}, HasUpdate={hasUpdate}");
+            return hasUpdate;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.CheckDlssUpdateAsync] Unexpected error — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Returns the path to the staged nvngx_dlss.dll, or null if not staged.
+    /// </summary>
+    public static string? GetStagedDlssPath()
+    {
+        var path = Path.Combine(DlssStagingDir, DlssDllFileName);
+        return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>
+    /// Returns the path to the staged nvngx_dlssd.dll (Ray Reconstruction), or null if not staged.
+    /// </summary>
+    public static string? GetStagedDlssdPath()
+    {
+        var path = Path.Combine(DlssStagingDir, DlssdDllFileName);
+        return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>
+    /// Returns the path to the staged nvngx_dlssg.dll (Frame Generation), or null if not staged.
+    /// </summary>
+    public static string? GetStagedDlssgPath()
+    {
+        var path = Path.Combine(DlssStagingDir, DlssgDllFileName);
+        return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>
+    /// Returns the staged DLSS version string, or null if not staged.
+    /// </summary>
+    public static string? GetStagedDlssVersion()
+    {
+        try
+        {
+            return File.Exists(DlssVersionPath)
+                ? File.ReadAllText(DlssVersionPath).Trim()
+                : null;
+        }
+        catch { return null; }
+    }
+
     // ── Install / Uninstall / Update ──────────────────────────────────────────
 
     /// <inheritdoc />
@@ -796,6 +1298,16 @@ public class OptiScalerService : IOptiScalerService
 
             // ── 3. Resolve effective DLL name ────────────────────────────────
             var effectiveDllName = _dllOverrideService.GetEffectiveOsName(card.GameName);
+
+            // For Vulkan games, OptiScaler must be named winmm.dll (dxgi.dll won't load).
+            // Only override if no user/manifest override is already set.
+            if (effectiveDllName == DefaultDllName
+                && card.GraphicsApi == Models.GraphicsApiType.Vulkan)
+            {
+                effectiveDllName = "winmm.dll";
+                CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName}: Vulkan game — auto-selected winmm.dll");
+            }
+
             CrashReporter.Log($"[OptiScalerService.InstallAsync] {card.GameName}: effective DLL name = {effectiveDllName}");
 
             progress?.Report(("Copying OptiScaler files...", 20));
@@ -975,6 +1487,38 @@ public class OptiScalerService : IOptiScalerService
                 // Always enforce LoadAsiPlugins=true so OptiPatcher can load when present
                 EnforceLoadAsiPlugins(gameIniPath);
                 CrashReporter.Log("[OptiScalerService.InstallAsync] Enforced LoadAsiPlugins=true in deployed INI");
+
+                // Point OptiScaler to the staged DLSS DLL — deploy it directly to the game folder
+                // since OptiScaler's NVNGX_DLSS_Path INI override doesn't work reliably.
+                // The DLL must be physically present in the game directory.
+                var stagedDlssPath = GetStagedDlssPath();
+                if (stagedDlssPath != null)
+                {
+                    var gameDlssPath = Path.Combine(card.InstallPath, DlssDllFileName);
+                    BackupOriginalIfExists(gameDlssPath);
+                    File.Copy(stagedDlssPath, gameDlssPath, overwrite: true);
+                    CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssDllFileName} ({new FileInfo(gameDlssPath).Length} bytes) to game folder");
+                }
+
+                // Deploy DLSS Ray Reconstruction DLL if staged
+                var stagedDlssdPath = GetStagedDlssdPath();
+                if (stagedDlssdPath != null)
+                {
+                    var gameDlssdPath = Path.Combine(card.InstallPath, DlssdDllFileName);
+                    BackupOriginalIfExists(gameDlssdPath);
+                    File.Copy(stagedDlssdPath, gameDlssdPath, overwrite: true);
+                    CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssdDllFileName} ({new FileInfo(gameDlssdPath).Length} bytes) to game folder");
+                }
+
+                // Deploy DLSS Frame Generation DLL if staged
+                var stagedDlssgPath = GetStagedDlssgPath();
+                if (stagedDlssgPath != null)
+                {
+                    var gameDlssgPath = Path.Combine(card.InstallPath, DlssgDllFileName);
+                    BackupOriginalIfExists(gameDlssgPath);
+                    File.Copy(stagedDlssgPath, gameDlssgPath, overwrite: true);
+                    CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssgDllFileName} ({new FileInfo(gameDlssgPath).Length} bytes) to game folder");
+                }
             }
 
             progress?.Report(("Saving install record...", 80));
@@ -1073,6 +1617,16 @@ public class OptiScalerService : IOptiScalerService
                 var record = _auxInstaller.FindRecord(card.GameName, gameDir, AddonType);
                 installedDll = record?.InstalledAs;
             }
+
+            // Determine if ReShade will be renamed to the same filename as the OptiScaler DLL.
+            // If so, skip restoring the .original for that filename — ReShade will claim it.
+            string? rsRestoreTarget = null;
+            var rsCoexistCheck = Path.Combine(gameDir, ReShadeCoexistName);
+            if (File.Exists(rsCoexistCheck))
+            {
+                rsRestoreTarget = ResolveReShadeFilename(card);
+            }
+
             if (!string.IsNullOrEmpty(installedDll))
             {
                 var dllPath = Path.Combine(gameDir, installedDll);
@@ -1080,7 +1634,32 @@ public class OptiScalerService : IOptiScalerService
                 {
                     File.Delete(dllPath);
                     CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted OptiScaler DLL: {dllPath}");
-                    RestoreOriginalIfExists(dllPath);
+
+                    // Only restore the .original if ReShade won't be renamed to this filename
+                    if (rsRestoreTarget == null
+                        || !installedDll.Equals(rsRestoreTarget, StringComparison.OrdinalIgnoreCase))
+                    {
+                        RestoreOriginalIfExists(dllPath);
+                    }
+                    else
+                    {
+                        // Delete the .original backup so it doesn't get restored later
+                        // when ReShade is uninstalled (AuxInstallService.RestoreForeignDll)
+                        var originalPath = dllPath + ".original";
+                        if (File.Exists(originalPath))
+                        {
+                            try
+                            {
+                                File.Delete(originalPath);
+                                CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted stale backup '{Path.GetFileName(originalPath)}' — ReShade will claim '{installedDll}'");
+                            }
+                            catch (Exception delEx)
+                            {
+                                CrashReporter.Log($"[OptiScalerService.Uninstall] Failed to delete backup — {delEx.Message}");
+                            }
+                        }
+                        CrashReporter.Log($"[OptiScalerService.Uninstall] Skipping .original restore for '{installedDll}' — ReShade will claim this filename");
+                    }
                 }
             }
 
@@ -1090,6 +1669,33 @@ public class OptiScalerService : IOptiScalerService
             {
                 File.Delete(iniPath);
                 CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted {IniFileName}");
+            }
+
+            // ── 2b. Delete deployed nvngx_dlss.dll and restore original ─────
+            var gameDlssPath = Path.Combine(gameDir, DlssDllFileName);
+            if (File.Exists(gameDlssPath))
+            {
+                File.Delete(gameDlssPath);
+                CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted {DlssDllFileName}");
+                RestoreOriginalIfExists(gameDlssPath);
+            }
+
+            // ── 2c. Delete deployed nvngx_dlssd.dll and restore original ────
+            var gameDlssdPath = Path.Combine(gameDir, DlssdDllFileName);
+            if (File.Exists(gameDlssdPath))
+            {
+                File.Delete(gameDlssdPath);
+                CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted {DlssdDllFileName}");
+                RestoreOriginalIfExists(gameDlssdPath);
+            }
+
+            // ── 2d. Delete deployed nvngx_dlssg.dll and restore original ────
+            var gameDlssgPath = Path.Combine(gameDir, DlssgDllFileName);
+            if (File.Exists(gameDlssgPath))
+            {
+                File.Delete(gameDlssgPath);
+                CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted {DlssgDllFileName}");
+                RestoreOriginalIfExists(gameDlssgPath);
             }
 
             // ── 3. Delete all other deployed files ───────────────────────────
@@ -1198,6 +1804,12 @@ public class OptiScalerService : IOptiScalerService
                         rsRecord.InstalledAs = actualName;
                         _auxInstaller.SaveAuxRecord(rsRecord);
                         CrashReporter.Log($"[OptiScalerService.Uninstall] Updated ReShade record InstalledAs → '{actualName}'");
+
+                        // Also update the card's RsRecord reference so UninstallReShade finds the correct file
+                        if (card.RsRecord != null)
+                        {
+                            card.RsRecord.InstalledAs = actualName;
+                        }
                     }
 
                     // Update card RS state
@@ -1317,6 +1929,36 @@ public class OptiScalerService : IOptiScalerService
             // INI is intentionally preserved — no copy operation here
             CrashReporter.Log("[OptiScalerService.UpdateAsync] Preserved existing OptiScaler.ini in game folder");
 
+            // ── 4b. Update nvngx_dlss.dll in game folder if staged ──────────
+            var stagedDlssUpdate = GetStagedDlssPath();
+            if (stagedDlssUpdate != null)
+            {
+                var gameDlssUpdate = Path.Combine(gameDir, DlssDllFileName);
+                BackupOriginalIfExists(gameDlssUpdate);
+                File.Copy(stagedDlssUpdate, gameDlssUpdate, overwrite: true);
+                CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated {DlssDllFileName} in game folder");
+            }
+
+            // ── 4c. Update nvngx_dlssd.dll in game folder if staged ─────────
+            var stagedDlssdUpdate = GetStagedDlssdPath();
+            if (stagedDlssdUpdate != null)
+            {
+                var gameDlssdUpdate = Path.Combine(gameDir, DlssdDllFileName);
+                BackupOriginalIfExists(gameDlssdUpdate);
+                File.Copy(stagedDlssdUpdate, gameDlssdUpdate, overwrite: true);
+                CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated {DlssdDllFileName} in game folder");
+            }
+
+            // ── 4d. Update nvngx_dlssg.dll in game folder if staged ─────────
+            var stagedDlssgUpdate = GetStagedDlssgPath();
+            if (stagedDlssgUpdate != null)
+            {
+                var gameDlssgUpdate = Path.Combine(gameDir, DlssgDllFileName);
+                BackupOriginalIfExists(gameDlssgUpdate);
+                File.Copy(stagedDlssgUpdate, gameDlssgUpdate, overwrite: true);
+                CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated {DlssgDllFileName} in game folder");
+            }
+
             progress?.Report(("Updating tracking record...", 80));
 
             // ── 5. Update tracking record with new version ───────────────────
@@ -1364,14 +2006,14 @@ public class OptiScalerService : IOptiScalerService
         if (card.DetectedApis != null && card.DetectedApis.Count > 0)
         {
             // Pick the primary API for filename resolution
+            // DX11/DX12 checked first — most modern games use these as primary
+            if (card.DetectedApis.Contains(Models.GraphicsApiType.DirectX11)
+                || card.DetectedApis.Contains(Models.GraphicsApiType.DirectX12))
+                return "dxgi.dll";
             if (card.DetectedApis.Contains(Models.GraphicsApiType.DirectX9))
                 return "d3d9.dll";
             if (card.DetectedApis.Contains(Models.GraphicsApiType.OpenGL))
                 return "opengl32.dll";
-            // DX11/DX12/Vulkan all use dxgi.dll
-            if (card.DetectedApis.Contains(Models.GraphicsApiType.DirectX11)
-                || card.DetectedApis.Contains(Models.GraphicsApiType.DirectX12))
-                return "dxgi.dll";
         }
 
         // 4. Default
@@ -1542,6 +2184,43 @@ public class OptiScalerService : IOptiScalerService
         File.WriteAllLines(iniPath, lines);
     }
 
+    /// <summary>
+    /// Reads the INI file at <paramref name="iniPath"/>, finds the <c>NVNGX_DLSS_Path=</c> line
+    /// (case-insensitive), replaces it with the given <paramref name="dlssFilePath"/> (full path
+    /// to nvngx_dlss.dll), or appends the line if it is missing. OptiScaler expects the full
+    /// file path including the filename, not just the directory.
+    /// Safe to set for all games — OptiScaler auto-locates the game's own copy first.
+    /// </summary>
+    public static void EnforceNvngxDlssPath(string iniPath, string dlssFilePath)
+    {
+        var lines = File.ReadAllLines(iniPath).ToList();
+        var value = $"NVNGX_DLSS_Path={dlssFilePath}";
+        bool found = false;
+        for (int i = 0; i < lines.Count; /* manual increment */)
+        {
+            if (lines[i].TrimStart().StartsWith("NVNGX_DLSS_Path=", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!found)
+                {
+                    lines[i] = value;
+                    found = true;
+                    i++;
+                }
+                else
+                {
+                    lines.RemoveAt(i);
+                }
+            }
+            else
+            {
+                i++;
+            }
+        }
+        if (!found)
+            lines.Add(value);
+        File.WriteAllLines(iniPath, lines);
+    }
+
     // ── Detection ─────────────────────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -1600,7 +2279,7 @@ public class OptiScalerService : IOptiScalerService
             if (!File.Exists(filePath)) return false;
 
             using var stream = File.OpenRead(filePath);
-            var bufferSize = (int)Math.Min(stream.Length, 2 * 1024 * 1024);
+            var bufferSize = (int)Math.Min(stream.Length, 8 * 1024 * 1024);
             var buffer = new byte[bufferSize];
             int totalRead = 0;
             while (totalRead < bufferSize)

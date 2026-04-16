@@ -18,8 +18,8 @@
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyName>RHI</AssemblyName>
     <AssemblyTitle>RHI</AssemblyTitle>
-    <AssemblyVersion>1.7.9.2</AssemblyVersion>
-    <FileVersion>1.7.9.2</FileVersion>
+    <AssemblyVersion>1.7.9.3</AssemblyVersion>
+    <FileVersion>1.7.9.3</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

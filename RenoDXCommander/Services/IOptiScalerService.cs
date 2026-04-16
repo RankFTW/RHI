@@ -43,6 +43,14 @@ public interface IOptiScalerService
     /// </summary>
     void ClearStaging();
 
+    // ── DLSS DLL staging ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Downloads the latest nvngx_dlss.dll from the DLSS Swapper manifest to the staging folder.
+    /// No-op if staging is already valid and up to date.
+    /// </summary>
+    Task EnsureDlssStagingAsync(IProgress<(string message, double percent)>? progress = null);
+
     // ── Install / Uninstall / Update ──────────────────────────────────────────
 
     /// <summary>
