@@ -77,8 +77,7 @@
 	"Control": "Northlight Engine",
 	"Control Ultimate Edition": "Northlight Engine",
 	"Monster Hunter Stories 3: Twisted Reflection": "RE Engine",
-	"Resident Evil Village": "RE Engine",
-	"REANIMAL": "Unreal"
+	"Resident Evil Village": "RE Engine"	
   },
   "graphicsApiOverrides": {
 	"Baldur's Gate 3": "DX12, VLK",
@@ -196,6 +195,10 @@
     "Cyberpunk 2077": {
       "url": "https://discord.gg/gF4GRJWZ2A",
       "label": "Get on Discord"
+    },
+	"REANIMAL": {
+      "url": "https://store.steampowered.com/news/app/2129530/view/520870020121624916?l=english",
+      "label": "Native HDR added"
     }
   },
   "gameNotes": {
