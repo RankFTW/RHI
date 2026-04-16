@@ -1,3 +1,22 @@
+## v1.7.9 Beta 2
+
+### New Features
+
+**OptiPatcher integration**
+- OptiPatcher ASI plugin is now automatically downloaded and deployed to the `plugins` folder for AMD/Intel GPU users during OptiScaler install. Enables DLSS/DLSSG inputs without GPU spoofing in supported games.
+- OptiPatcher is sourced from the rolling release at `github.com/optiscaler/OptiPatcher` and version-tracked (currently v0.39).
+- Cleaned up automatically on OptiScaler uninstall.
+
+### Changes
+
+- `LoadAsiPlugins=true` is now enforced in all OptiScaler INI deployments, enabling ASI plugin loading for OptiPatcher and other plugins.
+- OptiScaler overlay hotkey now written as Windows Virtual Key Code hex values (e.g. `0x2D` for Insert) matching OptiScaler's expected format.
+- ReShade is now renamed to `ReShade64.dll` before OptiScaler files are deployed, fixing a DLL conflict where OptiScaler could overwrite ReShade when both used the same filename.
+- Pre-generated OptiScaler INI templates are now always refreshed from the bundled templates on install, ensuring GPU settings changes in the Settings page take effect immediately.
+- OptiScaler overlay hotkey from Settings is applied to the deployed INI on every install.
+
+---
+
 ## v1.7.9 Beta 1
 
 ### New Features
@@ -8,7 +27,7 @@
 - First-time install warning prompts users to configure OptiScaler settings before proceeding.
 - All OptiScaler files are deployed from the staging folder, including companion DLLs, INI files, and the `D3D12_Optiscaler` subfolder. Installer scripts, READMEs, and license files are excluded.
 - Game-owned files are backed up to `.original` before overwriting and restored on uninstall.
-- ReShade coexistence handled automatically — ReShade is renamed to `ReShade64.dll` before OptiScaler files are deployed, preventing DLL conflicts. Restored to the correct filename on uninstall.
+- ReShade coexistence handled automatically — ReShade is renamed to `ReShade64.dll` when OptiScaler is installed, and restored to the correct filename on uninstall.
 - `LoadReshade=true` is always enforced in the deployed `OptiScaler.ini`.
 - DLL naming override dropdown in the per-game overrides panel (filters out filenames used by ReShade or Display Commander).
 - Manifest support for per-game OptiScaler DLL name defaults (`optiScalerDllOverrides`).
@@ -24,7 +43,6 @@
 ### Changes
 
 - Pre-generated OptiScaler INI templates bundled for each GPU configuration (NVIDIA, AMD/Intel with DLSS, AMD/Intel without DLSS). The correct template is deployed based on Settings page configuration.
-- OptiScaler overlay hotkey from Settings is applied to the deployed INI on every install.
 - Single-player warning text updated: "ReShade with addon support and OptiScaler may trigger anti-cheat."
 - Documentation updated across README, NexusMods page, and Detailed Guide.
 

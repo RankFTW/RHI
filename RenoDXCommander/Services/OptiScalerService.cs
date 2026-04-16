@@ -43,6 +43,51 @@ public class OptiScalerService : IOptiScalerService
     private static readonly string GitHubReleasesApi =
         "https://api.github.com/repos/optiscaler/OptiScaler/releases/latest";
 
+    // ── OptiPatcher constants ─────────────────────────────────────────────────
+    private static readonly string OptiPatcherReleasesApi =
+        "https://api.github.com/repos/optiscaler/OptiPatcher/releases/tags/rolling";
+    private static readonly string OptiPatcherStagingDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "optipatcher");
+    private static readonly string OptiPatcherVersionPath = Path.Combine(OptiPatcherStagingDir, "version.txt");
+    private static readonly string OptiPatcherFileName = "OptiPatcher.asi";
+
+    /// <summary>
+    /// Maps friendly key names (used in the Settings UI) to Windows Virtual Key Code
+    /// hex strings (used by OptiScaler's ShortcutKey= INI setting).
+    /// See: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+    /// </summary>
+    public static readonly Dictionary<string, string> HotkeyNameToVkCode = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Insert"]    = "0x2D",
+        ["Delete"]    = "0x2E",
+        ["Home"]      = "0x24",
+        ["End"]       = "0x23",
+        ["Page Up"]   = "0x21",
+        ["Page Down"] = "0x22",
+        ["F1"]        = "0x70",
+        ["F2"]        = "0x71",
+        ["F3"]        = "0x72",
+        ["F4"]        = "0x73",
+        ["F5"]        = "0x74",
+        ["F6"]        = "0x75",
+        ["F7"]        = "0x76",
+        ["F8"]        = "0x77",
+        ["F9"]        = "0x78",
+        ["F10"]       = "0x79",
+        ["F11"]       = "0x7A",
+        ["F12"]       = "0x7B",
+    };
+
+    /// <summary>
+    /// Converts a friendly key name to the VK code hex string for OptiScaler's INI.
+    /// Returns the input unchanged if no mapping exists (allows raw hex codes to pass through).
+    /// </summary>
+    public static string ResolveHotkeyToVkCode(string friendlyName)
+    {
+        return HotkeyNameToVkCode.TryGetValue(friendlyName, out var vkCode) ? vkCode : friendlyName;
+    }
+
     // ── Binary signature markers ──────────────────────────────────────────────
     // Unique strings embedded in OptiScaler.dll that distinguish it from ReShade
     // and other proxy DLLs. Checked via binary scan of the first ~2 MB.
@@ -499,6 +544,207 @@ public class OptiScalerService : IOptiScalerService
         }
     }
 
+    // ── OptiPatcher staging and update ────────────────────────────────────────
+
+    /// <summary>
+    /// Downloads the latest OptiPatcher.asi from the rolling release to the staging folder.
+    /// No-op if staging is already valid and up to date.
+    /// </summary>
+    public async Task EnsureOptiPatcherStagingAsync(IProgress<(string message, double percent)>? progress = null)
+    {
+        try
+        {
+            progress?.Report(("Checking OptiPatcher release...", 0));
+
+            // ── 1. Fetch rolling release metadata from GitHub API ────────────
+            string json;
+            try
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, OptiPatcherReleasesApi);
+                req.Headers.Add("User-Agent", "RHI");
+                req.Headers.Add("Accept", "application/vnd.github+json");
+                var resp = await _http.SendAsync(req);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] GitHub API returned {resp.StatusCode}");
+                    return;
+                }
+                json = await resp.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] GitHub API request failed — {ex.Message}");
+                return;
+            }
+
+            // ── 2. Parse release — extract version from body and find .asi asset ─
+            string? version = null;
+            string? downloadUrl = null;
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+
+                // Extract version from body text: "Base version: vX.XX"
+                if (doc.RootElement.TryGetProperty("body", out var bodyEl))
+                {
+                    var body = bodyEl.GetString() ?? "";
+                    var match = System.Text.RegularExpressions.Regex.Match(body, @"Base version:\s*v?([\d.]+)");
+                    if (match.Success)
+                        version = "v" + match.Groups[1].Value;
+                }
+
+                if (doc.RootElement.TryGetProperty("assets", out var assets))
+                {
+                    foreach (var asset in assets.EnumerateArray())
+                    {
+                        var name = asset.GetProperty("name").GetString() ?? "";
+                        if (name.Equals(OptiPatcherFileName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            downloadUrl = asset.GetProperty("browser_download_url").GetString();
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Failed to parse GitHub response — {ex.Message}");
+                return;
+            }
+
+            if (downloadUrl == null)
+            {
+                CrashReporter.Log("[OptiScalerService.EnsureOptiPatcherStagingAsync] No OptiPatcher.asi asset found in rolling release");
+                return;
+            }
+
+            version ??= "unknown";
+
+            // ── 3. Check if already up to date ──────────────────────────────
+            var cachedVersion = File.Exists(OptiPatcherVersionPath)
+                ? File.ReadAllText(OptiPatcherVersionPath).Trim()
+                : null;
+            var stagedAsiPath = Path.Combine(OptiPatcherStagingDir, OptiPatcherFileName);
+
+            if (cachedVersion != null
+                && string.Equals(cachedVersion, version, StringComparison.Ordinal)
+                && File.Exists(stagedAsiPath))
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Already up to date ({version})");
+                progress?.Report(("OptiPatcher up to date", 100));
+                return;
+            }
+
+            progress?.Report(($"Downloading OptiPatcher ({version})...", 30));
+            CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Downloading {OptiPatcherFileName} from {downloadUrl}");
+
+            // ── 4. Download the .asi file directly ──────────────────────────
+            Directory.CreateDirectory(OptiPatcherStagingDir);
+            try
+            {
+                var dlResp = await _http.GetAsync(downloadUrl);
+                if (!dlResp.IsSuccessStatusCode)
+                {
+                    CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Download failed ({dlResp.StatusCode})");
+                    return;
+                }
+
+                var bytes = await dlResp.Content.ReadAsByteArrayAsync();
+                await File.WriteAllBytesAsync(stagedAsiPath, bytes);
+                CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Downloaded {bytes.Length} bytes");
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Download exception — {ex.Message}");
+                return;
+            }
+
+            // ── 5. Write version to version.txt ─────────────────────────────
+            try
+            {
+                File.WriteAllText(OptiPatcherVersionPath, version);
+                CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Version tag written: {version}");
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Failed to write version file — {ex.Message}");
+            }
+
+            progress?.Report(("OptiPatcher staging ready", 100));
+            CrashReporter.Log("[OptiScalerService.EnsureOptiPatcherStagingAsync] Staging complete");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Unexpected error — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Checks the GitHub releases API for a newer OptiPatcher version than the staged one.
+    /// </summary>
+    public async Task<bool> CheckOptiPatcherUpdateAsync()
+    {
+        try
+        {
+            string json;
+            try
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, OptiPatcherReleasesApi);
+                req.Headers.Add("User-Agent", "RHI");
+                req.Headers.Add("Accept", "application/vnd.github+json");
+                var resp = await _http.SendAsync(req);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    CrashReporter.Log($"[OptiScalerService.CheckOptiPatcherUpdateAsync] GitHub API returned {resp.StatusCode}");
+                    return false;
+                }
+                json = await resp.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.CheckOptiPatcherUpdateAsync] GitHub API request failed — {ex.Message}");
+                return false;
+            }
+
+            string? remoteVersion = null;
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("body", out var bodyEl))
+                {
+                    var body = bodyEl.GetString() ?? "";
+                    var match = System.Text.RegularExpressions.Regex.Match(body, @"Base version:\s*v?([\d.]+)");
+                    if (match.Success)
+                        remoteVersion = "v" + match.Groups[1].Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.CheckOptiPatcherUpdateAsync] Failed to parse GitHub response — {ex.Message}");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(remoteVersion))
+            {
+                CrashReporter.Log("[OptiScalerService.CheckOptiPatcherUpdateAsync] No version found in rolling release body");
+                return false;
+            }
+
+            var cachedVersion = File.Exists(OptiPatcherVersionPath)
+                ? File.ReadAllText(OptiPatcherVersionPath).Trim()
+                : null;
+            var hasUpdate = !string.Equals(cachedVersion, remoteVersion, StringComparison.Ordinal);
+
+            CrashReporter.Log($"[OptiScalerService.CheckOptiPatcherUpdateAsync] Cached={cachedVersion ?? "(none)"}, Remote={remoteVersion}, HasUpdate={hasUpdate}");
+            return hasUpdate;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.CheckOptiPatcherUpdateAsync] Unexpected error — {ex.Message}");
+            return false;
+        }
+    }
+
     // ── Install / Uninstall / Update ──────────────────────────────────────────
 
     /// <inheritdoc />
@@ -725,6 +971,10 @@ public class OptiScalerService : IOptiScalerService
                     WriteShortcutKey(gameIniPath, hotkey);
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] Set ShortcutKey={hotkey} in deployed INI");
                 }
+
+                // Always enforce LoadAsiPlugins=true so OptiPatcher can load when present
+                EnforceLoadAsiPlugins(gameIniPath);
+                CrashReporter.Log("[OptiScalerService.InstallAsync] Enforced LoadAsiPlugins=true in deployed INI");
             }
 
             progress?.Report(("Saving install record...", 80));
@@ -742,6 +992,36 @@ public class OptiScalerService : IOptiScalerService
             };
             _auxInstaller.SaveAuxRecord(record);
             CrashReporter.Log($"[OptiScalerService.InstallAsync] Saved tracking record for {card.GameName}");
+
+            // ── 7. Deploy OptiPatcher for AMD/Intel GPUs ─────────────────────
+            if (gpuType.Equals("AMD", StringComparison.OrdinalIgnoreCase)
+                || gpuType.Equals("Intel", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    progress?.Report(("Downloading OptiPatcher...", 85));
+                    await EnsureOptiPatcherStagingAsync(progress);
+
+                    var stagedAsi = Path.Combine(OptiPatcherStagingDir, OptiPatcherFileName);
+                    if (File.Exists(stagedAsi))
+                    {
+                        var pluginsDir = Path.Combine(card.InstallPath, "plugins");
+                        Directory.CreateDirectory(pluginsDir);
+                        var destAsi = Path.Combine(pluginsDir, OptiPatcherFileName);
+                        File.Copy(stagedAsi, destAsi, overwrite: true);
+                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed OptiPatcher.asi to plugins folder");
+                        progress?.Report(("OptiPatcher deployed", 90));
+                    }
+                    else
+                    {
+                        CrashReporter.Log("[OptiScalerService.InstallAsync] OptiPatcher staging not available — skipping deployment");
+                    }
+                }
+                catch (Exception opEx)
+                {
+                    CrashReporter.Log($"[OptiScalerService.InstallAsync] OptiPatcher deployment failed — {opEx.Message}");
+                }
+            }
 
             // ── 8. Update card VM properties ─────────────────────────────────
             card.OsInstalledFile = effectiveDllName;
@@ -862,6 +1142,28 @@ public class OptiScalerService : IOptiScalerService
             {
                 _auxInstaller.RemoveRecord(existingRecord);
                 CrashReporter.Log($"[OptiScalerService.Uninstall] Removed tracking record for {card.GameName}");
+            }
+
+            // ── 4b. Clean up OptiPatcher ─────────────────────────────────────
+            try
+            {
+                var optiPatcherPath = Path.Combine(gameDir, "plugins", OptiPatcherFileName);
+                if (File.Exists(optiPatcherPath))
+                {
+                    File.Delete(optiPatcherPath);
+                    CrashReporter.Log("[OptiScalerService.Uninstall] Deleted OptiPatcher.asi from plugins folder");
+                }
+
+                var pluginsDir = Path.Combine(gameDir, "plugins");
+                if (Directory.Exists(pluginsDir) && !Directory.EnumerateFileSystemEntries(pluginsDir).Any())
+                {
+                    Directory.Delete(pluginsDir);
+                    CrashReporter.Log("[OptiScalerService.Uninstall] Removed empty plugins folder");
+                }
+            }
+            catch (Exception opEx)
+            {
+                CrashReporter.Log($"[OptiScalerService.Uninstall] OptiPatcher cleanup failed — {opEx.Message}");
             }
 
             // ── 5. ReShade coexistence — restore ReShade64.dll to correct name ──
@@ -1205,6 +1507,41 @@ public class OptiScalerService : IOptiScalerService
         File.WriteAllLines(iniPath, lines);
     }
 
+    /// <summary>
+    /// Reads the INI file at <paramref name="iniPath"/>, finds the <c>LoadAsiPlugins=</c> line
+    /// (case-insensitive), replaces it with <c>LoadAsiPlugins=true</c>, or appends the line
+    /// if it is missing. Writes the result back to the file.
+    /// </summary>
+    public static void EnforceLoadAsiPlugins(string iniPath)
+    {
+        var lines = File.ReadAllLines(iniPath).ToList();
+        bool found = false;
+        for (int i = 0; i < lines.Count; /* manual increment */)
+        {
+            if (lines[i].TrimStart().StartsWith("LoadAsiPlugins=", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!found)
+                {
+                    lines[i] = "LoadAsiPlugins=true";
+                    found = true;
+                    i++;
+                }
+                else
+                {
+                    // Duplicate — remove it
+                    lines.RemoveAt(i);
+                }
+            }
+            else
+            {
+                i++;
+            }
+        }
+        if (!found)
+            lines.Add("LoadAsiPlugins=true");
+        File.WriteAllLines(iniPath, lines);
+    }
+
     // ── Detection ─────────────────────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -1405,6 +1742,9 @@ public class OptiScalerService : IOptiScalerService
     /// </summary>
     public static void WriteShortcutKey(string iniPath, string hotkeyValue)
     {
+        // Convert friendly name (e.g. "Delete") to VK code (e.g. "0x2E") for OptiScaler
+        var vkValue = ResolveHotkeyToVkCode(hotkeyValue);
+
         var lines = File.Exists(iniPath)
             ? File.ReadAllLines(iniPath).ToList()
             : new List<string>();
@@ -1416,7 +1756,7 @@ public class OptiScalerService : IOptiScalerService
             {
                 if (!found)
                 {
-                    lines[i] = $"ShortcutKey={hotkeyValue}";
+                    lines[i] = $"ShortcutKey={vkValue}";
                     found = true;
                     i++;
                 }
@@ -1432,7 +1772,7 @@ public class OptiScalerService : IOptiScalerService
             }
         }
         if (!found)
-            lines.Add($"ShortcutKey={hotkeyValue}");
+            lines.Add($"ShortcutKey={vkValue}");
         File.WriteAllLines(iniPath, lines);
     }
 
