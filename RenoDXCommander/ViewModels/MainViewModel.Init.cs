@@ -636,8 +636,12 @@ public partial class MainViewModel
         var safeAddonCache = new ConcurrentDictionary<string, bool>(addonCache, StringComparer.OrdinalIgnoreCase);
         var cardBag = new ConcurrentBag<GameCardViewModel>();
 
+        var slowGameThresholdMs = 500; // Log games that take longer than this
+        var gameTimings = new ConcurrentBag<(string name, long ms)>();
+
         Parallel.ForEach(gameInfos, (item) =>
         {
+            var gameStopwatch = System.Diagnostics.Stopwatch.StartNew();
             var (game, installPath, engine, mod, origFallback, detectedMachine, engineOverrideLabel) = item;
             // Always show every detected game — even if no wiki mod exists.
             // The card will have no install button if there's no snapshot URL,
@@ -1200,9 +1204,24 @@ public partial class MainViewModel
             catch (Exception ex) { _crashReporter.Log($"[BuildCards] PcgwUrl resolve failed for '{game.Name}' — {ex.Message}"); }
 
             cardBag.Add(newCard);
+
+            gameStopwatch.Stop();
+            var elapsedMs = gameStopwatch.ElapsedMilliseconds;
+            gameTimings.Add((game.Name, elapsedMs));
+            if (elapsedMs > slowGameThresholdMs)
+                _crashReporter.Log($"[BuildCards] SLOW: '{game.Name}' took {elapsedMs}ms ({installPath})");
             });
 
         cards.AddRange(cardBag);
+
+        // Log BuildCards timing summary
+        var sortedTimings = gameTimings.OrderByDescending(t => t.ms).ToList();
+        var totalBuildMs = sortedTimings.Sum(t => t.ms);
+        var slowCount = sortedTimings.Count(t => t.ms > slowGameThresholdMs);
+        _crashReporter.Log($"[BuildCards] Timing: {sortedTimings.Count} games, {slowCount} slow (>{slowGameThresholdMs}ms), total CPU time {totalBuildMs}ms");
+        foreach (var (name, ms) in sortedTimings.Take(10))
+            _crashReporter.Log($"[BuildCards] Top: '{name}' = {ms}ms");
+
         ApplyCardOverrides(cards);
         ApplyManifestCardOverrides(_manifest, cards);
 
