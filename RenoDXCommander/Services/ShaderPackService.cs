@@ -435,7 +435,7 @@ public partial class ShaderPackService : IShaderPackService
             Id          : "NNShaders",
             DisplayName : "NN-Shaders by Sarenya",
             Kind        : SourceKind.DirectUrl,
-            Url         : "https://github.com/Sarenya/NN-Shaders/archive/refs/heads/main.zip",
+            Url         : "https://github.com/Sarenya/NN-Shaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
             Description : "Neural network-based image processing shaders"
         ),

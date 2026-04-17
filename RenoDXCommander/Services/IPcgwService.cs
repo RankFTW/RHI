@@ -21,4 +21,10 @@ public interface IPcgwService
     /// Returns null if unresolvable.
     /// </summary>
     Task<string?> ResolveUrlAsync(string gameName, int? steamAppId, string installPath, RemoteManifest? manifest);
+
+    /// <summary>
+    /// Forces an immediate write of the AppID cache to disk.
+    /// Call during app shutdown to ensure pending debounced writes are flushed.
+    /// </summary>
+    Task FlushCacheAsync();
 }

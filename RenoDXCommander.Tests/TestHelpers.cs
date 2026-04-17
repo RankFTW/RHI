@@ -224,6 +224,7 @@ internal static class TestHelpers
     {
         public Task LoadCacheAsync() => Task.CompletedTask;
         public Task<string?> ResolveUrlAsync(string gameName, int? steamAppId, string installPath, RemoteManifest? manifest) => Task.FromResult<string?>(null);
+        public Task FlushCacheAsync() => Task.CompletedTask;
     }
 
     internal class StubOptiScalerService : IOptiScalerService

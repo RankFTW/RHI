@@ -17,8 +17,16 @@ public class PcgwService : IPcgwService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "steam_appid_cache.json");
 
+    private static readonly JsonSerializerOptions s_writeOptions = new() { WriteIndented = true };
+
     /// <summary>Normalized game name → Steam AppID.</summary>
     private Dictionary<string, int> _appIdCache = new(StringComparer.Ordinal);
+
+    /// <summary>Debounce timer — resets on every <see cref="SaveCacheAsync"/> call.</summary>
+    private Timer? _saveDebounceTimer;
+
+    /// <summary>Guards <see cref="_saveDebounceTimer"/> creation/reset.</summary>
+    private readonly object _saveLock = new();
 
     public PcgwService(HttpClient http, ISteamAppIdResolver steamAppIdResolver, IGameDetectionService gameDetection)
     {
@@ -158,15 +166,56 @@ public class PcgwService : IPcgwService
     }
 
     /// <summary>
-    /// Persists the AppID cache to disk as JSON.
+    /// Schedules a debounced cache write. Resets a 500 ms timer on each call;
+    /// the actual disk write happens only once the timer fires (i.e. 500 ms after
+    /// the last call). This avoids ~45 concurrent writes during startup.
     /// </summary>
-    private async Task SaveCacheAsync()
+    private Task SaveCacheAsync()
+    {
+        lock (_saveLock)
+        {
+            if (_saveDebounceTimer != null)
+            {
+                _saveDebounceTimer.Change(500, Timeout.Infinite);
+            }
+            else
+            {
+                _saveDebounceTimer = new Timer(_ => WriteCacheToDisk(), null, 500, Timeout.Infinite);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task FlushCacheAsync()
+    {
+        Timer? timer;
+        lock (_saveLock)
+        {
+            timer = _saveDebounceTimer;
+            _saveDebounceTimer = null;
+        }
+
+        if (timer != null)
+        {
+            timer.Dispose();
+            WriteCacheToDisk();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Performs the actual disk write with retry logic via <see cref="FileHelper"/>.
+    /// </summary>
+    private void WriteCacheToDisk()
     {
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(CachePath)!);
-            var json = JsonSerializer.Serialize(_appIdCache, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(CachePath, json).ConfigureAwait(false);
+            var json = JsonSerializer.Serialize(_appIdCache, s_writeOptions);
+            FileHelper.WriteAllTextWithRetry(CachePath, json, "PcgwService.SaveCache");
         }
         catch (Exception ex)
         {

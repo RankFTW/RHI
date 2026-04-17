@@ -2,8 +2,13 @@
 
 ### Changes
 
-- Global update inclusion toggles in the overrides panel replaced with a compact "Update Inclusion" button that opens a dialog with checkboxes. A summary line below the button shows the current state at a glance (e.g. "RS: On · RDX: On · UL: On · DC: On · OS: On").
+- Global update inclusion toggles in the overrides panel replaced with a compact "Update Inclusion" button that opens a dialog with checkboxes. A summary line below the button shows the current state at a glance (e.g. "RS: On · RDX: On · UL: On · DC: Off · OS: On") with green/red coloring.
 - Bitness and Graphics API dropdowns in the overrides panel are now side by side instead of stacked vertically, saving space.
+
+### Bug Fixes
+
+- Fixed ~45 "Cache write failed" errors per startup caused by concurrent PCGW cache writes. Cache writes are now debounced — multiple calls within 500ms collapse into a single disk write.
+- Fixed NNShaders shader pack failing to download every startup (404 error). The GitHub URL was pointing to a `main` branch that doesn't exist — corrected to `master`.
 
 ---
 
