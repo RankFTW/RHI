@@ -1270,11 +1270,11 @@
                                 <ToggleSwitch x:Name="VerboseLoggingToggle" x:FieldModifier="internal"
                                               Header="Verbose Logging"
                                               Toggled="VerboseLoggingToggle_Toggled"
-                                              OnContent="Enabled — all activity logged to upst_log.txt"
+                                              OnContent="Enabled — all activity logged to session log"
                                               OffContent="Disabled — only crash/error reports saved"
                                               Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="When enabled, every action is logged to upst_log.txt for debugging. Disable for normal use."/>
+                                           Text="When enabled, every action is logged to the session log for debugging. Disable for normal use."/>
                             </StackPanel>
                         </Border>
 

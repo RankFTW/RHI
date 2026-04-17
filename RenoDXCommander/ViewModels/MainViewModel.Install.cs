@@ -1368,7 +1368,7 @@ public partial class MainViewModel
             if (ShowVulkanAdminRequiredDialog != null)
                 await ShowVulkanAdminRequiredDialog();
             else
-                card.RsActionMessage = "⚠ Administrator privileges are required for Vulkan layer installation. Restart RDXC as admin.";
+                card.RsActionMessage = "⚠ Administrator privileges are required for Vulkan layer installation. Restart RHI as admin.";
             return;
         }
 
