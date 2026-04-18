@@ -617,7 +617,7 @@ public class SettingsHandler
 
     // ── Mass INI Deployment ───────────────────────────────────────────────────────
 
-    public void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
+    public async void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
     {
         int count = 0;
         foreach (var card in _window.ViewModel.AllCards.Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
@@ -639,9 +639,10 @@ public class SettingsHandler
             }
         }
         CrashReporter.Log($"[MassDeployRsIni] Deployed reshade.ini to {count} game(s)");
+        await ShowDeployResult("reshade.ini", count);
     }
 
-    public void MassDeployUlIni_Click(object sender, RoutedEventArgs e)
+    public async void MassDeployUlIni_Click(object sender, RoutedEventArgs e)
     {
         int count = 0;
         foreach (var card in _window.ViewModel.AllCards.Where(c => c.UlStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
@@ -657,9 +658,10 @@ public class SettingsHandler
             }
         }
         CrashReporter.Log($"[MassDeployUlIni] Deployed relimiter.ini to {count} game(s)");
+        await ShowDeployResult("relimiter.ini", count);
     }
 
-    public void MassDeployDcIni_Click(object sender, RoutedEventArgs e)
+    public async void MassDeployDcIni_Click(object sender, RoutedEventArgs e)
     {
         int count = 0;
         foreach (var card in _window.ViewModel.AllCards.Where(c => c.DcStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
@@ -675,15 +677,17 @@ public class SettingsHandler
             }
         }
         CrashReporter.Log($"[MassDeployDcIni] Deployed DisplayCommander.ini to {count} game(s)");
+        await ShowDeployResult("DisplayCommander.ini", count);
     }
 
-    public void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
+    public async void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
     {
         int count = 0;
         var sourceIni = Services.OptiScalerService.OsIniPath;
         if (!File.Exists(sourceIni))
         {
             CrashReporter.Log("[MassDeployOsIni] No OptiScaler.ini found in INIs folder — aborting");
+            await ShowDeployResult("OptiScaler.ini", 0);
             return;
         }
         foreach (var card in _window.ViewModel.AllCards.Where(c => c.OsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
@@ -699,6 +703,23 @@ public class SettingsHandler
             }
         }
         CrashReporter.Log($"[MassDeployOsIni] Deployed OptiScaler.ini to {count} game(s)");
+        await ShowDeployResult("OptiScaler.ini", count);
+    }
+
+    private async Task ShowDeployResult(string iniName, int count)
+    {
+        var message = count > 0
+            ? $"✅ Deployed {iniName} to {count} game(s)."
+            : $"No games found with the corresponding component installed.";
+        var dialog = new ContentDialog
+        {
+            Title = "Mass INI Deployment",
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await dialog.ShowAsync();
     }
 
     public async Task MassPresetInstall_ClickAsync(XamlRoot xamlRoot)
