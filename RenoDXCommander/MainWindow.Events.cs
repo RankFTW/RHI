@@ -592,6 +592,9 @@ public sealed partial class MainWindow
     private void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.MassDeployOsIni_Click(sender, e);
 
+    private async void MassPresetInstall_Click(object sender, RoutedEventArgs e)
+        => await _settingsHandler.MassPresetInstall_ClickAsync(Content.XamlRoot);
+
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         try

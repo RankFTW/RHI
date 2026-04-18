@@ -1313,6 +1313,26 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- ── Mass ReShade Preset Install ─────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Mass ReShade Preset Install" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                           Text="Deploy ReShade presets from your presets folder to multiple games at once. Select a preset, choose which games to deploy to, and optionally install the required shader packs. Presets must already be in the presets folder — use the per-game preset selector or drag-and-drop to add new presets first."/>
+
+                                <Button Content="Mass Preset Install"
+                                        Click="MassPresetInstall_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                        </Border>
+
                         <!-- ── Preferences ────────────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">

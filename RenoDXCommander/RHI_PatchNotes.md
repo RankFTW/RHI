@@ -3,6 +3,7 @@
 ### Changes
 
 - New "Mass INI Deployment" section on the Settings page. Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games that have the corresponding component installed with a single button click. Custom hotkey and screenshot path settings are preserved during deployment.
+- New "Mass ReShade Preset Install" section on the Settings page. Select presets from your presets folder, choose which games to deploy them to via a checkbox game picker, and optionally install the required shader packs — all in one flow.
 - Global update inclusion toggles in the overrides panel replaced with a compact "Update Inclusion" button that opens a dialog with checkboxes. A summary line below the button shows the current state at a glance (e.g. "RS: On · RDX: On · UL: On · DC: Off · OS: On") with green/red coloring.
 - Bitness and Graphics API dropdowns in the overrides panel are now side by side instead of stacked vertically, saving space.
 
