@@ -265,7 +265,7 @@ public sealed partial class MainWindow
     /// Builds the effective screenshot save path for a game based on current settings.
     /// Returns null if no screenshot path is configured.
     /// </summary>
-    private string? BuildScreenshotSavePath(string gameName)
+    internal string? BuildScreenshotSavePath(string gameName)
     {
         var basePath = ViewModel.Settings.ScreenshotPath;
         if (string.IsNullOrEmpty(basePath)) return null;

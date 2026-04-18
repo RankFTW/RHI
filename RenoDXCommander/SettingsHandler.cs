@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 
@@ -612,5 +613,91 @@ public class SettingsHandler
             RequestedTheme = ElementTheme.Dark,
         };
         await dialog.ShowAsync();
+    }
+
+    // ── Mass INI Deployment ───────────────────────────────────────────────────────
+
+    public void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
+    {
+        int count = 0;
+        foreach (var card in _window.ViewModel.AllCards.Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
+        {
+            try
+            {
+                var screenshotPath = _window.BuildScreenshotSavePath(card.GameName);
+                var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
+                if (card.RequiresVulkanInstall)
+                    AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey);
+                else
+                    AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
+                AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
+                count++;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[MassDeployRsIni] Failed for '{card.GameName}' — {ex.Message}");
+            }
+        }
+        CrashReporter.Log($"[MassDeployRsIni] Deployed reshade.ini to {count} game(s)");
+    }
+
+    public void MassDeployUlIni_Click(object sender, RoutedEventArgs e)
+    {
+        int count = 0;
+        foreach (var card in _window.ViewModel.AllCards.Where(c => c.UlStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
+        {
+            try
+            {
+                AuxInstallService.CopyUlIni(card.InstallPath);
+                count++;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[MassDeployUlIni] Failed for '{card.GameName}' — {ex.Message}");
+            }
+        }
+        CrashReporter.Log($"[MassDeployUlIni] Deployed relimiter.ini to {count} game(s)");
+    }
+
+    public void MassDeployDcIni_Click(object sender, RoutedEventArgs e)
+    {
+        int count = 0;
+        foreach (var card in _window.ViewModel.AllCards.Where(c => c.DcStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
+        {
+            try
+            {
+                AuxInstallService.CopyDcIni(card.InstallPath);
+                count++;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[MassDeployDcIni] Failed for '{card.GameName}' — {ex.Message}");
+            }
+        }
+        CrashReporter.Log($"[MassDeployDcIni] Deployed DisplayCommander.ini to {count} game(s)");
+    }
+
+    public void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
+    {
+        int count = 0;
+        var sourceIni = Services.OptiScalerService.OsIniPath;
+        if (!File.Exists(sourceIni))
+        {
+            CrashReporter.Log("[MassDeployOsIni] No OptiScaler.ini found in INIs folder — aborting");
+            return;
+        }
+        foreach (var card in _window.ViewModel.AllCards.Where(c => c.OsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
+        {
+            try
+            {
+                _window.ViewModel.OptiScalerServiceInstance.CopyIniToGame(card);
+                count++;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[MassDeployOsIni] Failed for '{card.GameName}' — {ex.Message}");
+            }
+        }
+        CrashReporter.Log($"[MassDeployOsIni] Deployed OptiScaler.ini to {count} game(s)");
     }
 }

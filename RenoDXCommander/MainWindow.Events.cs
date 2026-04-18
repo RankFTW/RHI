@@ -580,6 +580,18 @@ public sealed partial class MainWindow
     private void ApplyOsHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyOsHotkey_Click(sender, e);
 
+    private void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.MassDeployRsIni_Click(sender, e);
+
+    private void MassDeployUlIni_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.MassDeployUlIni_Click(sender, e);
+
+    private void MassDeployDcIni_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.MassDeployDcIni_Click(sender, e);
+
+    private void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.MassDeployOsIni_Click(sender, e);
+
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         try
