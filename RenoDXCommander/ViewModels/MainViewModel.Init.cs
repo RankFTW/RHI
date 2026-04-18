@@ -653,6 +653,50 @@ public partial class MainViewModel
             var record = records.FirstOrDefault(r =>
                 r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase));
 
+            // ── Path reconciliation for RenoDX mod records ────────────────────────
+            // Xbox/Microsoft Store games change install paths on every update
+            // (e.g. version number embedded in the WindowsApps folder name).
+            // When the record's GameName matches but InstallPath differs, try to
+            // migrate the addon file to the new path so the mod stays detected.
+            if (record != null
+                && !record.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+            {
+                var oldPath = record.InstallPath;
+                var addonFile = record.AddonFileName;
+                var newFilePath = string.IsNullOrEmpty(addonFile) ? null : Path.Combine(installPath, addonFile);
+                var oldFilePath = string.IsNullOrEmpty(addonFile) ? null : Path.Combine(oldPath, addonFile);
+
+                if (newFilePath != null && File.Exists(newFilePath))
+                {
+                    // Addon already exists at the new path (user may have reinstalled)
+                    _crashReporter.Log($"[BuildCards] Path reconciliation: '{game.Name}' path changed '{oldPath}' → '{installPath}', addon already at new path");
+                }
+                else if (oldFilePath != null && File.Exists(oldFilePath))
+                {
+                    // Try to copy the addon from the old path to the new path
+                    try
+                    {
+                        var newDeployDir = Path.GetDirectoryName(newFilePath!)!;
+                        Directory.CreateDirectory(newDeployDir);
+                        File.Copy(oldFilePath, newFilePath!, overwrite: true);
+                        _crashReporter.Log($"[BuildCards] Path reconciliation: '{game.Name}' copied addon '{addonFile}' from '{oldPath}' → '{installPath}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        // WindowsApps or other restricted paths may deny access — that's OK
+                        _crashReporter.Log($"[BuildCards] Path reconciliation: '{game.Name}' failed to copy addon from '{oldPath}' → '{installPath}' — {ex.Message}");
+                    }
+                }
+                else
+                {
+                    _crashReporter.Log($"[BuildCards] Path reconciliation: '{game.Name}' path changed '{oldPath}' → '{installPath}', addon not found at either path (mod lost during game update)");
+                }
+
+                // Always update the record to the new detected path
+                record.InstallPath = installPath;
+                _installer.SaveRecordPublic(record);
+            }
+
             // Fallback: match by InstallPath for records saved with mod name instead of game name
             // (e.g. "Generic Unreal Engine" from before the fix).
             if (record == null)
@@ -847,6 +891,42 @@ public partial class MainViewModel
             var rsRec = auxRecords.FirstOrDefault(r =>
                 r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
                 (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal));
+
+            // ── Path reconciliation for ReShade aux records ───────────────────────
+            // Same Xbox/Microsoft Store path-change issue as RenoDX mod records above.
+            if (rsRec != null
+                && !rsRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+            {
+                var oldRsPath = rsRec.InstallPath;
+                var rsFile = rsRec.InstalledAs;
+                var newRsFilePath = string.IsNullOrEmpty(rsFile) ? null : Path.Combine(installPath, rsFile);
+                var oldRsFilePath = string.IsNullOrEmpty(rsFile) ? null : Path.Combine(oldRsPath, rsFile);
+
+                if (newRsFilePath != null && File.Exists(newRsFilePath))
+                {
+                    _crashReporter.Log($"[BuildCards] RS path reconciliation: '{game.Name}' path changed '{oldRsPath}' → '{installPath}', ReShade already at new path");
+                }
+                else if (oldRsFilePath != null && File.Exists(oldRsFilePath))
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(newRsFilePath!)!);
+                        File.Copy(oldRsFilePath, newRsFilePath!, overwrite: true);
+                        _crashReporter.Log($"[BuildCards] RS path reconciliation: '{game.Name}' copied ReShade '{rsFile}' from '{oldRsPath}' → '{installPath}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[BuildCards] RS path reconciliation: '{game.Name}' failed to copy ReShade from '{oldRsPath}' → '{installPath}' — {ex.Message}");
+                    }
+                }
+                else
+                {
+                    _crashReporter.Log($"[BuildCards] RS path reconciliation: '{game.Name}' path changed '{oldRsPath}' → '{installPath}', ReShade not found at either path");
+                }
+
+                rsRec.InstallPath = installPath;
+                _auxInstaller.SaveAuxRecord(rsRec);
+            }
 
             // Verify DB records against disk — if the file no longer exists the record is stale.
             // This handles the case where the user manually deleted files without using RDXC.
@@ -1061,6 +1141,42 @@ public partial class MainViewModel
                     var dcRec = auxRecords.FirstOrDefault(r =>
                         r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
                         r.AddonType == "DisplayCommander");
+
+                    // ── Path reconciliation for DC aux records ────────────────────
+                    if (dcRec != null
+                        && !dcRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var oldDcPath = dcRec.InstallPath;
+                        var dcFile = dcRec.InstalledAs;
+                        var newDcFilePath = string.IsNullOrEmpty(dcFile) ? null : Path.Combine(installPath, dcFile);
+                        var oldDcFilePath = string.IsNullOrEmpty(dcFile) ? null : Path.Combine(oldDcPath, dcFile);
+
+                        if (newDcFilePath != null && File.Exists(newDcFilePath))
+                        {
+                            _crashReporter.Log($"[BuildCards] DC path reconciliation: '{game.Name}' path changed, DC already at new path");
+                        }
+                        else if (oldDcFilePath != null && File.Exists(oldDcFilePath))
+                        {
+                            try
+                            {
+                                Directory.CreateDirectory(Path.GetDirectoryName(newDcFilePath!)!);
+                                File.Copy(oldDcFilePath, newDcFilePath!, overwrite: true);
+                                _crashReporter.Log($"[BuildCards] DC path reconciliation: '{game.Name}' copied DC '{dcFile}' from '{oldDcPath}' → '{installPath}'");
+                            }
+                            catch (Exception ex)
+                            {
+                                _crashReporter.Log($"[BuildCards] DC path reconciliation: '{game.Name}' failed to copy DC — {ex.Message}");
+                            }
+                        }
+                        else
+                        {
+                            _crashReporter.Log($"[BuildCards] DC path reconciliation: '{game.Name}' path changed, DC not found at either path");
+                        }
+
+                        dcRec.InstallPath = installPath;
+                        _auxInstaller.SaveAuxRecord(dcRec);
+                    }
+
                     if (dcRec != null && File.Exists(Path.Combine(dcRec.InstallPath, dcRec.InstalledAs)))
                     {
                         newCard.DcStatus = GameStatus.Installed;
@@ -1085,6 +1201,41 @@ public partial class MainViewModel
                 var osRec = auxRecords.FirstOrDefault(r =>
                     r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
                     r.AddonType == OptiScalerService.AddonType);
+
+                // ── Path reconciliation for OptiScaler aux records ────────────────
+                if (osRec != null
+                    && !osRec.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    var oldOsPath = osRec.InstallPath;
+                    var osFile = osRec.InstalledAs;
+                    var newOsFilePath = string.IsNullOrEmpty(osFile) ? null : Path.Combine(installPath, osFile);
+                    var oldOsFilePath = string.IsNullOrEmpty(osFile) ? null : Path.Combine(oldOsPath, osFile);
+
+                    if (newOsFilePath != null && File.Exists(newOsFilePath))
+                    {
+                        _crashReporter.Log($"[BuildCards] OS path reconciliation: '{game.Name}' path changed, OptiScaler already at new path");
+                    }
+                    else if (oldOsFilePath != null && File.Exists(oldOsFilePath))
+                    {
+                        try
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(newOsFilePath!)!);
+                            File.Copy(oldOsFilePath, newOsFilePath!, overwrite: true);
+                            _crashReporter.Log($"[BuildCards] OS path reconciliation: '{game.Name}' copied OptiScaler '{osFile}' from '{oldOsPath}' → '{installPath}'");
+                        }
+                        catch (Exception ex)
+                        {
+                            _crashReporter.Log($"[BuildCards] OS path reconciliation: '{game.Name}' failed to copy OptiScaler — {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        _crashReporter.Log($"[BuildCards] OS path reconciliation: '{game.Name}' path changed, OptiScaler not found at either path");
+                    }
+
+                    osRec.InstallPath = installPath;
+                    _auxInstaller.SaveAuxRecord(osRec);
+                }
 
                 if (osRec != null && File.Exists(Path.Combine(osRec.InstallPath, osRec.InstalledAs)))
                 {

@@ -32,6 +32,7 @@ public sealed partial class MainWindow : Window
     private readonly WindowStateManager _windowStateManager;
     private readonly DragDropHandler _dragDropHandler;
     private readonly AddonFileWatcher _addonFileWatcher;
+    private CompactViewBuilder? _compactViewBuilder;
 
     /// <summary>Exposes the detail panel builder for extracted handler classes.</summary>
     internal DetailPanelBuilder DetailPanelBuilderInstance => _detailPanelBuilder;
@@ -46,6 +47,7 @@ public sealed partial class MainWindow : Window
         InitializeSkeletons();
         _cardBuilder = new CardBuilder(this);
         _detailPanelBuilder = new DetailPanelBuilder(this);
+        _compactViewBuilder = new CompactViewBuilder(this);
         _overridesFlyoutBuilder = new OverridesFlyoutBuilder(this, crashReporter);
         _dialogService = new DialogService(this);
         _settingsHandler = new SettingsHandler(this);
@@ -71,7 +73,10 @@ public sealed partial class MainWindow : Window
         // Set a sensible default size immediately so the window isn't huge on first launch.
         // TryRestoreWindowBounds (called on Activated) will then override this with the
         // saved size+position from the previous session, if one exists.
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(DefaultWidth, DefaultHeight));
+        if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
+            AppWindow.Resize(new Windows.Graphics.SizeInt32(1050, 750));
+        else
+            AppWindow.Resize(new Windows.Graphics.SizeInt32(DefaultWidth, DefaultHeight));
 
         // Enforce minimum window size and enable Win32 drag-and-drop via WindowStateManager
         var hwnd = WindowNative.GetWindowHandle(this);
@@ -79,6 +84,9 @@ public sealed partial class MainWindow : Window
         _windowStateManager = new WindowStateManager(this, hwnd, _dragDropHandler, _crashReporter);
         _windowStateManager.InstallWndProcSubclass();
         _windowStateManager.EnableDragAccept();
+
+        // Compact size and lock are applied in MainWindow_Activated after TryRestoreWindowBounds
+        // so the saved window position is preserved.
 
         // Set the title bar icon (unpackaged apps need this explicitly)
         var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
@@ -148,7 +156,18 @@ public sealed partial class MainWindow : Window
         {
             // Only restore once
             this.Activated -= MainWindow_Activated;
-            _windowStateManager.TryRestoreWindowBounds();
+
+            if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
+            {
+                // Compact mode: restore position only, then apply the fixed compact size
+                _windowStateManager.TryRestoreWindowBounds(positionOnly: true);
+                _windowStateManager.ApplyCompactSize();
+                _windowStateManager.SetSizeLocked(true);
+            }
+            else
+            {
+                _windowStateManager.TryRestoreWindowBounds();
+            }
         }
         catch (Exception ex) { _crashReporter.Log($"[MainWindow.MainWindow_Activated] Failed to restore window bounds — {ex.Message}"); }
     }
@@ -224,41 +243,56 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.SelectedGame = card;
 
-            if (ViewModel.IsGridLayout)
+            switch (ViewModel.CurrentViewLayout)
             {
-                // In grid mode, scroll to and highlight the selected card
-                ScrollToCard(card);
-            }
-            else
-            {
-                // In detail mode, populate the detail panel as before
-                PopulateDetailPanel(card);
-                DetailPanel.Visibility = Visibility.Visible;
-                BuildOverridesPanel(card);
-                OverridesContainer.Visibility = Visibility.Visible;
-                ManagementContainer.Visibility = Visibility.Visible;
+                case ViewLayout.Grid:
+                    // In grid mode, scroll to and highlight the selected card
+                    ScrollToCard(card);
+                    break;
+                case ViewLayout.Detail:
+                    // In detail mode, populate the detail panel as before
+                    PopulateDetailPanel(card);
+                    DetailPanel.Visibility = Visibility.Visible;
+                    BuildOverridesPanel(card);
+                    OverridesContainer.Visibility = Visibility.Visible;
+                    ManagementContainer.Visibility = Visibility.Visible;
+                    break;
+                case ViewLayout.Compact:
+                    // Rebuild current compact page for newly selected game, retaining page index
+                    _compactViewBuilder?.RebuildCurrentPage(
+                        card, ViewModel.CompactPageIndex);
+                    break;
             }
         }
         else
         {
             ViewModel.SelectedGame = null;
 
-            if (ViewModel.IsGridLayout)
+            switch (ViewModel.CurrentViewLayout)
             {
-                // Clear highlight from all cards
-                foreach (var child in CardGridPanel.Children)
-                {
-                    if (child is Border b && b.Tag is GameCardViewModel c)
-                        c.CardHighlighted = false;
-                }
-            }
-            else
-            {
-                DetailPanel.Visibility = Visibility.Collapsed;
-                OverridesPanel.Children.Clear();
-                OverridesContainer.Visibility = Visibility.Collapsed;
-                ManagementPanel.Children.Clear();
-                ManagementContainer.Visibility = Visibility.Collapsed;
+                case ViewLayout.Grid:
+                    // Clear highlight from all cards
+                    foreach (var child in CardGridPanel.Children)
+                    {
+                        if (child is Border b && b.Tag is GameCardViewModel c)
+                            c.CardHighlighted = false;
+                    }
+                    break;
+                case ViewLayout.Detail:
+                    DetailPanel.Visibility = Visibility.Collapsed;
+                    OverridesPanel.Children.Clear();
+                    OverridesContainer.Visibility = Visibility.Collapsed;
+                    ManagementPanel.Children.Clear();
+                    ManagementContainer.Visibility = Visibility.Collapsed;
+                    break;
+                case ViewLayout.Compact:
+                    // Hide detail panel content when no game is selected
+                    DetailPanel.Visibility = Visibility.Collapsed;
+                    OverridesPanel.Children.Clear();
+                    OverridesContainer.Visibility = Visibility.Collapsed;
+                    ManagementPanel.Children.Clear();
+                    ManagementContainer.Visibility = Visibility.Collapsed;
+                    break;
             }
         }
     }

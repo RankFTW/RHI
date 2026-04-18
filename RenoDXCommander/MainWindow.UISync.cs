@@ -57,6 +57,12 @@ public sealed partial class MainWindow
                 case nameof(ViewModel.TotalGames):
                     GameCountText.Text = $"{ViewModel.TotalGames} shown";
                     if (ViewModel.IsGridLayout) RebuildCardGrid();
+                    if (ViewModel.CurrentViewLayout == ViewLayout.Compact
+                        && ViewModel.SelectedGame is { } compactCard)
+                    {
+                        _compactViewBuilder?.RebuildCurrentPage(
+                            compactCard, ViewModel.CompactPageIndex);
+                    }
                     break;
                 case nameof(ViewModel.HiddenCount):
                     HiddenCountText.Text = ViewModel.HiddenCount > 0
@@ -192,7 +198,7 @@ public sealed partial class MainWindow
 
     // ── Detail panel delegation ───────────────────────────────────────────────────
 
-    private void PopulateDetailPanel(GameCardViewModel card) => _detailPanelBuilder.PopulateDetailPanel(card);
+    internal void PopulateDetailPanel(GameCardViewModel card) => _detailPanelBuilder.PopulateDetailPanel(card);
 
     private void UpdateDetailComponentRows(GameCardViewModel card) => _detailPanelBuilder.UpdateDetailComponentRows(card);
 

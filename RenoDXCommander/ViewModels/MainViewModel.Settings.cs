@@ -410,7 +410,7 @@ public partial class MainViewModel
             _gameNameService.LoadNameMappings(
                 _dllOverrideService,
                 _settingsViewModel,
-                grid => IsGridLayout = grid,
+                layout => CurrentViewLayout = layout,
                 val => _filterViewModel.RestoreFilterMode(val),
                 filters =>
                 {
@@ -643,7 +643,7 @@ public partial class MainViewModel
         _gameNameService.SaveNameMappings(
             _dllOverrideService,
             _settingsViewModel,
-            IsGridLayout,
+            CurrentViewLayout,
             _isLoadingSettings,
             _filterViewModel.FilterMode,
             _filterViewModel.CustomFilters.ToList());

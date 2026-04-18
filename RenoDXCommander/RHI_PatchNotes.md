@@ -1,3 +1,24 @@
+## v1.8.1
+
+### New Features
+
+**Compact View mode**
+- New third view mode alongside Detail and Grid. Toggle between views using the toolbar button.
+- Compact View shows the same game card, overrides, and management panels as Detail View, split across three navigable pages with left/right arrow buttons.
+- The window locks to a fixed size in Compact View and restores your previous size when switching back.
+- Your chosen view mode is remembered across app restarts.
+
+**View-specific loading skeletons**
+- The loading skeleton now matches your last-used view. Grid View shows a card grid skeleton, Detail and Compact Views show the detail panel skeleton.
+
+### Bug Fixes
+
+**Xbox / Game Pass games no longer lose mods after game updates**
+- When a Game Pass game updates, Windows changes its install folder path. Previously this caused RHI to lose track of installed mods, showing them as needing reinstall. RHI now detects the path change and migrates your installed mods (RenoDX, ReShade, Display Commander, OptiScaler) to the new folder automatically.
+
+**Window position remembered in Compact View**
+- Fixed the app not restoring its window position on startup when Compact View was the last-used mode.
+
 ## v1.8.0
 
 ### New Features
