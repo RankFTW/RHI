@@ -103,24 +103,59 @@ public sealed partial class MainWindow
 
     private void LayoutToggle_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.IsGridLayout = !ViewModel.IsGridLayout;
+        var previousLayout = ViewModel.CurrentViewLayout;
+        ViewModel.CurrentViewLayout = ViewModel.NextViewLayout();
         ViewModel.SaveSettingsPublic(); // persist the chosen layout
-        if (ViewModel.IsGridLayout)
+
+        // Handle window size locking transitions
+        if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
         {
-            RebuildCardGrid();
+            _windowStateManager.CaptureCurrentBounds();
+            _windowStateManager.ApplyCompactSize();
+            _windowStateManager.SetSizeLocked(true);
         }
-        else
+        else if (previousLayout == ViewLayout.Compact)
         {
-            // Switching to detail mode — repopulate detail panel for selected game if any
-            if (ViewModel.SelectedGame is { } card)
-            {
-                PopulateDetailPanel(card);
-                DetailPanel.Visibility = Visibility.Visible;
-                BuildOverridesPanel(card);
-                OverridesContainer.Visibility = Visibility.Visible;
-                ManagementContainer.Visibility = Visibility.Visible;
-            }
+            // Leaving compact mode — restore all sections to visible first
+            _compactViewBuilder?.LeaveCompactMode();
+            _windowStateManager.SetSizeLocked(false);
+            _windowStateManager.RestoreWindowBounds();
         }
+
+        // Rebuild content for the new layout
+        switch (ViewModel.CurrentViewLayout)
+        {
+            case ViewLayout.Grid:
+                RebuildCardGrid();
+                break;
+            case ViewLayout.Detail:
+                // Switching to detail mode — repopulate detail panel for selected game if any
+                if (ViewModel.SelectedGame is { } card)
+                {
+                    PopulateDetailPanel(card);
+                    DetailPanel.Visibility = Visibility.Visible;
+                    BuildOverridesPanel(card);
+                    OverridesContainer.Visibility = Visibility.Visible;
+                    ManagementContainer.Visibility = Visibility.Visible;
+                }
+                break;
+            case ViewLayout.Compact:
+                if (ViewModel.SelectedGame is { } compactCard)
+                    _compactViewBuilder?.EnterCompactMode(compactCard, ViewModel.CompactPageIndex);
+                break;
+        }
+    }
+
+    private void CompactNavLeft_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.NavigateCompactPage(-1);
+        _compactViewBuilder?.NavigateToPage(ViewModel.CompactPageIndex);
+    }
+
+    private void CompactNavRight_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.NavigateCompactPage(1);
+        _compactViewBuilder?.NavigateToPage(ViewModel.CompactPageIndex);
     }
 
     /// <summary>
@@ -849,7 +884,7 @@ public sealed partial class MainWindow
         RefreshFilterButtonStyles();
     }
 
-    private void FavouriteButton_Click(object sender, RoutedEventArgs e)
+    internal void FavouriteButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
         ViewModel.ToggleFavouriteCommand.Execute(card);
@@ -876,7 +911,7 @@ public sealed partial class MainWindow
     private void CombinedInstallButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.CombinedInstallButton_Click(sender, e);
 
-    private void InstallButton_Click(object sender, RoutedEventArgs e)
+    internal void InstallButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallButton_Click(sender, e);
 
     private void Install64Button_Click(object sender, RoutedEventArgs e)
@@ -888,13 +923,13 @@ public sealed partial class MainWindow
     private async Task EnsurePathAndInstall(GameCardViewModel card, Func<Task> installAction)
         => await _installEventHandler.EnsurePathAndInstall(card, installAction);
 
-    private void UninstallButton_Click(object sender, RoutedEventArgs e)
+    internal void UninstallButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallButton_Click(sender, e);
 
-    private void InstallRsButton_Click(object sender, RoutedEventArgs e)
+    internal void InstallRsButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallRsButton_Click(sender, e);
 
-    private void UninstallRsButton_Click(object sender, RoutedEventArgs e)
+    internal void UninstallRsButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallRsButton_Click(sender, e);
 
     private void ChooseShadersButton_Click(object sender, RoutedEventArgs e)
@@ -965,28 +1000,28 @@ public sealed partial class MainWindow
     private async void UpdateAllReShade_Click(object sender, RoutedEventArgs e)
         => await ViewModel.UpdateAllReShadeAsync();
 
-    private void InstallUlButton_Click(object sender, RoutedEventArgs e)
+    internal void InstallUlButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallUlButton_Click(sender, e);
 
-    private void UninstallUlButton_Click(object sender, RoutedEventArgs e)
+    internal void UninstallUlButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallUlButton_Click(sender, e);
 
-    private void InstallDcButton_Click(object sender, RoutedEventArgs e)
+    internal void InstallDcButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallDcButton_Click(sender, e);
 
-    private void UninstallDcButton_Click(object sender, RoutedEventArgs e)
+    internal void UninstallDcButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallDcButton_Click(sender, e);
 
-    private void InstallOsButton_Click(object sender, RoutedEventArgs e)
+    internal void InstallOsButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallOsButton_Click(sender, e);
 
-    private void UninstallOsButton_Click(object sender, RoutedEventArgs e)
+    internal void UninstallOsButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallOsButton_Click(sender, e);
 
-    private void InstallRefButton_Click(object sender, RoutedEventArgs e)
+    internal void InstallRefButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.InstallRefButton_Click(sender, e);
 
-    private void UninstallRefButton_Click(object sender, RoutedEventArgs e)
+    internal void UninstallRefButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.UninstallRefButton_Click(sender, e);
 
     private void UlIniButton_Click(object sender, RoutedEventArgs e)
@@ -1123,7 +1158,7 @@ public sealed partial class MainWindow
     internal async Task ShowUeExtendedWarningAsync(GameCardViewModel card)
         => await _dialogService.ShowUeExtendedWarningAsync(card);
 
-    private void HideButton_Click(object sender, RoutedEventArgs e)
+    internal void HideButton_Click(object sender, RoutedEventArgs e)
     {
         if (GetCardFromSender(sender) is { } card)
             ViewModel.ToggleHideGameCommand.Execute(card);

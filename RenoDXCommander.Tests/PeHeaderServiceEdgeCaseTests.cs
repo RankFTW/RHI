@@ -202,7 +202,7 @@ public class LegacyIs32BitGamesIgnoredTests
             "UpdateAllExcluded", "PerGameShaderMode",
             "ShaderDeployMode", "SkipUpdateCheck", "VerboseLogging", "LastSeenVersion",
             "LumaEnabledGames", "LumaDisabledGames", "GameRenames", "DllOverrides",
-            "FolderOverrides", "HiddenGames", "FavouriteGames", "GridLayout",
+            "FolderOverrides", "HiddenGames", "FavouriteGames", "ViewLayout",
         };
 
         Assert.DoesNotContain("Is32BitGames", knownSavedKeys);

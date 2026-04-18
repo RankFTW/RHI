@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Shapes;
+using RenoDXCommander.Models;
 using Windows.UI;
 
 namespace RenoDXCommander;
@@ -158,9 +159,13 @@ public sealed partial class MainWindow
             AboutPanel: Visibility.Collapsed);
     }
 
+    /// <summary>Number of skeleton cards to display in the grid skeleton (3×3 grid).</summary>
+    internal const int SkeletonGridCardCount = 9;
+
     /// <summary>
     /// Called once during window initialization to populate skeleton placeholders
-    /// and start the shimmer animation.
+    /// and start the shimmer animation. Shows the appropriate content skeleton
+    /// based on the persisted view layout.
     /// </summary>
     internal void InitializeSkeletons()
     {
@@ -176,7 +181,7 @@ public sealed partial class MainWindow
             fillBrush = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x1A, 0x20, 0x28));
         }
 
-        // Create skeleton rows and collect all Border targets for shimmer
+        // Create skeleton rows (sidebar — shared across all views) and collect shimmer targets
         var shimmerTargets = new List<Border>();
 
         for (int i = 0; i < SkeletonRowCount; i++)
@@ -186,14 +191,65 @@ public sealed partial class MainWindow
             shimmerTargets.Add(row);
         }
 
-        // Populate the detail panel skeleton
-        PopulateSkeletonDetailPanel(fillBrush);
+        // Show the appropriate content skeleton based on the persisted view layout
+        var layout = ViewModel.CurrentViewLayout;
 
-        // Collect detail panel borders for shimmer
-        foreach (var child in SkeletonDetailPanel.Children)
+        if (layout == ViewLayout.Grid)
         {
-            if (child is Border b)
-                shimmerTargets.Add(b);
+            // Grid view: show card grid skeleton, hide detail skeleton
+            SkeletonDetailScrollViewer.Visibility = Visibility.Collapsed;
+            SkeletonGridScrollViewer.Visibility = Visibility.Visible;
+
+            SolidColorBrush tableBgBrush;
+            try
+            {
+                tableBgBrush = Application.Current.Resources[ResourceKeys.SurfaceComponentTableBrush] as SolidColorBrush
+                               ?? fillBrush;
+            }
+            catch { tableBgBrush = fillBrush; }
+
+            SolidColorBrush borderBrush;
+            try
+            {
+                borderBrush = Application.Current.Resources[ResourceKeys.BorderDefaultBrush] as SolidColorBrush
+                              ?? fillBrush;
+            }
+            catch { borderBrush = fillBrush; }
+
+            for (int i = 0; i < SkeletonGridCardCount; i++)
+            {
+                var card = CreateSkeletonCard(fillBrush, tableBgBrush, borderBrush);
+                SkeletonGridPanel.Children.Add(card);
+                shimmerTargets.Add(card);
+            }
+        }
+        else
+        {
+            // Detail and Compact views: show detail skeleton, hide grid skeleton
+            SkeletonDetailScrollViewer.Visibility = Visibility.Visible;
+            SkeletonGridScrollViewer.Visibility = Visibility.Collapsed;
+
+            PopulateSkeletonDetailPanel(fillBrush);
+
+            // In Compact mode, hide the overrides and management skeleton sections
+            // since they're on separate pages (only the game card page is visible)
+            if (layout == ViewLayout.Compact)
+            {
+                var children = SkeletonDetailPanel.Children;
+                // The last two children are the Overrides border and Management border
+                if (children.Count >= 2)
+                {
+                    children[children.Count - 1].Visibility = Visibility.Collapsed; // Management
+                    children[children.Count - 2].Visibility = Visibility.Collapsed; // Overrides
+                }
+            }
+
+            // Collect detail panel borders for shimmer
+            foreach (var child in SkeletonDetailPanel.Children)
+            {
+                if (child is Border b)
+                    shimmerTargets.Add(b);
+            }
         }
 
         // Resolve shimmer colors
@@ -223,14 +279,16 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// Stops the shimmer animation, clears skeleton children, and collapses
-    /// both skeleton panels. Called on the first IsLoading → false transition.
+    /// all skeleton panels. Called on the first IsLoading → false transition.
     /// Idempotent — safe to call multiple times.
     /// </summary>
     internal void RemoveSkeletons()
     {
         RemoveSkeletons(SkeletonRowPanel, SkeletonDetailPanel, ref _shimmerStoryboard);
-        // Also collapse the ScrollViewer wrapper around the detail panel
+        // Also collapse the ScrollViewer wrappers around the content skeletons
         SkeletonDetailScrollViewer.Visibility = Visibility.Collapsed;
+        SkeletonGridPanel.Children.Clear();
+        SkeletonGridScrollViewer.Visibility = Visibility.Collapsed;
     }
 
     /// <summary>
@@ -311,6 +369,165 @@ public sealed partial class MainWindow
             BorderThickness = new Thickness(1),
             BorderBrush = fillBrush,
             Child = grid,
+        };
+    }
+
+    /// <summary>
+    /// Creates a single skeleton card matching the real card layout from CardBuilder.
+    /// Width matches the CardItemWidth resource (280px in code, but the outer border
+    /// in the real builder uses 280). Includes header row, API badge, status dots,
+    /// action button, and settings gear placeholders.
+    /// </summary>
+    internal static Border CreateSkeletonCard(SolidColorBrush fillBrush, SolidColorBrush tableBgBrush, SolidColorBrush borderBrush)
+    {
+        var root = new StackPanel { Spacing = 8 };
+
+        // ── Header row: source icon + game name + favourite star + more button ──
+        var header = new Grid();
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });   // icon
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // name
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });   // fav
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });   // more
+
+        // Source icon placeholder (16×16 matches real card)
+        var iconPlaceholder = new Border
+        {
+            Width = 16,
+            Height = 16,
+            CornerRadius = new CornerRadius(3),
+            Background = fillBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 6, 0),
+        };
+        Grid.SetColumn(iconPlaceholder, 0);
+        header.Children.Add(iconPlaceholder);
+
+        // Game name placeholder (flexible width, matches FontSize=13 SemiBold)
+        var namePlaceholder = new Border
+        {
+            Height = 14,
+            CornerRadius = new CornerRadius(4),
+            Background = fillBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(namePlaceholder, 1);
+        header.Children.Add(namePlaceholder);
+
+        // Favourite star placeholder
+        var favPlaceholder = new Border
+        {
+            Width = 20,
+            Height = 20,
+            CornerRadius = new CornerRadius(4),
+            Background = fillBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 0, 0),
+        };
+        Grid.SetColumn(favPlaceholder, 2);
+        header.Children.Add(favPlaceholder);
+
+        // More button placeholder
+        var morePlaceholder = new Border
+        {
+            Width = 20,
+            Height = 20,
+            CornerRadius = new CornerRadius(4),
+            Background = fillBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(2, 0, 0, 0),
+        };
+        Grid.SetColumn(morePlaceholder, 3);
+        header.Children.Add(morePlaceholder);
+
+        root.Children.Add(header);
+
+        // ── API badge placeholder (e.g. "DX11/12") ──
+        var apiBadge = new Border
+        {
+            Width = 55,
+            Height = 22,
+            CornerRadius = new CornerRadius(5),
+            Background = fillBrush,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        root.Children.Add(apiBadge);
+
+        // ── Status dots row: RDX, RS, UL ──
+        var dotsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        string[] dotLabels = ["RDX", "RS", "UL"];
+        foreach (var label in dotLabels)
+        {
+            var dotPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+            dotPanel.Children.Add(new Ellipse
+            {
+                Width = 8,
+                Height = 8,
+                Fill = fillBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            dotPanel.Children.Add(new Border
+            {
+                Width = label.Length * 7,
+                Height = 10,
+                CornerRadius = new CornerRadius(3),
+                Background = fillBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            dotsRow.Children.Add(dotPanel);
+        }
+        root.Children.Add(dotsRow);
+
+        // ── Action button placeholder (full-width, matches install button) ──
+        var actionBtn = new Border
+        {
+            Height = 30,
+            CornerRadius = new CornerRadius(6),
+            Background = fillBrush,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        root.Children.Add(actionBtn);
+
+        // ── Bottom row: info area (left) + settings gear (right) ──
+        var bottomRow = new Grid();
+        bottomRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bottomRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        // Info button placeholder (left)
+        var infoPlaceholder = new Border
+        {
+            Width = 40,
+            Height = 22,
+            CornerRadius = new CornerRadius(4),
+            Background = fillBrush,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        Grid.SetColumn(infoPlaceholder, 0);
+        bottomRow.Children.Add(infoPlaceholder);
+
+        // Settings gear placeholder (right)
+        var gearPlaceholder = new Border
+        {
+            Width = 22,
+            Height = 22,
+            CornerRadius = new CornerRadius(4),
+            Background = fillBrush,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        Grid.SetColumn(gearPlaceholder, 1);
+        bottomRow.Children.Add(gearPlaceholder);
+
+        root.Children.Add(bottomRow);
+
+        // ── Outer card border — matches real card: Width=280, CornerRadius=10, Padding=14,12 ──
+        return new Border
+        {
+            Width = 280,
+            CornerRadius = new CornerRadius(10),
+            BorderThickness = new Thickness(1),
+            Background = tableBgBrush,
+            BorderBrush = borderBrush,
+            Padding = new Thickness(14, 12, 14, 12),
+            Child = root,
         };
     }
 

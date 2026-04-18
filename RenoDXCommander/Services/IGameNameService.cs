@@ -89,7 +89,7 @@ public interface IGameNameService
     Dictionary<string, string> LoadNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        Action<bool> setIsGridLayout,
+        Action<ViewLayout> setViewLayout,
         Action<string> setFilterMode,
         Action<List<CustomFilter>> setCustomFilters);
 
@@ -97,7 +97,7 @@ public interface IGameNameService
     void SaveNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        bool isGridLayout,
+        ViewLayout currentViewLayout,
         bool isLoadingSettings,
         string filterMode,
         List<CustomFilter> customFilters);

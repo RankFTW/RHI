@@ -93,7 +93,7 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> LoadNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        Action<bool> setIsGridLayout,
+        Action<ViewLayout> setViewLayout,
         Action<string> setFilterMode,
         Action<List<CustomFilter>> setCustomFilters)
     {
@@ -255,8 +255,10 @@ public class GameNameService : IGameNameService
         _favouriteGames = new HashSet<string>(
             Load<List<string>>("FavouriteGames", _favouriteGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
 
-        if (s.TryGetValue("GridLayout", out var glVal))
-            setIsGridLayout(glVal == "1");
+        if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
+            setViewLayout((ViewLayout)vlInt);
+        else if (s.TryGetValue("GridLayout", out var glVal))  // backward compat
+            setViewLayout(glVal == "1" ? ViewLayout.Grid : ViewLayout.Detail);
 
         if (s.TryGetValue("FilterMode", out var fmVal) && !string.IsNullOrWhiteSpace(fmVal))
             setFilterMode(fmVal);
@@ -273,7 +275,7 @@ public class GameNameService : IGameNameService
     public void SaveNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
-        bool isGridLayout,
+        ViewLayout currentViewLayout,
         bool isLoadingSettings,
         string filterMode,
         List<CustomFilter> customFilters)
@@ -321,7 +323,7 @@ public class GameNameService : IGameNameService
                 s["ApiOverrides"]        = JsonSerializer.Serialize(_apiOverrides);
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
-                s["GridLayout"]          = isGridLayout ? "1" : "0";
+                s["ViewLayout"]          = ((int)currentViewLayout).ToString();
                 s["FilterMode"]          = filterMode;
                 s["CustomFilters"]       = JsonSerializer.Serialize(customFilters);
                 SettingsViewModel.SaveSettingsFile(s);

@@ -1,5 +1,6 @@
 using FsCheck;
 using FsCheck.Xunit;
+using RenoDXCommander.Models;
 using RenoDXCommander.ViewModels;
 using Xunit;
 
@@ -8,61 +9,79 @@ namespace RenoDXCommander.Tests;
 /// <summary>
 /// Property-based tests for the multi-card-layout feature's ViewModel logic.
 /// Uses FsCheck with xUnit. Each property runs a minimum of 100 iterations.
+/// Updated for the three-state ViewLayout enum (Detail, Grid, Compact).
 /// </summary>
 [Collection("StaticShaderMode")]
 public class LayoutTogglePropertyTests
 {
-    // Feature: multi-card-layout, Property 1: Layout toggle involution
-    // Validates: Requirements 1.2
+    // Feature: multi-card-layout, Property 1: Layout toggle cycling
+    // Validates: Requirements 1.1, 1.2, 1.3
     [Property(MaxTest = 100)]
-    public bool ToggleIsGridLayout_Twice_ReturnsToOriginal(bool initial)
+    public bool ToggleViewLayout_ThreeTimes_ReturnsToOriginal(bool startAsGrid)
     {
         var vm = TestHelpers.CreateMainViewModel();
-        vm.IsGridLayout = initial;
+        var initial = startAsGrid ? ViewLayout.Grid : ViewLayout.Detail;
+        vm.CurrentViewLayout = initial;
 
-        // Toggle twice
-        vm.IsGridLayout = !vm.IsGridLayout;
-        vm.IsGridLayout = !vm.IsGridLayout;
+        // Cycle three times
+        vm.CurrentViewLayout = vm.NextViewLayout();
+        vm.CurrentViewLayout = vm.NextViewLayout();
+        vm.CurrentViewLayout = vm.NextViewLayout();
 
-        return vm.IsGridLayout == initial;
+        return vm.CurrentViewLayout == initial;
     }
 
-    // Feature: multi-card-layout, Property 1: Layout toggle involution (single flip)
-    // Validates: Requirements 1.2
+    // Feature: multi-card-layout, Property 1: Layout toggle single step
+    // Validates: Requirements 1.1, 1.2, 1.3
     [Property(MaxTest = 100)]
-    public bool ToggleIsGridLayout_Once_FlipsValue(bool initial)
+    public bool ToggleViewLayout_Once_AdvancesToNextMode(bool startAsGrid)
     {
         var vm = TestHelpers.CreateMainViewModel();
-        vm.IsGridLayout = initial;
+        var initial = startAsGrid ? ViewLayout.Grid : ViewLayout.Detail;
+        vm.CurrentViewLayout = initial;
 
-        vm.IsGridLayout = !vm.IsGridLayout;
+        vm.CurrentViewLayout = vm.NextViewLayout();
 
-        return vm.IsGridLayout == !initial;
+        var expected = initial switch
+        {
+            ViewLayout.Detail => ViewLayout.Grid,
+            ViewLayout.Grid => ViewLayout.Compact,
+            ViewLayout.Compact => ViewLayout.Detail,
+            _ => ViewLayout.Detail,
+        };
+
+        return vm.CurrentViewLayout == expected;
     }
 
-    // Feature: multi-card-layout, Property 1: Layout toggle involution (computed properties)
-    // Validates: Requirements 1.2
+    // Feature: multi-card-layout, Property 1: Layout toggle computed properties consistency
+    // Validates: Requirements 2.3, 2.4, 2.5
     [Property(MaxTest = 100)]
-    public bool ToggleIsGridLayout_ComputedProperties_AreConsistent(bool value)
+    public bool ToggleViewLayout_ComputedProperties_AreConsistent(bool startAsGrid)
     {
         var vm = TestHelpers.CreateMainViewModel();
-        vm.IsGridLayout = value;
+        vm.CurrentViewLayout = startAsGrid ? ViewLayout.Grid : ViewLayout.Detail;
 
         var detailVisible = vm.DetailPanelVisibility == Microsoft.UI.Xaml.Visibility.Visible;
         var gridVisible = vm.CardGridVisibility == Microsoft.UI.Xaml.Visibility.Visible;
-        var label = vm.LayoutToggleLabel;
+        var compactVisible = vm.CompactViewVisibility == Microsoft.UI.Xaml.Visibility.Visible;
 
-        // Detail and grid visibility are mutually exclusive
-        bool mutuallyExclusive = detailVisible != gridVisible;
+        // Exactly one view container is visible
+        int visibleCount = (detailVisible ? 1 : 0) + (gridVisible ? 1 : 0) + (compactVisible ? 1 : 0);
+        bool exactlyOneVisible = visibleCount == 1;
 
-        // When grid layout, detail is collapsed and grid is visible
-        bool detailCorrect = value ? !detailVisible : detailVisible;
-        bool gridCorrect = value ? gridVisible : !gridVisible;
+        // Correct container is visible for the current layout
+        bool correctVisibility = vm.CurrentViewLayout switch
+        {
+            ViewLayout.Detail => detailVisible && !gridVisible && !compactVisible,
+            ViewLayout.Grid => !detailVisible && gridVisible && !compactVisible,
+            ViewLayout.Compact => !detailVisible && !gridVisible && compactVisible,
+            _ => false,
+        };
 
-        // Label matches state
-        bool labelCorrect = value ? label == "Detail View" : label == "Grid View";
+        // IsGridLayout backward compat
+        bool isGridLayoutCorrect = vm.IsGridLayout == (vm.CurrentViewLayout == ViewLayout.Grid);
 
-        return mutuallyExclusive && detailCorrect && gridCorrect && labelCorrect;
+        return exactlyOneVisible && correctVisibility && isGridLayoutCorrect;
     }
 
     // Feature: multi-card-layout, Property 2: Layout preference persistence round-trip
@@ -82,20 +101,21 @@ public class LayoutTogglePropertyTests
     // Feature: multi-card-layout, Property 2: Layout preference persistence round-trip (ViewModel level)
     // Validates: Requirements 1.4
     [Property(MaxTest = 100)]
-    public bool GridLayout_ViewModelPersistence_RoundTrip(bool value)
+    public bool ViewLayout_ViewModelPersistence_RoundTrip(bool startAsGrid)
     {
-        // Verify that setting IsGridLayout on a ViewModel and reading it back
+        // Verify that setting CurrentViewLayout on a ViewModel and reading it back
         // produces the same value — the property setter/getter round-trips.
         var vm = TestHelpers.CreateMainViewModel();
-        vm.IsGridLayout = value;
+        var layout = startAsGrid ? ViewLayout.Grid : ViewLayout.Detail;
+        vm.CurrentViewLayout = layout;
 
-        return vm.IsGridLayout == value;
+        return vm.CurrentViewLayout == layout;
     }
 
     // Feature: multi-card-layout, Property 3: Layout toggle preserves non-layout state
     // Validates: Requirements 1.5, 1.6
     [Property(MaxTest = 100)]
-    public Property ToggleIsGridLayout_PreservesNonLayoutState()
+    public Property ToggleViewLayout_PreservesNonLayoutState()
     {
         // Generate random filter modes from the valid set and random search strings
         var filterModes = new[] { "Detected", "Favourites", "Hidden", "Unreal", "Unity", "Other", "RenoDX", "Luma" };
@@ -104,12 +124,12 @@ public class LayoutTogglePropertyTests
             Arb.From(Gen.Elements(filterModes)),
             Arb.From(Gen.Elements("", "test", "game name", "search query", "abc123")),
             Arb.From(Arb.Default.Bool().Generator),
-            (string filterMode, string searchQuery, bool initialLayout) =>
+            (string filterMode, string searchQuery, bool startAsGrid) =>
             {
                 var vm = TestHelpers.CreateMainViewModel();
 
                 // Set initial state
-                vm.IsGridLayout = initialLayout;
+                vm.CurrentViewLayout = startAsGrid ? ViewLayout.Grid : ViewLayout.Detail;
                 vm.FilterMode = filterMode;
                 vm.SearchQuery = searchQuery;
 
@@ -122,8 +142,8 @@ public class LayoutTogglePropertyTests
                 var searchBefore = vm.SearchQuery;
                 var selectedBefore = vm.SelectedGame;
 
-                // Toggle layout
-                vm.IsGridLayout = !vm.IsGridLayout;
+                // Toggle layout via NextViewLayout
+                vm.CurrentViewLayout = vm.NextViewLayout();
 
                 // Verify non-layout state is preserved
                 bool filterPreserved = vm.FilterMode == filterBefore;
@@ -137,10 +157,10 @@ public class LayoutTogglePropertyTests
     // Feature: multi-card-layout, Property 3: Layout toggle preserves non-layout state (null selection)
     // Validates: Requirements 1.5, 1.6
     [Property(MaxTest = 100)]
-    public bool ToggleIsGridLayout_WithNullSelection_PreservesState(bool initialLayout)
+    public bool ToggleViewLayout_WithNullSelection_PreservesState(bool startAsGrid)
     {
         var vm = TestHelpers.CreateMainViewModel();
-        vm.IsGridLayout = initialLayout;
+        vm.CurrentViewLayout = startAsGrid ? ViewLayout.Grid : ViewLayout.Detail;
         vm.SelectedGame = null;
         vm.SearchQuery = "some search";
         vm.FilterMode = "Detected";
@@ -148,8 +168,8 @@ public class LayoutTogglePropertyTests
         var filterBefore = vm.FilterMode;
         var searchBefore = vm.SearchQuery;
 
-        // Toggle layout
-        vm.IsGridLayout = !vm.IsGridLayout;
+        // Toggle layout via NextViewLayout
+        vm.CurrentViewLayout = vm.NextViewLayout();
 
         return vm.FilterMode == filterBefore
             && vm.SearchQuery == searchBefore

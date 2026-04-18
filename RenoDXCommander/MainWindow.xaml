@@ -97,7 +97,7 @@
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Switch between detail and grid view"/>
+                            ToolTipService.ToolTip="Cycle between detail, grid, and compact view"/>
                     <Button x:Name="SettingsBtn" Content="Settings"
                             Click="SettingsButton_Click"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
@@ -283,12 +283,12 @@
 
                 <!-- ── CONTENT COLUMN (Column 1): Detail Panel / Card Grid ────── -->
                 <Grid Grid.Column="1">
-                    <!-- Detail Panel (existing) — visible when NOT grid layout -->
-                    <ScrollViewer x:Name="DetailScrollViewer"
-                                  Visibility="{x:Bind ViewModel.DetailPanelVisibility, Mode=OneWay}"
+                    <!-- Detail Panel (existing) — visible in Detail and Compact modes -->
+                    <ScrollViewer x:Name="DetailScrollViewer" x:FieldModifier="internal"
+                                  Visibility="{x:Bind ViewModel.DetailOrCompactVisibility, Mode=OneWay}"
                                   VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                                   SizeChanged="DetailScrollViewer_SizeChanged">
-                    <StackPanel x:Name="DetailPanel" Spacing="16" Visibility="Collapsed"
+                    <StackPanel x:Name="DetailPanel" x:FieldModifier="internal" Spacing="16" Visibility="Collapsed"
                                 Padding="24,18,24,24" HorizontalAlignment="Center">
 
                         <!-- ── Game name + author row (above card) ── -->
@@ -815,7 +815,7 @@
                         </Border>
 
                         <!-- ── Overrides section ── -->
-                        <Border x:Name="OverridesContainer"
+                        <Border x:Name="OverridesContainer" x:FieldModifier="internal"
                                 Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
                                 BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                 Padding="14,12" Visibility="Collapsed">
@@ -842,11 +842,40 @@
                                             Margin="16"/>
                     </ScrollViewer>
 
+                    <!-- Compact Nav Arrows — overlaid on content area, visible only in Compact mode -->
+                    <Button x:Name="CompactNavLeft"
+                            Content="◀" Click="CompactNavLeft_Click"
+                            VerticalAlignment="Center" HorizontalAlignment="Left"
+                            Canvas.ZIndex="1"
+                            Visibility="{x:Bind ViewModel.CompactViewVisibility, Mode=OneWay}"
+                            Background="{StaticResource SurfaceOverlayBrush}"
+                            Foreground="{StaticResource AccentTealBrush}"
+                            BorderThickness="0" FontSize="18"
+                            Padding="8,16" Margin="4,0"/>
+
+                    <Button x:Name="CompactNavRight"
+                            Content="▶" Click="CompactNavRight_Click"
+                            VerticalAlignment="Center" HorizontalAlignment="Right"
+                            Canvas.ZIndex="1"
+                            Visibility="{x:Bind ViewModel.CompactViewVisibility, Mode=OneWay}"
+                            Background="{StaticResource SurfaceOverlayBrush}"
+                            Foreground="{StaticResource AccentTealBrush}"
+                            BorderThickness="0" FontSize="18"
+                            Padding="8,16" Margin="0,0,4,0"/>
+
                     <!-- Skeleton detail panel overlay (removed programmatically after first load) -->
                     <ScrollViewer x:Name="SkeletonDetailScrollViewer" VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled" Visibility="Visible">
                         <StackPanel x:Name="SkeletonDetailPanel" Spacing="16"
                                     Padding="24,18,24,24"/>
+                    </ScrollViewer>
+
+                    <!-- Skeleton grid panel overlay (removed programmatically after first load) -->
+                    <ScrollViewer x:Name="SkeletonGridScrollViewer" VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
+                        <controls:WrapPanel x:Name="SkeletonGridPanel"
+                                            HorizontalSpacing="12" VerticalSpacing="12"
+                                            Margin="16"/>
                     </ScrollViewer>
                 </Grid>
             </Grid>

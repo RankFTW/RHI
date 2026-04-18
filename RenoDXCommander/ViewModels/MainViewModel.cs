@@ -85,7 +85,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private AppPage currentPage = AppPage.GameView;
     [ObservableProperty] private GameCardViewModel? selectedGame;
     [ObservableProperty] private bool hasUpdatesAvailable;
-    [ObservableProperty] private bool _isGridLayout = false;
+    [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Detail;
+    [ObservableProperty] private int _compactPageIndex = 0;
 
     public Visibility HasUpdatesAvailableVisibility =>
         HasUpdatesAvailable ? Visibility.Visible : Visibility.Collapsed;
@@ -94,19 +95,52 @@ public partial class MainViewModel : ObservableObject
         => OnPropertyChanged(nameof(HasUpdatesAvailableVisibility));
 
     public Visibility DetailPanelVisibility =>
-        IsGridLayout ? Visibility.Collapsed : Visibility.Visible;
+        CurrentViewLayout == ViewLayout.Detail ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility CardGridVisibility =>
-        IsGridLayout ? Visibility.Visible : Visibility.Collapsed;
+        CurrentViewLayout == ViewLayout.Grid ? Visibility.Visible : Visibility.Collapsed;
 
-    public string LayoutToggleLabel =>
-        IsGridLayout ? "Detail View" : "Grid View";
+    public Visibility CompactViewVisibility =>
+        CurrentViewLayout == ViewLayout.Compact ? Visibility.Visible : Visibility.Collapsed;
 
-    partial void OnIsGridLayoutChanged(bool value)
+    /// <summary>
+    /// Returns Visible when in Detail OR Compact mode (both use the DetailScrollViewer).
+    /// </summary>
+    public Visibility DetailOrCompactVisibility =>
+        CurrentViewLayout == ViewLayout.Grid ? Visibility.Collapsed : Visibility.Visible;
+
+    public string LayoutToggleLabel => CurrentViewLayout switch
+    {
+        ViewLayout.Detail => "Detail View",
+        ViewLayout.Grid => "Grid View",
+        ViewLayout.Compact => "Compact View",
+        _ => "Detail View",
+    };
+
+    // Backward-compatible property for code that still checks grid mode
+    public bool IsGridLayout => CurrentViewLayout == ViewLayout.Grid;
+
+    partial void OnCurrentViewLayoutChanged(ViewLayout value)
     {
         OnPropertyChanged(nameof(DetailPanelVisibility));
         OnPropertyChanged(nameof(CardGridVisibility));
+        OnPropertyChanged(nameof(CompactViewVisibility));
+        OnPropertyChanged(nameof(DetailOrCompactVisibility));
         OnPropertyChanged(nameof(LayoutToggleLabel));
+        OnPropertyChanged(nameof(IsGridLayout));
+    }
+
+    public ViewLayout NextViewLayout() => CurrentViewLayout switch
+    {
+        ViewLayout.Detail => ViewLayout.Grid,
+        ViewLayout.Grid => ViewLayout.Compact,
+        ViewLayout.Compact => ViewLayout.Detail,
+        _ => ViewLayout.Detail,
+    };
+
+    public void NavigateCompactPage(int delta)
+    {
+        CompactPageIndex = ((CompactPageIndex + delta) % 3 + 3) % 3;
     }
 
     /// <summary>
