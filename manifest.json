@@ -19,10 +19,10 @@
     "Battle.net.16125",
     "Battle.net.15492",
     "Battle.net.15561",
-    "Battle.net.16089",
-    "Battle.net.16111",
-    "Battle.net.16014",
-    "Battle.net.17296",
+	``"Battle.net.16089",
+	``"Battle.net.16111",
+	``"Battle.net.16014",
+	``"Battle.net.17296",
     "Call of Duty: Modern Warfare 3 - Dedicated Server",
     "Muckingham Files 3",
     "Muckingham Files 4",
@@ -193,8 +193,7 @@
 	"Borderlands: The Pre-Sequel": "Binaries\\Win32",
 	"Hades": "x64",
 	"Deus Ex - Mankind Divided": "retail",
-  "Five Nights at Freddy's: Security Breach": "fnaf9\\Binaries\\Win64",
-	"Satisfactory": "Engine\\Binaries\\Win64"
+  "Five Nights at Freddy's: Security Breach": "fnaf9\\Binaries\\Win64"
   },
   "snapshotOverrides": {
 	"Assassin's Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
@@ -382,14 +381,5 @@
   },
   "authorOverrides": {
     "PRAGMATA": "Musa"
-  },
-  "pdUpscalerGames": {
-    "Resident Evil 2": "RE2",
-    "Resident Evil 3": "RE3",
-    "Resident Evil 4": "RE4",
-    "Resident Evil 7": "RE7",
-    "Resident Evil 7 Biohazard": "RE7",
-    "RESIDENT EVIL 7 biohazard": "RE7",
-    "Resident Evil Village": "RE8"
   }
 }

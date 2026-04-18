@@ -165,4 +165,13 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("pcgwUrlOverrides")]
     public Dictionary<string, string>? PcgwUrlOverrides { get; set; }
+
+    /// <summary>
+    /// Per-game author overrides. Sets the mod author for games that have no wiki entry
+    /// but have a known mod author (e.g. mods distributed via Discord or Nexus only).
+    /// The author name is displayed as a badge with a donation link if available.
+    /// Key = game name, Value = author display name (or "&amp;"-separated for multiple).
+    /// </summary>
+    [JsonPropertyName("authorOverrides")]
+    public Dictionary<string, string>? AuthorOverrides { get; set; }
 }

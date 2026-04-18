@@ -104,6 +104,7 @@ public partial class GameCardViewModel
                                    : WikiStatus == "🚧" ? "🚧 In Progress"
                                    : WikiStatus == "?"  ? "⚠️ May Work"
                                    : WikiStatus == "💬" ? "💬 Discord"
+                                   : WikiStatus == "🌐" ? "🌐 Nexus"
                                    : WikiStatus == "—" && IsGenericMod ? "⚠️ May Work"
                                    : "❓ Unknown";
 
@@ -115,6 +116,7 @@ public partial class GameCardViewModel
                                   : WikiStatus == "🚧" ? "🚧"
                                   : WikiStatus == "?"  ? "⚠️"
                                   : WikiStatus == "💬" ? "💬"
+                                  : WikiStatus == "🌐" ? "🌐"
                                   : WikiStatus == "—" && IsGenericMod ? "⚠️"
                                   : "❓";
 
@@ -123,12 +125,15 @@ public partial class GameCardViewModel
 
     // Badge colours change per status to make them visually distinct
     public string WikiStatusBadgeBackground  => WikiStatus == "💬" ? "#201838"
+                                              : WikiStatus == "🌐" ? "#182840"
                                               : WikiStatus == "?"  ? "#201C10"
                                               : "#1A2030";
     public string WikiStatusBadgeBorderBrush => WikiStatus == "💬" ? "#3A2860"
+                                              : WikiStatus == "🌐" ? "#2A4468"
                                               : WikiStatus == "?"  ? "#403018"
                                               : "#283240";
     public string WikiStatusBadgeForeground  => WikiStatus == "💬" ? "#B898E8"
+                                              : WikiStatus == "🌐" ? "#7AACDD"
                                               : WikiStatus == "?"  ? "#D4A856"
                                               : "#A0AABB";
 

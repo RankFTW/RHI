@@ -261,13 +261,20 @@ public class GameInitializationService : IGameInitializationService
             foreach (var card in cards)
             {
                 if (!manifest.ForceExternalOnly.TryGetValue(card.GameName, out var ext)) continue;
-                if (card.IsExternalOnly) continue;
+                // Always apply manifest URL/label — even if already external-only from wiki matching,
+                // the manifest entry should override the default Discord fallback.
                 if (card.Mod != null)
                     card.Mod.SnapshotUrl = null;
                 card.IsExternalOnly = true;
                 card.ExternalUrl    = ext.Url ?? "https://discord.gg/gF4GRJWZ2A";
                 card.ExternalLabel  = ext.Label ?? "Download from Discord";
-                card.WikiStatus     = "💬";
+                // Set WikiStatus based on the actual download source
+                bool isNexus = ext.Url != null && ext.Url.Contains("nexusmods", StringComparison.OrdinalIgnoreCase);
+                card.WikiStatus     = isNexus ? "🌐" : "💬";
+                // Clear DiscordUrl if the manifest points to a non-Discord source,
+                // so the Discord badge doesn't show when the download is from Nexus etc.
+                if (ext.Url != null && !ext.Url.Contains("discord", StringComparison.OrdinalIgnoreCase))
+                    card.DiscordUrl = null;
             }
         }
 
@@ -283,6 +290,16 @@ public class GameInitializationService : IGameInitializationService
                     card.LumaNotesUrl      = lumaNote.NotesUrl;
                     card.LumaNotesUrlLabel = lumaNote.NotesUrlLabel;
                 }
+            }
+        }
+
+        if (manifest.AuthorOverrides != null)
+        {
+            foreach (var card in cards)
+            {
+                if (!manifest.AuthorOverrides.TryGetValue(card.GameName, out var author)) continue;
+                if (string.IsNullOrWhiteSpace(card.Maintainer))
+                    card.Maintainer = author;
             }
         }
     }
