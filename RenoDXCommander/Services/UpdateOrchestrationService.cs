@@ -281,17 +281,28 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
             if (refInstalled.Count > 0)
             {
-                // Single check — all cards share the same RE Framework version source
-                var firstVersion = refInstalled[0].RefRecord!.InstalledVersion;
-                var refUpdateAvailable = await _refService.CheckForUpdateAsync(firstVersion).ConfigureAwait(false);
+                // Find a card with a standard version (not PD-Upscaler) for the update check.
+                // PD-Upscaler cards are on a different branch and shouldn't trigger updates.
+                var standardCard = refInstalled.FirstOrDefault(c =>
+                    !string.Equals(c.RefRecord!.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase));
 
-                if (refUpdateAvailable)
+                if (standardCard != null)
                 {
-                    dispatcherQueue?.TryEnqueue(() =>
+                    var firstVersion = standardCard.RefRecord!.InstalledVersion;
+                    var refUpdateAvailable = await _refService.CheckForUpdateAsync(firstVersion).ConfigureAwait(false);
+
+                    if (refUpdateAvailable)
                     {
-                        foreach (var card in refInstalled)
-                            card.RefStatus = GameStatus.UpdateAvailable;
-                    });
+                        dispatcherQueue?.TryEnqueue(() =>
+                        {
+                            // Only flag standard REF cards as needing update, not PD-Upscaler ones
+                            foreach (var card in refInstalled)
+                            {
+                                if (!string.Equals(card.RefRecord!.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
+                                    card.RefStatus = GameStatus.UpdateAvailable;
+                            }
+                        });
+                    }
                 }
             }
         }
