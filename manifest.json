@@ -381,5 +381,14 @@
   },
   "authorOverrides": {
     "PRAGMATA": "Musa"
+  },
+  "pdUpscalerGames": {
+    "Resident Evil 2": "RE2",
+    "Resident Evil 3": "RE3",
+    "Resident Evil 4": "RE4",
+    "Resident Evil 7": "RE7",
+    "Resident Evil 7 Biohazard": "RE7",
+    "RESIDENT EVIL 7 biohazard": "RE7",
+    "Resident Evil Village": "RE8"
   }
 }
