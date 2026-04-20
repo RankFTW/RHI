@@ -392,5 +392,15 @@ public partial class GameCardViewModel : ObservableObject
         // ── Nexus Mods / PCGW link computed properties ───────────────────────
         NotifyOnce(nameof(HasNexusModsUrl));
         NotifyOnce(nameof(HasPcgwUrl));
+
+        // ── Nexus Mods: IsNexusUpdateAvailable dependents ────────────────────
+        NotifyOnce(nameof(NexusUpdateBadgeVisibility));
+
+        // ── Nexus Mods: IsNexusDownloading dependents ────────────────────────
+        NotifyOnce(nameof(IsNexusNotDownloading));
+        NotifyOnce(nameof(NexusProgressVisibility));
+
+        // ── Nexus Mods: NexusActionMessage dependents ────────────────────────
+        NotifyOnce(nameof(NexusMessageVisibility));
     }
 }

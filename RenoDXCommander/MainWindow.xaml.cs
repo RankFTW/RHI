@@ -1,6 +1,7 @@
 // MainWindow.xaml.cs — Constructor, field declarations, window lifecycle,
 // addon file handling, and game list selection.
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using RenoDXCommander.Services;
 using Microsoft.UI.Xaml;
@@ -138,6 +139,8 @@ public sealed partial class MainWindow : Window
             DispatcherQueue.TryEnqueue(RebuildCustomFilterChips);
         // Silent update check — runs in background, shows dialog only if update found
         CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.UpdateCheck");
+        // Fire-and-forget: re-validate stored Nexus API key and check for mod updates
+        NexusStartupRevalidateAndCheckAsync().SafeFireAndForget("MainWindow.NexusStartup");
         // Show patch notes on first launch after update
         ShowPatchNotesIfNewVersionAsync().SafeFireAndForget("MainWindow.PatchNotes");
         // Register .addon64/.addon32 file associations (per-user, no admin)
@@ -197,6 +200,197 @@ public sealed partial class MainWindow : Window
     }
 
     // ── Addon file handling (Downloads watcher + file association) ───────────────
+
+    /// <summary>
+    /// Handles an nxm:// URI received via command-line or single-instance forwarding.
+    /// Parses the URI, downloads the file, then matches the game domain to a card
+    /// and routes the downloaded file to the existing addon/archive install flow.
+    /// </summary>
+    internal async void HandleNxmUri(string nxmUri)
+    {
+        try
+        {
+            _crashReporter.Log($"[MainWindow.HandleNxmUri] Processing nxm:// URI");
+
+            var protocolHandler = App.Services.GetRequiredService<INxmProtocolHandler>();
+            var parsed = protocolHandler.Parse(nxmUri);
+            if (parsed is null)
+            {
+                _crashReporter.Log($"[MainWindow.HandleNxmUri] Failed to parse nxm:// URI — discarding");
+                return;
+            }
+
+            // Wait for game list to be populated before processing
+            while (ViewModel.IsLoading)
+                await Task.Delay(200);
+
+            // Bring window to front
+            NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
+
+            var downloadService = App.Services.GetRequiredService<INexusDownloadService>();
+            var downloadedPath = await downloadService.ProcessNxmUriAsync(parsed);
+
+            if (string.IsNullOrEmpty(downloadedPath))
+            {
+                _crashReporter.Log($"[MainWindow.HandleNxmUri] Download returned no file — aborting");
+                return;
+            }
+
+            // ── Match gameDomain to a card ──────────────────────────────────────
+            var allCards = ViewModel.AllCards?.ToList() ?? new();
+            var matchedCards = new List<GameCardViewModel>();
+
+            foreach (var card in allCards)
+            {
+                var cardNexusUrl = card.NexusUrl ?? card.Mod?.NexusUrl;
+                if (string.IsNullOrWhiteSpace(cardNexusUrl))
+                    continue;
+
+                var cardRef = NexusUrlParser.Parse(cardNexusUrl);
+                if (cardRef is null)
+                    continue;
+
+                if (string.Equals(cardRef.GameDomain, parsed.GameDomain, StringComparison.OrdinalIgnoreCase))
+                    matchedCards.Add(card);
+            }
+
+            GameCardViewModel? targetCard;
+
+            if (matchedCards.Count == 1)
+            {
+                // Exact single match — use it automatically
+                targetCard = matchedCards[0];
+                _crashReporter.Log($"[MainWindow.HandleNxmUri] Auto-matched game domain '{parsed.GameDomain}' to '{targetCard.GameName}'");
+            }
+            else
+            {
+                // Zero or multiple matches — show a picker dialog
+                if (matchedCards.Count == 0)
+                    _crashReporter.Log($"[MainWindow.HandleNxmUri] No cards matched game domain '{parsed.GameDomain}' — showing picker");
+                else
+                    _crashReporter.Log($"[MainWindow.HandleNxmUri] {matchedCards.Count} cards matched game domain '{parsed.GameDomain}' — showing picker");
+
+                targetCard = await ShowNxmGamePickerDialogAsync(
+                    Path.GetFileName(downloadedPath), allCards, matchedCards);
+
+                if (targetCard is null)
+                {
+                    _crashReporter.Log($"[MainWindow.HandleNxmUri] User cancelled game selection — file remains at '{downloadedPath}'");
+                    return;
+                }
+            }
+
+            // ── Route to existing install flow ──────────────────────────────────
+            _crashReporter.Log($"[MainWindow.HandleNxmUri] Installing '{Path.GetFileName(downloadedPath)}' to '{targetCard.GameName}' at '{targetCard.InstallPath}'");
+
+            var ext = Path.GetExtension(downloadedPath).ToLowerInvariant();
+            if (ext is ".addon64" or ".addon32")
+            {
+                await _dragDropHandler.ProcessDroppedAddon(downloadedPath);
+            }
+            else
+            {
+                // Archives (.zip, .7z, .rar, etc.) go through the archive extraction flow
+                await _dragDropHandler.ProcessDroppedArchive(downloadedPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.HandleNxmUri] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Shows a ContentDialog asking the user to pick which game to install a Nexus download to.
+    /// Pre-selects matched cards if any, otherwise shows all cards.
+    /// Returns the selected card, or null if the user cancelled.
+    /// </summary>
+    private async Task<GameCardViewModel?> ShowNxmGamePickerDialogAsync(
+        string fileName,
+        List<GameCardViewModel> allCards,
+        List<GameCardViewModel> matchedCards)
+    {
+        if (allCards.Count == 0)
+        {
+            var noGamesDialog = new ContentDialog
+            {
+                Title = "No Games Available",
+                Content = "No games are currently detected. Add a game first.",
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await noGamesDialog.ShowAsync();
+            return null;
+        }
+
+        var combo = new ComboBox
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            PlaceholderText = "Select a game...",
+        };
+
+        var sortedCards = allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
+        foreach (var card in sortedCards)
+            combo.Items.Add(new ComboBoxItem { Content = card.GameName, Tag = card });
+
+        // Pre-select if there are matched cards (pick the first match in sorted order)
+        if (matchedCards.Count > 0)
+        {
+            var firstMatch = matchedCards[0];
+            for (int i = 0; i < sortedCards.Count; i++)
+            {
+                if (ReferenceEquals(sortedCards[i], firstMatch))
+                {
+                    combo.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+        else if (ViewModel.SelectedGame != null)
+        {
+            // Fall back to the currently selected game in the sidebar
+            for (int i = 0; i < sortedCards.Count; i++)
+            {
+                if (string.Equals(sortedCards[i].GameName, ViewModel.SelectedGame.GameName, StringComparison.OrdinalIgnoreCase))
+                {
+                    combo.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        var panel = new StackPanel { Spacing = 12 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"Choose which game to install '{fileName}' to:",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 13,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+        });
+        panel.Children.Add(combo);
+
+        var pickDialog = new ContentDialog
+        {
+            Title = "🌐 Nexus Mods Download",
+            Content = panel,
+            PrimaryButtonText = "Install",
+            CloseButtonText = "Cancel",
+            XamlRoot = Content.XamlRoot,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await pickDialog.ShowAsync();
+        if (result != ContentDialogResult.Primary)
+            return null;
+
+        if (combo.SelectedItem is ComboBoxItem selected && selected.Tag is GameCardViewModel targetCard)
+            return targetCard;
+
+        return null;
+    }
 
     /// <summary>
     /// Handles an addon file detected by the Downloads watcher or passed via command-line.

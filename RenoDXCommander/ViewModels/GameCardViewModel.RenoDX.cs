@@ -36,9 +36,9 @@ public partial class GameCardViewModel
         : "";
 
     // Update button colours — purple when an update is available, normal blue otherwise
-    public string InstallBtnBackground  => Status == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string InstallBtnForeground  => Status == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
-    public string InstallBtnBorderBrush => Status == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
+    public string InstallBtnBackground  => (Status == GameStatus.UpdateAvailable || IsNexusUpdateAvailable) ? "#201838" : "#182840";
+    public string InstallBtnForeground  => (Status == GameStatus.UpdateAvailable || IsNexusUpdateAvailable) ? "#B898E8" : "#7AACDD";
+    public string InstallBtnBorderBrush => (Status == GameStatus.UpdateAvailable || IsNexusUpdateAvailable) ? "#3A2860" : "#2A4468";
 
     // UE-Extended toggle label and styling
     public string UeExtendedLabel      => UseUeExtended ? "⚡ UE Extended ON" : "⚡ UE Extended";

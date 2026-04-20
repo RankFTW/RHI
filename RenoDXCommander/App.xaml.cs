@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using RenoDXCommander.Services;
@@ -80,6 +81,35 @@ public partial class App : Application
         services.AddSingleton<ISteamAppIdResolver, SteamAppIdResolver>();
         services.AddSingleton<IPcgwService, PcgwService>();
 
+        // Nexus API integration services
+        services.AddSingleton<INexusTokenStore, NexusTokenStore>();
+        services.AddSingleton<INexusApiClient>(sp =>
+        {
+            var http = sp.GetRequiredService<HttpClient>();
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var versionStr = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "0.0.0";
+            return new NexusApiClient(http, versionStr);
+        });
+        services.AddSingleton<INexusAuthService>(sp =>
+        {
+            var apiClient = sp.GetRequiredService<INexusApiClient>();
+            var tokenStore = sp.GetRequiredService<INexusTokenStore>();
+            return new NexusAuthService(apiClient, tokenStore);
+        });
+        services.AddSingleton<INexusUpdateChecker>(sp =>
+        {
+            var apiClient = sp.GetRequiredService<INexusApiClient>();
+            return new NexusUpdateChecker(apiClient);
+        });
+        services.AddSingleton<INexusDownloadService>(sp =>
+        {
+            var apiClient = sp.GetRequiredService<INexusApiClient>();
+            var authService = sp.GetRequiredService<INexusAuthService>();
+            var http = sp.GetRequiredService<HttpClient>();
+            return new NexusDownloadService(apiClient, authService, http);
+        });
+        services.AddSingleton<INxmProtocolHandler, NxmProtocolHandler>();
+
         // ViewModels
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<FilterViewModel>();
@@ -107,23 +137,34 @@ public partial class App : Application
         DownloadsMigrationService.RunOnce();
 
         // Single-instance check: if another instance is already running,
-        // forward the addon file path and exit immediately.
+        // forward the addon file path (or nxm:// URI) and exit immediately.
         var cmdArgs = Environment.GetCommandLineArgs();
         string? addonArg = null;
+        string? nxmArg = null;
         if (cmdArgs.Length > 1)
         {
-            var ext = Path.GetExtension(cmdArgs[1]);
-            var fileName = Path.GetFileName(cmdArgs[1]);
-            if ((string.Equals(ext, ".addon64", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(ext, ".addon32", StringComparison.OrdinalIgnoreCase))
-                && fileName.StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
-                addonArg = cmdArgs[1];
+            var arg = cmdArgs[1];
+            if (arg.StartsWith("nxm://", StringComparison.OrdinalIgnoreCase))
+            {
+                nxmArg = arg;
+            }
+            else
+            {
+                var ext = Path.GetExtension(arg);
+                var fileName = Path.GetFileName(arg);
+                if ((string.Equals(ext, ".addon64", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(ext, ".addon32", StringComparison.OrdinalIgnoreCase))
+                    && fileName.StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
+                    addonArg = arg;
+            }
         }
 
         if (!SingleInstanceService.TryAcquire())
         {
-            // Another instance is running — forward the file and exit
-            if (addonArg != null)
+            // Another instance is running — forward the file/URI and exit
+            if (nxmArg != null)
+                SingleInstanceService.SendToRunningInstance(nxmArg);
+            else if (addonArg != null)
                 SingleInstanceService.SendToRunningInstance(addonArg);
             Environment.Exit(0);
             return;
@@ -136,12 +177,17 @@ public partial class App : Application
         _window.Activate();
         CrashReporter.Log("[App.OnLaunched] MainWindow activated");
 
-        // Start listening for file paths from subsequent instances
+        // Start listening for file paths / nxm:// URIs from subsequent instances
         SingleInstanceService.StartListening();
         SingleInstanceService.FileReceived += path =>
         {
             if (_window is MainWindow mw)
-                mw.DispatcherQueue.TryEnqueue(() => mw.HandleAddonFile(path));
+            {
+                if (path.StartsWith("nxm://", StringComparison.OrdinalIgnoreCase))
+                    mw.DispatcherQueue.TryEnqueue(() => mw.HandleNxmUri(path));
+                else
+                    mw.DispatcherQueue.TryEnqueue(() => mw.HandleAddonFile(path));
+            }
         };
 
         // Handle addon file passed on first launch
@@ -150,6 +196,14 @@ public partial class App : Application
             CrashReporter.Log($"[App.OnLaunched] Addon file passed via command line: {addonArg}");
             if (_window is MainWindow mw)
                 mw.HandleAddonFile(addonArg);
+        }
+
+        // Handle nxm:// URI passed on first launch
+        if (nxmArg != null)
+        {
+            CrashReporter.Log($"[App.OnLaunched] nxm:// URI passed via command line: {nxmArg}");
+            if (_window is MainWindow mw)
+                mw.HandleNxmUri(nxmArg);
         }
     }
 

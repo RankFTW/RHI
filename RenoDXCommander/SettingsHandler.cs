@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Models;
@@ -178,6 +179,9 @@ public class SettingsHandler
         _window.GlobalUlUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipUlUpdates;
         _window.GlobalDcUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipDcUpdates;
         _window.GlobalOsUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipOsUpdates;
+
+        // Initialize Nexus Mods status
+        InitializeNexusStatus();
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
@@ -670,6 +674,104 @@ public class SettingsHandler
             RequestedTheme = ElementTheme.Dark,
         };
         await dialog.ShowAsync();
+    }
+
+    // ── Nexus Mods ──────────────────────────────────────────────────────────────
+
+    private void InitializeNexusStatus()
+    {
+        try
+        {
+            var authService = App.Services.GetRequiredService<INexusAuthService>();
+            var protocolHandler = App.Services.GetRequiredService<INxmProtocolHandler>();
+
+            if (authService.IsAuthenticated && authService.CurrentUser != null)
+            {
+                _window.NexusStatusText.Text = $"Linked as: {authService.CurrentUser.Name}" +
+                    (authService.IsPremium ? " (Premium)" : "");
+                _window.NexusApiKeyBox.Text = "";
+                _window.NexusApiKeyBox.PlaceholderText = "Account linked";
+            }
+            else
+            {
+                _window.NexusStatusText.Text = "Not linked";
+                _window.NexusApiKeyBox.PlaceholderText = "Paste your Nexus Mods API key";
+            }
+
+            _window.NxmProtocolToggle.IsOn = protocolHandler.IsRegistered();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.InitializeNexusStatus] Error — {ex.Message}");
+            _window.NexusStatusText.Text = "Not linked";
+        }
+    }
+
+    public async void NexusLinkBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var apiKey = _window.NexusApiKeyBox.Text?.Trim();
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            _window.NexusStatusText.Text = "Please enter an API key";
+            return;
+        }
+
+        _window.NexusStatusText.Text = "Validating...";
+        try
+        {
+            var authService = App.Services.GetRequiredService<INexusAuthService>();
+            var success = await authService.ValidateAndStoreApiKeyAsync(apiKey);
+
+            if (success && authService.CurrentUser != null)
+            {
+                _window.NexusStatusText.Text = $"Linked as: {authService.CurrentUser.Name}" +
+                    (authService.IsPremium ? " (Premium)" : "");
+                _window.NexusApiKeyBox.Text = "";
+                _window.NexusApiKeyBox.PlaceholderText = "Account linked";
+            }
+            else
+            {
+                _window.NexusStatusText.Text = "Invalid API key";
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.NexusLinkBtn_Click] Error — {ex.Message}");
+            _window.NexusStatusText.Text = "Validation failed";
+        }
+    }
+
+    public void NexusUnlinkBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var authService = App.Services.GetRequiredService<INexusAuthService>();
+            authService.UnlinkAccount();
+            _window.NexusStatusText.Text = "Not linked";
+            _window.NexusApiKeyBox.Text = "";
+            _window.NexusApiKeyBox.PlaceholderText = "Paste your Nexus Mods API key";
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.NexusUnlinkBtn_Click] Error — {ex.Message}");
+        }
+    }
+
+    public void NxmProtocolToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ToggleSwitch toggle) return;
+        try
+        {
+            var protocolHandler = App.Services.GetRequiredService<INxmProtocolHandler>();
+            if (toggle.IsOn)
+                protocolHandler.Register();
+            else
+                protocolHandler.Unregister();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.NxmProtocolToggle_Toggled] Error — {ex.Message}");
+        }
     }
 
     // ── Mass INI Deployment ───────────────────────────────────────────────────────

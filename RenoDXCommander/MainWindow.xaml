@@ -1272,6 +1272,63 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- ── Nexus Mods ──────────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Nexus Mods" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Link your Nexus Mods account to enable automatic mod updates and one-click downloads via nxm:// links. Premium users get direct CDN downloads."/>
+                                </StackPanel>
+
+                                <!-- API Key input + Link/Unlink buttons -->
+                                <StackPanel Spacing="8">
+                                    <TextBox x:Name="NexusApiKeyBox" x:FieldModifier="internal"
+                                             PlaceholderText="Paste your Nexus Mods API key"
+                                             FontSize="12"
+                                             Background="{StaticResource SurfaceInputBrush}"
+                                             Foreground="{StaticResource TextSecondaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" x:Name="NexusLinkBtn"
+                                                Content="Link Account"
+                                                Click="NexusLinkBtn_Click"
+                                                Background="{StaticResource AccentGreenBgBrush}"
+                                                Foreground="{StaticResource AccentGreenBrush}"
+                                                BorderBrush="{StaticResource AccentGreenBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
+                                        <Button Grid.Column="1" x:Name="NexusUnlinkBtn"
+                                                Content="Unlink Account"
+                                                Click="NexusUnlinkBtn_Click"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource TextSecondaryBrush}"
+                                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
+                                    </Grid>
+                                    <TextBlock x:Name="NexusStatusText" x:FieldModifier="internal"
+                                               Text="Not linked" FontSize="11"
+                                               Foreground="{StaticResource TextTertiaryBrush}"/>
+                                </StackPanel>
+
+                                <!-- nxm:// protocol handler toggle -->
+                                <ToggleSwitch x:Name="NxmProtocolToggle" x:FieldModifier="internal"
+                                              Header="nxm:// Protocol Handler"
+                                              OnContent="Registered — RHI handles nxm:// links"
+                                              OffContent="Not registered"
+                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                              Toggled="NxmProtocolToggle_Toggled"/>
+                            </StackPanel>
+                        </Border>
+
                         <!-- ── Custom Shaders & Addon Watch Folder ─────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">

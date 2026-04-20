@@ -239,9 +239,19 @@ public partial class DetailPanelBuilder
                     ? (object)new TextBlock { Text = card.ExternalDisplayLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
                     : card.ExternalDisplayLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.UseNormalReShade ? false : true;
-                _window.DetailRdxInstallBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
-                _window.DetailRdxInstallBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
-                _window.DetailRdxInstallBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+                // Use purple update colors when a Nexus update is available
+                if (card.IsNexusUpdateAvailable)
+                {
+                    _window.DetailRdxInstallBtn.Background = UIFactory.GetBrush(card.InstallBtnBackground);
+                    _window.DetailRdxInstallBtn.Foreground = UIFactory.GetBrush(card.InstallBtnForeground);
+                    _window.DetailRdxInstallBtn.BorderBrush = UIFactory.GetBrush(card.InstallBtnBorderBrush);
+                }
+                else
+                {
+                    _window.DetailRdxInstallBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
+                    _window.DetailRdxInstallBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
+                    _window.DetailRdxInstallBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+                }
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var extInstalled = card.IsRdxInstalled;

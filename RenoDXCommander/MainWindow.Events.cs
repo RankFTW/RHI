@@ -1,5 +1,6 @@
 // MainWindow.Events.cs — Button click handlers and user-initiated event handlers.
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -210,6 +211,17 @@ public sealed partial class MainWindow
         switch (component)
         {
             case "RDX":
+                // If a Nexus update is available, trigger the Nexus download flow
+                if (card.IsNexusUpdateAvailable && !string.IsNullOrEmpty(card.NexusUrl))
+                {
+                    var nexusRef = NexusUrlParser.Parse(card.NexusUrl);
+                    if (nexusRef?.ModId != null)
+                    {
+                        var downloadService = App.Services.GetRequiredService<INexusDownloadService>();
+                        await downloadService.DownloadAndInstallAsync(card, nexusRef.GameDomain, nexusRef.ModId.Value);
+                        break;
+                    }
+                }
                 await ViewModel.InstallModCommand.ExecuteAsync(card);
                 break;
             case "RS":
@@ -641,6 +653,15 @@ public sealed partial class MainWindow
 
     private void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.MassDeployOsIni_Click(sender, e);
+
+    private void NexusLinkBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.NexusLinkBtn_Click(sender, e);
+
+    private void NexusUnlinkBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.NexusUnlinkBtn_Click(sender, e);
+
+    private void NxmProtocolToggle_Toggled(object sender, RoutedEventArgs e)
+        => _settingsHandler.NxmProtocolToggle_Toggled(sender, e);
 
     private async void MassPresetInstall_Click(object sender, RoutedEventArgs e)
         => await _settingsHandler.MassPresetInstall_ClickAsync(Content.XamlRoot);
@@ -1236,6 +1257,9 @@ public sealed partial class MainWindow
         await ViewModel.RefreshAsync();
 
         RestoreScrollAndSelection(selectedName);
+
+        // Trigger Nexus mod update check with cache bypass on manual refresh (Requirement 3.5)
+        NexusManualRefreshAsync().SafeFireAndForget("MainWindow.NexusManualRefresh");
     }
 
     private async Task FullRefreshWithScrollRestore()
@@ -1245,6 +1269,9 @@ public sealed partial class MainWindow
         await ViewModel.FullRefreshAsync();
 
         RestoreScrollAndSelection(selectedName);
+
+        // Trigger Nexus mod update check with cache bypass on manual refresh (Requirement 3.5)
+        NexusManualRefreshAsync().SafeFireAndForget("MainWindow.NexusManualRefresh");
     }
 
     private void RestoreScrollAndSelection(string? selectedName)

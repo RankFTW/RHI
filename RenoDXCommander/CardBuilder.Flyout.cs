@@ -247,9 +247,9 @@ public partial class CardBuilder
                 Padding = new Thickness(8, 3, 8, 3),
                 MinWidth = 0,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.GetBrush("#1A2040"),
-                Foreground = UIFactory.GetBrush("#7AACDD"),
-                BorderBrush = UIFactory.GetBrush("#2A4468"),
+                Background = UIFactory.GetBrush(card.IsNexusUpdateAvailable ? card.InstallBtnBackground : "#1A2040"),
+                Foreground = UIFactory.GetBrush(card.IsNexusUpdateAvailable ? card.InstallBtnForeground : "#7AACDD"),
+                BorderBrush = UIFactory.GetBrush(card.IsNexusUpdateAvailable ? card.InstallBtnBorderBrush : "#2A4468"),
                 CornerRadius = new CornerRadius(6),
             };
             extBtn.Click += async (s, ev) =>
