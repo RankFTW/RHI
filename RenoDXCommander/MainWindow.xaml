@@ -1211,6 +1211,67 @@
                             </Grid>
                         </Border>
 
+                        <!-- ── Global Update Checks ────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Global Update Checks" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Disable update checks for individual components. When disabled, the component will not be checked for updates during startup or when using Update All."/>
+                                </StackPanel>
+
+                                <Grid ColumnSpacing="16" RowSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <ToggleSwitch Grid.Row="0" Grid.Column="0"
+                                                  x:Name="GlobalRdxUpdateToggle" x:FieldModifier="internal"
+                                                  Header="RenoDX"
+                                                  OnContent="On" OffContent="Off"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Toggled="GlobalRdxUpdateToggle_Toggled"/>
+
+                                    <ToggleSwitch Grid.Row="0" Grid.Column="1"
+                                                  x:Name="GlobalRsUpdateToggle" x:FieldModifier="internal"
+                                                  Header="ReShade"
+                                                  OnContent="On" OffContent="Off"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Toggled="GlobalRsUpdateToggle_Toggled"/>
+
+                                    <ToggleSwitch Grid.Row="0" Grid.Column="2"
+                                                  x:Name="GlobalUlUpdateToggle" x:FieldModifier="internal"
+                                                  Header="ReLimiter"
+                                                  OnContent="On" OffContent="Off"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Toggled="GlobalUlUpdateToggle_Toggled"/>
+
+                                    <ToggleSwitch Grid.Row="1" Grid.Column="0"
+                                                  x:Name="GlobalDcUpdateToggle" x:FieldModifier="internal"
+                                                  Header="Display Commander"
+                                                  OnContent="On" OffContent="Off"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Toggled="GlobalDcUpdateToggle_Toggled"/>
+
+                                    <ToggleSwitch Grid.Row="1" Grid.Column="1"
+                                                  x:Name="GlobalOsUpdateToggle" x:FieldModifier="internal"
+                                                  Header="OptiScaler"
+                                                  OnContent="On" OffContent="Off"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Toggled="GlobalOsUpdateToggle_Toggled"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
                         <!-- ── Custom Shaders & Addon Watch Folder ─────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">

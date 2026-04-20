@@ -733,9 +733,13 @@ public partial class MainViewModel
                 OnPropertyChanged(nameof(UpdateAllBtnBackground));
                 OnPropertyChanged(nameof(UpdateAllBtnForeground));
                 OnPropertyChanged(nameof(UpdateAllBtnBorder));
-            });
+            },
+            skipRdx: _settingsViewModel.GlobalSkipRdxUpdates,
+            skipRs: _settingsViewModel.GlobalSkipRsUpdates);
 
         // Check ReLimiter for updates (single global check, applies to all cards with UL installed)
+        if (!_settingsViewModel.GlobalSkipUlUpdates)
+        {
         try
         {
             var ulUpdateAvailable = await CheckUlUpdateAsync(cards).ConfigureAwait(false);
@@ -759,8 +763,11 @@ public partial class MainViewModel
         {
             _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] UL update check failed — {ex.Message}");
         }
+        }
 
         // Check Display Commander for updates (single global check, applies to all cards with DC installed)
+        if (!_settingsViewModel.GlobalSkipDcUpdates)
+        {
         try
         {
             var dcUpdateAvailable = await CheckDcUpdateAsync(cards).ConfigureAwait(false);
@@ -784,8 +791,11 @@ public partial class MainViewModel
         {
             _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DC update check failed — {ex.Message}");
         }
+        }
 
         // Check OptiScaler for updates (single global check, applies to all cards with OS installed)
+        if (!_settingsViewModel.GlobalSkipOsUpdates)
+        {
         try
         {
             await _optiScalerService.CheckForUpdateAsync().ConfigureAwait(false);
@@ -809,6 +819,7 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS update check failed — {ex.Message}");
+        }
         }
     }
 }

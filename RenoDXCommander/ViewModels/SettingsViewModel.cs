@@ -33,6 +33,11 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _perGameScreenshotFolders;
     [ObservableProperty] private bool _addonWarningDismissed;
     [ObservableProperty] private List<string> _enabledGlobalAddons = new();
+    [ObservableProperty] private bool _globalSkipRdxUpdates;
+    [ObservableProperty] private bool _globalSkipRsUpdates;
+    [ObservableProperty] private bool _globalSkipUlUpdates;
+    [ObservableProperty] private bool _globalSkipDcUpdates;
+    [ObservableProperty] private bool _globalSkipOsUpdates;
 
     /// <summary>
     /// Optional callback invoked after any settings-specific property changes,
@@ -162,6 +167,12 @@ public partial class SettingsViewModel : ObservableObject
             try { EnabledGlobalAddons = JsonSerializer.Deserialize<List<string>>(egaVal) ?? new(); }
             catch { EnabledGlobalAddons = new(); }
         }
+
+        if (s.TryGetValue("GlobalSkipRdxUpdates", out var gsrVal)) GlobalSkipRdxUpdates = gsrVal == "true";
+        if (s.TryGetValue("GlobalSkipRsUpdates", out var gssVal)) GlobalSkipRsUpdates = gssVal == "true";
+        if (s.TryGetValue("GlobalSkipUlUpdates", out var gsuVal)) GlobalSkipUlUpdates = gsuVal == "true";
+        if (s.TryGetValue("GlobalSkipDcUpdates", out var gsdVal)) GlobalSkipDcUpdates = gsdVal == "true";
+        if (s.TryGetValue("GlobalSkipOsUpdates", out var gsoVal)) GlobalSkipOsUpdates = gsoVal == "true";
     }
 
     /// <summary>
@@ -189,6 +200,11 @@ public partial class SettingsViewModel : ObservableObject
         s["PerGameScreenshotFolders"] = PerGameScreenshotFolders ? "true" : "false";
         s["AddonWarningDismissed"] = AddonWarningDismissed ? "true" : "false";
         s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);
+        s["GlobalSkipRdxUpdates"] = GlobalSkipRdxUpdates ? "true" : "false";
+        s["GlobalSkipRsUpdates"] = GlobalSkipRsUpdates ? "true" : "false";
+        s["GlobalSkipUlUpdates"] = GlobalSkipUlUpdates ? "true" : "false";
+        s["GlobalSkipDcUpdates"] = GlobalSkipDcUpdates ? "true" : "false";
+        s["GlobalSkipOsUpdates"] = GlobalSkipOsUpdates ? "true" : "false";
     }
 
     public void LoadThemeAndDensity()

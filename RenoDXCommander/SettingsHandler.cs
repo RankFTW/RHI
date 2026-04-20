@@ -171,6 +171,13 @@ public class SettingsHandler
         _window.OsDlssInputsToggle.IsOn = ViewModel.Settings.OsDlssInputs;
         bool showDlss = !string.Equals(gpuType, "NVIDIA", StringComparison.OrdinalIgnoreCase);
         _window.OsDlssInputsToggle.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
+
+        // Initialize Global Update Checks toggles (inverted: ON = updates enabled, skip = false)
+        _window.GlobalRdxUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipRdxUpdates;
+        _window.GlobalRsUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipRsUpdates;
+        _window.GlobalUlUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipUlUpdates;
+        _window.GlobalDcUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipDcUpdates;
+        _window.GlobalOsUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipOsUpdates;
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
@@ -540,6 +547,56 @@ public class SettingsHandler
         if (sender is ToggleSwitch toggle)
         {
             ViewModel.Settings.OsDlssInputs = toggle.IsOn;
+            ViewModel.SaveSettingsPublic();
+        }
+    }
+
+    public void GlobalRdxUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is ToggleSwitch toggle)
+        {
+            ViewModel.Settings.GlobalSkipRdxUpdates = !toggle.IsOn;
+            ViewModel.SaveSettingsPublic();
+        }
+    }
+
+    public void GlobalRsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is ToggleSwitch toggle)
+        {
+            ViewModel.Settings.GlobalSkipRsUpdates = !toggle.IsOn;
+            ViewModel.SaveSettingsPublic();
+        }
+    }
+
+    public void GlobalUlUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is ToggleSwitch toggle)
+        {
+            ViewModel.Settings.GlobalSkipUlUpdates = !toggle.IsOn;
+            ViewModel.SaveSettingsPublic();
+        }
+    }
+
+    public void GlobalDcUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is ToggleSwitch toggle)
+        {
+            ViewModel.Settings.GlobalSkipDcUpdates = !toggle.IsOn;
+            ViewModel.SaveSettingsPublic();
+        }
+    }
+
+    public void GlobalOsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is ToggleSwitch toggle)
+        {
+            ViewModel.Settings.GlobalSkipOsUpdates = !toggle.IsOn;
             ViewModel.SaveSettingsPublic();
         }
     }

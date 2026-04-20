@@ -612,6 +612,21 @@ public sealed partial class MainWindow
     private void OsDlssInputsToggle_Toggled(object sender, RoutedEventArgs e)
         => _settingsHandler.OsDlssInputsToggle_Toggled(sender, e);
 
+    private void GlobalRdxUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+        => _settingsHandler.GlobalRdxUpdateToggle_Toggled(sender, e);
+
+    private void GlobalRsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+        => _settingsHandler.GlobalRsUpdateToggle_Toggled(sender, e);
+
+    private void GlobalUlUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+        => _settingsHandler.GlobalUlUpdateToggle_Toggled(sender, e);
+
+    private void GlobalDcUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+        => _settingsHandler.GlobalDcUpdateToggle_Toggled(sender, e);
+
+    private void GlobalOsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+        => _settingsHandler.GlobalOsUpdateToggle_Toggled(sender, e);
+
     private void ApplyOsHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyOsHotkey_Click(sender, e);
 
@@ -986,11 +1001,16 @@ public sealed partial class MainWindow
 
     private async void UpdateAllButton_Click(object sender, RoutedEventArgs e)
     {
-        await ViewModel.UpdateAllReShadeAsync();
-        await ViewModel.UpdateAllRenoDxAsync();
-        await ViewModel.UpdateAllUlAsync();
-        await ViewModel.UpdateAllDcAsync();
-        await ViewModel.UpdateAllOsAsync();
+        if (!ViewModel.Settings.GlobalSkipRsUpdates)
+            await ViewModel.UpdateAllReShadeAsync();
+        if (!ViewModel.Settings.GlobalSkipRdxUpdates)
+            await ViewModel.UpdateAllRenoDxAsync();
+        if (!ViewModel.Settings.GlobalSkipUlUpdates)
+            await ViewModel.UpdateAllUlAsync();
+        if (!ViewModel.Settings.GlobalSkipDcUpdates)
+            await ViewModel.UpdateAllDcAsync();
+        if (!ViewModel.Settings.GlobalSkipOsUpdates)
+            await ViewModel.UpdateAllOsAsync();
         await ViewModel.UpdateAllRefAsync();
     }
 

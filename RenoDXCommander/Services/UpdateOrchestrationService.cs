@@ -221,10 +221,14 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         List<InstalledModRecord> records,
         List<AuxInstalledRecord> auxRecords,
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
-        Action notifyUpdateState)
+        Action notifyUpdateState,
+        bool skipRdx = false,
+        bool skipRs = false)
     {
-        _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {cards.Count} total cards");
+        _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {cards.Count} total cards (skipRdx={skipRdx}, skipRs={skipRs})");
 
+        if (!skipRdx)
+        {
         var installed = cards
             .Where(c => c.Status == GameStatus.Installed
                      && !c.IsExternalOnly
@@ -254,7 +258,10 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
         _crashReporter.Log("[UpdateOrchestrationService.CheckForUpdatesAsync] RenoDX mod checks complete");
+        }
 
+        if (!skipRs)
+        {
         var auxInstalled = cards
             .Where(c => c.RsStatus == GameStatus.Installed)
             .ToList();
@@ -269,6 +276,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
         await Task.WhenAll(auxTasks).ConfigureAwait(false);
         _crashReporter.Log("[UpdateOrchestrationService.CheckForUpdatesAsync] All checks complete");
+        }
 
         // ── RE Framework update check ─────────────────────────────────────────
         try

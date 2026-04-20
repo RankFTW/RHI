@@ -27,6 +27,9 @@ RHI is a WinUI 3 desktop application for managing HDR mod installations on PC ga
 - **ReLimiter OSD hotkey** — configure the ReLimiter overlay hotkey from the Settings page and apply it to all managed `relimiter.ini` files
 - **Game report** — Copy Report button in the overrides panel generates a diagnostic code for Discord or GitHub issues, showing detected vs corrected settings
 - **Performance** — parallel shader downloads, parallel game folder syncs, cached graphics API detection, debounced PCGW cache writes, optimised DLL scanning, and WindowsApps/DLC path skipping for fast startup
+- **Three view modes** — Detail View (full game card with overrides), Grid View (compact card grid), and Compact View (paged detail with navigation arrows and locked window size)
+- **Global update check toggles** — disable update checks for individual components (RenoDX, ReShade, ReLimiter, Display Commander, OptiScaler) from the Settings page
+- **PD-Upscaler REFramework** — automatically installs the pd-upscaler branch of REFramework when OptiScaler is installed on RE Engine games (RE2, RE3, RE4, RE7, RE8 Village), and restores standard REFramework on uninstall
 
 ## Quick Start
 

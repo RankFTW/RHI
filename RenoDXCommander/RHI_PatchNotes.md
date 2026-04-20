@@ -11,6 +11,15 @@
 **View-specific loading skeletons**
 - The loading skeleton now matches your last-used view. Grid View shows a card grid skeleton, Detail and Compact Views show the detail panel skeleton.
 
+**PD-Upscaler REFramework for OptiScaler on RE Engine games**
+- When installing OptiScaler on Resident Evil 2, 3, 4, 7, or Village, RHI automatically downloads and installs the pd-upscaler branch of REFramework required for OptiScaler compatibility.
+- The standard REFramework is backed up and restored when OptiScaler is uninstalled.
+- The RE Framework version display updates in real time to show "PD-Upscaler" while OptiScaler is active.
+
+**Global Update Check toggles**
+- New settings section to globally disable update checks for individual components: RenoDX, ReShade, ReLimiter, Display Commander, and OptiScaler.
+- When disabled, the component is skipped during startup update checks and Update All.
+
 **Manifest author overrides**
 - Mod authors can now be set via the remote manifest for games that aren't on the wiki. Author badges and donation links work the same as wiki-sourced authors.
 
@@ -27,6 +36,9 @@
 
 **ReShade detection for ReShade64.dll / ReShade32.dll**
 - Fixed ReShade not being detected when installed using its own filename (ReShade64.dll or ReShade32.dll) rather than a proxy DLL name like dxgi.dll.
+
+**RE Framework update check false positive with PD-Upscaler**
+- Fixed all RE Framework games being flagged as needing an update when one game had the PD-Upscaler version installed.
 
 **Manifest forceExternalOnly badge and label fixes**
 - Fixed `forceExternalOnly` entries being skipped when the game was already marked as external-only from wiki matching. The manifest URL and label now always take priority.

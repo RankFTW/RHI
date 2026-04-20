@@ -53,5 +53,7 @@ public interface IUpdateOrchestrationService
         List<InstalledModRecord> records,
         List<AuxInstalledRecord> auxRecords,
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
-        Action notifyUpdateState);
+        Action notifyUpdateState,
+        bool skipRdx = false,
+        bool skipRs = false);
 }

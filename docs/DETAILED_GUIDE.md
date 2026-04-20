@@ -37,7 +37,7 @@ This document covers everything RHI does in depth. For a quick overview, see the
 
 ## Layout
 
-RHI offers two view modes — Detail View and Grid View — plus a global Settings page and an About page. Window size and position are remembered across restarts.
+RHI offers three view modes — Detail View, Grid View, and Compact View — plus a global Settings page and an About page. Window size and position are remembered across restarts.
 
 ### Detail View
 
@@ -58,6 +58,10 @@ The grid view card flyout matches the detail panel: same component order (ReShad
 
 Games in Luma mode do not show a wiki status icon on the grid card.
 
+### Compact View
+
+A paged layout that shows the same content as Detail View but split across three navigable pages: Game Card, Overrides, and Management. Use the left/right arrow buttons on the sides to cycle between pages. The window locks to a fixed size in Compact View and restores your previous size when switching back. The loading skeleton matches the compact layout on startup.
+
 ### Toolbar
 
 | Control | Function |
@@ -65,7 +69,7 @@ Games in Luma mode do not show a wiki status icon on the grid card.
 | Refresh | Rescan game library and fetch latest mod info. After initial boot, runs invisibly in the background. |
 | Update All | Update ReShade, RenoDX, ReLimiter, Display Commander, and OptiScaler for all eligible games in one click. Lights up purple when updates are available. |
 | Help | Flyout with Discord (RHI support channel), Guide (this document), About page, and Ko-fi |
-| View toggle | Switch between Detail View and Grid View |
+| View toggle | Cycle between Detail View, Grid View, and Compact View. The button shows the name of the current view mode. |
 | Settings | Navigate to the Settings page |
 
 ### Game List Sidebar (Detail View)
