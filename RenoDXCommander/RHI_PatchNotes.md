@@ -1,3 +1,35 @@
+## v1.8.2
+
+### New Features
+
+**Per-addon Info buttons**
+- Every component row (RE Framework, ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, Luma) now has an "Info" button that opens a dialog with contextual information for the selected game.
+- Content is resolved through a three-tier priority system: per-game manifest notes → wiki-scraped content → generic addon description.
+- Info buttons with per-game or wiki content are highlighted in blue. Buttons with only generic fallback text use the default muted style.
+- Tooltips show "Per-game notes available", "Wiki info available", or "General addon info" on hover.
+- Works across all three view modes: Detail, Grid/Card flyout, and Compact.
+
+**OptiScaler wiki integration**
+- OptiScaler Info buttons now show compatibility data scraped from the OptiScaler wiki, including working status, supported upscalers (DLSS/FSR/XeSS), notes, and links to detailed wiki pages.
+- Both the standard Compatibility List and FSR4 Compatibility List are fetched at startup and displayed as separate sections when both exist.
+- 30 Steam-to-wiki name mappings ensure games like Resident Evil 2, Dead Space, S.T.A.L.K.E.R. 2, and others match correctly despite naming differences between Steam and the wiki.
+
+**Header button migration**
+- The header-level "ℹ" (Notes) and "💬" (Discussion) buttons have been removed. Their RenoDX wiki notes and discussion link functionality is now available through the per-addon RenoDX Info button.
+
+### Bug Fixes
+
+- Fixed "Skipped — unknown dxgi.dll" warning appearing during Update All ReShade when OptiScaler is installed. The updater now recognises OptiScaler's dxgi.dll and proceeds normally.
+- Fixed OptiScaler wiki not matching games with trademark symbols (®, ™) in their Steam names (e.g. "Borderlands® 4").
+- Fixed smart/curly apostrophes in wiki game names preventing matches (e.g. Assassin's Creed Shadows).
+- Fixed duplicate "View wiki page" link in the OptiScaler Info dialog when per-section detail links were already shown.
+- Fixed Compact View window briefly appearing at the default position before jumping to the saved position on startup. The saved position is now restored before the window becomes visible.
+
+### Changes
+
+- Manifest reorganised into logical sections with alphabetical ordering for easier maintenance.
+- New manifest dictionaries (per-addon info entries, OptiScaler wiki name overrides) are now normalised with case-insensitive comparison on load.
+
 ## v1.8.1
 
 ### New Features

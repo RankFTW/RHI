@@ -121,12 +121,20 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 var fileType = _auxFileService.IdentifyDxgiFile(dxgiPath);
                 if (fileType == AuxInstallService.DxgiFileType.Unknown)
                 {
-                    _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Skipping {card.GameName} — foreign dxgi.dll detected");
-                    dispatcherQueue?.TryEnqueue(() =>
+                    // Skip the warning if OptiScaler is installed — the dxgi.dll belongs to it
+                    if (card.IsOsInstalled)
                     {
-                        card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll";
-                    });
-                    continue;
+                        _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] {card.GameName} — dxgi.dll is OptiScaler, proceeding");
+                    }
+                    else
+                    {
+                        _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Skipping {card.GameName} — foreign dxgi.dll detected");
+                        dispatcherQueue?.TryEnqueue(() =>
+                        {
+                            card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll";
+                        });
+                        continue;
+                    }
                 }
             }
 

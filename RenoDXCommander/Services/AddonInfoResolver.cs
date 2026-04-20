@@ -291,8 +291,15 @@ public class AddonInfoResolver
         {
             return wikiName;
         }
-        return gameName;
+        // Strip trademark symbols so "Borderlands® 4" matches wiki "Borderlands 4"
+        return StripTrademarks(gameName);
     }
+
+    /// <summary>
+    /// Strips ™ ® © symbols from a game name so Steam names match wiki names.
+    /// </summary>
+    private static string StripTrademarks(string name) =>
+        name.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
 
     private static string FormatOptiScalerContent(
         OptiScalerCompatEntry? stdEntry,

@@ -91,6 +91,7 @@ public sealed partial class MainWindow : Window
         // prevents the user from resizing the window freely.
         if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
         {
+            _windowStateManager.TryRestoreWindowBounds(positionOnly: true);
             _windowStateManager.ApplyCompactSize();
             _windowStateManager.SetSizeLocked(true);
         }
