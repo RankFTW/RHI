@@ -10,6 +10,50 @@ namespace RenoDXCommander;
 
 public partial class DetailPanelBuilder
 {
+    private readonly AddonInfoResolver _addonInfoResolver = new();
+
+    /// <summary>
+    /// Applies Info button styling (highlighted vs muted) based on the resolved source type.
+    /// Also sets the Tag, tooltip, and click handler.
+    /// </summary>
+    private void ApplyInfoButtonStyle(Button infoBtn, GameCardViewModel card, AddonType addonType)
+    {
+        infoBtn.Tag = card;
+        var manifest = _window.ViewModel.Manifest;
+        var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
+        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData);
+        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData);
+        ToolTipService.SetToolTip(infoBtn, tooltip);
+
+        if (sourceType is InfoSourceType.None)
+        {
+            // Greyed-out state: no content available at all
+            infoBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+            infoBtn.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
+            infoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush);
+            infoBtn.Opacity = 0.3;
+            infoBtn.IsHitTestVisible = false;
+        }
+        else if (sourceType is InfoSourceType.Manifest or InfoSourceType.Wiki)
+        {
+            // Highlighted style for manifest/wiki content
+            infoBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
+            infoBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
+            infoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+            infoBtn.Opacity = 1.0;
+            infoBtn.IsHitTestVisible = true;
+        }
+        else
+        {
+            // Default muted style for fallback content
+            infoBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+            infoBtn.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
+            infoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush);
+            infoBtn.Opacity = 1.0;
+            infoBtn.IsHitTestVisible = true;
+        }
+        infoBtn.BorderThickness = new Thickness(1);
+    }
     public void UpdateDetailComponentRows(GameCardViewModel card)
     {
         bool isLumaMode = card.LumaFeatureEnabled && card.IsLumaMode;
@@ -34,6 +78,7 @@ public partial class DetailPanelBuilder
             var refShow = card.RefDeleteVisibility == Visibility.Visible;
             _window.DetailRefDeleteBtn.Opacity = refShow ? 1 : 0;
             _window.DetailRefDeleteBtn.IsHitTestVisible = refShow;
+            ApplyInfoButtonStyle(_window.DetailRefInfoBtn, card, AddonType.REFramework);
         }
 
         // ReShade row
@@ -96,12 +141,14 @@ public partial class DetailPanelBuilder
                 _window.DetailRsDeleteBtn.Opacity = rsShow ? 1 : 0;
                 _window.DetailRsDeleteBtn.IsHitTestVisible = rsShow;
             }
+            ApplyInfoButtonStyle(_window.DetailRsInfoBtn, card, AddonType.ReShade);
         }
 
         // ReLimiter row — hidden when in Luma mode
         _window.DetailUlRow.Visibility = card.UlRowVisibility;
-        _window.DetailUlRow.Opacity = (card.UseNormalReShade || card.IsDcInstalled || card.Is32Bit || !card.IsRsInstalled) ? 0.35 : 1.0;
-        _window.DetailUlRow.IsHitTestVisible = !card.UseNormalReShade;
+        bool ulGreyed = card.UseNormalReShade || card.IsDcInstalled || card.Is32Bit || !card.IsRsInstalled;
+        _window.DetailUlRow.Opacity = 1.0;
+        _window.DetailUlRow.IsHitTestVisible = true;
         if (card.UlRowVisibility == Visibility.Visible)
         {
             // Strikethrough the label and status when the other limiter (DC) is installed, game is 32-bit, or normal ReShade is active
@@ -109,6 +156,7 @@ public partial class DetailPanelBuilder
                 ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailUlLabel.TextDecorations = ulStrike;
+            _window.DetailUlLabel.Opacity = ulGreyed ? 0.35 : 1.0;
 
             _window.DetailUlStatus.Text = card.UlStatusText;
             _window.DetailUlStatus.Foreground = UIFactory.GetBrush(card.UlStatusColor);
@@ -116,6 +164,7 @@ public partial class DetailPanelBuilder
                 ? Windows.UI.Text.TextDecorations.Underline
                 : (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade) ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
+            _window.DetailUlStatus.Opacity = ulGreyed ? 0.35 : 1.0;
             _window.DetailUlInstallBtn.Tag = card;
             _window.DetailUlInstallBtn.Content = (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade)
                 ? (object)new TextBlock { Text = card.UlActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
@@ -125,19 +174,24 @@ public partial class DetailPanelBuilder
             _window.DetailUlInstallBtn.Foreground = UIFactory.GetBrush(card.UlBtnForeground);
             _window.DetailUlInstallBtn.BorderBrush = UIFactory.GetBrush(card.UlBtnBorderBrush);
             _window.DetailUlInstallBtn.BorderThickness = new Thickness(1);
+            _window.DetailUlInstallBtn.Opacity = ulGreyed ? 0.35 : 1.0;
+            _window.DetailUlInstallBtn.IsHitTestVisible = !card.UseNormalReShade;
             _window.DetailUlIniBtn.Tag = card;
             _window.DetailUlIniBtn.IsEnabled = card.UlIniExists;
-            _window.DetailUlIniBtn.Opacity = card.UlIniExists ? 1 : 0.3;
+            _window.DetailUlIniBtn.Opacity = ulGreyed ? 0.35 : (card.UlIniExists ? 1 : 0.3);
+            _window.DetailUlIniBtn.IsHitTestVisible = !card.UseNormalReShade;
             _window.DetailUlDeleteBtn.Tag = card;
             var ulShow = card.UlDeleteVisibility == Visibility.Visible;
-            _window.DetailUlDeleteBtn.Opacity = ulShow ? 1 : 0;
-            _window.DetailUlDeleteBtn.IsHitTestVisible = ulShow;
+            _window.DetailUlDeleteBtn.Opacity = ulGreyed ? 0 : (ulShow ? 1 : 0);
+            _window.DetailUlDeleteBtn.IsHitTestVisible = ulShow && !ulGreyed;
+            ApplyInfoButtonStyle(_window.DetailUlInfoBtn, card, AddonType.ReLimiter);
         }
 
         // Display Commander row — always visible (available in Luma mode)
         _window.DetailDcRow.Visibility = card.DcRowVisibility;
-        _window.DetailDcRow.Opacity = (card.UseNormalReShade || card.IsUlInstalled || !card.IsRsInstalled) ? 0.35 : 1.0;
-        _window.DetailDcRow.IsHitTestVisible = !card.UseNormalReShade;
+        bool dcGreyed = card.UseNormalReShade || card.IsUlInstalled || !card.IsRsInstalled;
+        _window.DetailDcRow.Opacity = 1.0;
+        _window.DetailDcRow.IsHitTestVisible = true;
         if (card.DcRowVisibility == Visibility.Visible)
         {
             // Strikethrough the label and status when the other limiter (UL) is installed or normal ReShade is active
@@ -145,6 +199,7 @@ public partial class DetailPanelBuilder
                 ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailDcLabel.TextDecorations = dcStrike;
+            _window.DetailDcLabel.Opacity = dcGreyed ? 0.35 : 1.0;
 
             _window.DetailDcStatus.Text = card.DcStatusText;
             _window.DetailDcStatus.Foreground = UIFactory.GetBrush(card.DcStatusColor);
@@ -152,6 +207,7 @@ public partial class DetailPanelBuilder
                 ? Windows.UI.Text.TextDecorations.Underline
                 : (card.IsUlInstalled || card.UseNormalReShade) ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
+            _window.DetailDcStatus.Opacity = dcGreyed ? 0.35 : 1.0;
             _window.DetailDcInstallBtn.Tag = card;
             _window.DetailDcInstallBtn.Content = (card.IsUlInstalled || card.UseNormalReShade)
                 ? (object)new TextBlock { Text = card.DcActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
@@ -161,36 +217,43 @@ public partial class DetailPanelBuilder
             _window.DetailDcInstallBtn.Foreground = UIFactory.GetBrush(card.DcBtnForeground);
             _window.DetailDcInstallBtn.BorderBrush = UIFactory.GetBrush(card.DcBtnBorderBrush);
             _window.DetailDcInstallBtn.BorderThickness = new Thickness(1);
+            _window.DetailDcInstallBtn.Opacity = dcGreyed ? 0.35 : 1.0;
+            _window.DetailDcInstallBtn.IsHitTestVisible = !card.UseNormalReShade;
             _window.DetailDcIniBtn.Tag = card;
             _window.DetailDcIniBtn.IsEnabled = card.DcIniExists;
-            _window.DetailDcIniBtn.Opacity = card.DcIniExists ? 1 : 0.3;
+            _window.DetailDcIniBtn.Opacity = dcGreyed ? 0.35 : (card.DcIniExists ? 1 : 0.3);
+            _window.DetailDcIniBtn.IsHitTestVisible = !card.UseNormalReShade;
             _window.DetailDcDeleteBtn.Tag = card;
             var dcShow = card.DcDeleteVisibility == Visibility.Visible;
-            _window.DetailDcDeleteBtn.Opacity = dcShow ? 1 : 0;
-            _window.DetailDcDeleteBtn.IsHitTestVisible = dcShow;
+            _window.DetailDcDeleteBtn.Opacity = dcGreyed ? 0 : (dcShow ? 1 : 0);
+            _window.DetailDcDeleteBtn.IsHitTestVisible = dcShow && !dcGreyed;
+            ApplyInfoButtonStyle(_window.DetailDcInfoBtn, card, AddonType.DisplayCommander);
         }
 
         // OptiScaler row — always visible, greyed out for 32-bit games
         _window.DetailOsRow.Visibility = card.OsRowVisibility;
         _window.DetailOptionalSeparator.Visibility = card.OsRowVisibility;
-        if (card.Is32Bit)
+        bool osGreyed = card.Is32Bit;
+        _window.DetailOsRow.Opacity = 1.0;
+        _window.DetailOsRow.IsHitTestVisible = true;
+        if (osGreyed)
         {
-            _window.DetailOsRow.Opacity = 0.35;
-            _window.DetailOsRow.IsHitTestVisible = false;
             _window.DetailOsLabel.TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough;
+            _window.DetailOsLabel.Opacity = 0.35;
             _window.DetailOsStatus.TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough;
+            _window.DetailOsStatus.Opacity = 0.35;
         }
         else
         {
-            _window.DetailOsRow.Opacity = 1.0;
-            _window.DetailOsRow.IsHitTestVisible = true;
             _window.DetailOsLabel.TextDecorations = Windows.UI.Text.TextDecorations.None;
+            _window.DetailOsLabel.Opacity = 1.0;
+            _window.DetailOsStatus.Opacity = 1.0;
         }
         if (card.OsRowVisibility == Visibility.Visible)
         {
             _window.DetailOsStatus.Text = card.OsStatusText;
             _window.DetailOsStatus.Foreground = UIFactory.GetBrush(card.OsStatusColor);
-            if (!card.Is32Bit)
+            if (!osGreyed)
             {
                 _window.DetailOsStatus.TextDecorations = card.IsOsInstalled
                     ? Windows.UI.Text.TextDecorations.Underline
@@ -203,20 +266,25 @@ public partial class DetailPanelBuilder
             _window.DetailOsInstallBtn.Foreground = UIFactory.GetBrush(card.OsBtnForeground);
             _window.DetailOsInstallBtn.BorderBrush = UIFactory.GetBrush(card.OsBtnBorderBrush);
             _window.DetailOsInstallBtn.BorderThickness = new Thickness(1);
+            _window.DetailOsInstallBtn.Opacity = osGreyed ? 0.35 : 1.0;
+            _window.DetailOsInstallBtn.IsHitTestVisible = !osGreyed;
             _window.DetailOsIniBtn.Tag = card;
             _window.DetailOsIniBtn.IsEnabled = card.OsIniExists;
-            _window.DetailOsIniBtn.Opacity = card.OsIniExists ? 1 : 0.3;
+            _window.DetailOsIniBtn.Opacity = osGreyed ? 0.35 : (card.OsIniExists ? 1 : 0.3);
+            _window.DetailOsIniBtn.IsHitTestVisible = !osGreyed;
             _window.DetailOsDeleteBtn.Tag = card;
             var osShow = card.OsDeleteVisibility == Visibility.Visible;
-            _window.DetailOsDeleteBtn.Opacity = osShow ? 1 : 0;
-            _window.DetailOsDeleteBtn.IsHitTestVisible = osShow;
+            _window.DetailOsDeleteBtn.Opacity = osGreyed ? 0 : (osShow ? 1 : 0);
+            _window.DetailOsDeleteBtn.IsHitTestVisible = osShow && !osGreyed;
+            ApplyInfoButtonStyle(_window.DetailOsInfoBtn, card, AddonType.OptiScaler);
         }
 
         // RenoDX row (also used for external-only / Discord link)
         bool showRdx = !isLumaMode;
         _window.DetailRdxRow.Visibility = showRdx ? Visibility.Visible : Visibility.Collapsed;
-        _window.DetailRdxRow.Opacity = (card.UseNormalReShade || !card.IsRsInstalled) ? 0.35 : 1.0;
-        _window.DetailRdxRow.IsHitTestVisible = !card.UseNormalReShade && card.IsRsInstalled;
+        bool rdxGreyed = card.UseNormalReShade || !card.IsRsInstalled;
+        _window.DetailRdxRow.Opacity = 1.0;
+        _window.DetailRdxRow.IsHitTestVisible = true;
         if (showRdx)
         {
             _window.DetailRdxInstallBtn.Tag = card;
@@ -227,6 +295,7 @@ public partial class DetailPanelBuilder
                     ? Windows.UI.Text.TextDecorations.Strikethrough
                     : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxLabel.TextDecorations = extStrike;
+                _window.DetailRdxLabel.Opacity = rdxGreyed ? 0.35 : 1.0;
 
                 _window.DetailRdxStatus.Text = card.IsRdxInstalled ? (card.RdxInstalledVersion ?? "Installed") : "";
                 _window.DetailRdxStatus.Foreground = UIFactory.GetBrush("#5ECB7D");
@@ -235,6 +304,7 @@ public partial class DetailPanelBuilder
                     : card.IsRdxInstalled
                         ? Windows.UI.Text.TextDecorations.Underline
                         : Windows.UI.Text.TextDecorations.None;
+                _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
                     ? (object)new TextBlock { Text = card.ExternalDisplayLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
                     : card.ExternalDisplayLabel;
@@ -243,10 +313,12 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxInstallBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
                 _window.DetailRdxInstallBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
+                _window.DetailRdxInstallBtn.Opacity = rdxGreyed ? 0.35 : 1.0;
+                _window.DetailRdxInstallBtn.IsHitTestVisible = !card.UseNormalReShade;
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var extInstalled = card.IsRdxInstalled;
-                _window.DetailRdxDeleteBtn.Opacity = extInstalled ? 1 : 0;
-                _window.DetailRdxDeleteBtn.IsHitTestVisible = extInstalled;
+                _window.DetailRdxDeleteBtn.Opacity = rdxGreyed ? 0 : (extInstalled ? 1 : 0);
+                _window.DetailRdxDeleteBtn.IsHitTestVisible = extInstalled && !rdxGreyed;
             }
             else
             {
@@ -255,6 +327,7 @@ public partial class DetailPanelBuilder
                     ? Windows.UI.Text.TextDecorations.Strikethrough
                     : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxLabel.TextDecorations = rdxStrike;
+                _window.DetailRdxLabel.Opacity = rdxGreyed ? 0.35 : 1.0;
 
                 _window.DetailRdxStatus.Text = card.RdxStatusText;
                 _window.DetailRdxStatus.Foreground = UIFactory.GetBrush(card.RdxStatusColor);
@@ -263,6 +336,7 @@ public partial class DetailPanelBuilder
                     : card.IsRdxInstalled
                         ? Windows.UI.Text.TextDecorations.Underline
                         : Windows.UI.Text.TextDecorations.None;
+                _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
                     ? (object)new TextBlock { Text = card.InstallActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
                     : card.InstallActionLabel;
@@ -271,11 +345,14 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxInstallBtn.Foreground = UIFactory.GetBrush(card.InstallBtnForeground);
                 _window.DetailRdxInstallBtn.BorderBrush = UIFactory.GetBrush(card.InstallBtnBorderBrush);
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
+                _window.DetailRdxInstallBtn.Opacity = rdxGreyed ? 0.35 : 1.0;
+                _window.DetailRdxInstallBtn.IsHitTestVisible = !card.UseNormalReShade && card.IsRsInstalled;
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var rdxShow = card.ReinstallRowVisibility == Visibility.Visible;
-                _window.DetailRdxDeleteBtn.Opacity = rdxShow ? 1 : 0;
-                _window.DetailRdxDeleteBtn.IsHitTestVisible = rdxShow;
+                _window.DetailRdxDeleteBtn.Opacity = rdxGreyed ? 0 : (rdxShow ? 1 : 0);
+                _window.DetailRdxDeleteBtn.IsHitTestVisible = rdxShow && !rdxGreyed;
             }
+            ApplyInfoButtonStyle(_window.DetailRdxInfoBtn, card, AddonType.RenoDX);
         }
 
         // Luma row
@@ -295,6 +372,7 @@ public partial class DetailPanelBuilder
             var lumaShow = card.LumaReinstallVisibility == Visibility.Visible;
             _window.DetailLumaDeleteBtn.Opacity = lumaShow ? 1 : 0;
             _window.DetailLumaDeleteBtn.IsHitTestVisible = lumaShow;
+            ApplyInfoButtonStyle(_window.DetailLumaInfoBtn, card, AddonType.Luma);
         }
         else _window.DetailLumaRow.Visibility = Visibility.Collapsed;
 

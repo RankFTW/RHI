@@ -169,12 +169,6 @@ public partial class DetailPanelBuilder
             ? new SolidColorBrush(((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color)
             : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
 
-        _window.DetailDiscussionBtn.Tag = card;
-        _window.DetailDiscussionBtn.Visibility = card.NameLinkVisibility;
-
-        _window.DetailNotesBtn.Tag = card;
-        _window.DetailNotesBtn.Visibility = card.NotesButtonVisibility;
-
         _window.DetailHideBtn.Tag = card;
         _window.DetailHideIcon.Text = card.IsHidden ? "Show" : "Hide";
         _window.DetailHideBtn.Foreground = card.IsHidden

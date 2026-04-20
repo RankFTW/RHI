@@ -74,7 +74,8 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
             new StubREFrameworkService(),
             new StubNexusModsService(),
             new StubPcgwService(),
-            new StubOptiScalerService());
+            new StubOptiScalerService(),
+            new StubOptiScalerWikiService());
 
         // Inject cards via reflection
         var field = typeof(MainViewModel).GetField("_allCards", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -355,5 +356,12 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         public string GetEffectiveOsDllName(string gameName) => "dxgi.dll";
         public void SetHotkey(string hotkeyValue) { }
         public void ApplyHotkeyToAllGames(string hotkeyValue) { }
+    }
+
+    private class StubOptiScalerWikiService : IOptiScalerWikiService
+    {
+        public OptiScalerWikiData? CachedData { get; set; }
+        public Task<OptiScalerWikiData> FetchAsync(IProgress<string>? progress = null)
+            => Task.FromResult(CachedData ?? new OptiScalerWikiData());
     }
 }

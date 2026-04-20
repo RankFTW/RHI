@@ -61,7 +61,8 @@ internal static class TestHelpers
             new StubREFrameworkService(),
             new StubNexusModsService(),
             new StubPcgwService(),
-            new StubOptiScalerService());
+            new StubOptiScalerService(),
+            new StubOptiScalerWikiService());
     }
 
     // ── Stub implementations ──────────────────────────────────────────────────
@@ -250,5 +251,12 @@ internal static class TestHelpers
         public string GetEffectiveOsDllName(string gameName) => "dxgi.dll";
         public void SetHotkey(string hotkeyValue) { }
         public void ApplyHotkeyToAllGames(string hotkeyValue) { }
+    }
+
+    internal class StubOptiScalerWikiService : IOptiScalerWikiService
+    {
+        public OptiScalerWikiData? CachedData { get; set; }
+        public Task<OptiScalerWikiData> FetchAsync(IProgress<string>? progress = null)
+            => Task.FromResult(CachedData ?? new OptiScalerWikiData());
     }
 }

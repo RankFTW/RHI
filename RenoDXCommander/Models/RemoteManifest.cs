@@ -184,4 +184,55 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("pdUpscalerGames")]
     public Dictionary<string, string>? PdUpscalerGames { get; set; }
+
+    /// <summary>
+    /// Per-game info entries for ReShade addon. Uses the same schema as GameNoteEntry.
+    /// Key = game name, Value = GameNoteEntry with notes, notesUrl, notesUrlLabel.
+    /// </summary>
+    [JsonPropertyName("reshadeGameInfo")]
+    public Dictionary<string, GameNoteEntry>? ReshadeGameInfo { get; set; }
+
+    /// <summary>
+    /// Per-game info entries for ReLimiter addon.
+    /// Key = game name, Value = GameNoteEntry with notes, notesUrl, notesUrlLabel.
+    /// </summary>
+    [JsonPropertyName("relimiterGameInfo")]
+    public Dictionary<string, GameNoteEntry>? RelimiterGameInfo { get; set; }
+
+    /// <summary>
+    /// Per-game info entries for Display Commander addon.
+    /// Key = game name, Value = GameNoteEntry with notes, notesUrl, notesUrlLabel.
+    /// </summary>
+    [JsonPropertyName("displayCommanderGameInfo")]
+    public Dictionary<string, GameNoteEntry>? DisplayCommanderGameInfo { get; set; }
+
+    /// <summary>
+    /// Per-game info entries for RE Framework addon.
+    /// Key = game name, Value = GameNoteEntry with notes, notesUrl, notesUrlLabel.
+    /// </summary>
+    [JsonPropertyName("reframeworkGameInfo")]
+    public Dictionary<string, GameNoteEntry>? ReframeworkGameInfo { get; set; }
+
+    /// <summary>
+    /// Per-game info entries for OptiScaler addon.
+    /// Key = game name, Value = GameNoteEntry with notes, notesUrl, notesUrlLabel.
+    /// </summary>
+    [JsonPropertyName("optiScalerGameInfo")]
+    public Dictionary<string, GameNoteEntry>? OptiScalerGameInfo { get; set; }
+
+    /// <summary>
+    /// Per-game info entries for Luma addon.
+    /// Key = game name, Value = GameNoteEntry with notes, notesUrl, notesUrlLabel.
+    /// </summary>
+    [JsonPropertyName("lumaGameInfo")]
+    public Dictionary<string, GameNoteEntry>? LumaGameInfo { get; set; }
+
+    /// <summary>
+    /// Maps game names (as detected by RHI) to the corresponding game name used
+    /// in the OptiScaler wiki compatibility list. Used when the wiki uses a different
+    /// name than what RHI detects.
+    /// Key = game name (RHI), Value = wiki game name.
+    /// </summary>
+    [JsonPropertyName("optiScalerWikiNames")]
+    public Dictionary<string, string>? OptiScalerWikiNames { get; set; }
 }

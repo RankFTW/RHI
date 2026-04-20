@@ -173,6 +173,10 @@ public partial class MainViewModel
                 var lumaTask     = _lumaService.FetchCompletedModsAsync();
                 var manifestTask = _manifestService.FetchAsync();
                 var detectTask   = DetectAllGamesDedupedAsync();
+                var osWikiTask   = Task.Run(async () => {
+                    try { await _optiScalerWikiService.FetchAsync(); }
+                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }
+                });
                 rsTask           = Task.Run(async () => {
                     try { await _rsUpdateService.EnsureLatestAsync(); }
                     catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] ReShade update task failed — {ex.Message}"); }
@@ -197,6 +201,7 @@ public partial class MainViewModel
                 try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
                 try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
                 try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
+                try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
                 // rsTask deferred until after cards display
                 // osTask deferred until after cards display
                 // dlssTask deferred until after cards display
@@ -237,6 +242,10 @@ public partial class MainViewModel
                 var lumaTask     = _lumaService.FetchCompletedModsAsync();
                 var manifestTask = _manifestService.FetchAsync();
                 var detectTask   = DetectAllGamesDedupedAsync();
+                var osWikiTask   = Task.Run(async () => {
+                    try { await _optiScalerWikiService.FetchAsync(); }
+                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }
+                });
                 rsTask           = Task.Run(async () => {
                     try { await _rsUpdateService.EnsureLatestAsync(); }
                     catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] ReShade update task failed — {ex.Message}"); }
@@ -261,6 +270,7 @@ public partial class MainViewModel
                 try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
                 try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
                 try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
+                try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
                 // rsTask deferred until after cards display
                 // osTask deferred until after cards display
                 // dlssTask deferred until after cards display

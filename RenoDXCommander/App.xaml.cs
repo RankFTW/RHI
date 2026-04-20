@@ -91,6 +91,7 @@ public partial class App : Application
         services.AddSingleton<IGameInitializationService, GameInitializationService>();
         services.AddSingleton<ISevenZipExtractor, ReShadeExtractor>();
         services.AddSingleton<IOptiScalerService, OptiScalerService>();
+        services.AddSingleton<IOptiScalerWikiService, OptiScalerWikiService>();
 
         services.AddSingleton<MainViewModel>();
 
