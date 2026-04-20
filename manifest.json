@@ -375,8 +375,7 @@
   "pcgwUrlOverrides": {
     "The Sinking City Remastered": "https://www.pcgamingwiki.com/wiki/The_Sinking_City_Remastered"
   },
-  "authorOverrides": {
-    "PRAGMATA": "Musa"
+  "authorOverrides": {    
   },
   "pdUpscalerGames": {
     "Resident Evil 2": "RE2",
