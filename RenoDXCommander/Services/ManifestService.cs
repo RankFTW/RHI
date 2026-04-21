@@ -177,5 +177,19 @@ public class ManifestService : IManifestService
             m.AuthorDisplayNames = new Dictionary<string, string>(m.AuthorDisplayNames, StringComparer.OrdinalIgnoreCase);
         if (m.GacSymlinkGames != null)
             m.GacSymlinkGames = new Dictionary<string, string>(m.GacSymlinkGames, StringComparer.OrdinalIgnoreCase);
+        if (m.OptiScalerWikiNames != null)
+            m.OptiScalerWikiNames = new Dictionary<string, string>(m.OptiScalerWikiNames, StringComparer.OrdinalIgnoreCase);
+        if (m.ReshadeGameInfo != null)
+            m.ReshadeGameInfo = new Dictionary<string, GameNoteEntry>(m.ReshadeGameInfo, StringComparer.OrdinalIgnoreCase);
+        if (m.RelimiterGameInfo != null)
+            m.RelimiterGameInfo = new Dictionary<string, GameNoteEntry>(m.RelimiterGameInfo, StringComparer.OrdinalIgnoreCase);
+        if (m.DisplayCommanderGameInfo != null)
+            m.DisplayCommanderGameInfo = new Dictionary<string, GameNoteEntry>(m.DisplayCommanderGameInfo, StringComparer.OrdinalIgnoreCase);
+        if (m.ReframeworkGameInfo != null)
+            m.ReframeworkGameInfo = new Dictionary<string, GameNoteEntry>(m.ReframeworkGameInfo, StringComparer.OrdinalIgnoreCase);
+        if (m.OptiScalerGameInfo != null)
+            m.OptiScalerGameInfo = new Dictionary<string, GameNoteEntry>(m.OptiScalerGameInfo, StringComparer.OrdinalIgnoreCase);
+        if (m.LumaGameInfo != null)
+            m.LumaGameInfo = new Dictionary<string, GameNoteEntry>(m.LumaGameInfo, StringComparer.OrdinalIgnoreCase);
     }
 }

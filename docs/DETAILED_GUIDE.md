@@ -89,8 +89,9 @@ When a game is selected:
 - **Info card** — bordered section containing action buttons (Nexus Mods, PCGW links on the left; Hide, Favourite on the right) and info badges for platform, engine type, wiki status, graphics API, UE-Extended / Native HDR, and 32-bit/64-bit indicator
 - **Install path** in monospace text below the game name
 - **Installed addon filename** badge when a mod is installed
-- **Browse, Info, and Discussion buttons** — on the badges row, right-aligned
-- **Components table** — ReShade → RenoDX → separator ("Frame limiters — Choose one") → ReLimiter → Display Commander, and Luma (when applicable), each with status, install/reinstall/update button, options menu, and uninstall button
+- **Browse button** — on the badges row, right-aligned
+- **Per-addon Info buttons** — each component row has an Info button showing game-specific notes, wiki compatibility data, or addon descriptions
+- **Components table** — ReShade → RenoDX → separator ("Frame limiters — Choose one") → ReLimiter → Display Commander, and Luma (when applicable), each with status, Info button, install/reinstall/update button, options menu, and uninstall button
 - **Rendering path toggle** — for dual-API games (DirectX + Vulkan)
 - **Overrides section** — all per-game settings inline
 - **Management section** — Change install folder, Reset folder, Reset Overrides, Copy Report in a dedicated bordered section below overrides
@@ -105,7 +106,7 @@ When a game is selected:
 
 ## Settings Page
 
-Click **Settings** in the toolbar. Click **Back to Games** to return.
+Click **Settings** in the toolbar. Click **Back to Games** to return. The Settings button is disabled during initial load to prevent navigation before games are loaded.
 
 | Section | Contents |
 |---------|----------|
@@ -225,15 +226,39 @@ The detail panel shows a Components section with up to five rows, separated into
 | Row | Component | Controls |
 |-----|-----------|----------|
 | ReShade | ReShade | Install / Reinstall / Update — Copy INI — Uninstall |
-| RenoDX | RenoDX Mod | Install / Reinstall / Update — UE-Extended options — Uninstall |
+| RenoDX | RenoDX Mod | Install / Reinstall / Update — Info — UE-Extended options — Uninstall |
 | Luma | Luma Framework | Install / Uninstall (shown only in Luma mode) |
 | — | *separator* | "Frame limiters — Choose one" |
-| ReLimiter | ReLimiter | Install / Reinstall / Update — Copy INI — Uninstall |
-| Display Commander | Display Commander | Install / Reinstall / Update — Copy INI — Uninstall |
+| ReLimiter | ReLimiter | Install / Reinstall / Update — Info — Copy INI — Uninstall |
+| Display Commander | Display Commander | Install / Reinstall / Update — Info — Copy INI — Uninstall |
 | — | *separator* | "── Optional ──" |
-| OptiScaler | OptiScaler | Install / Reinstall / Update — Copy INI — Uninstall |
+| OptiScaler | OptiScaler | Install / Reinstall / Update — Info — Copy INI — Uninstall |
+
+Each component row also has an **Info** button between the status text and the install button. See [Per-Addon Info Buttons](#per-addon-info-buttons) below.
 
 ReLimiter and Display Commander are mutually exclusive — only one frame rate limiter can be installed per game at a time. When one is installed, the other's install button is greyed out and the row is visually dimmed, making the mutual exclusivity clear at a glance. Removing one re-enables the other.
+
+### Per-Addon Info Buttons
+
+Each component row (RE Framework, ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, Luma) has an "Info" button that opens a dialog with context about that addon for the selected game.
+
+**Content resolution** follows a three-tier priority:
+
+1. **Manifest notes** — game-specific notes from the remote manifest (`gameNotes`, `lumaGameNotes`)
+2. **Wiki content** — compatibility data from the relevant wiki (OptiScaler wiki, HDR Gaming Database, RenoDX wiki)
+3. **Generic description** — a general description of what the addon does
+
+**Visual differentiation:**
+
+- Buttons with per-game content (manifest notes or wiki data) are highlighted in **blue** so you can spot them at a glance
+- Buttons with only a generic description use a **muted** style
+- Tooltips indicate what content is available before clicking
+
+The old header-level "ℹ" (Info) and "💬" (Discussion) buttons have been removed. Their functionality — game notes, wiki links, and discussion links — has moved to the per-addon RenoDX Info button.
+
+### RE Framework Requirement for RE Engine Games
+
+RE Engine games require RE Framework to be installed before ReShade can be installed. When RE Framework is not present, the ReShade install button shows "⚠ RE Framework required" and is greyed out. This prevents broken setups where ReShade is installed without the framework needed for proper injection on RE Engine titles.
 
 ### Version Display
 
@@ -317,6 +342,8 @@ Unreal Engine games with native HDR are automatically assigned UE-Extended via t
 The UE-Extended toggle appears for every Unreal Engine game that does not have a named mod on the RenoDX wiki. A compatibility warning dialog pops up when enabling UE-Extended, advising that not all games are compatible and to check the Notes section for game-specific information.
 
 Games on the `nativeHdrGames` list are flagged for native HDR support. Games on the `ueExtendedGames` list are marked for the UE-Extended addon. Both lists are maintained in the remote manifest and can be updated without an app release.
+
+Native HDR games show a specific message in the RenoDX Info button: "This game uses UE-Extended with native HDR. You must enable HDR in the game's display settings for the mod to work."
 
 ---
 
@@ -462,6 +489,17 @@ A per-game OptiScaler update exclusion toggle in the overrides panel lets you pi
 
 RHI detects existing OptiScaler installations by scanning DLLs in game folders for OptiScaler binary signatures and checking for `OptiScaler.ini` presence. Detected installations are tracked and displayed correctly without requiring reinstallation through RHI. The foreign DLL protection system recognises OptiScaler DLLs and does not flag them as foreign.
 
+### OptiScaler Wiki Integration
+
+RHI fetches compatibility data from the OptiScaler wiki at startup, covering both the standard and FSR4 compatibility lists. The OptiScaler Info button displays this data in a dialog showing:
+
+- Working status (e.g. Working, Partially Working, Not Working)
+- Supported upscalers
+- Notes and known issues
+- Direct link to the game's wiki page
+
+The remote manifest includes an `optiScalerWikiNames` section for mapping Steam game names to their OptiScaler wiki equivalents, handling naming differences (e.g. Resident Evil, S.T.A.L.K.E.R., Borderlands® 4, Assassin's Creed).
+
 ---
 
 ## Shader Packs
@@ -572,6 +610,9 @@ Folder management buttons (Change install folder, Reset folder, Reset Overrides,
 - Uninstalling or toggling off removes all Luma files.
 - The info popup shows Luma-specific notes from the wiki and remote manifest.
 - Games listed in the remote manifest `lumaDefaultGames` automatically start in Luma mode on first detection.
+- The Luma mode toggle is centered in the Components header with clear "Click to enable/disable Luma" text for improved visibility.
+- The Luma install row includes a 📋 button for deploying `reshade.ini` to the game folder, matching the ReShade row.
+- After installing Luma, ReLimiter and Display Commander become available immediately without requiring a manual Refresh.
 
 ### Trusted Downloads
 
@@ -864,6 +905,7 @@ Old session logs are pruned to keep a maximum of 10 on disk. The oldest logs are
 | Vulkan ReShade not showing as installed | Check that `reshade.ini` exists in the game folder. The Vulkan layer must also be installed globally. |
 | Shaders missing after uninstall | Click **Refresh** — RHI will detect the missing shaders and redeploy them |
 | Games showing as installed after manual file removal | Click **Refresh** — RHI verifies files exist on disk and cleans up stale records |
+| ReLimiter OSD hotkey not working | Re-apply the hotkey from Settings — fixed in v1.8.2 for multi-word keys like Page Up |
 | DLL override not applying from manifest | Click **Refresh** — manifest DLL overrides are applied on every refresh |
 
 ---

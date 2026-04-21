@@ -80,6 +80,23 @@ internal static class NativeInterop
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+    // ── DWM dark mode for title bar (fixes white title bar in taskbar thumbnail) ─
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    internal static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
+    internal const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+    /// <summary>
+    /// Tells DWM to render the non-client area (title bar, caption buttons) in dark mode.
+    /// Fixes the taskbar thumbnail showing a white title bar for WinUI 3 apps with custom colors.
+    /// </summary>
+    internal static void EnableDarkTitleBar(IntPtr hwnd)
+    {
+        int value = 1;
+        DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, sizeof(int));
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 

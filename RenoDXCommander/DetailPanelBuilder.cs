@@ -169,12 +169,6 @@ public partial class DetailPanelBuilder
             ? new SolidColorBrush(((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color)
             : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
 
-        _window.DetailDiscussionBtn.Tag = card;
-        _window.DetailDiscussionBtn.Visibility = card.NameLinkVisibility;
-
-        _window.DetailNotesBtn.Tag = card;
-        _window.DetailNotesBtn.Visibility = card.NotesButtonVisibility;
-
         _window.DetailHideBtn.Tag = card;
         _window.DetailHideIcon.Text = card.IsHidden ? "Show" : "Hide";
         _window.DetailHideBtn.Foreground = card.IsHidden
@@ -192,16 +186,16 @@ public partial class DetailPanelBuilder
         _window.DetailNexusModsBtn.Tag = card;
         _window.DetailNexusModsBtn.Visibility = card.HasNexusModsUrl ? Visibility.Visible : Visibility.Collapsed;
 
-        // Luma badge toggle
+        // Luma toggle row (full-width, above Luma install row)
         if (card.LumaBadgeVisibility == Visibility.Visible)
         {
-            _window.DetailLumaBadgeContainer.Visibility = Visibility.Visible;
+            _window.DetailLumaToggle.Visibility = Visibility.Visible;
             _window.DetailLumaToggle.IsChecked = card.IsLumaMode;
             _window.UpdateLumaToggleStyle(card.IsLumaMode);
         }
         else
         {
-            _window.DetailLumaBadgeContainer.Visibility = Visibility.Collapsed;
+            _window.DetailLumaToggle.Visibility = Visibility.Collapsed;
         }
 
         // Populate component rows

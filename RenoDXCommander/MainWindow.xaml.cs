@@ -81,6 +81,7 @@ public sealed partial class MainWindow : Window
 
         // Enforce minimum window size and enable Win32 drag-and-drop via WindowStateManager
         var hwnd = WindowNative.GetWindowHandle(this);
+        NativeInterop.EnableDarkTitleBar(hwnd);
         _dragDropHandler = new DragDropHandler(this, _crashReporter);
         _windowStateManager = new WindowStateManager(this, hwnd, _dragDropHandler, _crashReporter);
         _windowStateManager.InstallWndProcSubclass();
@@ -91,6 +92,7 @@ public sealed partial class MainWindow : Window
         // prevents the user from resizing the window freely.
         if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
         {
+            _windowStateManager.TryRestoreWindowBounds(positionOnly: true);
             _windowStateManager.ApplyCompactSize();
             _windowStateManager.SetSizeLocked(true);
         }

@@ -1225,6 +1225,13 @@ public partial class MainViewModel
             return;
         }
 
+        // RE Engine games require REFramework before ReShade (unless in Luma mode)
+        if (card.IsREEngineGame && !card.IsRefInstalled && !(card.LumaFeatureEnabled && card.IsLumaMode))
+        {
+            card.RsActionMessage = "⚠ Install RE Framework first.";
+            return;
+        }
+
         // ── Vulkan ReShade install flow ───────────────────────────────────────────
         if (card.RequiresVulkanInstall)
         {
@@ -1795,6 +1802,18 @@ public partial class MainViewModel
             // Always clear the persisted record if it exists on disk
             LumaService.RemoveRecordByPath(card.InstallPath);
 
+            // Luma's uninstall removes its bundled ReShade (dxgi.dll).
+            // Reset RS status if there's no standalone ReShade install.
+            var rsRecord = _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShade)
+                        ?? _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShadeNormal);
+            if (rsRecord == null)
+            {
+                card.RsRecord           = null;
+                card.RsInstalledFile    = null;
+                card.RsInstalledVersion = null;
+                card.RsStatus           = GameStatus.Available;
+            }
+
             // Uninstall ReLimiter when leaving Luma mode
             if (card.IsUlInstalled)
             {
@@ -1834,6 +1853,10 @@ public partial class MainViewModel
             card.LumaRecord = record;
             card.LumaStatus = GameStatus.Installed;
             card.LumaActionMessage = "Luma installed!";
+            // Luma bundles its own ReShade — update RS status so ReLimiter/DC
+            // buttons become available immediately without needing a refresh.
+            if (card.RsStatus == GameStatus.NotInstalled || card.RsStatus == GameStatus.Available)
+                card.RsStatus = GameStatus.Installed;
             card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
         }
         catch (Exception ex)
@@ -1858,6 +1881,12 @@ public partial class MainViewModel
             card.LumaRecord = null;
             card.LumaStatus = GameStatus.NotInstalled;
             card.LumaActionMessage = "✖ Luma removed.";
+            // Luma's uninstall removes its bundled ReShade (dxgi.dll).
+            // If there's no standalone ReShade install record, RS is no longer installed.
+            var rsRecord = _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShade)
+                        ?? _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShadeNormal);
+            if (rsRecord == null)
+                card.RsStatus = GameStatus.Available;
             card.NotifyAll();
             card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
         }

@@ -355,7 +355,17 @@ public class WikiService : IWikiService
         return result.Trim();
     }
 
-    private string Clean(string s) => HtmlEntity.DeEntitize(s ?? "").Trim();
+    private string Clean(string s) => NormalizeQuotes(HtmlEntity.DeEntitize(s ?? "").Trim());
+
+    /// <summary>
+    /// Replaces curly/smart quotes with straight ASCII equivalents
+    /// so wiki game names match Steam names which use standard characters.
+    /// </summary>
+    private static string NormalizeQuotes(string s) =>
+        s.Replace('\u2018', '\'')
+         .Replace('\u2019', '\'')
+         .Replace('\u201C', '"')
+         .Replace('\u201D', '"');
 
     /// <summary>
     /// Hardcoded status patches for games where the wiki status lags behind reality.

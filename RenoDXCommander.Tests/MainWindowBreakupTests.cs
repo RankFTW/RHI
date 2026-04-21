@@ -45,7 +45,6 @@ public class MainWindowBreakupTests
             "ShowPatchNotesDialogAsync",
             "ShowForeignDxgiConfirmDialogAsync",
             "ShowForeignWinmmConfirmDialogAsync",
-            "NotesButton_Click",
             "ShowUeExtendedWarningAsync"
         };
 

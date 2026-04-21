@@ -68,6 +68,9 @@ public partial class GameCardViewModel
         OnPropertyChanged(nameof(CardRefStatusDot));
         OnPropertyChanged(nameof(CardRefInstallEnabled));
         OnPropertyChanged(nameof(UpdateBadgeVisibility));
+        // ReShade depends on IsRefInstalled for RE Engine games
+        OnPropertyChanged(nameof(RsActionLabel));
+        OnPropertyChanged(nameof(CardRsInstallEnabled));
     }
 
     // ── Targeted notification: RefIsInstalling changed ────────────────────────────

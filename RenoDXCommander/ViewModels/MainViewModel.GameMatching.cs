@@ -656,21 +656,24 @@ public partial class MainViewModel
     /// </summary>
     private static bool MatchesGameSet(string gameName, IEnumerable<string> gameSet)
     {
+        // Snapshot mutable collections to avoid "Collection was modified" during parallel enumeration
+        IEnumerable<string> safeSet = gameSet is HashSet<string> hs ? hs.ToArray() : gameSet;
+
         // Fast path: exact match (works for HashSet and static lists)
         if (gameSet is ICollection<string> col && col.Contains(gameName)) return true;
-        if (gameSet is not ICollection<string> && gameSet.Contains(gameName)) return true;
+        if (gameSet is not ICollection<string> && safeSet.Contains(gameName)) return true;
 
         // Strip trademark symbols and retry
         var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
         if (stripped != gameName)
         {
             if (gameSet is ICollection<string> col2 && col2.Contains(stripped)) return true;
-            if (gameSet is not ICollection<string> && gameSet.Contains(stripped)) return true;
+            if (gameSet is not ICollection<string> && safeSet.Contains(stripped)) return true;
         }
 
         // Normalised comparison as last resort
         var norm = NormalizeForLookup(gameName);
-        foreach (var entry in gameSet)
+        foreach (var entry in safeSet)
         {
             if (NormalizeForLookup(entry) == norm) return true;
         }

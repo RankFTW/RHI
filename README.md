@@ -12,7 +12,11 @@ RHI is a WinUI 3 desktop application for managing HDR mod installations on PC ga
 - **One-click install** — install, update, or uninstall ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, and Luma Framework with a single button
 - **Frame rate limiter choice** — ReLimiter and Display Commander are mutually exclusive per game; installing one disables the other
 - **OptiScaler support** — install and manage OptiScaler per-game for upscaler redirection (DLSS/FSR/XeSS). Handles DLL naming (auto-selects `winmm.dll` for Vulkan games), INI configuration, ReShade coexistence (automatic rename to `ReShade64.dll`), GPU type settings (NVIDIA/AMD/Intel), DLSS input toggle (AMD/Intel only), and hotkey setup. Automatically downloads and deploys the latest DLSS Super Resolution, Ray Reconstruction, and Frame Generation DLLs. OptiPatcher auto-deployed for AMD/Intel GPUs. 64-bit games only
-- **ReShade dependency enforcement** — RenoDX, ReLimiter, and Display Commander require ReShade to be installed first. Install buttons show "⚠ ReShade required" when ReShade is not present
+- **Per-addon Info buttons** — each component row has an "Info" button showing game-specific notes, wiki compatibility data, or addon descriptions. Buttons with per-game content are highlighted in blue
+- **OptiScaler wiki integration** — OptiScaler Info buttons show compatibility data from the OptiScaler wiki (working status, supported upscalers, notes, wiki page links)
+- **HDR Gaming Database links** — RenoDX and Luma Info buttons link to HDR analysis entries from the HDR Gaming Database when available
+- **RE Framework dependency** — RE Engine games now require RE Framework before ReShade can be installed, preventing broken setups
+- **ReShade dependency enforcement** — RenoDX, ReLimiter, and Display Commander require ReShade to be installed first; RE Engine games also require RE Framework before ReShade. Install buttons show "⚠ ReShade required" or "⚠ RE Framework required" when prerequisites are not met
 - **Mass INI Deployment** — deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with the corresponding component installed from the Settings page
 - **Mass ReShade Preset Install** — deploy presets to multiple games at once from the Settings page, with optional shader pack installation
 - **Drag-and-drop** — drop a game `.exe`, addon file, archive, preset `.ini`, or URL to add games and install mods instantly
@@ -56,6 +60,7 @@ Grab the latest installer from the [GitHub Releases page](https://github.com/Ran
 | Downloads failing | Click **Refresh**, or clear cache from Settings → Open Downloads Cache |
 | Foreign DLL blocking install | Choose **Overwrite** in the confirmation dialog, or cancel to keep the existing file |
 | Games/mods out of sync | Settings → **Full Refresh** to clear all caches and re-scan |
+| ReLimiter OSD hotkey not working | Re-apply the hotkey from Settings — fixed in v1.8.2 for multi-word keys like Page Up |
 
 ## Third-Party Components
 

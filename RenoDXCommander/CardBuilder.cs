@@ -264,6 +264,7 @@ public partial class CardBuilder
                 {
                     Content = "Info",
                     Tag = card,
+                    DataContext = card.IsLumaMode ? AddonType.Luma : AddonType.RenoDX,
                     FontSize = 11,
                     Padding = new Thickness(6, 2, 6, 2),
                     MinWidth = 0, MinHeight = 0,
@@ -274,7 +275,7 @@ public partial class CardBuilder
                     CornerRadius = new CornerRadius(4),
                 };
                 ToolTipService.SetToolTip(notesBtn, "View notes");
-                notesBtn.Click += _window.CardNotesButton_Click;
+                notesBtn.Click += _window.InfoButton_Click;
                 infoRow.Children.Add(notesBtn);
             }
             Grid.SetColumn(infoRow, 0);

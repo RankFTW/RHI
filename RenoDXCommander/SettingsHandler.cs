@@ -435,7 +435,9 @@ public class SettingsHandler
         if (ctrl) parts.Add("Ctrl");
         if (alt) parts.Add("Alt");
         if (shift) parts.Add("Shift");
-        parts.Add(VkNames.TryGetValue(vk, out var name) ? name : $"0x{vk:X2}");
+        // ReLimiter expects key names without spaces (e.g. "PageUp" not "Page Up")
+        var keyName = VkNames.TryGetValue(vk, out var name) ? name.Replace(" ", "") : $"0x{vk:X2}";
+        parts.Add(keyName);
         return string.Join("+", parts);
     }
 

@@ -11,6 +11,41 @@ namespace RenoDXCommander;
 
 public partial class CardBuilder
 {
+    private readonly AddonInfoResolver _addonInfoResolver = new();
+
+    /// <summary>
+    /// Applies Info button styling (highlighted vs muted) for Card flyout Info buttons.
+    /// </summary>
+    private static void ApplyCardInfoButtonStyle(Button infoBtn, InfoSourceType sourceType)
+    {
+        if (sourceType is InfoSourceType.None)
+        {
+            // Greyed-out state: no content available at all
+            infoBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+            infoBtn.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
+            infoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush);
+            infoBtn.Opacity = 0.3;
+            infoBtn.IsHitTestVisible = false;
+        }
+        else if (sourceType is InfoSourceType.Manifest or InfoSourceType.Wiki)
+        {
+            // Highlighted style for manifest/wiki content
+            infoBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
+            infoBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
+            infoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+            infoBtn.Opacity = 1.0;
+            infoBtn.IsHitTestVisible = true;
+        }
+        else
+        {
+            // Default muted style for fallback content
+            infoBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+            infoBtn.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
+            infoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush);
+            infoBtn.Opacity = 1.0;
+            infoBtn.IsHitTestVisible = true;
+        }
+    }
     /// <summary>
     /// Builds the install flyout content panel with per-component rows.
     /// Each row has: component name, status text (colored), install button, copy config 📋 (RS only), uninstall ✕.
@@ -62,6 +97,7 @@ public partial class CardBuilder
             card.CardRefInstallEnabled, card.IsRefInstalled,
             showCopyConfig: false, copyConfigVisible: false,
             copyConfigTooltip: null,
+            addonType: AddonType.REFramework,
             btnBackground: card.RefBtnBackground, btnForeground: card.RefBtnForeground, btnBorderBrush: card.RefBtnBorderBrush);
         refRow.Visibility = card.RefRowVisibility;
         // Make REF status text a clickable link to the REFramework nightly releases
@@ -85,6 +121,7 @@ public partial class CardBuilder
             card.CardRsInstallEnabled, card.IsRsInstalled,
             showCopyConfig: true, copyConfigVisible: card.RsIniExists,
             copyConfigTooltip: "Copy ReShade.ini & ReShadePreset.ini",
+            addonType: AddonType.ReShade,
             btnBackground: card.RsBtnBackground, btnForeground: card.RsBtnForeground, btnBorderBrush: card.RsBtnBorderBrush);
         rsRow.Visibility = card.ReShadeRowVisibility;
         // Make RS status text a clickable link to reshade.me
@@ -108,6 +145,7 @@ public partial class CardBuilder
             card.CardRdxInstallEnabled, card.IsRdxInstalled,
             showCopyConfig: false, copyConfigVisible: false,
             copyConfigTooltip: null,
+            addonType: AddonType.RenoDX,
             btnBackground: card.InstallBtnBackground, btnForeground: card.InstallBtnForeground, btnBorderBrush: card.InstallBtnBorderBrush);
         rdxRow.Visibility = card.RenoDxRowVisibility;
         // Make RDX status text a clickable link to the RenoDX wiki page
@@ -138,6 +176,7 @@ public partial class CardBuilder
                 card.CardLumaInstallEnabled, card.IsLumaInstalled,
                 showCopyConfig: false, copyConfigVisible: false,
                 copyConfigTooltip: null,
+                addonType: AddonType.Luma,
                 btnBackground: card.LumaBtnBackground, btnForeground: card.LumaBtnForeground,
                 btnBorderBrush: card.LumaBtnBorderBrush);
             panel.Children.Add(lumaRow);
@@ -160,6 +199,7 @@ public partial class CardBuilder
             card.CardOsInstallEnabled, card.IsOsInstalled,
             showCopyConfig: true, copyConfigVisible: card.OsIniExists,
             copyConfigTooltip: "Copy OptiScaler.ini to game folder",
+            addonType: AddonType.OptiScaler,
             btnBackground: card.OsBtnBackground, btnForeground: card.OsBtnForeground, btnBorderBrush: card.OsBtnBorderBrush);
         // Grey out and disable for 32-bit games
         if (card.Is32Bit)
@@ -192,6 +232,7 @@ public partial class CardBuilder
             card.UlInstallEnabled, card.IsUlInstalled,
             showCopyConfig: true, copyConfigVisible: card.UlIniExists,
             copyConfigTooltip: "Copy relimiter.ini to game folder",
+            addonType: AddonType.ReLimiter,
             btnBackground: card.UlBtnBackground, btnForeground: card.UlBtnForeground, btnBorderBrush: card.UlBtnBorderBrush);
         var ulStatusBlock = ulRow.Children.OfType<TextBlock>().FirstOrDefault(t => t.Tag as string == "StatusText");
         if (ulStatusBlock != null)
@@ -216,6 +257,7 @@ public partial class CardBuilder
             card.DcInstallEnabled, card.IsDcInstalled,
             showCopyConfig: true, copyConfigVisible: card.DcIniExists,
             copyConfigTooltip: "Copy DisplayCommander.ini to game folder",
+            addonType: AddonType.DisplayCommander,
             btnBackground: card.DcBtnBackground, btnForeground: card.DcBtnForeground, btnBorderBrush: card.DcBtnBorderBrush);
         dcRow.Visibility = card.DcRowVisibility;
         panel.Children.Add(dcRow);
@@ -372,21 +414,23 @@ public partial class CardBuilder
     }
 
     /// <summary>
-    /// Builds a single component row Grid with: name, status text, install button, copy config 📋, uninstall ✕.
+    /// Builds a single component row Grid with: name, status text, Info button, install button, copy config 📋, uninstall ✕.
     /// </summary>
     public Grid BuildComponentRow(
         GameCardViewModel card, string componentName, string componentTag,
         string statusText, string statusColor, string actionLabel,
         bool installEnabled, bool isInstalled,
         bool showCopyConfig, bool copyConfigVisible, string? copyConfigTooltip,
+        AddonType addonType,
         string? btnBackground = null, string? btnForeground = null, string? btnBorderBrush = null)
     {
         var row = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });  // name
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(75) });  // status
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // install btn
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });     // copy config
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });     // uninstall
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });  // col 0: name
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(75) });  // col 1: status
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });  // col 2: Info button
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // col 3: install btn
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });     // col 4: copy config
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });     // col 5: uninstall
 
         // Component name
         var nameText = new TextBlock
@@ -411,6 +455,35 @@ public partial class CardBuilder
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);
 
+        // Info button — styled based on content availability
+        var manifest = _window.ViewModel.Manifest;
+        var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
+        var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
+        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
+
+        var infoBtn = new Button
+        {
+            Content = "Info",
+            Tag = card,
+            Name = $"Card{componentTag}InfoBtn",
+            FontSize = 11,
+            Padding = new Thickness(4, 2, 4, 2),
+            MinWidth = 0,
+            Width = 36,
+            Height = 32,
+            CornerRadius = new CornerRadius(8),
+            VerticalAlignment = VerticalAlignment.Center,
+            BorderThickness = new Thickness(1),
+        };
+        // Store the AddonType on DataContext for the click handler to identify which addon
+        infoBtn.DataContext = addonType;
+        ApplyCardInfoButtonStyle(infoBtn, sourceType);
+        ToolTipService.SetToolTip(infoBtn, tooltip);
+        infoBtn.Click += _window.InfoButton_Click;
+        Grid.SetColumn(infoBtn, 2);
+        row.Children.Add(infoBtn);
+
         // Install/update button
         var installBtn = new Button
         {
@@ -429,7 +502,7 @@ public partial class CardBuilder
         // Store component tag for the click handler to identify which component
         installBtn.DataContext = componentTag;
         installBtn.Click += _window.CardComponentInstall_Click;
-        Grid.SetColumn(installBtn, 2);
+        Grid.SetColumn(installBtn, 3);
         row.Children.Add(installBtn);
 
         // Copy config 📋 button — always added to reserve column space; hidden when not applicable
@@ -460,7 +533,7 @@ public partial class CardBuilder
             copyBtn.Click += _window.CardCopyOsIni_Click;
         if (copyConfigTooltip != null)
             ToolTipService.SetToolTip(copyBtn, copyConfigTooltip);
-        Grid.SetColumn(copyBtn, 3);
+        Grid.SetColumn(copyBtn, 4);
         row.Children.Add(copyBtn);
 
         // Uninstall ✕ button
@@ -487,16 +560,17 @@ public partial class CardBuilder
         };
         uninstallBtn.DataContext = componentTag;
         uninstallBtn.Click += _window.CardComponentUninstall_Click;
-        Grid.SetColumn(uninstallBtn, 4);
+        Grid.SetColumn(uninstallBtn, 5);
         row.Children.Add(uninstallBtn);
 
         return row;
     }
 
     /// <summary>
-    /// Updates a component row's status text, color, install button label/enabled, copy config visibility, and uninstall visibility.
+    /// Updates a component row's status text, color, install button label/enabled, copy config visibility,
+    /// uninstall visibility, and Info button styling.
     /// </summary>
-    public static void UpdateComponentRow(Grid row, string statusText, string statusColor,
+    public void UpdateComponentRow(Grid row, string statusText, string statusColor,
         string actionLabel, bool installEnabled, bool isInstalled, bool copyConfigVisible,
         string? btnBackground = null, string? btnForeground = null, string? btnBorderBrush = null)
     {
@@ -510,7 +584,21 @@ public partial class CardBuilder
             else if (child is Button btn)
             {
                 var col = Grid.GetColumn(btn);
-                if (col == 2) // install button
+                if (col == 2) // Info button
+                {
+                    // Refresh Info button styling based on current content availability
+                    if (btn.Tag is GameCardViewModel card && btn.DataContext is AddonType addonType)
+                    {
+                        var manifest = _window.ViewModel.Manifest;
+                        var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
+                        var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+                        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
+                        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
+                        ApplyCardInfoButtonStyle(btn, sourceType);
+                        ToolTipService.SetToolTip(btn, tooltip);
+                    }
+                }
+                else if (col == 3) // install button
                 {
                     btn.Content = actionLabel;
                     btn.IsEnabled = installEnabled;
@@ -521,12 +609,12 @@ public partial class CardBuilder
                     if (btnBorderBrush != null)
                         btn.BorderBrush = UIFactory.GetBrush(btnBorderBrush);
                 }
-                else if (col == 3) // copy config button
+                else if (col == 4) // copy config button
                 {
                     btn.Opacity = copyConfigVisible ? 1 : 0;
                     btn.IsHitTestVisible = copyConfigVisible;
                 }
-                else if (col == 4) // uninstall button
+                else if (col == 5) // uninstall button
                 {
                     btn.Opacity = isInstalled ? 1 : 0;
                     btn.IsHitTestVisible = isInstalled;

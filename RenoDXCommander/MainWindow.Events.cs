@@ -83,6 +83,27 @@ public sealed partial class MainWindow
         }
     }
 
+    private void LumaIniButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+        try
+        {
+            var screenshotPath = BuildScreenshotSavePath(card.GameName);
+            var overlayHotkey = ViewModel.Settings.OverlayHotkey;
+            AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
+            AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
+            bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
+            card.LumaActionMessage = presetDeployed
+                ? "✅ reshade.ini merged & ReShadePreset.ini copied."
+                : "✅ reshade.ini merged into game folder.";
+        }
+        catch (Exception ex)
+        {
+            card.LumaActionMessage = $"❌ {ex.Message}";
+        }
+    }
+
     private void SupportDiscord_Click(object sender, RoutedEventArgs e)
     {
         _ = Windows.System.Launcher.LaunchUriAsync(
@@ -482,8 +503,15 @@ public sealed partial class MainWindow
             var notesItem = new MenuFlyoutItem
             {
                 Text = "💬 View Notes",
+                Tag = card,
             };
-            notesItem.Click += NotesButton_Click;
+            notesItem.Click += async (s, ev) =>
+            {
+                // Create a temporary Button to pass through ShowAddonInfoDialogAsync
+                // which expects a Button with Tag (card) and DataContext (AddonType)
+                var tempBtn = new Button { Tag = card, DataContext = card.IsLumaMode ? AddonType.Luma : AddonType.RenoDX };
+                await _dialogService.ShowAddonInfoDialogAsync(tempBtn, ev);
+            };
             menu.Items.Add(notesItem);
         }
 
@@ -505,8 +533,8 @@ public sealed partial class MainWindow
         catch (Exception ex) { _crashReporter.Log($"[MainWindow.Card_PointerPressed] Error selecting card — {ex.Message}"); }
     }
 
-    private void NotesButton_Click(object sender, RoutedEventArgs e)
-        => _dialogService.NotesButton_Click(sender, e);
+    internal async void InfoButton_Click(object sender, RoutedEventArgs e)
+        => await _dialogService.ShowAddonInfoDialogAsync(sender, e);
 
     internal async void CardInfoLink_Click(object sender, RoutedEventArgs e)
     {
@@ -516,11 +544,6 @@ public sealed partial class MainWindow
             try { await Windows.System.Launcher.LaunchUriAsync(new Uri(card.NameUrl)); }
             catch (Exception ex) { _crashReporter.Log($"[MainWindow.CardInfoLink_Click] Failed — {ex.Message}"); }
         }
-    }
-
-    internal void CardNotesButton_Click(object sender, RoutedEventArgs e)
-    {
-        NotesButton_Click(sender, e);
     }
 
     internal async void ExternalLink_Click(object sender, RoutedEventArgs e)
