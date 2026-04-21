@@ -117,8 +117,9 @@ public partial class DialogService
         {
             var manifest = _window.ViewModel.Manifest;
             var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
+            var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
             var resolver = new AddonInfoResolver();
-            var result = resolver.Resolve(card, addonType.Value, manifest, osWikiData);
+            var result = resolver.Resolve(card, addonType.Value, manifest, osWikiData, hdrDatabase);
 
             var textColour = Brush(ResourceKeys.TextSecondaryBrush);
             var linkColour = Brush(ResourceKeys.AccentBlueBrush);
@@ -254,6 +255,12 @@ public partial class DialogService
             AddHyperlinkBlock(panel, result.UrlLabel ?? "View wiki page", result.Url, linkColour);
         }
 
+        // ── HDR Gaming Database link (supplementary) ─────────────────────────
+        if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
+        {
+            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+        }
+
         // ── Fallback if no content at all ────────────────────────────────────
         if (panel.Children.Count == 0)
         {
@@ -360,6 +367,12 @@ public partial class DialogService
             }
             if (!string.IsNullOrEmpty(result.Url))
                 AddHyperlinkBlock(panel, result.UrlLabel ?? result.Url, result.Url, linkColour);
+        }
+
+        // ── HDR Gaming Database link (supplementary) ─────────────────────────
+        if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
+        {
+            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
         }
 
         // ── Fallback if no content at all ────────────────────────────────────
@@ -554,6 +567,10 @@ public partial class DialogService
 
         if (!string.IsNullOrEmpty(result.Url))
             AddHyperlinkBlock(panel, result.UrlLabel ?? result.Url, result.Url, linkColour);
+
+        // ── HDR Gaming Database link (supplementary) ─────────────────────────
+        if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
+            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
     }
 
     // ── Shared helpers for dialog content ────────────────────────────────────────

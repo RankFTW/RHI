@@ -16,4 +16,7 @@ public class AddonInfoResult
     // OptiScaler-specific: structured compatibility data
     public OptiScalerCompatEntry? OptiScalerCompat { get; init; }
     public OptiScalerCompatEntry? OptiScalerFsr4Compat { get; init; }
+
+    // HDR Gaming Database: supplementary analysis link
+    public string? HdrAnalysisUrl { get; init; }
 }

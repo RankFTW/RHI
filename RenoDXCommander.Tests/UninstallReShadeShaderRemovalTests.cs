@@ -75,7 +75,8 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
             new StubNexusModsService(),
             new StubPcgwService(),
             new StubOptiScalerService(),
-            new StubOptiScalerWikiService());
+            new StubOptiScalerWikiService(),
+            new StubHdrDatabaseService());
 
         // Inject cards via reflection
         var field = typeof(MainViewModel).GetField("_allCards", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -363,5 +364,12 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         public OptiScalerWikiData? CachedData { get; set; }
         public Task<OptiScalerWikiData> FetchAsync(IProgress<string>? progress = null)
             => Task.FromResult(CachedData ?? new OptiScalerWikiData());
+    }
+
+    private class StubHdrDatabaseService : IHdrDatabaseService
+    {
+        public Dictionary<string, string>? CachedData { get; set; }
+        public Task<Dictionary<string, string>> FetchAsync(IProgress<string>? progress = null)
+            => Task.FromResult(CachedData ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
     }
 }

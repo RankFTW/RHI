@@ -62,7 +62,8 @@ internal static class TestHelpers
             new StubNexusModsService(),
             new StubPcgwService(),
             new StubOptiScalerService(),
-            new StubOptiScalerWikiService());
+            new StubOptiScalerWikiService(),
+            new StubHdrDatabaseService());
     }
 
     // ── Stub implementations ──────────────────────────────────────────────────
@@ -258,5 +259,12 @@ internal static class TestHelpers
         public OptiScalerWikiData? CachedData { get; set; }
         public Task<OptiScalerWikiData> FetchAsync(IProgress<string>? progress = null)
             => Task.FromResult(CachedData ?? new OptiScalerWikiData());
+    }
+
+    internal class StubHdrDatabaseService : IHdrDatabaseService
+    {
+        public Dictionary<string, string>? CachedData { get; set; }
+        public Task<Dictionary<string, string>> FetchAsync(IProgress<string>? progress = null)
+            => Task.FromResult(CachedData ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
     }
 }

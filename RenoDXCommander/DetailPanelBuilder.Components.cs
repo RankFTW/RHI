@@ -21,8 +21,9 @@ public partial class DetailPanelBuilder
         infoBtn.Tag = card;
         var manifest = _window.ViewModel.Manifest;
         var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
-        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData);
-        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData);
+        var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
+        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
         ToolTipService.SetToolTip(infoBtn, tooltip);
 
         if (sourceType is InfoSourceType.None)
@@ -142,6 +143,20 @@ public partial class DetailPanelBuilder
                 _window.DetailRsDeleteBtn.IsHitTestVisible = rsShow;
             }
             ApplyInfoButtonStyle(_window.DetailRsInfoBtn, card, AddonType.ReShade);
+
+            // Grey out ReShade row when RE Engine game needs REFramework first
+            bool rsNeedsRef = card.IsREEngineGame && !card.IsRefInstalled;
+            if (rsNeedsRef)
+            {
+                _window.DetailRsInstallBtn.IsEnabled = false;
+                _window.DetailRsInstallBtn.Opacity = 0.35;
+                _window.DetailRsInstallBtn.IsHitTestVisible = false;
+            }
+            else
+            {
+                _window.DetailRsInstallBtn.Opacity = 1.0;
+                _window.DetailRsInstallBtn.IsHitTestVisible = true;
+            }
         }
 
         // ReLimiter row — hidden when in Luma mode
@@ -368,6 +383,10 @@ public partial class DetailPanelBuilder
             _window.DetailLumaInstallBtn.Foreground = UIFactory.GetBrush(card.LumaBtnForeground);
             _window.DetailLumaInstallBtn.BorderBrush = UIFactory.GetBrush(card.LumaBtnBorderBrush);
             _window.DetailLumaInstallBtn.BorderThickness = new Thickness(1);
+            _window.DetailLumaIniBtn.Tag = card;
+            bool lumaIniExists = !string.IsNullOrEmpty(card.InstallPath) && File.Exists(Path.Combine(card.InstallPath, "reshade.ini"));
+            _window.DetailLumaIniBtn.IsEnabled = lumaIniExists;
+            _window.DetailLumaIniBtn.Opacity = lumaIniExists ? 1 : 0.3;
             _window.DetailLumaDeleteBtn.Tag = card;
             var lumaShow = card.LumaReinstallVisibility == Visibility.Visible;
             _window.DetailLumaDeleteBtn.Opacity = lumaShow ? 1 : 0;

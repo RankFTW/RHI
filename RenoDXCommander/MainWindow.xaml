@@ -453,22 +453,24 @@
                         <Border x:Name="DetailComponentSection" Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
                                 BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" Padding="16,14">
                             <StackPanel Spacing="10">
-                                <Grid>
+                                <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="36"/>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="Components" FontSize="13" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
-                                    <Border x:Name="DetailLumaBadgeContainer" x:FieldModifier="internal" Grid.Column="1" Visibility="Collapsed"
-                                            CornerRadius="6" VerticalAlignment="Center">
-                                        <ToggleButton x:Name="DetailLumaToggle" x:FieldModifier="internal"
-                                                      Click="LumaToggle_Click"
-                                                      Padding="10,4" MinHeight="0" MinWidth="0"
-                                                      CornerRadius="6" BorderThickness="1" FontSize="11">
-                                            <TextBlock x:Name="DetailLumaToggleText" x:FieldModifier="internal" FontSize="11"/>
-                                        </ToggleButton>
-                                    </Border>
+                                    <ToggleButton x:Name="DetailLumaToggle" x:FieldModifier="internal" Grid.Column="3"
+                                                  Click="LumaToggle_Click" Visibility="Collapsed"
+                                                  Padding="10,4" MinHeight="0" MinWidth="0"
+                                                  CornerRadius="6" BorderThickness="1" FontSize="11"
+                                                  HorizontalAlignment="Center">
+                                        <TextBlock x:Name="DetailLumaToggleText" x:FieldModifier="internal" FontSize="11"/>
+                                    </ToggleButton>
                                 </Grid>
 
                                 <!-- RE Framework row -->
@@ -626,7 +628,14 @@
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"
                                             BorderThickness="1"/>
-                                    <Border Grid.Column="4"/>
+                                    <Button x:Name="DetailLumaIniBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Click="LumaIniButton_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Copy ReShade.ini to game folder">
+                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
                                     <Button x:Name="DetailLumaDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallLumaButton_Click"
                                             Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"

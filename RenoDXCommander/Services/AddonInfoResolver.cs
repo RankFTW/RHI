@@ -25,6 +25,9 @@ public class AddonInfoResolver
     public const string FallbackRenoDX =
         "RenoDX is an HDR mod framework that upgrades SDR games to HDR using ReShade. It provides per-game tone mapping and color space conversion.";
 
+    public const string FallbackNativeHdr =
+        "This game uses UE-Extended with native HDR. You must enable HDR in the game's display settings for the mod to work.";
+
     public const string FallbackReLimiter =
         "ReLimiter is a frame limiter that works alongside ReShade to reduce input lag and improve frame pacing in games.";
 
@@ -59,23 +62,41 @@ public class AddonInfoResolver
         GameCardViewModel card,
         AddonType addon,
         RemoteManifest? manifest,
-        OptiScalerWikiData? osWikiData)
+        OptiScalerWikiData? osWikiData,
+        Dictionary<string, string>? hdrDatabase = null)
     {
         // ── Tier 1: Per-addon manifest dictionary ─────────────────────────────
         var manifestResult = TryResolveManifest(card.GameName, addon, manifest);
         if (manifestResult != null)
-            return manifestResult;
+            return AttachExtras(manifestResult, card, addon, hdrDatabase);
 
         // ── Tier 2: Wiki-scraped content ──────────────────────────────────────
-        var wikiResult = TryResolveWiki(card, addon, manifest, osWikiData);
-        if (wikiResult != null)
-            return wikiResult;
+        // Skip wiki content for native HDR games on RenoDX — the wiki notes are
+        // technical details that don't apply; the native HDR message is sufficient.
+        if (!(addon == AddonType.RenoDX && card.IsNativeHdrGame))
+        {
+            var wikiResult = TryResolveWiki(card, addon, manifest, osWikiData);
+            if (wikiResult != null)
+                return AttachExtras(wikiResult, card, addon, hdrDatabase);
+        }
 
         // ── Tier 3: Generic fallback ──────────────────────────────────────────
+        // Native HDR games using UE-Extended get a specific message instead of generic RenoDX text
+        var fallbackText = (addon == AddonType.RenoDX && card.IsNativeHdrGame)
+            ? FallbackNativeHdr
+            : GetFallbackText(addon);
+        // If the only content is generic fallback AND there's an HDR database entry,
+        // upgrade the source type to Wiki since we have real per-game content.
+        var hdrUrl = LookupHdrUrl(card.GameName, addon, hdrDatabase);
+        // Native HDR games always get highlighted (they have per-game relevant info)
+        var sourceType = (hdrUrl != null || (addon == AddonType.RenoDX && card.IsNativeHdrGame))
+            ? InfoSourceType.Wiki
+            : InfoSourceType.Fallback;
         return new AddonInfoResult
         {
-            Content = GetFallbackText(addon),
-            Source = InfoSourceType.Fallback
+            Content = fallbackText,
+            Source = sourceType,
+            HdrAnalysisUrl = hdrUrl
         };
     }
 
@@ -86,9 +107,10 @@ public class AddonInfoResolver
         GameCardViewModel card,
         AddonType addon,
         RemoteManifest? manifest,
-        OptiScalerWikiData? osWikiData)
+        OptiScalerWikiData? osWikiData,
+        Dictionary<string, string>? hdrDatabase = null)
     {
-        var source = GetSourceType(card, addon, manifest, osWikiData);
+        var source = GetSourceType(card, addon, manifest, osWikiData, hdrDatabase);
         return source switch
         {
             InfoSourceType.Manifest => "Per-game notes available",
@@ -106,7 +128,8 @@ public class AddonInfoResolver
         GameCardViewModel card,
         AddonType addon,
         RemoteManifest? manifest,
-        OptiScalerWikiData? osWikiData)
+        OptiScalerWikiData? osWikiData,
+        Dictionary<string, string>? hdrDatabase = null)
     {
         // Tier 1: manifest
         if (HasManifestEntry(card.GameName, addon, manifest))
@@ -114,6 +137,14 @@ public class AddonInfoResolver
 
         // Tier 2: wiki
         if (HasWikiContent(card, addon, manifest, osWikiData))
+            return InfoSourceType.Wiki;
+
+        // Check HDR database — if present for RenoDX/Luma, upgrade to Wiki
+        if (LookupHdrUrl(card.GameName, addon, hdrDatabase) != null)
+            return InfoSourceType.Wiki;
+
+        // Native HDR games using UE-Extended get highlighted (per-game relevant info)
+        if (addon == AddonType.RenoDX && card.IsNativeHdrGame)
             return InfoSourceType.Wiki;
 
         // Tier 3: fallback
@@ -384,6 +415,83 @@ public class AddonInfoResolver
             Url = url,
             UrlLabel = urlLabel,
             Source = InfoSourceType.Wiki
+        };
+    }
+
+    // ── HDR Gaming Database helpers ───────────────────────────────────────────
+
+    /// <summary>
+    /// Looks up the game name in the HDR Gaming Database, but only for RenoDX and Luma addon types.
+    /// Returns the discussion URL if found, null otherwise.
+    /// </summary>
+    private static string? LookupHdrUrl(string gameName, AddonType addon, Dictionary<string, string>? hdrDatabase)
+    {
+        if (hdrDatabase == null || hdrDatabase.Count == 0)
+            return null;
+
+        // Only RenoDX and Luma get HDR database links
+        if (addon is not (AddonType.RenoDX or AddonType.Luma))
+            return null;
+
+        var strippedName = StripTrademarks(gameName);
+        hdrDatabase.TryGetValue(strippedName, out var url);
+        return url;
+    }
+
+    /// <summary>
+    /// Attaches the HDR analysis URL and prepends the native HDR message to an existing result.
+    /// </summary>
+    private static AddonInfoResult AttachExtras(
+        AddonInfoResult result,
+        GameCardViewModel card,
+        AddonType addon,
+        Dictionary<string, string>? hdrDatabase)
+    {
+        var hdrUrl = LookupHdrUrl(card.GameName, addon, hdrDatabase);
+        if (hdrUrl == null) return result;
+
+        return new AddonInfoResult
+        {
+            Content = result.Content,
+            Url = result.Url,
+            UrlLabel = result.UrlLabel,
+            Source = result.Source,
+            WikiStatusLabel = result.WikiStatusLabel,
+            WikiStatusBadgeBg = result.WikiStatusBadgeBg,
+            WikiStatusBadgeFg = result.WikiStatusBadgeFg,
+            WikiStatusBadgeBorder = result.WikiStatusBadgeBorder,
+            OptiScalerCompat = result.OptiScalerCompat,
+            OptiScalerFsr4Compat = result.OptiScalerFsr4Compat,
+            HdrAnalysisUrl = hdrUrl
+        };
+    }
+
+    /// <summary>
+    /// Attaches the HDR analysis URL to an existing result (for RenoDX/Luma only).
+    /// Returns a new result with HdrAnalysisUrl set if found, otherwise returns the original.
+    /// </summary>
+    private static AddonInfoResult AttachHdrUrl(
+        AddonInfoResult result,
+        string gameName,
+        AddonType addon,
+        Dictionary<string, string>? hdrDatabase)
+    {
+        var hdrUrl = LookupHdrUrl(gameName, addon, hdrDatabase);
+        if (hdrUrl == null) return result;
+
+        return new AddonInfoResult
+        {
+            Content = result.Content,
+            Url = result.Url,
+            UrlLabel = result.UrlLabel,
+            Source = result.Source,
+            WikiStatusLabel = result.WikiStatusLabel,
+            WikiStatusBadgeBg = result.WikiStatusBadgeBg,
+            WikiStatusBadgeFg = result.WikiStatusBadgeFg,
+            WikiStatusBadgeBorder = result.WikiStatusBadgeBorder,
+            OptiScalerCompat = result.OptiScalerCompat,
+            OptiScalerFsr4Compat = result.OptiScalerFsr4Compat,
+            HdrAnalysisUrl = hdrUrl
         };
     }
 }

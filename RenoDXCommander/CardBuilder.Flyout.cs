@@ -458,8 +458,9 @@ public partial class CardBuilder
         // Info button — styled based on content availability
         var manifest = _window.ViewModel.Manifest;
         var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
-        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData);
-        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData);
+        var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
+        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
 
         var infoBtn = new Button
         {
@@ -590,8 +591,9 @@ public partial class CardBuilder
                     {
                         var manifest = _window.ViewModel.Manifest;
                         var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
-                        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData);
-                        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData);
+                        var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+                        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
+                        var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
                         ApplyCardInfoButtonStyle(btn, sourceType);
                         ToolTipService.SetToolTip(btn, tooltip);
                     }

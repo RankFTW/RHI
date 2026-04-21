@@ -12,14 +12,32 @@
 - The OptiScaler Info button now pulls compatibility data directly from the OptiScaler wiki — working status, supported upscalers, notes, and links to detailed wiki pages.
 - Both the standard and FSR4 compatibility lists are included.
 
+**HDR Gaming Database links**
+- The RenoDX and Luma Info buttons now link to the HDR Gaming Database when a game has an HDR analysis entry, giving you quick access to detailed HDR breakdowns.
+
+**Native HDR game guidance**
+- Games that use UE-Extended with native HDR now show a clear message in the RenoDX Info button explaining that HDR must be enabled in the game's display settings.
+
+**Luma toggle redesigned**
+- The Luma mode toggle is now more visible — centered in the Components header with clear "Click to enable/disable Luma" text.
+
+**Luma reshade.ini deploy button**
+- The Luma install row now has a 📋 button for copying reshade.ini to the game folder, matching the ReShade row.
+
+**RE Framework required for RE Engine games**
+- RE Engine games now require RE Framework to be installed before ReShade can be installed, preventing broken setups. The ReShade button shows "RE Framework required" and is greyed out until RE Framework is in place.
+
 **Notes and Discussion buttons moved**
 - The "ℹ" and "💬" buttons from the game header have been replaced by the new per-addon Info buttons. RenoDX notes and wiki links are now on the RenoDX Info button.
 
 ### Bug Fixes
 
+- Fixed ReLimiter and Display Commander staying greyed out after installing Luma until a manual refresh.
+- Fixed ReShade showing as "Installed" after disabling Luma mode, even though Luma's ReShade was removed.
 - Fixed "Skipped — unknown dxgi.dll" warning during Update All when OptiScaler is installed.
 - Fixed OptiScaler wiki not matching some games due to naming differences (e.g. Resident Evil, S.T.A.L.K.E.R., Borderlands® 4, Assassin's Creed).
 - Fixed Compact View window briefly appearing in the wrong position on startup before jumping to the saved location.
+- Fixed a rare startup crash caused by concurrent access to game lists during parallel card building.
 
 ## v1.8.1
 

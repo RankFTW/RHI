@@ -34,6 +34,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IPcgwService _pcgwService;
     private readonly IOptiScalerService _optiScalerService;
     private readonly IOptiScalerWikiService _optiScalerWikiService;
+    private readonly IHdrDatabaseService _hdrDatabaseService;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
     /// Awaited before the post-init shader sync so packs are available.
@@ -53,6 +54,7 @@ public partial class MainViewModel : ObservableObject
     public IAuxInstallService AuxInstallServiceInstance => _auxInstaller;
     public IOptiScalerService OptiScalerServiceInstance => _optiScalerService;
     public IOptiScalerWikiService OptiScalerWikiServiceInstance => _optiScalerWikiService;
+    public IHdrDatabaseService HdrDatabaseServiceInstance => _hdrDatabaseService;
     public IREFrameworkService REFrameworkServiceInstance => _refService;
     public RemoteManifest? Manifest => _manifest;
 
@@ -430,7 +432,8 @@ public partial class MainViewModel : ObservableObject
         INexusModsService nexusModsService,
         IPcgwService pcgwService,
         IOptiScalerService optiScalerService,
-        IOptiScalerWikiService optiScalerWikiService)
+        IOptiScalerWikiService optiScalerWikiService,
+        IHdrDatabaseService hdrDatabaseService)
     {
         _http = http;
         _installer = installer;
@@ -458,6 +461,7 @@ public partial class MainViewModel : ObservableObject
         _pcgwService = pcgwService;
         _optiScalerService = optiScalerService;
         _optiScalerWikiService = optiScalerWikiService;
+        _hdrDatabaseService = hdrDatabaseService;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();
         // Wire up DllOverrideService changes to trigger save

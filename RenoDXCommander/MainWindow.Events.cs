@@ -83,6 +83,27 @@ public sealed partial class MainWindow
         }
     }
 
+    private void LumaIniButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+        try
+        {
+            var screenshotPath = BuildScreenshotSavePath(card.GameName);
+            var overlayHotkey = ViewModel.Settings.OverlayHotkey;
+            AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
+            AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
+            bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
+            card.LumaActionMessage = presetDeployed
+                ? "✅ reshade.ini merged & ReShadePreset.ini copied."
+                : "✅ reshade.ini merged into game folder.";
+        }
+        catch (Exception ex)
+        {
+            card.LumaActionMessage = $"❌ {ex.Message}";
+        }
+    }
+
     private void SupportDiscord_Click(object sender, RoutedEventArgs e)
     {
         _ = Windows.System.Launcher.LaunchUriAsync(
