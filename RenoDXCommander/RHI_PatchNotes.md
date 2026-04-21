@@ -38,6 +38,8 @@
 - Fixed OptiScaler wiki not matching some games due to naming differences (e.g. Resident Evil, S.T.A.L.K.E.R., Borderlands® 4, Assassin's Creed).
 - Fixed Compact View window briefly appearing in the wrong position on startup before jumping to the saved location.
 - Fixed a rare startup crash caused by concurrent access to game lists during parallel card building.
+- Fixed ReLimiter OSD hotkey not working when set to Page Up, Page Down, or other multi-word keys.
+- Fixed navigating to Settings during initial load causing the main UI to never finish loading. The Settings button is now disabled until games are loaded.
 
 ## v1.8.1
 

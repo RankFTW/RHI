@@ -99,7 +99,7 @@
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Cycle between detail, grid, and compact view"/>
                     <Button x:Name="SettingsBtn" Content="Settings"
-                            Click="SettingsButton_Click"
+                            Click="SettingsButton_Click" IsEnabled="False"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"

@@ -33,6 +33,11 @@ public sealed partial class MainWindow
                     }
                     // LoadingPanel stays Collapsed always — skeleton replaces it
                     RefreshBtn.IsEnabled = !loading;
+                    // Lock Settings button during initial load so users can't navigate away
+                    // before cards are built (causes broken UI state)
+                    if (!silent) SettingsBtn.IsEnabled = !loading;
+                    // Lock Back button during refresh from Settings page
+                    SettingsBackBtn.IsEnabled = !loading;
                     if (!silent) StatusDot.Fill = new SolidColorBrush(loading
                         ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
                         : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentGreenBrush]).Color);
