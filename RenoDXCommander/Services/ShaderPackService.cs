@@ -20,8 +20,13 @@ namespace RenoDXCommander.Services;
 public partial class ShaderPackService : IShaderPackService
 {
     private readonly HttpClient _http;
+    private readonly GitHubETagCache _etagCache;
 
-    public ShaderPackService(HttpClient http) => _http = http;
+    public ShaderPackService(HttpClient http, GitHubETagCache etagCache)
+    {
+        _http = http;
+        _etagCache = etagCache;
+    }
     // ── Public path constants (used by AuxInstallService) ─────────────────────────
     public static readonly string ShadersDir = Path.Combine(AuxInstallService.RsStagingDir, "Shaders");
     public static readonly string TexturesDir = Path.Combine(AuxInstallService.RsStagingDir, "Textures");

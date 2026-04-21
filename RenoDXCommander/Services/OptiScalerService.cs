@@ -117,6 +117,7 @@ public class OptiScalerService : IOptiScalerService
     private readonly HttpClient _http;
     private readonly IAuxInstallService _auxInstaller;
     private readonly IDllOverrideService _dllOverrideService;
+    private readonly GitHubETagCache _etagCache;
 
     // ── Backing fields ────────────────────────────────────────────────────────
     private bool _hasUpdate;
@@ -125,11 +126,13 @@ public class OptiScalerService : IOptiScalerService
     public OptiScalerService(
         HttpClient http,
         IAuxInstallService auxInstaller,
-        IDllOverrideService dllOverrideService)
+        IDllOverrideService dllOverrideService,
+        GitHubETagCache etagCache)
     {
         _http = http;
         _auxInstaller = auxInstaller;
         _dllOverrideService = dllOverrideService;
+        _etagCache = etagCache;
     }
 
     // ── Properties ────────────────────────────────────────────────────────────
@@ -194,16 +197,12 @@ public class OptiScalerService : IOptiScalerService
             string json;
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, GitHubReleasesApi);
-                req.Headers.Add("User-Agent", "RHI");
-                req.Headers.Add("Accept", "application/vnd.github+json");
-                var resp = await _http.SendAsync(req);
-                if (!resp.IsSuccessStatusCode)
+                json = await _etagCache.GetWithETagAsync(_http, GitHubReleasesApi).ConfigureAwait(false);
+                if (json == null)
                 {
-                    CrashReporter.Log($"[OptiScalerService.EnsureStagingAsync] GitHub API returned {resp.StatusCode}");
+                    CrashReporter.Log($"[OptiScalerService.EnsureStagingAsync] GitHub API returned error");
                     return;
                 }
-                json = await resp.Content.ReadAsStringAsync();
             }
             catch (Exception ex)
             {
@@ -476,16 +475,12 @@ public class OptiScalerService : IOptiScalerService
             string json;
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, GitHubReleasesApi);
-                req.Headers.Add("User-Agent", "RHI");
-                req.Headers.Add("Accept", "application/vnd.github+json");
-                var resp = await _http.SendAsync(req);
-                if (!resp.IsSuccessStatusCode)
+                json = await _etagCache.GetWithETagAsync(_http, GitHubReleasesApi).ConfigureAwait(false);
+                if (json == null)
                 {
-                    CrashReporter.Log($"[OptiScalerService.CheckForUpdateAsync] GitHub API returned {resp.StatusCode}");
+                    CrashReporter.Log($"[OptiScalerService.CheckForUpdateAsync] GitHub API returned error");
                     return;
                 }
-                json = await resp.Content.ReadAsStringAsync();
             }
             catch (Exception ex)
             {
@@ -577,16 +572,12 @@ public class OptiScalerService : IOptiScalerService
             string json;
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, OptiPatcherReleasesApi);
-                req.Headers.Add("User-Agent", "RHI");
-                req.Headers.Add("Accept", "application/vnd.github+json");
-                var resp = await _http.SendAsync(req);
-                if (!resp.IsSuccessStatusCode)
+                json = await _etagCache.GetWithETagAsync(_http, OptiPatcherReleasesApi).ConfigureAwait(false);
+                if (json == null)
                 {
-                    CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] GitHub API returned {resp.StatusCode}");
+                    CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] GitHub API returned error");
                     return;
                 }
-                json = await resp.Content.ReadAsStringAsync();
             }
             catch (Exception ex)
             {
@@ -706,16 +697,12 @@ public class OptiScalerService : IOptiScalerService
             string json;
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, OptiPatcherReleasesApi);
-                req.Headers.Add("User-Agent", "RHI");
-                req.Headers.Add("Accept", "application/vnd.github+json");
-                var resp = await _http.SendAsync(req);
-                if (!resp.IsSuccessStatusCode)
+                json = await _etagCache.GetWithETagAsync(_http, OptiPatcherReleasesApi).ConfigureAwait(false);
+                if (json == null)
                 {
-                    CrashReporter.Log($"[OptiScalerService.CheckOptiPatcherUpdateAsync] GitHub API returned {resp.StatusCode}");
+                    CrashReporter.Log($"[OptiScalerService.CheckOptiPatcherUpdateAsync] GitHub API returned error");
                     return false;
                 }
-                json = await resp.Content.ReadAsStringAsync();
             }
             catch (Exception ex)
             {

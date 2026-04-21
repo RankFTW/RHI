@@ -30,7 +30,7 @@ public class SelectShaderModeUnitTests
     [Fact]
     public void AvailablePacks_Returns43PacksWithNonEmptyDisplayNames()
     {
-        var service = new ShaderPackService(new HttpClient());
+        var service = new ShaderPackService(new HttpClient(), new GitHubETagCache());
         var packs = service.AvailablePacks;
 
         Assert.Equal(44, packs.Count);
@@ -65,7 +65,7 @@ public class SelectShaderModeUnitTests
     [Fact]
     public void SyncGameFolder_UnknownPackId_SilentlyIgnored()
     {
-        var service = new ShaderPackService(new HttpClient());
+        var service = new ShaderPackService(new HttpClient(), new GitHubETagCache());
         var tempDir = Path.Combine(Path.GetTempPath(), $"rdxc_test_{Guid.NewGuid():N}");
 
         try

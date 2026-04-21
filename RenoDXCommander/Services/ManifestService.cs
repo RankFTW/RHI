@@ -13,8 +13,13 @@ namespace RenoDXCommander.Services;
 public class ManifestService : IManifestService
 {
     private readonly HttpClient _http;
+    private readonly GitHubETagCache _etagCache;
 
-    public ManifestService(HttpClient http) => _http = http;
+    public ManifestService(HttpClient http, GitHubETagCache etagCache)
+    {
+        _http = http;
+        _etagCache = etagCache;
+    }
     /// <summary>GitHub API endpoint — no CDN cache delay, reflects commits instantly.</summary>
     private const string GitHubApiUrl =
         "https://api.github.com/repos/RankFTW/RHI/contents/manifest.json";
@@ -102,14 +107,10 @@ public class ManifestService : IManifestService
     /// </summary>
     private async Task<string> FetchViaGitHubApiAsync()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, GitHubApiUrl);
-        request.Headers.Add("Accept", "application/vnd.github.v3+json");
-        // User-Agent is already set on the shared HttpClient
+        var apiJson = await _etagCache.GetWithETagAsync(_http, GitHubApiUrl).ConfigureAwait(false);
+        if (apiJson == null)
+            throw new HttpRequestException("GitHub API returned error for manifest");
 
-        using var response = await _http.SendAsync(request).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-
-        var apiJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         using var doc = JsonDocument.Parse(apiJson);
         var root = doc.RootElement;
 

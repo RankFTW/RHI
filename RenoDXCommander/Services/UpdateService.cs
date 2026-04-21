@@ -12,8 +12,13 @@ namespace RenoDXCommander.Services;
 public class UpdateService : IUpdateService
 {
     private readonly HttpClient _http;
+    private readonly GitHubETagCache _etagCache;
 
-    public UpdateService(HttpClient http) => _http = http;
+    public UpdateService(HttpClient http, GitHubETagCache etagCache)
+    {
+        _http = http;
+        _etagCache = etagCache;
+    }
     // GitHub API endpoint for the latest release (new per-version tags like "RHI 1.6.7").
     // This is the primary check — uses /releases/latest to find the newest release.
     private const string LatestReleaseApiUrl =
@@ -132,18 +137,13 @@ public class UpdateService : IUpdateService
     /// </summary>
     private async Task<(RdxcVersion version, string downloadUrl)?> FetchReleaseAsync(string apiUrl)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RHI", CurrentVersion.ToString()));
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-
-        var response = await _http.SendAsync(request).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        var json = await _etagCache.GetWithETagAsync(_http, apiUrl, $"RHI/{CurrentVersion}").ConfigureAwait(false);
+        if (json == null)
         {
-            CrashReporter.Log($"[UpdateService.FetchReleaseAsync] GitHub API returned {response.StatusCode} for {apiUrl}");
+            CrashReporter.Log($"[UpdateService.FetchReleaseAsync] GitHub API returned error for {apiUrl}");
             return null;
         }
 
-        var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 

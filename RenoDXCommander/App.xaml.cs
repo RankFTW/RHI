@@ -58,6 +58,9 @@ public partial class App : Application
             return client;
         });
 
+        // Shared ETag cache for GitHub API conditional requests (304 Not Modified)
+        services.AddSingleton<GitHubETagCache>();
+
         // Services — all singletons
         services.AddSingleton<IModInstallService, ModInstallService>();
         services.AddSingleton<IAuxInstallService, AuxInstallService>();

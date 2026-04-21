@@ -13,7 +13,7 @@ namespace RenoDXCommander.Tests;
 /// </summary>
 public class ShaderPackDataPropertyTests
 {
-    private readonly ShaderPackService _service = new(new HttpClient());
+    private readonly ShaderPackService _service = new(new HttpClient(), new GitHubETagCache());
 
     /// <summary>All 44 expected pack Ids after adding ReShade installer packs.</summary>
     private static readonly string[] ExpectedPackIds =

@@ -269,17 +269,13 @@ public partial class ShaderPackService
     {
         try
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, pack.Url);
-            req.Headers.Add("User-Agent", "RHI");
-            req.Headers.Add("Accept", "application/vnd.github+json");
-            var resp = await _http.SendAsync(req);
-            if (!resp.IsSuccessStatusCode)
+            var json = await _etagCache.GetWithETagAsync(_http, pack.Url).ConfigureAwait(false);
+            if (json == null)
             {
-                CrashReporter.Log($"[ShaderPackService.ResolveGhRelease] [{pack.Id}] GitHub API {resp.StatusCode}");
+                CrashReporter.Log($"[ShaderPackService.ResolveGhRelease] [{pack.Id}] GitHub API returned error");
                 return (null, "");
             }
 
-            var json = await resp.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 

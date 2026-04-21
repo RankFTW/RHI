@@ -76,7 +76,8 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
             new StubPcgwService(),
             new StubOptiScalerService(),
             new StubOptiScalerWikiService(),
-            new StubHdrDatabaseService());
+            new StubHdrDatabaseService(),
+            new GitHubETagCache());
 
         // Inject cards via reflection
         var field = typeof(MainViewModel).GetField("_allCards", BindingFlags.NonPublic | BindingFlags.Instance)!;

@@ -56,13 +56,15 @@ public class REFrameworkService : IREFrameworkService
     // ── State ─────────────────────────────────────────────────────────────────────
 
     private readonly HttpClient _http;
+    private readonly GitHubETagCache _etagCache;
 
     /// <summary>Session-level cache for the latest release tag to avoid repeated API calls.</summary>
     private string? _cachedLatestVersion;
 
-    public REFrameworkService(HttpClient http)
+    public REFrameworkService(HttpClient http, GitHubETagCache etagCache)
     {
         _http = http;
+        _etagCache = etagCache;
     }
 
     // ── InstallAsync ──────────────────────────────────────────────────────────────
@@ -196,7 +198,12 @@ public class REFrameworkService : IREFrameworkService
             CrashReporter.Log("[REFrameworkService.GetLatestVersionAsync] Fetching latest release tag");
 
             // Use the /releases endpoint and pick the first (latest) release
-            var json = await _http.GetStringAsync(ReleasesApiUrl);
+            var json = await _etagCache.GetWithETagAsync(_http, ReleasesApiUrl).ConfigureAwait(false);
+            if (json == null)
+            {
+                CrashReporter.Log("[REFrameworkService.GetLatestVersionAsync] GitHub API returned error");
+                return null;
+            }
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 

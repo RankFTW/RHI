@@ -22,11 +22,11 @@ public class LumaService : ILumaService
     private readonly ShaderPackService _shaderPackService;
     private readonly IAuxFileService _auxFileService;
 
-    public LumaService(HttpClient http, IAuxFileService auxFileService)
+    public LumaService(HttpClient http, IAuxFileService auxFileService, GitHubETagCache etagCache)
     {
         _http = http;
         _auxFileService = auxFileService;
-        _shaderPackService = new ShaderPackService(http);
+        _shaderPackService = new ShaderPackService(http, etagCache);
     }
 
     // ── Wiki fetch & parse ────────────────────────────────────────────────────────

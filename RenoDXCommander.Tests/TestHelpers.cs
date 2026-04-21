@@ -63,7 +63,8 @@ internal static class TestHelpers
             new StubPcgwService(),
             new StubOptiScalerService(),
             new StubOptiScalerWikiService(),
-            new StubHdrDatabaseService());
+            new StubHdrDatabaseService(),
+            new GitHubETagCache());
     }
 
     // ── Stub implementations ──────────────────────────────────────────────────

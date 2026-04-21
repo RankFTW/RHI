@@ -22,8 +22,13 @@ namespace RenoDXCommander.Services;
 public class LiliumShaderService : ILiliumShaderService
 {
     private readonly HttpClient _http;
+    private readonly GitHubETagCache _etagCache;
 
-    public LiliumShaderService(HttpClient http) => _http = http;
+    public LiliumShaderService(HttpClient http, GitHubETagCache etagCache)
+    {
+        _http = http;
+        _etagCache = etagCache;
+    }
 
     private const string GhApiUrl = "https://api.github.com/repos/EndlesslyFlowering/ReShade_HDR_shaders/releases/latest";
     private const string SettingsKey = "LiliumShadersVersion";
@@ -63,16 +68,12 @@ public class LiliumShaderService : ILiliumShaderService
             string json;
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, GhApiUrl);
-                req.Headers.Add("User-Agent", "RHI");
-                req.Headers.Add("Accept", "application/vnd.github+json");
-                var resp = await _http.SendAsync(req);
-                if (!resp.IsSuccessStatusCode)
+                json = await _etagCache.GetWithETagAsync(_http, GhApiUrl).ConfigureAwait(false);
+                if (json == null)
                 {
-                    CrashReporter.Log($"[LiliumShaderService.EnsureLatestAsync] GitHub API returned {resp.StatusCode}");
+                    CrashReporter.Log($"[LiliumShaderService.EnsureLatestAsync] GitHub API returned error");
                     return;
                 }
-                json = await resp.Content.ReadAsStringAsync();
             }
             catch (Exception ex)
             {

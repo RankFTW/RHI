@@ -832,14 +832,9 @@ public partial class MainViewModel
     {
         try
         {
-            using var apiReq = new HttpRequestMessage(HttpMethod.Get, UltraLimiterReleasesApiUrl);
-            apiReq.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-            apiReq.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
+            var json = await _etagCache.GetWithETagAsync(_http, UltraLimiterReleasesApiUrl).ConfigureAwait(false);
+            if (json == null) return;
 
-            var apiResp = await _http.SendAsync(apiReq, HttpCompletionOption.ResponseContentRead);
-            if (!apiResp.IsSuccessStatusCode) return;
-
-            var json = await apiResp.Content.ReadAsStringAsync();
             using var doc = System.Text.Json.JsonDocument.Parse(json);
 
             if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))
@@ -1014,14 +1009,9 @@ public partial class MainViewModel
     {
         try
         {
-            using var apiReq = new HttpRequestMessage(HttpMethod.Get, DcReleasesApiUrl);
-            apiReq.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-            apiReq.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
+            var json = await _etagCache.GetWithETagAsync(_http, DcReleasesApiUrl).ConfigureAwait(false);
+            if (json == null) return;
 
-            var apiResp = await _http.SendAsync(apiReq, HttpCompletionOption.ResponseContentRead);
-            if (!apiResp.IsSuccessStatusCode) return;
-
-            var json = await apiResp.Content.ReadAsStringAsync();
             using var doc = System.Text.Json.JsonDocument.Parse(json);
 
             if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))

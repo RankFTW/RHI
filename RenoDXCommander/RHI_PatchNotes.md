@@ -1,3 +1,9 @@
+## v1.8.3
+
+### Changes
+
+- Reduced GitHub API usage with smart caching. Update checks and component downloads no longer fail when launching the app multiple times in a short period.
+
 ## v1.8.2
 
 ### New Features

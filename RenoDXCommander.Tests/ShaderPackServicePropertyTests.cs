@@ -24,13 +24,13 @@ public class ShaderPackServicePropertyTests : IDisposable
 
     /// <summary>Known pack IDs for generating selections.</summary>
     private static readonly string[] KnownPackIds =
-        new ShaderPackService(new HttpClient()).AvailablePacks.Select(p => p.Id).ToArray();
+        new ShaderPackService(new HttpClient(), new GitHubETagCache()).AvailablePacks.Select(p => p.Id).ToArray();
 
     public ShaderPackServicePropertyTests()
     {
         _tempRoot = Path.Combine(Path.GetTempPath(), "RdxcShaderProp_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempRoot);
-        _service = new ShaderPackService(new HttpClient());
+        _service = new ShaderPackService(new HttpClient(), new GitHubETagCache());
         EnsureStagingFiles();
     }
 

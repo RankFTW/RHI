@@ -20,7 +20,7 @@ public class ShaderPopupPerGameRoundTripPropertyTests
 {
     /// <summary>Known shader pack IDs from the service.</summary>
     private static readonly string[] AllPackIds =
-        new ShaderPackService(new HttpClient()).AvailablePacks.Select(p => p.Id).ToArray();
+        new ShaderPackService(new HttpClient(), new GitHubETagCache()).AvailablePacks.Select(p => p.Id).ToArray();
 
     // ── Generators ────────────────────────────────────────────────────────────────
 

@@ -11,13 +11,13 @@ public class ShaderPackDeployPropertyTests : IDisposable
     private readonly string _tempRoot;
     private readonly ShaderPackService _service;
     private static readonly string[] AllPackIds =
-        new ShaderPackService(new HttpClient()).AvailablePacks.Select(p => p.Id).ToArray();
+        new ShaderPackService(new HttpClient(), new GitHubETagCache()).AvailablePacks.Select(p => p.Id).ToArray();
 
     public ShaderPackDeployPropertyTests()
     {
         _tempRoot = Path.Combine(Path.GetTempPath(), "RdxcDeployProp_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempRoot);
-        _service = new ShaderPackService(new HttpClient());
+        _service = new ShaderPackService(new HttpClient(), new GitHubETagCache());
     }
 
     public void Dispose() { try { Directory.Delete(_tempRoot, true); } catch { } }

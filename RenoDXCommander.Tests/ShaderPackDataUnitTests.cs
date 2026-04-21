@@ -11,7 +11,7 @@ namespace RenoDXCommander.Tests;
 /// </summary>
 public class ShaderPackDataUnitTests
 {
-    private readonly ShaderPackService _service = new(new HttpClient());
+    private readonly ShaderPackService _service = new(new HttpClient(), new GitHubETagCache());
 
     // ── Reflection helpers ────────────────────────────────────────────────────────
 
