@@ -502,6 +502,16 @@
       "notes": "Recommended to use Luma for this game for best HDR results.\nYou must switch the game to DX11 with launch argument -dx11\n\nAdditional information available on Nexus below:",
       "notesUrl": "https://www.nexusmods.com/finalfantasy7remake/mods/1974",
       "notesUrlLabel": "Final Fantasy VII Remake Nexus"
+    },
+    "Metro 2033 Redux": {
+      "notes": "⚠ Must either set windowed mode in the config file, or use the borderless windowed mod (recommended).\n\nDownload the borderless windowed mod for Metro 2033 Redux from the link below:",
+      "notesUrl": "https://discord.com/channels/142072549537349632/1335626023412174908/1495615263289376889",
+      "notesUrlLabel": "Borderless mod for Metro 2033 Redux"
+    },
+    "Metro: Last Light Redux": {
+      "notes": "⚠ Must either set windowed mode in the config file, or use the borderless windowed mod (recommended).\n\nDownload the borderless windowed mod for Metro Last Light Redux from the link below:",
+      "notesUrl": "https://discord.com/channels/142072549537349632/1446291444242321620/1495631664125313128",
+      "notesUrlLabel": "Borderless mod for Metro Last Light Redux"
     }
   },
 
