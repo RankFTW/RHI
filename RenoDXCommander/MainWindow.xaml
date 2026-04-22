@@ -248,7 +248,7 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <Grid Grid.Column="0" VerticalAlignment="Center">
+                                            <Grid Grid.Column="0" Width="16" VerticalAlignment="Center">
                                                 <Image Width="14" Height="14"
                                                        Stretch="Uniform"
                                                        Visibility="{x:Bind SourceIconImageVisibility}">
@@ -1030,6 +1030,8 @@
                                     <RowDefinition Height="Auto"/>  <!-- Row 2: Per-Game toggle | ReShade Apply -->
                                     <RowDefinition Height="Auto"/>  <!-- Row 3: (empty) | ReLimiter label + key -->
                                     <RowDefinition Height="Auto"/>  <!-- Row 4: Screenshot Apply | ReLimiter Apply -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 5: (empty) | Screenshot key label + box -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 6: (empty) | Screenshot key Apply -->
                                 </Grid.RowDefinitions>
 
                                 <!-- ── Row 0: Titles + descriptions ── -->
@@ -1041,7 +1043,7 @@
                                                Text="Set a screenshot save path that will be written to all managed reshade.ini files."/>
                                 </StackPanel>
 
-                                <Border Grid.Row="0" Grid.RowSpan="5" Grid.Column="1" Width="1"
+                                <Border Grid.Row="0" Grid.RowSpan="7" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch"
                                         Margin="12,0,12,0"/>
@@ -1139,6 +1141,43 @@
                                 <Button Grid.Row="4" Grid.Column="2" x:Name="ApplyUlHotkeyBtn" x:FieldModifier="internal"
                                         Content="Apply to All Games"
                                         Click="ApplyUlOsdHotkey_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
+
+                                <!-- ── Row 5: Screenshot key label + box + reset (right column) ── -->
+                                <StackPanel Grid.Row="5" Grid.Column="2" Spacing="4">
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="ReShade screenshot key"/>
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" x:Name="ScreenshotHotkeyBox" x:FieldModifier="internal"
+                                                 PlaceholderText="Press a key..."
+                                                 IsReadOnly="True"
+                                                 FontSize="12"
+                                                 Background="{StaticResource SurfaceInputBrush}"
+                                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                                 BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                 PreviewKeyDown="ScreenshotHotkeyBox_PreviewKeyDown"/>
+                                        <Button Grid.Column="1" Content="↺" Click="ResetScreenshotHotkey_Click"
+                                                ToolTipService.ToolTip="Reset to Print Screen"
+                                                Background="Transparent" BorderThickness="0"
+                                                Padding="6,4" MinWidth="0" MinHeight="0" FontSize="14"
+                                                Foreground="{StaticResource TextTertiaryBrush}"
+                                                VerticalAlignment="Center"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- ── Row 6: Screenshot key Apply (right column) ── -->
+                                <Button Grid.Row="6" Grid.Column="2" x:Name="ApplyScreenshotHotkeyBtn" x:FieldModifier="internal"
+                                        Content="Apply to All Games"
+                                        Click="ApplyScreenshotHotkey_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"
                                         Foreground="{StaticResource AccentBlueBrush}"
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"

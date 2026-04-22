@@ -1,8 +1,28 @@
 ## v1.8.3
 
+### Highlights
+
+**The 2-Pixel Fix** — After months of painstaking investigation, we are beyond proud to announce the most significant visual improvement in RHI history. Manually added games in the sidebar were misaligned by exactly two pixels. Two. The wrench icon for custom-added games rendered at a fractionally different width than the Steam, Xbox, Epic, GOG, Ubisoft, Battle.net, and Rockstar icons, causing every single game name after it to sit imperceptibly — yet unforgivably — out of line. This was the kind of defect that haunts you at 3am. The kind you see every time you open the app. The kind that, once noticed, can never be unseen. It has been fixed. The source icon column now uses a precision-engineered fixed-width container, guaranteeing pixel-perfect alignment across every game in your library, no matter how it was added. Sleep well tonight.
+
 ### Changes
 
 - Reduced GitHub API usage with smart caching. Update checks and component downloads no longer fail when launching the app multiple times in a short period.
+- Install buttons now show a ◄ arrow indicator when the Info button has game-specific content, drawing attention to it.
+- New "ReShade screenshot key" setting on the Settings page. Set a custom key for taking ReShade screenshots, applied to all managed reshade.ini files. Defaults to Print Screen with a reset button to restore it.
+
+### Performance
+
+- Game scanning on startup is significantly faster. Most games now load in under 100ms, down from 500ms–1.5s. Total scan time reduced by up to 90%.
+- Games with known engines (Assassin's Creed, Battlefield, Metro, Control, etc.) no longer run filesystem-based engine detection on every launch. The engine is read from the manifest instead, skipping expensive directory traversals.
+- Fixed two ReShade addons (FreePIE and Screenshot to Clipboard) being re-downloaded on every launch instead of using the cached version.
+- Shader pack checks are now instant on normal launches — the app skips re-verifying files that haven't changed since the last run.
+
+### Bug Fixes
+
+- Fixed generic RenoDX mods (Unity, Unreal, UE-Extended) not detecting updates and silently reinstalling the old version from cache. Updates are now downloaded fresh and applied correctly.
+- Generic Unity and Unreal mods are now sourced directly from GitHub Releases instead of the GitHub Pages CDN, making update detection faster and more reliable.
+- Fixed Luma addon files not being placed in the custom addon folder when the user has a custom AddonPath set in reshade.ini. Luma addons now follow the same path rules as all other addons.
+- Fixed repeated error messages in the log for games with broken symlinks or missing shader folders (e.g. The Ascent).
 
 ## v1.8.2
 

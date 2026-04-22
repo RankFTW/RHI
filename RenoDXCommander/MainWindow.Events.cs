@@ -62,15 +62,16 @@ public sealed partial class MainWindow
         {
             var screenshotPath = BuildScreenshotSavePath(card.GameName);
             var overlayHotkey = ViewModel.Settings.OverlayHotkey;
+            var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
             if (card.RequiresVulkanInstall)
             {
-                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey);
+                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
                 // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI)
                 ViewModel.DeployShadersForCard(card.GameName);
             }
             else
-                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
+                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
             bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
             card.RsActionMessage = presetDeployed
@@ -91,7 +92,8 @@ public sealed partial class MainWindow
         {
             var screenshotPath = BuildScreenshotSavePath(card.GameName);
             var overlayHotkey = ViewModel.Settings.OverlayHotkey;
-            AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
+            var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
+            AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
             bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
             card.LumaActionMessage = presetDeployed
@@ -296,15 +298,16 @@ public sealed partial class MainWindow
         {
             var screenshotPath = BuildScreenshotSavePath(card.GameName);
             var overlayHotkey = ViewModel.Settings.OverlayHotkey;
+            var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
             if (card.RequiresVulkanInstall)
             {
-                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey);
+                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
                 // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI)
                 ViewModel.DeployShadersForCard(card.GameName);
             }
             else
-                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
+                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
             card.RsActionMessage = "✅ reshade.ini merged into game folder.";
         }
         catch (Exception ex)
@@ -619,6 +622,15 @@ public sealed partial class MainWindow
 
     private void ApplyOverlayHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyOverlayHotkey_Click(sender, e);
+
+    private void ScreenshotHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        => _settingsHandler.ScreenshotHotkeyBox_PreviewKeyDown(sender, e);
+
+    private void ApplyScreenshotHotkey_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.ApplyScreenshotHotkey_Click(sender, e);
+
+    private void ResetScreenshotHotkey_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.ResetScreenshotHotkey_Click(sender, e);
 
     private void UlHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
         => _settingsHandler.UlHotkeyBox_PreviewKeyDown(sender, e);

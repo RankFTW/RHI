@@ -9,7 +9,7 @@ public partial class AuxInstallService
     /// already in the game's INI that are not in the template are preserved untouched.
     /// If no reshade.ini exists in the game folder, the template is copied as-is.
     /// </summary>
-    public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null)
+    public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null)
     {
         if (!File.Exists(RsIniPath))
             throw new FileNotFoundException("reshade.ini not found in inis folder.", RsIniPath);
@@ -28,6 +28,10 @@ public partial class AuxInstallService
             // Apply overlay hotkey if non-default
             if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
                 ApplyOverlayHotkey(gamePath, overlayHotkey);
+
+            // Apply screenshot hotkey if non-default
+            if (screenshotHotkey != null && screenshotHotkey != "44,0,0,0")
+                ApplyScreenshotHotkey(gamePath, screenshotHotkey);
             return;
         }
 
@@ -61,6 +65,10 @@ public partial class AuxInstallService
         // Apply overlay hotkey if non-default
         if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
             ApplyOverlayHotkey(gamePath, overlayHotkey);
+
+        // Apply screenshot hotkey if non-default
+        if (screenshotHotkey != null && screenshotHotkey != "44,0,0,0")
+            ApplyScreenshotHotkey(gamePath, screenshotHotkey);
     }
 
     /// <summary>
@@ -70,7 +78,7 @@ public partial class AuxInstallService
     /// reshade.ini if the Vulkan template doesn't exist.
     /// For Red Dead Redemption 2, uses the dedicated reshade.rdr2.ini template instead.
     /// </summary>
-    public static void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null)
+    public static void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null)
     {
         // Red Dead Redemption 2 uses a dedicated ini template
         string templatePath;
@@ -95,6 +103,10 @@ public partial class AuxInstallService
             // Apply overlay hotkey if non-default
             if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
                 ApplyOverlayHotkey(gamePath, overlayHotkey);
+
+            // Apply screenshot hotkey if non-default
+            if (screenshotHotkey != null && screenshotHotkey != "44,0,0,0")
+                ApplyScreenshotHotkey(gamePath, screenshotHotkey);
             return;
         }
 
@@ -123,6 +135,10 @@ public partial class AuxInstallService
         // Apply overlay hotkey if non-default
         if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
             ApplyOverlayHotkey(gamePath, overlayHotkey);
+
+        // Apply screenshot hotkey if non-default
+        if (screenshotHotkey != null && screenshotHotkey != "44,0,0,0")
+            ApplyScreenshotHotkey(gamePath, screenshotHotkey);
     }
 
     /// <summary>Returns true if the game name matches Red Dead Redemption 2 (case-insensitive).</summary>
@@ -276,6 +292,26 @@ public partial class AuxInstallService
             ini[section] = new OrderedDict();
 
         ini[section]["KeyOverlay"] = keyOverlayValue;
+
+        WriteIni(iniFilePath, ini);
+    }
+
+    /// <summary>
+    /// Writes or updates the [INPUT] section in the given reshade*.ini file,
+    /// setting KeyScreenshot to the specified value. All other sections/keys are preserved.
+    /// </summary>
+    public static void ApplyScreenshotHotkey(string iniFilePath, string keyScreenshotValue)
+    {
+        var ini = File.Exists(iniFilePath)
+            ? ParseIni(File.ReadAllLines(iniFilePath))
+            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+        const string section = "INPUT";
+
+        if (!ini.ContainsKey(section))
+            ini[section] = new OrderedDict();
+
+        ini[section]["KeyScreenshot"] = keyScreenshotValue;
 
         WriteIni(iniFilePath, ini);
     }

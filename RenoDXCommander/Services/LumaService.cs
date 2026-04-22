@@ -309,13 +309,43 @@ public class LumaService : ILumaService
         progress?.Report(("Extracting Luma files...", 80));
         var installedFiles = new List<string>();
 
+        // ── Deploy reshade.ini FIRST ──────────────────────────────────────────────
+        // Must happen before zip extraction so that the AddonPath setting in
+        // reshade.ini is available when resolving where .addon files should go.
+        progress?.Report(("Deploying ReShade config...", 75));
+        try
+        {
+            _auxFileService.EnsureInisDir();
+            if (File.Exists(AuxInstallService.RsIniPath))
+            {
+                _auxFileService.MergeRsIni(gameInstallPath);
+                installedFiles.Add("reshade.ini");
+            }
+        }
+        catch (Exception ex) { CrashReporter.Log($"[LumaService.Install] reshade.ini deploy failed — {ex.Message}"); }
+
+        // ── Extract zip ───────────────────────────────────────────────────────────
+        progress?.Report(("Extracting Luma files...", 80));
+
         if (cachePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
+            // Resolve the addon deploy path once — this respects the AddonPath
+            // setting in reshade.ini so .addon files land in the correct folder
+            // (e.g. .\ue4ss) rather than always going to the game root.
+            var addonDeployPath = ModInstallService.GetAddonDeployPath(gameInstallPath);
+
             using var archive = ZipFile.OpenRead(cachePath);
             foreach (var entry in archive.Entries)
             {
                 if (string.IsNullOrEmpty(entry.Name)) continue; // skip directory entries
-                var destPath = Path.Combine(gameInstallPath, entry.FullName);
+
+                // Route .addon files to the addon deploy path
+                var isAddonFile = entry.Name.EndsWith(".addon", StringComparison.OrdinalIgnoreCase)
+                               || entry.Name.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
+                               || entry.Name.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase);
+                var baseDir = isAddonFile ? addonDeployPath : gameInstallPath;
+                var destPath = Path.Combine(baseDir, entry.FullName);
+
                 Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
                 entry.ExtractToFile(destPath, overwrite: true);
                 installedFiles.Add(entry.FullName);
@@ -330,19 +360,6 @@ public class LumaService : ILumaService
             File.Copy(cachePath, destPath, overwrite: true);
             installedFiles.Add(destName);
         }
-
-        // ── Deploy bundled reshade.ini ─────────────────────────────────────────────
-        progress?.Report(("Deploying ReShade config...", 90));
-        try
-        {
-            _auxFileService.EnsureInisDir();
-            if (File.Exists(AuxInstallService.RsIniPath))
-            {
-                _auxFileService.MergeRsIni(gameInstallPath);
-                installedFiles.Add("reshade.ini");
-            }
-        }
-        catch (Exception ex) { CrashReporter.Log($"[LumaService.Install] reshade.ini deploy failed — {ex.Message}"); }
 
         // ── Deploy Lilium shader pack (Minimum mode = Lilium only) ────────────────
         progress?.Report(("Deploying shaders...", 95));
@@ -409,12 +426,25 @@ public class LumaService : ILumaService
     /// </summary>
     public void Uninstall(LumaInstalledRecord record)
     {
+        // Resolve addon deploy path so .addon files placed in a custom AddonPath
+        // (e.g. .\ue4ss) are found and deleted during uninstall.
+        var addonDeployPath = ModInstallService.GetAddonDeployPath(record.InstallPath);
+
         foreach (var relPath in record.InstalledFiles)
         {
             var fullPath = Path.Combine(record.InstallPath, relPath);
             try
             {
-                if (File.Exists(fullPath)) File.Delete(fullPath);
+                if (File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                }
+                else if (addonDeployPath != record.InstallPath)
+                {
+                    // File not at game root — check addon deploy path
+                    var addonPath = Path.Combine(addonDeployPath, relPath);
+                    if (File.Exists(addonPath)) File.Delete(addonPath);
+                }
             }
             catch (Exception ex)
             {

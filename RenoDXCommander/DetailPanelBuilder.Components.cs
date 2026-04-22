@@ -13,6 +13,58 @@ public partial class DetailPanelBuilder
     private readonly AddonInfoResolver _addonInfoResolver = new();
 
     /// <summary>
+    /// Returns true when the Info button for this addon has real per-game content
+    /// (manifest or wiki), meaning the arrow indicator should be shown on the install button.
+    /// </summary>
+    private bool HasRealInfoContent(GameCardViewModel card, AddonType addonType)
+    {
+        var manifest = _window.ViewModel.Manifest;
+        var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
+        var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+        var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
+        return sourceType is InfoSourceType.Manifest or InfoSourceType.Wiki;
+    }
+
+    /// <summary>
+    /// Prepends a left-aligned arrow indicator to the install button when the
+    /// Info button has real per-game content, drawing attention to it.
+    /// The arrow sits on the left edge while the label text stays centered.
+    /// Skipped when the button shows an update (purple state).
+    /// </summary>
+    private static object WithInfoArrow(string label, bool hasInfo, bool isUpdate, Button? btn = null)
+    {
+        if (!hasInfo || isUpdate)
+        {
+            // Reset to default centered alignment when no arrow
+            if (btn != null) btn.HorizontalContentAlignment = HorizontalAlignment.Center;
+            return label;
+        }
+
+        // Stretch content so the Grid fills the full button width
+        if (btn != null) btn.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+
+        var grid = new Grid();
+
+        grid.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 12,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+
+        grid.Children.Add(new TextBlock
+        {
+            Text = "◄",
+            FontSize = 12,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+
+        return grid;
+    }
+
+    /// <summary>
     /// Applies Info button styling (highlighted vs muted) based on the resolved source type.
     /// Also sets the Tag, tooltip, and click handler.
     /// </summary>
@@ -69,7 +121,7 @@ public partial class DetailPanelBuilder
                 ? Windows.UI.Text.TextDecorations.Underline
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailRefInstallBtn.Tag = card;
-            _window.DetailRefInstallBtn.Content = card.RefActionLabel;
+            _window.DetailRefInstallBtn.Content = WithInfoArrow(card.RefActionLabel, HasRealInfoContent(card, AddonType.REFramework), card.RefStatus == GameStatus.UpdateAvailable, _window.DetailRefInstallBtn);
             _window.DetailRefInstallBtn.IsEnabled = card.IsRefNotInstalling;
             _window.DetailRefInstallBtn.Background = UIFactory.GetBrush(card.RefBtnBackground);
             _window.DetailRefInstallBtn.Foreground = UIFactory.GetBrush(card.RefBtnForeground);
@@ -106,7 +158,7 @@ public partial class DetailPanelBuilder
                     _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.None;
                 }
                 _window.DetailRsInstallBtn.Tag = card;
-                _window.DetailRsInstallBtn.Content = card.RsActionLabel;
+                _window.DetailRsInstallBtn.Content = WithInfoArrow(card.RsActionLabel, HasRealInfoContent(card, AddonType.ReShade), card.RsStatus == GameStatus.UpdateAvailable, _window.DetailRsInstallBtn);
                 _window.DetailRsInstallBtn.IsEnabled = card.IsRsNotInstalling;
                 _window.DetailRsInstallBtn.Background = UIFactory.GetBrush(card.RsBtnBackground);
                 _window.DetailRsInstallBtn.Foreground = UIFactory.GetBrush(card.RsBtnForeground);
@@ -128,7 +180,7 @@ public partial class DetailPanelBuilder
                     ? Windows.UI.Text.TextDecorations.Underline
                     : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRsInstallBtn.Tag = card;
-                _window.DetailRsInstallBtn.Content = card.RsActionLabel;
+                _window.DetailRsInstallBtn.Content = WithInfoArrow(card.RsActionLabel, HasRealInfoContent(card, AddonType.ReShade), card.RsStatus == GameStatus.UpdateAvailable, _window.DetailRsInstallBtn);
                 _window.DetailRsInstallBtn.IsEnabled = card.IsRsNotInstalling;
                 _window.DetailRsInstallBtn.Background = UIFactory.GetBrush(card.RsBtnBackground);
                 _window.DetailRsInstallBtn.Foreground = UIFactory.GetBrush(card.RsBtnForeground);
@@ -181,9 +233,10 @@ public partial class DetailPanelBuilder
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailUlStatus.Opacity = ulGreyed ? 0.35 : 1.0;
             _window.DetailUlInstallBtn.Tag = card;
+            var ulLabel = WithInfoArrow(card.UlActionLabel, HasRealInfoContent(card, AddonType.ReLimiter), card.UlStatus == GameStatus.UpdateAvailable, _window.DetailUlInstallBtn);
             _window.DetailUlInstallBtn.Content = (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade)
                 ? (object)new TextBlock { Text = card.UlActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
-                : card.UlActionLabel;
+                : ulLabel;
             _window.DetailUlInstallBtn.IsEnabled = card.UlInstallEnabled;
             _window.DetailUlInstallBtn.Background = UIFactory.GetBrush(card.UlBtnBackground);
             _window.DetailUlInstallBtn.Foreground = UIFactory.GetBrush(card.UlBtnForeground);
@@ -224,9 +277,10 @@ public partial class DetailPanelBuilder
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailDcStatus.Opacity = dcGreyed ? 0.35 : 1.0;
             _window.DetailDcInstallBtn.Tag = card;
+            var dcLabel = WithInfoArrow(card.DcActionLabel, HasRealInfoContent(card, AddonType.DisplayCommander), card.DcStatus == GameStatus.UpdateAvailable, _window.DetailDcInstallBtn);
             _window.DetailDcInstallBtn.Content = (card.IsUlInstalled || card.UseNormalReShade)
                 ? (object)new TextBlock { Text = card.DcActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
-                : card.DcActionLabel;
+                : dcLabel;
             _window.DetailDcInstallBtn.IsEnabled = card.DcInstallEnabled;
             _window.DetailDcInstallBtn.Background = UIFactory.GetBrush(card.DcBtnBackground);
             _window.DetailDcInstallBtn.Foreground = UIFactory.GetBrush(card.DcBtnForeground);
@@ -275,7 +329,7 @@ public partial class DetailPanelBuilder
                     : Windows.UI.Text.TextDecorations.None;
             }
             _window.DetailOsInstallBtn.Tag = card;
-            _window.DetailOsInstallBtn.Content = card.OsActionLabel;
+            _window.DetailOsInstallBtn.Content = WithInfoArrow(card.OsActionLabel, HasRealInfoContent(card, AddonType.OptiScaler), card.OsStatus == GameStatus.UpdateAvailable, _window.DetailOsInstallBtn);
             _window.DetailOsInstallBtn.IsEnabled = card.OsInstallEnabled;
             _window.DetailOsInstallBtn.Background = UIFactory.GetBrush(card.OsBtnBackground);
             _window.DetailOsInstallBtn.Foreground = UIFactory.GetBrush(card.OsBtnForeground);
@@ -320,9 +374,10 @@ public partial class DetailPanelBuilder
                         ? Windows.UI.Text.TextDecorations.Underline
                         : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
+                var extLabel = WithInfoArrow(card.ExternalDisplayLabel, HasRealInfoContent(card, AddonType.RenoDX), card.Status == GameStatus.UpdateAvailable, _window.DetailRdxInstallBtn);
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
                     ? (object)new TextBlock { Text = card.ExternalDisplayLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
-                    : card.ExternalDisplayLabel;
+                    : extLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.UseNormalReShade ? false : true;
                 _window.DetailRdxInstallBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
                 _window.DetailRdxInstallBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
@@ -352,9 +407,10 @@ public partial class DetailPanelBuilder
                         ? Windows.UI.Text.TextDecorations.Underline
                         : Windows.UI.Text.TextDecorations.None;
                 _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
+                var rdxLabel = WithInfoArrow(card.InstallActionLabel, HasRealInfoContent(card, AddonType.RenoDX), card.Status == GameStatus.UpdateAvailable, _window.DetailRdxInstallBtn);
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
                     ? (object)new TextBlock { Text = card.InstallActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
-                    : card.InstallActionLabel;
+                    : rdxLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.UseNormalReShade ? false : card.CanInstall;
                 _window.DetailRdxInstallBtn.Background = UIFactory.GetBrush(card.InstallBtnBackground);
                 _window.DetailRdxInstallBtn.Foreground = UIFactory.GetBrush(card.InstallBtnForeground);
@@ -377,7 +433,7 @@ public partial class DetailPanelBuilder
             _window.DetailLumaStatus.Text = card.LumaStatusText;
             _window.DetailLumaStatus.Foreground = UIFactory.GetBrush(card.LumaStatusColor);
             _window.DetailLumaInstallBtn.Tag = card;
-            _window.DetailLumaInstallBtn.Content = card.LumaActionLabel;
+            _window.DetailLumaInstallBtn.Content = WithInfoArrow(card.LumaActionLabel, HasRealInfoContent(card, AddonType.Luma), card.LumaStatus == GameStatus.UpdateAvailable, _window.DetailLumaInstallBtn);
             _window.DetailLumaInstallBtn.IsEnabled = card.IsLumaNotInstalling;
             _window.DetailLumaInstallBtn.Background = UIFactory.GetBrush(card.LumaBtnBackground);
             _window.DetailLumaInstallBtn.Foreground = UIFactory.GetBrush(card.LumaBtnForeground);

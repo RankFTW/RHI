@@ -1326,7 +1326,7 @@ public partial class MainViewModel
             card.RsActionMessage = "Installing Vulkan ReShade...";
             try
             {
-                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey);
+                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
                 AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
                 VulkanFootprintService.Create(card.InstallPath);
                 _shaderPackService.SyncGameFolder(card.InstallPath,
@@ -1391,7 +1391,7 @@ public partial class MainViewModel
             await Task.Run(() => InstallLayerAction());
 
             // 4. Deploy reshade.vulkan.ini (as reshade.ini) to game directory
-            AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey);
+            AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
 
             // 5. Deploy ReShadePreset.ini if present
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);

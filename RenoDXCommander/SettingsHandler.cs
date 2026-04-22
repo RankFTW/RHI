@@ -107,6 +107,7 @@ public class SettingsHandler
     internal string _currentHotkeyString = "36,0,0,0";
     internal string _currentUlHotkeyString = "F12";
     internal string _currentOsHotkeyString = "Insert";
+    internal string _currentScreenshotHotkeyString = "44,0,0,0";
 
     public SettingsHandler(MainWindow window)
     {
@@ -134,6 +135,9 @@ public class SettingsHandler
         // Initialize hotkey display from persisted value (Req 2.4, 3.2)
         _currentHotkeyString = ViewModel.Settings.OverlayHotkey;
         _window.HotkeyBox.Text = FormatHotkeyDisplay(ViewModel.Settings.OverlayHotkey);
+        // Initialize screenshot hotkey display
+        _currentScreenshotHotkeyString = ViewModel.Settings.ScreenshotHotkey;
+        _window.ScreenshotHotkeyBox.Text = FormatHotkeyDisplay(ViewModel.Settings.ScreenshotHotkey);
         // Initialize ReLimiter OSD hotkey display
         _currentUlHotkeyString = ViewModel.Settings.UlOsdHotkey;
         _window.UlHotkeyBox.Text = ViewModel.Settings.UlOsdHotkey;
@@ -263,6 +267,10 @@ public class SettingsHandler
                 foreach (var iniFile in iniFiles)
                 {
                     AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
+                    // Also apply screenshot hotkey if non-default
+                    var ssHotkey = ViewModel.Settings.ScreenshotHotkey;
+                    if (ssHotkey != "44,0,0,0")
+                        AuxInstallService.ApplyScreenshotHotkey(iniFile, ssHotkey);
                 }
                 updatedCount++;
             }
@@ -421,6 +429,107 @@ public class SettingsHandler
             RequestedTheme = ElementTheme.Dark,
         };
         await dialog.ShowAsync();
+    }
+
+    // ── Screenshot Hotkey ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Handles PreviewKeyDown on the ScreenshotHotkeyBox to capture key combinations.
+    /// </summary>
+    public void ScreenshotHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        var key = e.Key;
+
+        if (key == Windows.System.VirtualKey.Control ||
+            key == Windows.System.VirtualKey.Shift ||
+            key == Windows.System.VirtualKey.Menu ||
+            key == (Windows.System.VirtualKey)91 ||
+            key == (Windows.System.VirtualKey)92 ||
+            key == Windows.System.VirtualKey.LeftControl ||
+            key == Windows.System.VirtualKey.RightControl ||
+            key == Windows.System.VirtualKey.LeftShift ||
+            key == Windows.System.VirtualKey.RightShift ||
+            key == Windows.System.VirtualKey.LeftMenu ||
+            key == Windows.System.VirtualKey.RightMenu)
+        {
+            return;
+        }
+
+        int vk = (int)key;
+
+        bool shift = Microsoft.UI.Input.InputKeyboardSource
+            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        bool ctrl = Microsoft.UI.Input.InputKeyboardSource
+            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        bool alt = Microsoft.UI.Input.InputKeyboardSource
+            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        _currentScreenshotHotkeyString = BuildHotkeyString(vk, shift, ctrl, alt);
+
+        if (sender is TextBox hotkeyBox)
+        {
+            hotkeyBox.Text = FormatHotkeyDisplay(vk, shift, ctrl, alt);
+        }
+
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Handles the Apply to All Games button click for the screenshot hotkey.
+    /// Persists the hotkey, applies it to all managed reshade*.ini files, and shows a confirmation dialog.
+    /// </summary>
+    public async void ApplyScreenshotHotkey_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.Settings.ScreenshotHotkey = _currentScreenshotHotkeyString;
+        ViewModel.SaveSettingsPublic();
+
+        int updatedCount = 0;
+        foreach (var card in ViewModel.AllCards)
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) continue;
+
+            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
+                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (iniFiles.Count == 0) continue;
+
+            try
+            {
+                foreach (var iniFile in iniFiles)
+                {
+                    AuxInstallService.ApplyScreenshotHotkey(iniFile, _currentScreenshotHotkeyString);
+                }
+                updatedCount++;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[SettingsHandler.ApplyScreenshotHotkey_Click] Failed for '{card.GameName}' — {ex.Message}");
+            }
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "ReShade Screenshot Hotkey",
+            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            CloseButtonText = "OK",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await dialog.ShowAsync();
+    }
+
+    /// <summary>Resets the screenshot hotkey to the default Print Screen key.</summary>
+    public void ResetScreenshotHotkey_Click(object sender, RoutedEventArgs e)
+    {
+        _currentScreenshotHotkeyString = "44,0,0,0";
+        _window.ScreenshotHotkeyBox.Text = FormatHotkeyDisplay("44,0,0,0");
+        ViewModel.Settings.ScreenshotHotkey = "44,0,0,0";
+        ViewModel.SaveSettingsPublic();
     }
 
     // ── ReLimiter OSD Hotkey ──────────────────────────────────────────────────
@@ -685,10 +794,11 @@ public class SettingsHandler
             {
                 var screenshotPath = _window.BuildScreenshotSavePath(card.GameName);
                 var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
+                var screenshotHotkey = _window.ViewModel.Settings.ScreenshotHotkey;
                 if (card.RequiresVulkanInstall)
-                    AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey);
+                    AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
                 else
-                    AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey);
+                    AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
                 AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
                 count++;
             }

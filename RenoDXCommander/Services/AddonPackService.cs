@@ -180,7 +180,7 @@ public class AddonPackService : IAddonPackService
     // ── Stub methods (implemented in subsequent tasks) ────────────────────────────
 
     /// <inheritdoc />
-    public async Task DownloadAddonAsync(AddonEntry entry, IProgress<(string msg, double pct)>? progress = null)
+    public async Task DownloadAddonAsync(AddonEntry entry, IProgress<(string msg, double pct)>? progress = null, string? versionOverride = null)
     {
         try
         {
@@ -217,7 +217,8 @@ public class AddonPackService : IAddonPackService
                 return;
             }
 
-            string? versionToken = null;
+            // Use the caller-provided version if available (avoids ETag drift for /latest/ URLs)
+            string? versionToken = versionOverride;
 
             for (int i = 0; i < downloads.Count; i++)
             {
@@ -308,7 +309,7 @@ public class AddonPackService : IAddonPackService
                 }
 
                 CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] Update available for '{entry.PackageName}': {storedVersion} → {remoteVersion}. Downloading...");
-                await DownloadAddonAsync(entry);
+                await DownloadAddonAsync(entry, versionOverride: remoteVersion);
                 CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] '{entry.PackageName}' updated to {remoteVersion}.");
             }
             catch (Exception ex)

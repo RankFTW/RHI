@@ -44,7 +44,18 @@ public class GitHubETagCache
         }
 
         if (!response.IsSuccessStatusCode)
+        {
+            // If we have a cached body (e.g. from a previous successful request) and the
+            // server returned an error (403 rate-limited, 5xx, etc.), return the stale
+            // cached body rather than null. This avoids unnecessary fallback requests and
+            // keeps the app working with slightly stale data.
+            if (cached.body != null)
+            {
+                CrashReporter.Log($"[GitHubETagCache] {response.StatusCode} for {TruncateUrl(url)} — returning cached body");
+                return cached.body;
+            }
             return null; // Let caller handle the error
+        }
 
         var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 

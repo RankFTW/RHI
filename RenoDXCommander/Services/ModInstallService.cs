@@ -100,11 +100,16 @@ public class ModInstallService : IModInstallService
         catch (Exception ex) { CrashReporter.Log($"[ModInstallService.InstallAsync] HEAD request failed for size check — {ex.Message}"); }
 
         // ── Step 2: use cache if it matches remote size (or size unknown) ─────────
+        // IMPORTANT: only trust the cache when the remote size is known AND matches.
+        // GitHub Pages CDN often omits Content-Length on HEAD responses; in that case
+        // we must re-download to ensure we have the latest version. Without this guard,
+        // a stale cached file would be silently reused even when a newer version exists
+        // on the server, preventing updates from being applied.
         bool usedCache = false;
         if (File.Exists(cachePath))
         {
             var cacheSize = new FileInfo(cachePath).Length;
-            bool sizeOk   = !remoteSize.HasValue || remoteSize.Value == cacheSize;
+            bool sizeOk   = remoteSize.HasValue && remoteSize.Value == cacheSize;
             if (sizeOk && HasPeSignature(cachePath))
             {
                 progress?.Report(("Installing from cache...", 50));
@@ -132,14 +137,23 @@ public class ModInstallService : IModInstallService
                 var uri = new Uri(resolvedUrl);
                 var fn  = Path.GetFileName(uri.LocalPath);
 
+                // Unity fallbacks: try NotVoosh GitHub Pages, then clshortfuse GitHub Pages
                 if (fn.Equals("renodx-unityengine.addon64", StringComparison.OrdinalIgnoreCase)
                  || fn.Equals("renodx-unityengine.addon32", StringComparison.OrdinalIgnoreCase))
                 {
+                    candidates.Add($"https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/{fn}");
                     candidates.Add($"https://notvoosh.github.io/renodx-unity/{fn}");
                     candidates.Add($"https://clshortfuse.github.io/renodx/{fn}");
-                    candidates.Add($"https://github.com/clshortfuse/renodx/releases/download/snapshot/{fn}");
                 }
 
+                // Unreal fallbacks: try GitHub Releases, then GitHub Pages
+                if (fn.Equals("renodx-unrealengine.addon64", StringComparison.OrdinalIgnoreCase))
+                {
+                    candidates.Add($"https://github.com/clshortfuse/renodx/releases/download/snapshot/{fn}");
+                    candidates.Add($"https://clshortfuse.github.io/renodx/{fn}");
+                }
+
+                // Generic fallback for any github.io URL: try GitHub Releases
                 if (uri.Host.EndsWith("github.io", StringComparison.OrdinalIgnoreCase))
                 {
                     var fn2 = Path.GetFileName(uri.LocalPath);
@@ -360,8 +374,12 @@ public class ModInstallService : IModInstallService
             }
             catch { /* best-effort — don't block the update check */ }
 
-            // Download the remote file to a temp path
-            var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            // Download the remote file to a temp path.
+            // Use Cache-Control: no-cache to bypass CDN caches (GitHub Pages can serve
+            // stale content for up to 10 minutes after a push, preventing update detection).
+            var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
+            var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
             if (!resp.IsSuccessStatusCode) return false;
 
             // Reject HTML responses — GitHub Pages may return a 200 with an HTML error

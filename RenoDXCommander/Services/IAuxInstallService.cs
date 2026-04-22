@@ -17,7 +17,8 @@ public interface IAuxInstallService
         IProgress<(string message, double percent)>? progress = null,
         string? screenshotSavePath = null,
         bool useNormalReShade = false,
-        string? overlayHotkey = null);
+        string? overlayHotkey = null,
+        string? screenshotHotkey = null);
 
     Task<bool> CheckForUpdateAsync(AuxInstalledRecord record);
 

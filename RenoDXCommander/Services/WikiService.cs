@@ -17,11 +17,11 @@ public class WikiService : IWikiService
     private const string WikiUrl = "https://github.com/clshortfuse/renodx/wiki/Mods";
 
     // Generic addon download URLs
-    // Unreal: confirmed working from wiki snapshot links pattern
-    public const string GenericUnrealUrl  = "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64";
-    // Unity: use the static gh-pages host for snapshot-like generic downloads (reliable CDN)
-    public const string GenericUnityUrl64 = "https://clshortfuse.github.io/renodx/renodx-unityengine.addon64";
-    public const string GenericUnityUrl32 = "https://clshortfuse.github.io/renodx/renodx-unityengine.addon32";
+    // Unreal: GitHub Releases provides reliable Content-Length for update detection
+    public const string GenericUnrealUrl  = "https://github.com/clshortfuse/renodx/releases/download/snapshot/renodx-unrealengine.addon64";
+    // Unity: sourced from NotVoosh's dedicated repo for reliable updates
+    public const string GenericUnityUrl64 = "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64";
+    public const string GenericUnityUrl32 = "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon32";
     public const string GenericUnityUrl   = GenericUnityUrl64;
 
     public async Task<(List<GameMod> Mods, Dictionary<string, string> GenericNotes)>

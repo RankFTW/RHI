@@ -18,7 +18,7 @@ public partial class GameCardViewModel
                 return "⚠  ReShade required";
             // No mod available and nothing manually installed
             if (Mod?.SnapshotUrl == null && !IsExternalOnly && string.IsNullOrEmpty(InstalledAddonFileName))
-                return "No RenoDX mod available for this game";
+                return "No RenoDX mod available";
             return Status == GameStatus.UpdateAvailable ? "⬆  Update RenoDX"
                  : Status == GameStatus.Installed       ? "↺  Reinstall RenoDX"
                  : "⬇  Install RenoDX";

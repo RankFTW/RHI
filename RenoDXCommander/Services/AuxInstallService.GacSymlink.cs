@@ -17,7 +17,8 @@ public partial class AuxInstallService
         string dllFileName,
         bool use32Bit,
         string? screenshotSavePath = null,
-        string? overlayHotkey = null)
+        string? overlayHotkey = null,
+        string? screenshotHotkey = null)
     {
         if (!Directory.Exists(gacDirectory))
             throw new DirectoryNotFoundException($"GAC directory not found: {gacDirectory}");
@@ -34,7 +35,7 @@ public partial class AuxInstallService
 
         // ── Merge reshade.ini in the game folder with BasePath ────────────────
         if (File.Exists(RsIniPath))
-            MergeRsIni(gameInstallPath, screenshotSavePath, overlayHotkey);
+            MergeRsIni(gameInstallPath, screenshotSavePath, overlayHotkey, screenshotHotkey);
 
         var stagedIniPath = Path.Combine(gameInstallPath, "reshade.ini");
 

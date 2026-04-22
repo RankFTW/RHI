@@ -14,8 +14,13 @@ public interface IAddonPackService
     /// <summary>Fetches Addons.ini, parses, and caches. Called on startup.</summary>
     Task EnsureLatestAsync();
 
-    /// <summary>Downloads an addon to the staging area. Handles .addon/.zip formats.</summary>
-    Task DownloadAddonAsync(AddonEntry entry, IProgress<(string msg, double pct)>? progress = null);
+    /// <summary>
+    /// Downloads an addon to the staging area. Handles .addon/.zip formats.
+    /// When <paramref name="versionOverride"/> is provided, it is used as the stored
+    /// version token instead of re-resolving via HEAD request (avoids ETag drift
+    /// for /latest/ redirect URLs).
+    /// </summary>
+    Task DownloadAddonAsync(AddonEntry entry, IProgress<(string msg, double pct)>? progress = null, string? versionOverride = null);
 
     /// <summary>Checks if an addon is already downloaded in the staging area.</summary>
     bool IsDownloaded(string packageName);
