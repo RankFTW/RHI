@@ -29,6 +29,7 @@ RHI is a WinUI 3 desktop application for managing HDR mod installations on PC ga
 - **ReShade preset deployment** — place `.ini` preset files in the reshade-presets folder and deploy them to any game from the overrides panel, or drag-and-drop a preset `.ini` onto RHI to deploy it with automatic shader pack installation
 - **ReShade Without Addon Support** — per-game toggle to switch from addon-enabled ReShade to standard ReShade. All addons are removed and rows dimmed; toggle back to restore
 - **ReLimiter OSD hotkey** — configure the ReLimiter overlay hotkey from the Settings page and apply it to all managed `relimiter.ini` files
+- **ReShade screenshot hotkey** — configure the ReShade screenshot key from the Settings page and apply it to all managed `reshade.ini` files. Defaults to Print Screen with a reset button
 - **Game report** — Copy Report button in the overrides panel generates a diagnostic code for Discord or GitHub issues, showing detected vs corrected settings
 - **Performance** — parallel shader downloads, parallel game folder syncs, cached graphics API detection, debounced PCGW cache writes, optimised DLL scanning, and WindowsApps/DLC path skipping for fast startup
 - **Three view modes** — Detail View (full game card with overrides), Grid View (compact card grid), and Compact View (paged detail with navigation arrows and locked window size)

@@ -113,7 +113,7 @@ Click **Settings** in the toolbar. Click **Back to Games** to return. The Settin
 | Add Game | Manually add a game that wasn't auto-detected. Enter the game name and pick the install folder. |
 | Full Refresh | Clears all caches (including API detection caches) and re-scans everything from disk. Use when games or mods appear out of sync. |
 | Preferences | Skip Update Check on Launch, Verbose Logging, Custom Shaders toggle, Screenshot Path (with Browse and Open buttons, optional per-game subfolder, Apply to All writes to all reshade*.ini variants) |
-| Hotkeys | ReShade UI Hotkey (capture key combo, applies to all reshade.ini files), ReLimiter OSD Hotkey (capture key combo in ReLimiter's native format, applies to all relimiter.ini files), OptiScaler Overlay Hotkey (default: Insert, applies to all OptiScaler.ini files) |
+| Hotkeys | ReShade UI Hotkey (capture key combo, applies to all reshade.ini files), ReShade Screenshot Key (capture key combo, default Print Screen, applies to all reshade.ini files), ReLimiter OSD Hotkey (capture key combo in ReLimiter's native format, applies to all relimiter.ini files), OptiScaler Overlay Hotkey (default: Insert, applies to all OptiScaler.ini files) |
 | Crash and Error Logs | Open Logs Folder, Open Downloads Cache, ReShade staging path |
 | OptiScaler Settings | GPU type (NVIDIA/AMD/Intel), DLSS input toggle (AMD/Intel only), overlay hotkey, Apply to All Games, OptiScaler Compatibility List link |
 | Mass INI Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with the corresponding component installed |
@@ -391,7 +391,7 @@ The ReLimiter status dot is hidden when a game is in Luma mode.
 
 ### Display Commander
 
-Display Commander (DC) is an alternative frame rate limiter, using the LITE variant downloaded from GitHub on demand.
+Display Commander (DC) is an alternative frame rate limiter, downloaded from GitHub on demand.
 
 #### 32-bit and 64-bit Support
 
