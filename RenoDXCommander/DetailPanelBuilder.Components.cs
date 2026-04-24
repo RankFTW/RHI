@@ -197,7 +197,8 @@ public partial class DetailPanelBuilder
             ApplyInfoButtonStyle(_window.DetailRsInfoBtn, card, AddonType.ReShade);
 
             // Grey out ReShade row when RE Engine game needs REFramework first
-            bool rsNeedsRef = card.IsREEngineGame && !card.IsRefInstalled;
+            // (unless user has excluded REF via Update Inclusion toggle)
+            bool rsNeedsRef = card.IsREEngineGame && !card.IsRefInstalled && !card.ExcludeFromUpdateAllRef;
             if (rsNeedsRef)
             {
                 _window.DetailRsInstallBtn.IsEnabled = false;

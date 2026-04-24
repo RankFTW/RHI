@@ -41,7 +41,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         var lumaService = new StubLumaService();
         var settingsVm = new SettingsViewModel();
         var filterVm = new FilterViewModel();
-        var updateOrch = new UpdateOrchestrationService(installer, auxInstaller, new CrashReporterService(), auxInstaller, new StubREFrameworkService());
+        var updateOrch = new UpdateOrchestrationService(installer, auxInstaller, new CrashReporterService(), auxInstaller, new StubREFrameworkService(), lumaService);
         var dllOverride = new DllOverrideService(auxInstaller);
         var gameName = new GameNameService(gameDetection, installer, auxInstaller, lumaService);
         var rsUpdate = new StubReShadeUpdateService();
@@ -302,6 +302,8 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         public void Uninstall(LumaInstalledRecord record) { }
         public void SaveLumaRecord(LumaInstalledRecord record) { }
         public void RemoveLumaRecord(string gameName, string installPath) { }
+        public Task<int> GetLatestBuildNumberAsync() => Task.FromResult(0);
+        public Task<bool> CheckForUpdateAsync(LumaInstalledRecord record) => Task.FromResult(false);
     }
 
     private class StubReShadeUpdateService : IReShadeUpdateService

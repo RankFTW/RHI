@@ -392,6 +392,7 @@ public class LumaService : ILumaService
             DownloadUrl = mod.DownloadUrl,
             InstalledFiles = installedFiles,
             InstalledAt = DateTime.UtcNow,
+            InstalledBuildNumber = await GetLatestBuildNumberAsync().ConfigureAwait(false),
         };
         SaveRecord(record);
         progress?.Report(("Luma installed!", 100));
@@ -552,4 +553,51 @@ public class LumaService : ILumaService
     }
 
     private static string Clean(string s) => HtmlEntity.DeEntitize(s ?? "").Trim();
+
+    // ── Update detection ──────────────────────────────────────────────────────────
+
+    private const string LumaReleasesApi =
+        "https://api.github.com/repos/Filoppi/Luma-Framework/releases/latest";
+
+    /// <summary>
+    /// Fetches the latest Luma-Framework release tag from GitHub and extracts the
+    /// build number (e.g. "latest-428" → 428). Returns 0 on failure.
+    /// </summary>
+    public async Task<int> GetLatestBuildNumberAsync()
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, LumaReleasesApi);
+            request.Headers.UserAgent.ParseAdd("RHI");
+            request.Headers.Accept.ParseAdd("application/vnd.github+json");
+            var response = await _http.SendAsync(request).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                CrashReporter.Log($"[LumaService.GetLatestBuildNumberAsync] GitHub API returned {response.StatusCode}");
+                return 0;
+            }
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var tagName = doc.RootElement.GetProperty("tag_name").GetString() ?? "";
+            // Tag format: "latest-428"
+            var dashIdx = tagName.LastIndexOf('-');
+            if (dashIdx >= 0 && int.TryParse(tagName[(dashIdx + 1)..], out var buildNumber))
+                return buildNumber;
+            CrashReporter.Log($"[LumaService.GetLatestBuildNumberAsync] Could not parse build number from tag '{tagName}'");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[LumaService.GetLatestBuildNumberAsync] Failed — {ex.Message}");
+            return 0;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> CheckForUpdateAsync(LumaInstalledRecord record)
+    {
+        if (record.InstalledBuildNumber <= 0) return false; // no version info — can't compare
+        var latest = await GetLatestBuildNumberAsync().ConfigureAwait(false);
+        return latest > 0 && latest > record.InstalledBuildNumber;
+    }
 }

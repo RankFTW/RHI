@@ -951,116 +951,20 @@ public partial class DetailPanelBuilder
         // ── Global update inclusion (compact: button + summary) ──────────────────
         var capturedCard = card;
 
-        // Build summary showing current state at a glance with colored On/Off
-        void RefreshUpdateSummary(TextBlock summaryTb)
-        {
-            summaryTb.Inlines.Clear();
-            var items = new List<(string label, bool isOn)>
+        var (updateInclusionBtn, updateSummaryText) = UpdateInclusionHelper.CreateUpdateInclusionControls(
+            _window.ViewModel, capturedName, card.IsREEngineGame, _window.Content.XamlRoot,
+            onSaved: () =>
             {
-                ("RS", !_window.ViewModel.IsUpdateAllExcludedReShade(capturedName)),
-                ("RDX", !_window.ViewModel.IsUpdateAllExcludedRenoDx(capturedName)),
-                ("UL", !_window.ViewModel.IsUpdateAllExcludedUl(capturedName)),
-                ("DC", !_window.ViewModel.IsUpdateAllExcludedDc(capturedName)),
-                ("OS", !_window.ViewModel.IsUpdateAllExcludedOs(capturedName)),
-            };
-            if (card.IsREEngineGame)
-                items.Add(("REF", !_window.ViewModel.IsUpdateAllExcludedRef(capturedName)));
-            for (int i = 0; i < items.Count; i++)
-            {
-                var (label, isOn) = items[i];
-                summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+                // Rebuild the detail panel so component rows reflect the new exclusion state
+                // (e.g. ReShade row un-greys when REF is excluded)
+                var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (refreshCard != null)
                 {
-                    Text = $"{label}: ",
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                });
-                summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                {
-                    Text = isOn ? "On" : "Off",
-                    Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-                });
-                if (i < items.Count - 1)
-                {
-                    summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                    {
-                        Text = "  ·  ",
-                        Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                    });
+                    _window.PopulateDetailPanel(refreshCard);
+                    BuildOverridesPanel(refreshCard);
                 }
-            }
-        }
-
-        var updateSummaryText = new TextBlock
-        {
-            FontSize = 11,
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 4, 0, 0),
-        };
-        RefreshUpdateSummary(updateSummaryText);
-
-        var updateInclusionBtn = new Button
-        {
-            Content = "Update Inclusion",
-            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(12, 7, 12, 7),
-            FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-
-        updateInclusionBtn.Click += async (s, ev) =>
-        {
-            var rsCheck = new CheckBox { Content = "ReShade", IsChecked = !_window.ViewModel.IsUpdateAllExcludedReShade(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var rdxCheck = new CheckBox { Content = "RenoDX", IsChecked = !_window.ViewModel.IsUpdateAllExcludedRenoDx(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !_window.ViewModel.IsUpdateAllExcludedUl(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var dcCheck = new CheckBox { Content = "Display Commander", IsChecked = !_window.ViewModel.IsUpdateAllExcludedDc(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var osCheck = new CheckBox { Content = "OptiScaler", IsChecked = !_window.ViewModel.IsUpdateAllExcludedOs(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            CheckBox? refCheck = card.IsREEngineGame
-                ? new CheckBox { Content = "RE Framework", IsChecked = !_window.ViewModel.IsUpdateAllExcludedRef(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
-                : null;
-
-            var checkPanel = new StackPanel { Spacing = 0 };
-            checkPanel.Children.Add(new TextBlock { Text = "Include this game in Update All for:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
-            checkPanel.Children.Add(rsCheck);
-            checkPanel.Children.Add(rdxCheck);
-            checkPanel.Children.Add(ulCheck);
-            checkPanel.Children.Add(dcCheck);
-            checkPanel.Children.Add(osCheck);
-            if (refCheck != null) checkPanel.Children.Add(refCheck);
-
-            var dialog = new ContentDialog
-            {
-                Title = "Global Update Inclusion",
-                Content = checkPanel,
-                PrimaryButtonText = "Save",
-                CloseButtonText = "Cancel",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-
-            var result = await DialogService.ShowSafeAsync(dialog);
-            if (result == ContentDialogResult.Primary)
-            {
-                // Apply changes
-                if ((rsCheck.IsChecked == true) == _window.ViewModel.IsUpdateAllExcludedReShade(capturedName))
-                    _window.ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
-                if ((rdxCheck.IsChecked == true) == _window.ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
-                    _window.ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
-                if ((ulCheck.IsChecked == true) == _window.ViewModel.IsUpdateAllExcludedUl(capturedName))
-                    _window.ViewModel.ToggleUpdateAllExclusionUl(capturedName);
-                if ((dcCheck.IsChecked == true) == _window.ViewModel.IsUpdateAllExcludedDc(capturedName))
-                    _window.ViewModel.ToggleUpdateAllExclusionDc(capturedName);
-                if ((osCheck.IsChecked == true) == _window.ViewModel.IsUpdateAllExcludedOs(capturedName))
-                    _window.ViewModel.ToggleUpdateAllExclusionOs(capturedName);
-                if (refCheck != null && (refCheck.IsChecked == true) == _window.ViewModel.IsUpdateAllExcludedRef(capturedName))
-                    _window.ViewModel.ToggleUpdateAllExclusionRef(capturedName);
-
-                // Refresh summary
-                RefreshUpdateSummary(updateSummaryText);
-            }
-        };
+            });
 
         var toggleRow = new StackPanel { Spacing = 0 };
         toggleRow.Children.Add(updateInclusionBtn);
@@ -1294,7 +1198,7 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.ToggleUpdateAllExclusionDc(capturedName);
             if (_window.ViewModel.IsUpdateAllExcludedOs(capturedName))
                 _window.ViewModel.ToggleUpdateAllExclusionOs(capturedName);
-            RefreshUpdateSummary(updateSummaryText);
+            UpdateInclusionHelper.RefreshSummary(updateSummaryText, _window.ViewModel, capturedName, card.IsREEngineGame);
             wikiExcludeToggle.IsOn = false;
 
             // Persist all reset values immediately
@@ -1438,7 +1342,7 @@ public partial class DetailPanelBuilder
                         if (shaderResult == ContentDialogResult.Primary)
                         {
                             var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
-                            _window.ViewModel.ApplyPresetShaders(capturedName, presetPaths);
+                            await _window.ViewModel.ApplyPresetShadersAsync(capturedName, presetPaths);
 
                             // Rebuild overrides panel so the shader toggle reflects the new "Select" mode
                             var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>

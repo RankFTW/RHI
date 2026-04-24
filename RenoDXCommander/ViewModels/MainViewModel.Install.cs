@@ -1252,8 +1252,11 @@ public partial class MainViewModel
             return;
         }
 
-        // RE Engine games require REFramework before ReShade (unless in Luma mode)
-        if (card.IsREEngineGame && !card.IsRefInstalled && !(card.LumaFeatureEnabled && card.IsLumaMode))
+        // RE Engine games require REFramework before ReShade (unless in Luma mode
+        // or user has excluded REF via Update Inclusion toggle)
+        if (card.IsREEngineGame && !card.IsRefInstalled
+            && !(card.LumaFeatureEnabled && card.IsLumaMode)
+            && !card.ExcludeFromUpdateAllRef)
         {
             card.RsActionMessage = "⚠ Install RE Framework first.";
             return;

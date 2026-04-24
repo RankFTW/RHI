@@ -28,7 +28,8 @@ public partial class GameCardViewModel
         {
             if (RsIsInstalling) return "Installing...";
             // RE Engine games require REFramework before ReShade can be installed
-            if (IsREEngineGame && !IsRefInstalled && !EffectiveLumaMode)
+            // (unless user has excluded REF via Update Inclusion toggle)
+            if (IsREEngineGame && !IsRefInstalled && !EffectiveLumaMode && !ExcludeFromUpdateAllRef)
                 return "⚠  RE Framework required";
             if (RequiresVulkanInstall)
             {

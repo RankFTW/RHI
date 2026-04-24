@@ -19,4 +19,16 @@ public interface ILumaService
     void SaveLumaRecord(LumaInstalledRecord record);
 
     void RemoveLumaRecord(string gameName, string installPath);
+
+    /// <summary>
+    /// Fetches the latest Luma-Framework release build number from GitHub.
+    /// Returns 0 if the fetch fails.
+    /// </summary>
+    Task<int> GetLatestBuildNumberAsync();
+
+    /// <summary>
+    /// Checks whether a newer Luma-Framework release is available compared to
+    /// the build number stored in the installed record.
+    /// </summary>
+    Task<bool> CheckForUpdateAsync(LumaInstalledRecord record);
 }

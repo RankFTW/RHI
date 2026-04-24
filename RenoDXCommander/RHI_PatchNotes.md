@@ -1,3 +1,24 @@
+## v1.8.6
+
+### Highlights
+
+**Luma Update Detection** — Luma mods now check for updates automatically. When a newer Luma-Framework build is released, your installed Luma games will show an update badge just like RenoDX and ReShade do. The installed build number is also displayed in the component status (e.g. "Build 428").
+
+### New Features
+
+- Luma mods now show update badges and the installed build number in the detail panel.
+- RE Engine games can now install ReShade without RE Framework. Uncheck RE Framework in the Update Inclusion dialog and the ReShade install button unlocks immediately — no app restart or refresh needed.
+- The Update Inclusion dialog now refreshes the detail panel instantly when you save, so changes like enabling or disabling RE Framework take effect without clicking Refresh.
+
+### Bug Fixes
+
+- Fixed preset shader install doing nothing when shader cache was turned off. The app now fetches any missing shader pack info before resolving which packs a preset needs, so presets work regardless of your cache setting.
+- Fixed the shader mode not visually switching to "Select" after installing a preset from the right-click flyout or the mass preset deploy in Settings. The overrides panel now updates immediately.
+
+### Under the Hood
+
+- Major structural cleanup: large service files split into focused modules, duplicated hotkey and dialog code consolidated into shared helpers, and unused legacy code removed. No behavior changes — just a cleaner foundation for future features.
+
 ## v1.8.5
 
 ### Highlights

@@ -161,64 +161,75 @@ public partial class MainViewModel
                 LastSelectedGameName = savedLib.LastSelectedGame;
             }
 
-            if (savedLib != null && !forceRescan)
+            // 1. Set status messages and addonCache based on whether cache exists
+            bool hasCachedLibrary = savedLib != null && !forceRescan;
+            if (hasCachedLibrary)
             {
-                StatusText    = $"Library loaded ({savedLib.Games.Count} games, scanned {FormatAge(savedLib.LastScanned)})";
+                StatusText    = $"Library loaded ({savedLib!.Games.Count} games, scanned {FormatAge(savedLib.LastScanned)})";
                 SubStatusText = "Checking for new games and fetching latest mod info...";
                 addonCache    = savedLib.AddonScanCache;
+            }
+            else
+            {
+                StatusText    = "Scanning game library...";
+                SubStatusText = "Running store scans + wiki fetch simultaneously...";
+                addonCache    = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            }
 
-                // Always re-detect games so newly installed titles (especially Xbox) appear
-                // without requiring the user to delete cache files or manually refresh.
-                var wikiTask     = _wikiService.FetchAllAsync();
-                var lumaTask     = _lumaService.FetchCompletedModsAsync();
-                var manifestTask = _manifestService.FetchAsync();
-                var detectTask   = DetectAllGamesDedupedAsync();
-                var osWikiTask   = Task.Run(async () => {
-                    try { await _optiScalerWikiService.FetchAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }
-                });
-                var hdrDbTask    = Task.Run(async () => {
-                    try { await _hdrDatabaseService.FetchAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database fetch failed — {ex.Message}"); }
-                });
-                rsTask           = Task.Run(async () => {
-                    try { await _rsUpdateService.EnsureLatestAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] ReShade update task failed — {ex.Message}"); }
-                });
-                normalRsTask     = Task.Run(async () => {
-                    try { await _normalRsUpdateService.EnsureLatestAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Normal ReShade update task failed — {ex.Message}"); }
-                });
-                osTask           = Task.Run(async () => {
-                    try { await _optiScalerService.EnsureStagingAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler staging task failed — {ex.Message}"); }
-                });
-                dlssTask         = Task.Run(async () => {
-                    try { await _optiScalerService.EnsureDlssStagingAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
-                });
+            // 2. Launch all background tasks (identical for both paths)
+            var wikiTask     = _wikiService.FetchAllAsync();
+            var lumaTask     = _lumaService.FetchCompletedModsAsync();
+            var manifestTask = _manifestService.FetchAsync();
+            var detectTask   = DetectAllGamesDedupedAsync();
+            var osWikiTask   = Task.Run(async () => {
+                try { await _optiScalerWikiService.FetchAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }
+            });
+            var hdrDbTask    = Task.Run(async () => {
+                try { await _hdrDatabaseService.FetchAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database fetch failed — {ex.Message}"); }
+            });
+            rsTask           = Task.Run(async () => {
+                try { await _rsUpdateService.EnsureLatestAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] ReShade update task failed — {ex.Message}"); }
+            });
+            normalRsTask     = Task.Run(async () => {
+                try { await _normalRsUpdateService.EnsureLatestAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Normal ReShade update task failed — {ex.Message}"); }
+            });
+            osTask           = Task.Run(async () => {
+                try { await _optiScalerService.EnsureStagingAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler staging task failed — {ex.Message}"); }
+            });
+            dlssTask         = Task.Run(async () => {
+                try { await _optiScalerService.EnsureDlssStagingAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
+            });
 
-                // Await detection first — this never needs network
-                var freshGamesResult = await detectTask;
+            // 3. Await detection first — this never needs network
+            var freshGames = await detectTask;
 
-                // Await network tasks individually so failures don't block game display
-                try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
-                try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
-                try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
-                try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
-                try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database task failed — {ex.Message}"); }
-                // rsTask deferred until after cards display
-                // osTask deferred until after cards display
-                // dlssTask deferred until after cards display
+            // 4. Await network tasks individually so failures don't block game display
+            try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
+            try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
+            try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
+            try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
+            try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database task failed — {ex.Message}"); }
+            // rsTask deferred until after cards display
+            // osTask deferred until after cards display
+            // dlssTask deferred until after cards display
 
-                var wikiResult = !wikiFetchFailed ? await wikiTask : default;
-                _allMods      = wikiResult.Mods ?? new();
-                _genericNotes = wikiResult.GenericNotes ?? new();
-                try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
+            // 5. Extract wiki/luma results
+            var wikiResult = !wikiFetchFailed ? await wikiTask : default;
+            _allMods      = wikiResult.Mods ?? new();
+            _genericNotes = wikiResult.GenericNotes ?? new();
+            try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
 
-                var freshGames = freshGamesResult;
-                ApplyGameRenames(freshGames);
-                var cachedGames = _gameLibraryService.ToDetectedGames(savedLib);
+            // 6. Merge or use directly based on cache
+            ApplyGameRenames(freshGames);
+            if (hasCachedLibrary)
+            {
+                var cachedGames = _gameLibraryService.ToDetectedGames(savedLib!);
 
                 // Merge: start with fresh scan, then add any cached games that weren't re-detected
                 // (e.g. games on a disconnected drive). Fresh scan wins for duplicates.
@@ -241,55 +252,7 @@ public partial class MainViewModel
             }
             else
             {
-                StatusText    = "Scanning game library...";
-                SubStatusText = "Running store scans + wiki fetch simultaneously...";
-                var wikiTask     = _wikiService.FetchAllAsync();
-                var lumaTask     = _lumaService.FetchCompletedModsAsync();
-                var manifestTask = _manifestService.FetchAsync();
-                var detectTask   = DetectAllGamesDedupedAsync();
-                var osWikiTask   = Task.Run(async () => {
-                    try { await _optiScalerWikiService.FetchAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }
-                });
-                var hdrDbTask    = Task.Run(async () => {
-                    try { await _hdrDatabaseService.FetchAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database fetch failed — {ex.Message}"); }
-                });
-                rsTask           = Task.Run(async () => {
-                    try { await _rsUpdateService.EnsureLatestAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] ReShade update task failed — {ex.Message}"); }
-                });
-                normalRsTask     = Task.Run(async () => {
-                    try { await _normalRsUpdateService.EnsureLatestAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Normal ReShade update task failed — {ex.Message}"); }
-                });
-                osTask           = Task.Run(async () => {
-                    try { await _optiScalerService.EnsureStagingAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler staging task failed — {ex.Message}"); }
-                });
-                dlssTask         = Task.Run(async () => {
-                    try { await _optiScalerService.EnsureDlssStagingAsync(); }
-                    catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
-                });
-
-                // Await detection first — this never needs network
-                detectedGames = await detectTask;
-
-                // Await network tasks individually so failures don't block game display
-                try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
-                try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
-                try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
-                try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
-                try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database task failed — {ex.Message}"); }
-                // rsTask deferred until after cards display
-                // osTask deferred until after cards display
-                // dlssTask deferred until after cards display
-
-                var wikiResult2 = !wikiFetchFailed ? await wikiTask : default;
-                _allMods      = wikiResult2.Mods ?? new();
-                _genericNotes = wikiResult2.GenericNotes ?? new();
-                try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
-                addonCache    = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+                detectedGames = freshGames;
                 _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch complete: {_allMods.Count} mods. Store scan complete: {detectedGames.Count} games.");
             }
 

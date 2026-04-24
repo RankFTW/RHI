@@ -36,7 +36,8 @@ public partial class GameCardViewModel
     // Component table: Luma short status/action (consistent with RS/DC/RDX)
     public string LumaStatusText => IsLumaInstalling ? "Installing…"
         : LumaStatus == GameStatus.UpdateAvailable ? "Update"
-        : LumaStatus == GameStatus.Installed       ? "Installed"
+        : LumaStatus == GameStatus.Installed
+            ? (LumaRecord?.InstalledBuildNumber > 0 ? $"Build {LumaRecord.InstalledBuildNumber}" : "Installed")
         : "Ready";
     public string LumaStatusColor => IsLumaInstalling ? "#D4A856"
         : LumaStatus == GameStatus.UpdateAvailable ? "#B898E8"

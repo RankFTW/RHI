@@ -28,6 +28,7 @@ public sealed partial class MainWindow : Window
     private readonly OverridesFlyoutBuilder _overridesFlyoutBuilder;
     private readonly DialogService _dialogService;
     private readonly SettingsHandler _settingsHandler;
+    private readonly MassDeployHandler _massDeployHandler;
     private readonly InstallEventHandler _installEventHandler;
     private readonly WindowStateManager _windowStateManager;
     private readonly DragDropHandler _dragDropHandler;
@@ -51,6 +52,7 @@ public sealed partial class MainWindow : Window
         _overridesFlyoutBuilder = new OverridesFlyoutBuilder(this, crashReporter);
         _dialogService = new DialogService(this);
         _settingsHandler = new SettingsHandler(this);
+        _massDeployHandler = new MassDeployHandler(this);
         _installEventHandler = new InstallEventHandler(this, PickFolderAsync);
         AuxInstallService.EnsureInisDir();       // create inis folder on first run
         AuxInstallService.EnsureReShadeStaging(); // create staging dir (DLLs downloaded by ReShadeUpdateService)

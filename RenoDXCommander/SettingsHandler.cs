@@ -12,90 +12,6 @@ namespace RenoDXCommander;
 /// </summary>
 public class SettingsHandler
 {
-    // ── Hotkey helper methods ──────────────────────────────────────────
-
-    private static readonly Dictionary<int, string> VkNames = new()
-    {
-        [8] = "Backspace", [9] = "Tab", [13] = "Enter", [19] = "Pause", [20] = "Caps Lock",
-        [27] = "Escape", [32] = "Space", [33] = "Page Up", [34] = "Page Down",
-        [35] = "End", [36] = "Home", [37] = "Left", [38] = "Up", [39] = "Right", [40] = "Down",
-        [44] = "Print Screen", [45] = "Insert", [46] = "Delete",
-        [48] = "0", [49] = "1", [50] = "2", [51] = "3", [52] = "4",
-        [53] = "5", [54] = "6", [55] = "7", [56] = "8", [57] = "9",
-        [65] = "A", [66] = "B", [67] = "C", [68] = "D", [69] = "E", [70] = "F",
-        [71] = "G", [72] = "H", [73] = "I", [74] = "J", [75] = "K", [76] = "L",
-        [77] = "M", [78] = "N", [79] = "O", [80] = "P", [81] = "Q", [82] = "R",
-        [83] = "S", [84] = "T", [85] = "U", [86] = "V", [87] = "W", [88] = "X",
-        [89] = "Y", [90] = "Z",
-        [96] = "Num 0", [97] = "Num 1", [98] = "Num 2", [99] = "Num 3", [100] = "Num 4",
-        [101] = "Num 5", [102] = "Num 6", [103] = "Num 7", [104] = "Num 8", [105] = "Num 9",
-        [106] = "Num *", [107] = "Num +", [109] = "Num -", [110] = "Num .", [111] = "Num /",
-        [112] = "F1", [113] = "F2", [114] = "F3", [115] = "F4", [116] = "F5", [117] = "F6",
-        [118] = "F7", [119] = "F8", [120] = "F9", [121] = "F10", [122] = "F11", [123] = "F12",
-        [124] = "F13", [125] = "F14", [126] = "F15", [127] = "F16", [128] = "F17", [129] = "F18",
-        [130] = "F19", [131] = "F20", [132] = "F21", [133] = "F22", [134] = "F23", [135] = "F24",
-        [144] = "Num Lock", [145] = "Scroll Lock",
-        [186] = ";", [187] = "=", [188] = ",", [189] = "-", [190] = ".", [191] = "/",
-        [192] = "`", [219] = "[", [220] = "\\", [221] = "]", [222] = "'",
-    };
-
-    /// <summary>
-    /// Parses a KeyOverlay format string "vk,shift,ctrl,alt" into its components.
-    /// Returns (vkCode, shift, ctrl, alt). Returns default (36, false, false, false) on invalid input.
-    /// </summary>
-    public static (int vk, bool shift, bool ctrl, bool alt) ParseHotkeyString(string value)
-    {
-        try
-        {
-            var parts = value.Split(',');
-            if (parts.Length != 4) return (36, false, false, false);
-            return (int.Parse(parts[0]), parts[1] != "0", parts[2] != "0", parts[3] != "0");
-        }
-        catch
-        {
-            return (36, false, false, false);
-        }
-    }
-
-    /// <summary>
-    /// Builds a KeyOverlay format string from components.
-    /// </summary>
-    public static string BuildHotkeyString(int vk, bool shift, bool ctrl, bool alt)
-    {
-        return $"{vk},{(shift ? 1 : 0)},{(ctrl ? 1 : 0)},{(alt ? 1 : 0)}";
-    }
-
-    /// <summary>
-    /// Formats a hotkey into a human-readable display string.
-    /// Modifier order: Ctrl, Shift, Alt, then the main key name.
-    /// </summary>
-    public static string FormatHotkeyDisplay(int vk, bool shift, bool ctrl, bool alt)
-    {
-        var parts = new List<string>();
-        if (ctrl) parts.Add("Ctrl");
-        if (shift) parts.Add("Shift");
-        if (alt) parts.Add("Alt");
-        parts.Add(VkNames.TryGetValue(vk, out var name) ? name : $"Key {vk}");
-        return string.Join(" + ", parts);
-    }
-
-    /// <summary>
-    /// Formats a KeyOverlay string "vk,shift,ctrl,alt" into a human-readable display string.
-    /// </summary>
-    public static string FormatHotkeyDisplay(string keyOverlayValue)
-    {
-        var (vk, shift, ctrl, alt) = ParseHotkeyString(keyOverlayValue);
-        return FormatHotkeyDisplay(vk, shift, ctrl, alt);
-    }
-
-    /// <summary>
-    /// Returns true if the given KeyOverlay string represents the default Home key (36,0,0,0).
-    /// </summary>
-    public static bool IsDefaultHotkey(string keyOverlayValue)
-    {
-        return keyOverlayValue == "36,0,0,0";
-    }
-
     // ── Instance members ───────────────────────────────────────────────
 
     private readonly MainWindow _window;
@@ -134,10 +50,10 @@ public class SettingsHandler
         _window.PerGameScreenshotToggle.IsOn = ViewModel.Settings.PerGameScreenshotFolders;
         // Initialize hotkey display from persisted value (Req 2.4, 3.2)
         _currentHotkeyString = ViewModel.Settings.OverlayHotkey;
-        _window.HotkeyBox.Text = FormatHotkeyDisplay(ViewModel.Settings.OverlayHotkey);
+        _window.HotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.OverlayHotkey);
         // Initialize screenshot hotkey display
         _currentScreenshotHotkeyString = ViewModel.Settings.ScreenshotHotkey;
-        _window.ScreenshotHotkeyBox.Text = FormatHotkeyDisplay(ViewModel.Settings.ScreenshotHotkey);
+        _window.ScreenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.ScreenshotHotkey);
         // Initialize ReLimiter OSD hotkey display
         _currentUlHotkeyString = ViewModel.Settings.UlOsdHotkey;
         _window.UlHotkeyBox.Text = ViewModel.Settings.UlOsdHotkey;
@@ -363,12 +279,12 @@ public class SettingsHandler
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
         // Build and store the hotkey string in KeyOverlay format (Req 2.2)
-        _currentHotkeyString = BuildHotkeyString(vk, shift, ctrl, alt);
+        _currentHotkeyString = HotkeyManager.BuildHotkeyString(vk, shift, ctrl, alt);
 
         // Update the TextBox display with human-readable format (Req 2.1)
         if (sender is TextBox hotkeyBox)
         {
-            hotkeyBox.Text = FormatHotkeyDisplay(vk, shift, ctrl, alt);
+            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(vk, shift, ctrl, alt);
         }
 
         // Prevent the TextBox from receiving the character
@@ -385,7 +301,7 @@ public class SettingsHandler
         ViewModel.Settings.OverlayHotkey = _currentHotkeyString;
         ViewModel.SaveSettingsPublic();
 
-        bool isDefault = IsDefaultHotkey(_currentHotkeyString);
+        bool isDefault = HotkeyManager.IsDefaultHotkey(_currentHotkeyString);
 
         // Req 4.1: Iterate all game cards with a non-empty InstallPath
         int updatedCount = 0;
@@ -444,7 +360,7 @@ public class SettingsHandler
         ViewModel.Settings.ScreenshotHotkey = _currentScreenshotHotkeyString;
         ViewModel.SaveSettingsPublic();
 
-        bool isDefault = IsDefaultHotkey(_currentHotkeyString);
+        bool isDefault = HotkeyManager.IsDefaultHotkey(_currentHotkeyString);
 
         int updatedCount = 0;
         foreach (var card in ViewModel.AllCards)
@@ -523,11 +439,11 @@ public class SettingsHandler
             .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
-        _currentScreenshotHotkeyString = BuildHotkeyString(vk, shift, ctrl, alt);
+        _currentScreenshotHotkeyString = HotkeyManager.BuildHotkeyString(vk, shift, ctrl, alt);
 
         if (sender is TextBox hotkeyBox)
         {
-            hotkeyBox.Text = FormatHotkeyDisplay(vk, shift, ctrl, alt);
+            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(vk, shift, ctrl, alt);
         }
 
         e.Handled = true;
@@ -583,28 +499,12 @@ public class SettingsHandler
     public void ResetScreenshotHotkey_Click(object sender, RoutedEventArgs e)
     {
         _currentScreenshotHotkeyString = "44,0,0,0";
-        _window.ScreenshotHotkeyBox.Text = FormatHotkeyDisplay("44,0,0,0");
+        _window.ScreenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay("44,0,0,0");
         ViewModel.Settings.ScreenshotHotkey = "44,0,0,0";
         ViewModel.SaveSettingsPublic();
     }
 
     // ── ReLimiter OSD Hotkey ──────────────────────────────────────────────────
-
-    /// <summary>
-    /// Builds a ReLimiter-format hotkey string from VK code and modifiers.
-    /// Format: [Ctrl+][Alt+][Shift+]KeyName (e.g. "Ctrl+F12", "Alt+P", "F1")
-    /// </summary>
-    public static string BuildUlHotkeyString(int vk, bool shift, bool ctrl, bool alt)
-    {
-        var parts = new List<string>();
-        if (ctrl) parts.Add("Ctrl");
-        if (alt) parts.Add("Alt");
-        if (shift) parts.Add("Shift");
-        // ReLimiter expects key names without spaces (e.g. "PageUp" not "Page Up")
-        var keyName = VkNames.TryGetValue(vk, out var name) ? name.Replace(" ", "") : $"0x{vk:X2}";
-        parts.Add(keyName);
-        return string.Join("+", parts);
-    }
 
     public void UlHotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
@@ -637,7 +537,7 @@ public class SettingsHandler
             .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
-        _currentUlHotkeyString = BuildUlHotkeyString(vk, shift, ctrl, alt);
+        _currentUlHotkeyString = HotkeyManager.BuildUlHotkeyString(vk, shift, ctrl, alt);
 
         if (sender is TextBox hotkeyBox)
             hotkeyBox.Text = _currentUlHotkeyString;
@@ -859,259 +759,4 @@ public class SettingsHandler
         await DialogService.ShowSafeAsync(dialog);
     }
 
-    // ── Mass INI Deployment ───────────────────────────────────────────────────────
-
-    public async void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
-    {
-        int count = 0;
-        foreach (var card in _window.ViewModel.AllCards.Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
-        {
-            try
-            {
-                var screenshotPath = _window.BuildScreenshotSavePath(card.GameName);
-                var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
-                var screenshotHotkey = _window.ViewModel.Settings.ScreenshotHotkey;
-                if (card.RequiresVulkanInstall)
-                    AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
-                else
-                    AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
-                AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
-                count++;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassDeployRsIni] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-        CrashReporter.Log($"[MassDeployRsIni] Deployed reshade.ini to {count} game(s)");
-        await ShowDeployResult("reshade.ini", count);
-    }
-
-    public async void MassDeployUlIni_Click(object sender, RoutedEventArgs e)
-    {
-        int count = 0;
-        foreach (var card in _window.ViewModel.AllCards.Where(c => c.UlStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
-        {
-            try
-            {
-                AuxInstallService.CopyUlIni(card.InstallPath);
-                count++;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassDeployUlIni] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-        CrashReporter.Log($"[MassDeployUlIni] Deployed relimiter.ini to {count} game(s)");
-        await ShowDeployResult("relimiter.ini", count);
-    }
-
-    public async void MassDeployDcIni_Click(object sender, RoutedEventArgs e)
-    {
-        int count = 0;
-        foreach (var card in _window.ViewModel.AllCards.Where(c => c.DcStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
-        {
-            try
-            {
-                AuxInstallService.CopyDcIni(card.InstallPath);
-                count++;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassDeployDcIni] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-        CrashReporter.Log($"[MassDeployDcIni] Deployed DisplayCommander.ini to {count} game(s)");
-        await ShowDeployResult("DisplayCommander.ini", count);
-    }
-
-    public async void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
-    {
-        int count = 0;
-        var sourceIni = Services.OptiScalerService.OsIniPath;
-        if (!File.Exists(sourceIni))
-        {
-            CrashReporter.Log("[MassDeployOsIni] No OptiScaler.ini found in INIs folder — aborting");
-            await ShowDeployResult("OptiScaler.ini", 0);
-            return;
-        }
-        foreach (var card in _window.ViewModel.AllCards.Where(c => c.OsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
-        {
-            try
-            {
-                _window.ViewModel.OptiScalerServiceInstance.CopyIniToGame(card);
-                count++;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassDeployOsIni] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-        CrashReporter.Log($"[MassDeployOsIni] Deployed OptiScaler.ini to {count} game(s)");
-        await ShowDeployResult("OptiScaler.ini", count);
-    }
-
-    private async Task ShowDeployResult(string iniName, int count)
-    {
-        var message = count > 0
-            ? $"✅ Deployed {iniName} to {count} game(s)."
-            : $"No games found with the corresponding component installed.";
-        var dialog = new ContentDialog
-        {
-            Title = "Mass INI Deployment",
-            Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        await DialogService.ShowSafeAsync(dialog);
-    }
-
-    public async Task MassPresetInstall_ClickAsync(XamlRoot xamlRoot)
-    {
-        // ── 1. Show preset picker ────────────────────────────────────────────
-        var selectedPresets = await PresetPopupHelper.ShowAsync(xamlRoot);
-        if (selectedPresets == null || selectedPresets.Count == 0) return;
-
-        // ── 2. Show game picker — list all games with ReShade installed ──────
-        var rsGames = _window.ViewModel.AllCards
-            .Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath))
-            .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (rsGames.Count == 0)
-        {
-            var noGamesDialog = new ContentDialog
-            {
-                Title = "No Games Available",
-                Content = "No games with ReShade installed were found. Install ReShade on at least one game first.",
-                CloseButtonText = "OK",
-                XamlRoot = xamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            await DialogService.ShowSafeAsync(noGamesDialog);
-            return;
-        }
-
-        var gamePanel = new StackPanel { Spacing = 4 };
-        var gameCheckBoxes = new List<(GameCardViewModel Card, CheckBox Box)>();
-
-        // Select All / Deselect All buttons
-        var selectAllBtn = new Button
-        {
-            Content = "Select All",
-            FontSize = 11,
-            Padding = new Thickness(8, 4, 8, 4),
-            Margin = new Thickness(0, 0, 8, 8),
-        };
-        var deselectAllBtn = new Button
-        {
-            Content = "Deselect All",
-            FontSize = 11,
-            Padding = new Thickness(8, 4, 8, 4),
-            Margin = new Thickness(0, 0, 0, 8),
-        };
-        var btnRow = new StackPanel { Orientation = Orientation.Horizontal };
-        btnRow.Children.Add(selectAllBtn);
-        btnRow.Children.Add(deselectAllBtn);
-        gamePanel.Children.Add(btnRow);
-
-        foreach (var card in rsGames)
-        {
-            var cb = new CheckBox
-            {
-                Content = card.GameName,
-                IsChecked = false,
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                Margin = new Thickness(0, 2, 0, 2),
-            };
-            gameCheckBoxes.Add((card, cb));
-            gamePanel.Children.Add(cb);
-        }
-
-        selectAllBtn.Click += (s, ev) => { foreach (var (_, cb) in gameCheckBoxes) cb.IsChecked = true; };
-        deselectAllBtn.Click += (s, ev) => { foreach (var (_, cb) in gameCheckBoxes) cb.IsChecked = false; };
-
-        var gameScrollViewer = new ScrollViewer
-        {
-            Content = gamePanel,
-            MaxHeight = 400,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        };
-
-        var gameDialog = new ContentDialog
-        {
-            Title = $"Select Games — {string.Join(", ", selectedPresets)}",
-            Content = gameScrollViewer,
-            PrimaryButtonText = "Deploy",
-            IsPrimaryButtonEnabled = false,
-            CloseButtonText = "Cancel",
-            XamlRoot = xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-            MinWidth = 500,
-        };
-
-        // Enable Deploy only when at least one game is ticked
-        foreach (var (_, box) in gameCheckBoxes)
-        {
-            box.Checked += (s, ev) => gameDialog.IsPrimaryButtonEnabled = gameCheckBoxes.Any(cb => cb.Box.IsChecked == true);
-            box.Unchecked += (s, ev) => gameDialog.IsPrimaryButtonEnabled = gameCheckBoxes.Any(cb => cb.Box.IsChecked == true);
-        }
-
-        var gameResult = await DialogService.ShowSafeAsync(gameDialog);
-        if (gameResult != ContentDialogResult.Primary) return;
-
-        // ── 3. Deploy presets to selected games ──────────────────────────────
-        var selectedGames = gameCheckBoxes
-            .Where(cb => cb.Box.IsChecked == true)
-            .Select(cb => cb.Card)
-            .ToList();
-
-        int totalDeployed = 0;
-        foreach (var card in selectedGames)
-        {
-            try
-            {
-                int count = PresetPopupHelper.DeployPresets(selectedPresets, card.InstallPath);
-                totalDeployed += count;
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassPresetInstall] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
-        CrashReporter.Log($"[MassPresetInstall] Deployed {selectedPresets.Count} preset(s) to {selectedGames.Count} game(s) ({totalDeployed} total copies)");
-
-        if (totalDeployed == 0) return;
-
-        // ── 4. Offer shader installation ─────────────────────────────────────
-        var shaderDialog = new ContentDialog
-        {
-            Title = "🔧 Install Shaders?",
-            Content = $"Presets deployed to {selectedGames.Count} game(s).\n\nAlso install the required shader packs for these games?",
-            PrimaryButtonText = "Yes",
-            CloseButtonText = "No",
-            XamlRoot = xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-
-        var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
-        if (shaderResult == ContentDialogResult.Primary)
-        {
-            var presetPaths = selectedPresets.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
-            foreach (var card in selectedGames)
-            {
-                try
-                {
-                    _window.ViewModel.ApplyPresetShaders(card.GameName, presetPaths);
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[MassPresetInstall] Shader install failed for '{card.GameName}' — {ex.Message}");
-                }
-            }
-            CrashReporter.Log($"[MassPresetInstall] Applied preset shaders to {selectedGames.Count} game(s)");
-        }
-    }
 }

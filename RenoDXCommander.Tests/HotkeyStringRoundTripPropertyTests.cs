@@ -39,8 +39,8 @@ public class HotkeyStringRoundTripPropertyTests
             {
                 var (vk, shift, ctrl, alt) = t;
 
-                var built = SettingsHandler.BuildHotkeyString(vk, shift, ctrl, alt);
-                var (parsedVk, parsedShift, parsedCtrl, parsedAlt) = SettingsHandler.ParseHotkeyString(built);
+                var built = HotkeyManager.BuildHotkeyString(vk, shift, ctrl, alt);
+                var (parsedVk, parsedShift, parsedCtrl, parsedAlt) = HotkeyManager.ParseHotkeyString(built);
 
                 var vkMatch = parsedVk == vk;
                 var shiftMatch = parsedShift == shift;

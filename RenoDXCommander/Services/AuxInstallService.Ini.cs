@@ -26,7 +26,7 @@ public partial class AuxInstallService
                 ApplyScreenshotPath(gamePath, screenshotSavePath);
 
             // Apply overlay hotkey if non-default
-            if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
+            if (overlayHotkey != null && !HotkeyManager.IsDefaultHotkey(overlayHotkey))
                 ApplyOverlayHotkey(gamePath, overlayHotkey);
 
             // Apply screenshot hotkey if non-default
@@ -63,7 +63,7 @@ public partial class AuxInstallService
             ApplyScreenshotPath(gamePath, screenshotSavePath);
 
         // Apply overlay hotkey if non-default
-        if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
+        if (overlayHotkey != null && !HotkeyManager.IsDefaultHotkey(overlayHotkey))
             ApplyOverlayHotkey(gamePath, overlayHotkey);
 
         // Apply screenshot hotkey if non-default
@@ -101,7 +101,7 @@ public partial class AuxInstallService
                 ApplyScreenshotPath(gamePath, screenshotSavePath);
 
             // Apply overlay hotkey if non-default
-            if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
+            if (overlayHotkey != null && !HotkeyManager.IsDefaultHotkey(overlayHotkey))
                 ApplyOverlayHotkey(gamePath, overlayHotkey);
 
             // Apply screenshot hotkey if non-default
@@ -133,7 +133,7 @@ public partial class AuxInstallService
             ApplyScreenshotPath(gamePath, screenshotSavePath);
 
         // Apply overlay hotkey if non-default
-        if (overlayHotkey != null && !SettingsHandler.IsDefaultHotkey(overlayHotkey))
+        if (overlayHotkey != null && !HotkeyManager.IsDefaultHotkey(overlayHotkey))
             ApplyOverlayHotkey(gamePath, overlayHotkey);
 
         // Apply screenshot hotkey if non-default

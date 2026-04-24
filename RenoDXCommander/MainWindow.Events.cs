@@ -675,19 +675,19 @@ public sealed partial class MainWindow
         => _settingsHandler.ApplyOsHotkey_Click(sender, e);
 
     private void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
-        => _settingsHandler.MassDeployRsIni_Click(sender, e);
+        => _massDeployHandler.MassDeployRsIni_Click(sender, e);
 
     private void MassDeployUlIni_Click(object sender, RoutedEventArgs e)
-        => _settingsHandler.MassDeployUlIni_Click(sender, e);
+        => _massDeployHandler.MassDeployUlIni_Click(sender, e);
 
     private void MassDeployDcIni_Click(object sender, RoutedEventArgs e)
-        => _settingsHandler.MassDeployDcIni_Click(sender, e);
+        => _massDeployHandler.MassDeployDcIni_Click(sender, e);
 
     private void MassDeployOsIni_Click(object sender, RoutedEventArgs e)
-        => _settingsHandler.MassDeployOsIni_Click(sender, e);
+        => _massDeployHandler.MassDeployOsIni_Click(sender, e);
 
     private async void MassPresetInstall_Click(object sender, RoutedEventArgs e)
-        => await _settingsHandler.MassPresetInstall_ClickAsync(Content.XamlRoot);
+        => await _massDeployHandler.MassPresetInstall_ClickAsync(Content.XamlRoot);
 
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {

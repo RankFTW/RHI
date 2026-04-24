@@ -43,7 +43,7 @@ public class HotkeyDisplayFormatPropertyTests
             {
                 var (vk, shift, ctrl, alt) = t;
 
-                var display = SettingsHandler.FormatHotkeyDisplay(vk, shift, ctrl, alt);
+                var display = HotkeyManager.FormatHotkeyDisplay(vk, shift, ctrl, alt);
 
                 // (a) output is non-empty
                 var nonEmpty = !string.IsNullOrEmpty(display);

@@ -1,4 +1,4 @@
-// ShaderPackService.Deploy.cs — Shader deployment, sync, pruning, marker/ownership, and legacy migration
+// ShaderPackService.Deploy.cs — Shader deployment, sync, pruning, marker/ownership
 using System.Text.Json;
 
 namespace RenoDXCommander.Services;
@@ -157,61 +157,6 @@ public partial class ShaderPackService
             try { Directory.Move(orig, current); }
             catch (Exception ex)
             { CrashReporter.Log($"[ShaderPackService.RestoreOriginalShaders] Failed to restore original — {ex.Message}"); }
-        }
-    }
-
-    // ── Legacy migration ──────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// One-time startup migration: renames legacy Shaders and Textures folders
-    /// inside the DC AppData folder to *.old so Display Commander no longer loads
-    /// stale global shaders. Skips the rename when the .old target already exists.
-    /// Never throws — errors are logged via CrashReporter.
-    /// </summary>
-    [Obsolete("DC has been removed. This migration is retained for one release cycle to clean up existing installs.")]
-    public static void MigrateLegacyDcShaders()
-    {
-        var dcReshadeDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Programs", "Display_Commander", "Reshade");
-        MigrateLegacyDcShaders(
-            Path.Combine(dcReshadeDir, "Shaders"),
-            Path.Combine(dcReshadeDir, "Textures"));
-    }
-
-    /// <summary>
-    /// Testable overload that accepts explicit directory paths.
-    /// </summary>
-    internal static void MigrateLegacyDcShaders(string shadersDir, string texturesDir)
-    {
-        // Rename Shaders → Shaders.old
-        try
-        {
-            var shadersOld = shadersDir + ".old";
-            if (Directory.Exists(shadersDir) && !Directory.Exists(shadersOld))
-            {
-                Directory.Move(shadersDir, shadersOld);
-                CrashReporter.Log("[ShaderPackService.MigrateLegacyDcShaders] Renamed Shaders → Shaders.old");
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[ShaderPackService.MigrateLegacyDcShaders] Failed to rename Shaders — {ex.Message}");
-        }
-
-        // Rename Textures → Textures.old
-        try
-        {
-            var texturesOld = texturesDir + ".old";
-            if (Directory.Exists(texturesDir) && !Directory.Exists(texturesOld))
-            {
-                Directory.Move(texturesDir, texturesOld);
-                CrashReporter.Log("[ShaderPackService.MigrateLegacyDcShaders] Renamed Textures → Textures.old");
-            }
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[ShaderPackService.MigrateLegacyDcShaders] Failed to rename Textures — {ex.Message}");
         }
     }
 

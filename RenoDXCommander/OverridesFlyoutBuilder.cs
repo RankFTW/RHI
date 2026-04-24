@@ -787,115 +787,20 @@ public class OverridesFlyoutBuilder
         mainGrid.Children.Add(bitnessApiRow);
 
         // ── Right column: Update Inclusion button + summary ──
-        void RefreshUpdateSummary(TextBlock summaryTb)
-        {
-            summaryTb.Inlines.Clear();
-            var items = new List<(string label, bool isOn)>
+        var (updateInclusionBtn, updateSummaryText_) = UpdateInclusionHelper.CreateUpdateInclusionControls(
+            ViewModel, capturedName, card.IsREEngineGame, _window.Content.XamlRoot,
+            onSaved: () =>
             {
-                ("RS", !ViewModel.IsUpdateAllExcludedReShade(capturedName)),
-                ("RDX", !ViewModel.IsUpdateAllExcludedRenoDx(capturedName)),
-                ("UL", !ViewModel.IsUpdateAllExcludedUl(capturedName)),
-                ("DC", !ViewModel.IsUpdateAllExcludedDc(capturedName)),
-                ("OS", !ViewModel.IsUpdateAllExcludedOs(capturedName)),
-            };
-            if (card.IsREEngineGame)
-                items.Add(("REF", !ViewModel.IsUpdateAllExcludedRef(capturedName)));
-            for (int i = 0; i < items.Count; i++)
-            {
-                var (label, isOn) = items[i];
-                summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+                // Rebuild the detail panel if the same game is selected, so component
+                // rows reflect the new exclusion state immediately
+                if (ViewModel.SelectedGame is { } sel
+                    && sel.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase))
                 {
-                    Text = $"{label}: ",
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                });
-                summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                {
-                    Text = isOn ? "On" : "Off",
-                    Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-                });
-                if (i < items.Count - 1)
-                {
-                    summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
-                    {
-                        Text = "  ·  ",
-                        Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                    });
+                    _window.PopulateDetailPanel(sel);
+                    _window.BuildOverridesPanel(sel);
                 }
-            }
-        }
-
-        updateSummaryText = new TextBlock
-        {
-            FontSize = 11,
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 4, 0, 0),
-        };
-        RefreshUpdateSummary(updateSummaryText);
-
-        var updateInclusionBtn = new Button
-        {
-            Content = "Update Inclusion",
-            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(12, 7, 12, 7),
-            FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-
-        updateInclusionBtn.Click += async (s, ev) =>
-        {
-            var rsCheck = new CheckBox { Content = "ReShade", IsChecked = !ViewModel.IsUpdateAllExcludedReShade(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var rdxCheck = new CheckBox { Content = "RenoDX", IsChecked = !ViewModel.IsUpdateAllExcludedRenoDx(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !ViewModel.IsUpdateAllExcludedUl(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var dcCheck = new CheckBox { Content = "Display Commander", IsChecked = !ViewModel.IsUpdateAllExcludedDc(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var osCheck = new CheckBox { Content = "OptiScaler", IsChecked = !ViewModel.IsUpdateAllExcludedOs(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            CheckBox? refCheck = card.IsREEngineGame
-                ? new CheckBox { Content = "RE Framework", IsChecked = !ViewModel.IsUpdateAllExcludedRef(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
-                : null;
-
-            var checkPanel = new StackPanel { Spacing = 0 };
-            checkPanel.Children.Add(new TextBlock { Text = "Include this game in Update All for:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
-            checkPanel.Children.Add(rsCheck);
-            checkPanel.Children.Add(rdxCheck);
-            checkPanel.Children.Add(ulCheck);
-            checkPanel.Children.Add(dcCheck);
-            checkPanel.Children.Add(osCheck);
-            if (refCheck != null) checkPanel.Children.Add(refCheck);
-
-            var dialog = new ContentDialog
-            {
-                Title = "Global Update Inclusion",
-                Content = checkPanel,
-                PrimaryButtonText = "Save",
-                CloseButtonText = "Cancel",
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-
-            var result = await DialogService.ShowSafeAsync(dialog);
-            if (result == ContentDialogResult.Primary)
-            {
-                // Apply changes
-                if ((rsCheck.IsChecked == true) == ViewModel.IsUpdateAllExcludedReShade(capturedName))
-                    ViewModel.ToggleUpdateAllExclusionReShade(capturedName);
-                if ((rdxCheck.IsChecked == true) == ViewModel.IsUpdateAllExcludedRenoDx(capturedName))
-                    ViewModel.ToggleUpdateAllExclusionRenoDx(capturedName);
-                if ((ulCheck.IsChecked == true) == ViewModel.IsUpdateAllExcludedUl(capturedName))
-                    ViewModel.ToggleUpdateAllExclusionUl(capturedName);
-                if ((dcCheck.IsChecked == true) == ViewModel.IsUpdateAllExcludedDc(capturedName))
-                    ViewModel.ToggleUpdateAllExclusionDc(capturedName);
-                if ((osCheck.IsChecked == true) == ViewModel.IsUpdateAllExcludedOs(capturedName))
-                    ViewModel.ToggleUpdateAllExclusionOs(capturedName);
-                if (refCheck != null && (refCheck.IsChecked == true) == ViewModel.IsUpdateAllExcludedRef(capturedName))
-                    ViewModel.ToggleUpdateAllExclusionRef(capturedName);
-
-                // Refresh summary
-                RefreshUpdateSummary(updateSummaryText);
-            }
-        };
+            });
+        updateSummaryText = updateSummaryText_;
 
         var globalUpdateColumn = new StackPanel { Spacing = 0 };
         globalUpdateColumn.Children.Add(new TextBlock
@@ -1215,7 +1120,14 @@ public class OverridesFlyoutBuilder
                         if (shaderResult == ContentDialogResult.Primary)
                         {
                             var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
-                            ViewModel.ApplyPresetShaders(capturedName, presetPaths);
+                            await ViewModel.ApplyPresetShadersAsync(capturedName, presetPaths);
+
+                            // Rebuild overrides panel so the shader toggle reflects the new "Select" mode
+                            if (ViewModel.SelectedGame is { } selectedCard
+                                && selectedCard.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                _window.BuildOverridesPanel(selectedCard);
+                            }
                         }
                     }
                 }
@@ -1338,7 +1250,7 @@ public class OverridesFlyoutBuilder
                 ViewModel.ToggleUpdateAllExclusionOs(capturedName);
 
             // Refresh update summary
-            RefreshUpdateSummary(updateSummaryText);
+            UpdateInclusionHelper.RefreshSummary(updateSummaryText, ViewModel, capturedName, card.IsREEngineGame);
 
             // Disable wiki exclusion
             if (ViewModel.IsWikiExcluded(capturedName))

@@ -564,7 +564,7 @@ public partial class MainViewModel
     /// switches the game to Per_Game_Shader_Mode "Select", merges resolved packs with
     /// existing selection (union), persists, and calls SyncGameFolder.
     /// </summary>
-    public void ApplyPresetShaders(string gameName, IEnumerable<string> presetFilePaths)
+    public async Task ApplyPresetShadersAsync(string gameName, IEnumerable<string> presetFilePaths)
     {
         try
         {
@@ -603,11 +603,25 @@ public partial class MainViewModel
                 return;
             }
 
-            // 2. Build pack file lists and resolve
+            // 2. Ensure packs with missing file lists are downloaded so the resolver
+            //    can match .fx files to packs. Only downloads packs that don't already
+            //    have a file list entry in settings.json — avoids re-downloading everything.
+            var existingFileLists = BuildPackFileLists();
+            var missingPacks = _shaderPackService.AvailablePacks
+                .Where(p => !existingFileLists.ContainsKey(p.Id))
+                .Select(p => p.Id)
+                .ToList();
+            if (missingPacks.Count > 0)
+            {
+                _crashReporter.Log($"[MainViewModel.ApplyPresetShaders] Downloading {missingPacks.Count} pack(s) missing file lists: {string.Join(", ", missingPacks)}");
+                await _shaderPackService.EnsurePacksAsync(missingPacks);
+            }
+
+            // 3. Build pack file lists and resolve
             var packFileLists = BuildPackFileLists();
             var (matchedPackIds, unresolvedFiles) = ShaderResolver.Resolve(allFxFiles, packFileLists);
 
-            // 3. Log unresolved files
+            // 4. Log unresolved files
             foreach (var unresolved in unresolvedFiles)
                 _crashReporter.Log($"[MainViewModel.ApplyPresetShaders] Unresolved shader: {unresolved}");
 
@@ -617,10 +631,10 @@ public partial class MainViewModel
                 return;
             }
 
-            // 4. Set per-game mode to "Select"
+            // 5. Set per-game mode to "Select"
             SetPerGameShaderMode(gameName, "Select");
 
-            // 5. Merge resolved pack IDs with existing selection (union)
+            // 6. Merge resolved pack IDs with existing selection (union)
             if (_gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var existing))
             {
                 var merged = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
@@ -632,10 +646,10 @@ public partial class MainViewModel
                 _gameNameService.PerGameShaderSelection[gameName] = matchedPackIds.ToList();
             }
 
-            // 6. Persist
+            // 7. Persist
             SaveNameMappings();
 
-            // 7. Deploy
+            // 8. Deploy
             DeployShadersForCard(gameName);
 
             _crashReporter.Log($"[MainViewModel.ApplyPresetShaders] Applied {matchedPackIds.Count} shader pack(s) for '{gameName}'");

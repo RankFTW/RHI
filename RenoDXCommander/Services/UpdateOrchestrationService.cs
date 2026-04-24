@@ -15,19 +15,22 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
     private readonly ICrashReporter _crashReporter;
     private readonly IAuxFileService _auxFileService;
     private readonly IREFrameworkService _refService;
+    private readonly ILumaService _lumaService;
 
     public UpdateOrchestrationService(
         IModInstallService installer,
         IAuxInstallService auxInstaller,
         ICrashReporter crashReporter,
         IAuxFileService auxFileService,
-        IREFrameworkService refService)
+        IREFrameworkService refService,
+        ILumaService lumaService)
     {
         _installer = installer;
         _auxInstaller = auxInstaller;
         _crashReporter = crashReporter;
         _auxFileService = auxFileService;
         _refService = refService;
+        _lumaService = lumaService;
     }
 
     /// <summary>
@@ -329,6 +332,38 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         {
             _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF update check failed — {ex.Message}");
         }
+        }
+
+        // ── Luma update check ─────────────────────────────────────────────────
+        try
+        {
+            var lumaInstalled = cards
+                .Where(c => c.LumaRecord != null && c.LumaRecord.InstalledBuildNumber > 0)
+                .ToList();
+
+            if (lumaInstalled.Count > 0)
+            {
+                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {lumaInstalled.Count} Luma cards to check");
+
+                // Single API call — all Luma mods share the same release
+                var latestBuild = await _lumaService.GetLatestBuildNumberAsync().ConfigureAwait(false);
+                if (latestBuild > 0)
+                {
+                    foreach (var card in lumaInstalled)
+                    {
+                        if (latestBuild > card.LumaRecord!.InstalledBuildNumber)
+                        {
+                            dispatcherQueue?.TryEnqueue(() => { card.LumaStatus = GameStatus.UpdateAvailable; });
+                        }
+                    }
+                }
+
+                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Luma check complete (latest build: {latestBuild})");
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Luma update check failed — {ex.Message}");
         }
 
         dispatcherQueue?.TryEnqueue(() => notifyUpdateState());

@@ -192,7 +192,7 @@ public partial class DragDropHandler
         if (shaderResult == ContentDialogResult.Primary)
         {
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] User chose to install shaders for '{gameName}'");
-            ViewModel.ApplyPresetShaders(gameName, new[] { iniPath });
+            await ViewModel.ApplyPresetShadersAsync(gameName, new[] { iniPath });
 
             // Rebuild overrides panel so the shader toggle reflects the new "Select" mode
             if (ViewModel.SelectedGame is { } selectedCard
