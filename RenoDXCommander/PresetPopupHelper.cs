@@ -80,7 +80,7 @@ public static class PresetPopupHelper
                 MinWidth = 500,
             };
 
-            var emptyResult = await emptyDlg.ShowAsync();
+            var emptyResult = await DialogService.ShowSafeAsync(emptyDlg);
             if (emptyResult == ContentDialogResult.Primary)
             {
                 try { System.Diagnostics.Process.Start("explorer.exe", PresetsDir); }
@@ -154,7 +154,7 @@ public static class PresetPopupHelper
             box.Unchecked += (s, e) => dlg.IsPrimaryButtonEnabled = checkBoxes.Any(cb => cb.Box.IsChecked == true);
         }
 
-        var result = await dlg.ShowAsync();
+        var result = await DialogService.ShowSafeAsync(dlg);
         if (result != ContentDialogResult.Primary)
             return null;
 

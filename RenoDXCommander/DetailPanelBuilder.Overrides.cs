@@ -952,10 +952,10 @@ public partial class DetailPanelBuilder
         var capturedCard = card;
 
         // Build summary showing current state at a glance with colored On/Off
-        void RefreshUpdateSummary(StackPanel summaryPanel)
+        void RefreshUpdateSummary(TextBlock summaryTb)
         {
-            summaryPanel.Children.Clear();
-            var items = new (string label, bool isOn)[]
+            summaryTb.Inlines.Clear();
+            var items = new List<(string label, bool isOn)>
             {
                 ("RS", !_window.ViewModel.IsUpdateAllExcludedReShade(capturedName)),
                 ("RDX", !_window.ViewModel.IsUpdateAllExcludedRenoDx(capturedName)),
@@ -963,42 +963,39 @@ public partial class DetailPanelBuilder
                 ("DC", !_window.ViewModel.IsUpdateAllExcludedDc(capturedName)),
                 ("OS", !_window.ViewModel.IsUpdateAllExcludedOs(capturedName)),
             };
-            for (int i = 0; i < items.Length; i++)
+            if (card.IsREEngineGame)
+                items.Add(("REF", !_window.ViewModel.IsUpdateAllExcludedRef(capturedName)));
+            for (int i = 0; i < items.Count; i++)
             {
                 var (label, isOn) = items[i];
-                summaryPanel.Children.Add(new TextBlock
+                summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
-                    Text = $"{label}:",
-                    FontSize = 11,
+                    Text = $"{label}: ",
                     Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                    Margin = new Thickness(0, 0, 4, 0),
                 });
-                summaryPanel.Children.Add(new TextBlock
+                summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
                     Text = isOn ? "On" : "Off",
-                    FontSize = 11,
                     Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-                    Margin = new Thickness(0, 0, i < items.Length - 1 ? 6 : 0, 0),
                 });
-                if (i < items.Length - 1)
+                if (i < items.Count - 1)
                 {
-                    summaryPanel.Children.Add(new TextBlock
+                    summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                     {
-                        Text = "·",
-                        FontSize = 11,
+                        Text = "  ·  ",
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                        Margin = new Thickness(0, 0, 6, 0),
                     });
                 }
             }
         }
 
-        var updateSummaryPanel = new StackPanel
+        var updateSummaryText = new TextBlock
         {
-            Orientation = Orientation.Horizontal,
+            FontSize = 11,
+            TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 4, 0, 0),
         };
-        RefreshUpdateSummary(updateSummaryPanel);
+        RefreshUpdateSummary(updateSummaryText);
 
         var updateInclusionBtn = new Button
         {
@@ -1020,6 +1017,9 @@ public partial class DetailPanelBuilder
             var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !_window.ViewModel.IsUpdateAllExcludedUl(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
             var dcCheck = new CheckBox { Content = "Display Commander", IsChecked = !_window.ViewModel.IsUpdateAllExcludedDc(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
             var osCheck = new CheckBox { Content = "OptiScaler", IsChecked = !_window.ViewModel.IsUpdateAllExcludedOs(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+            CheckBox? refCheck = card.IsREEngineGame
+                ? new CheckBox { Content = "RE Framework", IsChecked = !_window.ViewModel.IsUpdateAllExcludedRef(capturedName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
+                : null;
 
             var checkPanel = new StackPanel { Spacing = 0 };
             checkPanel.Children.Add(new TextBlock { Text = "Include this game in Update All for:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
@@ -1028,6 +1028,7 @@ public partial class DetailPanelBuilder
             checkPanel.Children.Add(ulCheck);
             checkPanel.Children.Add(dcCheck);
             checkPanel.Children.Add(osCheck);
+            if (refCheck != null) checkPanel.Children.Add(refCheck);
 
             var dialog = new ContentDialog
             {
@@ -1039,7 +1040,7 @@ public partial class DetailPanelBuilder
                 RequestedTheme = ElementTheme.Dark,
             };
 
-            var result = await dialog.ShowAsync();
+            var result = await DialogService.ShowSafeAsync(dialog);
             if (result == ContentDialogResult.Primary)
             {
                 // Apply changes
@@ -1053,15 +1054,17 @@ public partial class DetailPanelBuilder
                     _window.ViewModel.ToggleUpdateAllExclusionDc(capturedName);
                 if ((osCheck.IsChecked == true) == _window.ViewModel.IsUpdateAllExcludedOs(capturedName))
                     _window.ViewModel.ToggleUpdateAllExclusionOs(capturedName);
+                if (refCheck != null && (refCheck.IsChecked == true) == _window.ViewModel.IsUpdateAllExcludedRef(capturedName))
+                    _window.ViewModel.ToggleUpdateAllExclusionRef(capturedName);
 
                 // Refresh summary
-                RefreshUpdateSummary(updateSummaryPanel);
+                RefreshUpdateSummary(updateSummaryText);
             }
         };
 
         var toggleRow = new StackPanel { Spacing = 0 };
         toggleRow.Children.Add(updateInclusionBtn);
-        toggleRow.Children.Add(updateSummaryPanel);
+        toggleRow.Children.Add(updateSummaryText);
 
         // ── Global update inclusion section (Middle Row right column) ────────────
         var globalUpdateColumn = new StackPanel { Spacing = 0 };
@@ -1196,7 +1199,7 @@ public partial class DetailPanelBuilder
                     Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
                     RequestedTheme = ElementTheme.Dark,
                 };
-                await infoDlg.ShowAsync();
+                await DialogService.ShowSafeAsync(infoDlg);
                 return;
             }
 
@@ -1291,7 +1294,7 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.ToggleUpdateAllExclusionDc(capturedName);
             if (_window.ViewModel.IsUpdateAllExcludedOs(capturedName))
                 _window.ViewModel.ToggleUpdateAllExclusionOs(capturedName);
-            RefreshUpdateSummary(updateSummaryPanel);
+            RefreshUpdateSummary(updateSummaryText);
             wikiExcludeToggle.IsOn = false;
 
             // Persist all reset values immediately
@@ -1431,7 +1434,7 @@ public partial class DetailPanelBuilder
                             RequestedTheme = ElementTheme.Dark,
                         };
 
-                        var shaderResult = await shaderDialog.ShowAsync();
+                        var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
                         if (shaderResult == ContentDialogResult.Primary)
                         {
                             var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();

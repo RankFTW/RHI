@@ -179,7 +179,7 @@ public class InstallEventHandler
                     RequestedTheme = ElementTheme.Dark,
                 };
 
-                var result = await warningDialog.ShowAsync();
+                var result = await DialogService.ShowSafeAsync(warningDialog);
                 if (result != ContentDialogResult.Primary) return;
 
                 ViewModel.Settings.OsFirstTimeWarningDismissed = true;

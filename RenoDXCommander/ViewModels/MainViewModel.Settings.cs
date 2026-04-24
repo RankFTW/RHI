@@ -348,6 +348,7 @@ public partial class MainViewModel
     public bool IsUpdateAllExcludedUl(string gameName) => _updateAllExcludedUl.Contains(gameName);
     public bool IsUpdateAllExcludedDc(string gameName) => _updateAllExcludedDc.Contains(gameName);
     public bool IsUpdateAllExcludedOs(string gameName) => _updateAllExcludedOs.Contains(gameName);
+    public bool IsUpdateAllExcludedRef(string gameName) => _updateAllExcludedRef.Contains(gameName);
 
     /// <summary>Returns true if the game is configured to use normal (non-addon) ReShade.</summary>
     public bool IsNormalReShadeGame(string gameName) => _normalReShadeGames.Contains(gameName);
@@ -399,6 +400,16 @@ public partial class MainViewModel
         SaveNameMappings();
         var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
         if (card != null) card.ExcludeFromUpdateAllOs = set.Contains(gameName);
+        NotifyUpdateButtonChanged();
+    }
+
+    public void ToggleUpdateAllExclusionRef(string gameName)
+    {
+        var set = _gameNameService.UpdateAllExcludedRef;
+        if (!set.Remove(gameName)) set.Add(gameName);
+        SaveNameMappings();
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        if (card != null) card.ExcludeFromUpdateAllRef = set.Contains(gameName);
         NotifyUpdateButtonChanged();
     }
 

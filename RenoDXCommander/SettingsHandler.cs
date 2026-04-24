@@ -182,6 +182,7 @@ public class SettingsHandler
         _window.GlobalUlUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipUlUpdates;
         _window.GlobalDcUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipDcUpdates;
         _window.GlobalOsUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipOsUpdates;
+        _window.GlobalRefUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipRefUpdates;
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
@@ -289,7 +290,7 @@ public class SettingsHandler
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        await dialog.ShowAsync();
+        await DialogService.ShowSafeAsync(dialog);
     }
 
     /// <summary>
@@ -428,7 +429,7 @@ public class SettingsHandler
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        await dialog.ShowAsync();
+        await DialogService.ShowSafeAsync(dialog);
     }
 
     // ── Combined ReShade Hotkeys (overlay + screenshot) ───────────────────────
@@ -482,7 +483,7 @@ public class SettingsHandler
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        await dialog.ShowAsync();
+        await DialogService.ShowSafeAsync(dialog);
     }
 
     // ── Screenshot Hotkey ─────────────────────────────────────────────────────
@@ -574,7 +575,7 @@ public class SettingsHandler
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        await dialog.ShowAsync();
+        await DialogService.ShowSafeAsync(dialog);
     }
 
     /// <summary>Resets the screenshot hotkey to the default Print Screen key.</summary>
@@ -689,7 +690,7 @@ public class SettingsHandler
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        await dialog.ShowAsync();
+        await DialogService.ShowSafeAsync(dialog);
     }
 
     // ── OptiScaler Hotkey ─────────────────────────────────────────────────────
@@ -766,6 +767,16 @@ public class SettingsHandler
         }
     }
 
+    public void GlobalRefUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is ToggleSwitch toggle)
+        {
+            ViewModel.Settings.GlobalSkipRefUpdates = !toggle.IsOn;
+            ViewModel.SaveSettingsPublic();
+        }
+    }
+
     public void OsHotkeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is ComboBox combo && combo.SelectedItem is string selected)
@@ -834,7 +845,7 @@ public class SettingsHandler
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        await dialog.ShowAsync();
+        await DialogService.ShowSafeAsync(dialog);
     }
 
     // ── Mass INI Deployment ───────────────────────────────────────────────────────
@@ -942,7 +953,7 @@ public class SettingsHandler
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        await dialog.ShowAsync();
+        await DialogService.ShowSafeAsync(dialog);
     }
 
     public async Task MassPresetInstall_ClickAsync(XamlRoot xamlRoot)
@@ -967,7 +978,7 @@ public class SettingsHandler
                 XamlRoot = xamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await noGamesDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(noGamesDialog);
             return;
         }
 
@@ -1037,7 +1048,7 @@ public class SettingsHandler
             box.Unchecked += (s, ev) => gameDialog.IsPrimaryButtonEnabled = gameCheckBoxes.Any(cb => cb.Box.IsChecked == true);
         }
 
-        var gameResult = await gameDialog.ShowAsync();
+        var gameResult = await DialogService.ShowSafeAsync(gameDialog);
         if (gameResult != ContentDialogResult.Primary) return;
 
         // ── 3. Deploy presets to selected games ──────────────────────────────
@@ -1074,7 +1085,7 @@ public class SettingsHandler
             RequestedTheme = ElementTheme.Dark,
         };
 
-        var shaderResult = await shaderDialog.ShowAsync();
+        var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
         if (shaderResult == ContentDialogResult.Primary)
         {
             var presetPaths = selectedPresets.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();

@@ -48,7 +48,7 @@ public static class AddonPopupHelper
                 MinWidth = 750,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await emptyDlg.ShowAsync();
+            await DialogService.ShowSafeAsync(emptyDlg);
             return null;
         }
 
@@ -180,7 +180,7 @@ public static class AddonPopupHelper
             RequestedTheme = ElementTheme.Dark,
         };
 
-        var dialogResult = await dlg.ShowAsync();
+        var dialogResult = await DialogService.ShowSafeAsync(dlg);
         if (dialogResult != ContentDialogResult.Primary)
             return null;
 

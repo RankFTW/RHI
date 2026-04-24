@@ -44,6 +44,9 @@ public interface IGameNameService
     /// <summary>Games excluded from batch OptiScaler updates.</summary>
     HashSet<string> UpdateAllExcludedOs { get; }
 
+    /// <summary>Games excluded from batch RE Framework updates.</summary>
+    HashSet<string> UpdateAllExcludedRef { get; }
+
     /// <summary>Per-game shader mode settings.</summary>
     Dictionary<string, string> PerGameShaderMode { get; }
 

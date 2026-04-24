@@ -55,5 +55,6 @@ public interface IUpdateOrchestrationService
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
         Action notifyUpdateState,
         bool skipRdx = false,
-        bool skipRs = false);
+        bool skipRs = false,
+        bool skipRef = false);
 }

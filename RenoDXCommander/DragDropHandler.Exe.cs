@@ -48,7 +48,7 @@ public partial class DragDropHandler
                 Background      = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
                 RequestedTheme  = ElementTheme.Dark,
             };
-            await dupDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(dupDialog);
             return;
         }
 
@@ -86,7 +86,7 @@ public partial class DragDropHandler
             Background        = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
             RequestedTheme    = ElementTheme.Dark,
         };
-        var result = await confirmDialog.ShowAsync();
+        var result = await DialogService.ShowSafeAsync(confirmDialog);
         if (result != ContentDialogResult.Primary) return;
 
         var finalName = nameBox.Text.Trim();

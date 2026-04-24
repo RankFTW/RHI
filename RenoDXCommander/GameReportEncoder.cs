@@ -41,7 +41,7 @@ public static class GameReportEncoder
             RequestedTheme = ElementTheme.Dark,
         };
 
-        var gateResult = await gateDlg.ShowAsync();
+        var gateResult = await DialogService.ShowSafeAsync(gateDlg);
         if (gateResult != ContentDialogResult.Primary) return;
 
         // Show dialog with optional note
@@ -79,7 +79,7 @@ public static class GameReportEncoder
             RequestedTheme = ElementTheme.Dark,
         };
 
-        var result = await dlg.ShowAsync();
+        var result = await DialogService.ShowSafeAsync(dlg);
         if (result != ContentDialogResult.Primary) return;
 
         var report = BuildReport(card, vm, noteBox.Text?.Trim() ?? "");

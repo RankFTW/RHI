@@ -42,7 +42,7 @@ public static class AddonManagerDialog
                 MinWidth = 750,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await emptyDlg.ShowAsync();
+            await DialogService.ShowSafeAsync(emptyDlg);
             return;
         }
 
@@ -72,7 +72,7 @@ public static class AddonManagerDialog
             RequestedTheme = ElementTheme.Dark,
         };
 
-        await dlg.ShowAsync();
+        await DialogService.ShowSafeAsync(dlg);
     }
 
     /// <summary>

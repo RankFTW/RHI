@@ -38,7 +38,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
             return;
         }
 
@@ -87,7 +87,7 @@ public partial class DragDropHandler
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
-                await failDialog.ShowAsync();
+                await DialogService.ShowSafeAsync(failDialog);
                 return;
             }
 
@@ -108,7 +108,7 @@ public partial class DragDropHandler
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
-                await noAddonDialog.ShowAsync();
+                await DialogService.ShowSafeAsync(noAddonDialog);
                 return;
             }
 
@@ -141,7 +141,7 @@ public partial class DragDropHandler
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
-                if (await pickDialog.ShowAsync() != ContentDialogResult.Primary) return;
+                if (await DialogService.ShowSafeAsync(pickDialog) != ContentDialogResult.Primary) return;
                 addonToInstall = (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? addonFiles[0];
             }
 
@@ -176,7 +176,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await noGamesDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(noGamesDialog);
             return;
         }
 
@@ -252,7 +252,7 @@ public partial class DragDropHandler
             RequestedTheme = ElementTheme.Dark,
         };
 
-        var pickResult = await pickDialog.ShowAsync();
+        var pickResult = await DialogService.ShowSafeAsync(pickDialog);
         if (pickResult != ContentDialogResult.Primary) return;
 
         if (combo.SelectedItem is not ComboBoxItem selected || selected.Tag is not GameCardViewModel targetCard)
@@ -265,7 +265,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await noSelection.ShowAsync();
+            await DialogService.ShowSafeAsync(noSelection);
             return;
         }
 
@@ -307,7 +307,7 @@ public partial class DragDropHandler
             RequestedTheme = ElementTheme.Dark,
         };
 
-        var confirmResult = await confirmDialog.ShowAsync();
+        var confirmResult = await DialogService.ShowSafeAsync(confirmDialog);
         if (confirmResult != ContentDialogResult.Primary) return;
 
         // Remove existing RenoDX addon files (not DC addons)
@@ -360,7 +360,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await successDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(successDialog);
         }
         catch (Exception ex)
         {
@@ -373,7 +373,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
         }
     }
 
@@ -397,7 +397,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
             return;
         }
 
@@ -414,7 +414,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
             return;
         }
 
@@ -431,7 +431,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
             return;
         }
 
@@ -470,7 +470,13 @@ public partial class DragDropHandler
             RequestedTheme = ElementTheme.Dark,
         };
 
-        // Show dialog non-blocking
+        // Show dialog non-blocking (acquire dialog gate to prevent concurrent dialogs)
+        if (!DialogService.TryAcquireDialogGate())
+        {
+            CrashReporter.Log("[DragDropHandler.Addon] Skipped progress dialog — another dialog is open");
+            return;
+        }
+        progressDialog.Closed += (_, _) => DialogService.ReleaseDialogGate();
         var dialogTask = progressDialog.ShowAsync();
 
         try
@@ -491,7 +497,7 @@ public partial class DragDropHandler
                         XamlRoot = _window.Content.XamlRoot,
                         RequestedTheme = ElementTheme.Dark,
                     };
-                    await errDialog.ShowAsync();
+                    await DialogService.ShowSafeAsync(errDialog);
                     return;
                 }
 
@@ -546,7 +552,7 @@ public partial class DragDropHandler
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
-                await errDialog.ShowAsync();
+                await DialogService.ShowSafeAsync(errDialog);
                 return;
             }
             catch (TaskCanceledException ex)
@@ -561,7 +567,7 @@ public partial class DragDropHandler
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
-                await errDialog.ShowAsync();
+                await DialogService.ShowSafeAsync(errDialog);
                 return;
             }
 
@@ -584,7 +590,7 @@ public partial class DragDropHandler
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
-                await errDialog.ShowAsync();
+                await DialogService.ShowSafeAsync(errDialog);
                 return;
             }
 

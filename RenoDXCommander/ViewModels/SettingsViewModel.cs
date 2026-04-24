@@ -39,6 +39,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _globalSkipUlUpdates;
     [ObservableProperty] private bool _globalSkipDcUpdates;
     [ObservableProperty] private bool _globalSkipOsUpdates;
+    [ObservableProperty] private bool _globalSkipRefUpdates;
 
     /// <summary>
     /// Optional callback invoked after any settings-specific property changes,
@@ -177,6 +178,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("GlobalSkipUlUpdates", out var gsuVal)) GlobalSkipUlUpdates = gsuVal == "true";
         if (s.TryGetValue("GlobalSkipDcUpdates", out var gsdVal)) GlobalSkipDcUpdates = gsdVal == "true";
         if (s.TryGetValue("GlobalSkipOsUpdates", out var gsoVal)) GlobalSkipOsUpdates = gsoVal == "true";
+        if (s.TryGetValue("GlobalSkipRefUpdates", out var gsrefVal)) GlobalSkipRefUpdates = gsrefVal == "true";
     }
 
     /// <summary>
@@ -210,6 +212,7 @@ public partial class SettingsViewModel : ObservableObject
         s["GlobalSkipUlUpdates"] = GlobalSkipUlUpdates ? "true" : "false";
         s["GlobalSkipDcUpdates"] = GlobalSkipDcUpdates ? "true" : "false";
         s["GlobalSkipOsUpdates"] = GlobalSkipOsUpdates ? "true" : "false";
+        s["GlobalSkipRefUpdates"] = GlobalSkipRefUpdates ? "true" : "false";
     }
 
     public void LoadThemeAndDensity()

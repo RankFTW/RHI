@@ -69,7 +69,7 @@ public partial class DialogService
             RequestedTheme      = ElementTheme.Dark,
         };
 
-        var result = await dlg.ShowAsync();
+        var result = await DialogService.ShowSafeAsync(dlg);
         if (result != ContentDialogResult.Primary) return; // user chose "Later"
 
         // User chose "Update Now" — show downloading dialog
@@ -108,7 +108,14 @@ public partial class DialogService
             // No buttons — dialog will be closed programmatically when download completes
         };
 
-        // Show dialog non-blocking
+        // Show dialog non-blocking (acquire dialog gate to prevent concurrent dialogs)
+        if (!DialogService.TryAcquireDialogGate())
+        {
+            CrashReporter.Log("[DialogService.Update] Skipped download dialog — another dialog is open");
+            return;
+        }
+        bool gateReleased = false;
+        downloadDlg.Closed += (_, _) => { if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); } };
         var dialogTask = downloadDlg.ShowAsync();
 
         var progress = new Progress<(string msg, double pct)>(p =>
@@ -137,6 +144,7 @@ public partial class DialogService
 
         // Close the progress dialog
         downloadDlg.Hide();
+        if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
 
         // Launch installer and close RDXC
         ViewModel.UpdateServiceInstance.LaunchInstallerAndExit(installerPath, () =>
@@ -251,6 +259,6 @@ public partial class DialogService
             RequestedTheme     = ElementTheme.Dark,
         };
 
-        await dlg.ShowAsync();
+        await DialogService.ShowSafeAsync(dlg);
     }
 }

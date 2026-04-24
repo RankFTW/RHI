@@ -1357,6 +1357,13 @@
                                                   OnContent="On" OffContent="Off"
                                                   Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
                                                   Toggled="GlobalOsUpdateToggle_Toggled"/>
+
+                                    <ToggleSwitch Grid.Row="1" Grid.Column="2"
+                                                  x:Name="GlobalRefUpdateToggle" x:FieldModifier="internal"
+                                                  Header="RE Framework"
+                                                  OnContent="On" OffContent="Off"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Toggled="GlobalRefUpdateToggle_Toggled"/>
                                 </Grid>
                             </StackPanel>
                         </Border>

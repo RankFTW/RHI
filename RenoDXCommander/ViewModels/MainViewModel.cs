@@ -556,6 +556,7 @@ public partial class MainViewModel : ObservableObject
     private HashSet<string> _updateAllExcludedUl => _gameNameService.UpdateAllExcludedUl;
     private HashSet<string> _updateAllExcludedDc => _gameNameService.UpdateAllExcludedDc;
     private HashSet<string> _updateAllExcludedOs => _gameNameService.UpdateAllExcludedOs;
+    private HashSet<string> _updateAllExcludedRef => _gameNameService.UpdateAllExcludedRef;
     private Dictionary<string, string> _perGameShaderMode => _gameNameService.PerGameShaderMode;
     /// <summary>Per-game Vulkan rendering path preferences. Key = game name, Value = "DirectX" or "Vulkan".</summary>
     private Dictionary<string, string> _vulkanRenderingPaths => _gameNameService.VulkanRenderingPaths;

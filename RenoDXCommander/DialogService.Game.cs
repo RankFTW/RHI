@@ -38,7 +38,7 @@ public partial class DialogService
             RequestedTheme      = ElementTheme.Dark,
         };
 
-        var result = await dlg.ShowAsync();
+        var result = await DialogService.ShowSafeAsync(dlg);
         return result == ContentDialogResult.Primary;
     }
 
@@ -68,7 +68,7 @@ public partial class DialogService
             RequestedTheme      = ElementTheme.Dark,
         };
 
-        var result = await dlg.ShowAsync();
+        var result = await DialogService.ShowSafeAsync(dlg);
         return result == ContentDialogResult.Primary;
     }
 
@@ -164,7 +164,7 @@ public partial class DialogService
                 Background      = Brush(ResourceKeys.SurfaceToolbarBrush),
                 RequestedTheme  = ElementTheme.Dark,
             };
-            await dialog.ShowAsync();
+            await DialogService.ShowSafeAsync(dialog);
         }
         catch (Exception ex)
         {
@@ -681,7 +681,7 @@ public partial class DialogService
                 RequestedTheme      = ElementTheme.Dark,
             };
 
-            await dlg.ShowAsync();
+            await DialogService.ShowSafeAsync(dlg);
         }
         catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowUeExtendedWarningAsync] Failed to show UE warning for '{card.GameName}' — {ex.Message}"); }
     }

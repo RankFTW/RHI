@@ -54,4 +54,59 @@ public partial class DialogService
         MenuFlyoutItem item when item.Tag is GameCardViewModel c => c,
         _ => null
     };
+
+    // ── Safe dialog guard ────────────────────────────────────────────────────────
+    // WinUI3 only allows one ContentDialog open at a time. A second ShowAsync()
+    // throws a COMException, and if that's in an async-void handler the exception
+    // goes unobserved, leaving an invisible modal overlay that blocks all input.
+    // This guard serialises all dialog opens so that can never happen.
+
+    private static readonly SemaphoreSlim _dialogGate = new(1, 1);
+
+    /// <summary>
+    /// Shows a <see cref="ContentDialog"/> safely. If another dialog is already
+    /// open, the call is skipped and <see cref="ContentDialogResult.None"/> is
+    /// returned (treated as "cancelled" by callers).
+    /// Every <c>ContentDialog.ShowAsync()</c> in the app should go through this.
+    /// </summary>
+    public static async Task<ContentDialogResult> ShowSafeAsync(ContentDialog dialog)
+    {
+        if (!_dialogGate.Wait(0))
+        {
+            CrashReporter.Log("[DialogService.ShowSafeAsync] Skipped — another dialog is already open");
+            return ContentDialogResult.None;
+        }
+        try
+        {
+            return await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DialogService.ShowSafeAsync] Dialog failed — {ex.Message}");
+            return ContentDialogResult.None;
+        }
+        finally
+        {
+            _dialogGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Acquires the dialog gate for non-blocking dialog patterns (progress dialogs
+    /// that are shown with ShowAsync() but closed programmatically via Hide()).
+    /// Must be paired with <see cref="ReleaseDialogGate"/>.
+    /// </summary>
+    public static bool TryAcquireDialogGate()
+    {
+        return _dialogGate.Wait(0);
+    }
+
+    /// <summary>
+    /// Releases the dialog gate after a non-blocking dialog is closed.
+    /// </summary>
+    public static void ReleaseDialogGate()
+    {
+        try { _dialogGate.Release(); }
+        catch (SemaphoreFullException) { }
+    }
 }

@@ -47,7 +47,7 @@ public static class ShaderPopupHelper
                 MinWidth          = 750,
             };
 
-            await emptyDlg.ShowAsync();
+            await DialogService.ShowSafeAsync(emptyDlg);
             return null;
         }
 
@@ -146,7 +146,7 @@ public static class ShaderPopupHelper
             MinWidth          = 750,
         };
 
-        var dialogResult = await dlg.ShowAsync();
+        var dialogResult = await DialogService.ShowSafeAsync(dlg);
         if (dialogResult != ContentDialogResult.Primary)
             return null; // cancelled — caller should preserve existing state
 

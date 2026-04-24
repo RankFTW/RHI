@@ -34,7 +34,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
             return;
         }
 
@@ -49,7 +49,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
             return;
         }
 
@@ -72,7 +72,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
             return;
         }
 
@@ -88,7 +88,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await noGamesDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(noGamesDialog);
             return;
         }
 
@@ -135,7 +135,7 @@ public partial class DragDropHandler
             RequestedTheme = ElementTheme.Dark,
         };
 
-        var pickResult = await pickDialog.ShowAsync();
+        var pickResult = await DialogService.ShowSafeAsync(pickDialog);
         if (pickResult != ContentDialogResult.Primary) return;
 
         if (combo.SelectedItem is not ComboBoxItem selected || selected.Tag is not GameCardViewModel targetCard)
@@ -148,7 +148,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await noSelection.ShowAsync();
+            await DialogService.ShowSafeAsync(noSelection);
             return;
         }
 
@@ -173,7 +173,7 @@ public partial class DragDropHandler
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
-            await errDialog.ShowAsync();
+            await DialogService.ShowSafeAsync(errDialog);
             return;
         }
 
@@ -188,7 +188,7 @@ public partial class DragDropHandler
             RequestedTheme = ElementTheme.Dark,
         };
 
-        var shaderResult = await shaderDialog.ShowAsync();
+        var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
         if (shaderResult == ContentDialogResult.Primary)
         {
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] User chose to install shaders for '{gameName}'");

@@ -231,9 +231,10 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
         Action notifyUpdateState,
         bool skipRdx = false,
-        bool skipRs = false)
+        bool skipRs = false,
+        bool skipRef = false)
     {
-        _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {cards.Count} total cards (skipRdx={skipRdx}, skipRs={skipRs})");
+        _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {cards.Count} total cards (skipRdx={skipRdx}, skipRs={skipRs}, skipRef={skipRef})");
 
         if (!skipRdx)
         {
@@ -287,6 +288,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         }
 
         // ── RE Framework update check ─────────────────────────────────────────
+        if (!skipRef)
+        {
         try
         {
             var refInstalled = cards
@@ -325,6 +328,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         catch (Exception ex)
         {
             _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF update check failed — {ex.Message}");
+        }
         }
 
         dispatcherQueue?.TryEnqueue(() => notifyUpdateState());

@@ -725,7 +725,8 @@ public partial class MainViewModel
                 OnPropertyChanged(nameof(UpdateAllBtnBorder));
             },
             skipRdx: _settingsViewModel.GlobalSkipRdxUpdates,
-            skipRs: _settingsViewModel.GlobalSkipRsUpdates);
+            skipRs: _settingsViewModel.GlobalSkipRsUpdates,
+            skipRef: _settingsViewModel.GlobalSkipRefUpdates);
 
         // Check ReLimiter for updates (single global check, applies to all cards with UL installed)
         if (!_settingsViewModel.GlobalSkipUlUpdates)

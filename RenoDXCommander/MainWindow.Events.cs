@@ -665,6 +665,9 @@ public sealed partial class MainWindow
     private void GlobalOsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
         => _settingsHandler.GlobalOsUpdateToggle_Toggled(sender, e);
 
+    private void GlobalRefUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+        => _settingsHandler.GlobalRefUpdateToggle_Toggled(sender, e);
+
     private void ApplyOsHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyOsHotkey_Click(sender, e);
 
@@ -817,7 +820,7 @@ public sealed partial class MainWindow
             }
         };
 
-        var result = await dialog.ShowAsync();
+        var result = await DialogService.ShowSafeAsync(dialog);
         if (result != ContentDialogResult.Primary) return;
 
         var filterName = nameBox.Text?.Trim() ?? "";
@@ -910,7 +913,7 @@ public sealed partial class MainWindow
             Background          = Brush(ResourceKeys.SurfaceToolbarBrush),
             RequestedTheme      = ElementTheme.Dark,
         };
-        var result = await nameDialog.ShowAsync();
+        var result = await DialogService.ShowSafeAsync(nameDialog);
         if (result != ContentDialogResult.Primary) return;
 
         var gameName = nameBox.Text.Trim();
@@ -1012,7 +1015,7 @@ public sealed partial class MainWindow
                     RequestedTheme = ElementTheme.Dark,
                 };
 
-                var result = await warningDialog.ShowAsync();
+                var result = await DialogService.ShowSafeAsync(warningDialog);
 
                 if (result != ContentDialogResult.Primary)
                     return; // Req 10.5: Cancel — don't persist flag, don't open manager
@@ -1049,7 +1052,8 @@ public sealed partial class MainWindow
             await ViewModel.UpdateAllDcAsync();
         if (!ViewModel.Settings.GlobalSkipOsUpdates)
             await ViewModel.UpdateAllOsAsync();
-        await ViewModel.UpdateAllRefAsync();
+        if (!ViewModel.Settings.GlobalSkipRefUpdates)
+            await ViewModel.UpdateAllRefAsync();
     }
 
     private async void UpdateAllRenoDx_Click(object sender, RoutedEventArgs e)
