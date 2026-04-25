@@ -251,8 +251,8 @@ public partial class DetailPanelBuilder
             _window.DetailUlIniBtn.IsHitTestVisible = !card.UseNormalReShade;
             _window.DetailUlDeleteBtn.Tag = card;
             var ulShow = card.UlDeleteVisibility == Visibility.Visible;
-            _window.DetailUlDeleteBtn.Opacity = ulGreyed ? 0 : (ulShow ? 1 : 0);
-            _window.DetailUlDeleteBtn.IsHitTestVisible = ulShow && !ulGreyed;
+            _window.DetailUlDeleteBtn.Opacity = ulShow ? 1 : 0;
+            _window.DetailUlDeleteBtn.IsHitTestVisible = ulShow;
             ApplyInfoButtonStyle(_window.DetailUlInfoBtn, card, AddonType.ReLimiter);
         }
 
@@ -295,8 +295,8 @@ public partial class DetailPanelBuilder
             _window.DetailDcIniBtn.IsHitTestVisible = !card.UseNormalReShade;
             _window.DetailDcDeleteBtn.Tag = card;
             var dcShow = card.DcDeleteVisibility == Visibility.Visible;
-            _window.DetailDcDeleteBtn.Opacity = dcGreyed ? 0 : (dcShow ? 1 : 0);
-            _window.DetailDcDeleteBtn.IsHitTestVisible = dcShow && !dcGreyed;
+            _window.DetailDcDeleteBtn.Opacity = dcShow ? 1 : 0;
+            _window.DetailDcDeleteBtn.IsHitTestVisible = dcShow;
             ApplyInfoButtonStyle(_window.DetailDcInfoBtn, card, AddonType.DisplayCommander);
         }
 
@@ -388,8 +388,8 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxInstallBtn.IsHitTestVisible = !card.UseNormalReShade;
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var extInstalled = card.IsRdxInstalled;
-                _window.DetailRdxDeleteBtn.Opacity = rdxGreyed ? 0 : (extInstalled ? 1 : 0);
-                _window.DetailRdxDeleteBtn.IsHitTestVisible = extInstalled && !rdxGreyed;
+                _window.DetailRdxDeleteBtn.Opacity = extInstalled ? 1 : 0;
+                _window.DetailRdxDeleteBtn.IsHitTestVisible = extInstalled;
             }
             else
             {
@@ -421,8 +421,8 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxInstallBtn.IsHitTestVisible = !card.UseNormalReShade && card.IsRsInstalled;
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var rdxShow = card.ReinstallRowVisibility == Visibility.Visible;
-                _window.DetailRdxDeleteBtn.Opacity = rdxGreyed ? 0 : (rdxShow ? 1 : 0);
-                _window.DetailRdxDeleteBtn.IsHitTestVisible = rdxShow && !rdxGreyed;
+                _window.DetailRdxDeleteBtn.Opacity = rdxShow ? 1 : 0;
+                _window.DetailRdxDeleteBtn.IsHitTestVisible = rdxShow;
             }
             ApplyInfoButtonStyle(_window.DetailRdxInfoBtn, card, AddonType.RenoDX);
         }

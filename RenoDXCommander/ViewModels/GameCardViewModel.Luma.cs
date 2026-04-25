@@ -30,6 +30,7 @@ public partial class GameCardViewModel
     public Visibility LumaProgressVisibility => IsLumaInstalling ? Visibility.Visible : Visibility.Collapsed;
     public Visibility LumaMessageVisibility => string.IsNullOrEmpty(LumaActionMessage) ? Visibility.Collapsed : Visibility.Visible;
     public string LumaActionLabel => IsLumaInstalling ? "Installing..."
+        : LumaStatus == GameStatus.UpdateAvailable ? "⬆  Update Luma"
         : LumaStatus == GameStatus.Installed ? "↺  Reinstall Luma"
         : "⬇  Install Luma";
 

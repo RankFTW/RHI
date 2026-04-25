@@ -130,22 +130,27 @@ public partial class AuxInstallService
         // If neither staged DLL exists, we can't compare — assume no update
         // to avoid false positives (e.g. normal RS staging not downloaded yet).
         if (!File.Exists(staged64) && !File.Exists(staged32))
+        {
+            CrashReporter.Log($"[AuxInstallService.CheckReShadeUpdateLocal] [{record.AddonType}] {record.GameName}: no staged DLLs found — skipping");
             return false;
+        }
 
         // Defensive: skip update check if staged DLLs are suspiciously small (test artifacts)
         if (File.Exists(staged64) && new FileInfo(staged64).Length < 100_000
             && File.Exists(staged32) && new FileInfo(staged32).Length < 100_000)
             return false;
 
+        var staged64Size = File.Exists(staged64) ? new FileInfo(staged64).Length : -1;
+        var staged32Size = File.Exists(staged32) ? new FileInfo(staged32).Length : -1;
+
         // Check against the 64-bit staged DLL first, then 32-bit.
-        // The installed file matches the staged DLL it was copied from.
-        // If either staged file has a different size, an update is available.
-        if (File.Exists(staged64) && localSize == new FileInfo(staged64).Length)
+        if (File.Exists(staged64) && localSize == staged64Size)
             return false; // matches current 64-bit — no update
-        if (File.Exists(staged32) && localSize == new FileInfo(staged32).Length)
+        if (File.Exists(staged32) && localSize == staged32Size)
             return false; // matches current 32-bit — no update
 
         // Size doesn't match either staged DLL — update available
+        CrashReporter.Log($"[AuxInstallService.CheckReShadeUpdateLocal] [{record.AddonType}] {record.GameName}: size mismatch — local={localSize}, staged64={staged64Size}, staged32={staged32Size} → update flagged");
         return true;
     }
 

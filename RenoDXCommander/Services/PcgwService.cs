@@ -28,6 +28,12 @@ public class PcgwService : IPcgwService
     /// <summary>Guards <see cref="_saveDebounceTimer"/> creation/reset.</summary>
     private readonly object _saveLock = new();
 
+    /// <summary>
+    /// Circuit breaker: once PCGW returns an error or times out, skip all further
+    /// lookups for the rest of the session to avoid blocking card builds.
+    /// </summary>
+    private volatile bool _pcgwDown;
+
     public PcgwService(HttpClient http, ISteamAppIdResolver steamAppIdResolver, IGameDetectionService gameDetection)
     {
         _http = http;
@@ -118,16 +124,20 @@ public class PcgwService : IPcgwService
     /// </summary>
     private async Task<string?> OpenSearchFallbackAsync(string gameName)
     {
+        if (_pcgwDown) return null;
+
         try
         {
             var encodedName = Uri.EscapeDataString(gameName);
             var url = $"https://www.pcgamingwiki.com/w/api.php?action=opensearch&search={encodedName}&limit=5&format=json";
 
-            var response = await _http.GetAsync(url).ConfigureAwait(false);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var response = await _http.GetAsync(url, cts.Token).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
-                CrashReporter.Log($"[PcgwService.OpenSearchFallback] OpenSearch returned {(int)response.StatusCode} — skipping");
+                CrashReporter.Log($"[PcgwService.OpenSearchFallback] OpenSearch returned {(int)response.StatusCode} — disabling PCGW for this session");
+                _pcgwDown = true;
                 return null;
             }
 
@@ -160,7 +170,8 @@ public class PcgwService : IPcgwService
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[PcgwService.OpenSearchFallback] Failed — {ex.Message}");
+            CrashReporter.Log($"[PcgwService.OpenSearchFallback] Failed — {ex.Message} — disabling PCGW for this session");
+            _pcgwDown = true;
             return null;
         }
     }

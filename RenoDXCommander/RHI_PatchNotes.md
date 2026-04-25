@@ -6,7 +6,7 @@
 
 ### New Features
 
-- Luma mods now show update badges and the installed build number in the detail panel.
+- Luma mods now show update badges and the installed build number in the detail panel. The install button shows "Update Luma" when an update is available.
 - RE Engine games can now install ReShade without RE Framework. Uncheck RE Framework in the Update Inclusion dialog and the ReShade install button unlocks immediately — no app restart or refresh needed.
 - The Update Inclusion dialog now refreshes the detail panel instantly when you save, so changes like enabling or disabling RE Framework take effect without clicking Refresh.
 
@@ -14,6 +14,11 @@
 
 - Fixed preset shader install doing nothing when shader cache was turned off. The app now fetches any missing shader pack info before resolving which packs a preset needs, so presets work regardless of your cache setting.
 - Fixed the shader mode not visually switching to "Select" after installing a preset from the right-click flyout or the mass preset deploy in Settings. The overrides panel now updates immediately.
+- Fixed the uninstall (red X) buttons for RenoDX, ReLimiter, and Display Commander disappearing when ReShade was uninstalled. You can now always remove installed components even if ReShade isn't present.
+- Fixed drag-and-drop mod installs from Discord (and other sources) being silently ignored when a background dialog (like an update check) was still open. Dialogs now queue instead of being skipped.
+- Fixed RE Framework failing to download with a 404 error. The nightly releases switched from per-game zips to a single monolithic build — the app now downloads `REFramework.zip` which works for all RE Engine games.
+- Fixed Luma games (Hollow Knight: Silksong, Metro Redux, etc.) falsely showing a ReShade update badge. Luma bundles its own ReShade version, so the update check now skips games in Luma mode.
+- Fixed the app hanging for up to 40+ seconds on startup when PCGamingWiki is down. The PCGW lookup now has a 5-second timeout and automatically disables itself for the session after the first failure.
 
 ### Under the Hood
 

@@ -6,7 +6,7 @@ namespace RenoDXCommander.Services;
 
 /// <summary>
 /// Installs and manages RE Framework (dinput8.dll) for RE Engine games.
-/// Downloads MHWILDS.zip from GitHub nightly releases, extracts dinput8.dll,
+/// Downloads REFramework.zip from GitHub nightly releases, extracts dinput8.dll,
 /// caches it locally, and copies it to the game directory.
 /// </summary>
 public class REFrameworkService : IREFrameworkService
@@ -19,31 +19,17 @@ public class REFrameworkService : IREFrameworkService
 
     /// <summary>
     /// Maps game names to their RE Framework nightly ZIP filename.
-    /// Each RE Engine game has a game-specific build of RE Framework.
-    /// Keys are compared case-insensitively via ResolveZipName.
+    /// Since the monolithic REFramework.zip build, all RE Engine games use the
+    /// same zip. The map is retained for any future per-game overrides.
     /// </summary>
     private static readonly Dictionary<string, string> GameZipMap = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["Devil May Cry 5"]                     = "DMC5.zip",
-        ["Dragon's Dogma 2"]                    = "DD2.zip",
-        ["Monster Hunter Rise"]                 = "MHRISE.zip",
-        ["Monster Hunter Rise: Sunbreak"]       = "MHRISE.zip",
-        ["Monster Hunter Wilds"]                = "MHWILDS.zip",
-        ["Pragmata"]                            = "PRAGMATA.zip",
-        ["Resident Evil 2"]                     = "RE2.zip",
-        ["Resident Evil 3"]                     = "RE3.zip",
-        ["Resident Evil 4"]                     = "RE4.zip",
-        ["Resident Evil Village"]               = "RE8.zip",
-        ["Resident Evil 7"]                     = "RE7.zip",
-        ["Resident Evil 7 Biohazard"]           = "RE7.zip",
-        ["RESIDENT EVIL 7 biohazard"]           = "RE7.zip",
-        ["Resident Evil 9"]                     = "RE9.zip",
-        ["Resident Evil Requiem"]                = "RE9.zip",
-        ["Resident Evil Requiem"]                = "RE9.zip",
-        ["Street Fighter 6"]                    = "SF6.zip",
-        ["Street Fighter™ 6"]                   = "SF6.zip",
-        ["Monster Hunter Stories 3"]            = "MHSTORIES3.zip",
+        // All RE Engine games now use the monolithic REFramework.zip.
+        // Per-game zips (DMC5.zip, RE2.zip, etc.) are no longer published.
     };
+
+    /// <summary>The monolithic zip that works for all supported RE Engine games.</summary>
+    private const string MonolithicZipName = "REFramework.zip";
 
     // ── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -161,8 +147,9 @@ public class REFrameworkService : IREFrameworkService
     // ── ZIP name resolution ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Resolves the game-specific RE Framework ZIP filename from the game name.
-    /// Falls back to MHWILDS.zip for unknown games (most common RE Engine game).
+    /// Resolves the RE Framework ZIP filename. Since the switch to the monolithic
+    /// build, all RE Engine games use REFramework.zip. The GameZipMap is checked
+    /// first for any future per-game overrides.
     /// </summary>
     private static string ResolveZipName(string gameName)
     {
@@ -174,15 +161,7 @@ public class REFrameworkService : IREFrameworkService
         if (stripped != gameName && GameZipMap.TryGetValue(stripped, out zip))
             return zip;
 
-        // Try partial matching for common variations (e.g. "RESIDENT EVIL 2" vs "Resident Evil 2")
-        foreach (var kvp in GameZipMap)
-        {
-            if (stripped.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
-                return kvp.Value;
-        }
-
-        CrashReporter.Log($"[REFrameworkService.ResolveZipName] No mapping for '{gameName}', falling back to MHWILDS.zip");
-        return "MHWILDS.zip";
+        return MonolithicZipName;
     }
 
     // ── Version tracking ──────────────────────────────────────────────────────────

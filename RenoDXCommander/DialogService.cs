@@ -71,9 +71,12 @@ public partial class DialogService
     /// </summary>
     public static async Task<ContentDialogResult> ShowSafeAsync(ContentDialog dialog)
     {
-        if (!_dialogGate.Wait(0))
+        // Wait up to 10 seconds for any existing dialog to close before giving up.
+        // This prevents drag-and-drop and other user-initiated dialogs from being
+        // silently swallowed when a background dialog (e.g. update check) is open.
+        if (!await _dialogGate.WaitAsync(TimeSpan.FromSeconds(10)))
         {
-            CrashReporter.Log("[DialogService.ShowSafeAsync] Skipped — another dialog is already open");
+            CrashReporter.Log("[DialogService.ShowSafeAsync] Skipped — another dialog is still open after 10s");
             return ContentDialogResult.None;
         }
         try

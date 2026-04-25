@@ -276,6 +276,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         {
         var auxInstalled = cards
             .Where(c => c.RsStatus == GameStatus.Installed)
+            .Where(c => !c.IsLumaMode) // Luma games bundle their own ReShade — skip update check
             .ToList();
 
         _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {auxInstalled.Count} aux (RS) cards to check");
