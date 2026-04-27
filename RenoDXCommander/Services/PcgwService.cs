@@ -34,6 +34,13 @@ public class PcgwService : IPcgwService
     /// </summary>
     private volatile bool _pcgwDown;
 
+    /// <summary>
+    /// Shared cancellation source — cancelled when the circuit breaker trips so
+    /// all in-flight PCGW requests abort immediately instead of each waiting
+    /// their own 5-second timeout.
+    /// </summary>
+    private readonly CancellationTokenSource _pcgwCts = new();
+
     public PcgwService(HttpClient http, ISteamAppIdResolver steamAppIdResolver, IGameDetectionService gameDetection)
     {
         _http = http;
@@ -131,13 +138,15 @@ public class PcgwService : IPcgwService
             var encodedName = Uri.EscapeDataString(gameName);
             var url = $"https://www.pcgamingwiki.com/w/api.php?action=opensearch&search={encodedName}&limit=5&format=json";
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_pcgwCts.Token);
+            cts.CancelAfter(TimeSpan.FromSeconds(5));
             var response = await _http.GetAsync(url, cts.Token).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
                 CrashReporter.Log($"[PcgwService.OpenSearchFallback] OpenSearch returned {(int)response.StatusCode} — disabling PCGW for this session");
                 _pcgwDown = true;
+                try { _pcgwCts.Cancel(); } catch { }
                 return null;
             }
 
@@ -172,6 +181,7 @@ public class PcgwService : IPcgwService
         {
             CrashReporter.Log($"[PcgwService.OpenSearchFallback] Failed — {ex.Message} — disabling PCGW for this session");
             _pcgwDown = true;
+            try { _pcgwCts.Cancel(); } catch { }
             return null;
         }
     }

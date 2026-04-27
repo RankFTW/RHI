@@ -3,6 +3,7 @@
 ### Bug Fixes
 
 - Fixed games showing a false ReShade update badge after switching between addon and non-addon ReShade. The update check now recognises both ReShade variants so toggling the preference no longer triggers a phantom update.
+- Fixed multiple games without cached PCGW data each waiting 5 seconds on startup when PCGamingWiki is down. The first timeout now cancels all other in-flight PCGW requests immediately instead of each waiting independently.
 
 ## v1.8.6
 

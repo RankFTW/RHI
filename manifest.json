@@ -24,6 +24,8 @@
     "Indiana Jones and the Great Circle: The Last Crusade Pack - Traveling Suit Outfit",
     "Lossless Scaling",
     "Masters Vacation Pack",
+    "Minecraft Launcher",
+    "Minecraft: Java Edition",
     "Muckingham Files 3",
     "Muckingham Files 4",
     "MWII: Campaign Pack",
@@ -588,6 +590,8 @@
   },
 
   "pcgwUrlOverrides": {
+    "Alan Wake 2": "https://www.pcgamingwiki.com/wiki/Alan_Wake_2",
+    "Fortnite": "https://www.pcgamingwiki.com/wiki/Fortnite",
     "The Sinking City Remastered": "https://www.pcgamingwiki.com/wiki/The_Sinking_City_Remastered"
   },
 
