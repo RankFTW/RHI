@@ -149,6 +149,17 @@ public partial class AuxInstallService
         if (File.Exists(staged32) && localSize == staged32Size)
             return false; // matches current 32-bit — no update
 
+        // Also check against the OTHER variant's staging DLLs.
+        // When switching between addon and normal ReShade, the record's AddonType
+        // updates but the DLL on disk may still be the previous variant until
+        // the user actually reinstalls. Avoid false update badges in this case.
+        var altStaged64 = record.AddonType == TypeReShadeNormal ? RsStagedPath64 : RsNormalStagedPath64;
+        var altStaged32 = record.AddonType == TypeReShadeNormal ? RsStagedPath32 : RsNormalStagedPath32;
+        if (File.Exists(altStaged64) && localSize == new FileInfo(altStaged64).Length)
+            return false; // matches the other variant's 64-bit — no update
+        if (File.Exists(altStaged32) && localSize == new FileInfo(altStaged32).Length)
+            return false; // matches the other variant's 32-bit — no update
+
         // Size doesn't match either staged DLL — update available
         CrashReporter.Log($"[AuxInstallService.CheckReShadeUpdateLocal] [{record.AddonType}] {record.GameName}: size mismatch — local={localSize}, staged64={staged64Size}, staged32={staged32Size} → update flagged");
         return true;

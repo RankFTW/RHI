@@ -1,3 +1,9 @@
+## v1.8.7
+
+### Bug Fixes
+
+- Fixed games showing a false ReShade update badge after switching between addon and non-addon ReShade. The update check now recognises both ReShade variants so toggling the preference no longer triggers a phantom update.
+
 ## v1.8.6
 
 ### Highlights
