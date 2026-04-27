@@ -57,6 +57,8 @@ public class SettingsHandler
         // Initialize ReLimiter OSD hotkey display
         _currentUlHotkeyString = ViewModel.Settings.UlOsdHotkey;
         _window.UlHotkeyBox.Text = ViewModel.Settings.UlOsdHotkey;
+        // Initialize ReLimiter shared presets toggle
+        _window.UlSharedPresetsToggle.IsOn = ViewModel.Settings.UlSharedPresets;
         // Initialize OptiScaler hotkey display
         _currentOsHotkeyString = ViewModel.Settings.OsHotkey;
         var osCombo = _window.OsHotkeyCombo;
@@ -550,6 +552,7 @@ public class SettingsHandler
         ViewModel.Settings.UlOsdHotkey = _currentUlHotkeyString;
         ViewModel.SaveSettingsPublic();
 
+        bool sharedPresets = ViewModel.Settings.UlSharedPresets;
         int updatedCount = 0;
         foreach (var card in ViewModel.AllCards)
         {
@@ -562,6 +565,19 @@ public class SettingsHandler
             try
             {
                 AuxInstallService.ApplyUlOsdHotkey(iniFile, _currentUlHotkeyString);
+                AuxInstallService.ApplyUlSharedPresets(iniFile, sharedPresets);
+
+                // RE Framework games also store relimiter.ini in _storage_
+                if (card.IsRefInstalled)
+                {
+                    var storagePath = Path.Combine(card.InstallPath, "_storage_", "relimiter.ini");
+                    if (File.Exists(storagePath))
+                    {
+                        AuxInstallService.ApplyUlOsdHotkey(storagePath, _currentUlHotkeyString);
+                        AuxInstallService.ApplyUlSharedPresets(storagePath, sharedPresets);
+                    }
+                }
+
                 updatedCount++;
             }
             catch (Exception ex)
@@ -576,6 +592,7 @@ public class SettingsHandler
             try
             {
                 AuxInstallService.ApplyUlOsdHotkey(AuxInstallService.UlIniPath, _currentUlHotkeyString);
+                AuxInstallService.ApplyUlSharedPresets(AuxInstallService.UlIniPath, sharedPresets);
             }
             catch (Exception ex)
             {
@@ -592,6 +609,17 @@ public class SettingsHandler
             RequestedTheme = ElementTheme.Dark,
         };
         await DialogService.ShowSafeAsync(dialog);
+    }
+
+    // ── ReLimiter Shared Presets ──────────────────────────────────────────────
+
+    public void UlSharedPresetsToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleSwitch toggle)
+        {
+            ViewModel.Settings.UlSharedPresets = toggle.IsOn;
+            ViewModel.SaveSettingsPublic();
+        }
     }
 
     // ── OptiScaler Hotkey ─────────────────────────────────────────────────────

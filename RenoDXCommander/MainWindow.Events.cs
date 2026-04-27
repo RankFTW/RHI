@@ -641,6 +641,9 @@ public sealed partial class MainWindow
     private void ApplyUlOsdHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyUlOsdHotkey_Click(sender, e);
 
+    private void UlSharedPresetsToggle_Toggled(object sender, RoutedEventArgs e)
+        => _settingsHandler.UlSharedPresetsToggle_Toggled(sender, e);
+
     private void OsHotkeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.OsHotkeyCombo_SelectionChanged(sender, e);
 

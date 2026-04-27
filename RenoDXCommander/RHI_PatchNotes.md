@@ -1,5 +1,9 @@
 ## v1.8.7
 
+### New Features
+
+- Added "Shared OSD Presets" toggle for ReLimiter on the Settings page. When enabled, all games share the same OSD presets from a central file instead of each game having its own. The "Apply to All Games" button writes both the hotkey and the shared presets setting to all deployed relimiter.ini files, and new installs inherit the setting automatically.
+
 ### Bug Fixes
 
 - Fixed games showing a false ReShade update badge after switching between addon and non-addon ReShade. The update check now recognises both ReShade variants so toggling the preference no longer triggers a phantom update.

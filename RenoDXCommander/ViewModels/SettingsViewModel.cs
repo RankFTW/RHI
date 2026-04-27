@@ -27,6 +27,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _overlayHotkey = "36,0,0,0";
     [ObservableProperty] private string _screenshotHotkey = "44,0,0,0";
     [ObservableProperty] private string _ulOsdHotkey = "F12";
+    [ObservableProperty] private bool _ulSharedPresets = false;
     [ObservableProperty] private string _osHotkey = "Insert";
     [ObservableProperty] private string _osGpuType = "NVIDIA";
     [ObservableProperty] private bool _osDlssInputs = true;
@@ -150,6 +151,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("UlOsdHotkey", out var ulhVal))
             UlOsdHotkey = ulhVal ?? "F12";
 
+        if (s.TryGetValue("UlSharedPresets", out var ulspVal))
+            UlSharedPresets = ulspVal == "true";
+
         if (s.TryGetValue("OsHotkey", out var oshVal))
             OsHotkey = oshVal ?? "Insert";
 
@@ -202,6 +206,7 @@ public partial class SettingsViewModel : ObservableObject
         s["OverlayHotkey"] = OverlayHotkey;
         s["ScreenshotHotkey"] = ScreenshotHotkey;
         s["UlOsdHotkey"] = UlOsdHotkey;
+        s["UlSharedPresets"] = UlSharedPresets ? "true" : "false";
         s["OsHotkey"] = OsHotkey;
         s["OsGpuType"] = OsGpuType;
         s["OsDlssInputs"] = OsDlssInputs ? "true" : "false";
