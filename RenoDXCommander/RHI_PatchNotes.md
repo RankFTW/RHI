@@ -5,6 +5,15 @@
 - Fixed games showing a false ReShade update badge after switching between addon and non-addon ReShade. The update check now recognises both ReShade variants so toggling the preference no longer triggers a phantom update.
 - Fixed multiple games without cached PCGW data each waiting 5 seconds on startup when PCGamingWiki is down. The first timeout now cancels all other in-flight PCGW requests immediately instead of each waiting independently.
 
+### Manifest Updates
+
+- FINAL FANTASY XIV Online now installs to the correct `game` subfolder.
+- Assassin's Creed Origins and Odyssey now correctly detect as DX11 instead of OpenGL.
+- Elden Ring install button now links to Nexus Mods instead of the snapshot download.
+- Sea of Thieves blacklisted — ReShade can cause bans in this game.
+- Minecraft Launcher blacklisted (not a game).
+- Added direct PCGW links for Alan Wake 2 and Fortnite to avoid slow lookups.
+
 ## v1.8.6
 
 ### Highlights
