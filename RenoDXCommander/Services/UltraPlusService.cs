@@ -24,13 +24,9 @@ public partial class UltraPlusService : IUltraPlusService
     /// <summary>Normalized game name → Ultra+ page URL.</summary>
     private Dictionary<string, string> _lookup = new(StringComparer.Ordinal);
 
-    // Matches HTML links like: <a href="https://theultraplace.com/games/slug/">Game Name</a>
-    // Also matches markdown-style links from rendered content: [Game Name](url)
-    [GeneratedRegex(@"href=""(https://theultraplace\.com/games/[^""]+)"">([^<]+)</a>", RegexOptions.IgnoreCase)]
-    private static partial Regex GameLinkHtmlRegex();
-
-    [GeneratedRegex(@"\[([^\]]+)\]\((https://theultraplace\.com/games/[^)]+)\)", RegexOptions.IgnoreCase)]
-    private static partial Regex GameLinkMdRegex();
+    // Matches game cards: <a href="/games/slug/" class="game-card"...><h3>Game Name</h3>
+    [GeneratedRegex(@"<a\s+href=""(/games/[^""]+)""\s+class=""game-card""[^>]*>.*?<h3>([^<]+)</h3>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex GameCardRegex();
 
     public UltraPlusService(HttpClient http, IGameDetectionService gameDetection)
     {
@@ -114,43 +110,20 @@ public partial class UltraPlusService : IUltraPlusService
         try
         {
             var dict = new Dictionary<string, string>(StringComparer.Ordinal);
-            var htmlRegex = GameLinkHtmlRegex();
-            var mdRegex = GameLinkMdRegex();
+            var regex = GameCardRegex();
+            const string baseUrl = "https://theultraplace.com";
 
-            // Track seen URLs to avoid duplicates (the page has game cards + nav links)
-            var seenUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // Try HTML pattern first (actual HTTP response)
-            foreach (Match match in htmlRegex.Matches(html))
+            foreach (Match match in regex.Matches(html))
             {
-                var url = match.Groups[1].Value.Trim();
+                var path = match.Groups[1].Value.Trim();
                 var gameName = match.Groups[2].Value.Trim();
 
-                if (string.IsNullOrEmpty(gameName) || string.IsNullOrEmpty(url)) continue;
-                if (seenUrls.Contains(url)) continue;
-                seenUrls.Add(url);
+                if (string.IsNullOrEmpty(gameName) || string.IsNullOrEmpty(path)) continue;
 
+                var url = baseUrl + path;
                 var key = _gameDetection.NormalizeName(gameName);
                 if (!string.IsNullOrEmpty(key))
                     dict.TryAdd(key, url);
-            }
-
-            // Fallback: try markdown pattern (rendered content)
-            if (dict.Count == 0)
-            {
-                foreach (Match match in mdRegex.Matches(html))
-                {
-                    var gameName = match.Groups[1].Value.Trim();
-                    var url = match.Groups[2].Value.Trim();
-
-                    if (string.IsNullOrEmpty(gameName) || string.IsNullOrEmpty(url)) continue;
-                    if (seenUrls.Contains(url)) continue;
-                    seenUrls.Add(url);
-
-                    var key = _gameDetection.NormalizeName(gameName);
-                    if (!string.IsNullOrEmpty(key))
-                        dict.TryAdd(key, url);
-                }
             }
 
             _lookup = dict;
