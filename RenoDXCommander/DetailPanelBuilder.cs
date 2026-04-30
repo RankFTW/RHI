@@ -33,6 +33,7 @@ public partial class DetailPanelBuilder
         cursorProp?.SetValue(_window.DetailNexusModsBtn, handCursor);
         cursorProp?.SetValue(_window.DetailPcgwBtn, handCursor);
         cursorProp?.SetValue(_window.DetailUwFixBtn, handCursor);
+        cursorProp?.SetValue(_window.DetailUltraPlusBtn, handCursor);
     }
 
     /// <summary>Gets the currently displayed detail card (if any).</summary>
@@ -197,6 +198,10 @@ public partial class DetailPanelBuilder
         // Lyall Fix link button
         _window.DetailUwFixBtn.Tag = card;
         _window.DetailUwFixBtn.Visibility = card.HasUwFixUrl ? Visibility.Visible : Visibility.Collapsed;
+
+        // Ultra+ link button
+        _window.DetailUltraPlusBtn.Tag = card;
+        _window.DetailUltraPlusBtn.Visibility = card.HasUltraPlusUrl ? Visibility.Visible : Visibility.Collapsed;
 
         // Luma toggle row (full-width, above Luma install row)
         if (card.LumaBadgeVisibility == Visibility.Visible)

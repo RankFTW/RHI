@@ -33,6 +33,7 @@ public partial class MainViewModel : ObservableObject
     private readonly INexusModsService _nexusModsService;
     private readonly IPcgwService _pcgwService;
     private readonly IUltrawideFixService _uwFixService;
+    private readonly IUltraPlusService _ultraPlusService;
     private readonly IOptiScalerService _optiScalerService;
     private readonly IOptiScalerWikiService _optiScalerWikiService;
     private readonly IHdrDatabaseService _hdrDatabaseService;
@@ -455,6 +456,7 @@ public partial class MainViewModel : ObservableObject
         INexusModsService nexusModsService,
         IPcgwService pcgwService,
         IUltrawideFixService uwFixService,
+        IUltraPlusService ultraPlusService,
         IOptiScalerService optiScalerService,
         IOptiScalerWikiService optiScalerWikiService,
         IHdrDatabaseService hdrDatabaseService,
@@ -485,6 +487,7 @@ public partial class MainViewModel : ObservableObject
         _nexusModsService = nexusModsService;
         _pcgwService = pcgwService;
         _uwFixService = uwFixService;
+        _ultraPlusService = ultraPlusService;
         _optiScalerService = optiScalerService;
         _optiScalerWikiService = optiScalerWikiService;
         _hdrDatabaseService = hdrDatabaseService;

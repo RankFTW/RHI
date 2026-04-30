@@ -147,6 +147,10 @@ public partial class MainViewModel
                 try { await _uwFixService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] UltrawideFixService init failed — {ex.Message}"); }
             });
+            var ultraPlusInitTask = Task.Run(async () => {
+                try { await _ultraPlusService.InitAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] UltraPlusService init failed — {ex.Message}"); }
+            });
 
             // Merge hidden/favourite from library file with any already loaded from settings.json
             if (savedLib?.HiddenGames != null)
@@ -320,6 +324,7 @@ public partial class MainViewModel
             await nexusInitTask;
             await pcgwCacheTask;
             await uwFixInitTask;
+            await ultraPlusInitTask;
 
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
             _allCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));
@@ -1422,6 +1427,12 @@ public partial class MainViewModel
             }
             catch (Exception ex) { _crashReporter.Log($"[BuildCards] UwFixUrl resolve failed for '{game.Name}' — {ex.Message}"); }
 
+            try
+            {
+                newCard.UltraPlusUrl = _ultraPlusService.ResolveUrl(game.Name, _manifest);
+            }
+            catch (Exception ex) { _crashReporter.Log($"[BuildCards] UltraPlusUrl resolve failed for '{game.Name}' — {ex.Message}"); }
+
             cardBag.Add(newCard);
 
             gameStopwatch.Stop();
@@ -1994,6 +2005,10 @@ public partial class MainViewModel
                 try { await _uwFixService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] UltrawideFixService init failed — {ex.Message}"); }
             });
+            var ultraPlusInitTask = Task.Run(async () => {
+                try { await _ultraPlusService.InitAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] UltraPlusService init failed — {ex.Message}"); }
+            });
 
             // Launch all background tasks (identical to InitializeAsync)
             var wikiTask     = _wikiService.FetchAllAsync();
@@ -2107,6 +2122,7 @@ public partial class MainViewModel
             await nexusInitTask;
             await pcgwCacheTask;
             await uwFixInitTask;
+            await ultraPlusInitTask;
 
             // Build fresh cards
             _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Building cards for {allGames.Count} games...");
@@ -2292,6 +2308,7 @@ public partial class MainViewModel
                 existing.NexusModsUrl       = fresh.NexusModsUrl;
                 existing.PcgwUrl            = fresh.PcgwUrl;
                 existing.UwFixUrl        = fresh.UwFixUrl;
+                existing.UltraPlusUrl    = fresh.UltraPlusUrl;
                 existing.EngineHint         = fresh.EngineHint;
                 existing.GraphicsApi        = fresh.GraphicsApi;
                 existing.Is32Bit            = fresh.Is32Bit;

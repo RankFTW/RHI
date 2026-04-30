@@ -589,6 +589,13 @@ public sealed partial class MainWindow
             await Windows.System.Launcher.LaunchUriAsync(new Uri(card.UwFixUrl));
     }
 
+    private async void UltraPlusLink_Click(object sender, RoutedEventArgs e)
+    {
+        var card = GetCardFromSender(sender);
+        if (card?.UltraPlusUrl != null)
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(card.UltraPlusUrl));
+    }
+
     // ── Settings handlers ─────────────────────────────────────────────────────────
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)

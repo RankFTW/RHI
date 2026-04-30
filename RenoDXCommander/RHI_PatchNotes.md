@@ -7,6 +7,7 @@
 ### New Features
 
 - Ultrawide fix links now appear on game cards. If a game has an ultrawide/resolution fix available from Lyall, RoseTheFlower, or p1xel8ted, a "UW Fix" button shows next to the Nexus and PCGW buttons. Clicking it opens the fix page directly. All three sources are fetched once and cached for 24 hours. Manifest overrides available for edge cases where automatic name matching fails.
+- Ultra+ links now appear on game cards. If a game has an Ultra+ mod on theultraplace.com, an "Ultra+" button shows next to the other link buttons. Clicking it opens the Ultra+ page for that game directly.
 
 ### Performance
 

@@ -591,6 +591,11 @@ public partial class DetailPanelBuilder
                 _window.DetailUwFixBtn.Visibility = _currentDetailCard.HasUwFixUrl
                     ? Visibility.Visible : Visibility.Collapsed;
             }
+            if (e.PropertyName is "UltraPlusUrl" or "HasUltraPlusUrl")
+            {
+                _window.DetailUltraPlusBtn.Visibility = _currentDetailCard.HasUltraPlusUrl
+                    ? Visibility.Visible : Visibility.Collapsed;
+            }
         });
     }
 

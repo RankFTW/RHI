@@ -174,6 +174,13 @@ public class RemoteManifest
     public Dictionary<string, string>? UwFixUrlOverrides { get; set; }
 
     /// <summary>
+    /// Per-game Ultra+ URL overrides. Highest priority in the Ultra+ resolution chain.
+    /// Key = game name, Value = URL to the Ultra+ page.
+    /// </summary>
+    [JsonPropertyName("ultraPlusUrlOverrides")]
+    public Dictionary<string, string>? UltraPlusUrlOverrides { get; set; }
+
+    /// <summary>
     /// Per-game author overrides. Sets the mod author for games that have no wiki entry
     /// but have a known mod author (e.g. mods distributed via Discord or Nexus only).
     /// The author name is displayed as a badge with a donation link if available.

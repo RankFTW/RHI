@@ -197,6 +197,7 @@ public partial class GameCardViewModel
     public bool HasNexusModsUrl       => !string.IsNullOrEmpty(NexusModsUrl);
     public bool HasPcgwUrl            => !string.IsNullOrEmpty(PcgwUrl);
     public bool HasUwFixUrl        => !string.IsNullOrEmpty(UwFixUrl);
+    public bool HasUltraPlusUrl    => !string.IsNullOrEmpty(UltraPlusUrl);
     public bool HasNameUrl            => !string.IsNullOrEmpty(NameUrl);
     public string HideButtonLabel     => IsHidden ? "👁 Show" : "🚫 Hide";
     public string StarForeground       => IsFavourite ? "#FFD700" : "#282840";

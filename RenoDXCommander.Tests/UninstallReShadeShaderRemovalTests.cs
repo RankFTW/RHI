@@ -75,6 +75,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
             new StubNexusModsService(),
             new StubPcgwService(),
             new StubUltrawideFixService(),
+            new StubUltraPlusService(),
             new StubOptiScalerService(),
             new StubOptiScalerWikiService(),
             new StubHdrDatabaseService(),
@@ -344,6 +345,12 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
     }
 
     private class StubUltrawideFixService : IUltrawideFixService
+    {
+        public Task InitAsync() => Task.CompletedTask;
+        public string? ResolveUrl(string gameName, RemoteManifest? manifest) => null;
+    }
+
+    private class StubUltraPlusService : IUltraPlusService
     {
         public Task InitAsync() => Task.CompletedTask;
         public string? ResolveUrl(string gameName, RemoteManifest? manifest) => null;

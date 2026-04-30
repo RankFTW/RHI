@@ -83,6 +83,7 @@ public partial class App : Application
         services.AddSingleton<ISteamAppIdResolver, SteamAppIdResolver>();
         services.AddSingleton<IPcgwService, PcgwService>();
         services.AddSingleton<IUltrawideFixService, UltrawideFixService>();
+        services.AddSingleton<IUltraPlusService, UltraPlusService>();
 
         // ViewModels
         services.AddSingleton<SettingsViewModel>();
