@@ -1739,9 +1739,15 @@ public partial class MainViewModel
             .Concat(_manualGames)
             .ToList();
 
-        // 7. Remove manifest-blacklisted entries if we have a cached manifest
-        //    (manifest is not persisted in the library, so _manifest will be null here —
-        //     blacklist filtering will happen again in Phase 2 after manifest fetch)
+        // 7. Load cached manifest and apply blacklist so DLC/non-game entries
+        //    don't appear during the cache phase.
+        var cachedManifest = _manifestService.LoadCached();
+        if (cachedManifest?.Blacklist != null)
+        {
+            var blacklist = new HashSet<string>(cachedManifest.Blacklist, StringComparer.OrdinalIgnoreCase);
+            allGames = allGames.Where(g => !blacklist.Contains(g.Name)).ToList();
+            _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Applied cached blacklist ({blacklist.Count} entries), {allGames.Count} games remaining");
+        }
 
         // 8. Load installed records and aux records from disk (fast local reads)
         var records    = _installer.LoadAll();
