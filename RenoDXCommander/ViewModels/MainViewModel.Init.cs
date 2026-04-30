@@ -143,9 +143,9 @@ public partial class MainViewModel
                 try { await _pcgwService.LoadCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
-            var lyallInitTask = Task.Run(async () => {
-                try { await _lyallFixService.InitAsync(); }
-                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] LyallFixService init failed — {ex.Message}"); }
+            var uwFixInitTask = Task.Run(async () => {
+                try { await _uwFixService.InitAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] UltrawideFixService init failed — {ex.Message}"); }
             });
 
             // Merge hidden/favourite from library file with any already loaded from settings.json
@@ -319,7 +319,7 @@ public partial class MainViewModel
             // Ensure Nexus Mods dictionary and PCGW AppID cache are ready before building cards
             await nexusInitTask;
             await pcgwCacheTask;
-            await lyallInitTask;
+            await uwFixInitTask;
 
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
             _allCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));
@@ -1418,9 +1418,9 @@ public partial class MainViewModel
 
             try
             {
-                newCard.LyallFixUrl = _lyallFixService.ResolveUrl(game.Name);
+                newCard.UwFixUrl = _uwFixService.ResolveUrl(game.Name, _manifest);
             }
-            catch (Exception ex) { _crashReporter.Log($"[BuildCards] LyallFixUrl resolve failed for '{game.Name}' — {ex.Message}"); }
+            catch (Exception ex) { _crashReporter.Log($"[BuildCards] UwFixUrl resolve failed for '{game.Name}' — {ex.Message}"); }
 
             cardBag.Add(newCard);
 
@@ -1869,7 +1869,7 @@ public partial class MainViewModel
                 // Wiki/mod data left empty — Phase 2 MergeCards will fill these in:
                 // Mod, WikiStatus, Maintainer, Notes, IsGenericMod, IsExternalOnly,
                 // ExternalUrl, ExternalLabel, NexusUrl, DiscordUrl, NameUrl,
-                // NexusModsUrl, PcgwUrl, LyallFixUrl, UseUeExtended, IsNativeHdrGame
+                // NexusModsUrl, PcgwUrl, UwFixUrl, UseUeExtended, IsNativeHdrGame
                 WikiStatus             = "—",
             };
 
@@ -1990,9 +1990,9 @@ public partial class MainViewModel
                 try { await _pcgwService.LoadCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
-            var lyallInitTask = Task.Run(async () => {
-                try { await _lyallFixService.InitAsync(); }
-                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] LyallFixService init failed — {ex.Message}"); }
+            var uwFixInitTask = Task.Run(async () => {
+                try { await _uwFixService.InitAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] UltrawideFixService init failed — {ex.Message}"); }
             });
 
             // Launch all background tasks (identical to InitializeAsync)
@@ -2106,7 +2106,7 @@ public partial class MainViewModel
             // Ensure Nexus Mods dictionary and PCGW AppID cache are ready before building cards
             await nexusInitTask;
             await pcgwCacheTask;
-            await lyallInitTask;
+            await uwFixInitTask;
 
             // Build fresh cards
             _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Building cards for {allGames.Count} games...");
@@ -2291,7 +2291,7 @@ public partial class MainViewModel
                 existing.RsRecord           = fresh.RsRecord;
                 existing.NexusModsUrl       = fresh.NexusModsUrl;
                 existing.PcgwUrl            = fresh.PcgwUrl;
-                existing.LyallFixUrl        = fresh.LyallFixUrl;
+                existing.UwFixUrl        = fresh.UwFixUrl;
                 existing.EngineHint         = fresh.EngineHint;
                 existing.GraphicsApi        = fresh.GraphicsApi;
                 existing.Is32Bit            = fresh.Is32Bit;

@@ -345,13 +345,13 @@
                                                 ToolTipService.ToolTip="Open PCGamingWiki page">
                                             <TextBlock Text="PCGW" TextDecorations="Underline"/>
                                         </Button>
-                                        <Button x:Name="DetailLyallFixBtn" x:FieldModifier="internal"
+                                        <Button x:Name="DetailUwFixBtn" x:FieldModifier="internal"
                                                 Background="{StaticResource SurfaceOverlayBrush}"
                                                 Foreground="{StaticResource ChipTextBrush}"
                                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                                 CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
                                                 FontSize="11"
-                                                Click="LyallFixLink_Click"
+                                                Click="UwFixLink_Click"
                                                 Visibility="Collapsed"
                                                 ToolTipService.ToolTip="Open Lyall's ultrawide fix page">
                                             <TextBlock Text="UW Fix" TextDecorations="Underline"/>

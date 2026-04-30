@@ -1,14 +1,22 @@
 ## v1.9.0
 
+### Highlights
+
+**Instant Launch** — The game list now appears instantly on startup. On subsequent launches, the app loads your library from cache and displays it immediately — no more waiting for game detection and network fetches. The full scan runs silently in the background and merges any changes (new games, updated statuses) into the already-visible list.
+
 ### New Features
 
-- Lyall's ultrawide fix links now appear on game cards. If a game has an ultrawide/resolution fix by Lyall available on Codeberg, a "UW Fix" button shows next to the Nexus and PCGW buttons. Clicking it opens the fix page directly. Data is fetched once and cached for 24 hours.
+- Ultrawide fix links now appear on game cards. If a game has an ultrawide/resolution fix available from Lyall, RoseTheFlower, or p1xel8ted, a "UW Fix" button shows next to the Nexus and PCGW buttons. Clicking it opens the fix page directly. All three sources are fetched once and cached for 24 hours. Manifest overrides available for edge cases where automatic name matching fails.
 
 ### Performance
 
 - Update checks now have a 4-hour cooldown. Launching the app multiple times no longer hammers the GitHub API — checks are skipped if the last successful check was recent. Full Refresh bypasses the cooldown when you need to force a check.
 - GitHub API rate limiting is now detected and handled gracefully. If a 403 is received, all remaining API calls for the session are skipped instead of each one failing independently.
 - Shader packs from GitHub Releases (Lilium, PumboAutoHDR) no longer call the API on every startup. If the files are already cached and extracted, the check is skipped entirely.
+
+### Manifest Updates
+
+- Satisfactory now installs to the correct `Engine\Binaries\Win64` subfolder.
 
 ## v1.8.9
 

@@ -1,4 +1,4 @@
-﻿// MainViewModel.cs -- Core scaffolding: constructor, fields, observable properties, forwarding properties, UI callbacks, and shared helpers.
+// MainViewModel.cs -- Core scaffolding: constructor, fields, observable properties, forwarding properties, UI callbacks, and shared helpers.
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using RenoDXCommander.Collections;
@@ -32,7 +32,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IAddonPackService _addonPackService;
     private readonly INexusModsService _nexusModsService;
     private readonly IPcgwService _pcgwService;
-    private readonly ILyallFixService _lyallFixService;
+    private readonly IUltrawideFixService _uwFixService;
     private readonly IOptiScalerService _optiScalerService;
     private readonly IOptiScalerWikiService _optiScalerWikiService;
     private readonly IHdrDatabaseService _hdrDatabaseService;
@@ -454,7 +454,7 @@ public partial class MainViewModel : ObservableObject
         IREFrameworkService refService,
         INexusModsService nexusModsService,
         IPcgwService pcgwService,
-        ILyallFixService lyallFixService,
+        IUltrawideFixService uwFixService,
         IOptiScalerService optiScalerService,
         IOptiScalerWikiService optiScalerWikiService,
         IHdrDatabaseService hdrDatabaseService,
@@ -484,7 +484,7 @@ public partial class MainViewModel : ObservableObject
         _addonPackService = new AddonPackService(http);
         _nexusModsService = nexusModsService;
         _pcgwService = pcgwService;
-        _lyallFixService = lyallFixService;
+        _uwFixService = uwFixService;
         _optiScalerService = optiScalerService;
         _optiScalerWikiService = optiScalerWikiService;
         _hdrDatabaseService = hdrDatabaseService;

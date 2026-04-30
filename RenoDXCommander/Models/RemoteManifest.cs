@@ -167,6 +167,13 @@ public class RemoteManifest
     public Dictionary<string, string>? PcgwUrlOverrides { get; set; }
 
     /// <summary>
+    /// Per-game ultrawide fix URL overrides. Highest priority in the UW Fix resolution chain.
+    /// Key = game name, Value = URL to the ultrawide fix page.
+    /// </summary>
+    [JsonPropertyName("uwFixUrlOverrides")]
+    public Dictionary<string, string>? UwFixUrlOverrides { get; set; }
+
+    /// <summary>
     /// Per-game author overrides. Sets the mod author for games that have no wiki entry
     /// but have a known mod author (e.g. mods distributed via Discord or Nexus only).
     /// The author name is displayed as a badge with a donation link if available.

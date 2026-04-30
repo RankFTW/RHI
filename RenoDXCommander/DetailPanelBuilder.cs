@@ -32,7 +32,7 @@ public partial class DetailPanelBuilder
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         cursorProp?.SetValue(_window.DetailNexusModsBtn, handCursor);
         cursorProp?.SetValue(_window.DetailPcgwBtn, handCursor);
-        cursorProp?.SetValue(_window.DetailLyallFixBtn, handCursor);
+        cursorProp?.SetValue(_window.DetailUwFixBtn, handCursor);
     }
 
     /// <summary>Gets the currently displayed detail card (if any).</summary>
@@ -195,8 +195,8 @@ public partial class DetailPanelBuilder
         _window.DetailNexusModsBtn.Visibility = card.HasNexusModsUrl ? Visibility.Visible : Visibility.Collapsed;
 
         // Lyall Fix link button
-        _window.DetailLyallFixBtn.Tag = card;
-        _window.DetailLyallFixBtn.Visibility = card.HasLyallFixUrl ? Visibility.Visible : Visibility.Collapsed;
+        _window.DetailUwFixBtn.Tag = card;
+        _window.DetailUwFixBtn.Visibility = card.HasUwFixUrl ? Visibility.Visible : Visibility.Collapsed;
 
         // Luma toggle row (full-width, above Luma install row)
         if (card.LumaBadgeVisibility == Visibility.Visible)

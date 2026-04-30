@@ -27,7 +27,7 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private string? _nexusUrl;
     [ObservableProperty] private string? _nexusModsUrl;
     [ObservableProperty] private string? _pcgwUrl;
-    [ObservableProperty] private string? _lyallFixUrl;
+    [ObservableProperty] private string? _uwFixUrl;
     [ObservableProperty] private string? _discordUrl;
     [ObservableProperty] private string? _notes;
     [ObservableProperty] private GameMod? _mod;

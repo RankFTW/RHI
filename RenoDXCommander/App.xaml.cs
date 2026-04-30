@@ -82,7 +82,7 @@ public partial class App : Application
         services.AddSingleton<INexusModsService, NexusModsService>();
         services.AddSingleton<ISteamAppIdResolver, SteamAppIdResolver>();
         services.AddSingleton<IPcgwService, PcgwService>();
-        services.AddSingleton<ILyallFixService, LyallFixService>();
+        services.AddSingleton<IUltrawideFixService, UltrawideFixService>();
 
         // ViewModels
         services.AddSingleton<SettingsViewModel>();

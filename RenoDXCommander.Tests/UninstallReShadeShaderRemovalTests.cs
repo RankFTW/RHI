@@ -74,7 +74,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
             new StubREFrameworkService(),
             new StubNexusModsService(),
             new StubPcgwService(),
-            new StubLyallFixService(),
+            new StubUltrawideFixService(),
             new StubOptiScalerService(),
             new StubOptiScalerWikiService(),
             new StubHdrDatabaseService(),
@@ -343,10 +343,10 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         public Task FlushCacheAsync() => Task.CompletedTask;
     }
 
-    private class StubLyallFixService : ILyallFixService
+    private class StubUltrawideFixService : IUltrawideFixService
     {
         public Task InitAsync() => Task.CompletedTask;
-        public string? ResolveUrl(string gameName) => null;
+        public string? ResolveUrl(string gameName, RemoteManifest? manifest) => null;
     }
 
     private class StubOptiScalerService : IOptiScalerService

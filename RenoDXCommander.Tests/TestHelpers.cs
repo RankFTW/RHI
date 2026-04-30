@@ -61,7 +61,7 @@ internal static class TestHelpers
             new StubREFrameworkService(),
             new StubNexusModsService(),
             new StubPcgwService(),
-            new StubLyallFixService(),
+            new StubUltrawideFixService(),
             new StubOptiScalerService(),
             new StubOptiScalerWikiService(),
             new StubHdrDatabaseService(),
@@ -238,10 +238,10 @@ internal static class TestHelpers
         public Task FlushCacheAsync() => Task.CompletedTask;
     }
 
-    internal class StubLyallFixService : ILyallFixService
+    internal class StubUltrawideFixService : IUltrawideFixService
     {
         public Task InitAsync() => Task.CompletedTask;
-        public string? ResolveUrl(string gameName) => null;
+        public string? ResolveUrl(string gameName, RemoteManifest? manifest) => null;
     }
 
     internal class StubOptiScalerService : IOptiScalerService
