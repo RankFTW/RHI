@@ -369,6 +369,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _statusText = "Loading...";
     [ObservableProperty] private string _subStatusText = "";
     [ObservableProperty] private bool _isLoading = true;
+    [ObservableProperty] private bool _isBackgroundScanning;
+    [ObservableProperty] private string _backgroundScanStatusText = "";
     private bool _hasInitialized;
     public bool HasInitialized => _hasInitialized;
     public void MarkInitialized() => _hasInitialized = true;

@@ -260,6 +260,7 @@
     "Of Ash and Steel": "ofAshAndSteelGame\\Binaries\\Win64",
     "Project Motor Racing": "x64",
     "SILENT HILL 2": "SHProto\\Binaries\\Win64",
+    "Satisfactory": "Engine\\Binaries\\Win64",
     "The Witcher 3: Wild Hunt": "bin\\x64_dx12",
     "The Witcher 3: Wild Hunt - Game of the Year Edition": "bin\\x64_dx12",
     "tModLoader": "dotnet"

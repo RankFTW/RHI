@@ -181,6 +181,15 @@ public partial class MainViewModel
                 addonCache    = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             }
 
+            // ── Instant cache UI: if we have a cached library and this isn't a forced rescan,
+            // show cached cards immediately and run the full scan in the background.
+            if (hasCachedLibrary)
+            {
+                await LoadCacheAndBuildCardsAsync(savedLib!);
+                _ = RunBackgroundScanAndMergeAsync(savedLib!);
+                return;
+            }
+
             // 2. Launch all background tasks (identical for both paths)
             var wikiTask     = _wikiService.FetchAllAsync();
             var lumaTask     = _lumaService.FetchCompletedModsAsync();
@@ -1674,6 +1683,689 @@ public partial class MainViewModel
 
         _gameLibraryService.Save(detectedGames, addonCache, _hiddenGames, _favouriteGames, _manualGames,
             _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache, LastSelectedGameName);
+    }
+
+    /// <summary>
+    /// Phase 1 fast path: loads cached data from the saved library and builds
+    /// cards immediately without any network calls or filesystem traversal.
+    /// Creates lightweight GameCardViewModel objects directly from saved library
+    /// data + installed records. Skips PE header scanning, ReShade detection,
+    /// addon scanning, PCGW/Nexus/Lyall lookups, and wiki matching.
+    /// Phase 2's MergeCards fills in the remaining data.
+    /// </summary>
+    private Task LoadCacheAndBuildCardsAsync(SavedGameLibrary savedLib)
+    {
+        _crashReporter.Log("[MainViewModel.LoadCacheAndBuildCardsAsync] Starting cache-based card load...");
+
+        // 1. Restore hidden/favourite sets from savedLib
+        if (savedLib.HiddenGames != null)
+            foreach (var g in savedLib.HiddenGames) _hiddenGames.Add(g);
+        if (savedLib.FavouriteGames != null)
+            foreach (var g in savedLib.FavouriteGames) _favouriteGames.Add(g);
+
+        // 2. Restore manual games
+        _manualGames = _gameLibraryService.ToManualGames(savedLib);
+
+        // 3. Restore all caches from the saved library
+        _engineTypeCache   = savedLib.EngineTypeCache   ?? new(StringComparer.OrdinalIgnoreCase);
+        _resolvedPathCache = savedLib.ResolvedPathCache ?? new(StringComparer.OrdinalIgnoreCase);
+        _addonFileCache    = savedLib.AddonFileCache    ?? new(StringComparer.OrdinalIgnoreCase);
+        _bitnessCache      = savedLib.BitnessCache      ?? new(StringComparer.OrdinalIgnoreCase);
+        LastSelectedGameName = savedLib.LastSelectedGame;
+
+        // 4. Convert cached games to DetectedGame list
+        var cachedGames = _gameLibraryService.ToDetectedGames(savedLib);
+
+        // 5. Apply game renames and folder overrides
+        ApplyGameRenames(cachedGames);
+        ApplyFolderOverrides(cachedGames);
+
+        // 6. Combine with manual games (manual games override auto-detected with same name)
+        var manualNames = _manualGames.Select(g => _gameDetectionService.NormalizeName(g.Name))
+                                      .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var allGames = cachedGames
+            .Where(g => !manualNames.Contains(_gameDetectionService.NormalizeName(g.Name)))
+            .Concat(_manualGames)
+            .ToList();
+
+        // 7. Remove manifest-blacklisted entries if we have a cached manifest
+        //    (manifest is not persisted in the library, so _manifest will be null here —
+        //     blacklist filtering will happen again in Phase 2 after manifest fetch)
+
+        // 8. Load installed records and aux records from disk (fast local reads)
+        var records    = _installer.LoadAll();
+        var auxRecords = _auxInstaller.LoadAll();
+
+        // 9. Build cards from cached data — lightweight path that creates
+        //    GameCardViewModel objects directly from saved library data +
+        //    installed records. NO filesystem access (no PE scanning, no
+        //    ReShade detection, no addon scanning, no PCGW/Nexus/Lyall lookups).
+        //    Phase 2's MergeCards will fill in wiki status, URLs, and other
+        //    network/filesystem-dependent data.
+        _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Building lightweight cards for {allGames.Count} cached games...");
+
+        // Pre-index records by game name for O(1) lookup
+        var recordsByName = records
+            .GroupBy(r => r.GameName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var auxByNameType = auxRecords
+            .GroupBy(r => (r.GameName.ToLowerInvariant(), r.AddonType))
+            .ToDictionary(g => g.Key, g => g.First());
+
+        // Load RE Framework + Luma records for matching
+        var refRecords = _refService.GetRecords();
+        var refByName = refRecords
+            .GroupBy(r => r.GameName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        var cards = new List<GameCardViewModel>(allGames.Count);
+
+        foreach (var game in allGames)
+        {
+            var rootKey = game.InstallPath.TrimEnd('\\', '/').ToLowerInvariant();
+
+            // Resolve install path from cache (no filesystem fallback)
+            var installPath = _resolvedPathCache.TryGetValue(rootKey, out var cachedPath)
+                ? cachedPath
+                : game.InstallPath;
+
+            // Apply per-game install path overrides (e.g. Cyberpunk 2077 → bin\x64)
+            if (_installPathOverrides.TryGetValue(game.Name, out var subPath))
+            {
+                var overridePath = Path.Combine(game.InstallPath, subPath);
+                // Trust the override without checking Directory.Exists — Phase 2 will verify
+                installPath = overridePath;
+            }
+
+            // Resolve engine from cache
+            var engine = EngineType.Unknown;
+            if (_engineTypeCache.TryGetValue(rootKey, out var cachedEngine))
+                engine = Enum.TryParse<EngineType>(cachedEngine, out var e) ? e : EngineType.Unknown;
+
+            // Resolve engine override label (manifest overrides)
+            var engineOverrideLabel = ResolveEngineOverride(game.Name, out var engineOverride);
+            if (engineOverrideLabel != null)
+                engine = engineOverride;
+
+            // Resolve bitness from cache
+            var resolvedKey = installPath.ToLowerInvariant();
+            var machineType = _bitnessCache.TryGetValue(resolvedKey, out var cachedMachine)
+                ? cachedMachine
+                : MachineType.x64; // default to 64-bit when no cache
+
+            // Resolve graphics API from game API cache (no filesystem scanning)
+            var graphicsApi = GraphicsApiType.Unknown;
+            HashSet<GraphicsApiType> detectedApis = new();
+            if (_gameApiCache.TryGetValue(installPath, out var cachedApi))
+            {
+                graphicsApi = cachedApi.Primary;
+                detectedApis = cachedApi.All;
+            }
+
+            // Look up installed RenoDX record
+            recordsByName.TryGetValue(game.Name, out var record);
+            // Fallback: match by install path for records saved with mod name
+            if (record == null)
+            {
+                record = records.FirstOrDefault(r =>
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Look up aux records (ReShade, DC, OptiScaler)
+            auxByNameType.TryGetValue((game.Name.ToLowerInvariant(), AuxInstallService.TypeReShade), out var rsRec);
+            if (rsRec == null)
+                auxByNameType.TryGetValue((game.Name.ToLowerInvariant(), AuxInstallService.TypeReShadeNormal), out rsRec);
+            auxByNameType.TryGetValue((game.Name.ToLowerInvariant(), "DisplayCommander"), out var dcRec);
+            auxByNameType.TryGetValue((game.Name.ToLowerInvariant(), OptiScalerService.AddonType), out var osRec);
+
+            // Build engine hint string
+            var engineHint = engineOverrideLabel != null
+                ? engineOverrideLabel
+                : engine == EngineType.Unreal       ? "Unreal Engine"
+                : engine == EngineType.UnrealLegacy ? "Unreal (Legacy)"
+                : engine == EngineType.Unity        ? "Unity"
+                : engine == EngineType.REEngine     ? "RE Engine" : "";
+
+            var is32Bit = ResolveIs32Bit(game.Name, machineType);
+
+            var newCard = new GameCardViewModel
+            {
+                GameName               = game.Name,
+                DetectedGame           = game,
+                InstallPath            = installPath,
+                Source                 = game.Source,
+                InstalledRecord        = record,
+                Status                 = record != null ? GameStatus.Installed : GameStatus.Available,
+                InstalledAddonFileName = record?.AddonFileName,
+                RdxInstalledVersion    = null, // Filled by Phase 2 (avoids PE header read)
+                EngineHint             = engineHint,
+                Is32Bit                = is32Bit,
+                GraphicsApi            = graphicsApi,
+                DetectedApis           = detectedApis,
+                IsHidden               = _hiddenGames.Contains(game.Name),
+                IsFavourite            = _favouriteGames.Contains(game.Name),
+                IsManuallyAdded        = game.IsManuallyAdded,
+                IsREEngineGame         = engine == EngineType.REEngine,
+
+                // ReShade state from aux records
+                RsRecord               = rsRec,
+                RsStatus               = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
+                RsInstalledFile        = rsRec?.InstalledAs,
+                RsInstalledVersion     = null, // Filled by Phase 2 (avoids PE header read)
+
+                // Per-game settings from GameNameService
+                ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
+                ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
+                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
+                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(game.Name),
+                ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(game.Name),
+                ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(game.Name),
+                UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(game.Name),
+                ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smCache) ? smCache : null,
+                VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(game.Name, out var vrpCache) ? vrpCache : "DirectX",
+                DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
+                LumaFeatureEnabled     = LumaFeatureEnabled,
+
+                // Wiki/mod data left empty — Phase 2 MergeCards will fill these in:
+                // Mod, WikiStatus, Maintainer, Notes, IsGenericMod, IsExternalOnly,
+                // ExternalUrl, ExternalLabel, NexusUrl, DiscordUrl, NameUrl,
+                // NexusModsUrl, PcgwUrl, LyallFixUrl, UseUeExtended, IsNativeHdrGame
+                WikiStatus             = "—",
+            };
+
+            // Dual-API state
+            newCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(newCard.DetectedApis);
+
+            // Display Commander from aux record (no filesystem scanning)
+            if (dcRec != null)
+            {
+                newCard.DcStatus = GameStatus.Installed;
+                newCard.DcInstalledFile = dcRec.InstalledAs;
+                newCard.DcInstalledVersion = null; // Filled by Phase 2
+            }
+
+            // OptiScaler from aux record (no filesystem scanning)
+            if (osRec != null && !is32Bit)
+            {
+                newCard.OsStatus = GameStatus.Installed;
+                newCard.OsInstalledFile = osRec.InstalledAs;
+                newCard.OsInstalledVersion = _optiScalerService.StagedVersion;
+            }
+
+            // RE Framework from records
+            if (newCard.IsREEngineGame && refByName.TryGetValue(game.Name, out var refRec))
+            {
+                newCard.RefRecord = refRec;
+                newCard.RefStatus = GameStatus.Installed;
+                newCard.RefInstalledVersion = refRec.InstalledVersion;
+            }
+
+            // Luma matching (in-memory only, no filesystem)
+            var lumaMatch = MatchLumaGame(game.Name);
+            if (lumaMatch != null)
+            {
+                newCard.LumaMod = lumaMatch;
+                newCard.IsLumaMode = _lumaEnabledGames.Contains(game.Name);
+                // Luma install record is checked by path — uses a local JSON file read
+                var lumaRec = LumaService.GetRecordByPath(installPath);
+                if (lumaRec != null)
+                {
+                    newCard.LumaRecord = lumaRec;
+                    newCard.LumaStatus = GameStatus.Installed;
+                }
+            }
+
+            cards.Add(newCard);
+        }
+
+        _allCards = cards;
+        _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Lightweight card build complete: {_allCards.Count} cards");
+
+        // 10. Apply card overrides and manifest card overrides
+        //     (manifest is null during cache phase — ApplyManifestCardOverrides is a no-op with null)
+        ApplyCardOverrides(_allCards);
+        ApplyManifestCardOverrides(_manifest, _allCards);
+
+        // Reconcile default naming for games without overrides
+        ReconcileDefaultNaming();
+
+        // Sort cards by game name
+        _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
+
+        // 11. Push to FilterViewModel, apply filter
+        _filterViewModel.SetAllCards(_allCards);
+        _filterViewModel.UpdateCounts();
+        _filterViewModel.ApplyFilter();
+
+        // 12. Cards are ready — suppress skeleton and show game list simultaneously.
+        // IsLoading must go false BEFORE MarkInitialized so the UISync handler
+        // sees HasInitialized=false and calls RemoveSkeletons().
+        IsLoading = false;
+
+        // 13. Restore selection from LastSelectedGameName
+        if (!string.IsNullOrEmpty(LastSelectedGameName))
+        {
+            var match = _allCards.FirstOrDefault(c =>
+                c.GameName.Equals(LastSelectedGameName, StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+                SelectedGame = match;
+        }
+
+        // 14. Set StatusText to show cached game count
+        StatusText    = $"{_allCards.Count} games";
+        SubStatusText = "";
+
+        _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Cache phase complete — {_allCards.Count} cards displayed");
+
+        return Task.CompletedTask;
+    }
+
+    // ── Phase 2: Background scan and merge ──────────────────────────────────────
+
+    /// <summary>
+    /// Phase 2 background path: runs the full detection + network pipeline
+    /// (identical to InitializeAsync) and merges fresh results into the
+    /// already-displayed cached cards. Runs as fire-and-forget after Phase 1.
+    /// </summary>
+    private async Task RunBackgroundScanAndMergeAsync(SavedGameLibrary savedLib)
+    {
+        IsBackgroundScanning = true;
+        BackgroundScanStatusText = "Scanning for changes...";
+        _crashReporter.Log("[MainViewModel.RunBackgroundScanAndMergeAsync] Starting background scan...");
+
+        try
+        {
+            bool wikiFetchFailed = false;
+            Task rsTask = Task.CompletedTask;
+            Task normalRsTask = Task.CompletedTask;
+            Task osTask = Task.CompletedTask;
+            Task dlssTask = Task.CompletedTask;
+
+            // Start Nexus Mods + PCGW + Lyall initialization early (network I/O)
+            var nexusInitTask = Task.Run(async () => {
+                try { await _nexusModsService.InitAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] NexusModsService init failed — {ex.Message}"); }
+            });
+            var pcgwCacheTask = Task.Run(async () => {
+                try { await _pcgwService.LoadCacheAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService cache load failed — {ex.Message}"); }
+            });
+            var lyallInitTask = Task.Run(async () => {
+                try { await _lyallFixService.InitAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] LyallFixService init failed — {ex.Message}"); }
+            });
+
+            // Launch all background tasks (identical to InitializeAsync)
+            var wikiTask     = _wikiService.FetchAllAsync();
+            var lumaTask     = _lumaService.FetchCompletedModsAsync();
+            var manifestTask = _manifestService.FetchAsync();
+            var detectTask   = DetectAllGamesDedupedAsync();
+            var osWikiTask   = Task.Run(async () => {
+                try { await _optiScalerWikiService.FetchAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }
+            });
+            var hdrDbTask    = Task.Run(async () => {
+                try { await _hdrDatabaseService.FetchAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database fetch failed — {ex.Message}"); }
+            });
+            rsTask           = Task.Run(async () => {
+                try { await _rsUpdateService.EnsureLatestAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] ReShade update task failed — {ex.Message}"); }
+            });
+            normalRsTask     = Task.Run(async () => {
+                try { await _normalRsUpdateService.EnsureLatestAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Normal ReShade update task failed — {ex.Message}"); }
+            });
+            var shaderPackTask = Task.Run(async () => {
+                try { await _shaderPackService.EnsureLatestAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Shader pack task failed — {ex.Message}"); }
+            });
+            var addonPackTask = Task.Run(async () => {
+                try {
+                    await _addonPackService.EnsureLatestAsync();
+                    await _addonPackService.CheckAndUpdateAllAsync();
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Addon pack task failed — {ex.Message}"); }
+            });
+            osTask           = Task.Run(async () => {
+                try { await _optiScalerService.EnsureStagingAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler staging task failed — {ex.Message}"); }
+            });
+            dlssTask         = Task.Run(async () => {
+                try { await _optiScalerService.EnsureDlssStagingAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS staging task failed — {ex.Message}"); }
+            });
+
+            // Await detection first — this never needs network
+            var freshGames = await detectTask;
+
+            // Await network tasks individually so failures don't block
+            try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
+            try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
+            try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
+            try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki task failed — {ex.Message}"); }
+            try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database task failed — {ex.Message}"); }
+
+            // Extract wiki/luma results
+            var wikiResult = !wikiFetchFailed ? await wikiTask : default;
+            _allMods      = wikiResult.Mods ?? new();
+            _genericNotes = wikiResult.GenericNotes ?? new();
+            try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); }
+            catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
+
+            // Store manifest
+            // (_manifest already assigned above in the try block)
+
+            // Merge fresh games with cached games (same logic as InitializeAsync)
+            ApplyGameRenames(freshGames);
+            var cachedGames = _gameLibraryService.ToDetectedGames(savedLib);
+            var freshKeys = freshGames
+                .Where(g => !string.IsNullOrEmpty(g.InstallPath))
+                .Select(g => (
+                    Name: _gameDetectionService.NormalizeName(g.Name),
+                    Path: g.InstallPath.TrimEnd(Path.DirectorySeparatorChar).ToLowerInvariant()))
+                .ToHashSet();
+            var detectedGames = freshGames
+                .Concat(cachedGames.Where(g =>
+                {
+                    if (string.IsNullOrEmpty(g.InstallPath)) return true;
+                    var key = (
+                        Name: _gameDetectionService.NormalizeName(g.Name),
+                        Path: g.InstallPath.TrimEnd(Path.DirectorySeparatorChar).ToLowerInvariant());
+                    return !freshKeys.Contains(key);
+                }))
+                .ToList();
+            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Merged library: {freshGames.Count} detected + {cachedGames.Count} cached → {detectedGames.Count} total");
+
+            // Apply persisted renames and folder overrides
+            ApplyGameRenames(detectedGames);
+            ApplyFolderOverrides(detectedGames);
+
+            // Combine auto-detected + manual games
+            var manualNames = _manualGames.Select(g => _gameDetectionService.NormalizeName(g.Name))
+                                          .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var allGames = detectedGames
+                .Where(g => !manualNames.Contains(_gameDetectionService.NormalizeName(g.Name)))
+                .Concat(_manualGames)
+                .ToList();
+
+            // Apply remote manifest data
+            ApplyManifest(_manifest);
+            if (_manifest != null)
+                GameCardViewModel.MergeManifestAuthorData(_manifest.DonationUrls, _manifest.AuthorDisplayNames);
+            ApplyManifestStatusOverrides();
+
+            // Remove manifest-blacklisted entries
+            if (_manifestBlacklist.Count > 0)
+                allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)).ToList();
+
+            var records    = _installer.LoadAll();
+            var auxRecords = _auxInstaller.LoadAll();
+            var addonCache = savedLib.AddonScanCache ?? new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+            // Ensure Nexus Mods dictionary and PCGW AppID cache are ready before building cards
+            await nexusInitTask;
+            await pcgwCacheTask;
+            await lyallInitTask;
+
+            // Build fresh cards
+            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Building cards for {allGames.Count} games...");
+            var freshCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));
+            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] BuildCards complete: {freshCards.Count} cards");
+            GraphicsApiDetector.SaveCache();
+            SaveGameApiCache();
+
+            // Apply card overrides and manifest card overrides
+            ApplyCardOverrides(freshCards);
+            ApplyManifestCardOverrides(_manifest, freshCards);
+
+            // Apply manifest DLL name overrides
+            ApplyManifestDllRenames();
+
+            // Reconcile default naming
+            ReconcileDefaultNaming();
+
+            // Merge fresh cards into displayed cards
+            MergeCards(freshCards);
+
+            // Save updated library
+            _ = Task.Run(() => { try { SaveLibrary(); } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Fire-and-forget SaveLibrary failed — {ex.Message}"); } });
+
+            // Check for updates (async, parallel, non-blocking)
+            _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Starting background update checks...");
+            _ = Task.Run(async () =>
+            {
+                try { await CheckForUpdatesAsync(_allCards, records, auxRecords); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Background update check failed — {ex}"); }
+            });
+
+            // Update status text with final counts
+            var offlineMode = wikiFetchFailed;
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                StatusText = offlineMode
+                    ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
+                    : $"{detectedGames.Count} games detected · {InstalledCount} mods installed";
+                SubStatusText = "";
+            });
+
+            // ── Deferred background work: ReShade staging + OptiScaler staging + shader sync ──
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.WhenAll(rsTask, normalRsTask, osTask, dlssTask);
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Deferred ReShade sync failed — {ex.Message}"); }
+
+                if (_shaderPackReadyTask != null)
+                {
+                    try { await _shaderPackReadyTask; }
+                    catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] ShaderPackReady failed — {ex.Message}"); }
+                }
+
+                // Deploy shaders to all installed game locations
+                try
+                {
+                    var rsCards = _allCards
+                        .Where(card => !string.IsNullOrEmpty(card.InstallPath))
+                        .Where(card => card.RequiresVulkanInstall
+                            ? VulkanFootprintService.Exists(card.InstallPath)
+                            : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable)
+                        .ToList();
+
+                    var allNeededPacks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var card in rsCards)
+                    {
+                        var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+                        if (sel != null) allNeededPacks.UnionWith(sel);
+                    }
+                    if (allNeededPacks.Count > 0)
+                        await _shaderPackService.EnsurePacksAsync(allNeededPacks);
+
+                    var syncTasks = rsCards
+                        .Select(card =>
+                        {
+                            var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+                            return Task.Run(() => _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection));
+                        });
+                    await Task.WhenAll(syncTasks);
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] SyncShaders failed — {ex.Message}"); }
+
+                // Deploy managed addons to all installed game locations
+                try
+                {
+                    var addonTasks = _allCards
+                        .Where(card => !string.IsNullOrEmpty(card.InstallPath))
+                        .Where(card => card.RequiresVulkanInstall
+                            ? VulkanFootprintService.Exists(card.InstallPath)
+                            : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable)
+                        .Select(card =>
+                        {
+                            if (card.UseNormalReShade)
+                            {
+                                return Task.Run(() => _addonPackService.DeployAddonsForGame(
+                                    card.GameName, card.InstallPath, card.Is32Bit,
+                                    useGlobalSet: true, perGameSelection: new List<string>()));
+                            }
+
+                            string addonMode = GetPerGameAddonMode(card.GameName);
+                            bool useGlobalSet = addonMode != "Select";
+                            List<string>? selection = useGlobalSet
+                                ? _settingsViewModel.EnabledGlobalAddons
+                                : (_gameNameService.PerGameAddonSelection.TryGetValue(card.GameName, out var sel) ? sel : null);
+                            return Task.Run(() => _addonPackService.DeployAddonsForGame(
+                                card.GameName, card.InstallPath, card.Is32Bit, useGlobalSet, selection));
+                        });
+                    await Task.WhenAll(addonTasks);
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] SyncAddons failed — {ex.Message}"); }
+
+                finally
+                {
+                    DispatcherQueue?.TryEnqueue(() => { SubStatusText = ""; });
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Background scan failed — {ex.Message}");
+            _crashReporter.WriteCrashReport("RunBackgroundScanAndMergeAsync", ex);
+            // Leave cached cards in place — user sees stale data but app remains functional
+        }
+        finally
+        {
+            IsBackgroundScanning = false;
+            BackgroundScanStatusText = "";
+        }
+    }
+
+    /// <summary>
+    /// Reconciles fresh cards from the background scan with the currently displayed
+    /// cached cards. Updates existing cards in-place (so WinUI bindings fire),
+    /// adds new games, and removes stale games.
+    /// </summary>
+    private void MergeCards(List<GameCardViewModel> freshCards)
+    {
+        _crashReporter.Log($"[MergeCards] Merging {freshCards.Count} fresh cards into {_allCards.Count} existing cards...");
+
+        // Zero-detection guard: if background scan returned 0 games but we have cached cards,
+        // this likely indicates a transient failure — skip merge to preserve cached state.
+        if (freshCards.Count == 0 && _allCards.Count > 0)
+        {
+            _crashReporter.Log("[MergeCards] Background scan returned 0 games — skipping merge to preserve cached state.");
+            return;
+        }
+
+        // Build lookup of existing cards by GameName (case-insensitive)
+        var existingByName = new Dictionary<string, GameCardViewModel>(StringComparer.OrdinalIgnoreCase);
+        foreach (var card in _allCards)
+        {
+            // First card wins if duplicates exist
+            existingByName.TryAdd(card.GameName, card);
+        }
+
+        // Build set of fresh game names for stale detection
+        var freshNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var fc in freshCards)
+            freshNames.Add(fc.GameName);
+
+        var cardsToAdd = new List<GameCardViewModel>();
+
+        // For each fresh card: update existing or mark as new
+        foreach (var fresh in freshCards)
+        {
+            if (existingByName.TryGetValue(fresh.GameName, out var existing))
+            {
+                // Update mutable properties in-place so WinUI bindings fire
+                existing.Status             = fresh.Status;
+                existing.RsStatus           = fresh.RsStatus;
+                existing.UlStatus           = fresh.UlStatus;
+                existing.DcStatus           = fresh.DcStatus;
+                existing.OsStatus           = fresh.OsStatus;
+                existing.RefStatus          = fresh.RefStatus;
+                existing.LumaStatus         = fresh.LumaStatus;
+                existing.Mod                = fresh.Mod;
+                existing.InstalledRecord    = fresh.InstalledRecord;
+                existing.RsRecord           = fresh.RsRecord;
+                existing.NexusModsUrl       = fresh.NexusModsUrl;
+                existing.PcgwUrl            = fresh.PcgwUrl;
+                existing.LyallFixUrl        = fresh.LyallFixUrl;
+                existing.EngineHint         = fresh.EngineHint;
+                existing.GraphicsApi        = fresh.GraphicsApi;
+                existing.Is32Bit            = fresh.Is32Bit;
+                existing.WikiStatus         = fresh.WikiStatus;
+                existing.Maintainer         = fresh.Maintainer;
+                existing.InstallPath        = fresh.InstallPath;
+                existing.Source             = fresh.Source;
+                existing.IsGenericMod       = fresh.IsGenericMod;
+                existing.IsExternalOnly     = fresh.IsExternalOnly;
+                existing.ExternalUrl        = fresh.ExternalUrl;
+                existing.ExternalLabel      = fresh.ExternalLabel;
+                existing.NexusUrl           = fresh.NexusUrl;
+                existing.DiscordUrl         = fresh.DiscordUrl;
+                existing.NameUrl            = fresh.NameUrl;
+                existing.Notes              = fresh.Notes;
+                existing.NotesUrl           = fresh.NotesUrl;
+                existing.NotesUrlLabel      = fresh.NotesUrlLabel;
+                existing.UseUeExtended      = fresh.UseUeExtended;
+                existing.InstalledAddonFileName = fresh.InstalledAddonFileName;
+                existing.RdxInstalledVersion    = fresh.RdxInstalledVersion;
+                existing.RsInstalledFile        = fresh.RsInstalledFile;
+                existing.RsInstalledVersion     = fresh.RsInstalledVersion;
+                existing.DetectedGame           = fresh.DetectedGame;
+                existing.DetectedApis           = fresh.DetectedApis;
+                existing.IsDualApiGame          = fresh.IsDualApiGame;
+                existing.LumaMod                = fresh.LumaMod;
+                existing.LumaRecord             = fresh.LumaRecord;
+                existing.LumaNotes              = fresh.LumaNotes;
+                existing.LumaNotesUrl           = fresh.LumaNotesUrl;
+                existing.LumaNotesUrlLabel      = fresh.LumaNotesUrlLabel;
+                existing.IsNativeHdrGame        = fresh.IsNativeHdrGame;
+                existing.IsManifestUeExtended   = fresh.IsManifestUeExtended;
+                existing.DllOverrideEnabled      = fresh.DllOverrideEnabled;
+                existing.ExcludeFromUpdateAllReShade = fresh.ExcludeFromUpdateAllReShade;
+                existing.ExcludeFromUpdateAllRenoDx  = fresh.ExcludeFromUpdateAllRenoDx;
+                existing.ExcludeFromUpdateAllUl      = fresh.ExcludeFromUpdateAllUl;
+                existing.ExcludeFromUpdateAllDc      = fresh.ExcludeFromUpdateAllDc;
+                existing.UseNormalReShade        = fresh.UseNormalReShade;
+                existing.ShaderModeOverride      = fresh.ShaderModeOverride;
+            }
+            else
+            {
+                // New game detected — add to list
+                cardsToAdd.Add(fresh);
+            }
+        }
+
+        // Remove stale games (not in fresh set AND not manually added)
+        var cardsToRemove = _allCards
+            .Where(c => !freshNames.Contains(c.GameName) && !c.IsManuallyAdded)
+            .ToList();
+
+        foreach (var stale in cardsToRemove)
+            _allCards.Remove(stale);
+
+        // Add new games
+        _allCards.AddRange(cardsToAdd);
+
+        _crashReporter.Log($"[MergeCards] Updated {freshCards.Count - cardsToAdd.Count} existing, added {cardsToAdd.Count} new, removed {cardsToRemove.Count} stale");
+
+        // Preserve SelectedGame: if still in list keep it, if removed select first card
+        DispatcherQueue?.TryEnqueue(() =>
+        {
+            if (SelectedGame != null && !_allCards.Contains(SelectedGame))
+                SelectedGame = _allCards.Count > 0 ? _allCards[0] : null;
+
+            // Re-sort by game name
+            _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
+
+            // Push to FilterViewModel, apply filter
+            _filterViewModel.SetAllCards(_allCards);
+            _filterViewModel.UpdateCounts();
+            _filterViewModel.ApplyFilter();
+        });
     }
 
     private static string FormatAge(DateTime utc)
