@@ -746,6 +746,15 @@ public partial class MainViewModel
             // Deploy relimiter.ini from AppData if not already present in game folder
             AuxInstallService.DeployUlIniIfAbsent(card.InstallPath);
 
+            // Apply shared presets setting to the newly deployed INI if enabled
+            if (_settingsViewModel.UlSharedPresets)
+            {
+                var deployPath2 = ModInstallService.GetAddonDeployPath(card.InstallPath);
+                var iniFile = Path.Combine(deployPath2, "relimiter.ini");
+                if (File.Exists(iniFile))
+                    AuxInstallService.ApplyUlSharedPresets(iniFile, true);
+            }
+
             DispatcherQueue?.TryEnqueue(() =>
             {
                 card.UlInstalledFile = GetUlFileName(card.Is32Bit);

@@ -3,6 +3,16 @@
 ### Bug Fixes
 
 - Fixed games installed on multiple platforms (e.g. Steam and Xbox) only showing once. Both copies now appear in the sidebar with their respective platform icons, so you can manage mods for each install independently.
+- Fixed DLC and expansion packs (e.g. X4 DLC, DOOM DLC) appearing as separate entries when they share the base game's install folder. They now collapse to the base game automatically.
+- Fixed the "Shared OSD Presets" setting not being applied to newly installed ReLimiter games. New installs now inherit the shared presets toggle immediately.
+
+### Manifest Updates
+
+- Until Dawn added as UE-Extended with native HDR support.
+- Grand Theft Auto III, Vice City, and San Andreas Definitive Editions added as individual UE-Extended entries with SDR-to-HDR upgrade support.
+- Aphelion added as Unreal Engine.
+- Battle.net launcher components blacklisted.
+- L.A. Noire and Dying Light 2 RenoDX mods removed — both are deprecated. L.A. Noire has a note linking to the older Nexus mod that works with ReShade 6.3.3.
 
 ## v1.8.8
 

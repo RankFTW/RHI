@@ -142,9 +142,11 @@
     "Dead Island",
     "Death's Door",
     "Descenders",
+    "Dying Light 2",
     "Elin",
     "Greedfall: The Dying World",
     "Haste",
+    "L.A. Noire",
     "LEGO® Builder's Journey",
     "MIO: Memories in Orbit",
     "Northern Journey",
@@ -461,6 +463,16 @@
     },
     "Grand Theft Auto V Enhanced": {
       "notes": "ℹ️ Change ReShade overlay button in ReShade.ini so it doesn't conflict with Rockstar overlay",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    },
+    "L.A. Noire": {
+      "notes": "⚠️ The RenoDX wiki mod for L.A. Noire is deprecated and does not work with recent ReShade versions.\n\nTo use RenoDX with this game you must enforce DX11, install ReShade with addon support v6.3.3, and use the older Nexus file version linked below.",
+      "notesUrl": "https://www.nexusmods.com/lanoire/mods/6",
+      "notesUrlLabel": "RenoDX for L.A. Noire (Nexus Mods)"
+    },
+    "Dying Light 2": {
+      "notes": "⚠️ The RenoDX mod for Dying Light 2 has been abandoned and is no longer maintained. It may not work with current game or ReShade versions.",
       "notesUrl": null,
       "notesUrlLabel": null
     },

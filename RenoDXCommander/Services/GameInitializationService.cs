@@ -89,7 +89,15 @@ public class GameInitializationService : IGameInitializationService
             .Select(grp => grp.First())
             .ToList();
 
-        var byPath = deduped;
+        // Step 2: deduplicate by install path alone.
+        // DLC and expansions (e.g. X4 DLC, DOOM DLC) share the base game's install
+        // folder but have different names. Collapse them to the shortest name, which
+        // is typically the base game. Cross-platform installs survive because they
+        // have different paths.
+        var byPath = deduped
+            .GroupBy(g => g.InstallPath.TrimEnd('\\', '/').ToLowerInvariant())
+            .Select(grp => grp.OrderBy(g => g.Name.Length).First())
+            .ToList();
 
         // Permanently exclude specific non-game entries
         var permanentExclusions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
