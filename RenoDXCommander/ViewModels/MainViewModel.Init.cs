@@ -1924,6 +1924,20 @@ public partial class MainViewModel
                 newCard.RefInstalledVersion = refRec.InstalledVersion;
             }
 
+            // ReLimiter detection (single File.Exists check + local JSON read for version)
+            if (!string.IsNullOrEmpty(installPath))
+            {
+                var ulFileName = GetUlFileName(is32Bit);
+                var ulDeployPath = ModInstallService.GetAddonDeployPath(installPath);
+                if (File.Exists(Path.Combine(ulDeployPath, ulFileName))
+                    || File.Exists(Path.Combine(installPath, ulFileName)))
+                {
+                    newCard.UlStatus = GameStatus.Installed;
+                    newCard.UlInstalledFile = ulFileName;
+                    newCard.UlInstalledVersion = ReadUlInstalledVersion(is32Bit);
+                }
+            }
+
             // Luma matching (in-memory only, no filesystem)
             var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
@@ -2361,6 +2375,14 @@ public partial class MainViewModel
                 existing.ExcludeFromUpdateAllDc      = fresh.ExcludeFromUpdateAllDc;
                 existing.UseNormalReShade        = fresh.UseNormalReShade;
                 existing.ShaderModeOverride      = fresh.ShaderModeOverride;
+                existing.UlInstalledFile         = fresh.UlInstalledFile;
+                existing.UlInstalledVersion      = fresh.UlInstalledVersion;
+                existing.DcInstalledFile         = fresh.DcInstalledFile;
+                existing.DcInstalledVersion      = fresh.DcInstalledVersion;
+                existing.OsInstalledFile         = fresh.OsInstalledFile;
+                existing.OsInstalledVersion      = fresh.OsInstalledVersion;
+                existing.RefRecord               = fresh.RefRecord;
+                existing.RefInstalledVersion     = fresh.RefInstalledVersion;
             }
             else
             {
