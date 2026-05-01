@@ -7,7 +7,7 @@
 
 ### Manifest Updates
 
-- FINAL FANTASY XIII and FINAL FANTASY XIII-2 wiki-unlinked — FFXIII was being falsely matched to the FFX RenoDX mod.
+- FINAL FANTASY XIII, FINAL FANTASY XIII-2, and FINAL FANTASY XVI wiki-unlinked — FFXIII was being falsely matched to FFX, FFXVI to FFXV.
 
 ## v1.9.0
 
