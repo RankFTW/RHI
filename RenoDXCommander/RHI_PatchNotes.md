@@ -4,7 +4,10 @@
 
 - Fixed ReLimiter showing "Installed" instead of its version number on launch. The instant-launch cache path had no ReLimiter detection — it now checks for the addon file and reads the version from local metadata immediately.
 - Fixed component version numbers (ReLimiter, Display Commander, OptiScaler, RE Framework) not updating after the background scan completed. The merge step was copying status fields but not version or filename fields, so versions stayed blank until a manual Refresh.
-- Fixed FINAL FANTASY XIII being falsely matched to the FFX RenoDX mod on the wiki. FFXIII and FFXIII-2 are now wiki-unlinked.
+
+### Manifest Updates
+
+- FINAL FANTASY XIII and FINAL FANTASY XIII-2 wiki-unlinked — FFXIII was being falsely matched to the FFX RenoDX mod.
 
 ## v1.9.0
 
