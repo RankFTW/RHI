@@ -8,6 +8,8 @@
 
 - Ultrawide fix links now appear on game cards. If a game has an ultrawide/resolution fix available from Lyall, RoseTheFlower, or p1xel8ted, a "UW Fix" button shows next to the Nexus and PCGW buttons. Clicking it opens the fix page directly. All three sources are fetched once and cached for 24 hours. Manifest overrides available for edge cases where automatic name matching fails.
 - Ultra+ links now appear on game cards. If a game has an Ultra+ mod on theultraplace.com, an "Ultra+" button shows next to the other link buttons. Clicking it opens the Ultra+ page for that game directly.
+- Typing "UW Fix" or "Ultra+" in the search bar now filters to games that have those links, just like searching for engine names or authors.
+- Nexus, PCGW, UW Fix, and Ultra+ link buttons are now underlined with a hand cursor on hover.
 
 ### Performance
 
@@ -18,6 +20,7 @@
 ### Manifest Updates
 
 - Satisfactory now installs to the correct `Engine\Binaries\Win64` subfolder.
+- Indiana Jones DLC blacklisted (Xbox Store dash-variant names).
 
 ## v1.8.9
 
