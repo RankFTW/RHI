@@ -195,9 +195,14 @@ public partial class DetailPanelBuilder
         _window.DetailNexusModsBtn.Tag = card;
         _window.DetailNexusModsBtn.Visibility = card.HasNexusModsUrl ? Visibility.Visible : Visibility.Collapsed;
 
-        // Lyall Fix link button
+        // UW Fix link button
         _window.DetailUwFixBtn.Tag = card;
         _window.DetailUwFixBtn.Visibility = card.HasUwFixUrl ? Visibility.Visible : Visibility.Collapsed;
+        if (card.HasUwFixUrl)
+        {
+            var source = card.UwFixSource ?? "creator";
+            ToolTipService.SetToolTip(_window.DetailUwFixBtn, $"Open {source}'s ultrawide fix page");
+        }
 
         // Ultra+ link button
         _window.DetailUltraPlusBtn.Tag = card;

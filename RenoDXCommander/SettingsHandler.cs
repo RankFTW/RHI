@@ -102,6 +102,14 @@ public class SettingsHandler
         _window.GlobalOsUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipOsUpdates;
         _window.GlobalRefUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipRefUpdates;
         _window.CacheAllShadersToggle.IsOn = ViewModel.Settings.CacheAllShaders;
+
+        // Initialize DXVK variant combo
+        var dxvkCombo = _window.DxvkVariantCombo;
+        var dxvkVariant = ViewModel.Settings.DxvkVariant;
+        if (string.Equals(dxvkVariant, "Stable", StringComparison.OrdinalIgnoreCase))
+            dxvkCombo.SelectedIndex = 1;
+        else
+            dxvkCombo.SelectedIndex = 0;
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
@@ -785,6 +793,58 @@ public class SettingsHandler
             RequestedTheme = ElementTheme.Dark,
         };
         await DialogService.ShowSafeAsync(dialog);
+    }
+
+    // ── DXVK Variant Selector ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Handles the DXVK variant ComboBox selection change.
+    /// Persists the variant, clears the staging cache, and prompts about re-deployment.
+    /// </summary>
+    public async void DxvkVariantCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is not ComboBox combo || combo.SelectedItem is not string selected) return;
+
+        var newVariant = selected.Contains("Stable", StringComparison.OrdinalIgnoreCase)
+            ? DxvkVariant.Stable
+            : DxvkVariant.Development;
+
+        var currentVariant = ViewModel.DxvkServiceInstance.SelectedVariant;
+        if (newVariant == currentVariant) return;
+
+        // Persist the variant preference
+        ViewModel.Settings.DxvkVariant = newVariant switch
+        {
+            DxvkVariant.Stable => "Stable",
+            _ => "Development"
+        };
+        ViewModel.SaveSettingsPublic();
+
+        // Update the service
+        ViewModel.DxvkServiceInstance.SelectedVariant = newVariant;
+
+        // Clear staging cache so the new variant is downloaded
+        ViewModel.DxvkServiceInstance.ClearStaging();
+
+        // Check if any games have DXVK installed
+        var gamesWithDxvk = ViewModel.AllCards
+            .Where(c => c.DxvkStatus == GameStatus.Installed || c.DxvkStatus == GameStatus.UpdateAvailable)
+            .ToList();
+
+        if (gamesWithDxvk.Count > 0)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "DXVK Variant Changed",
+                Content = $"The DXVK variant has been changed. {gamesWithDxvk.Count} game(s) currently have DXVK installed.\n\n"
+                    + "The new variant will be used the next time you update or reinstall DXVK for each game.",
+                CloseButtonText = "OK",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(dialog);
+        }
     }
 
 }

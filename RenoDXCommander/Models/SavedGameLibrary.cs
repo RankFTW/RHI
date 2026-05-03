@@ -20,4 +20,13 @@ public class SavedGameLibrary
     public Dictionary<string, MachineType> BitnessCache { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>The game name that was selected when the app last closed, used to restore selection on next launch.</summary>
     public string? LastSelectedGame { get; set; }
+
+    /// <summary>Game names that have DXVK enabled (per-game override toggle).</summary>
+    public HashSet<string> DxvkEnabledGames { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Maps game name → installed DXVK version string (e.g. "v2.7.1"). Only present for games with DXVK installed.</summary>
+    public Dictionary<string, string> DxvkInstalledVersions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Game names excluded from the DXVK portion of Update All.</summary>
+    public HashSet<string> ExcludeFromUpdateAllDxvk { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }

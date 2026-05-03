@@ -133,12 +133,16 @@ public partial class MainViewModel
                 && !_manifestDllOverrideOptOuts.Contains(card.GameName)) continue;
 
             // ── RS reconciliation ──────────────────────────────────────────────
+            // Resolve the correct default ReShade filename for this game's API.
+            // DX9 games should use d3d9.dll, OpenGL should use opengl32.dll, etc.
+            // Only rename if the current filename doesn't match the API-correct default.
+            var rsDefaultName = ResolveAutoReShadeFilename(card.DetectedApis) ?? AuxInstallService.RsNormalName;
             if (card.RsRecord != null
                 && !string.IsNullOrEmpty(card.RsRecord.InstalledAs)
-                && !card.RsRecord.InstalledAs.Equals(AuxInstallService.RsNormalName, StringComparison.OrdinalIgnoreCase))
+                && !card.RsRecord.InstalledAs.Equals(rsDefaultName, StringComparison.OrdinalIgnoreCase))
             {
                 var rsOldPath = Path.Combine(card.InstallPath, card.RsRecord.InstalledAs);
-                var rsDefaultPath = Path.Combine(card.InstallPath, AuxInstallService.RsNormalName);
+                var rsDefaultPath = Path.Combine(card.InstallPath, rsDefaultName);
 
                 if (File.Exists(rsOldPath))
                 {
@@ -170,10 +174,10 @@ public partial class MainViewModel
                         try
                         {
                             File.Move(rsOldPath, rsDefaultPath);
-                            card.RsRecord.InstalledAs = AuxInstallService.RsNormalName;
+                            card.RsRecord.InstalledAs = rsDefaultName;
                             _auxInstaller.SaveAuxRecord(card.RsRecord);
-                            card.RsInstalledFile = AuxInstallService.RsNormalName;
-                            _crashReporter.Log($"[MainViewModel.ReconcileDefaultNaming] RS {card.GameName}: {Path.GetFileName(rsOldPath)} → {AuxInstallService.RsNormalName}");
+                            card.RsInstalledFile = rsDefaultName;
+                            _crashReporter.Log($"[MainViewModel.ReconcileDefaultNaming] RS {card.GameName}: {Path.GetFileName(rsOldPath)} → {rsDefaultName}");
                         }
                         catch (Exception ex)
                         {

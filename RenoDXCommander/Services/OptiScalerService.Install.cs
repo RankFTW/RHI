@@ -338,6 +338,48 @@ public partial class OptiScalerService
             card.OsStatus = GameStatus.Installed;
             HasUpdate = false;
 
+            // ── 9. DXVK coexistence — move conflicting DXVK DLL to plugins folder ──
+            try
+            {
+                var dxvkService = _dxvkServiceLazy.Value;
+                var dxvkRecord = dxvkService.FindRecord(card.GameName, card.InstallPath);
+                if (dxvkRecord != null)
+                {
+                    // Check if any DXVK DLL in the game root conflicts with OptiScaler's filename
+                    var conflictingDll = dxvkRecord.InstalledDlls
+                        .FirstOrDefault(dll => string.Equals(dll, effectiveDllName, StringComparison.OrdinalIgnoreCase));
+
+                    if (conflictingDll != null)
+                    {
+                        var srcPath = Path.Combine(card.InstallPath, conflictingDll);
+                        var pluginsFolder = Path.Combine(card.InstallPath, "OptiScaler", "plugins");
+                        Directory.CreateDirectory(pluginsFolder);
+                        var destPath = Path.Combine(pluginsFolder, conflictingDll);
+
+                        if (File.Exists(srcPath) && DxvkService.IsDxvkFileStatic(srcPath))
+                        {
+                            File.Move(srcPath, destPath, overwrite: true);
+                            CrashReporter.Log($"[OptiScalerService.InstallAsync] Moved DXVK '{conflictingDll}' to OptiScaler/plugins/ (coexistence)");
+
+                            // Update the DxvkInstalledRecord
+                            dxvkRecord.InstalledDlls.Remove(conflictingDll);
+                            if (!dxvkRecord.PluginFolderDlls.Contains(conflictingDll))
+                                dxvkRecord.PluginFolderDlls.Add(conflictingDll);
+                            dxvkRecord.InOptiScalerPlugins = dxvkRecord.PluginFolderDlls.Count > 0;
+                            // Save the updated record via the service
+                            // Use reflection-free approach: call SaveRecord through the interface
+                            // DxvkService.SaveRecord is internal, so we cast to DxvkService
+                            if (dxvkService is DxvkService dxvkSvc)
+                                dxvkSvc.SaveRecordPublic(dxvkRecord);
+                        }
+                    }
+                }
+            }
+            catch (Exception dxvkEx)
+            {
+                CrashReporter.Log($"[OptiScalerService.InstallAsync] DXVK coexistence check failed — {dxvkEx.Message}");
+            }
+
             progress?.Report(("OptiScaler installed!", 100));
             CrashReporter.Log($"[OptiScalerService.InstallAsync] Install complete for {card.GameName}");
 
@@ -536,6 +578,43 @@ public partial class OptiScalerService
             catch (Exception opEx)
             {
                 CrashReporter.Log($"[OptiScalerService.Uninstall] OptiPatcher cleanup failed — {opEx.Message}");
+            }
+
+            // ── 4c. DXVK coexistence — move DXVK DLLs back from plugins folder to game root ──
+            try
+            {
+                var dxvkService = _dxvkServiceLazy.Value;
+                var dxvkRecord = dxvkService.FindRecord(card.GameName, gameDir);
+                if (dxvkRecord != null && dxvkRecord.PluginFolderDlls.Count > 0)
+                {
+                    var osPluginsFolder = Path.Combine(gameDir, "OptiScaler", "plugins");
+                    var dllsToMove = new List<string>(dxvkRecord.PluginFolderDlls);
+
+                    foreach (var dll in dllsToMove)
+                    {
+                        var srcPath = Path.Combine(osPluginsFolder, dll);
+                        var destPath = Path.Combine(gameDir, dll);
+
+                        if (File.Exists(srcPath))
+                        {
+                            File.Move(srcPath, destPath, overwrite: true);
+                            CrashReporter.Log($"[OptiScalerService.Uninstall] Moved DXVK '{dll}' back to game root (OptiScaler removed)");
+
+                            // Update the DxvkInstalledRecord
+                            dxvkRecord.PluginFolderDlls.Remove(dll);
+                            if (!dxvkRecord.InstalledDlls.Contains(dll))
+                                dxvkRecord.InstalledDlls.Add(dll);
+                        }
+                    }
+
+                    dxvkRecord.InOptiScalerPlugins = dxvkRecord.PluginFolderDlls.Count > 0;
+                    if (dxvkService is DxvkService dxvkSvc)
+                        dxvkSvc.SaveRecordPublic(dxvkRecord);
+                }
+            }
+            catch (Exception dxvkEx)
+            {
+                CrashReporter.Log($"[OptiScalerService.Uninstall] DXVK coexistence restore failed — {dxvkEx.Message}");
             }
 
             // ── 5. ReShade coexistence — restore ReShade64.dll to correct name ──

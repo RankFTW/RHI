@@ -28,6 +28,7 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private string? _nexusModsUrl;
     [ObservableProperty] private string? _pcgwUrl;
     [ObservableProperty] private string? _uwFixUrl;
+    public string? UwFixSource { get; set; }
     [ObservableProperty] private string? _ultraPlusUrl;
     [ObservableProperty] private string? _discordUrl;
     [ObservableProperty] private string? _notes;
@@ -53,7 +54,7 @@ public partial class GameCardViewModel : ObservableObject
 
     // Computed Vulkan properties
     public bool IsVulkanOnly => GraphicsApi == GraphicsApiType.Vulkan && !IsDualApiGame;
-    public bool RequiresVulkanInstall => IsVulkanOnly || (IsDualApiGame && VulkanRenderingPath == "Vulkan");
+    public bool RequiresVulkanInstall => IsVulkanOnly || (IsDualApiGame && VulkanRenderingPath == "Vulkan") || DxvkEnabled;
     public bool ShowRenderingPathToggle => IsDualApiGame;
 
     public string EngineHint    { get; set; } = "";
@@ -331,6 +332,33 @@ public partial class GameCardViewModel : ObservableObject
         NotifyOnce(nameof(OsMessageVisibility));
         NotifyOnce(nameof(IsOsNotInstalling));
         NotifyOnce(nameof(OsIniExists));
+
+        // ── DXVK: DxvkStatus dependents ─────────────────────────────
+        NotifyOnce(nameof(DxvkStatusDot));
+        NotifyOnce(nameof(DxvkActionLabel));
+        NotifyOnce(nameof(DxvkBtnBackground));
+        NotifyOnce(nameof(DxvkBtnForeground));
+        NotifyOnce(nameof(DxvkBtnBorderBrush));
+        NotifyOnce(nameof(DxvkDeleteVisibility));
+        NotifyOnce(nameof(DxvkStatusText));
+        NotifyOnce(nameof(DxvkStatusColor));
+        NotifyOnce(nameof(DxvkShortAction));
+        NotifyOnce(nameof(IsDxvkInstalled));
+        NotifyOnce(nameof(DxvkInstallEnabled));
+        NotifyOnce(nameof(CardDxvkStatusDot));
+        NotifyOnce(nameof(CardDxvkInstallEnabled));
+
+        // ── DXVK: DxvkIsInstalling dependents ───────────────────────
+        NotifyOnce(nameof(DxvkProgressVisibility));
+        NotifyOnce(nameof(IsDxvkNotInstalling));
+
+        // ── DXVK: DxvkEnabled dependents ────────────────────────────
+        NotifyOnce(nameof(DxvkRowVisibility));
+
+        // ── DXVK: Toggle eligibility dependents ─────────────────────
+        NotifyOnce(nameof(IsDxvkToggleVisible));
+        NotifyOnce(nameof(IsDxvkToggleEnabled));
+        NotifyOnce(nameof(DxvkToggleTooltip));
 
         // ── Normal ReShade: UseNormalReShade dependents ───────────────
         NotifyOnce(nameof(AddonsDisabled));

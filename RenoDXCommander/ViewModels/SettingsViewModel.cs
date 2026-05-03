@@ -43,6 +43,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _globalSkipRefUpdates;
     [ObservableProperty] private bool _cacheAllShaders = true;
     [ObservableProperty] private string _lastUpdateCheckUtc = "";
+    [ObservableProperty] private string _dxvkVariant = "Development";
 
     /// <summary>
     /// Optional callback invoked after any settings-specific property changes,
@@ -187,6 +188,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("GlobalSkipRefUpdates", out var gsrefVal)) GlobalSkipRefUpdates = gsrefVal == "true";
         if (s.TryGetValue("CacheAllShaders", out var casVal)) CacheAllShaders = casVal != "false"; // default true
         if (s.TryGetValue("LastUpdateCheckUtc", out var luc)) LastUpdateCheckUtc = luc;
+        if (s.TryGetValue("DxvkVariant", out var dvVal)) DxvkVariant = dvVal ?? "Development";
     }
 
     /// <summary>
@@ -224,6 +226,7 @@ public partial class SettingsViewModel : ObservableObject
         s["GlobalSkipRefUpdates"] = GlobalSkipRefUpdates ? "true" : "false";
         s["CacheAllShaders"] = CacheAllShaders ? "true" : "false";
         s["LastUpdateCheckUtc"] = LastUpdateCheckUtc;
+        s["DxvkVariant"] = DxvkVariant;
     }
 
     public void LoadThemeAndDensity()

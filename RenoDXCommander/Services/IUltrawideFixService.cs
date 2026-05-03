@@ -20,4 +20,10 @@ public interface IUltrawideFixService
     /// Priority: manifest override > Lyall > RoseTheFlower > p1xel8ted.
     /// </summary>
     string? ResolveUrl(string gameName, RemoteManifest? manifest);
+
+    /// <summary>
+    /// Returns the creator name for the ultrawide fix source for a game.
+    /// Returns "Lyall", "Rose", "p1xel8ted", or null if no fix exists.
+    /// </summary>
+    string? ResolveSource(string gameName, RemoteManifest? manifest);
 }

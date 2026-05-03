@@ -336,6 +336,7 @@ public partial class MainViewModel
                 (c.UlStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllUl) ||
                 (c.DcStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDc) ||
                 (c.OsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllOs) ||
+                (c.DxvkStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDxvk) ||
                 (c.RefStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRef)));
 
     // Button colours — purple when updates available, dim when idle
@@ -411,6 +412,23 @@ public partial class MainViewModel
         var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
         if (card != null) card.ExcludeFromUpdateAllRef = set.Contains(gameName);
         NotifyUpdateButtonChanged();
+    }
+
+    public bool IsUpdateAllExcludedDxvk(string gameName)
+    {
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        return card?.ExcludeFromUpdateAllDxvk ?? false;
+    }
+
+    public void ToggleUpdateAllExclusionDxvk(string gameName)
+    {
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        if (card != null)
+        {
+            card.ExcludeFromUpdateAllDxvk = !card.ExcludeFromUpdateAllDxvk;
+            SaveLibrary();
+            NotifyUpdateButtonChanged();
+        }
     }
 
     private void LoadNameMappings()

@@ -6,7 +6,7 @@ public partial class AuxInstallService
     /// <summary>
     /// Classifies what a dxgi.dll file is based on its content.
     /// </summary>
-    public enum DxgiFileType { Unknown, ReShade, OptiScaler }
+    public enum DxgiFileType { Unknown, ReShade, OptiScaler, Dxvk }
 
     /// <summary>
     /// Identifies what type of dxgi.dll is at the given path.
@@ -22,6 +22,9 @@ public partial class AuxInstallService
 
         // Check for OptiScaler binary signatures
         if (OptiScalerService.IsOptiScalerFileStatic(filePath)) return DxgiFileType.OptiScaler;
+
+        // Check for DXVK binary signatures
+        if (DxvkService.IsDxvkFileStatic(filePath)) return DxgiFileType.Dxvk;
 
         return DxgiFileType.Unknown;
     }
@@ -42,6 +45,11 @@ public partial class AuxInstallService
         bool isForeign;
         if (name.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))
             isForeign = IdentifyDxgiFile(dllPath) == DxgiFileType.Unknown;
+        else if (IsDxvkManagedDllName(name))
+            // For DXVK-managed filenames (d3d8, d3d9, d3d10core, d3d11),
+            // only treat as foreign if it's NOT a DXVK file AND NOT a ReShade file.
+            // ReShade can be installed as d3d9.dll for DX9 games — don't back that up.
+            isForeign = !DxvkService.IsDxvkFileStatic(dllPath) && !IsReShadeFile(dllPath);
         else
             return false;
 
@@ -61,6 +69,17 @@ public partial class AuxInstallService
             return false;
         }
     }
+
+    /// <summary>
+    /// Returns true if the given DLL filename is one that DXVK may deploy
+    /// (d3d8.dll, d3d9.dll, d3d10core.dll, d3d11.dll). dxgi.dll is handled
+    /// separately by <see cref="IdentifyDxgiFile"/>.
+    /// </summary>
+    private static bool IsDxvkManagedDllName(string fileName) =>
+        fileName.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("d3d10core.dll", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// If a <c>.original</c> backup exists for <paramref name="dllPath"/> and the

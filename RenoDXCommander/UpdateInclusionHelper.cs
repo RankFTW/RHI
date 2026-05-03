@@ -21,7 +21,8 @@ public static class UpdateInclusionHelper
         TextBlock summaryTb,
         MainViewModel viewModel,
         string gameName,
-        bool isREEngineGame)
+        bool isREEngineGame,
+        bool isDxvkEnabled = false)
     {
         summaryTb.Inlines.Clear();
         var items = new List<(string label, bool isOn)>
@@ -32,6 +33,8 @@ public static class UpdateInclusionHelper
             ("DC", !viewModel.IsUpdateAllExcludedDc(gameName)),
             ("OS", !viewModel.IsUpdateAllExcludedOs(gameName)),
         };
+        if (isDxvkEnabled)
+            items.Add(("DXVK", !viewModel.IsUpdateAllExcludedDxvk(gameName)));
         if (isREEngineGame)
             items.Add(("REF", !viewModel.IsUpdateAllExcludedRef(gameName)));
         for (int i = 0; i < items.Count; i++)
@@ -67,7 +70,8 @@ public static class UpdateInclusionHelper
         string gameName,
         bool isREEngineGame,
         XamlRoot xamlRoot,
-        Action? onSaved = null)
+        Action? onSaved = null,
+        bool isDxvkEnabled = false)
     {
         var summaryText = new TextBlock
         {
@@ -76,7 +80,7 @@ public static class UpdateInclusionHelper
             Margin = new Thickness(0, 4, 0, 0),
         };
 
-        RefreshSummary(summaryText, viewModel, gameName, isREEngineGame);
+        RefreshSummary(summaryText, viewModel, gameName, isREEngineGame, isDxvkEnabled);
 
         var button = new Button
         {
@@ -98,6 +102,9 @@ public static class UpdateInclusionHelper
             var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !viewModel.IsUpdateAllExcludedUl(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
             var dcCheck = new CheckBox { Content = "Display Commander", IsChecked = !viewModel.IsUpdateAllExcludedDc(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
             var osCheck = new CheckBox { Content = "OptiScaler", IsChecked = !viewModel.IsUpdateAllExcludedOs(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+            CheckBox? dxvkCheck = isDxvkEnabled
+                ? new CheckBox { Content = "DXVK", IsChecked = !viewModel.IsUpdateAllExcludedDxvk(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
+                : null;
             CheckBox? refCheck = isREEngineGame
                 ? new CheckBox { Content = "RE Framework", IsChecked = !viewModel.IsUpdateAllExcludedRef(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
                 : null;
@@ -109,6 +116,7 @@ public static class UpdateInclusionHelper
             checkPanel.Children.Add(ulCheck);
             checkPanel.Children.Add(dcCheck);
             checkPanel.Children.Add(osCheck);
+            if (dxvkCheck != null) checkPanel.Children.Add(dxvkCheck);
             if (refCheck != null) checkPanel.Children.Add(refCheck);
 
             var dialog = new ContentDialog
@@ -135,11 +143,13 @@ public static class UpdateInclusionHelper
                     viewModel.ToggleUpdateAllExclusionDc(gameName);
                 if ((osCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedOs(gameName))
                     viewModel.ToggleUpdateAllExclusionOs(gameName);
+                if (dxvkCheck != null && (dxvkCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedDxvk(gameName))
+                    viewModel.ToggleUpdateAllExclusionDxvk(gameName);
                 if (refCheck != null && (refCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedRef(gameName))
                     viewModel.ToggleUpdateAllExclusionRef(gameName);
 
                 // Refresh summary
-                RefreshSummary(summaryText, viewModel, gameName, isREEngineGame);
+                RefreshSummary(summaryText, viewModel, gameName, isREEngineGame, isDxvkEnabled);
 
                 // Notify caller so it can rebuild UI (e.g. component panel)
                 onSaved?.Invoke();

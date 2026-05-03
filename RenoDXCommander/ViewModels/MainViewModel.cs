@@ -13,6 +13,7 @@ public partial class MainViewModel : ObservableObject
     private readonly HttpClient        _http;
     public HttpClient HttpClient => _http;
     private readonly IModInstallService _installer;
+    public IModInstallService ModInstallServiceInstance => _installer;
     private readonly IAuxInstallService _auxInstaller;
     private readonly IREFrameworkService _refService;
     private readonly ICrashReporter _crashReporter;
@@ -35,6 +36,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IUltrawideFixService _uwFixService;
     private readonly IUltraPlusService _ultraPlusService;
     private readonly IOptiScalerService _optiScalerService;
+    private readonly IDxvkService _dxvkService;
     private readonly IOptiScalerWikiService _optiScalerWikiService;
     private readonly IHdrDatabaseService _hdrDatabaseService;
     private readonly GitHubETagCache _etagCache;
@@ -56,6 +58,7 @@ public partial class MainViewModel : ObservableObject
     public IPeHeaderService PeHeaderServiceInstance => _peHeaderService;
     public IAuxInstallService AuxInstallServiceInstance => _auxInstaller;
     public IOptiScalerService OptiScalerServiceInstance => _optiScalerService;
+    public IDxvkService DxvkServiceInstance => _dxvkService;
     public IOptiScalerWikiService OptiScalerWikiServiceInstance => _optiScalerWikiService;
     public IHdrDatabaseService HdrDatabaseServiceInstance => _hdrDatabaseService;
     public IREFrameworkService REFrameworkServiceInstance => _refService;
@@ -361,6 +364,10 @@ public partial class MainViewModel : ObservableObject
     private Dictionary<string, string> _resolvedPathCache = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _addonFileCache = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, MachineType> _bitnessCache = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Game names that have DXVK enabled (loaded from saved library).</summary>
+    private HashSet<string> _dxvkEnabledGames = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Game names excluded from DXVK Update All (loaded from saved library).</summary>
+    private HashSet<string> _excludeFromUpdateAllDxvk = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Maps current (renamed) game name → original store-detected name.
     /// Populated during ApplyGameRenames so the Overrides dialog can reset to the original.</summary>
     private Dictionary<string, string> _originalDetectedNames => _gameNameService.OriginalDetectedNames;
@@ -458,6 +465,7 @@ public partial class MainViewModel : ObservableObject
         IUltrawideFixService uwFixService,
         IUltraPlusService ultraPlusService,
         IOptiScalerService optiScalerService,
+        IDxvkService dxvkService,
         IOptiScalerWikiService optiScalerWikiService,
         IHdrDatabaseService hdrDatabaseService,
         GitHubETagCache etagCache)
@@ -489,6 +497,7 @@ public partial class MainViewModel : ObservableObject
         _uwFixService = uwFixService;
         _ultraPlusService = ultraPlusService;
         _optiScalerService = optiScalerService;
+        _dxvkService = dxvkService;
         _optiScalerWikiService = optiScalerWikiService;
         _hdrDatabaseService = hdrDatabaseService;
         _etagCache = etagCache;

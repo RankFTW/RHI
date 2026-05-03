@@ -1,13 +1,38 @@
-## v1.9.1
+## v1.9.1-beta
+
+### New Features
+
+- **DXVK Integration (WIP)** — DXVK is now a managed per-game component. Enable it from the Overrides panel on DX8/DX9/DX10 games to translate DirectX calls to Vulkan, enabling ReShade compute shaders and potentially reducing CPU-bound stuttering on older titles. This is an advanced feature — not all games are compatible. **Note: This feature is still a work in progress and has only been tested by the developer. Expect rough edges.**
+  - Per-game toggle in the Overrides panel (hidden for DX11/DX12/OpenGL/Vulkan)
+  - DXVK component row in the Components section (visible only when enabled)
+  - Automatic ReShade mode switching: when DXVK is enabled, ReShade switches from DX proxy to Vulkan layer mode; when disabled, it switches back with the correct API-specific filename (d3d9.dll for DX9, etc.)
+  - OptiScaler coexistence: filename conflicts are automatically resolved by routing DLLs to the OptiScaler plugins folder
+  - Game originals backed up as `.original` and restored on uninstall
+  - dxvk.conf deployed with sensible defaults (HDR enabled, borderless fullscreen, latency sleep)
+  - Binary signature detection for foreign DLL protection
+  - Update All integration via the existing Update Inclusion dialog (DXVK only appears when enabled for a game)
+  - Settings page variant selector: Development (nightly builds via nightly.link — default) or Stable (tagged releases)
+  - Warning dialog with "Don't show again" checkbox — explains this is an advanced unsupported feature
+  - Dual-API awareness: games with DX12 detected alongside their primary API won't show the DXVK toggle
+  - ReShade Install button automatically uses Vulkan layer path when DXVK is active
+- **ReLimiter and Display Commander Info buttons now show changelogs** — the Info button on the ReLimiter and Display Commander component rows now fetches the project's CHANGELOG.md from GitHub and displays the patch notes for the installed version plus the two previous versions, rendered as markdown. The button is highlighted blue to indicate content is available.
 
 ### Bug Fixes
 
+- Fixed UW Fix tooltip always saying "Lyall" — it now shows the correct creator (Lyall, Rose, or p1xel8ted) per game.
+- Fixed ReShade DLL being renamed from `d3d9.dll` to `dxgi.dll` on refresh for DX9 games. The default naming reconciliation now respects the game's API — DX9 games keep `d3d9.dll`, OpenGL keeps `opengl32.dll`.
+- Fixed ReShade `d3d9.dll` being incorrectly backed up as a "foreign" DLL during Update All. The foreign DLL detection now recognises ReShade installed under DXVK-managed filenames (d3d9.dll, d3d10core.dll, etc.).
+- Fixed drag-and-dropped addons disappearing after refresh. The drag-and-drop install now saves a persistent record to the database so the addon is detected on subsequent launches and refreshes.
+- Fixed addon file watcher triggering duplicate installs when downloading to the watch folder. Browser downloads fire both Created and Renamed events — a 5-second deduplication window now prevents the second install.
 - Fixed ReLimiter showing "Installed" instead of its version number on launch. The instant-launch cache path had no ReLimiter detection — it now checks for the addon file and reads the version from local metadata immediately.
 - Fixed component version numbers (ReLimiter, Display Commander, OptiScaler, RE Framework) not updating after the background scan completed. The merge step was copying status fields but not version or filename fields, so versions stayed blank until a manual Refresh.
+- Fixed corrupted ReShade staging file (2.88KB instead of ~5MB) causing false "update available" badges on every game and deploying a broken DLL on update. Added 1MB minimum size validation to ReShade staging so corrupted files trigger a re-download.
 
 ### Manifest Updates
 
 - FINAL FANTASY XIII, FINAL FANTASY XIII-2, and FINAL FANTASY XVI wiki-unlinked — FFXIII was being falsely matched to FFX, FFXVI to FFXV.
+- Added DXVK blacklist for anti-cheat games (Fortnite, Apex Legends, Valorant, etc.)
+- Added DXVK game notes for FFXIV
 
 ## v1.9.0
 
