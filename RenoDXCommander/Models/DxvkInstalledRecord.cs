@@ -26,6 +26,13 @@ public class DxvkInstalledRecord
     /// <summary>Whether any DXVK DLL is in the OptiScaler plugins folder.</summary>
     public bool InOptiScalerPlugins { get; set; }
 
+    /// <summary>
+    /// True when DXVK was installed using the ReShade proxy chain method (DX8/DX9 games).
+    /// In proxy mode, DXVK is deployed as dxgi_dxvk.dll and ReShade's [PROXY] section
+    /// chains to it, instead of using the Vulkan implicit layer.
+    /// </summary>
+    public bool IsProxyMode { get; set; }
+
     /// <summary>Timestamp of installation.</summary>
     public DateTime InstalledAt { get; set; }
 }

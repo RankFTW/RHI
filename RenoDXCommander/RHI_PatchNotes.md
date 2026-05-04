@@ -1,3 +1,9 @@
+## v1.9.2-beta
+
+### New Features
+
+- **DXVK Proxy Mode for DX8/DX9 games** — DX8 and DX9 games now use a ReShade proxy chain instead of the Vulkan implicit layer when DXVK is enabled. DXVK is deployed as `dxgi_dxvk.dll` and ReShade chains to it via the `[PROXY]` section in reshade.ini. No Vulkan layer install or admin privileges needed. This matches the method recommended by RenoDX mod authors on Nexus Mods.
+
 ## v1.9.1
 
 ### Highlights
@@ -14,6 +20,7 @@
   - Per-game toggle in the Overrides panel (hidden for DX11/DX12/OpenGL/Vulkan)
   - DXVK component row in the Components section (visible only when enabled)
   - Automatic ReShade mode switching: when DXVK is enabled, ReShade switches from DX proxy to Vulkan layer mode; when disabled, it switches back with the correct API-specific filename (d3d9.dll for DX9, etc.)
+  - DX8/DX9 proxy mode: DXVK is deployed as `dxgi_dxvk.dll` and ReShade chains to it via the `[PROXY]` section in reshade.ini — no Vulkan layer or admin needed. Matches the method recommended by RenoDX mod authors on Nexus.
   - OptiScaler coexistence: filename conflicts are automatically resolved by routing DLLs to the OptiScaler plugins folder
   - Game originals backed up as `.original` and restored on uninstall
   - dxvk.conf deployed with sensible defaults (HDR enabled, borderless fullscreen, latency sleep)

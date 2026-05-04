@@ -14,6 +14,17 @@ public partial class DxvkService
         d3d9.dpiAware = True
         """;
 
+    // ── Proxy mode constants (DX8/DX9) ───────────────────────────────
+    /// <summary>
+    /// Filename for the DXVK DLL when using proxy chain mode.
+    /// ReShade's [PROXY] section points to this file.
+    /// </summary>
+    private const string ProxyDxvkDllName = "dxgi_dxvk.dll";
+
+    /// <summary>Returns true when the API should use proxy chain mode instead of Vulkan layer.</summary>
+    private static bool IsProxyModeApi(GraphicsApiType api) =>
+        api is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
+
     // ── Install ───────────────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -70,6 +81,83 @@ public partial class DxvkService
             }
 
             progress?.Report(("Resolving deployment paths...", 15));
+
+            // ── DX8/DX9 Proxy Mode ──────────────────────────────────────
+            // For DX8/DX9 games, use the ReShade proxy chain method:
+            // ReShade stays as d3d9.dll (DX proxy), DXVK is deployed as
+            // dxgi_dxvk.dll, and ReShade's [PROXY] section chains to it.
+            // No Vulkan layer needed.
+            bool useProxyMode = IsProxyModeApi(card.GraphicsApi);
+
+            if (useProxyMode)
+            {
+                progress?.Report(("Deploying DXVK (proxy mode)...", 35));
+
+                // The source DLL is DXVK's d3d9.dll from staging
+                var srcDll = Path.Combine(StagingDir, archFolder, "d3d9.dll");
+                if (!File.Exists(srcDll))
+                {
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Proxy mode: staged d3d9.dll not found at '{srcDll}'");
+                    progress?.Report(("DXVK d3d9.dll not found in staging", 0));
+                    return;
+                }
+
+                // Deploy as dxgi_dxvk.dll in the game folder
+                var destDll = Path.Combine(card.InstallPath, ProxyDxvkDllName);
+                CopyFileWithLockHandling(srcDll, destDll, ProxyDxvkDllName, card.GameName);
+                CrashReporter.Log($"[DxvkService.InstallAsync] Proxy mode: deployed {ProxyDxvkDllName} to game root");
+
+                // Add [PROXY] section to reshade.ini
+                progress?.Report(("Configuring ReShade proxy chain...", 50));
+                AddProxySectionToReShadeIni(card.InstallPath);
+
+                progress?.Report(("Configuring dxvk.conf...", 65));
+
+                // Deploy default dxvk.conf if none exists
+                var proxyConfPath = Path.Combine(card.InstallPath, "dxvk.conf");
+                bool proxyDeployedConf = false;
+                if (!File.Exists(proxyConfPath))
+                {
+                    try
+                    {
+                        File.WriteAllText(proxyConfPath, DefaultDxvkConfContent);
+                        proxyDeployedConf = true;
+                        CrashReporter.Log("[DxvkService.InstallAsync] Deployed default dxvk.conf");
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[DxvkService.InstallAsync] Failed to deploy dxvk.conf — {ex.Message}");
+                    }
+                }
+
+                progress?.Report(("Saving install record...", 80));
+
+                var proxyRecord = new DxvkInstalledRecord
+                {
+                    GameName = card.GameName,
+                    InstallPath = card.InstallPath,
+                    DxvkVersion = StagedVersion ?? "unknown",
+                    InstalledDlls = new List<string> { ProxyDxvkDllName },
+                    PluginFolderDlls = new List<string>(),
+                    BackedUpFiles = new List<string>(),
+                    DeployedConf = proxyDeployedConf,
+                    InOptiScalerPlugins = false,
+                    IsProxyMode = true,
+                    InstalledAt = DateTime.UtcNow,
+                };
+                SaveRecord(proxyRecord);
+
+                card.DxvkInstalledVersion = proxyRecord.DxvkVersion;
+                card.DxvkStatus = GameStatus.Installed;
+                card.DxvkRecord = proxyRecord;
+                HasUpdate = false;
+
+                progress?.Report(("DXVK installed (proxy mode)!", 100));
+                CrashReporter.Log($"[DxvkService.InstallAsync] Proxy mode install complete for {card.GameName}");
+                return;
+            }
+
+            // ── Standard Mode (DX10/DX11) ────────────────────────────────
 
             // ── 5. Resolve OptiScaler coexistence paths ──────────────────
             var (rootDlls, pluginDlls) = ResolveDeploymentPaths(dllNames, card.InstallPath);
@@ -288,16 +376,26 @@ public partial class DxvkService
                 }
             }
 
-            // ── 5. Coordinate ReShade mode switching (Vulkan layer → DX proxy) ──
-            // Fire-and-forget since Uninstall is synchronous; the actual switching
-            // is lightweight (file operations only, no network).
-            try
+            // ── 5. Coordinate ReShade mode switching ─────────────────────
+            if (record.IsProxyMode)
             {
-                SwitchReShadeForDxvkAsync(card, dxvkEnabled: false).GetAwaiter().GetResult();
+                // Proxy mode: remove [PROXY] section from reshade.ini
+                RemoveProxySectionFromReShadeIni(gameDir);
+                CrashReporter.Log($"[DxvkService.Uninstall] Removed [PROXY] section from reshade.ini (proxy mode)");
             }
-            catch (Exception ex)
+            else
             {
-                CrashReporter.Log($"[DxvkService.Uninstall] ReShade mode switch failed — {ex.Message}");
+                // Standard mode: switch Vulkan layer → DX proxy
+                // Fire-and-forget since Uninstall is synchronous; the actual switching
+                // is lightweight (file operations only, no network).
+                try
+                {
+                    SwitchReShadeForDxvkAsync(card, dxvkEnabled: false).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[DxvkService.Uninstall] ReShade mode switch failed — {ex.Message}");
+                }
             }
 
             // ── 6. Remove tracking record ────────────────────────────────
@@ -716,5 +814,92 @@ public partial class DxvkService
         {
             CrashReporter.Log($"[DxvkService.SwitchReShadeForDxvk] {card.GameName}: ReShade mode switch failed — {ex.Message}");
         }
+    }
+
+    // ── ReShade INI proxy section helpers (DX8/DX9 proxy mode) ────────
+
+    /// <summary>
+    /// Adds or updates the [PROXY] section in reshade.ini to chain to the DXVK DLL.
+    /// Creates reshade.ini if it doesn't exist.
+    /// </summary>
+    private static void AddProxySectionToReShadeIni(string gameDir)
+    {
+        var iniPath = Path.Combine(gameDir, "reshade.ini");
+        try
+        {
+            var lines = File.Exists(iniPath)
+                ? new List<string>(File.ReadAllLines(iniPath))
+                : new List<string>();
+
+            // Remove existing [PROXY] section if present
+            RemoveSection(lines, "PROXY");
+
+            // Append the new [PROXY] section
+            if (lines.Count > 0 && !string.IsNullOrWhiteSpace(lines[^1]))
+                lines.Add(""); // blank line separator
+            lines.Add("[PROXY]");
+            lines.Add("EnableProxyLibrary=1");
+            lines.Add($"ProxyLibrary={ProxyDxvkDllName}");
+
+            File.WriteAllLines(iniPath, lines);
+            CrashReporter.Log($"[DxvkService] Added [PROXY] section to reshade.ini → {ProxyDxvkDllName}");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DxvkService.AddProxySectionToReShadeIni] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes the [PROXY] section from reshade.ini (or sets EnableProxyLibrary=0).
+    /// </summary>
+    private static void RemoveProxySectionFromReShadeIni(string gameDir)
+    {
+        var iniPath = Path.Combine(gameDir, "reshade.ini");
+        if (!File.Exists(iniPath)) return;
+        try
+        {
+            var lines = new List<string>(File.ReadAllLines(iniPath));
+            if (RemoveSection(lines, "PROXY"))
+            {
+                File.WriteAllLines(iniPath, lines);
+                CrashReporter.Log("[DxvkService] Removed [PROXY] section from reshade.ini");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DxvkService.RemoveProxySectionFromReShadeIni] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes all lines belonging to the given INI section (header + keys until next section or EOF).
+    /// Returns true if the section was found and removed.
+    /// </summary>
+    private static bool RemoveSection(List<string> lines, string sectionName)
+    {
+        var header = $"[{sectionName}]";
+        int start = -1;
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (lines[i].Trim().Equals(header, StringComparison.OrdinalIgnoreCase))
+            {
+                start = i;
+                break;
+            }
+        }
+        if (start < 0) return false;
+
+        // Find the end of the section (next [Section] header or EOF)
+        int end = start + 1;
+        while (end < lines.Count && !lines[end].TrimStart().StartsWith('['))
+            end++;
+
+        // Remove trailing blank lines before the section too
+        while (start > 0 && string.IsNullOrWhiteSpace(lines[start - 1]))
+            start--;
+
+        lines.RemoveRange(start, end - start);
+        return true;
     }
 }

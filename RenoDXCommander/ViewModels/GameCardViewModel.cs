@@ -54,7 +54,9 @@ public partial class GameCardViewModel : ObservableObject
 
     // Computed Vulkan properties
     public bool IsVulkanOnly => GraphicsApi == GraphicsApiType.Vulkan && !IsDualApiGame;
-    public bool RequiresVulkanInstall => IsVulkanOnly || (IsDualApiGame && VulkanRenderingPath == "Vulkan") || DxvkEnabled;
+    public bool RequiresVulkanInstall => IsVulkanOnly
+        || (IsDualApiGame && VulkanRenderingPath == "Vulkan")
+        || (DxvkEnabled && GraphicsApi is not GraphicsApiType.DirectX8 and not GraphicsApiType.DirectX9);
     public bool ShowRenderingPathToggle => IsDualApiGame;
 
     public string EngineHint    { get; set; } = "";
