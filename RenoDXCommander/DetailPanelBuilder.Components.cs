@@ -18,6 +18,10 @@ public partial class DetailPanelBuilder
     /// </summary>
     private bool HasRealInfoContent(GameCardViewModel card, AddonType addonType)
     {
+        // ReLimiter and Display Commander always have changelog content
+        if (addonType is AddonType.ReLimiter or AddonType.DisplayCommander)
+            return true;
+
         var manifest = _window.ViewModel.Manifest;
         var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
         var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
@@ -75,6 +79,15 @@ public partial class DetailPanelBuilder
         var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
         var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
         var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
+
+        // ReLimiter and Display Commander always have useful content
+        // (release notes from GitHub when available, fallback description + releases link otherwise)
+        if (sourceType == InfoSourceType.Fallback
+            && addonType is AddonType.ReLimiter or AddonType.DisplayCommander)
+        {
+            sourceType = InfoSourceType.Wiki;
+        }
+
         var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
         ToolTipService.SetToolTip(infoBtn, tooltip);
 
@@ -235,9 +248,15 @@ public partial class DetailPanelBuilder
             _window.DetailUlStatus.Opacity = ulGreyed ? 0.35 : 1.0;
             _window.DetailUlInstallBtn.Tag = card;
             var ulLabel = WithInfoArrow(card.UlActionLabel, HasRealInfoContent(card, AddonType.ReLimiter), card.UlStatus == GameStatus.UpdateAvailable, _window.DetailUlInstallBtn);
-            _window.DetailUlInstallBtn.Content = (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade)
-                ? (object)new TextBlock { Text = card.UlActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
-                : ulLabel;
+            if (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade)
+            {
+                _window.DetailUlInstallBtn.Content = new TextBlock { Text = card.UlActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center };
+                _window.DetailUlInstallBtn.HorizontalContentAlignment = HorizontalAlignment.Center;
+            }
+            else
+            {
+                _window.DetailUlInstallBtn.Content = ulLabel;
+            }
             _window.DetailUlInstallBtn.IsEnabled = card.UlInstallEnabled;
             _window.DetailUlInstallBtn.Background = UIFactory.GetBrush(card.UlBtnBackground);
             _window.DetailUlInstallBtn.Foreground = UIFactory.GetBrush(card.UlBtnForeground);
@@ -279,9 +298,15 @@ public partial class DetailPanelBuilder
             _window.DetailDcStatus.Opacity = dcGreyed ? 0.35 : 1.0;
             _window.DetailDcInstallBtn.Tag = card;
             var dcLabel = WithInfoArrow(card.DcActionLabel, HasRealInfoContent(card, AddonType.DisplayCommander), card.DcStatus == GameStatus.UpdateAvailable, _window.DetailDcInstallBtn);
-            _window.DetailDcInstallBtn.Content = (card.IsUlInstalled || card.UseNormalReShade)
-                ? (object)new TextBlock { Text = card.DcActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
-                : dcLabel;
+            if (card.IsUlInstalled || card.UseNormalReShade)
+            {
+                _window.DetailDcInstallBtn.Content = new TextBlock { Text = card.DcActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center };
+                _window.DetailDcInstallBtn.HorizontalContentAlignment = HorizontalAlignment.Center;
+            }
+            else
+            {
+                _window.DetailDcInstallBtn.Content = dcLabel;
+            }
             _window.DetailDcInstallBtn.IsEnabled = card.DcInstallEnabled;
             _window.DetailDcInstallBtn.Background = UIFactory.GetBrush(card.DcBtnBackground);
             _window.DetailDcInstallBtn.Foreground = UIFactory.GetBrush(card.DcBtnForeground);
@@ -352,6 +377,32 @@ public partial class DetailPanelBuilder
         // RenoDX row (also used for external-only / Discord link)
         bool showRdx = !isLumaMode;
         _window.DetailRdxRow.Visibility = showRdx ? Visibility.Visible : Visibility.Collapsed;
+
+        // DXVK row — visible only when DxvkEnabled is true
+        _window.DetailDxvkRow.Visibility = card.DxvkRowVisibility;
+        if (card.DxvkRowVisibility == Visibility.Visible)
+        {
+            _window.DetailDxvkStatus.Text = card.DxvkStatusText;
+            _window.DetailDxvkStatus.Foreground = UIFactory.GetBrush(card.DxvkStatusColor);
+            _window.DetailDxvkStatus.TextDecorations = card.IsDxvkInstalled
+                ? Windows.UI.Text.TextDecorations.Underline
+                : Windows.UI.Text.TextDecorations.None;
+            _window.DetailDxvkInstallBtn.Tag = card;
+            _window.DetailDxvkInstallBtn.Content = card.DxvkActionLabel;
+            _window.DetailDxvkInstallBtn.IsEnabled = card.DxvkInstallEnabled;
+            _window.DetailDxvkInstallBtn.Background = UIFactory.GetBrush(card.DxvkBtnBackground);
+            _window.DetailDxvkInstallBtn.Foreground = UIFactory.GetBrush(card.DxvkBtnForeground);
+            _window.DetailDxvkInstallBtn.BorderBrush = UIFactory.GetBrush(card.DxvkBtnBorderBrush);
+            _window.DetailDxvkInstallBtn.BorderThickness = new Thickness(1);
+            _window.DetailDxvkConfBtn.Tag = card;
+            _window.DetailDxvkConfBtn.IsEnabled = card.DxvkInstallEnabled;
+            _window.DetailDxvkConfBtn.Opacity = card.DxvkInstallEnabled ? 1 : 0.3;
+            _window.DetailDxvkInfoBtn.Tag = card;
+            _window.DetailDxvkDeleteBtn.Tag = card;
+            var dxvkShow = card.DxvkDeleteVisibility == Visibility.Visible;
+            _window.DetailDxvkDeleteBtn.Opacity = dxvkShow ? 1 : 0;
+            _window.DetailDxvkDeleteBtn.IsHitTestVisible = dxvkShow;
+        }
         bool rdxGreyed = card.UseNormalReShade || !card.IsRsInstalled;
         _window.DetailRdxRow.Opacity = 1.0;
         _window.DetailRdxRow.IsHitTestVisible = true;
@@ -509,6 +560,13 @@ public partial class DetailPanelBuilder
         _window.DetailOsMessage.Visibility = card.OsRowVisibility == Visibility.Visible ? card.OsMessageVisibility : Visibility.Collapsed;
         _window.DetailOsMessage.Text = card.OsActionMessage;
         _window.DetailOsMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.OsActionMessage));
+        _window.DetailDxvkProgress.Visibility = card.DxvkRowVisibility == Visibility.Visible ? card.DxvkProgressVisibility : Visibility.Collapsed;
+        _window.DetailDxvkProgress.Value = card.DxvkProgress;
+        _window.DetailDxvkMessage.Visibility = card.DxvkRowVisibility == Visibility.Visible
+            ? (string.IsNullOrEmpty(card.DxvkActionMessage) ? Visibility.Collapsed : Visibility.Visible)
+            : Visibility.Collapsed;
+        _window.DetailDxvkMessage.Text = card.DxvkActionMessage;
+        _window.DetailDxvkMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DxvkActionMessage));
         _window.DetailRdxProgress.Visibility = card.ProgressVisibility;
         _window.DetailRdxProgress.Value = card.InstallProgress;
         _window.DetailRdxMessage.Visibility = card.MessageVisibility;

@@ -15,7 +15,11 @@ public interface IGameLibraryService
         Dictionary<string, string>? resolvedPathCache = null,
         Dictionary<string, string>? addonFileCache = null,
         Dictionary<string, MachineType>? bitnessCache = null,
-        string? lastSelectedGame = null);
+        string? lastSelectedGame = null,
+        HashSet<string>? dxvkEnabledGames = null,
+        Dictionary<string, string>? dxvkInstalledVersions = null,
+        HashSet<string>? excludeFromUpdateAllDxvk = null,
+        Dictionary<string, string>? updateAvailableSnapshot = null);
 
     List<DetectedGame> ToDetectedGames(SavedGameLibrary lib);
 

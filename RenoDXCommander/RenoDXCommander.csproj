@@ -18,8 +18,8 @@
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyName>RHI</AssemblyName>
     <AssemblyTitle>RHI</AssemblyTitle>
-    <AssemblyVersion>1.9.0.0</AssemblyVersion>
-    <FileVersion>1.9.0.0</FileVersion>
+    <AssemblyVersion>1.9.2.0</AssemblyVersion>
+    <FileVersion>1.9.2.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -73,6 +73,10 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
     <Content Include="DisplayCommander.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Include="dxvk.conf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>

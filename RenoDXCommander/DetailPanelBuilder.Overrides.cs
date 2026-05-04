@@ -964,7 +964,8 @@ public partial class DetailPanelBuilder
                     _window.PopulateDetailPanel(refreshCard);
                     BuildOverridesPanel(refreshCard);
                 }
-            });
+            },
+            isDxvkEnabled: card.DxvkEnabled);
 
         var toggleRow = new StackPanel { Spacing = 0 };
         toggleRow.Children.Add(updateInclusionBtn);
@@ -1154,6 +1155,9 @@ public partial class DetailPanelBuilder
         // Forward-declare normalReShadeToggle so the reset handler can reference it
         ToggleSwitch normalReShadeToggle = null!;
 
+        // Forward-declare DXVK toggles so the reset handler can reference them
+        ToggleSwitch dxvkToggle = null!;
+
         var manageRowGrid = new Grid { ColumnSpacing = 0 };
         manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -1198,7 +1202,7 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.ToggleUpdateAllExclusionDc(capturedName);
             if (_window.ViewModel.IsUpdateAllExcludedOs(capturedName))
                 _window.ViewModel.ToggleUpdateAllExclusionOs(capturedName);
-            UpdateInclusionHelper.RefreshSummary(updateSummaryText, _window.ViewModel, capturedName, card.IsREEngineGame);
+            UpdateInclusionHelper.RefreshSummary(updateSummaryText, _window.ViewModel, capturedName, card.IsREEngineGame, card.DxvkEnabled);
             wikiExcludeToggle.IsOn = false;
 
             // Persist all reset values immediately
@@ -1262,6 +1266,20 @@ public partial class DetailPanelBuilder
                 if (targetCard != null && targetCard.UseNormalReShade)
                     _window.ViewModel.SetUseNormalReShade(targetCard, false);
             }
+
+            // Reset DXVK toggles
+            if (dxvkToggle != null)
+            {
+                dxvkToggle.IsOn = false;
+                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard != null && targetCard.DxvkEnabled)
+                    _ = _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
+            }
+
+            // Reset DXVK update exclusion via the shared Update Inclusion system
+            if (_window.ViewModel.IsUpdateAllExcludedDxvk(capturedName))
+                _window.ViewModel.ToggleUpdateAllExclusionDxvk(capturedName);
 
             // Reset bitness override to Auto
             bitnessCombo.SelectedItem = "Auto";
@@ -1415,6 +1433,82 @@ public partial class DetailPanelBuilder
         manageRowGrid.Children.Add(manageRightColumn);
 
         _window.OverridesPanel.Children.Add(manageRowGrid);
+
+        // ══════════════════════════════════════════════════════════════════════
+        // DXVK section — separator + DXVK toggle row
+        // ══════════════════════════════════════════════════════════════════════
+        if (card.IsDxvkToggleVisible)
+        {
+            _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
+
+            var dxvkRowGrid = new Grid { ColumnSpacing = 0 };
+            dxvkRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            dxvkRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            dxvkRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            // Left column — DXVK toggle
+            dxvkToggle = new ToggleSwitch
+            {
+                Header = "DXVK (DX→Vulkan)",
+                IsOn = card.DxvkEnabled,
+                IsEnabled = card.IsDxvkToggleEnabled && card.DxvkInstallEnabled,
+                OnContent = "Enabled",
+                OffContent = "Disabled",
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                FontSize = 12,
+            };
+            if (card.DxvkToggleTooltip != null)
+                ToolTipService.SetToolTip(dxvkToggle, card.DxvkToggleTooltip);
+            else
+                ToolTipService.SetToolTip(dxvkToggle,
+                    "Enable DXVK to translate DirectX to Vulkan for this game. " +
+                    "Enables ReShade compute shaders, may improve performance and reduce shader stutter.");
+
+            dxvkToggle.Toggled += async (s, ev) =>
+            {
+                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard == null) return;
+                if (dxvkToggle.IsOn != targetCard.DxvkEnabled)
+                {
+                    dxvkToggle.IsEnabled = false;
+                    await _window.ViewModel.HandleDxvkToggleAsync(targetCard, dxvkToggle.IsOn, _window.Content.XamlRoot);
+                    // Sync toggle state in case install was cancelled
+                    dxvkToggle.IsOn = targetCard.DxvkEnabled;
+                    dxvkToggle.IsEnabled = targetCard.IsDxvkToggleEnabled && targetCard.DxvkInstallEnabled;
+
+                    // Rebuild the overrides panel so Update Inclusion picks up the new DxvkEnabled state
+                    _window.PopulateDetailPanel(targetCard);
+                    BuildOverridesPanel(targetCard);
+                }
+            };
+
+            var dxvkColumn = new StackPanel { Spacing = 6 };
+            dxvkColumn.Children.Add(new TextBlock
+            {
+                Text = "DXVK",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                Margin = new Thickness(0, 0, 0, 4),
+            });
+            dxvkColumn.Children.Add(dxvkToggle);
+
+            Grid.SetColumn(dxvkColumn, 0);
+            dxvkRowGrid.Children.Add(dxvkColumn);
+
+            // Vertical divider
+            var dxvkDivider = new Border
+            {
+                Width = 1,
+                Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Margin = new Thickness(12, 0, 12, 0),
+            };
+            Grid.SetColumn(dxvkDivider, 1);
+            dxvkRowGrid.Children.Add(dxvkDivider);
+
+            _window.OverridesPanel.Children.Add(dxvkRowGrid);
+        }
 
         // ── Management section (separate bordered panel below overrides) ──
         _window.ManagementPanel.Children.Clear();

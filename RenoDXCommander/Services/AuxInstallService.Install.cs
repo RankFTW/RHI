@@ -135,10 +135,18 @@ public partial class AuxInstallService
             return false;
         }
 
-        // Defensive: skip update check if staged DLLs are suspiciously small (test artifacts)
-        if (File.Exists(staged64) && new FileInfo(staged64).Length < 100_000
-            && File.Exists(staged32) && new FileInfo(staged32).Length < 100_000)
+        // Defensive: skip update check if staged DLLs are suspiciously small (corrupted/truncated)
+        // ReShade DLLs are always 4-5MB+, so anything under 1MB is invalid.
+        if (File.Exists(staged64) && new FileInfo(staged64).Length < 1_000_000)
+        {
+            CrashReporter.Log($"[AuxInstallService.CheckReShadeUpdateLocal] [{record.AddonType}] {record.GameName}: staged64 too small ({new FileInfo(staged64).Length} bytes) — skipping update check");
             return false;
+        }
+        if (File.Exists(staged32) && new FileInfo(staged32).Length < 1_000_000)
+        {
+            CrashReporter.Log($"[AuxInstallService.CheckReShadeUpdateLocal] [{record.AddonType}] {record.GameName}: staged32 too small ({new FileInfo(staged32).Length} bytes) — skipping update check");
+            return false;
+        }
 
         var staged64Size = File.Exists(staged64) ? new FileInfo(staged64).Length : -1;
         var staged32Size = File.Exists(staged32) ? new FileInfo(staged32).Length : -1;

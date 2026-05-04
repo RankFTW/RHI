@@ -683,6 +683,8 @@ public partial class MainViewModel
     private const string LegacyUltraLimiterFileName32 = "ultra_limiter.addon32";
     private const string UltraLimiterReleasesApiUrl =
         "https://api.github.com/repos/RankFTW/ReLimiter/releases/latest";
+    private const string UlChangelogUrl =
+        "https://raw.githubusercontent.com/RankFTW/ReLimiter/main/CHANGELOG.md";
 
     internal static string GetUlFileName(bool is32Bit) =>
         is32Bit ? UltraLimiterFileName32 : UltraLimiterFileName64;
@@ -849,6 +851,9 @@ public partial class MainViewModel
 
             if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))
                 _latestUlVersion = tagEl.GetString();
+
+            if (doc.RootElement.TryGetProperty("body", out var bodyEl))
+                _latestUlReleaseBody = bodyEl.GetString();
 
             var targetFileName = GetUlFileName(is32Bit);
             if (doc.RootElement.TryGetProperty("assets", out var assets))
@@ -1043,6 +1048,7 @@ public partial class MainViewModel
                 if (tag == "latest_build" && doc.RootElement.TryGetProperty("body", out var bodyEl))
                 {
                     var body = bodyEl.GetString() ?? "";
+                    _latestDcReleaseBody = body;
                     var versionMatch = System.Text.RegularExpressions.Regex.Match(
                         body, @"\*{0,2}Version in binaries\*{0,2}:\s*([\d.]+)");
                     if (versionMatch.Success)
@@ -1053,7 +1059,11 @@ public partial class MainViewModel
                         _latestDcVersion = tag;
                 }
                 else
+                {
                     _latestDcVersion = tag;
+                    if (doc.RootElement.TryGetProperty("body", out var bodyEl2))
+                        _latestDcReleaseBody = bodyEl2.GetString();
+                }
             }
 
             var targetFileName = GetDcFileName(is32Bit);
@@ -1229,6 +1239,175 @@ public partial class MainViewModel
     private string? _latestDcVersion;
     private string? _latestDcDownloadUrl;
     private string? _latestDcDownloadUrl32;
+    private string? _latestDcReleaseBody;
+
+    /// <summary>Markdown body of the latest Display Commander GitHub release, or null if not yet fetched.</summary>
+    public string? LatestDcReleaseBody => _latestDcReleaseBody;
+
+    /// <summary>
+    /// Fetches the ReLimiter CHANGELOG.md from GitHub and extracts the
+    /// entries for the installed version and the 2 previous versions (3 total).
+    /// </summary>
+    public async Task EnsureUlReleaseBodyAsync(string? installedVersion = null)
+    {
+        if (_latestUlReleaseBody != null) return;
+        try
+        {
+            var response = await _http.GetAsync(UlChangelogUrl).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                _crashReporter.Log($"[EnsureUlReleaseBodyAsync] HTTP {(int)response.StatusCode} fetching CHANGELOG.md");
+                return;
+            }
+
+            var changelog = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            _latestUlReleaseBody = ExtractDcChangelogEntries(changelog, installedVersion, 3);
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[EnsureUlReleaseBodyAsync] Failed — {ex.Message}");
+        }
+    }
+
+    private const string DcChangelogUrl =
+        "https://raw.githubusercontent.com/pmnoxx/display-commander/main/CHANGELOG.md";
+
+    /// <summary>
+    /// Fetches the Display Commander CHANGELOG.md from GitHub and extracts the
+    /// entries for the installed version and the 2 previous versions (3 total).
+    /// The installed version is matched by the first 4 version numbers.
+    /// </summary>
+    public async Task EnsureDcReleaseBodyAsync(string? installedVersion = null)
+    {
+        if (_latestDcReleaseBody != null) return;
+        try
+        {
+            var response = await _http.GetAsync(DcChangelogUrl).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                _crashReporter.Log($"[EnsureDcReleaseBodyAsync] HTTP {(int)response.StatusCode} fetching CHANGELOG.md");
+                return;
+            }
+
+            var changelog = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            _latestDcReleaseBody = ExtractDcChangelogEntries(changelog, installedVersion, 3);
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[EnsureDcReleaseBodyAsync] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Extracts <paramref name="count"/> changelog entries starting from the entry
+    /// matching <paramref name="installedVersion"/> (by first 4 version numbers).
+    /// Falls back to the first <paramref name="count"/> entries if no match is found.
+    /// </summary>
+    internal static string ExtractDcChangelogEntries(string changelog, string? installedVersion, int count)
+    {
+        // Split into version sections by "## " headers that start with a version number
+        // Handles both "## v0.14.17" and "## 3.2.0" formats
+        var sections = new List<(string header, string body)>();
+        var lines = changelog.Split('\n');
+        string? currentHeader = null;
+        var currentBody = new System.Text.StringBuilder();
+
+        foreach (var line in lines)
+        {
+            if (IsVersionHeader(line))
+            {
+                if (currentHeader != null)
+                    sections.Add((currentHeader, currentBody.ToString().TrimEnd()));
+                currentHeader = line.TrimEnd();
+                currentBody.Clear();
+            }
+            else if (currentHeader != null)
+            {
+                currentBody.AppendLine(line);
+            }
+        }
+        if (currentHeader != null)
+            sections.Add((currentHeader, currentBody.ToString().TrimEnd()));
+
+        if (sections.Count == 0)
+            return "(No changelog entries found)";
+
+        // Find the section matching the installed version
+        int startIndex = 0;
+        if (!string.IsNullOrEmpty(installedVersion))
+        {
+            // Normalize: strip leading 'v', trim trailing ".0" segments for flexible matching
+            var normalized = installedVersion.TrimStart('v', 'V').Trim();
+
+            for (int i = 0; i < sections.Count; i++)
+            {
+                var headerVersion = ExtractVersionFromHeader(sections[i].header);
+
+                // Compare: installed "3.2.0" should match header "3.2.0"
+                // installed "0.14.17.0" should match header "0.14.17"
+                if (string.Equals(headerVersion, normalized, StringComparison.OrdinalIgnoreCase)
+                    || normalized.StartsWith(headerVersion + ".", StringComparison.OrdinalIgnoreCase)
+                    || headerVersion.StartsWith(normalized + ".", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(headerVersion, normalized.Split('.').Length > 3
+                        ? string.Join(".", normalized.Split('.')[..3]) : normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Take 'count' entries starting from the matched index
+        var result = new System.Text.StringBuilder();
+        for (int i = startIndex; i < Math.Min(startIndex + count, sections.Count); i++)
+        {
+            if (result.Length > 0)
+                result.AppendLine();
+            result.AppendLine(sections[i].header);
+            result.AppendLine(sections[i].body);
+        }
+
+        return result.ToString().TrimEnd();
+    }
+
+    /// <summary>
+    /// Returns true if the line is a changelog version header.
+    /// Matches "## v0.14.17", "## 3.2.0", "## v0.13.189 (2026-04-14)", etc.
+    /// </summary>
+    private static bool IsVersionHeader(string line)
+    {
+        if (!line.StartsWith("## ", StringComparison.Ordinal))
+            return false;
+        var rest = line.AsSpan(3).TrimStart();
+        // Skip optional 'v' prefix
+        if (rest.Length > 0 && (rest[0] == 'v' || rest[0] == 'V'))
+            rest = rest[1..];
+        // Must start with a digit (version number)
+        return rest.Length > 0 && char.IsDigit(rest[0]);
+    }
+
+    /// <summary>
+    /// Extracts the version string from a changelog header line.
+    /// "## v0.14.17 (2026-04-14)" → "0.14.17"
+    /// "## 3.2.0" → "3.2.0"
+    /// </summary>
+    private static string ExtractVersionFromHeader(string header)
+    {
+        var version = header;
+        // Strip "## " prefix
+        if (version.StartsWith("## ", StringComparison.Ordinal))
+            version = version[3..];
+        version = version.TrimStart();
+        // Strip optional 'v' prefix
+        if (version.Length > 0 && (version[0] == 'v' || version[0] == 'V'))
+            version = version[1..];
+        version = version.Trim();
+        // Take only the version part (before any space/parenthesis)
+        var spaceIdx = version.IndexOfAny(new[] { ' ', '(' });
+        if (spaceIdx >= 0)
+            version = version[..spaceIdx].Trim();
+        return version;
+    }
 
     // ── ReShade helpers ──────────────────────────────────────────────────────────
 

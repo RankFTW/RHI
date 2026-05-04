@@ -39,10 +39,16 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// by ReShadeUpdateService — this method only verifies they are present.
     /// Returns true if staged DLLs are available, false if missing.
     /// </summary>
+    /// <summary>Minimum valid size for a ReShade DLL (1 MB). Real DLLs are 4-5 MB+.</summary>
+    public const long MinReShadeSize = 1_000_000;
+
     public static bool EnsureReShadeStaging()
     {
         Directory.CreateDirectory(RsStagingDir);
-        return File.Exists(RsStagedPath64) && File.Exists(RsStagedPath32);
+        // Verify both DLLs exist AND are large enough to be valid.
+        // A corrupted/truncated file (e.g. 2-3 KB) must not pass this check.
+        return File.Exists(RsStagedPath64) && new FileInfo(RsStagedPath64).Length > MinReShadeSize
+            && File.Exists(RsStagedPath32) && new FileInfo(RsStagedPath32).Length > MinReShadeSize;
     }
 
     // Keys used in AuxInstalledRecord.AddonType
@@ -69,6 +75,7 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     public static string RsRdr2IniPath => Path.Combine(InisDir, "reshade.rdr2.ini");
     public static string UlIniPath => Path.Combine(InisDir, "relimiter.ini");
     public static string DcIniPath => Path.Combine(InisDir, "DisplayCommander.ini");
+    public static string DxvkConfPath => Path.Combine(InisDir, "dxvk.conf");
 
     /// <summary>
     /// Ensures the inis directory exists and seeds the default reshade.ini if missing.
@@ -168,6 +175,24 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
                 }
             }
         }
+
+        // Seed bundled dxvk.conf if the user doesn't already have one
+        if (!File.Exists(DxvkConfPath))
+        {
+            var bundledDxvk = Path.Combine(AppContext.BaseDirectory, "dxvk.conf");
+            if (File.Exists(bundledDxvk))
+            {
+                try
+                {
+                    File.Copy(bundledDxvk, DxvkConfPath, overwrite: false);
+                    CrashReporter.Log("[AuxInstallService.EnsureInisDir] Seeded default dxvk.conf from bundle");
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[AuxInstallService.EnsureInisDir] Failed to seed dxvk.conf — {ex.Message}");
+                }
+            }
+        }
     }
 
     // ── Directory name sanitization ──────────────────────────────────────────────
@@ -240,6 +265,11 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
                 // For other files with 4+ parts, trim to 3.
                 if (parts.Length > 3)
                     ver = string.Join(".", parts[0], parts[1], parts[2]);
+
+                // Nightly ReShade builds embed "UNOFFICIAL" in the PE version string.
+                // Replace with "Nightly" for a cleaner display.
+                if (ver.Contains("UNOFFICIAL", StringComparison.OrdinalIgnoreCase))
+                    ver = ver.Replace("UNOFFICIAL", "Nightly", StringComparison.OrdinalIgnoreCase).Trim();
             }
 
             return ver;

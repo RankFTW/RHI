@@ -346,11 +346,24 @@ public partial class DragDropHandler
             File.Copy(addonPath, destPath, overwrite: true);
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Installed '{addonFileName}' to '{addonDeployPath}'");
 
+            // Save an InstalledModRecord so the addon survives refresh/restart
+            var installRecord = new InstalledModRecord
+            {
+                GameName      = gameName,
+                InstallPath   = addonDeployPath,
+                AddonFileName = addonFileName,
+                InstalledAt   = DateTime.UtcNow,
+                SnapshotUrl   = targetCard.Mod?.SnapshotUrl,
+            };
+            _window.ViewModel.ModInstallServiceInstance.SaveRecordPublic(installRecord);
+
             // Update card status
+            targetCard.InstalledRecord = installRecord;
             targetCard.Status = GameStatus.Installed;
             targetCard.InstalledAddonFileName = addonFileName;
             targetCard.RdxInstalledVersion = AuxInstallService.ReadInstalledVersion(addonDeployPath, addonFileName);
             targetCard.NotifyAll();
+            _window.ViewModel.SaveLibraryPublic();
 
             var successDialog = new ContentDialog
             {

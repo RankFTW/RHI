@@ -311,6 +311,24 @@ public class GameInitializationService : IGameInitializationService
                     card.Maintainer = author;
             }
         }
+
+        // ── DXVK blacklist and API override flags ────────────────────────────
+        if (manifest.DxvkBlacklist != null && manifest.DxvkBlacklist.Count > 0)
+        {
+            var blacklistSet = new HashSet<string>(manifest.DxvkBlacklist, StringComparer.OrdinalIgnoreCase);
+            foreach (var card in cards)
+            {
+                card.IsDxvkBlacklisted = blacklistSet.Contains(card.GameName);
+            }
+        }
+
+        if (manifest.DxvkApiOverrides != null && manifest.DxvkApiOverrides.Count > 0)
+        {
+            foreach (var card in cards)
+            {
+                card.HasDxvkApiOverride = manifest.DxvkApiOverrides.ContainsKey(card.GameName);
+            }
+        }
     }
 
     /// <summary>

@@ -12,6 +12,13 @@ public sealed class AddonFileWatcher : IDisposable
     private readonly ICrashReporter _crashReporter;
     private string _watchPath;
 
+    /// <summary>
+    /// Tracks recently processed file paths to prevent duplicate installs.
+    /// Browser downloads trigger both Created and Renamed events for the same file.
+    /// </summary>
+    private readonly Dictionary<string, DateTime> _recentFiles = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly TimeSpan DedupeWindow = TimeSpan.FromSeconds(5);
+
     private static readonly HashSet<string> ArchiveExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".zip", ".7z", ".rar"
@@ -84,6 +91,20 @@ public sealed class AddonFileWatcher : IDisposable
     private void ScheduleCheck(string path)
     {
         var ext = Path.GetExtension(path);
+
+        // Deduplicate: ignore if we've already seen this file recently.
+        // Browser downloads trigger both Created and Renamed events.
+        lock (_recentFiles)
+        {
+            var now = DateTime.UtcNow;
+            // Clean up old entries
+            var stale = _recentFiles.Where(kv => now - kv.Value > DedupeWindow).Select(kv => kv.Key).ToList();
+            foreach (var key in stale) _recentFiles.Remove(key);
+
+            if (_recentFiles.ContainsKey(path))
+                return; // already processing this file
+            _recentFiles[path] = now;
+        }
 
         // Check for addon files
         if (string.Equals(ext, ".addon64", StringComparison.OrdinalIgnoreCase)

@@ -102,6 +102,22 @@ public class SettingsHandler
         _window.GlobalOsUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipOsUpdates;
         _window.GlobalRefUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipRefUpdates;
         _window.CacheAllShadersToggle.IsOn = ViewModel.Settings.CacheAllShaders;
+
+        // Initialize DXVK variant combo
+        var dxvkCombo = _window.DxvkVariantCombo;
+        var dxvkVariant = ViewModel.Settings.DxvkVariant;
+        if (string.Equals(dxvkVariant, "Stable", StringComparison.OrdinalIgnoreCase))
+            dxvkCombo.SelectedIndex = 1;
+        else
+            dxvkCombo.SelectedIndex = 0;
+
+        // Initialize ReShade channel combo
+        var rsChannelCombo = _window.ReShadeChannelCombo;
+        var rsChannel = ViewModel.Settings.ReShadeChannel;
+        if (string.Equals(rsChannel, "Nightly", StringComparison.OrdinalIgnoreCase))
+            rsChannelCombo.SelectedIndex = 1;
+        else
+            rsChannelCombo.SelectedIndex = 0;
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
@@ -785,6 +801,237 @@ public class SettingsHandler
             RequestedTheme = ElementTheme.Dark,
         };
         await DialogService.ShowSafeAsync(dialog);
+    }
+
+    // ── DXVK Variant Selector ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Handles the DXVK variant ComboBox selection change.
+    /// Persists the variant, clears the staging cache, and prompts about re-deployment.
+    /// </summary>
+    public async void DxvkVariantCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is not ComboBox combo || combo.SelectedItem is not string selected) return;
+
+        var newVariant = selected.Contains("Stable", StringComparison.OrdinalIgnoreCase)
+            ? DxvkVariant.Stable
+            : DxvkVariant.Development;
+
+        var currentVariant = ViewModel.DxvkServiceInstance.SelectedVariant;
+        if (newVariant == currentVariant) return;
+
+        // Persist the variant preference
+        ViewModel.Settings.DxvkVariant = newVariant switch
+        {
+            DxvkVariant.Stable => "Stable",
+            _ => "Development"
+        };
+        ViewModel.SaveSettingsPublic();
+
+        // Update the service
+        ViewModel.DxvkServiceInstance.SelectedVariant = newVariant;
+
+        // Clear staging cache so the new variant is downloaded
+        ViewModel.DxvkServiceInstance.ClearStaging();
+
+        // Check if any games have DXVK installed
+        var gamesWithDxvk = ViewModel.AllCards
+            .Where(c => c.DxvkStatus == GameStatus.Installed || c.DxvkStatus == GameStatus.UpdateAvailable)
+            .ToList();
+
+        if (gamesWithDxvk.Count > 0)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "DXVK Variant Changed",
+                Content = $"The DXVK variant has been changed. {gamesWithDxvk.Count} game(s) currently have DXVK installed.\n\n"
+                    + "The new variant will be used the next time you update or reinstall DXVK for each game.",
+                CloseButtonText = "OK",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(dialog);
+        }
+    }
+
+    // ── ReShade Build Channel Selector ────────────────────────────────────────
+
+    /// <summary>
+    /// Handles the ReShade build channel ComboBox selection change.
+    /// Persists the channel, clears the addon ReShade staging cache, downloads
+    /// from the new source, and flags all installed ReShade games as UpdateAvailable.
+    /// </summary>
+    public async void ReShadeChannelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel.Settings.IsLoadingSettings) return;
+        if (sender is not ComboBox combo || combo.SelectedItem is not string selected) return;
+
+        var newChannel = selected.Contains("Nightly", StringComparison.OrdinalIgnoreCase)
+            ? "Nightly" : "Stable";
+
+        if (string.Equals(newChannel, ViewModel.Settings.ReShadeChannel, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Persist the channel preference
+        ViewModel.Settings.ReShadeChannel = newChannel;
+        ViewModel.SaveSettingsPublic();
+
+        // Clear addon ReShade staging so the new channel is downloaded
+        try
+        {
+            if (Directory.Exists(AuxInstallService.RsStagingDir))
+            {
+                foreach (var file in Directory.GetFiles(AuxInstallService.RsStagingDir))
+                    try { File.Delete(file); } catch { }
+            }
+            CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Cleared ReShade staging for channel switch to {newChannel}");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Failed to clear staging — {ex.Message}");
+        }
+
+        // Download from the new source and update Vulkan layer when done
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (string.Equals(newChannel, "Nightly", StringComparison.OrdinalIgnoreCase))
+                    await ViewModel.ReShadeNightlyServiceInstance.EnsureLatestAsync();
+                else
+                    await ViewModel.ReShadeUpdateServiceInstance.EnsureLatestAsync();
+
+                // Update the global Vulkan layer DLLs if they exist
+                try
+                {
+                    var layerDir = VulkanLayerService.LayerDirectory;
+
+                    // 64-bit
+                    var layer64 = Path.Combine(layerDir, VulkanLayerService.LayerDllName);
+                    if (File.Exists(AuxInstallService.RsStagedPath64)
+                        && new FileInfo(AuxInstallService.RsStagedPath64).Length > AuxInstallService.MinReShadeSize
+                        && File.Exists(layer64))
+                    {
+                        try
+                        {
+                            File.Copy(AuxInstallService.RsStagedPath64, layer64, overwrite: true);
+                            CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 64-bit DLL to {newChannel} build");
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            CrashReporter.Log("[SettingsHandler.ReShadeChannelCombo] Direct copy denied, attempting elevated copy...");
+                            try
+                            {
+                                ElevatedFileCopy(AuxInstallService.RsStagedPath64, layer64);
+                                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 64-bit DLL via elevated copy to {newChannel} build");
+                            }
+                            catch (Exception elevEx)
+                            {
+                                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Elevated copy failed — {elevEx.Message}");
+                            }
+                        }
+                        catch (IOException ioEx)
+                        {
+                            CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Vulkan layer 64-bit copy failed (file locked?) — {ioEx.Message}");
+                        }
+                    }
+
+                    // 32-bit
+                    var layer32 = Path.Combine(layerDir, "ReShade32.dll");
+                    if (File.Exists(AuxInstallService.RsStagedPath32)
+                        && new FileInfo(AuxInstallService.RsStagedPath32).Length > AuxInstallService.MinReShadeSize
+                        && File.Exists(layer32))
+                    {
+                        try
+                        {
+                            File.Copy(AuxInstallService.RsStagedPath32, layer32, overwrite: true);
+                            CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 32-bit DLL to {newChannel} build");
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            try
+                            {
+                                ElevatedFileCopy(AuxInstallService.RsStagedPath32, layer32);
+                                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 32-bit DLL via elevated copy to {newChannel} build");
+                            }
+                            catch (Exception elevEx)
+                            {
+                                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] 32-bit elevated copy failed — {elevEx.Message}");
+                            }
+                        }
+                        catch (Exception ex32)
+                        {
+                            CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] 32-bit Vulkan layer copy failed — {ex32.Message}");
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    CrashReporter.Log("[SettingsHandler.ReShadeChannelCombo] Cannot update Vulkan layer — admin privileges required");
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Failed to update Vulkan layer — {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Background download failed — {ex.Message}");
+            }
+        });
+
+        // Flag all games with ReShade installed as UpdateAvailable
+        var gamesWithRs = ViewModel.AllCards
+            .Where(c => c.RsStatus == GameStatus.Installed)
+            .ToList();
+
+        foreach (var card in gamesWithRs)
+        {
+            card.RsStatus = GameStatus.UpdateAvailable;
+            card.NotifyAll();
+        }
+
+        // Refresh the Update All button state so it turns purple
+        ViewModel.NotifyUpdateButtonChanged();
+
+        var totalCount = gamesWithRs.Count;
+        var channelLabel = string.Equals(newChannel, "Nightly", StringComparison.OrdinalIgnoreCase)
+            ? "Nightly (GitHub Actions)" : "Stable (reshade.me)";
+
+        var dialog = new ContentDialog
+        {
+            Title = "ReShade Build Channel Changed",
+            Content = $"ReShade build channel changed to {channelLabel}.\n\n"
+                + (totalCount > 0
+                    ? $"{totalCount} game(s) with ReShade installed have been flagged for update. Use Update All or update individual games to apply the new build."
+                    : "No games currently have ReShade installed."),
+            CloseButtonText = "OK",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
+    /// <summary>
+    /// Copies a file using an elevated cmd.exe process (UAC prompt).
+    /// Used when direct File.Copy fails due to permissions on C:\ProgramData\ReShade.
+    /// </summary>
+    private static void ElevatedFileCopy(string source, string destination)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            Arguments = $"/c copy /y \"{source}\" \"{destination}\"",
+            Verb = "runas",
+            UseShellExecute = true,
+            CreateNoWindow = true,
+            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+        };
+        using var proc = System.Diagnostics.Process.Start(psi);
+        proc?.WaitForExit(10_000);
+        if (proc != null && proc.ExitCode != 0)
+            throw new IOException($"Elevated copy exited with code {proc.ExitCode}");
     }
 
 }

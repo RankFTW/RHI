@@ -69,6 +69,7 @@ public partial class App : Application
         services.AddSingleton<IGameLibraryService, GameLibraryService>();
         services.AddSingleton<IReShadeUpdateService, ReShadeUpdateService>();
         services.AddSingleton<INormalReShadeUpdateService, NormalReShadeUpdateService>();
+        services.AddSingleton<ReShadeNightlyService>();
         services.AddSingleton<IUpdateService, UpdateService>();
         services.AddSingleton<ILumaService, LumaService>();
         services.AddSingleton<IShaderPackService, ShaderPackService>();
@@ -98,6 +99,9 @@ public partial class App : Application
         services.AddSingleton<IOptiScalerService, OptiScalerService>();
         services.AddSingleton<IOptiScalerWikiService, OptiScalerWikiService>();
         services.AddSingleton<IHdrDatabaseService, HdrDatabaseService>();
+        services.AddSingleton<IDxvkService, DxvkService>();
+        // Lazy<IDxvkService> breaks the circular dependency between OptiScalerService ↔ DxvkService
+        services.AddSingleton<Lazy<IDxvkService>>(sp => new Lazy<IDxvkService>(() => sp.GetRequiredService<IDxvkService>()));
 
         services.AddSingleton<MainViewModel>();
 

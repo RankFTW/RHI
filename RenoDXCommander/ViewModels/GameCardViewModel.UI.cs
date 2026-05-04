@@ -106,7 +106,7 @@ public partial class GameCardViewModel
                                    : WikiStatus == "💬" ? "💬 Discord"
                                    : WikiStatus == "🌐" ? "🌐 Nexus"
                                    : WikiStatus == "—" && IsGenericMod ? "⚠️ May Work"
-                                   : "❓ Unknown";
+                                   : "";
 
     /// <summary>
     /// Returns just the wiki status icon for grid card display.
@@ -232,6 +232,7 @@ public partial class GameCardViewModel
                                                       || (UlStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllUl)
                                                       || (DcStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllDc)
                                                       || (OsStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllOs)
+                                                      || (DxvkStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllDxvk)
                                                       || (LumaStatus == GameStatus.UpdateAvailable)
                                                       || (RefStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllRef))
                                                       ? Visibility.Visible : Visibility.Collapsed;

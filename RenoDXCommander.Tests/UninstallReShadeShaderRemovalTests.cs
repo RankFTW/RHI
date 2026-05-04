@@ -77,6 +77,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
             new StubUltrawideFixService(),
             new StubUltraPlusService(),
             new StubOptiScalerService(),
+            new StubDxvkService(),
             new StubOptiScalerWikiService(),
             new StubHdrDatabaseService(),
             new GitHubETagCache());
@@ -262,7 +263,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
     private class StubGameLibraryService : IGameLibraryService
     {
         public SavedGameLibrary? Load() => null;
-        public void Save(List<DetectedGame> games, Dictionary<string, bool> addonCache, HashSet<string> hiddenGames, HashSet<string> favouriteGames, List<DetectedGame> manualGames, Dictionary<string, string>? engineTypeCache = null, Dictionary<string, string>? resolvedPathCache = null, Dictionary<string, string>? addonFileCache = null, Dictionary<string, MachineType>? bitnessCache = null, string? lastSelectedGame = null) { }
+        public void Save(List<DetectedGame> games, Dictionary<string, bool> addonCache, HashSet<string> hiddenGames, HashSet<string> favouriteGames, List<DetectedGame> manualGames, Dictionary<string, string>? engineTypeCache = null, Dictionary<string, string>? resolvedPathCache = null, Dictionary<string, string>? addonFileCache = null, Dictionary<string, MachineType>? bitnessCache = null, string? lastSelectedGame = null, HashSet<string>? dxvkEnabledGames = null, Dictionary<string, string>? dxvkInstalledVersions = null, HashSet<string>? excludeFromUpdateAllDxvk = null) { }
         public List<DetectedGame> ToDetectedGames(SavedGameLibrary lib) => new();
         public List<DetectedGame> ToManualGames(SavedGameLibrary lib) => new();
     }
@@ -384,6 +385,26 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
         public OptiScalerWikiData? CachedData { get; set; }
         public Task<OptiScalerWikiData> FetchAsync(IProgress<string>? progress = null)
             => Task.FromResult(CachedData ?? new OptiScalerWikiData());
+    }
+
+    private class StubDxvkService : IDxvkService
+    {
+        public bool IsStagingReady => false;
+        public bool HasUpdate => false;
+        public string? StagedVersion => null;
+        public bool FirstTimeWarningAcknowledged { get; set; }
+        public DxvkVariant SelectedVariant { get; set; } = DxvkVariant.Development;
+        public Task EnsureStagingAsync(IProgress<(string message, double percent)>? progress = null) => Task.CompletedTask;
+        public Task CheckForUpdateAsync() => Task.CompletedTask;
+        public void ClearStaging() { }
+        public Task InstallAsync(GameCardViewModel card, IProgress<(string message, double percent)>? progress = null) => Task.CompletedTask;
+        public void Uninstall(GameCardViewModel card) { }
+        public Task UpdateAsync(GameCardViewModel card, IProgress<(string message, double percent)>? progress = null) => Task.CompletedTask;
+        public void CopyConfToGame(GameCardViewModel card) { }
+        public bool IsDxvkFile(string filePath) => false;
+        public string? DetectInstallation(string installPath, GraphicsApiType api) => null;
+        public List<DxvkInstalledRecord> LoadAllRecords() => new();
+        public DxvkInstalledRecord? FindRecord(string gameName, string installPath) => null;
     }
 
     private class StubHdrDatabaseService : IHdrDatabaseService

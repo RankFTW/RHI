@@ -1,13 +1,60 @@
-## v1.9.1
+## v1.9.2
+
+### New Features
+
+- **DXVK Proxy Mode for DX8/DX9 games** — DX8 and DX9 games now use a ReShade proxy chain instead of the Vulkan implicit layer when DXVK is enabled. DXVK is deployed as `dxgi_dxvk.dll` and ReShade chains to it via the `[PROXY]` section in reshade.ini. No Vulkan layer install or admin privileges needed. This matches the method recommended by RenoDX mod authors on Nexus Mods.
 
 ### Bug Fixes
 
+- Fixed Luma mode toggle disappearing after app restart. The `IsLumaMode` flag was not being set during the cache phase or copied during the background merge, so Luma games lost their mode state until a full refresh.
+- Fixed frame limiters (ReLimiter, Display Commander) showing "ReShade required" on Luma games after toggling Luma mode back on. Luma bundles its own ReShade, so `IsRsInstalled` now returns true when Luma is installed in Luma mode.
+- Removed the "❓ Unknown" wiki status badge — games with no wiki match now show no badge instead of a misleading "Unknown" label.
+- Fixed update-available statuses (green dots, purple buttons) not persisting across app restarts. Update badges are now saved to the library cache and restored on launch, so they survive the 4-hour update check cooldown.
+
+## v1.9.1
+
+### Highlights
+
+**DXVK Integration (WIP)** — DXVK is now a managed per-game component. Enable it from the Overrides panel on DX8/DX9/DX10 games to translate DirectX calls to Vulkan, enabling ReShade compute shaders and potentially reducing CPU-bound stuttering on older titles. This is an advanced feature — not all games are compatible. Note: This feature is still a work in progress and has only been tested by the developer. Expect rough edges.
+
+**ReShade Nightly Build Channel** — A new "Build Channels" section on the Settings page lets you choose between Stable (reshade.me releases, default) and Nightly (latest GitHub Actions builds from the crosire/reshade repository). Switching channels clears the ReShade staging cache, downloads from the new source, flags all games with ReShade installed as needing an update, and updates the global Vulkan layer DLLs — so you can Update All to apply the new build across your entire library.
+
+**Component Changelogs** — The Info buttons on the ReLimiter and Display Commander component rows now fetch the project's CHANGELOG.md from GitHub and display the patch notes for the installed version plus the two previous versions, rendered as markdown. The buttons are highlighted blue to indicate content is available.
+
+### New Features
+
+- **DXVK Integration (WIP)** details:
+  - Per-game toggle in the Overrides panel (hidden for DX11/DX12/OpenGL/Vulkan)
+  - DXVK component row in the Components section (visible only when enabled)
+  - Automatic ReShade mode switching: when DXVK is enabled, ReShade switches from DX proxy to Vulkan layer mode; when disabled, it switches back with the correct API-specific filename (d3d9.dll for DX9, etc.)
+  - DX8/DX9 proxy mode: DXVK is deployed as `dxgi_dxvk.dll` and ReShade chains to it via the `[PROXY]` section in reshade.ini — no Vulkan layer or admin needed. Matches the method recommended by RenoDX mod authors on Nexus.
+  - OptiScaler coexistence: filename conflicts are automatically resolved by routing DLLs to the OptiScaler plugins folder
+  - Game originals backed up as `.original` and restored on uninstall
+  - dxvk.conf deployed with sensible defaults (HDR enabled, borderless fullscreen, latency sleep)
+  - Binary signature detection for foreign DLL protection
+  - Update All integration via the existing Update Inclusion dialog (DXVK only appears when enabled for a game)
+  - Settings page variant selector: Development (nightly builds via nightly.link — default) or Stable (tagged releases)
+  - Warning dialog with "Don't show again" checkbox — explains this is an advanced unsupported feature
+  - Dual-API awareness: games with DX12 detected alongside their primary API won't show the DXVK toggle
+  - ReShade Install button automatically uses Vulkan layer path when DXVK is active
+
+### Bug Fixes
+
+- Fixed UW Fix tooltip always saying "Lyall" — it now shows the correct creator (Lyall, Rose, or p1xel8ted) per game.
+- Fixed ReShade DLL being renamed from `d3d9.dll` to `dxgi.dll` on refresh for DX9 games. The default naming reconciliation now respects the game's API — DX9 games keep `d3d9.dll`, OpenGL keeps `opengl32.dll`.
+- Fixed ReShade `d3d9.dll` being incorrectly backed up as a "foreign" DLL during Update All. The foreign DLL detection now recognises ReShade installed under DXVK-managed filenames (d3d9.dll, d3d10core.dll, etc.).
+- Fixed drag-and-dropped addons disappearing after refresh. The drag-and-drop install now saves a persistent record to the database so the addon is detected on subsequent launches and refreshes.
+- Fixed addon file watcher triggering duplicate installs when downloading to the watch folder. Browser downloads fire both Created and Renamed events — a 5-second deduplication window now prevents the second install.
 - Fixed ReLimiter showing "Installed" instead of its version number on launch. The instant-launch cache path had no ReLimiter detection — it now checks for the addon file and reads the version from local metadata immediately.
 - Fixed component version numbers (ReLimiter, Display Commander, OptiScaler, RE Framework) not updating after the background scan completed. The merge step was copying status fields but not version or filename fields, so versions stayed blank until a manual Refresh.
+- Fixed wiki status badge showing "❓ Unknown" until switching games or refreshing. The computed badge properties (label, colours, icon) were not being notified when `WikiStatus` changed during the background merge — they now update immediately.
+- Fixed corrupted ReShade staging file (2.88KB instead of ~5MB) causing false "update available" badges on every game and deploying a broken DLL on update. Added 1MB minimum size validation to ReShade staging so corrupted files trigger a re-download.
 
 ### Manifest Updates
 
 - FINAL FANTASY XIII, FINAL FANTASY XIII-2, and FINAL FANTASY XVI wiki-unlinked — FFXIII was being falsely matched to FFX, FFXVI to FFXV.
+- Added DXVK blacklist for anti-cheat games (Fortnite, Apex Legends, Valorant, etc.)
+- Added DXVK game notes for FFXIV
 
 ## v1.9.0
 

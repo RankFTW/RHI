@@ -799,7 +799,8 @@ public class OverridesFlyoutBuilder
                     _window.PopulateDetailPanel(sel);
                     _window.BuildOverridesPanel(sel);
                 }
-            });
+            },
+            isDxvkEnabled: card.DxvkEnabled);
         updateSummaryText = updateSummaryText_;
 
         var globalUpdateColumn = new StackPanel { Spacing = 0 };
@@ -1184,6 +1185,77 @@ public class OverridesFlyoutBuilder
         Grid.SetRow(normalReShadeToggle, 6);
         mainGrid.Children.Add(normalReShadeToggle);
 
+        // ══════════════════════════════════════════════════════════════════════
+        // ROW 7 — Horizontal separator (before DXVK)
+        // ══════════════════════════════════════════════════════════════════════
+        mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 7 (separator)
+        mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 8 (DXVK)
+        // Extend vertical divider to span the new rows
+        Grid.SetRowSpan(verticalDivider, 9);
+
+        var sep4 = UIFactory.MakeSeparator();
+        Grid.SetColumn(sep4, 0);
+        Grid.SetRow(sep4, 7);
+        Grid.SetColumnSpan(sep4, 3);
+        mainGrid.Children.Add(sep4);
+
+        // ══════════════════════════════════════════════════════════════════════
+        // ROW 8 — Left: DXVK toggle
+        //         Right: DXVK update exclusion toggle
+        // ══════════════════════════════════════════════════════════════════════
+
+        // Forward-declare DXVK toggle for reset handler
+        ToggleSwitch dxvkToggle = null!;
+
+        if (card.IsDxvkToggleVisible)
+        {
+            dxvkToggle = new ToggleSwitch
+            {
+                Header = "DXVK (DX→Vulkan)",
+                IsOn = card.DxvkEnabled,
+                IsEnabled = card.IsDxvkToggleEnabled && card.DxvkInstallEnabled,
+                OnContent = "Enabled",
+                OffContent = "Disabled",
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                FontSize = 12,
+            };
+            if (card.DxvkToggleTooltip != null)
+                ToolTipService.SetToolTip(dxvkToggle, card.DxvkToggleTooltip);
+            else
+                ToolTipService.SetToolTip(dxvkToggle,
+                    "Enable DXVK to translate DirectX to Vulkan for this game. " +
+                    "Enables ReShade compute shaders, may improve performance and reduce shader stutter.");
+
+            dxvkToggle.Toggled += async (s, ev) =>
+            {
+                var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard == null) return;
+                if (dxvkToggle.IsOn != targetCard.DxvkEnabled)
+                {
+                    dxvkToggle.IsEnabled = false;
+                    await ViewModel.HandleDxvkToggleAsync(targetCard, dxvkToggle.IsOn, _window.Content.XamlRoot);
+                    // Sync toggle state in case install was cancelled
+                    dxvkToggle.IsOn = targetCard.DxvkEnabled;
+                    dxvkToggle.IsEnabled = targetCard.IsDxvkToggleEnabled && targetCard.DxvkInstallEnabled;
+                }
+            };
+
+            var dxvkColumn = new StackPanel { Spacing = 6 };
+            dxvkColumn.Children.Add(new TextBlock
+            {
+                Text = "DXVK",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                Margin = new Thickness(0, 0, 0, 4),
+            });
+            dxvkColumn.Children.Add(dxvkToggle);
+
+            Grid.SetColumn(dxvkColumn, 0);
+            Grid.SetRow(dxvkColumn, 8);
+            mainGrid.Children.Add(dxvkColumn);
+        }
+
         panel.Children.Add(mainGrid);
 
         // ══════════════════════════════════════════════════════════════════════
@@ -1250,7 +1322,7 @@ public class OverridesFlyoutBuilder
                 ViewModel.ToggleUpdateAllExclusionOs(capturedName);
 
             // Refresh update summary
-            UpdateInclusionHelper.RefreshSummary(updateSummaryText, ViewModel, capturedName, card.IsREEngineGame);
+            UpdateInclusionHelper.RefreshSummary(updateSummaryText, ViewModel, capturedName, card.IsREEngineGame, card.DxvkEnabled);
 
             // Disable wiki exclusion
             if (ViewModel.IsWikiExcluded(capturedName))

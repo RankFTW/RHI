@@ -24,6 +24,7 @@ This document covers every feature in RHI. For a quick overview, see the [README
 - [Nexus Mods and PCGamingWiki Links](#nexus-mods-and-pcgamingwiki-links)
 - [UW Fix and Ultra+ Links](#uw-fix-and-ultra-links)
 - [Vulkan ReShade Support](#vulkan-reshade-support)
+- [DXVK](#dxvk)
 - [Foreign DLL Protection](#foreign-dll-protection)
 - [UE-Extended and Native HDR](#ue-extended-and-native-hdr)
 - [Drag-and-Drop](#drag-and-drop)
@@ -111,6 +112,7 @@ Click **Settings** in the toolbar. Click **Back to Games** to return. The Settin
 | Mass INI Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with the corresponding component installed. |
 | Mass ReShade Preset Install | Select presets from the presets folder, choose target games via a checkbox picker with Select All / Deselect All, and optionally install required shader packs. |
 | RE Framework Exclusion | Globally exclude RE Framework from Update All. The per-game version of this toggle appears in the Update Inclusion dialog for RE Engine games. |
+| Build Channels | Choose between Stable and Nightly builds for ReShade and DXVK. ReShade Stable uses reshade.me releases; Nightly uses the latest GitHub Actions build. DXVK Development uses nightly.link builds; Stable uses tagged releases. Switching channels clears the staging cache, downloads from the new source, and flags installed games for update. |
 
 ---
 
@@ -226,7 +228,9 @@ Every component row has an **Info** button that opens a dialog with context abou
 2. **Wiki content** — compatibility data from the relevant wiki (OptiScaler wiki, HDR Gaming Database, RenoDX wiki).
 3. **Generic description** — a general description of what the addon does.
 
-Buttons with per-game content (manifest notes or wiki data) are highlighted in **blue**. Buttons with only a generic description use a muted style. An arrow indicator (◄) appears on the install button when the Info button has game-specific content.
+**ReLimiter and Display Commander** Info buttons fetch the project's `CHANGELOG.md` from GitHub and display the patch notes for the installed version plus the two previous versions, rendered as markdown.
+
+Buttons with content are highlighted in **blue**. Buttons with only a generic description use a muted style. An arrow indicator (◄) appears on the install button when the Info button has content available.
 
 ### Version Display
 
@@ -633,6 +637,36 @@ Games with both DirectX and Vulkan show a rendering path toggle. Switching from 
 ### Per-Game Uninstall
 
 Uninstalling removes `reshade.ini`, the footprint file, and managed shaders from the game folder. The global Vulkan layer is not affected.
+
+---
+
+## DXVK
+
+DXVK is a DirectX-to-Vulkan translation layer that can improve performance and enable ReShade compute shaders on older DX8/DX9/DX10 games. RHI manages DXVK as a per-game component with the same lifecycle as other managed components.
+
+**This feature is a work in progress and has only been tested by the developer.**
+
+### Enabling DXVK
+
+The DXVK toggle appears in the Overrides panel for DX8, DX9, and DX10 games. It is hidden for DX11, DX12, OpenGL, and Vulkan games. Games with DX12 detected alongside their primary API (dual-API) also hide the toggle, as do Unreal Engine DX11 games that likely support DX12.
+
+Toggling DXVK on triggers the install flow (with a warning dialog). Toggling off uninstalls DXVK and restores the original game DLLs.
+
+### What happens on install
+
+1. The required DXVK DLLs (e.g. `d3d9.dll`, `d3d11.dll`, `dxgi.dll`) are copied from staging to the game folder based on the game's API and bitness.
+2. Game-original DLLs are backed up with a `.original` extension and restored on uninstall.
+3. A default `dxvk.conf` is deployed (HDR enabled, borderless fullscreen, latency sleep).
+4. If ReShade is installed as a DX proxy DLL, it is switched to Vulkan layer mode automatically. When DXVK is disabled, ReShade switches back with the correct API-specific filename.
+5. OptiScaler coexistence is handled — filename conflicts are resolved by routing DLLs to the OptiScaler plugins folder.
+
+### Build variants
+
+Choose between Development (nightly builds via nightly.link) and Stable (tagged releases) in the Build Channels section on the Settings page.
+
+### Anti-cheat blacklist
+
+Games with known anti-cheat (Fortnite, Apex Legends, Valorant, etc.) are blacklisted via the remote manifest. The DXVK toggle is disabled for these games.
 
 ---
 

@@ -109,10 +109,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         Func<string, string?, IEnumerable<string>?>? shaderResolver = null,
         Func<string, ManifestDllNames?>? manifestDllResolver = null)
     {
+        // ── DX proxy games (per-game DLL) ─────────────────────────────────────
         var targets = UpdateAllEligible(allCards)
             .Where(c => !c.ExcludeFromUpdateAllReShade)
             .Where(c => c.RsStatus == GameStatus.Installed || c.RsStatus == GameStatus.UpdateAvailable)
-            .Where(c => !c.RequiresVulkanInstall) // Vulkan games use the global layer — not a per-game DLL
+            .Where(c => !c.RequiresVulkanInstall) // Vulkan games handled separately below
             .Where(c => !c.IsLumaMode) // Luma games use an older ReShade version — skip global updates
             .ToList();
 
@@ -181,7 +182,154 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             finally { card.RsIsInstalling = false; }
         }
 
+        // ── Vulkan games (global layer DLL) ───────────────────────────────────
+        var vulkanTargets = UpdateAllEligible(allCards)
+            .Where(c => !c.ExcludeFromUpdateAllReShade)
+            .Where(c => c.RsStatus == GameStatus.Installed || c.RsStatus == GameStatus.UpdateAvailable)
+            .Where(c => c.RequiresVulkanInstall)
+            .Where(c => !c.IsLumaMode)
+            .ToList();
+
+        if (vulkanTargets.Count > 0)
+        {
+            // Update the global Vulkan layer DLLs (copy from staging)
+            bool layerUpdated = false;
+            var layerDir = VulkanLayerService.LayerDirectory;
+            try
+            {
+                // Update 64-bit layer DLL
+                var staged64 = AuxInstallService.RsStagedPath64;
+                var layer64 = Path.Combine(layerDir, VulkanLayerService.LayerDllName);
+                if (File.Exists(staged64) && new FileInfo(staged64).Length > AuxInstallService.MinReShadeSize)
+                {
+                    if (File.Exists(layer64))
+                    {
+                        try
+                        {
+                            File.Copy(staged64, layer64, overwrite: true);
+                            layerUpdated = true;
+                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 64-bit DLL ({new FileInfo(layer64).Length} bytes)");
+                        }
+                        catch (UnauthorizedAccessException uaEx)
+                        {
+                            // Direct copy denied — try elevated copy via UAC prompt
+                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Direct copy denied — {uaEx.Message}, attempting elevated copy...");
+                            try
+                            {
+                                ElevatedFileCopy(staged64, layer64);
+                                layerUpdated = true;
+                                _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 64-bit DLL via elevated copy");
+                            }
+                            catch (Exception elevEx)
+                            {
+                                _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Elevated copy also failed — {elevEx.Message}");
+                            }
+                        }
+                        catch (IOException ioEx)
+                        {
+                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Vulkan layer 64-bit copy failed (file locked?) — {ioEx.Message}");
+                        }
+                    }
+                    else
+                    {
+                        _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Vulkan layer 64-bit DLL not found at '{layer64}' — skipping (layer not installed?)");
+                    }
+                }
+                else
+                {
+                    _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Staged 64-bit DLL missing or too small — skipping Vulkan layer update");
+                }
+
+                // Update 32-bit layer DLL if it exists
+                var staged32 = AuxInstallService.RsStagedPath32;
+                var layer32 = Path.Combine(layerDir, "ReShade32.dll");
+                if (File.Exists(staged32) && new FileInfo(staged32).Length > AuxInstallService.MinReShadeSize
+                    && File.Exists(layer32))
+                {
+                    try
+                    {
+                        File.Copy(staged32, layer32, overwrite: true);
+                        _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 32-bit DLL ({new FileInfo(layer32).Length} bytes)");
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        try
+                        {
+                            ElevatedFileCopy(staged32, layer32);
+                            _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 32-bit DLL via elevated copy");
+                        }
+                        catch (Exception elevEx)
+                        {
+                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] 32-bit elevated copy failed — {elevEx.Message}");
+                        }
+                    }
+                    catch (Exception ex32)
+                    {
+                        _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] 32-bit Vulkan layer copy failed — {ex32.Message}");
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Cannot update Vulkan layer DLLs — admin privileges required for C:\\ProgramData\\ReShade");
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Failed to update Vulkan layer DLLs — {ex.Message}");
+            }
+
+            // Update each Vulkan game's reshade.ini and status
+            foreach (var vCard in vulkanTargets)
+            {
+                vCard.RsIsInstalling = true;
+                vCard.RsActionMessage = "Updating Vulkan ReShade...";
+                try
+                {
+                    AuxInstallService.MergeRsVulkanIni(vCard.InstallPath, vCard.GameName);
+                    AuxInstallService.CopyRsPresetIniIfPresent(vCard.InstallPath);
+
+                    var vulkanVersion = AuxInstallService.ReadInstalledVersion(
+                        VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        vCard.RsInstalledVersion = vulkanVersion;
+                        vCard.RsStatus = GameStatus.Installed;
+                        vCard.RsActionMessage = layerUpdated ? "✅ Updated!" : "✅ Up to date";
+                        vCard.NotifyAll();
+                        vCard.FadeMessage(m => vCard.RsActionMessage = m, vCard.RsActionMessage);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    vCard.RsActionMessage = $"❌ Failed: {ex.Message}";
+                    _crashReporter.WriteCrashReport("UpdateAllReShade.Vulkan", ex, note: $"Game: {vCard.GameName}");
+                }
+                finally { vCard.RsIsInstalling = false; }
+            }
+        }
+
         dispatcherQueue?.TryEnqueue(() => notifyUpdateState());
+    }
+
+    /// <summary>
+    /// Copies a file to a destination using an elevated cmd.exe process (UAC prompt).
+    /// Used when direct File.Copy fails due to permissions on C:\ProgramData\ReShade.
+    /// </summary>
+    private static void ElevatedFileCopy(string source, string destination)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            Arguments = $"/c copy /y \"{source}\" \"{destination}\"",
+            Verb = "runas",
+            UseShellExecute = true,
+            CreateNoWindow = true,
+            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+        };
+        using var proc = System.Diagnostics.Process.Start(psi);
+        proc?.WaitForExit(10_000);
+        if (proc != null && proc.ExitCode != 0)
+            throw new IOException($"Elevated copy exited with code {proc.ExitCode}");
     }
 
     public async Task UpdateAllREFrameworkAsync(

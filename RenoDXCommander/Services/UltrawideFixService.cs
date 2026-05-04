@@ -128,6 +128,35 @@ public partial class UltrawideFixService : IUltrawideFixService
         return null;
     }
 
+    /// <inheritdoc />
+    public string? ResolveSource(string gameName, RemoteManifest? manifest)
+    {
+        try
+        {
+            var normalized = _gameDetection.NormalizeName(gameName);
+            if (string.IsNullOrEmpty(normalized)) return null;
+
+            if (manifest?.UwFixUrlOverrides != null
+                && manifest.UwFixUrlOverrides.ContainsKey(gameName))
+                return null; // manifest override — unknown source
+
+            if (_lyallLookup.ContainsKey(normalized))
+                return "Lyall";
+
+            if (_roseLookup.ContainsKey(normalized))
+                return "Rose";
+
+            if (_p1xelLookup.ContainsKey(normalized))
+                return "p1xel8ted";
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[UltrawideFixService.ResolveSource] Failed for '{gameName}' — {ex.Message}");
+        }
+
+        return null;
+    }
+
     // ── Lyall (Codeberg API) ──────────────────────────────────────────────────
 
     private async Task InitLyallAsync()

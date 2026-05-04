@@ -34,6 +34,8 @@ public partial class GameCardViewModel
             if (RequiresVulkanInstall)
             {
                 bool layerInstalled = IsLayerInstalledFunc();
+                if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
+                    return "⬆  Update Vulkan ReShade";
                 if (layerInstalled && IsVulkanRsActive) return "↺  Reinstall Vulkan ReShade";
                 if (layerInstalled) return "⬇  Install Vulkan ReShade";
                 return "⬇  Install Vulkan Layer";
@@ -76,6 +78,8 @@ public partial class GameCardViewModel
             if (RequiresVulkanInstall)
             {
                 bool layerInstalled = IsLayerInstalledFunc();
+                if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
+                    return "⬆ Update";
                 if (layerInstalled && IsVulkanRsActive) return "↺ Reinstall";
                 if (layerInstalled) return "⬇ Vulkan RS";
                 return "⬇ Install";
@@ -87,7 +91,8 @@ public partial class GameCardViewModel
     }
 
     public bool IsRsNotInstalling => !RsIsInstalling;
-    public bool IsRsInstalled   => RsStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
+    public bool IsRsInstalled   => RsStatus is GameStatus.Installed or GameStatus.UpdateAvailable
+        || (EffectiveLumaMode && LumaStatus is GameStatus.Installed or GameStatus.UpdateAvailable);
 
     // ── Dynamic corner radius for RS install buttons ─────────────────────────────
     public string RsInstallCornerRadius => (RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable)

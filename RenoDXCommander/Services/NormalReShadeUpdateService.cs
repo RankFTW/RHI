@@ -104,8 +104,8 @@ public class NormalReShadeUpdateService : INormalReShadeUpdateService
         if (stagedVersion == version
             && File.Exists(stagedPath64)
             && File.Exists(stagedPath32)
-            && new FileInfo(stagedPath64).Length > 0
-            && new FileInfo(stagedPath32).Length > 0)
+            && new FileInfo(stagedPath64).Length > 1_000_000
+            && new FileInfo(stagedPath32).Length > 1_000_000)
         {
             CrashReporter.Log($"[NormalReShadeUpdateService.EnsureLatestAsync] Already have v{version}");
             progress?.Report(($"Normal ReShade {version} is current", 100));

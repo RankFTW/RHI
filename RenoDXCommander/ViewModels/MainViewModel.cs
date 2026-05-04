@@ -13,6 +13,7 @@ public partial class MainViewModel : ObservableObject
     private readonly HttpClient        _http;
     public HttpClient HttpClient => _http;
     private readonly IModInstallService _installer;
+    public IModInstallService ModInstallServiceInstance => _installer;
     private readonly IAuxInstallService _auxInstaller;
     private readonly IREFrameworkService _refService;
     private readonly ICrashReporter _crashReporter;
@@ -35,6 +36,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IUltrawideFixService _uwFixService;
     private readonly IUltraPlusService _ultraPlusService;
     private readonly IOptiScalerService _optiScalerService;
+    private readonly IDxvkService _dxvkService;
     private readonly IOptiScalerWikiService _optiScalerWikiService;
     private readonly IHdrDatabaseService _hdrDatabaseService;
     private readonly GitHubETagCache _etagCache;
@@ -48,6 +50,8 @@ public partial class MainViewModel : ObservableObject
     public IAddonPackService AddonPackServiceInstance => _addonPackService;
     public IGameDetectionService GameDetectionServiceInstance => _gameDetectionService;
     public SettingsViewModel Settings => _settingsViewModel;
+    /// <summary>True when the user has selected the Nightly ReShade build channel.</summary>
+    public bool IsReShadeNightly => string.Equals(_settingsViewModel.ReShadeChannel, "Nightly", StringComparison.OrdinalIgnoreCase);
     public FilterViewModel Filter => _filterViewModel;
     public IDllOverrideService DllOverrideServiceInstance => _dllOverrideService;
     public IGameNameService GameNameServiceInstance => _gameNameService;
@@ -56,6 +60,9 @@ public partial class MainViewModel : ObservableObject
     public IPeHeaderService PeHeaderServiceInstance => _peHeaderService;
     public IAuxInstallService AuxInstallServiceInstance => _auxInstaller;
     public IOptiScalerService OptiScalerServiceInstance => _optiScalerService;
+    public IDxvkService DxvkServiceInstance => _dxvkService;
+    public ReShadeNightlyService ReShadeNightlyServiceInstance => _rsNightlyService;
+    public IReShadeUpdateService ReShadeUpdateServiceInstance => _rsUpdateService;
     public IOptiScalerWikiService OptiScalerWikiServiceInstance => _optiScalerWikiService;
     public IHdrDatabaseService HdrDatabaseServiceInstance => _hdrDatabaseService;
     public IREFrameworkService REFrameworkServiceInstance => _refService;
@@ -361,6 +368,10 @@ public partial class MainViewModel : ObservableObject
     private Dictionary<string, string> _resolvedPathCache = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _addonFileCache = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, MachineType> _bitnessCache = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Game names that have DXVK enabled (loaded from saved library).</summary>
+    private HashSet<string> _dxvkEnabledGames = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Game names excluded from DXVK Update All (loaded from saved library).</summary>
+    private HashSet<string> _excludeFromUpdateAllDxvk = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Maps current (renamed) game name → original store-detected name.
     /// Populated during ApplyGameRenames so the Overrides dialog can reset to the original.</summary>
     private Dictionary<string, string> _originalDetectedNames => _gameNameService.OriginalDetectedNames;
@@ -446,6 +457,7 @@ public partial class MainViewModel : ObservableObject
         ILumaService lumaService,
         IReShadeUpdateService rsUpdateService,
         INormalReShadeUpdateService normalRsUpdateService,
+        ReShadeNightlyService rsNightlyService,
         SettingsViewModel settingsViewModel,
         FilterViewModel filterViewModel,
         IUpdateOrchestrationService updateOrchestrationService,
@@ -458,6 +470,7 @@ public partial class MainViewModel : ObservableObject
         IUltrawideFixService uwFixService,
         IUltraPlusService ultraPlusService,
         IOptiScalerService optiScalerService,
+        IDxvkService dxvkService,
         IOptiScalerWikiService optiScalerWikiService,
         IHdrDatabaseService hdrDatabaseService,
         GitHubETagCache etagCache)
@@ -477,6 +490,7 @@ public partial class MainViewModel : ObservableObject
         _lumaService = lumaService;
         _rsUpdateService = rsUpdateService;
         _normalRsUpdateService = normalRsUpdateService;
+        _rsNightlyService = rsNightlyService;
         _settingsViewModel = settingsViewModel;
         _filterViewModel = filterViewModel;
         _updateOrchestrationService = updateOrchestrationService;
@@ -489,6 +503,7 @@ public partial class MainViewModel : ObservableObject
         _uwFixService = uwFixService;
         _ultraPlusService = ultraPlusService;
         _optiScalerService = optiScalerService;
+        _dxvkService = dxvkService;
         _optiScalerWikiService = optiScalerWikiService;
         _hdrDatabaseService = hdrDatabaseService;
         _etagCache = etagCache;
@@ -536,6 +551,7 @@ public partial class MainViewModel : ObservableObject
     private readonly ILumaService _lumaService;
     private readonly IReShadeUpdateService _rsUpdateService;
     private readonly INormalReShadeUpdateService _normalRsUpdateService;
+    private readonly ReShadeNightlyService _rsNightlyService;
     private List<LumaMod> _lumaMods = new();
     private HashSet<string> _lumaEnabledGames => _gameNameService.LumaEnabledGames;
     /// <summary>

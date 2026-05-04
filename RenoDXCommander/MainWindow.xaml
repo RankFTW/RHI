@@ -353,7 +353,7 @@
                                                 FontSize="11"
                                                 Click="UwFixLink_Click"
                                                 Visibility="Collapsed"
-                                                ToolTipService.ToolTip="Open Lyall's ultrawide fix page">
+                                                ToolTipService.ToolTip="Open ultrawide fix page">
                                             <TextBlock Text="UW Fix" TextDecorations="Underline"/>
                                         </Button>
                                         <Button x:Name="DetailUltraPlusBtn" x:FieldModifier="internal"
@@ -837,6 +837,49 @@
                                     </Button>
                                 </Grid>
 
+                                <!-- DXVK row -->
+                                <Grid x:Name="DetailDxvkRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="DetailDxvkLabel" x:FieldModifier="internal" Grid.Column="0" Text="DXVK" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DetailDxvkStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
+                                               VerticalAlignment="Center" HorizontalTextAlignment="Center"/>
+                                    <Button x:Name="DetailDxvkInfoBtn" x:FieldModifier="internal" Grid.Column="2"
+                                            Content="Info" FontSize="11" Padding="6,2,6,2"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32"
+                                            Click="DxvkInfoButton_Click"/>
+                                    <Button x:Name="DetailDxvkInstallBtn" x:FieldModifier="internal" Grid.Column="3"
+                                            Click="InstallDxvkButton_Click"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                            CornerRadius="8" FontSize="12" Height="32"/>
+                                    <Button x:Name="DetailDxvkConfBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Click="CopyDxvkConfButton_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Copy dxvk.conf to game folder">
+                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button x:Name="DetailDxvkDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
+                                            Click="UninstallDxvkButton_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Remove DXVK" Opacity="0" IsHitTestVisible="False">
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
+                                    </Button>
+                                </Grid>
+
                                 <!-- No mod message -->
                                 <Border x:Name="DetailNoModMsg" x:FieldModifier="internal" Visibility="Collapsed"
                                         Background="{StaticResource AccentPurpleBgBrush}" CornerRadius="8" Padding="12,8"
@@ -873,6 +916,11 @@
                                                  Maximum="100" Height="3" CornerRadius="2"
                                                  Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
                                     <TextBlock x:Name="DetailOsMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentBlueBrush}"
+                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                                    <ProgressBar x:Name="DetailDxvkProgress" x:FieldModifier="internal" Visibility="Collapsed"
+                                                 Maximum="100" Height="3" CornerRadius="2"
+                                                 Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
+                                    <TextBlock x:Name="DetailDxvkMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentBlueBrush}"
                                                Visibility="Collapsed" TextWrapping="Wrap"/>
                                     <ProgressBar x:Name="DetailRdxProgress" x:FieldModifier="internal" Visibility="Collapsed"
                                                  Maximum="100" Height="3" CornerRadius="2"
@@ -1517,6 +1565,50 @@
                                               VerticalAlignment="Center"
                                               Margin="16,0,0,0"/>
                             </Grid>
+                        </Border>
+
+                        <!-- ── Build Channels ───────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Build Channels" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Choose the build source for ReShade and DXVK. Stable uses official tagged releases. Nightly/Development uses the latest builds from GitHub Actions (may be unstable but includes the newest fixes)."/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="ReShade Build Channel" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <ComboBox x:Name="ReShadeChannelCombo" x:FieldModifier="internal"
+                                              FontSize="12"
+                                              HorizontalAlignment="Stretch"
+                                              Background="{StaticResource SurfaceInputBrush}"
+                                              Foreground="{StaticResource TextSecondaryBrush}"
+                                              BorderBrush="{StaticResource BorderSubtleBrush}"
+                                              SelectionChanged="ReShadeChannelCombo_SelectionChanged">
+                                        <x:String>Stable (reshade.me releases)</x:String>
+                                        <x:String>Nightly (GitHub Actions builds)</x:String>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="DXVK Variant" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <ComboBox x:Name="DxvkVariantCombo" x:FieldModifier="internal"
+                                              FontSize="12"
+                                              HorizontalAlignment="Stretch"
+                                              Background="{StaticResource SurfaceInputBrush}"
+                                              Foreground="{StaticResource TextSecondaryBrush}"
+                                              BorderBrush="{StaticResource BorderSubtleBrush}"
+                                              SelectionChanged="DxvkVariantCombo_SelectionChanged">
+                                        <x:String>Development (nightly builds)</x:String>
+                                        <x:String>Stable (tagged releases)</x:String>
+                                    </ComboBox>
+                                </StackPanel>
+                            </StackPanel>
                         </Border>
 
                         <!-- ── Mass INI Deployment ─────────────────────────────────── -->

@@ -141,6 +141,22 @@ public partial class DialogService
                     BuildOptiScalerContent(outerPanel, result, textColour, linkColour, dimColour);
                     break;
 
+                case AddonType.ReLimiter:
+                    await _window.ViewModel.EnsureUlReleaseBodyAsync(card.UlInstalledVersion);
+                    BuildReleaseNotesContent(outerPanel, result, card.UlInstalledVersion,
+                        _window.ViewModel.LatestUlReleaseBody,
+                        "https://github.com/RankFTW/ReLimiter/releases",
+                        textColour, linkColour, dimColour);
+                    break;
+
+                case AddonType.DisplayCommander:
+                    await _window.ViewModel.EnsureDcReleaseBodyAsync(card.DcInstalledVersion);
+                    BuildReleaseNotesContent(outerPanel, result, card.DcInstalledVersion,
+                        _window.ViewModel.LatestDcReleaseBody,
+                        "https://github.com/pmnoxx/display-commander/releases",
+                        textColour, linkColour, dimColour);
+                    break;
+
                 default:
                     BuildGenericContent(outerPanel, result, textColour, linkColour);
                     break;
@@ -571,6 +587,72 @@ public partial class DialogService
         // ── HDR Gaming Database link (supplementary) ─────────────────────────
         if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
             AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+    }
+
+    // ── Release notes content rendering (ReLimiter, Display Commander) ───────────
+
+    /// <summary>
+    /// Builds dialog content showing the GitHub release notes for the installed version.
+    /// Falls back to the generic addon description if release notes are not available.
+    /// </summary>
+    private static void BuildReleaseNotesContent(
+        StackPanel panel,
+        AddonInfoResult result,
+        string? installedVersion,
+        string? releaseBody,
+        string releasesPageUrl,
+        SolidColorBrush textColour,
+        SolidColorBrush linkColour,
+        SolidColorBrush dimColour)
+    {
+        // Show installed version header if available
+        if (!string.IsNullOrWhiteSpace(installedVersion))
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text       = $"Installed: {installedVersion}",
+                Foreground = dimColour,
+                FontSize   = 12,
+                Margin     = new Thickness(0, 0, 0, 4),
+            });
+        }
+
+        // Show release notes as markdown if available
+        if (!string.IsNullOrWhiteSpace(releaseBody))
+        {
+            var markdown = new CommunityToolkit.WinUI.Controls.MarkdownTextBlock
+            {
+                Text              = releaseBody,
+                Background        = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                Foreground        = textColour,
+                FontSize          = 12,
+                UseEmphasisExtras = true,
+                UseListExtras     = true,
+                UseTaskLists      = true,
+            };
+
+            var markdownContainer = new Grid { RequestedTheme = ElementTheme.Dark };
+            markdownContainer.Children.Add(markdown);
+            panel.Children.Add(markdownContainer);
+        }
+        else
+        {
+            // Fall back to generic addon description
+            if (!string.IsNullOrWhiteSpace(result.Content))
+            {
+                panel.Children.Add(new TextBlock
+                {
+                    Text         = result.Content,
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground   = textColour,
+                    FontSize     = 13,
+                    LineHeight   = 22,
+                });
+            }
+        }
+
+        // Always show link to the releases page
+        AddHyperlinkBlock(panel, "View all releases on GitHub", releasesPageUrl, linkColour);
     }
 
     // ── Shared helpers for dialog content ────────────────────────────────────────

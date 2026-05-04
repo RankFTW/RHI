@@ -23,6 +23,7 @@ RHI installs ReShade with addon support, which may trigger anti-cheat in online 
 [*] [b]UW Fix & Ultra+ links[/b] — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
 [*] [b]Three view modes[/b] — Detail View, Grid View, and Compact View. Pick what fits your workflow.
 [*] [b]Smart about updates[/b] — rate-limit aware, cooldown-based update checks, and cached shader packs that skip unnecessary API calls.
+[*] [b]ReShade build channels[/b] — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Switching channels updates all installed games.
 [/list]
 
 [line]
@@ -43,9 +44,10 @@ Each game's executable is scanned via PE header analysis to detect DirectX 8–1
 [*] [url=https://github.com/optiscaler/OptiScaler][b]OptiScaler[/b][/url] — Upscaler redirection (DLSS/FSR/XeSS). Auto-downloads DLSS SR, Ray Reconstruction, and Frame Gen DLLs. Handles ReShade coexistence, DLL naming, INI config, and OptiPatcher for AMD/Intel GPUs. 64-bit only.
 [*] [url=https://github.com/praydog/REFramework-nightly][b]RE Framework[/b][/url] — Required for ReShade on RE Engine games (Monster Hunter Wilds, Resident Evil series, Devil May Cry 5, Street Fighter 6, Dragon's Dogma 2, etc.).
 [*] [url=https://github.com/Filoppi/Luma-Framework][b]Luma Framework[/b][/url] — DX11 HDR modding framework. Toggle Luma mode per game — RenoDX and standard ReShade are swapped out automatically.
+[*] [url=https://github.com/doitsujin/dxvk][b]DXVK[/b][/url] — DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Enables ReShade compute shaders and can reduce CPU-bound stuttering on older titles. Per-game toggle in the Overrides panel. [b](WIP)[/b]
 [/list]
 
-Every component has one-click install, update detection, and uninstall. Per-addon [b]Info[/b] buttons show game-specific notes, wiki compatibility data, or general descriptions — buttons with per-game content are highlighted in blue.
+Every component has one-click install, update detection, and uninstall. Per-addon [b]Info[/b] buttons show game-specific notes, wiki compatibility data, or general descriptions — ReLimiter and Display Commander Info buttons also show changelogs from GitHub. Buttons with content are highlighted in blue.
 
 [size=4][b]Shader Packs & Presets[/b][/size]
 41 shader packs (Essential, Recommended, Extra) with global or per-game selection. Drag a ReShade preset .ini onto the window and RHI deploys it to a game, then offers to auto-install the required shader packs by parsing the preset's Techniques line.
@@ -112,6 +114,7 @@ For the full reference covering every feature, see the [url=https://github.com/R
 [*] [url=https://github.com/Filoppi/Luma-Framework]Luma Framework[/url] by Pumbo (Filoppi) — Source-available
 [*] [url=https://github.com/optiscaler/OptiScaler]OptiScaler[/url] by OptiScaler contributors — Source-available
 [*] [url=https://www.7-zip.org]7-Zip[/url] by Igor Pavlov — LGPL-2.1 / BSD-3-Clause
+[*] [url=https://github.com/doitsujin/dxvk]DXVK[/url] by doitsujin & contributors — Zlib
 [/list]
 
 [line]

@@ -168,6 +168,10 @@ public partial class MainViewModel
                 _addonFileCache    = savedLib.AddonFileCache    ?? new(StringComparer.OrdinalIgnoreCase);
                 _bitnessCache      = savedLib.BitnessCache      ?? new(StringComparer.OrdinalIgnoreCase);
                 LastSelectedGameName = savedLib.LastSelectedGame;
+
+                // Restore DXVK per-game overrides from saved library
+                _dxvkEnabledGames = savedLib.DxvkEnabledGames ?? new(StringComparer.OrdinalIgnoreCase);
+                _excludeFromUpdateAllDxvk = savedLib.ExcludeFromUpdateAllDxvk ?? new(StringComparer.OrdinalIgnoreCase);
             }
 
             // 1. Set status messages and addonCache based on whether cache exists
@@ -208,7 +212,13 @@ public partial class MainViewModel
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database fetch failed — {ex.Message}"); }
             });
             rsTask           = Task.Run(async () => {
-                try { await _rsUpdateService.EnsureLatestAsync(); }
+                try
+                {
+                    if (IsReShadeNightly)
+                        await _rsNightlyService.EnsureLatestAsync();
+                    else
+                        await _rsUpdateService.EnsureLatestAsync();
+                }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] ReShade update task failed — {ex.Message}"); }
             });
             normalRsTask     = Task.Run(async () => {
@@ -222,6 +232,10 @@ public partial class MainViewModel
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
+            });
+            var dxvkTask     = Task.Run(async () => {
+                try { await _dxvkService.EnsureStagingAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DXVK staging task failed — {ex.Message}"); }
             });
 
             // 3. Await detection first — this never needs network
@@ -314,9 +328,9 @@ public partial class MainViewModel
             // Snapshot update statuses from old cards so they survive the rebuild.
             // The background CheckForUpdatesAsync will re-verify, but this avoids
             // a visual gap where the update badge disappears until the network check completes.
-            var prevUpdateStatus = new Dictionary<string, (GameStatus mod, GameStatus rs, GameStatus dc, GameStatus ul, GameStatus refFw, GameStatus os)>(StringComparer.OrdinalIgnoreCase);
+            var prevUpdateStatus = new Dictionary<string, (GameStatus mod, GameStatus rs, GameStatus dc, GameStatus ul, GameStatus refFw, GameStatus os, GameStatus dxvk)>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in _allCards)
-                prevUpdateStatus[c.GameName] = (c.Status, c.RsStatus, c.DcStatus, c.UlStatus, c.RefStatus, c.OsStatus);
+                prevUpdateStatus[c.GameName] = (c.Status, c.RsStatus, c.DcStatus, c.UlStatus, c.RefStatus, c.OsStatus, c.DxvkStatus);
 
             SubStatusText = "Matching mods and checking install status...";
 
@@ -355,6 +369,8 @@ public partial class MainViewModel
                         c.RefStatus = GameStatus.UpdateAvailable;
                     if (prev.os == GameStatus.UpdateAvailable && c.OsStatus == GameStatus.Installed)
                         c.OsStatus = GameStatus.UpdateAvailable;
+                    if (prev.dxvk == GameStatus.UpdateAvailable && c.DxvkStatus == GameStatus.Installed)
+                        c.DxvkStatus = GameStatus.UpdateAvailable;
                 }
             }
 
@@ -393,8 +409,8 @@ public partial class MainViewModel
             {
                 try
                 {
-                    // Wait for ReShade staging, OptiScaler staging, and DLSS staging to finish in parallel
-                    await Task.WhenAll(rsTask, normalRsTask, osTask, dlssTask);
+                    // Wait for ReShade staging, OptiScaler staging, DLSS staging, and DXVK staging to finish in parallel
+                    await Task.WhenAll(rsTask, normalRsTask, osTask, dlssTask, dxvkTask);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Deferred ReShade sync failed — {ex.Message}"); }
 
@@ -1383,6 +1399,41 @@ public partial class MainViewModel
                 }
             }
 
+            // ── DXVK detection ─────────────────────────────────────────────────
+            if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            {
+                // First check for an existing tracking record
+                var dxvkRec = _dxvkService.FindRecord(game.Name, installPath);
+                if (dxvkRec != null)
+                {
+                    newCard.DxvkRecord = dxvkRec;
+                    newCard.DxvkStatus = GameStatus.Installed;
+                    newCard.DxvkInstalledVersion = dxvkRec.DxvkVersion;
+                }
+                else
+                {
+                    // No tracking record — try binary signature detection
+                    bool isWindowsApps = installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
+                                      || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase);
+                    if (!isWindowsApps)
+                    {
+                        var detectedVersion = _dxvkService.DetectInstallation(installPath, newCard.GraphicsApi);
+                        if (detectedVersion != null)
+                        {
+                            // Unmanaged DXVK detected — show as installed with detected version
+                            newCard.DxvkStatus = GameStatus.Installed;
+                            newCard.DxvkInstalledVersion = detectedVersion;
+                        }
+                    }
+                }
+
+                // Restore saved DXVK overrides from GameNameService / saved library
+                if (_dxvkEnabledGames.Contains(game.Name))
+                    newCard.DxvkEnabled = true;
+                if (_excludeFromUpdateAllDxvk.Contains(game.Name))
+                    newCard.ExcludeFromUpdateAllDxvk = true;
+            }
+
             var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
             {
@@ -1424,6 +1475,7 @@ public partial class MainViewModel
             try
             {
                 newCard.UwFixUrl = _uwFixService.ResolveUrl(game.Name, _manifest);
+                newCard.UwFixSource = _uwFixService.ResolveSource(game.Name, _manifest);
             }
             catch (Exception ex) { _crashReporter.Log($"[BuildCards] UwFixUrl resolve failed for '{game.Name}' — {ex.Message}"); }
 
@@ -1692,8 +1744,40 @@ public partial class MainViewModel
                 _addonFileCache[key] = "";
         }
 
+        // Collect DXVK state from cards for persistence
+        var dxvkEnabledGames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var dxvkInstalledVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var excludeFromUpdateAllDxvk = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in _allCards)
+        {
+            if (c.DxvkEnabled)
+                dxvkEnabledGames.Add(c.GameName);
+            if (!string.IsNullOrEmpty(c.DxvkInstalledVersion))
+                dxvkInstalledVersions[c.GameName] = c.DxvkInstalledVersion;
+            if (c.ExcludeFromUpdateAllDxvk)
+                excludeFromUpdateAllDxvk.Add(c.GameName);
+        }
+
+        // Collect update-available snapshot from cards for persistence across restarts
+        var updateSnapshot = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in _allCards)
+        {
+            var flags = new List<string>();
+            if (c.Status == GameStatus.UpdateAvailable) flags.Add("RDX");
+            if (c.RsStatus == GameStatus.UpdateAvailable) flags.Add("RS");
+            if (c.UlStatus == GameStatus.UpdateAvailable) flags.Add("UL");
+            if (c.DcStatus == GameStatus.UpdateAvailable) flags.Add("DC");
+            if (c.OsStatus == GameStatus.UpdateAvailable) flags.Add("OS");
+            if (c.RefStatus == GameStatus.UpdateAvailable) flags.Add("REF");
+            if (c.DxvkStatus == GameStatus.UpdateAvailable) flags.Add("DXVK");
+            if (c.LumaStatus == GameStatus.UpdateAvailable) flags.Add("LUMA");
+            if (flags.Count > 0)
+                updateSnapshot[c.GameName] = string.Join(",", flags);
+        }
+
         _gameLibraryService.Save(detectedGames, addonCache, _hiddenGames, _favouriteGames, _manualGames,
-            _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache, LastSelectedGameName);
+            _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache, LastSelectedGameName,
+            dxvkEnabledGames, dxvkInstalledVersions, excludeFromUpdateAllDxvk, updateSnapshot);
     }
 
     /// <summary>
@@ -1779,6 +1863,12 @@ public partial class MainViewModel
         // Load RE Framework + Luma records for matching
         var refRecords = _refService.GetRecords();
         var refByName = refRecords
+            .GroupBy(r => r.GameName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        // Load DXVK installed records for matching
+        var dxvkRecords = _dxvkService.LoadAllRecords();
+        var dxvkByName = dxvkRecords
             .GroupBy(r => r.GameName, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
@@ -1889,6 +1979,7 @@ public partial class MainViewModel
                 VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(game.Name, out var vrpCache) ? vrpCache : "DirectX",
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 LumaFeatureEnabled     = LumaFeatureEnabled,
+                IsLumaMode             = _lumaEnabledGames.Contains(game.Name),
 
                 // Wiki/mod data left empty — Phase 2 MergeCards will fill these in:
                 // Mod, WikiStatus, Maintainer, Notes, IsGenericMod, IsExternalOnly,
@@ -1924,6 +2015,20 @@ public partial class MainViewModel
                 newCard.RefInstalledVersion = refRec.InstalledVersion;
             }
 
+            // DXVK state from tracking records + saved library
+            if (dxvkByName.TryGetValue(game.Name, out var dxvkRec))
+            {
+                newCard.DxvkRecord = dxvkRec;
+                newCard.DxvkStatus = GameStatus.Installed;
+                newCard.DxvkInstalledVersion = dxvkRec.DxvkVersion;
+            }
+            if (savedLib.DxvkEnabledGames.Contains(game.Name))
+                newCard.DxvkEnabled = true;
+            if (savedLib.DxvkInstalledVersions.TryGetValue(game.Name, out var savedDxvkVer) && newCard.DxvkInstalledVersion == null)
+                newCard.DxvkInstalledVersion = savedDxvkVer;
+            if (savedLib.ExcludeFromUpdateAllDxvk.Contains(game.Name))
+                newCard.ExcludeFromUpdateAllDxvk = true;
+
             // ReLimiter detection (single File.Exists check + local JSON read for version)
             if (!string.IsNullOrEmpty(installPath))
             {
@@ -1950,6 +2055,27 @@ public partial class MainViewModel
                 {
                     newCard.LumaRecord = lumaRec;
                     newCard.LumaStatus = GameStatus.Installed;
+                }
+            }
+
+            // Restore update-available statuses from the saved snapshot
+            if (savedLib.UpdateAvailableSnapshot != null
+                && savedLib.UpdateAvailableSnapshot.TryGetValue(game.Name, out var updateFlags))
+            {
+                var flags = updateFlags.Split(',');
+                foreach (var flag in flags)
+                {
+                    switch (flag.Trim())
+                    {
+                        case "RDX":  if (newCard.Status != GameStatus.NotInstalled) newCard.Status = GameStatus.UpdateAvailable; break;
+                        case "RS":   if (newCard.RsStatus != GameStatus.NotInstalled) newCard.RsStatus = GameStatus.UpdateAvailable; break;
+                        case "UL":   if (newCard.UlStatus != GameStatus.NotInstalled) newCard.UlStatus = GameStatus.UpdateAvailable; break;
+                        case "DC":   if (newCard.DcStatus != GameStatus.NotInstalled) newCard.DcStatus = GameStatus.UpdateAvailable; break;
+                        case "OS":   if (newCard.OsStatus != GameStatus.NotInstalled) newCard.OsStatus = GameStatus.UpdateAvailable; break;
+                        case "REF":  if (newCard.RefStatus != GameStatus.NotInstalled) newCard.RefStatus = GameStatus.UpdateAvailable; break;
+                        case "DXVK": if (newCard.DxvkStatus != GameStatus.NotInstalled) newCard.DxvkStatus = GameStatus.UpdateAvailable; break;
+                        case "LUMA": if (newCard.LumaStatus != GameStatus.NotInstalled) newCard.LumaStatus = GameStatus.UpdateAvailable; break;
+                    }
                 }
             }
 
@@ -2051,7 +2177,13 @@ public partial class MainViewModel
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database fetch failed — {ex.Message}"); }
             });
             rsTask           = Task.Run(async () => {
-                try { await _rsUpdateService.EnsureLatestAsync(); }
+                try
+                {
+                    if (IsReShadeNightly)
+                        await _rsNightlyService.EnsureLatestAsync();
+                    else
+                        await _rsUpdateService.EnsureLatestAsync();
+                }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] ReShade update task failed — {ex.Message}"); }
             });
             normalRsTask     = Task.Run(async () => {
@@ -2076,6 +2208,10 @@ public partial class MainViewModel
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS staging task failed — {ex.Message}"); }
+            });
+            var dxvkTask     = Task.Run(async () => {
+                try { await _dxvkService.EnsureStagingAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DXVK staging task failed — {ex.Message}"); }
             });
 
             // Await detection first — this never needs network
@@ -2197,7 +2333,7 @@ public partial class MainViewModel
             {
                 try
                 {
-                    await Task.WhenAll(rsTask, normalRsTask, osTask, dlssTask);
+                    await Task.WhenAll(rsTask, normalRsTask, osTask, dlssTask, dxvkTask);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Deferred ReShade sync failed — {ex.Message}"); }
 
@@ -2335,6 +2471,7 @@ public partial class MainViewModel
                 existing.NexusModsUrl       = fresh.NexusModsUrl;
                 existing.PcgwUrl            = fresh.PcgwUrl;
                 existing.UwFixUrl        = fresh.UwFixUrl;
+                existing.UwFixSource     = fresh.UwFixSource;
                 existing.UltraPlusUrl    = fresh.UltraPlusUrl;
                 existing.EngineHint         = fresh.EngineHint;
                 existing.GraphicsApi        = fresh.GraphicsApi;
@@ -2362,6 +2499,7 @@ public partial class MainViewModel
                 existing.DetectedApis           = fresh.DetectedApis;
                 existing.IsDualApiGame          = fresh.IsDualApiGame;
                 existing.LumaMod                = fresh.LumaMod;
+                existing.IsLumaMode             = fresh.IsLumaMode;
                 existing.LumaRecord             = fresh.LumaRecord;
                 existing.LumaNotes              = fresh.LumaNotes;
                 existing.LumaNotesUrl           = fresh.LumaNotesUrl;
@@ -2383,6 +2521,13 @@ public partial class MainViewModel
                 existing.OsInstalledVersion      = fresh.OsInstalledVersion;
                 existing.RefRecord               = fresh.RefRecord;
                 existing.RefInstalledVersion     = fresh.RefInstalledVersion;
+
+                // ── DXVK fields ──────────────────────────────────────────
+                existing.DxvkStatus              = fresh.DxvkStatus;
+                existing.DxvkInstalledVersion    = fresh.DxvkInstalledVersion;
+                existing.DxvkRecord              = fresh.DxvkRecord;
+                existing.DxvkEnabled             = fresh.DxvkEnabled;
+                existing.ExcludeFromUpdateAllDxvk = fresh.ExcludeFromUpdateAllDxvk;
             }
             else
             {
@@ -2417,6 +2562,9 @@ public partial class MainViewModel
             _filterViewModel.SetAllCards(_allCards);
             _filterViewModel.UpdateCounts();
             _filterViewModel.ApplyFilter();
+
+            // Refresh the selected game's detail panel so merged data (LumaMod, wiki, etc.) is visible
+            SelectedGame?.NotifyAll();
         });
     }
 

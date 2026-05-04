@@ -1074,6 +1074,7 @@ public sealed partial class MainWindow
             await ViewModel.UpdateAllOsAsync();
         if (!ViewModel.Settings.GlobalSkipRefUpdates)
             await ViewModel.UpdateAllRefAsync();
+        await ViewModel.UpdateAllDxvkAsync();
         await ViewModel.UpdateAllLumaAsync();
     }
 
@@ -1140,6 +1141,78 @@ public sealed partial class MainWindow
 
     private void CopyOsIniButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.CopyOsIniButton_Click(sender, e);
+
+    // ── DXVK event handlers ──────────────────────────────────────────────────
+
+    private async void InstallDxvkButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        if (card.DxvkIsInstalling) return;
+        if (card.DxvkStatus == GameStatus.UpdateAvailable)
+            await ViewModel.UpdateDxvkAsync(card);
+        else if (card.DxvkStatus == GameStatus.Installed)
+            await ViewModel.InstallDxvkAsync(card, Content.XamlRoot); // reinstall
+        else
+            await ViewModel.InstallDxvkAsync(card, Content.XamlRoot);
+    }
+
+    private void UninstallDxvkButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        ViewModel.UninstallDxvk(card);
+    }
+
+    private void CopyDxvkConfButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        ViewModel.CopyDxvkConf(card);
+    }
+
+    private async void DxvkInfoButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+
+        // Build DXVK info content with game-specific notes from manifest
+        var content = "DXVK translates DirectX 8/9/10/11 API calls into Vulkan.\n\n"
+            + "Benefits:\n"
+            + "• Enables ReShade compute shaders on older DX games\n"
+            + "• May improve performance and reduce shader stutter\n"
+            + "• Enables HDR output via dxvk.conf\n"
+            + "• Borderless fullscreen recommended over exclusive fullscreen\n\n"
+            + "⚠ Anti-cheat games may ban players using DXVK.\n"
+            + "⚠ Game overlays (Steam, NVIDIA, RTSS) may conflict.";
+
+        // Append game-specific notes from manifest
+        var manifest = ViewModel.Manifest;
+        if (manifest?.DxvkGameNotes != null
+            && manifest.DxvkGameNotes.TryGetValue(card.GameName, out var noteEntry)
+            && !string.IsNullOrWhiteSpace(noteEntry.Notes))
+        {
+            content += $"\n\n── Game Notes ──\n{noteEntry.Notes}";
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "ℹ DXVK Info",
+            Content = new TextBlock
+            {
+                Text = content,
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                FontSize = 13,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            },
+            CloseButtonText = "OK",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
+    private void DxvkVariantCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.DxvkVariantCombo_SelectionChanged(sender, e);
+
+    private void ReShadeChannelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.ReShadeChannelCombo_SelectionChanged(sender, e);
 
     private async void DetailOsStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {

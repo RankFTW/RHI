@@ -7,7 +7,7 @@ namespace RenoDXCommander.ViewModels;
 
 public partial class MainViewModel
 {
-    private void NotifyUpdateButtonChanged()
+    internal void NotifyUpdateButtonChanged()
     {
         HasUpdatesAvailable = AnyUpdateAvailable;
         OnPropertyChanged(nameof(AnyUpdateAvailable));
@@ -275,6 +275,10 @@ public partial class MainViewModel
             if (doc.RootElement.TryGetProperty("tag_name", out var tagEl))
                 remoteVersion = tagEl.GetString();
 
+            // Always capture the release body for the Info dialog
+            if (doc.RootElement.TryGetProperty("body", out var ulBodyEl))
+                _latestUlReleaseBody = ulBodyEl.GetString();
+
             if (string.IsNullOrEmpty(remoteVersion))
             {
                 _crashReporter.Log("[CheckUlUpdateAsync] No tag_name in latest release");
@@ -403,6 +407,7 @@ public partial class MainViewModel
             if (doc.RootElement.TryGetProperty("body", out var bodyEl))
             {
                 var body = bodyEl.GetString() ?? "";
+                _latestDcReleaseBody = body; // Always capture for the Info dialog
                 var versionMatch = System.Text.RegularExpressions.Regex.Match(
                     body, @"\*{0,2}Version in binaries\*{0,2}:\s*([\d.]+)");
                 if (versionMatch.Success)
@@ -537,6 +542,10 @@ public partial class MainViewModel
     private string? _latestUlVersion;
     private string? _latestUlDownloadUrl;
     private string? _latestUlDownloadUrl32;
+    private string? _latestUlReleaseBody;
+
+    /// <summary>Markdown body of the latest ReLimiter GitHub release, or null if not yet fetched.</summary>
+    public string? LatestUlReleaseBody => _latestUlReleaseBody;
 
     /// <summary>URL to the GitHub release page for the latest UL version, or null if unknown.</summary>
     public string? LatestUlReleasePageUrl => _latestUlVersion != null
@@ -667,6 +676,46 @@ public partial class MainViewModel
             OnPropertyChanged(nameof(UpdateAllBtnBorder));
         });
     }
+
+    public async Task UpdateAllDxvkAsync()
+    {
+        var dxvkCards = GetUpdateAllDxvkEligibleCards(_allCards);
+        if (dxvkCards.Count == 0) return;
+
+        // Ensure latest DXVK staging is available before updating games
+        if (!_dxvkService.IsStagingReady)
+        {
+            try { await _dxvkService.EnsureStagingAsync(); }
+            catch (Exception ex) { _crashReporter.Log($"[UpdateAllDxvkAsync] Staging failed — {ex.Message}"); return; }
+        }
+
+        foreach (var card in dxvkCards)
+        {
+            try { await _dxvkService.UpdateAsync(card); }
+            catch (Exception ex) { _crashReporter.Log($"[UpdateAllDxvkAsync] Failed for '{card.GameName}': {ex.Message}"); }
+        }
+
+        DispatcherQueue?.TryEnqueue(() =>
+        {
+            HasUpdatesAvailable = AnyUpdateAvailable;
+            OnPropertyChanged(nameof(AnyUpdateAvailable));
+            OnPropertyChanged(nameof(UpdateAllBtnBackground));
+            OnPropertyChanged(nameof(UpdateAllBtnForeground));
+            OnPropertyChanged(nameof(UpdateAllBtnBorder));
+        });
+    }
+
+    /// <summary>
+    /// Returns the list of cards eligible for DXVK Update All.
+    /// A card is eligible when DxvkStatus == UpdateAvailable, not excluded, and not hidden.
+    /// Extracted as a static helper so the filtering logic can be property-tested
+    /// without MainViewModel dependencies.
+    /// </summary>
+    internal static List<GameCardViewModel> GetUpdateAllDxvkEligibleCards(IEnumerable<GameCardViewModel> cards)
+        => cards.Where(c => c.DxvkStatus == GameStatus.UpdateAvailable
+                         && !c.ExcludeFromUpdateAllDxvk
+                         && !c.IsHidden)
+                .ToList();
 
     public async Task UpdateAllOsAsync()
     {
@@ -867,6 +916,32 @@ public partial class MainViewModel
         {
             _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS update check failed — {ex.Message}");
         }
+        }
+
+        // Check DXVK for updates (single global check, applies to all cards with DXVK installed)
+        try
+        {
+            await _dxvkService.CheckForUpdateAsync().ConfigureAwait(false);
+            var dxvkUpdateAvailable = _dxvkService.HasUpdate;
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK update result: {dxvkUpdateAvailable}, cards with DXVK installed: {cards.Count(c => c.DxvkStatus == GameStatus.Installed)}");
+            if (dxvkUpdateAvailable)
+            {
+                DispatcherQueue?.TryEnqueue(() =>
+                {
+                    foreach (var card in cards.Where(c => c.DxvkStatus == GameStatus.Installed))
+                        card.DxvkStatus = GameStatus.UpdateAvailable;
+
+                    HasUpdatesAvailable = AnyUpdateAvailable;
+                    OnPropertyChanged(nameof(AnyUpdateAvailable));
+                    OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                    OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                    OnPropertyChanged(nameof(UpdateAllBtnBorder));
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK update check failed — {ex.Message}");
         }
 
         // Record successful check time

@@ -657,5 +657,29 @@
   },
 
   "steamAppIdOverrides": {
+  },
+
+  "_comment_dxvk": "=== DXVK INTEGRATION ===",
+
+  "dxvkBlacklist": [
+    "Fortnite",
+    "Apex Legends",
+    "Dead by Daylight",
+    "PUBG: BATTLEGROUNDS",
+    "Rainbow Six Siege",
+    "Escape from Tarkov",
+    "Genshin Impact",
+    "Valorant"
+  ],
+
+  "dxvkGameNotes": {
+    "FINAL FANTASY XIV Online": {
+      "notes": "ℹ️ DXVK provides significant CPU-bound performance improvements for FFXIV.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    }
+  },
+
+  "dxvkApiOverrides": {
   }
 }

@@ -249,4 +249,23 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("optiScalerWikiNames")]
     public Dictionary<string, string>? OptiScalerWikiNames { get; set; }
+
+    /// <summary>
+    /// Games where the DXVK toggle is blocked (anti-cheat, known incompatible).
+    /// </summary>
+    [JsonPropertyName("dxvkBlacklist")]
+    public List<string>? DxvkBlacklist { get; set; }
+
+    /// <summary>
+    /// Per-game DXVK notes displayed in the DXVK Info dialog.
+    /// </summary>
+    [JsonPropertyName("dxvkGameNotes")]
+    public Dictionary<string, GameNoteEntry>? DxvkGameNotes { get; set; }
+
+    /// <summary>
+    /// Per-game DirectX API overrides for DXVK DLL selection.
+    /// Key = game name, Value = "DX8", "DX9", "DX10", or "DX11".
+    /// </summary>
+    [JsonPropertyName("dxvkApiOverrides")]
+    public Dictionary<string, string>? DxvkApiOverrides { get; set; }
 }

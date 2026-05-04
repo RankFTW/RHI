@@ -95,8 +95,8 @@ public class ReShadeUpdateService : IReShadeUpdateService
         if (stagedVersion == version
             && File.Exists(AuxInstallService.RsStagedPath64)
             && File.Exists(AuxInstallService.RsStagedPath32)
-            && new FileInfo(AuxInstallService.RsStagedPath64).Length > 0
-            && new FileInfo(AuxInstallService.RsStagedPath32).Length > 0)
+            && new FileInfo(AuxInstallService.RsStagedPath64).Length > 1_000_000
+            && new FileInfo(AuxInstallService.RsStagedPath32).Length > 1_000_000)
         {
             CrashReporter.Log($"[ReShadeUpdateService.EnsureLatestAsync] Already have v{version}");
             progress?.Report(($"ReShade {version} is current", 100));

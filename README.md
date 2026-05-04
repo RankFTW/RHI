@@ -18,6 +18,7 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **UW Fix & Ultra+ links** — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
 - **Three view modes** — Detail View, Grid View, and Compact View. Pick what fits your workflow.
 - **Smart about updates** — rate-limit aware, cooldown-based update checks, and cached shader packs that skip unnecessary API calls.
+- **ReShade build channels** — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Switching channels updates all installed games.
 
 ## Features
 
@@ -38,8 +39,9 @@ Each game's executable is scanned via PE header analysis to detect DirectX 8–1
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | Upscaler redirection (DLSS → FSR/XeSS and vice versa). Auto-downloads DLSS SR, Ray Reconstruction, and Frame Gen DLLs. Handles ReShade coexistence, DLL naming, INI config, and OptiPatcher for AMD/Intel GPUs. 64-bit only. |
 | [RE Framework](https://github.com/praydog/REFramework-nightly) | Required for ReShade on RE Engine games (Monster Hunter Wilds, Resident Evil series, Devil May Cry 5, Street Fighter 6, Dragon's Dogma 2, etc.). |
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | DX11 HDR modding framework. Toggle Luma mode per game — RenoDX and standard ReShade are swapped out automatically. |
+| [DXVK](https://github.com/doitsujin/dxvk) | DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Enables ReShade compute shaders and can reduce CPU-bound stuttering on older titles. Per-game toggle in the Overrides panel. **(WIP)** |
 
-Every component has one-click install, update detection, and uninstall. Per-addon **Info** buttons show game-specific notes, wiki compatibility data, or general descriptions — buttons with per-game content are highlighted in blue.
+Every component has one-click install, update detection, and uninstall. Per-addon **Info** buttons show game-specific notes, wiki compatibility data, or general descriptions — ReLimiter and Display Commander Info buttons also show changelogs from GitHub. Buttons with content are highlighted in blue.
 
 ### Shader Packs & Presets
 
@@ -108,6 +110,7 @@ For the full reference covering every feature, see the [Detailed Guide](docs/DET
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | OptiScaler contributors | Source-available |
 | [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |
+| [DXVK](https://github.com/doitsujin/dxvk) | doitsujin & contributors | [Zlib](https://github.com/doitsujin/dxvk/blob/master/LICENSE) |
 
 > RHI is an unofficial third-party tool, not affiliated with or endorsed by the RenoDX project, Crosire, or the Luma Framework. All mod files are downloaded from their official sources at runtime and are not redistributed.
 
