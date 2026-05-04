@@ -91,7 +91,8 @@ public partial class GameCardViewModel
     }
 
     public bool IsRsNotInstalling => !RsIsInstalling;
-    public bool IsRsInstalled   => RsStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
+    public bool IsRsInstalled   => RsStatus is GameStatus.Installed or GameStatus.UpdateAvailable
+        || (EffectiveLumaMode && LumaStatus is GameStatus.Installed or GameStatus.UpdateAvailable);
 
     // ── Dynamic corner radius for RS install buttons ─────────────────────────────
     public string RsInstallCornerRadius => (RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable)

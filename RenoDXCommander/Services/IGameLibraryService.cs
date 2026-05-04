@@ -18,7 +18,8 @@ public interface IGameLibraryService
         string? lastSelectedGame = null,
         HashSet<string>? dxvkEnabledGames = null,
         Dictionary<string, string>? dxvkInstalledVersions = null,
-        HashSet<string>? excludeFromUpdateAllDxvk = null);
+        HashSet<string>? excludeFromUpdateAllDxvk = null,
+        Dictionary<string, string>? updateAvailableSnapshot = null);
 
     List<DetectedGame> ToDetectedGames(SavedGameLibrary lib);
 

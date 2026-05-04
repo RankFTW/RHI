@@ -4,6 +4,13 @@
 
 - **DXVK Proxy Mode for DX8/DX9 games** — DX8 and DX9 games now use a ReShade proxy chain instead of the Vulkan implicit layer when DXVK is enabled. DXVK is deployed as `dxgi_dxvk.dll` and ReShade chains to it via the `[PROXY]` section in reshade.ini. No Vulkan layer install or admin privileges needed. This matches the method recommended by RenoDX mod authors on Nexus Mods.
 
+### Bug Fixes
+
+- Fixed Luma mode toggle disappearing after app restart. The `IsLumaMode` flag was not being set during the cache phase or copied during the background merge, so Luma games lost their mode state until a full refresh.
+- Fixed frame limiters (ReLimiter, Display Commander) showing "ReShade required" on Luma games after toggling Luma mode back on. Luma bundles its own ReShade, so `IsRsInstalled` now returns true when Luma is installed in Luma mode.
+- Removed the "❓ Unknown" wiki status badge — games with no wiki match now show no badge instead of a misleading "Unknown" label.
+- Fixed update-available statuses (green dots, purple buttons) not persisting across app restarts. Update badges are now saved to the library cache and restored on launch, so they survive the 4-hour update check cooldown.
+
 ## v1.9.1
 
 ### Highlights

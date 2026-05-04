@@ -106,7 +106,7 @@ public partial class GameCardViewModel
                                    : WikiStatus == "💬" ? "💬 Discord"
                                    : WikiStatus == "🌐" ? "🌐 Nexus"
                                    : WikiStatus == "—" && IsGenericMod ? "⚠️ May Work"
-                                   : "❓ Unknown";
+                                   : "";
 
     /// <summary>
     /// Returns just the wiki status icon for grid card display.

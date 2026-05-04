@@ -1758,9 +1758,26 @@ public partial class MainViewModel
                 excludeFromUpdateAllDxvk.Add(c.GameName);
         }
 
+        // Collect update-available snapshot from cards for persistence across restarts
+        var updateSnapshot = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in _allCards)
+        {
+            var flags = new List<string>();
+            if (c.Status == GameStatus.UpdateAvailable) flags.Add("RDX");
+            if (c.RsStatus == GameStatus.UpdateAvailable) flags.Add("RS");
+            if (c.UlStatus == GameStatus.UpdateAvailable) flags.Add("UL");
+            if (c.DcStatus == GameStatus.UpdateAvailable) flags.Add("DC");
+            if (c.OsStatus == GameStatus.UpdateAvailable) flags.Add("OS");
+            if (c.RefStatus == GameStatus.UpdateAvailable) flags.Add("REF");
+            if (c.DxvkStatus == GameStatus.UpdateAvailable) flags.Add("DXVK");
+            if (c.LumaStatus == GameStatus.UpdateAvailable) flags.Add("LUMA");
+            if (flags.Count > 0)
+                updateSnapshot[c.GameName] = string.Join(",", flags);
+        }
+
         _gameLibraryService.Save(detectedGames, addonCache, _hiddenGames, _favouriteGames, _manualGames,
             _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache, LastSelectedGameName,
-            dxvkEnabledGames, dxvkInstalledVersions, excludeFromUpdateAllDxvk);
+            dxvkEnabledGames, dxvkInstalledVersions, excludeFromUpdateAllDxvk, updateSnapshot);
     }
 
     /// <summary>
@@ -1962,6 +1979,7 @@ public partial class MainViewModel
                 VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(game.Name, out var vrpCache) ? vrpCache : "DirectX",
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 LumaFeatureEnabled     = LumaFeatureEnabled,
+                IsLumaMode             = _lumaEnabledGames.Contains(game.Name),
 
                 // Wiki/mod data left empty — Phase 2 MergeCards will fill these in:
                 // Mod, WikiStatus, Maintainer, Notes, IsGenericMod, IsExternalOnly,
@@ -2037,6 +2055,27 @@ public partial class MainViewModel
                 {
                     newCard.LumaRecord = lumaRec;
                     newCard.LumaStatus = GameStatus.Installed;
+                }
+            }
+
+            // Restore update-available statuses from the saved snapshot
+            if (savedLib.UpdateAvailableSnapshot != null
+                && savedLib.UpdateAvailableSnapshot.TryGetValue(game.Name, out var updateFlags))
+            {
+                var flags = updateFlags.Split(',');
+                foreach (var flag in flags)
+                {
+                    switch (flag.Trim())
+                    {
+                        case "RDX":  if (newCard.Status != GameStatus.NotInstalled) newCard.Status = GameStatus.UpdateAvailable; break;
+                        case "RS":   if (newCard.RsStatus != GameStatus.NotInstalled) newCard.RsStatus = GameStatus.UpdateAvailable; break;
+                        case "UL":   if (newCard.UlStatus != GameStatus.NotInstalled) newCard.UlStatus = GameStatus.UpdateAvailable; break;
+                        case "DC":   if (newCard.DcStatus != GameStatus.NotInstalled) newCard.DcStatus = GameStatus.UpdateAvailable; break;
+                        case "OS":   if (newCard.OsStatus != GameStatus.NotInstalled) newCard.OsStatus = GameStatus.UpdateAvailable; break;
+                        case "REF":  if (newCard.RefStatus != GameStatus.NotInstalled) newCard.RefStatus = GameStatus.UpdateAvailable; break;
+                        case "DXVK": if (newCard.DxvkStatus != GameStatus.NotInstalled) newCard.DxvkStatus = GameStatus.UpdateAvailable; break;
+                        case "LUMA": if (newCard.LumaStatus != GameStatus.NotInstalled) newCard.LumaStatus = GameStatus.UpdateAvailable; break;
+                    }
                 }
             }
 
@@ -2460,6 +2499,7 @@ public partial class MainViewModel
                 existing.DetectedApis           = fresh.DetectedApis;
                 existing.IsDualApiGame          = fresh.IsDualApiGame;
                 existing.LumaMod                = fresh.LumaMod;
+                existing.IsLumaMode             = fresh.IsLumaMode;
                 existing.LumaRecord             = fresh.LumaRecord;
                 existing.LumaNotes              = fresh.LumaNotes;
                 existing.LumaNotesUrl           = fresh.LumaNotesUrl;
@@ -2522,6 +2562,9 @@ public partial class MainViewModel
             _filterViewModel.SetAllCards(_allCards);
             _filterViewModel.UpdateCounts();
             _filterViewModel.ApplyFilter();
+
+            // Refresh the selected game's detail panel so merged data (LumaMod, wiki, etc.) is visible
+            SelectedGame?.NotifyAll();
         });
     }
 

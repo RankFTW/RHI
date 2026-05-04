@@ -29,4 +29,11 @@ public class SavedGameLibrary
 
     /// <summary>Game names excluded from the DXVK portion of Update All.</summary>
     public HashSet<string> ExcludeFromUpdateAllDxvk { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Snapshot of per-game update-available statuses from the last session.
+    /// Maps game name → component flags (e.g. "RS,UL" means ReShade and ReLimiter have updates).
+    /// Restored during cache phase so update badges persist across restarts without re-checking.
+    /// </summary>
+    public Dictionary<string, string> UpdateAvailableSnapshot { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
