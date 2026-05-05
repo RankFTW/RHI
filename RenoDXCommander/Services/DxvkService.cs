@@ -202,11 +202,9 @@ public partial class DxvkService : IDxvkService
     private const string LiliumHdrConfContent_D3d9 =
         """
 
-        # Lilium HDR (2nd safest preset)
+        # Lilium HDR
         dxvk.enableAsync                          = true
         dxvk.gplAsyncCache                        = true
-        d3d9.enableBackBufferUpgrade              = true
-        d3d9.upgradeBackBufferTo                  = rgba16_unorm
         d3d9.enableSwapChainUpgrade               = true
         d3d9.upgradeSwapChainFormatTo             = rgba16_sfloat
         d3d9.upgradeSwapChainColorSpaceTo         = scRGB
@@ -216,11 +214,9 @@ public partial class DxvkService : IDxvkService
     private const string LiliumHdrConfContent_D3d11 =
         """
 
-        # Lilium HDR (2nd safest preset)
+        # Lilium HDR
         dxvk.enableAsync                              = true
         dxvk.gplAsyncCache                            = true
-        d3d11.enableBackBufferUpgrade                 = true
-        d3d11.upgradeBackBufferTo                     = rgba16_unorm
         d3d11.enableSwapChainUpgrade                  = true
         d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
         d3d11.upgradeSwapChainColorSpaceTo            = scRGB
