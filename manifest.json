@@ -165,6 +165,7 @@
   "_comment_overrides": "=== NAME, PATH & ENGINE OVERRIDES ===",
 
   "wikiNameOverrides": {
+    "AFOP": "Avatar: Frontiers of Pandora™",
     "Alfred Hitchcock - Vertigo": "Alfred Hitchcock – Vertigo",
     "Assassin's Creed": "Assassin's Creed™: Director's Cut Edition",
     "Borderlands 2": "Borderlands 2 & The Pre-Sequel",
@@ -628,6 +629,7 @@
   },
 
   "nexusUrlOverrides": {
+    "AFOP": "https://www.nexusmods.com/games/avatarfrontiersofpandora",
     "Deadly Premonition 2": "https://www.nexusmods.com/games/deadlypremonition2ablessingindisguise",
     "DEATH STRANDING DIRECTOR'S CUT": "https://www.nexusmods.com/games/deathstranding",
     "Dying Light: The Beast Restored Land": "https://www.nexusmods.com/games/dyinglightthebeast",
@@ -644,6 +646,7 @@
   },
 
   "pcgwUrlOverrides": {
+    "AFOP": "https://www.pcgamingwiki.com/wiki/Avatar:_Frontiers_of_Pandora",
     "Alan Wake 2": "https://www.pcgamingwiki.com/wiki/Alan_Wake_2",
     "Fortnite": "https://www.pcgamingwiki.com/wiki/Fortnite",
     "The Sinking City Remastered": "https://www.pcgamingwiki.com/wiki/The_Sinking_City_Remastered"
