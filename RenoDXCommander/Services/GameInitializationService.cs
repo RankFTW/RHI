@@ -98,6 +98,18 @@ public class GameInitializationService : IGameInitializationService
             .Select(grp => grp.OrderBy(g => g.Name.Length).First())
             .ToList();
 
+        // Step 3: correct Source for games in Steam folders detected by other stores.
+        // Some EA/Ubisoft-published games have registry entries that cause them to be
+        // detected by those stores even when installed via Steam.
+        foreach (var game in byPath)
+        {
+            if (!string.Equals(game.Source, "Steam", StringComparison.OrdinalIgnoreCase)
+                && game.InstallPath.Contains(@"steamapps\common", StringComparison.OrdinalIgnoreCase))
+            {
+                game.Source = "Steam";
+            }
+        }
+
         // Permanently exclude specific non-game entries
         var permanentExclusions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
