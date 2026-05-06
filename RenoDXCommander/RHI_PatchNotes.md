@@ -1,4 +1,4 @@
-## v1.9.3-beta
+## v1.9.3
 
 ### New Features
 
