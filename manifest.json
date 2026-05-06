@@ -553,7 +553,7 @@
       "notesUrlLabel": null
     },
     "Until Dawn™": {
-      "notes": "ℹ️ This game supports UE-Extended using native HDR.\n\nHDR must be enabled in the game's display settings.\nIn ReShade → Add-ons → RenoDX, set Upgrade Path to 0.",
+      "notes": "ℹ️ This game supports UE-Extended using native HDR.\n\nHDR must be enabled in the game's display settings.\nIn RenoDX → Advanced, set Upgrade Path to 0.",
       "notesUrl": null,
       "notesUrlLabel": null
     }
