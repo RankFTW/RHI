@@ -50,19 +50,18 @@
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Rescan game library and fetch latest mod info"/>
-                    <Button x:Name="ChooseShadersBtn" Content="Global Shaders"
-                            Click="ChooseShadersButton_Click"
-                            IsEnabled="{x:Bind ViewModel.IsGlobalShaderButtonEnabled, Mode=OneWay}"
+                    <Button x:Name="ShadersAddonsBtn" Content="Shaders/Addons"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Choose which shader packs to deploy"/>
-                    <Button x:Name="ReShadeAddonsBtn" Content="ReShade Addons"
-                            Click="ReShadeAddonsButton_Click"
-                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
-                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Browse and manage ReShade addons"/>
+                            ToolTipService.ToolTip="Manage global shaders and ReShade addons">
+                        <Button.Flyout>
+                            <MenuFlyout Placement="Bottom">
+                                <MenuFlyoutItem x:Name="ChooseShadersItem" Text="Global Shaders" Click="ChooseShadersButton_Click"/>
+                                <MenuFlyoutItem x:Name="ReShadeAddonsItem" Text="ReShade Addons" Click="ReShadeAddonsButton_Click"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
@@ -77,6 +76,21 @@
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
+                    <Button x:Name="LinksBtn" Content="Links"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Useful links and resources">
+                        <Button.Flyout>
+                            <MenuFlyout Placement="Bottom">
+                                <MenuFlyoutItem Text="RenoDX Wiki" Click="LinkRenoDxWiki_Click"/>
+                                <MenuFlyoutItem Text="Luma Wiki" Click="LinkLumaWiki_Click"/>
+                                <MenuFlyoutItem Text="RHI GitHub" Click="LinkRhiGithub_Click"/>
+                                <MenuFlyoutItem Text="ReLimiter GitHub" Click="LinkReLimiterGithub_Click"/>
+                                <MenuFlyoutItem Text="Display Commander GitHub" Click="LinkDcGithub_Click"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                     <Button x:Name="SupportBtn" Content="Help"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
@@ -91,13 +105,22 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
-                    <Button x:Name="LayoutToggleBtn"
-                            Content="{x:Bind ViewModel.LayoutToggleLabel, Mode=OneWay}"
-                            Click="LayoutToggle_Click"
+
+                    <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
+
+                    <Button x:Name="LayoutToggleBtn" Content="Views"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Cycle between detail, grid, and compact view"/>
+                            ToolTipService.ToolTip="Switch between view layouts">
+                        <Button.Flyout>
+                            <MenuFlyout Placement="Bottom">
+                                <MenuFlyoutItem Text="Compact" Click="ViewCompact_Click"/>
+                                <MenuFlyoutItem Text="Detail" Click="ViewDetail_Click"/>
+                                <MenuFlyoutItem Text="Grid" Click="ViewGrid_Click"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                     <Button x:Name="SettingsBtn" Content="Settings"
                             Click="SettingsButton_Click" IsEnabled="False"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
@@ -1050,7 +1073,7 @@
                                         <TextBlock Text="Add Game" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Manually add a game that wasn't automatically detected. You'll be asked to name it and select the game folder."/>
+                                                   Text="Manually add a game that wasn't automatically detected. Select the game's exe and you'll be asked to name it."/>
                                     </StackPanel>
                                     <Button Grid.Row="1" x:Name="AddGameBtn" Content="Add Game"
                                             Click="AddGameButton_Click"

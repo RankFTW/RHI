@@ -16,6 +16,9 @@
 ### QoL
 
 - The "Save Custom Filter" dialog now pre-populates the filter name with the current search text.
+- Toolbar redesigned: "Global Shaders" and "ReShade Addons" combined into a single "Shaders/Addons" dropdown. New "Links" dropdown with RenoDX Wiki, Luma Wiki, RHI GitHub, ReLimiter GitHub, and Display Commander GitHub. View toggle replaced with a "Views" dropdown (Compact, Detail, Grid).
+- Games installed via Steam but detected by EA/Ubisoft/etc now correctly show the Steam badge when the install path is in a Steam folder. Requires a Full Refresh.
+- "Add Game" flow simplified: click the button, pick the game's exe, then name it. No more confusing name-first workflow. 
 
 ### Bug Fixes
 

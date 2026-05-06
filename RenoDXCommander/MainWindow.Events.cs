@@ -124,6 +124,94 @@ public sealed partial class MainWindow
             new Uri("https://ko-fi.com/rankftw"));
     }
 
+    // ── Links menu handlers ───────────────────────────────────────────────────
+
+    private void LinkRenoDxWiki_Click(object sender, RoutedEventArgs e)
+    {
+        _ = Windows.System.Launcher.LaunchUriAsync(
+            new Uri("https://github.com/clshortfuse/renodx/wiki/Mods"));
+    }
+
+    private void LinkLumaWiki_Click(object sender, RoutedEventArgs e)
+    {
+        _ = Windows.System.Launcher.LaunchUriAsync(
+            new Uri("https://github.com/Filoppi/Luma-Framework/wiki"));
+    }
+
+    private void LinkRhiGithub_Click(object sender, RoutedEventArgs e)
+    {
+        _ = Windows.System.Launcher.LaunchUriAsync(
+            new Uri("https://github.com/RankFTW/RHI"));
+    }
+
+    private void LinkReLimiterGithub_Click(object sender, RoutedEventArgs e)
+    {
+        _ = Windows.System.Launcher.LaunchUriAsync(
+            new Uri("https://github.com/RankFTW/ReLimiter"));
+    }
+
+    private void LinkDcGithub_Click(object sender, RoutedEventArgs e)
+    {
+        _ = Windows.System.Launcher.LaunchUriAsync(
+            new Uri("https://github.com/pmnoxx/display-commander"));
+    }
+
+    // ── Views menu handlers ───────────────────────────────────────────────────
+
+    private void ViewCompact_Click(object sender, RoutedEventArgs e)
+        => SwitchToView(ViewLayout.Compact);
+
+    private void ViewDetail_Click(object sender, RoutedEventArgs e)
+        => SwitchToView(ViewLayout.Detail);
+
+    private void ViewGrid_Click(object sender, RoutedEventArgs e)
+        => SwitchToView(ViewLayout.Grid);
+
+    private void SwitchToView(ViewLayout target)
+    {
+        if (ViewModel.CurrentViewLayout == target) return;
+
+        var previousLayout = ViewModel.CurrentViewLayout;
+        ViewModel.CurrentViewLayout = target;
+        ViewModel.SaveSettingsPublic();
+
+        // Handle window size locking transitions
+        if (target == ViewLayout.Compact)
+        {
+            _windowStateManager.CaptureCurrentBounds();
+            _windowStateManager.ApplyCompactSize();
+            _windowStateManager.SetSizeLocked(true);
+        }
+        else if (previousLayout == ViewLayout.Compact)
+        {
+            _compactViewBuilder?.LeaveCompactMode();
+            _windowStateManager.SetSizeLocked(false);
+            _windowStateManager.RestoreWindowBounds();
+        }
+
+        // Rebuild content for the new layout
+        switch (target)
+        {
+            case ViewLayout.Grid:
+                RebuildCardGrid();
+                break;
+            case ViewLayout.Detail:
+                if (ViewModel.SelectedGame is { } card)
+                {
+                    PopulateDetailPanel(card);
+                    DetailPanel.Visibility = Visibility.Visible;
+                    BuildOverridesPanel(card);
+                    OverridesContainer.Visibility = Visibility.Visible;
+                    ManagementContainer.Visibility = Visibility.Visible;
+                }
+                break;
+            case ViewLayout.Compact:
+                if (ViewModel.SelectedGame is { } compactCard)
+                    _compactViewBuilder?.EnterCompactMode(compactCard, ViewModel.CompactPageIndex);
+                break;
+        }
+    }
+
     private void LayoutToggle_Click(object sender, RoutedEventArgs e)
     {
         var previousLayout = ViewModel.CurrentViewLayout;
@@ -913,21 +1001,47 @@ public sealed partial class MainWindow
 
     private async void AddGameButton_Click(object sender, RoutedEventArgs e)
     {
-        // Ask for game name
-        var nameBox = new TextBox { PlaceholderText = "Game name (e.g. Cyberpunk 2077)", Width = 350 };
+        // Step 1: Pick the game executable
+        var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
+        filePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.ComputerFolder;
+        filePicker.FileTypeFilter.Add(".exe");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
+
+        Windows.Storage.StorageFile? file;
+        try { file = await filePicker.PickSingleFileAsync(); }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.AddGameButton_Click] File picker failed — {ex.Message}");
+            return;
+        }
+        if (file == null) return;
+
+        // Use the exe's parent folder as the install path
+        var folder = Path.GetDirectoryName(file.Path);
+        if (string.IsNullOrEmpty(folder)) return;
+
+        // Pre-populate the game name from the folder name
+        var suggestedName = Path.GetFileName(folder);
+
+        // Step 2: Ask for the game name
+        var nameBox = new TextBox { Text = suggestedName, Width = 350 };
+        nameBox.SelectAll();
         var nameDialog = new ContentDialog
         {
-            Title           = "➕ Add Game Manually",
+            Title           = "Name This Game",
             Content         = new StackPanel
             {
                 Spacing = 10,
                 Children =
                 {
-                    new TextBlock { Text = "Enter the game name exactly as it appears on the wiki mod list:", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush) },
+                    new TextBlock { Text = $"Selected: {file.Path}", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush), FontSize = 11 },
+                    new TextBlock { Text = "Enter the game name:", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush) },
                     nameBox
                 }
             },
-            PrimaryButtonText   = "Pick Folder →",
+            PrimaryButtonText   = "Add Game",
             CloseButtonText     = "Cancel",
             XamlRoot            = Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceToolbarBrush),
@@ -938,11 +1052,7 @@ public sealed partial class MainWindow
 
         var gameName = nameBox.Text.Trim();
         if (string.IsNullOrEmpty(gameName)) return;
-        _crashReporter.Log($"[MainWindow.AddGameButton_Click] Adding game: {gameName}");
-
-        // Pick the game folder
-        var folder = await PickFolderAsync();
-        if (folder == null) return;
+        _crashReporter.Log($"[MainWindow.AddGameButton_Click] Adding game: {gameName} at {folder}");
 
         var game = new DetectedGame
         {
