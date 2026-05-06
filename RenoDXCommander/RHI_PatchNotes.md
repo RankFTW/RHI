@@ -1,3 +1,9 @@
+## v1.9.4
+
+### Bug Fixes
+
+- Fixed DXVK staging downloading all 3 variants on every startup, causing GitHub API rate limiting for users with fresh installs. Only the globally selected variant is now downloaded at startup — other variants are fetched on-demand when a per-game override needs them.
+
 ## v1.9.3
 
 ### New Features
