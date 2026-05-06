@@ -60,9 +60,11 @@ A paged layout that shows the same content as Detail View, split across three na
 | Button | What it does |
 |--------|-------------|
 | Refresh | Re-scans your game library and fetches the latest mod info. After the first boot, this runs in the background without blanking the UI. |
+| Shaders/Addons | Dropdown: Global Shaders (choose shader packs) and ReShade Addons (manage addon toggles). |
 | Update All | Updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, and RE Framework across all eligible games. Lights up purple when updates are available. |
-| View toggle | Cycles between Detail, Grid, and Compact View. Shows the name of the current mode. |
-| Help | Opens a flyout with links to the RHI support channel, this guide, the About page, and Ko-fi. |
+| Links | Dropdown with quick links: RenoDX Wiki, Luma Wiki, RHI GitHub, ReLimiter GitHub, Display Commander GitHub. |
+| Help | Dropdown: Discord support channel, this guide, Ko-fi, and About page. |
+| Views | Dropdown: Compact, Detail, and Grid view. |
 | Settings | Opens the Settings page. |
 
 ### Sidebar (Detail View)
@@ -100,7 +102,7 @@ Click **Settings** in the toolbar. Click **Back to Games** to return. The Settin
 
 | Section | What's in it |
 |---------|-------------|
-| Add Game | Manually add a game that wasn't auto-detected. Enter the name and pick the install folder. |
+| Add Game | Manually add a game that wasn't auto-detected. Select the game's exe and name it. |
 | Full Refresh | Clears all caches (API detection, shader, PCGW, etc.) and re-scans everything from disk. Bypasses the 4-hour update check cooldown. |
 | Preferences | Skip Update Check on Launch, Verbose Logging, Shader Cache toggle, Custom Shaders toggle. |
 | Screenshot Path | Set a global screenshot save path written to all managed reshade.ini files. Optional per-game subfolder toggle. Browse and Open buttons. |
@@ -112,7 +114,7 @@ Click **Settings** in the toolbar. Click **Back to Games** to return. The Settin
 | Mass INI Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with the corresponding component installed. |
 | Mass ReShade Preset Install | Select presets from the presets folder, choose target games via a checkbox picker with Select All / Deselect All, and optionally install required shader packs. |
 | RE Framework Exclusion | Globally exclude RE Framework from Update All. The per-game version of this toggle appears in the Update Inclusion dialog for RE Engine games. |
-| Build Channels | Choose between Stable and Nightly builds for ReShade and DXVK. ReShade Stable uses reshade.me releases; Nightly uses the latest GitHub Actions build. DXVK Development uses nightly.link builds; Stable uses tagged releases. Switching channels clears the staging cache, downloads from the new source, and flags installed games for update. |
+| Build Channels | Choose between Stable and Nightly builds for ReShade, and Development, Stable, or Lilium HDR for DXVK. All variants are downloaded simultaneously — switching is instant. Per-game overrides in the Overrides panel let you mix variants across your library. |
 
 ---
 
@@ -151,7 +153,7 @@ RHI reads the PE header of the game executable to determine bitness. The remote 
 
 ### Adding Games Manually
 
-- **Add Game** (Settings page) — enter the game name and pick the install folder.
+- **Add Game** (Settings page) — click the button, pick the game's executable, then name it. The install path is set to the exe's parent folder automatically.
 - **Drag and drop** — drag a game's `.exe` onto the RHI window. RHI detects the engine, infers the game root folder, and guesses the name. A confirmation dialog lets you edit the name before adding. The new game is auto-selected in the sidebar.
 
 ### Multi-Platform Games
@@ -535,6 +537,8 @@ The Overrides section appears below Components in the detail panel. All controls
 | Rendering Path | For dual-API games — switches between DirectX and Vulkan ReShade. |
 | Bitness override | Auto, 32-bit, or 64-bit. Overrides PE header detection. |
 | Graphics API override | Auto, DirectX8, DirectX9, DirectX10, DX11/DX12, Vulkan, OpenGL. |
+| RS Channel override | Global, Stable, or Nightly. Overrides the global ReShade build channel for this game. Vulkan games: applies to all Vulkan games. |
+| DXVK Variant override | Global, Development, Stable, or Lilium HDR. Overrides the global DXVK variant for this game. |
 | ReShade Without Addon Support | Toggle to switch from addon-enabled to standard ReShade. |
 | OptiScaler DLL name | Override the OptiScaler proxy DLL filename. |
 | Select ReShade Preset | Deploy preset files from the presets folder. |
@@ -644,8 +648,6 @@ Uninstalling removes `reshade.ini`, the footprint file, and managed shaders from
 
 DXVK is a DirectX-to-Vulkan translation layer that can improve performance and enable ReShade compute shaders on older DX8/DX9/DX10 games. RHI manages DXVK as a per-game component with the same lifecycle as other managed components.
 
-**This feature is a work in progress and has only been tested by the developer.**
-
 ### Enabling DXVK
 
 The DXVK toggle appears in the Overrides panel for DX8, DX9, and DX10 games. It is hidden for DX11, DX12, OpenGL, and Vulkan games. Games with DX12 detected alongside their primary API (dual-API) also hide the toggle, as do Unreal Engine DX11 games that likely support DX12.
@@ -656,13 +658,35 @@ Toggling DXVK on triggers the install flow (with a warning dialog). Toggling off
 
 1. The required DXVK DLLs (e.g. `d3d9.dll`, `d3d11.dll`, `dxgi.dll`) are copied from staging to the game folder based on the game's API and bitness.
 2. Game-original DLLs are backed up with a `.original` extension and restored on uninstall.
-3. A default `dxvk.conf` is deployed (HDR enabled, borderless fullscreen, latency sleep).
+3. A `dxvk.conf` is deployed with settings appropriate for the selected variant (standard settings for Development/Stable, HDR swap chain upgrade for Lilium HDR).
 4. If ReShade is installed as a DX proxy DLL, it is switched to Vulkan layer mode automatically. When DXVK is disabled, ReShade switches back with the correct API-specific filename.
 5. OptiScaler coexistence is handled — filename conflicts are resolved by routing DLLs to the OptiScaler plugins folder.
 
 ### Build variants
 
-Choose between Development (nightly builds via nightly.link) and Stable (tagged releases) in the Build Channels section on the Settings page.
+Three DXVK variants are available, selectable globally in Settings or per-game in the Overrides panel:
+
+| Variant | Source | Description |
+|---------|--------|-------------|
+| Development | nightly.link (doitsujin/dxvk master) | Latest nightly builds with newest fixes. Default. |
+| Stable | doitsujin/dxvk tagged releases | Official stable releases. |
+| Lilium HDR | EndlesslyFlowering/dxvk releases | Fork with HDR swap chain upgrades (scRGB output). Enables HDR output on DX8/DX9/DX10 games via format and colour space upgrades. |
+
+All three variants are downloaded and kept up to date simultaneously. Switching variants (globally or per-game) instantly reinstalls DXVK with the correct DLLs and dxvk.conf — no manual update needed.
+
+### Lilium HDR
+
+The Lilium HDR variant deploys a `dxvk.conf` with HDR-specific settings:
+
+- `dxvk.enableAsync = true` and `dxvk.gplAsyncCache = true` (async shader compilation)
+- Swap chain upgrade to `rgba16_sfloat` with `scRGB` colour space
+- `d3d9.enforceWindowModeInternally = disabled` (DX9 games only)
+
+This is the safest HDR preset — it upgrades only the swap chain output without modifying render targets or back buffers, ensuring near-100% compatibility.
+
+### Per-game variant override
+
+The "DXVK Variant" dropdown in the Overrides panel lets you override the global variant for individual games. Options: Global, Development, Stable, Lilium HDR. Changing the variant immediately reinstalls DXVK with the correct DLLs and conf.
 
 ### Anti-cheat blacklist
 
@@ -854,6 +878,10 @@ Everything is stored under `%LOCALAPPDATA%\RHI\`:
 | `addons_cache.ini` | Cached Addons.ini for offline fallback. |
 | `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `relimiter.ini`, `DisplayCommander.ini`, `OptiScaler.ini`, etc.) and `reshade-presets\` subfolder. |
 | `reshade\` | Staged shader packs and custom shaders. |
+| `reshade-nightly\` | Staged nightly ReShade DLLs. |
+| `dxvk-development\` | Staged DXVK Development (nightly) DLLs. |
+| `dxvk-stable\` | Staged DXVK Stable (tagged release) DLLs. |
+| `dxvk-lilium\` | Staged DXVK Lilium HDR DLLs. |
 | `logs\` | Session logs (timestamped) and crash reports. Max 10 logs kept on disk. |
 | `reports\` | Saved game reports from Copy Report. |
 | `nexus_games.json` | Cached Nexus Mods game catalogue (24-hour TTL). |
@@ -899,3 +927,5 @@ A new log file is created every time RHI starts, named with a timestamp (e.g. `s
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | OptiScaler contributors | Source-available |
 | [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |
+| [DXVK](https://github.com/doitsujin/dxvk) | doitsujin & contributors | [Zlib](https://github.com/doitsujin/dxvk/blob/master/LICENSE) |
+| [DXVK HDR-mod](https://github.com/EndlesslyFlowering/dxvk) | EndlesslyFlowering (Lilium) | [Zlib](https://github.com/EndlesslyFlowering/dxvk/blob/HDR-mod/LICENSE) |

@@ -23,7 +23,8 @@ RHI installs ReShade with addon support, which may trigger anti-cheat in online 
 [*] [b]UW Fix & Ultra+ links[/b] — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
 [*] [b]Three view modes[/b] — Detail View, Grid View, and Compact View. Pick what fits your workflow.
 [*] [b]Smart about updates[/b] — rate-limit aware, cooldown-based update checks, and cached shader packs that skip unnecessary API calls.
-[*] [b]ReShade build channels[/b] — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Switching channels updates all installed games.
+[*] [b]ReShade build channels[/b] — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Per-game overrides let you mix channels across your library.
+[*] [b]DXVK variants[/b] — choose between Development (nightly), Stable (tagged releases), and Lilium HDR (scRGB HDR output) in Settings. Per-game overrides available.
 [/list]
 
 [line]
@@ -44,7 +45,7 @@ Each game's executable is scanned via PE header analysis to detect DirectX 8–1
 [*] [url=https://github.com/optiscaler/OptiScaler][b]OptiScaler[/b][/url] — Upscaler redirection (DLSS/FSR/XeSS). Auto-downloads DLSS SR, Ray Reconstruction, and Frame Gen DLLs. Handles ReShade coexistence, DLL naming, INI config, and OptiPatcher for AMD/Intel GPUs. 64-bit only.
 [*] [url=https://github.com/praydog/REFramework-nightly][b]RE Framework[/b][/url] — Required for ReShade on RE Engine games (Monster Hunter Wilds, Resident Evil series, Devil May Cry 5, Street Fighter 6, Dragon's Dogma 2, etc.).
 [*] [url=https://github.com/Filoppi/Luma-Framework][b]Luma Framework[/b][/url] — DX11 HDR modding framework. Toggle Luma mode per game — RenoDX and standard ReShade are swapped out automatically.
-[*] [url=https://github.com/doitsujin/dxvk][b]DXVK[/b][/url] — DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Enables ReShade compute shaders and can reduce CPU-bound stuttering on older titles. Per-game toggle in the Overrides panel. [b](WIP)[/b]
+[*] [url=https://github.com/doitsujin/dxvk][b]DXVK[/b][/url] — DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Enables ReShade compute shaders and can reduce CPU-bound stuttering on older titles. Three variants: Development, Stable, and Lilium HDR (scRGB HDR output). Per-game toggle and variant selector in the Overrides panel.
 [/list]
 
 Every component has one-click install, update detection, and uninstall. Per-addon [b]Info[/b] buttons show game-specific notes, wiki compatibility data, or general descriptions — ReLimiter and Display Commander Info buttons also show changelogs from GitHub. Buttons with content are highlighted in blue.
@@ -56,7 +57,7 @@ Every component has one-click install, update detection, and uninstall. Per-addo
 Browse and toggle curated addons from the official ReShade addon list. Enabled addons are auto-deployed when ReShade is installed and synced on every Refresh. Per-game addon overrides let you customise which addons are active per game.
 
 [size=4][b]Per-Game Overrides[/b][/size]
-DLL naming, shader selection, addon selection, bitness and graphics API overrides, update inclusion toggles, wiki name mapping, ReShade Without Addon Support toggle, and more. All settings save immediately.
+DLL naming, shader selection, addon selection, bitness and graphics API overrides, ReShade channel override (Stable/Nightly), DXVK variant override (Development/Stable/Lilium HDR), update inclusion toggles, wiki name mapping, ReShade Without Addon Support toggle, and more. All settings save immediately.
 
 [size=4][b]Nexus Mods, PCGW, UW Fix & Ultra+ Links[/b][/size]
 Each game card shows clickable links to its Nexus Mods page, PCGamingWiki page, ultrawide fix (sourced from Lyall, RoseTheFlower, and p1xel8ted), and Ultra+ mod page when available. Search "UW Fix" or "Ultra+" to filter to games with those links.
@@ -115,6 +116,7 @@ For the full reference covering every feature, see the [url=https://github.com/R
 [*] [url=https://github.com/optiscaler/OptiScaler]OptiScaler[/url] by OptiScaler contributors — Source-available
 [*] [url=https://www.7-zip.org]7-Zip[/url] by Igor Pavlov — LGPL-2.1 / BSD-3-Clause
 [*] [url=https://github.com/doitsujin/dxvk]DXVK[/url] by doitsujin & contributors — Zlib
+[*] [url=https://github.com/EndlesslyFlowering/dxvk]DXVK HDR-mod[/url] by EndlesslyFlowering (Lilium) — Zlib
 [/list]
 
 [line]

@@ -18,7 +18,8 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **UW Fix & Ultra+ links** — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
 - **Three view modes** — Detail View, Grid View, and Compact View. Pick what fits your workflow.
 - **Smart about updates** — rate-limit aware, cooldown-based update checks, and cached shader packs that skip unnecessary API calls.
-- **ReShade build channels** — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Switching channels updates all installed games.
+- **ReShade build channels** — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Per-game overrides let you mix channels across your library.
+- **DXVK variants** — choose between Development (nightly), Stable (tagged releases), and Lilium HDR (scRGB HDR output) in Settings. Per-game overrides available.
 
 ## Features
 
@@ -39,7 +40,7 @@ Each game's executable is scanned via PE header analysis to detect DirectX 8–1
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | Upscaler redirection (DLSS → FSR/XeSS and vice versa). Auto-downloads DLSS SR, Ray Reconstruction, and Frame Gen DLLs. Handles ReShade coexistence, DLL naming, INI config, and OptiPatcher for AMD/Intel GPUs. 64-bit only. |
 | [RE Framework](https://github.com/praydog/REFramework-nightly) | Required for ReShade on RE Engine games (Monster Hunter Wilds, Resident Evil series, Devil May Cry 5, Street Fighter 6, Dragon's Dogma 2, etc.). |
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | DX11 HDR modding framework. Toggle Luma mode per game — RenoDX and standard ReShade are swapped out automatically. |
-| [DXVK](https://github.com/doitsujin/dxvk) | DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Enables ReShade compute shaders and can reduce CPU-bound stuttering on older titles. Per-game toggle in the Overrides panel. **(WIP)** |
+| [DXVK](https://github.com/doitsujin/dxvk) | DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Enables ReShade compute shaders and can reduce CPU-bound stuttering on older titles. Three variants: Development, Stable, and Lilium HDR (scRGB HDR output). Per-game toggle and variant selector in the Overrides panel. |
 
 Every component has one-click install, update detection, and uninstall. Per-addon **Info** buttons show game-specific notes, wiki compatibility data, or general descriptions — ReLimiter and Display Commander Info buttons also show changelogs from GitHub. Buttons with content are highlighted in blue.
 
@@ -53,7 +54,7 @@ Browse and toggle curated addons from the official ReShade addon list. Enabled a
 
 ### Per-Game Overrides
 
-DLL naming, shader selection, addon selection, bitness and graphics API overrides, update inclusion toggles, wiki name mapping, ReShade Without Addon Support toggle, and more. All settings save immediately.
+DLL naming, shader selection, addon selection, bitness and graphics API overrides, ReShade channel override (Stable/Nightly), DXVK variant override (Development/Stable/Lilium HDR), update inclusion toggles, wiki name mapping, ReShade Without Addon Support toggle, and more. All settings save immediately.
 
 ### Nexus Mods, PCGW, UW Fix & Ultra+ Links
 
@@ -88,7 +89,7 @@ Grab the latest release from the [GitHub Releases page](https://github.com/RankF
 
 | Problem | Fix |
 |---------|-----|
-| Game not detected | **Add Game** in Settings, or drag the .exe onto the window |
+| Game not detected | **Add Game** in Settings — pick the game's exe and name it |
 | Xbox games missing | Click **Refresh** — Game Pass detection may need a moment |
 | ReShade not loading | Check the install path via 📁 — the DLL must sit next to the game exe |
 | Black screen (Unreal) | ReShade → Add-ons → RenoDX → set `R10G10B10A2_UNORM` to `output size` |
@@ -111,6 +112,7 @@ For the full reference covering every feature, see the [Detailed Guide](docs/DET
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | OptiScaler contributors | Source-available |
 | [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |
 | [DXVK](https://github.com/doitsujin/dxvk) | doitsujin & contributors | [Zlib](https://github.com/doitsujin/dxvk/blob/master/LICENSE) |
+| [DXVK HDR-mod](https://github.com/EndlesslyFlowering/dxvk) | EndlesslyFlowering (Lilium) | [Zlib](https://github.com/EndlesslyFlowering/dxvk/blob/HDR-mod/LICENSE) |
 
 > RHI is an unofficial third-party tool, not affiliated with or endorsed by the RenoDX project, Crosire, or the Luma Framework. All mod files are downloaded from their official sources at runtime and are not redistributed.
 
