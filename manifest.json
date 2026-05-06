@@ -64,8 +64,7 @@
     "Mortal Kombat 1",
     "Nobody Wants to Die",
     "Returnal",
-    "Still Wakes the Deep",
-    "Until Dawn™"
+    "Still Wakes the Deep"
   ],
 
   "ueExtendedGames": [
@@ -554,7 +553,7 @@
       "notesUrlLabel": null
     },
     "Until Dawn™": {
-      "notes": "ℹ️ This game supports UE-Extended using native HDR. Works out of the box, no additional configuration needed.",
+      "notes": "ℹ️ This game supports UE-Extended using native HDR.\n\nHDR must be enabled in the game's display settings.\nIn ReShade → Add-ons → RenoDX, set Upgrade Path to 0.",
       "notesUrl": null,
       "notesUrlLabel": null
     }
