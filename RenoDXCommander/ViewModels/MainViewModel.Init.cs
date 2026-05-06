@@ -243,19 +243,9 @@ public partial class MainViewModel
                     // Migrate legacy shared staging folder to variant-specific folders
                     MigrateDxvkStagingFolder();
 
-                    // Download all variants so per-game overrides work
-                    var savedVariant = _dxvkService.SelectedVariant;
-
-                    _dxvkService.SelectedVariant = DxvkVariant.Development;
+                    // Only download the globally selected variant at startup.
+                    // Other variants are downloaded on-demand when a per-game override needs them.
                     await _dxvkService.EnsureStagingAsync();
-
-                    _dxvkService.SelectedVariant = DxvkVariant.Stable;
-                    await _dxvkService.EnsureStagingAsync();
-
-                    _dxvkService.SelectedVariant = DxvkVariant.LiliumHdr;
-                    await _dxvkService.EnsureStagingAsync();
-
-                    _dxvkService.SelectedVariant = savedVariant;
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DXVK staging task failed — {ex.Message}"); }
             });
@@ -2234,18 +2224,9 @@ public partial class MainViewModel
             var dxvkTask     = Task.Run(async () => {
                 try
                 {
-                    var savedVariant = _dxvkService.SelectedVariant;
-
-                    _dxvkService.SelectedVariant = DxvkVariant.Development;
+                    // Only download the globally selected variant.
+                    // Other variants are downloaded on-demand when a per-game override needs them.
                     await _dxvkService.EnsureStagingAsync();
-
-                    _dxvkService.SelectedVariant = DxvkVariant.Stable;
-                    await _dxvkService.EnsureStagingAsync();
-
-                    _dxvkService.SelectedVariant = DxvkVariant.LiliumHdr;
-                    await _dxvkService.EnsureStagingAsync();
-
-                    _dxvkService.SelectedVariant = savedVariant;
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DXVK staging task failed — {ex.Message}"); }
             });
