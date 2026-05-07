@@ -82,6 +82,7 @@
   ],
 
   "thirtyTwoBitGames": [
+    "Assassin's Creed",
     "Batman: Arkham Asylum GOTY Edition",
     "Far Cry 3",
     "Max Payne 3",
@@ -374,6 +375,7 @@
   },
 
   "graphicsApiOverrides": {
+    "Assassin's Creed": "DX10",
     "Assassin's Creed Origins": "DX11",
     "Assassin's Creed® Origins": "DX11",
     "Assassin's Creed Odyssey": "DX11",
@@ -625,6 +627,7 @@
   },
 
   "authorOverrides": {
+    "Assassin's Creed": "Musa"
   },
 
   "nexusUrlOverrides": {
