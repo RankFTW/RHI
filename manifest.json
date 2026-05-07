@@ -601,6 +601,10 @@
     "Elden Ring": {
       "url": "https://www.nexusmods.com/eldenring/mods/8163",
       "label": "Get on Nexus"
+    },
+    "GreedFall: The Dying World": {
+      "url": "https://www.nexusmods.com/greedfallthedyingworld/mods/8",
+      "label": "Get on Nexus"
     }
   },
 
@@ -621,13 +625,15 @@
     "Musa": "https://ko-fi.com/musaqh",
     "Nukem": "https://ko-fi.com/nukem9",
     "Pumbo": "https://ko-fi.com/realpumbo",
+    "RankFTW": "https://ko-fi.com/rankftw",
     "Ritsu": "https://ko-fi.com/ritsucecil",
     "ShortFuse": "https://ko-fi.com/shortfuse",
     "Voosh": "https://ko-fi.com/notvoosh"
   },
 
   "authorOverrides": {
-    "Assassin's Creed": "Musa"
+    "Assassin's Creed": "Musa",
+    "GreedFall: The Dying World": "RankFTW"
   },
 
   "nexusUrlOverrides": {
