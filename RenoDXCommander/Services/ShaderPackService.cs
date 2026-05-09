@@ -460,6 +460,14 @@ public partial class ShaderPackService : IShaderPackService
             IsMinimum   : false,
             Description : "Lightweight all-in-one: sharpening, AO, indirect lighting, and color correction in a single pass"
         ),
+        new(
+            Id          : "LumaBoost",
+            DisplayName : "LumaBoost by Valadore",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/Valadore/LumaBoost/archive/refs/heads/main.zip",
+            IsMinimum   : false,
+            Description : "OLED ABL compensation — dynamically lifts midtones to counteract auto brightness limiting"
+        ),
     };
 
     // ── AvailablePacks ───────────────────────────────────────────────────────────

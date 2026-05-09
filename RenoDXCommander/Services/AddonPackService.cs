@@ -361,10 +361,34 @@ public class AddonPackService : IAddonPackService
                 continue;
             }
 
-            // Use DeployFileName if the entry specifies one, otherwise use the sanitized package name
+            // Use DeployFileName if the entry specifies one, otherwise use the original
+            // filename from the download URL to preserve the addon's real name.
             var entry = _packs.FirstOrDefault(e =>
                 e.PackageName.Equals(packageName, StringComparison.OrdinalIgnoreCase));
-            var deployName = entry?.DeployFileName ?? safeName;
+            string deployName;
+            if (!string.IsNullOrEmpty(entry?.DeployFileName))
+            {
+                deployName = entry.DeployFileName;
+            }
+            else
+            {
+                // Try to extract the original filename from the download URL
+                var downloadUrl = is32Bit ? entry?.DownloadUrl32 : entry?.DownloadUrl64;
+                downloadUrl ??= entry?.DownloadUrl;
+                if (!string.IsNullOrEmpty(downloadUrl))
+                {
+                    var urlFileName = Path.GetFileNameWithoutExtension(new Uri(downloadUrl).AbsolutePath);
+                    // Strip the .addon64/.addon32 extension if doubled (e.g. "file.addon64" from URL)
+                    if (urlFileName.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
+                        || urlFileName.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase))
+                        urlFileName = Path.GetFileNameWithoutExtension(urlFileName);
+                    deployName = !string.IsNullOrEmpty(urlFileName) ? urlFileName : safeName;
+                }
+                else
+                {
+                    deployName = safeName;
+                }
+            }
 
             var destFile = Path.Combine(installPath, deployName + bitnessExt);
             try
