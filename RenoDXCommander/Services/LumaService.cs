@@ -461,6 +461,18 @@ public class LumaService : ILumaService
         }
         catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] ShaderPackService cleanup failed — {ex.Message}"); }
 
+        // Remove the Luma folder if it exists (entirely RHI-managed)
+        var lumaDir = Path.Combine(record.InstallPath, "Luma");
+        try
+        {
+            if (Directory.Exists(lumaDir))
+            {
+                Directory.Delete(lumaDir, recursive: true);
+                CrashReporter.Log($"[LumaService.Uninstall] Removed Luma folder from '{record.InstallPath}'");
+            }
+        }
+        catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] Failed to remove Luma folder — {ex.Message}"); }
+
         // Clean up empty reshade-shaders directory tree if it still exists
         var rsDir = Path.Combine(record.InstallPath, LiliumShaderService.GameReShadeShaders);
         try
