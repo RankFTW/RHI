@@ -1,3 +1,13 @@
+## v1.9.5-beta
+
+### New Features
+
+- **LumaBoost shader pack** — OLED ABL compensation shader by Valadore added to the shader picker (Extra category).
+
+### Bug Fixes
+
+- Fixed managed addons being deployed with sanitized package names instead of their original filenames. Addons now retain the filename from their download URL.
+
 ## v1.9.4
 
 ### Bug Fixes
