@@ -7,6 +7,7 @@
 ### Bug Fixes
 
 - Fixed managed addons being deployed with sanitized package names instead of their original filenames. Addons now retain the filename from their download URL.
+- Fixed Luma uninstall not removing the Luma folder from game directories.
 
 ## v1.9.4
 
