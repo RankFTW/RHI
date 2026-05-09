@@ -2113,6 +2113,9 @@ public partial class MainViewModel
         _filterViewModel.UpdateCounts();
         _filterViewModel.ApplyFilter();
 
+        // Refresh the Update All button state from cached update statuses
+        NotifyUpdateButtonChanged();
+
         // 12. Cards are ready — suppress skeleton and show game list simultaneously.
         // IsLoading must go false BEFORE MarkInitialized so the UISync handler
         // sees HasInitialized=false and calls RemoveSkeletons().
