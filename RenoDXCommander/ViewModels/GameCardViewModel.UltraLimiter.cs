@@ -13,6 +13,7 @@ public partial class GameCardViewModel
         : UlStatus == GameStatus.Installed ? "🟢" : "⚪";
 
     public string UlActionLabel => UlIsInstalling ? "Installing..."
+        : Is32Bit ? "⚠  Not supported on 32-bit"
         : !IsRsInstalled ? "⚠  ReShade required"
         : UlStatus == GameStatus.UpdateAvailable ? "⬆  Update ReLimiter"
         : UlStatus == GameStatus.Installed ? "↺  Reinstall ReLimiter"
