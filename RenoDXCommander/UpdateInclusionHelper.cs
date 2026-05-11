@@ -29,7 +29,7 @@ public static class UpdateInclusionHelper
         {
             ("RS", !viewModel.IsUpdateAllExcludedReShade(gameName)),
             ("RDX", !viewModel.IsUpdateAllExcludedRenoDx(gameName)),
-            ("UL", !viewModel.IsUpdateAllExcludedUl(gameName)),
+            ("RL", !viewModel.IsUpdateAllExcludedUl(gameName)),
             ("DC", !viewModel.IsUpdateAllExcludedDc(gameName)),
             ("OS", !viewModel.IsUpdateAllExcludedOs(gameName)),
         };
