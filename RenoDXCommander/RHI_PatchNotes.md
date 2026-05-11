@@ -9,6 +9,8 @@
 - Fixed managed addons being deployed with sanitized package names instead of their original filenames. Addons now retain the filename from their download URL.
 - Fixed Luma uninstall not removing the Luma folder from game directories.
 - Fixed "Update All" button not turning purple when updates are available from cached state (e.g. after restart within the 4-hour cooldown).
+- Fixed update inclusion summary showing "UL" instead of "RL" for ReLimiter.
+- Fixed ReLimiter row showing "ReShade required" on 32-bit games instead of "Not supported on 32-bit".
 
 ## v1.9.4
 
