@@ -17,13 +17,14 @@ RHI installs ReShade with addon support, which may trigger anti-cheat in online 
 [*] [b]8-store detection[/b] — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, and Rockstar. No manual setup needed.
 [*] [b]One-click everything[/b] — install, update, or remove ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, and Luma Framework per game.
 [*] [b]Keeps things in sync[/b] — Update All checks every component across every game. One button, done.
-[*] [b]41 shader packs[/b] — global or per-game shader selection with automatic dependency resolution.
+[*] [b]42 shader packs[/b] — global or per-game shader selection with automatic dependency resolution.
 [*] [b]Drag-and-drop[/b] — drop an .exe to add a game, drop a mod to install it, drop a preset to deploy it with auto shader install.
 [*] [b]OptiScaler built in[/b] — upscaler redirection (DLSS/FSR/XeSS) with automatic DLSS DLL downloads, ReShade coexistence, and INI management.
 [*] [b]UW Fix & Ultra+ links[/b] — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
 [*] [b]Three view modes[/b] — Detail View, Grid View, and Compact View. Pick what fits your workflow.
 [*] [b]Smart about updates[/b] — rate-limit aware, cooldown-based update checks, and cached shader packs that skip unnecessary API calls.
 [*] [b]ReShade build channels[/b] — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Per-game overrides let you mix channels across your library.
+[*] [b]Legacy ReShade[/b] — pin any game to a specific older ReShade version (6.0.0+) from the RS Channel dropdown. Available versions managed server-side.
 [*] [b]DXVK variants[/b] — choose between Development (nightly), Stable (tagged releases), and Lilium HDR (scRGB HDR output) in Settings. Per-game overrides available.
 [/list]
 
@@ -51,7 +52,7 @@ Each game's executable is scanned via PE header analysis to detect DirectX 8–1
 Every component has one-click install, update detection, and uninstall. Per-addon [b]Info[/b] buttons show game-specific notes, wiki compatibility data, or general descriptions — ReLimiter and Display Commander Info buttons also show changelogs from GitHub. Buttons with content are highlighted in blue.
 
 [size=4][b]Shader Packs & Presets[/b][/size]
-41 shader packs (Essential, Recommended, Extra) with global or per-game selection. Drag a ReShade preset .ini onto the window and RHI deploys it to a game, then offers to auto-install the required shader packs by parsing the preset's Techniques line.
+42 shader packs (Essential, Recommended, Extra) with global or per-game selection. Drag a ReShade preset .ini onto the window and RHI deploys it to a game, then offers to auto-install the required shader packs by parsing the preset's Techniques line.
 
 [size=4][b]ReShade Addon Manager[/b][/size]
 Browse and toggle curated addons from the official ReShade addon list. Enabled addons are auto-deployed when ReShade is installed and synced on every Refresh. Per-game addon overrides let you customise which addons are active per game.

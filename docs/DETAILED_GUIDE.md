@@ -271,6 +271,17 @@ Toggle back to restore addon ReShade and re-deploy addons. The setting persists 
 
 If ReShade was installed using a non-standard DLL name (e.g. `d3d11.dll`, `dinput8.dll`, `version.dll`), RHI detects it via binary signature scanning. The scan matches on `reshade.me` or `crosire` strings unique to the actual ReShade binary, and rejects files over 15 MB.
 
+### Legacy ReShade Versions
+
+Pin any game to a specific older ReShade version from the RS Channel dropdown in the Overrides panel. Select "Legacy..." to open a version picker dialog listing all available legacy versions (6.0.0 onwards).
+
+- **Available versions** are managed server-side via the manifest (`legacyReShadeAvailable`) — no app update needed when new versions release.
+- **On-demand download** — legacy versions are downloaded and cached the first time they're selected. Subsequent uses of the same version are instant.
+- **Staging** — each version is cached in `%LocalAppData%\RHI\LegacyReshade\{version}\`.
+- **Update exclusion** — games on a legacy version are automatically excluded from ReShade update checks.
+- **Manifest-forced versions** — the manifest can force specific games to a legacy version (e.g. Max Payne 3 → 6.4.1). Users can override this to Global/Stable/Nightly if desired.
+- **Addon warning** — a warning is shown when selecting legacy versions, as older ReShade versions may not support newer addon formats.
+
 ### Copy INI
 
 The Copy INI button (📋) on the ReShade row copies `reshade.ini` from the AppData INI folder to the game directory. If the game already has a `reshade.ini`, existing game-specific settings (addon configs, effect toggles, custom keybinds) are preserved — only template keys are overwritten.
@@ -537,7 +548,7 @@ The Overrides section appears below Components in the detail panel. All controls
 | Rendering Path | For dual-API games — switches between DirectX and Vulkan ReShade. |
 | Bitness override | Auto, 32-bit, or 64-bit. Overrides PE header detection. |
 | Graphics API override | Auto, DirectX8, DirectX9, DirectX10, DX11/DX12, Vulkan, OpenGL. |
-| RS Channel override | Global, Stable, or Nightly. Overrides the global ReShade build channel for this game. Vulkan games: applies to all Vulkan games. |
+| RS Channel override | Global, Stable, Nightly, or Legacy (specific version). Overrides the global ReShade build channel for this game. Vulkan games: applies to all Vulkan games. Legacy pins to a specific older version and excludes from updates. |
 | DXVK Variant override | Global, Development, Stable, or Lilium HDR. Overrides the global DXVK variant for this game. |
 | ReShade Without Addon Support | Toggle to switch from addon-enabled to standard ReShade. |
 | OptiScaler DLL name | Override the OptiScaler proxy DLL filename. |
@@ -882,6 +893,7 @@ Everything is stored under `%LOCALAPPDATA%\RHI\`:
 | `dxvk-development\` | Staged DXVK Development (nightly) DLLs. |
 | `dxvk-stable\` | Staged DXVK Stable (tagged release) DLLs. |
 | `dxvk-lilium\` | Staged DXVK Lilium HDR DLLs. |
+| `LegacyReshade\{version}\` | Cached legacy ReShade DLLs per version (on-demand). |
 | `logs\` | Session logs (timestamped) and crash reports. Max 10 logs kept on disk. |
 | `reports\` | Saved game reports from Copy Report. |
 | `nexus_games.json` | Cached Nexus Mods game catalogue (24-hour TTL). |

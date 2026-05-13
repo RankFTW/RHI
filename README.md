@@ -12,13 +12,14 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **8-store detection** — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, and Rockstar. No manual setup needed.
 - **One-click everything** — install, update, or remove ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, and Luma Framework per game.
 - **Keeps things in sync** — Update All checks every component across every game. One button, done.
-- **41 shader packs** — global or per-game shader selection with automatic dependency resolution.
+- **42 shader packs** — global or per-game shader selection with automatic dependency resolution.
 - **Drag-and-drop** — drop an .exe to add a game, drop a mod to install it, drop a preset to deploy it with auto shader install.
 - **OptiScaler built in** — upscaler redirection (DLSS/FSR/XeSS) with automatic DLSS DLL downloads, ReShade coexistence, and INI management.
 - **UW Fix & Ultra+ links** — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
 - **Three view modes** — Detail View, Grid View, and Compact View. Pick what fits your workflow.
 - **Smart about updates** — rate-limit aware, cooldown-based update checks, and cached shader packs that skip unnecessary API calls.
 - **ReShade build channels** — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Per-game overrides let you mix channels across your library.
+- **Legacy ReShade** — pin any game to a specific older ReShade version (6.0.0+) from the RS Channel dropdown. Available versions managed server-side.
 - **DXVK variants** — choose between Development (nightly), Stable (tagged releases), and Lilium HDR (scRGB HDR output) in Settings. Per-game overrides available.
 
 ## Features
@@ -46,7 +47,7 @@ Every component has one-click install, update detection, and uninstall. Per-addo
 
 ### Shader Packs & Presets
 
-41 shader packs (Essential, Recommended, Extra) with global or per-game selection. Drag a ReShade preset `.ini` onto the window and RHI deploys it to a game, then offers to auto-install the required shader packs by parsing the preset's `Techniques` line.
+42 shader packs (Essential, Recommended, Extra) with global or per-game selection. Drag a ReShade preset `.ini` onto the window and RHI deploys it to a game, then offers to auto-install the required shader packs by parsing the preset's `Techniques` line.
 
 ### ReShade Addon Manager
 
