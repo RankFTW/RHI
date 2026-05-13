@@ -385,14 +385,19 @@
     "Burnout Paradise Remastered": "DX11",
     "BurnoutPR": "DX11",
     "Doom: The Dark Ages": "VLK",
+    "Dragon Age: Inquisition": "DX11",
+    "Dragon Age™ Inquisition": "DX11",
     "Dying Light": "DX11",
     "Dying Light: The Beast": "DX12",
     "Indiana Jones and the Great Circle": "VLK",
+    "Max Payne 3": "DX11",
     "Metro 2033 Redux": "DX11",
     "Metro: Last Light Redux": "DX11",
     "Red Dead Redemption 2": "VLK",
+    "Stardew Valley": "OGL",
     "The Witcher 3: Wild Hunt": "DX12",
-    "The Witcher 3: Wild Hunt - Game of the Year Edition": "DX12"
+    "The Witcher 3: Wild Hunt - Game of the Year Edition": "DX12",
+    "Wartales": "DX11"
   },
 
   "dllNameOverrides": {
