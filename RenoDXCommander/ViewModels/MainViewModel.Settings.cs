@@ -64,14 +64,47 @@ public partial class MainViewModel
     public string? GetReShadeChannelOverride(string gameName)
         => _reShadeChannelOverrides.TryGetValue(gameName, out var value) ? value : null;
 
-    /// <summary>Sets the per-game ReShade channel override. Null removes the override (use global); "Stable" or "Nightly" sets it.</summary>
+    /// <summary>Sets the per-game ReShade channel override. Null removes the override (use global); "Stable" or "Nightly" sets it. Any other value is a legacy version string.</summary>
     public void SetReShadeChannelOverride(string gameName, string? value)
     {
+        var previousValue = _reShadeChannelOverrides.TryGetValue(gameName, out var prev) ? prev : null;
+
         if (value == null)
             _reShadeChannelOverrides.Remove(gameName);
         else
             _reShadeChannelOverrides[gameName] = value;
         SaveNameMappings();
+
+        // Auto-manage update exclusion for legacy versions
+        bool wasLegacy = IsLegacyVersion(previousValue);
+        bool isLegacy = IsLegacyVersion(value);
+
+        if (isLegacy && !wasLegacy)
+        {
+            // Entering legacy — exclude from ReShade updates
+            if (!_updateAllExcludedReShade.Contains(gameName))
+            {
+                _updateAllExcludedReShade.Add(gameName);
+                var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+                if (card != null) card.ExcludeFromUpdateAllReShade = true;
+            }
+        }
+        else if (!isLegacy && wasLegacy)
+        {
+            // Leaving legacy — re-include in ReShade updates
+            _updateAllExcludedReShade.Remove(gameName);
+            var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+            if (card != null) card.ExcludeFromUpdateAllReShade = false;
+        }
+    }
+
+    /// <summary>Returns true if the channel value is a legacy version string (not null, not "Stable", not "Nightly").</summary>
+    public static bool IsLegacyVersion(string? channel)
+    {
+        if (string.IsNullOrEmpty(channel)) return false;
+        if (string.Equals(channel, "Stable", StringComparison.OrdinalIgnoreCase)) return false;
+        if (string.Equals(channel, "Nightly", StringComparison.OrdinalIgnoreCase)) return false;
+        return true;
     }
 
     /// <summary>

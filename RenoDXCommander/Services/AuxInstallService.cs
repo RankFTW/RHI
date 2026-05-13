@@ -34,6 +34,31 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     public static string RsNightlyStagedPath64 => Path.Combine(RsNightlyStagingDir, RsStaged64);
     public static string RsNightlyStagedPath32 => Path.Combine(RsNightlyStagingDir, RsStaged32);
 
+    // Legacy ReShade staging base folder: %LocalAppData%\RHI\LegacyReshade\
+    public static readonly string RsLegacyStagingBaseDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "LegacyReshade");
+
+    /// <summary>
+    /// Returns the staged DLL path for a legacy ReShade version.
+    /// </summary>
+    public static string GetLegacyStagedPath(string version, bool use32Bit)
+    {
+        var dll = use32Bit ? RsStaged32 : RsStaged64;
+        return Path.Combine(RsLegacyStagingBaseDir, version, dll);
+    }
+
+    /// <summary>
+    /// Returns true if the given legacy version is already cached (both DLLs present and valid).
+    /// </summary>
+    public static bool IsLegacyVersionCached(string version)
+    {
+        var path64 = GetLegacyStagedPath(version, false);
+        var path32 = GetLegacyStagedPath(version, true);
+        return File.Exists(path64) && new FileInfo(path64).Length > MinReShadeSize
+            && File.Exists(path32) && new FileInfo(path32).Length > MinReShadeSize;
+    }
+
     // Normal (non-addon) ReShade staging folder: %LocalAppData%\RHI\reshade-normal\
     public static readonly string RsNormalStagingDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -68,12 +93,16 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
 
     /// <summary>
     /// Returns the correct staged DLL path for the given channel and bitness.
+    /// Handles "Stable", "Nightly", and legacy version strings (e.g. "6.4.1").
     /// </summary>
     public static string GetStagedPathForChannel(string channel, bool use32Bit)
     {
         if (string.Equals(channel, ChannelNightly, StringComparison.OrdinalIgnoreCase))
             return use32Bit ? RsNightlyStagedPath32 : RsNightlyStagedPath64;
-        return use32Bit ? RsStagedPath32 : RsStagedPath64;
+        if (string.Equals(channel, ChannelStable, StringComparison.OrdinalIgnoreCase))
+            return use32Bit ? RsStagedPath32 : RsStagedPath64;
+        // Legacy version string (e.g. "6.4.1")
+        return GetLegacyStagedPath(channel, use32Bit);
     }
 
     /// <summary>
@@ -335,6 +364,90 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     void IAuxFileService.CopyRsPresetIniIfPresent(string gameDir) => CopyRsPresetIniIfPresent(gameDir);
     string? IAuxFileService.ReadInstalledVersion(string installPath, string fileName) => ReadInstalledVersion(installPath, fileName);
     bool IAuxFileService.CheckReShadeUpdateLocal(AuxInstalledRecord record) => CheckReShadeUpdateLocal(record);
+
+    /// <summary>
+    /// Downloads and extracts a legacy ReShade version to its staging folder.
+    /// Uses the same extraction logic as ReShadeUpdateService.
+    /// Returns true on success.
+    /// </summary>
+    public static async Task<bool> DownloadLegacyReShadeAsync(string version, HttpClient http, IProgress<(string msg, double pct)>? progress = null)
+    {
+        var destDir = Path.Combine(RsLegacyStagingBaseDir, version);
+        var dest64 = Path.Combine(destDir, RsStaged64);
+        var dest32 = Path.Combine(destDir, RsStaged32);
+
+        // Already cached?
+        if (IsLegacyVersionCached(version))
+        {
+            CrashReporter.Log($"[AuxInstallService.DownloadLegacyReShadeAsync] v{version} already cached");
+            return true;
+        }
+
+        Directory.CreateDirectory(destDir);
+
+        var url = $"https://reshade.me/downloads/ReShade_Setup_{version}_Addon.exe";
+        progress?.Report(($"Downloading ReShade {version}...", 10));
+        CrashReporter.Log($"[AuxInstallService.DownloadLegacyReShadeAsync] Downloading {url}");
+
+        var tempExe = Path.Combine(destDir, $"ReShade_Setup_{version}_Addon.exe");
+        try
+        {
+            using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            using (var netStream = await response.Content.ReadAsStreamAsync())
+            using (var fileStream = File.Create(tempExe))
+                await netStream.CopyToAsync(fileStream);
+
+            progress?.Report(($"Extracting ReShade {version}...", 60));
+
+            // Extract using bundled 7z.exe (same as ReShadeUpdateService)
+            var sevenZipPath = Path.Combine(AppContext.BaseDirectory, "7z.exe");
+            var psi = new ProcessStartInfo
+            {
+                FileName = sevenZipPath,
+                Arguments = $"e \"{tempExe}\" -o\"{destDir}\" ReShade64.dll ReShade32.dll -y",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+
+            using var proc = Process.Start(psi);
+            if (proc == null)
+            {
+                CrashReporter.Log("[AuxInstallService.DownloadLegacyReShadeAsync] Failed to start 7z.exe");
+                return false;
+            }
+            await proc.WaitForExitAsync();
+
+            if (!File.Exists(dest64) || !File.Exists(dest32))
+            {
+                CrashReporter.Log($"[AuxInstallService.DownloadLegacyReShadeAsync] Extraction failed — DLLs not found after 7z");
+                return false;
+            }
+
+            // Validate sizes
+            if (new FileInfo(dest64).Length < MinReShadeSize || new FileInfo(dest32).Length < MinReShadeSize)
+            {
+                CrashReporter.Log($"[AuxInstallService.DownloadLegacyReShadeAsync] Extracted DLLs too small — invalid");
+                return false;
+            }
+
+            progress?.Report(($"ReShade {version} ready!", 100));
+            CrashReporter.Log($"[AuxInstallService.DownloadLegacyReShadeAsync] v{version} staged successfully");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.DownloadLegacyReShadeAsync] Failed — {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            if (File.Exists(tempExe)) try { File.Delete(tempExe); } catch { }
+        }
+    }
 
     /// <summary>
     /// Copies a file to a destination that may require admin privileges (e.g. C:\ProgramData\ReShade).

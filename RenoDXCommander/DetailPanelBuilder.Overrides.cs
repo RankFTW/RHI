@@ -960,7 +960,7 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(channelLabel,
             "Override the global ReShade build channel for this game.\nVulkan games: changing this affects ALL Vulkan games.");
 
-        var channelItems = new[] { "Global", "Stable", "Nightly" };
+        var channelItems = new[] { "Global", "Stable", "Nightly", "Legacy..." };
         // For Vulkan games, show the effective Vulkan-wide override (any Vulkan game's override applies to all)
         var currentChannelOverride = _window.ViewModel.GetReShadeChannelOverride(gameName);
         if (currentChannelOverride == null && card.RequiresVulkanInstall)
@@ -970,16 +970,28 @@ public partial class DetailPanelBuilder
                 .Select(c => _window.ViewModel.GetReShadeChannelOverride(c.GameName))
                 .FirstOrDefault(ch => ch != null);
         }
-        var defaultChannelSelection = currentChannelOverride switch
+
+        // If a legacy version is active, add it to the dropdown items
+        var channelItemsList = new List<string>(channelItems);
+        string defaultChannelSelection;
+        if (MainViewModel.IsLegacyVersion(currentChannelOverride))
         {
-            "Stable" => "Stable",
-            "Nightly" => "Nightly",
-            _ => "Global",
-        };
+            channelItemsList.Insert(3, currentChannelOverride!);
+            defaultChannelSelection = currentChannelOverride!;
+        }
+        else
+        {
+            defaultChannelSelection = currentChannelOverride switch
+            {
+                "Stable" => "Stable",
+                "Nightly" => "Nightly",
+                _ => "Global",
+            };
+        }
 
         var channelCombo = new ComboBox
         {
-            ItemsSource = channelItems,
+            ItemsSource = channelItemsList,
             SelectedItem = defaultChannelSelection,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -988,6 +1000,80 @@ public partial class DetailPanelBuilder
         channelCombo.SelectionChanged += async (s, ev) =>
         {
             var selected = channelCombo.SelectedItem as string;
+
+            // ── "Legacy..." opens the version picker dialog ──
+            if (selected == "Legacy...")
+            {
+                var legacyVersions = _window.ViewModel.Manifest?.LegacyReShadeAvailable;
+                if (legacyVersions == null || legacyVersions.Count == 0)
+                {
+                    channelCombo.SelectedItem = defaultChannelSelection;
+                    return;
+                }
+
+                var radioButtons = new RadioButtons { MaxColumns = 1 };
+                foreach (var ver in legacyVersions)
+                    radioButtons.Items.Add(ver);
+
+                var pickerContent = new StackPanel { Spacing = 12 };
+                pickerContent.Children.Add(new TextBlock
+                {
+                    Text = "⚠ Older ReShade versions may not support newer addons.\nThe game will be excluded from automatic ReShade updates.",
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    FontSize = 12,
+                });
+                pickerContent.Children.Add(radioButtons);
+
+                var pickerDialog = new ContentDialog
+                {
+                    Title = "Select Legacy ReShade Version",
+                    Content = new ScrollViewer { Content = pickerContent, MaxHeight = 400 },
+                    PrimaryButtonText = "Confirm",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = _window.Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                };
+
+                var pickerResult = await DialogService.ShowSafeAsync(pickerDialog);
+                if (pickerResult != ContentDialogResult.Primary || radioButtons.SelectedItem is not string pickedVersion)
+                {
+                    channelCombo.SelectedItem = defaultChannelSelection;
+                    return;
+                }
+
+                if (!AuxInstallService.IsLegacyVersionCached(pickedVersion))
+                {
+                    var success = await AuxInstallService.DownloadLegacyReShadeAsync(pickedVersion, _window.ViewModel.HttpClient);
+                    if (!success)
+                    {
+                        channelCombo.SelectedItem = defaultChannelSelection;
+                        return;
+                    }
+                }
+
+                _window.ViewModel.SetReShadeChannelOverride(capturedName, pickedVersion);
+
+                if (!channelItemsList.Contains(pickedVersion))
+                    channelItemsList.Insert(3, pickedVersion);
+                channelCombo.ItemsSource = channelItemsList;
+                channelCombo.SelectedItem = pickedVersion;
+
+                var targetCard2 = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard2 != null && targetCard2.IsRsInstalled)
+                    await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(targetCard2);
+
+                _window.ViewModel.NotifyUpdateButtonChanged();
+                return;
+            }
+
+            // ── If a legacy version is already selected and user picks it again, do nothing ──
+            if (MainViewModel.IsLegacyVersion(selected) && selected != "Legacy...")
+            {
+                return;
+            }
+
             string? channelValue = selected switch
             {
                 "Stable" => "Stable",

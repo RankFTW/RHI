@@ -323,6 +323,17 @@ public partial class MainViewModel
             // Apply remote manifest data before building cards (local user overrides take priority)
             ApplyManifest(_manifest);
 
+            // Apply manifest-driven legacy ReShade version overrides
+            // (only if user hasn't already set their own override for that game)
+            if (_manifest?.LegacyReShadeVersions != null)
+            {
+                foreach (var (gameName, version) in _manifest.LegacyReShadeVersions)
+                {
+                    if (!_reShadeChannelOverrides.ContainsKey(gameName))
+                        SetReShadeChannelOverride(gameName, version);
+                }
+            }
+
             // Merge manifest-provided author donation URLs and display names
             if (_manifest != null)
                 GameCardViewModel.MergeManifestAuthorData(_manifest.DonationUrls, _manifest.AuthorDisplayNames);
@@ -2289,6 +2300,17 @@ public partial class MainViewModel
 
             // Apply remote manifest data
             ApplyManifest(_manifest);
+
+            // Apply manifest-driven legacy ReShade version overrides
+            if (_manifest?.LegacyReShadeVersions != null)
+            {
+                foreach (var (gameName, version) in _manifest.LegacyReShadeVersions)
+                {
+                    if (!_reShadeChannelOverrides.ContainsKey(gameName))
+                        SetReShadeChannelOverride(gameName, version);
+                }
+            }
+
             if (_manifest != null)
                 GameCardViewModel.MergeManifestAuthorData(_manifest.DonationUrls, _manifest.AuthorDisplayNames);
             ApplyManifestStatusOverrides();

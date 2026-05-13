@@ -268,4 +268,19 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("dxvkApiOverrides")]
     public Dictionary<string, string>? DxvkApiOverrides { get; set; }
+
+    /// <summary>
+    /// List of legacy ReShade versions available in the per-game version picker.
+    /// Managed server-side — when a new stable releases, the old version is added here.
+    /// </summary>
+    [JsonPropertyName("legacyReShadeAvailable")]
+    public List<string>? LegacyReShadeAvailable { get; set; }
+
+    /// <summary>
+    /// Per-game forced legacy ReShade versions.
+    /// Key = game name, Value = version string (e.g. "6.4.1").
+    /// User can override to Global/Stable/Nightly.
+    /// </summary>
+    [JsonPropertyName("legacyReShadeVersions")]
+    public Dictionary<string, string>? LegacyReShadeVersions { get; set; }
 }

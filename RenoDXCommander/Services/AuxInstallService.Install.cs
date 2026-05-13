@@ -121,6 +121,12 @@ public partial class AuxInstallService
         if (record.AddonType != TypeReShade && record.AddonType != TypeReShadeNormal)
             return false;
 
+        // Legacy versions are pinned — never show update available
+        if (!string.IsNullOrEmpty(record.Channel)
+            && !string.Equals(record.Channel, ChannelStable, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(record.Channel, ChannelNightly, StringComparison.OrdinalIgnoreCase))
+            return false;
+
         var localFile = Path.Combine(record.InstallPath, record.InstalledAs);
         if (!File.Exists(localFile)) return false;
 
