@@ -93,7 +93,7 @@ public partial class AuxInstallService
 
         // Deploy reshade.ini alongside the DLL.
         if (File.Exists(RsIniPath))
-            MergeRsIni(installPath, screenshotSavePath, overlayHotkey, screenshotHotkey);
+            MergeRsIni(installPath, screenshotSavePath, overlayHotkey, screenshotHotkey, gameName);
         // Deploy ReShadePreset.ini alongside reshade.ini when the user has placed one in the inis folder.
         CopyRsPresetIniIfPresent(installPath);
 

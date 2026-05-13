@@ -9,17 +9,22 @@ public partial class AuxInstallService
     /// already in the game's INI that are not in the template are preserved untouched.
     /// If no reshade.ini exists in the game folder, the template is copied as-is.
     /// </summary>
-    public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null)
+    public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null)
     {
-        if (!File.Exists(RsIniPath))
-            throw new FileNotFoundException("reshade.ini not found in inis folder.", RsIniPath);
+        // Determine which template to use — RDR2/Max Payne 3 use a dedicated template
+        var templatePath = (gameName != null && IsRdr2(gameName) && File.Exists(RsRdr2IniPath))
+            ? RsRdr2IniPath
+            : RsIniPath;
+
+        if (!File.Exists(templatePath))
+            throw new FileNotFoundException("reshade.ini not found in inis folder.", templatePath);
 
         var gamePath = Path.Combine(gameDir, "reshade.ini");
 
         if (!File.Exists(gamePath))
         {
             // No existing INI — just copy the template
-            File.Copy(RsIniPath, gamePath, overwrite: true);
+            File.Copy(templatePath, gamePath, overwrite: true);
 
             // Apply screenshot path to the freshly copied file
             if (screenshotSavePath != null)
@@ -37,7 +42,7 @@ public partial class AuxInstallService
 
         // Parse both files
         var gameIni     = ParseIni(File.ReadAllLines(gamePath));
-        var templateIni = ParseIni(File.ReadAllLines(RsIniPath));
+        var templateIni = ParseIni(File.ReadAllLines(templatePath));
 
         // Merge: template keys overwrite, game-only keys preserved
         foreach (var (section, templateKeys) in templateIni)
@@ -141,10 +146,19 @@ public partial class AuxInstallService
             ApplyScreenshotHotkey(gamePath, screenshotHotkey);
     }
 
-    /// <summary>Returns true if the game name matches Red Dead Redemption 2 (case-insensitive).</summary>
+    /// <summary>Returns true if the game name matches Red Dead Redemption 2 or Max Payne 3 (case-insensitive).
+    /// These games use the dedicated reshade.rdr2.ini template with special depth buffer settings.</summary>
+    internal static bool UsesRdr2Template(string gameName) =>
+        gameName.Contains("Red Dead Redemption 2", StringComparison.OrdinalIgnoreCase) ||
+        gameName.Equals("RDR2", StringComparison.OrdinalIgnoreCase) ||
+        gameName.Contains("Max Payne 3", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Returns true if the game name matches Red Dead Redemption 2 or Max Payne 3 (case-insensitive).
+    /// These games use the dedicated reshade.rdr2.ini template.</summary>
     internal static bool IsRdr2(string gameName) =>
         gameName.Contains("Red Dead Redemption 2", StringComparison.OrdinalIgnoreCase) ||
-        gameName.Equals("RDR2", StringComparison.OrdinalIgnoreCase);
+        gameName.Equals("RDR2", StringComparison.OrdinalIgnoreCase) ||
+        gameName.Contains("Max Payne 3", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Copies reshade.ini from the inis folder to the given game directory (full overwrite, no merge).</summary>
     public static void CopyRsIni(string gameDir)
