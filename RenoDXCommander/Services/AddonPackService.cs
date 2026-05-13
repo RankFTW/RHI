@@ -362,7 +362,7 @@ public class AddonPackService : IAddonPackService
             }
 
             // Use DeployFileName if the entry specifies one, otherwise use the original
-            // filename from the download URL to preserve the addon's real name.
+            // filename from the zip/URL to preserve the addon's real name.
             var entry = _packs.FirstOrDefault(e =>
                 e.PackageName.Equals(packageName, StringComparison.OrdinalIgnoreCase));
             string deployName;
@@ -372,21 +372,34 @@ public class AddonPackService : IAddonPackService
             }
             else
             {
-                // Try to extract the original filename from the download URL
-                var downloadUrl = is32Bit ? entry?.DownloadUrl32 : entry?.DownloadUrl64;
-                downloadUrl ??= entry?.DownloadUrl;
-                if (!string.IsNullOrEmpty(downloadUrl))
+                // Check versions.json for original filename from zip extraction
+                var versions = LoadVersions();
+                string? originalName = null;
+                if (versions.TryGetValue(packageName, out var vInfo))
+                    originalName = is32Bit ? vInfo.OriginalName32 : vInfo.OriginalName64;
+
+                if (!string.IsNullOrEmpty(originalName))
                 {
-                    var urlFileName = Path.GetFileNameWithoutExtension(new Uri(downloadUrl).AbsolutePath);
-                    // Strip the .addon64/.addon32 extension if doubled (e.g. "file.addon64" from URL)
-                    if (urlFileName.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
-                        || urlFileName.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase))
-                        urlFileName = Path.GetFileNameWithoutExtension(urlFileName);
-                    deployName = !string.IsNullOrEmpty(urlFileName) ? urlFileName : safeName;
+                    deployName = originalName;
                 }
                 else
                 {
-                    deployName = safeName;
+                    // Fallback: try to extract the original filename from the download URL
+                    var downloadUrl = is32Bit ? entry?.DownloadUrl32 : entry?.DownloadUrl64;
+                    downloadUrl ??= entry?.DownloadUrl;
+                    if (!string.IsNullOrEmpty(downloadUrl))
+                    {
+                        var urlFileName = Path.GetFileNameWithoutExtension(new Uri(downloadUrl).AbsolutePath);
+                        // Strip the .addon64/.addon32 extension if doubled (e.g. "file.addon64" from URL)
+                        if (urlFileName.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
+                            || urlFileName.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase))
+                            urlFileName = Path.GetFileNameWithoutExtension(urlFileName);
+                        deployName = !string.IsNullOrEmpty(urlFileName) ? urlFileName : safeName;
+                    }
+                    else
+                    {
+                        deployName = safeName;
+                    }
                 }
             }
 
@@ -539,7 +552,20 @@ public class AddonPackService : IAddonPackService
                 using var fileStream = File.Create(destPath);
                 await entryStream.CopyToAsync(fileStream);
 
-                CrashReporter.Log($"[AddonPackService.DownloadAndExtractZipAsync] Extracted '{fileName}' → '{destPath}'");
+                // Store the original filename from inside the zip for deploy naming
+                var originalName = Path.GetFileNameWithoutExtension(fileName);
+                var versions = LoadVersions();
+                var packageName = _packs.FirstOrDefault(p => SanitizeFileName(p.PackageName) == safeName)?.PackageName ?? safeName;
+                if (!versions.TryGetValue(packageName, out var info))
+                    info = new AddonVersionInfo();
+                if (ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase))
+                    info.OriginalName32 = originalName;
+                else
+                    info.OriginalName64 = originalName;
+                versions[packageName] = info;
+                SaveVersions(versions);
+
+                CrashReporter.Log($"[AddonPackService.DownloadAndExtractZipAsync] Extracted '{fileName}' → '{destPath}' (originalName={originalName})");
             }
 
             progress?.Report(($"Extracted {safeName}.", pctBase + pctRange));
@@ -711,4 +737,8 @@ public class AddonVersionInfo
     public string? LastChecked { get; set; }
     public string? FileName32 { get; set; }
     public string? FileName64 { get; set; }
+    /// <summary>Original addon filename from inside the zip (without extension), used for deploy naming.</summary>
+    public string? OriginalName32 { get; set; }
+    /// <summary>Original addon filename from inside the zip (without extension), used for deploy naming.</summary>
+    public string? OriginalName64 { get; set; }
 }
