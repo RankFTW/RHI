@@ -2,15 +2,19 @@
 
 ### New Features
 
+- **Legacy ReShade Support** — Pin any game to a specific older ReShade version (6.0.0 – 6.7.2) from the RS Channel dropdown in Overrides. Select "Legacy..." to open the version picker. The chosen version is downloaded on-demand and cached for reuse. Games on legacy versions are automatically excluded from ReShade update checks. The available version list is managed server-side via the manifest — no app update needed when new versions release.
 - **LumaBoost shader pack** — OLED ABL compensation shader by Valadore added to the shader picker (Extra category).
 
 ### Bug Fixes
 
-- Fixed managed addons being deployed with sanitized package names instead of their original filenames. Addons now retain the filename from their download URL.
+- Fixed managed addons being deployed with sanitized package names instead of their original filenames. Addons now retain the filename from their download URL (zip-extracted names preserved via versions.json backfill).
 - Fixed Luma uninstall not removing the Luma folder from game directories.
 - Fixed "Update All" button not turning purple when updates are available from cached state (e.g. after restart within the 4-hour cooldown).
 - Fixed update inclusion summary showing "UL" instead of "RL" for ReLimiter.
-- Fixed ReLimiter row showing "ReShade required" on 32-bit games instead of "Not supported on 32-bit".make a steering file with all the knowledge we've ever aquired on this project and best conventions
+- Fixed ReLimiter row showing "ReShade required" on 32-bit games instead of "Not supported on 32-bit".
+- Fixed addon stale removal not recognising URL-derived or original filenames, causing addons to persist when switching from per-game to global.
+- Fixed concurrent addon downloads causing file lock contention on startup.
+- Fixed "Collection was modified" error in DeployAllAddons when rapidly toggling global addons.
 
 ## v1.9.4
 
