@@ -373,9 +373,9 @@ public class AddonPackService : IAddonPackService
             else
             {
                 // Check versions.json for original filename from zip extraction
-                var versions = LoadVersions();
+                var versionData = LoadVersions();
                 string? originalName = null;
-                if (versions.TryGetValue(packageName, out var vInfo))
+                if (versionData.TryGetValue(packageName, out var vInfo))
                     originalName = is32Bit ? vInfo.OriginalName32 : vInfo.OriginalName64;
 
                 if (!string.IsNullOrEmpty(originalName))
@@ -385,9 +385,11 @@ public class AddonPackService : IAddonPackService
                 else
                 {
                     // Fallback: try to extract the original filename from the download URL
+                    // Only use URL filename for direct addon downloads, not for zip archives
                     var downloadUrl = is32Bit ? entry?.DownloadUrl32 : entry?.DownloadUrl64;
                     downloadUrl ??= entry?.DownloadUrl;
-                    if (!string.IsNullOrEmpty(downloadUrl))
+                    if (!string.IsNullOrEmpty(downloadUrl)
+                        && !downloadUrl.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                     {
                         var urlFileName = Path.GetFileNameWithoutExtension(new Uri(downloadUrl).AbsolutePath);
                         // Strip the .addon64/.addon32 extension if doubled (e.g. "file.addon64" from URL)
@@ -418,17 +420,45 @@ public class AddonPackService : IAddonPackService
 
         // 5. Remove stale addon files — only remove files that RHI's addon manager could have deployed.
         // Build the set of all known addon filenames from the available packs list.
+        // Include all possible naming variants: sanitized name, DeployFileName, URL-derived name, and OriginalName.
         var knownAddonFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var versions = LoadVersions();
         foreach (var pack in _packs)
         {
             var sn = SanitizeFileName(pack.PackageName);
             knownAddonFileNames.Add(sn + ".addon32");
             knownAddonFileNames.Add(sn + ".addon64");
-            // Also track DeployFileName variants so they aren't removed as stale
+            // DeployFileName variants
             if (!string.IsNullOrEmpty(pack.DeployFileName))
             {
                 knownAddonFileNames.Add(pack.DeployFileName + ".addon32");
                 knownAddonFileNames.Add(pack.DeployFileName + ".addon64");
+            }
+            // URL-derived filename variants
+            foreach (var url in new[] { pack.DownloadUrl, pack.DownloadUrl32, pack.DownloadUrl64 })
+            {
+                if (string.IsNullOrEmpty(url)) continue;
+                try
+                {
+                    var urlFile = Path.GetFileNameWithoutExtension(new Uri(url).AbsolutePath);
+                    if (urlFile.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
+                        || urlFile.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase))
+                        urlFile = Path.GetFileNameWithoutExtension(urlFile);
+                    if (!string.IsNullOrEmpty(urlFile))
+                    {
+                        knownAddonFileNames.Add(urlFile + ".addon32");
+                        knownAddonFileNames.Add(urlFile + ".addon64");
+                    }
+                }
+                catch { }
+            }
+            // OriginalName variants from versions.json
+            if (versions.TryGetValue(pack.PackageName, out var vInfo))
+            {
+                if (!string.IsNullOrEmpty(vInfo.OriginalName32))
+                    knownAddonFileNames.Add(vInfo.OriginalName32 + ".addon32");
+                if (!string.IsNullOrEmpty(vInfo.OriginalName64))
+                    knownAddonFileNames.Add(vInfo.OriginalName64 + ".addon64");
             }
         }
 
