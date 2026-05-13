@@ -21,10 +21,13 @@
 - Added Avatar: Frontiers of Pandora (AFOP) — wiki match, Nexus, PCGW links.
 - Added Assassin's Creed — DX10 API override, 32-bit bitness, author corrected to Musa.
 - Added GreedFall: The Dying World — external Nexus link, author RankFTW.
-- Added Max Payne 3 — external Nexus link, ReShade 6.4.1 forced via legacy, game notes for both RenoDX and ReShade Info buttons.
+- Added Max Payne 3 — external Nexus link, ReShade 6.4.1 forced via legacy, game notes for both RenoDX and ReShade Info buttons, DX11 API override.
 - Added Call of Duty: Black Ops III (non-® variant) to Luma default games.
 - Until Dawn™ — removed from native HDR games, updated note with HDR + upgrade path instructions.
-- Added empty placeholders for all per-component Info button fields (reshadeGameInfo, reframeworkGameInfo, relimiterGameInfo, displayCommanderGameInfo, optiScalerGameInfo, lumaGameInfo).
+- Added Dragon Age: Inquisition — DX11 API override.
+- Added Stardew Valley — OpenGL API override.
+- Added Wartales — DX11 API override.
+- Added empty placeholders for all per-component Info button fields.
 
 ## v1.9.4
 
