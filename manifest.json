@@ -511,7 +511,7 @@
       "notesUrlLabel": "Engine.ini"
     },
     "Max Payne 3": {
-      "notes": "⚠️ The RenoDX mod for Max Payne 3 requires a separate Nexus mod to function. Download and follow the instructions on the Nexus page.\n\nReShade 6.4.1 is required for RenoDX compatibility and has been automatically set in Overrides. If you want to use a newer ReShade version, change the RS Channel in Overrides.",
+      "notes": "⚠️ The RenoDX mod for Max Payne 3 requires a separate Nexus mod to function. Download and follow the instructions on the Nexus page.",
       "notesUrl": "https://www.nexusmods.com/maxpayne3/mods/218",
       "notesUrlLabel": "Max Payne 3 RenoDX Nexus Mod"
     },
@@ -710,6 +710,21 @@
       "notesUrl": null,
       "notesUrlLabel": null
     }
+  },
+
+  "reframeworkGameInfo": {
+  },
+
+  "relimiterGameInfo": {
+  },
+
+  "displayCommanderGameInfo": {
+  },
+
+  "optiScalerGameInfo": {
+  },
+
+  "lumaGameInfo": {
   },
 
   "legacyReShadeAvailable": [
