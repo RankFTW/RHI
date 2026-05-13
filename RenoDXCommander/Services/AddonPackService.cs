@@ -735,12 +735,17 @@ public class AddonPackService : IAddonPackService
         var has32 = File.Exists(Path.Combine(StagingDir, safeName + ".addon32"));
         var has64 = File.Exists(Path.Combine(StagingDir, safeName + ".addon64"));
 
+        // Preserve OriginalName values if they were set during zip extraction
+        var existing = versions.TryGetValue(packageName, out var prev) ? prev : null;
+
         versions[packageName] = new AddonVersionInfo
         {
             Version = version,
             LastChecked = DateTime.UtcNow.ToString("O"),
             FileName32 = has32 ? safeName + ".addon32" : null,
-            FileName64 = has64 ? safeName + ".addon64" : null
+            FileName64 = has64 ? safeName + ".addon64" : null,
+            OriginalName32 = existing?.OriginalName32,
+            OriginalName64 = existing?.OriginalName64
         };
 
         SaveVersions(versions);
