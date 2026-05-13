@@ -881,11 +881,14 @@ public class OverridesFlyoutBuilder
                 // Set the override and reinstall
                 ViewModel.SetReShadeChannelOverride(capturedName, pickedVersion);
 
-                // Add the version to the dropdown and select it
+                // Update dropdown: remove old legacy version, add new one
+                var oldLegacy = channelItemsList.FirstOrDefault(v => MainViewModel.IsLegacyVersion(v) && v != "Legacy...");
+                if (oldLegacy != null) channelItemsList.Remove(oldLegacy);
                 if (!channelItemsList.Contains(pickedVersion))
                     channelItemsList.Insert(3, pickedVersion);
                 channelCombo.ItemsSource = channelItemsList;
                 channelCombo.SelectedItem = pickedVersion;
+                defaultChannelSelection = pickedVersion;
 
                 var targetCard2 = ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
