@@ -26,6 +26,10 @@ public partial class AuxInstallService
             // No existing INI — just copy the template
             File.Copy(templatePath, gamePath, overwrite: true);
 
+            // Strip Vulkan-only PreprocessorDefinitions when deploying RDR2 template to DX games
+            if (templatePath == RsRdr2IniPath)
+                StripPreprocessorDefinitions(gamePath);
+
             // Apply screenshot path to the freshly copied file
             if (screenshotSavePath != null)
                 ApplyScreenshotPath(gamePath, screenshotSavePath);
@@ -62,6 +66,10 @@ public partial class AuxInstallService
 
         // Write merged INI back
         WriteIni(gamePath, gameIni);
+
+        // Strip Vulkan-only PreprocessorDefinitions when deploying RDR2 template to DX games
+        if (templatePath == RsRdr2IniPath)
+            StripPreprocessorDefinitions(gamePath);
 
         // Apply screenshot path after merge
         if (screenshotSavePath != null)
@@ -267,6 +275,29 @@ public partial class AuxInstallService
     }
 
     // ── Screenshot path application ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Removes the PreprocessorDefinitions line from a reshade.ini file.
+    /// This line contains Vulkan-specific depth buffer settings that should not be
+    /// present when deploying the RDR2 template to DX games.
+    /// </summary>
+    private static void StripPreprocessorDefinitions(string iniFilePath)
+    {
+        try
+        {
+            var lines = File.ReadAllLines(iniFilePath);
+            var filtered = lines.Where(l => !l.TrimStart().StartsWith("PreprocessorDefinitions=", StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (filtered.Length != lines.Length)
+            {
+                File.WriteAllLines(iniFilePath, filtered);
+                CrashReporter.Log("[AuxInstallService.StripPreprocessorDefinitions] Removed Vulkan-only PreprocessorDefinitions from DX deployment");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.StripPreprocessorDefinitions] Failed — {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// Writes or updates the [SCREENSHOT] section in the given reshade.ini file,
