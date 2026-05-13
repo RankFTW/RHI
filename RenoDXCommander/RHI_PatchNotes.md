@@ -16,6 +16,16 @@
 - Fixed concurrent addon downloads causing file lock contention on startup.
 - Fixed "Collection was modified" error in DeployAllAddons when rapidly toggling global addons.
 
+### Manifest Updates
+
+- Added Avatar: Frontiers of Pandora (AFOP) — wiki match, Nexus, PCGW links.
+- Added Assassin's Creed — DX10 API override, 32-bit bitness, author corrected to Musa.
+- Added GreedFall: The Dying World — external Nexus link, author RankFTW.
+- Added Max Payne 3 — external Nexus link, ReShade 6.4.1 forced via legacy, game notes for both RenoDX and ReShade Info buttons.
+- Added Call of Duty: Black Ops III (non-® variant) to Luma default games.
+- Until Dawn™ — removed from native HDR games, updated note with HDR + upgrade path instructions.
+- Added empty placeholders for all per-component Info button fields (reshadeGameInfo, reframeworkGameInfo, relimiterGameInfo, displayCommanderGameInfo, optiScalerGameInfo, lumaGameInfo).
+
 ## v1.9.4
 
 ### Bug Fixes
