@@ -304,7 +304,22 @@ public class AddonPackService : IAddonPackService
 
                 if (string.Equals(remoteVersion, storedVersion, StringComparison.Ordinal))
                 {
-                    CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] '{entry.PackageName}' is up to date (version: {storedVersion}).");
+                    // Check if OriginalName is missing — if so, re-download to capture it
+                    var needsNameBackfill = info != null
+                        && string.IsNullOrEmpty(info.OriginalName64)
+                        && string.IsNullOrEmpty(info.OriginalName32)
+                        && (versionUrl.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+                            || versionUrl.Contains(".zip", StringComparison.OrdinalIgnoreCase));
+
+                    if (needsNameBackfill)
+                    {
+                        CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] '{entry.PackageName}' is current but missing OriginalName — re-downloading to capture filename.");
+                        await DownloadAddonAsync(entry, versionOverride: storedVersion);
+                    }
+                    else
+                    {
+                        CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] '{entry.PackageName}' is up to date (version: {storedVersion}).");
+                    }
                     continue;
                 }
 
