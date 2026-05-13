@@ -704,6 +704,14 @@
   "dxvkApiOverrides": {
   },
 
+  "reshadeGameInfo": {
+    "Max Payne 3": {
+      "notes": "⚠️ ReShade 6.4.1 is required for RenoDX compatibility with this game. This has been automatically set in Overrides (RS Channel).\n\nIf you want to use a newer ReShade version, change the RS Channel in the Overrides panel — but RenoDX may not work correctly.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    }
+  },
+
   "legacyReShadeAvailable": [
     "6.7.2", "6.7.1", "6.7.0",
     "6.6.2", "6.6.1", "6.6.0",
