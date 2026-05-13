@@ -26,6 +26,7 @@ public class AddonPackService : IAddonPackService
 
     private readonly HttpClient _http;
     private List<AddonEntry> _packs = new();
+    private readonly SemaphoreSlim _downloadLock = new(1, 1);
 
     // RenoDX DevKit addon — injected alongside Addons.ini entries
     private static readonly AddonEntry RenoDxDevKitEntry = new(
@@ -120,6 +121,9 @@ public class AddonPackService : IAddonPackService
     /// <inheritdoc />
     public async Task EnsureLatestAsync()
     {
+        await _downloadLock.WaitAsync();
+        try
+        {
         List<AddonEntry>? parsed = null;
 
         try
@@ -175,6 +179,8 @@ public class AddonPackService : IAddonPackService
 
         _packs = parsed;
         CrashReporter.Log($"[AddonPackService.EnsureLatestAsync] Loaded {_packs.Count} addon entries.");
+        }
+        finally { _downloadLock.Release(); }
     }
 
     // ── Stub methods (implemented in subsequent tasks) ────────────────────────────
@@ -314,7 +320,9 @@ public class AddonPackService : IAddonPackService
                     if (needsNameBackfill)
                     {
                         CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] '{entry.PackageName}' is current but missing OriginalName — re-downloading to capture filename.");
-                        await DownloadAddonAsync(entry, versionOverride: storedVersion);
+                        await _downloadLock.WaitAsync();
+                        try { await DownloadAddonAsync(entry, versionOverride: storedVersion); }
+                        finally { _downloadLock.Release(); }
                     }
                     else
                     {
@@ -324,7 +332,9 @@ public class AddonPackService : IAddonPackService
                 }
 
                 CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] Update available for '{entry.PackageName}': {storedVersion} → {remoteVersion}. Downloading...");
-                await DownloadAddonAsync(entry, versionOverride: remoteVersion);
+                await _downloadLock.WaitAsync();
+                try { await DownloadAddonAsync(entry, versionOverride: remoteVersion); }
+                finally { _downloadLock.Release(); }
                 CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] '{entry.PackageName}' updated to {remoteVersion}.");
             }
             catch (Exception ex)

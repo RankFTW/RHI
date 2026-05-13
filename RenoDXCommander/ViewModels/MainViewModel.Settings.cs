@@ -343,7 +343,8 @@ public partial class MainViewModel
         {
             try
             {
-                foreach (var card in _allCards)
+                var cards = _allCards.ToList(); // Snapshot to avoid collection modification during enumeration
+                foreach (var card in cards)
                 {
                     if (string.IsNullOrEmpty(card.InstallPath)) continue;
 
