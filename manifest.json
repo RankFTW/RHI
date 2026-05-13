@@ -510,6 +510,11 @@
       "notesUrl": "https://github.com/RankFTW/rdxc-manifest/releases/download/Engine.ini/Engine.ini",
       "notesUrlLabel": "Engine.ini"
     },
+    "Max Payne 3": {
+      "notes": "⚠️ The RenoDX mod for Max Payne 3 requires a separate Nexus mod to function. Download and follow the instructions on the Nexus page.\n\nReShade 6.4.1 is required for RenoDX compatibility and has been automatically set in Overrides. If you want to use a newer ReShade version, change the RS Channel in Overrides.",
+      "notesUrl": "https://www.nexusmods.com/maxpayne3/mods/218",
+      "notesUrlLabel": "Max Payne 3 RenoDX Nexus Mod"
+    },
     "Monster Hunter Wilds": {
       "notes": "⚠️ You must download REFramework in order to use ReShade and RenoDX in this title.\n",
       "notesUrl": "https://github.com/praydog/REFramework-nightly/releases",
@@ -605,6 +610,10 @@
     },
     "GreedFall: The Dying World": {
       "url": "https://www.nexusmods.com/greedfallthedyingworld/mods/8",
+      "label": "Get on Nexus"
+    },
+    "Max Payne 3": {
+      "url": "https://www.nexusmods.com/maxpayne3/mods/218",
       "label": "Get on Nexus"
     }
   },
