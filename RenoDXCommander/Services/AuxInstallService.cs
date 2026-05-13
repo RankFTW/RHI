@@ -49,6 +49,16 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     }
 
     /// <summary>
+    /// Returns true if the channel value is a legacy version string (not null, not "Stable", not "Nightly").
+    /// </summary>
+    public static bool IsLegacyVersion(string? channel)
+    {
+        if (string.IsNullOrEmpty(channel)) return false;
+        return !string.Equals(channel, ChannelStable, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(channel, ChannelNightly, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Returns true if the given legacy version is already cached (both DLLs present and valid).
     /// </summary>
     public static bool IsLegacyVersionCached(string version)

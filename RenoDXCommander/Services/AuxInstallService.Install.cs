@@ -68,6 +68,16 @@ public partial class AuxInstallService
         var rsStagedPath = useNormalReShade
             ? (use32Bit ? RsNormalStagedPath32 : RsNormalStagedPath64)
             : GetStagedPathForChannel(effectiveChannel, use32Bit);
+
+        // If this is a legacy version and not cached, download it on-demand
+        if (!File.Exists(rsStagedPath) && !useNormalReShade && IsLegacyVersion(effectiveChannel))
+        {
+            progress?.Report(($"Downloading ReShade {effectiveChannel}...", 15));
+            var downloaded = await DownloadLegacyReShadeAsync(effectiveChannel, _http, progress);
+            if (downloaded)
+                rsStagedPath = GetStagedPathForChannel(effectiveChannel, use32Bit);
+        }
+
         if (!File.Exists(rsStagedPath))
             throw new FileNotFoundException(
                 $"ReShade DLLs not found in staging directory.\n" +
