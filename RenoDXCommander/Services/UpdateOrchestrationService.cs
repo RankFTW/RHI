@@ -35,11 +35,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
     /// <summary>
     /// Returns the set of cards eligible for batch update operations.
-    /// Eligibility: card must not be hidden, not excluded from Update All,
-    /// not using DLL overrides, and must have a valid install path.
+    /// Eligibility: card must not be hidden and must have a valid install path.
+    /// DLL override games ARE eligible — the update methods resolve custom filenames.
     /// </summary>
     public IEnumerable<GameCardViewModel> UpdateAllEligible(IReadOnlyList<GameCardViewModel> allCards) =>
-        allCards.Where(c => !c.IsHidden && !c.DllOverrideEnabled
+        allCards.Where(c => !c.IsHidden
                           && !string.IsNullOrEmpty(c.InstallPath)
                           && Directory.Exists(c.InstallPath));
 

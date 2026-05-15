@@ -3,6 +3,7 @@
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 
 namespace RenoDXCommander;
@@ -97,6 +98,14 @@ public static class UpdateInclusionHelper
 
         button.Click += async (s, ev) =>
         {
+            // Resolve XamlRoot at click time — the build-time value may be null
+            // if the panel was constructed before the window fully loaded.
+            var effectiveRoot = xamlRoot ?? (s as FrameworkElement)?.XamlRoot;
+            if (effectiveRoot == null)
+            {
+                CrashReporter.Log("[UpdateInclusionHelper] Cannot show dialog — XamlRoot is null");
+                return;
+            }
             var rsCheck = new CheckBox { Content = "ReShade", IsChecked = !viewModel.IsUpdateAllExcludedReShade(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
             var rdxCheck = new CheckBox { Content = "RenoDX", IsChecked = !viewModel.IsUpdateAllExcludedRenoDx(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
             var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !viewModel.IsUpdateAllExcludedUl(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
@@ -125,7 +134,7 @@ public static class UpdateInclusionHelper
                 Content = checkPanel,
                 PrimaryButtonText = "Save",
                 CloseButtonText = "Cancel",
-                XamlRoot = xamlRoot,
+                XamlRoot = effectiveRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
 

@@ -229,7 +229,13 @@ public sealed partial class MainWindow : Window
             // Bring window to front
             NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
 
-            await _dragDropHandler.ProcessDroppedAddon(filePath);
+            // Delete source after install only if the file is in the addon watch folder
+            var watchFolder = _addonFileWatcher.CurrentWatchPath;
+            var fileDir = Path.GetDirectoryName(filePath);
+            bool shouldDelete = !string.IsNullOrEmpty(watchFolder) && !string.IsNullOrEmpty(fileDir)
+                && string.Equals(Path.GetFullPath(fileDir), Path.GetFullPath(watchFolder), StringComparison.OrdinalIgnoreCase);
+
+            await _dragDropHandler.ProcessDroppedAddon(filePath, deleteSourceAfterInstall: shouldDelete);
         }
         catch (Exception ex)
         {
@@ -249,6 +255,26 @@ public sealed partial class MainWindow : Window
             NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
 
             await _dragDropHandler.ProcessDroppedArchive(filePath);
+
+            // Delete source archive from watch folder after successful processing
+            var watchFolder = _addonFileWatcher.CurrentWatchPath;
+            var fileDir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(watchFolder) && !string.IsNullOrEmpty(fileDir)
+                && string.Equals(Path.GetFullPath(fileDir), Path.GetFullPath(watchFolder), StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                        _crashReporter.Log($"[MainWindow.HandleArchiveFile] Deleted source archive '{Path.GetFileName(filePath)}' from watch folder");
+                    }
+                }
+                catch (Exception delEx)
+                {
+                    _crashReporter.Log($"[MainWindow.HandleArchiveFile] Failed to delete source archive — {delEx.Message}");
+                }
+            }
         }
         catch (Exception ex)
         {

@@ -423,7 +423,7 @@ public partial class MainViewModel
 
     public bool AnyUpdateAvailable =>
         _allCards.Any(c =>
-            !c.IsHidden && !c.DllOverrideEnabled
+            !c.IsHidden
             && !string.IsNullOrEmpty(c.InstallPath)
             && Directory.Exists(c.InstallPath)
             && ((c.Status   == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRenoDx) ||

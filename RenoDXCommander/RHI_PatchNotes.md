@@ -1,3 +1,19 @@
+## v1.9.6-beta
+
+### New Features
+
+- **Auto-delete downloaded addons** — When the addon file watcher detects and installs an addon from the watch folder (Downloads by default), the source file is automatically deleted after successful installation. Keeps your Downloads folder clean.
+
+### Bug Fixes
+
+- Fixed "Update All" skipping games with DLL overrides enabled (e.g. Neverness To Everness). Games with custom DLL filenames are now correctly included in batch updates.
+- Fixed "Update Inclusion" button not opening the dialog on some systems (XamlRoot null at build time, now resolved at click time).
+
+### Manifest Updates
+
+- Until Dawn™ — moved from UE-Extended to native HDR games.
+- Batman™: Arkham Knight — added PCGW URL override (AppID redirect not working).
+
 ## v1.9.5
 
 ### New Features

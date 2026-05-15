@@ -159,7 +159,7 @@ public partial class DragDropHandler
     /// Handles a dropped .addon64/.addon32 file — prompts the user to pick a game
     /// and installs the addon to that game's folder after confirmation.
     /// </summary>
-    public async Task ProcessDroppedAddon(string addonPath)
+    public async Task ProcessDroppedAddon(string addonPath, bool deleteSourceAfterInstall = false)
     {
         var addonFileName = Path.GetFileName(addonPath);
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Received '{addonFileName}'");
@@ -364,6 +364,20 @@ public partial class DragDropHandler
             targetCard.RdxInstalledVersion = AuxInstallService.ReadInstalledVersion(addonDeployPath, addonFileName);
             targetCard.NotifyAll();
             _window.ViewModel.SaveLibraryPublic();
+
+            // Delete the source file from Downloads if requested (file watcher flow)
+            if (deleteSourceAfterInstall)
+            {
+                try
+                {
+                    File.Delete(addonPath);
+                    _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Deleted source file '{addonFileName}' from watch folder");
+                }
+                catch (Exception delEx)
+                {
+                    _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Failed to delete source file — {delEx.Message}");
+                }
+            }
 
             var successDialog = new ContentDialog
             {

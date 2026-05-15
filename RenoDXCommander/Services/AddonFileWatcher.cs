@@ -12,6 +12,9 @@ public sealed class AddonFileWatcher : IDisposable
     private readonly ICrashReporter _crashReporter;
     private string _watchPath;
 
+    /// <summary>The current folder being watched for addon files.</summary>
+    public string CurrentWatchPath => _watchPath;
+
     /// <summary>
     /// Tracks recently processed file paths to prevent duplicate installs.
     /// Browser downloads trigger both Created and Renamed events for the same file.
