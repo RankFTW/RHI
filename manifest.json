@@ -400,6 +400,10 @@
     "Wartales": "DX11"
   },
 
+  "pcgwUrlOverrides": {
+    "Batman™: Arkham Knight": "https://www.pcgamingwiki.com/wiki/Batman:_Arkham_Knight"
+  },
+
   "dllNameOverrides": {
     "Aliens: Dark Descent": { "reshade": "dxgi.dll", "dc": "" },
     "Borderlands: The Pre-Sequel": { "reshade": "d3d9.dll", "dc": "" },
