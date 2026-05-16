@@ -400,11 +400,6 @@
     "Wartales": "DX11"
   },
 
-  "pcgwUrlOverrides": {
-    "Batman™: Arkham Knight": "https://www.pcgamingwiki.com/wiki/Batman:_Arkham_Knight",
-    "Forza Horizon 6": "https://www.pcgamingwiki.com/wiki/Forza_Horizon_6"
-  },
-
   "dllNameOverrides": {
     "Aliens: Dark Descent": { "reshade": "dxgi.dll", "dc": "" },
     "Borderlands: The Pre-Sequel": { "reshade": "d3d9.dll", "dc": "" },
@@ -676,7 +671,9 @@
   "pcgwUrlOverrides": {
     "AFOP": "https://www.pcgamingwiki.com/wiki/Avatar:_Frontiers_of_Pandora",
     "Alan Wake 2": "https://www.pcgamingwiki.com/wiki/Alan_Wake_2",
+    "Batman™: Arkham Knight": "https://www.pcgamingwiki.com/wiki/Batman:_Arkham_Knight",
     "Fortnite": "https://www.pcgamingwiki.com/wiki/Fortnite",
+    "Forza Horizon 6": "https://www.pcgamingwiki.com/wiki/Forza_Horizon_6",
     "The Sinking City Remastered": "https://www.pcgamingwiki.com/wiki/The_Sinking_City_Remastered"
   },
 
