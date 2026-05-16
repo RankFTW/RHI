@@ -401,7 +401,8 @@
   },
 
   "pcgwUrlOverrides": {
-    "Batman™: Arkham Knight": "https://www.pcgamingwiki.com/wiki/Batman:_Arkham_Knight"
+    "Batman™: Arkham Knight": "https://www.pcgamingwiki.com/wiki/Batman:_Arkham_Knight",
+    "Forza Horizon 6": "https://www.pcgamingwiki.com/wiki/Forza_Horizon_6"
   },
 
   "dllNameOverrides": {
