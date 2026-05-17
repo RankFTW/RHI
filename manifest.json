@@ -188,6 +188,7 @@
     "DRAGON QUEST® XI S: Echoes of an Elusive Age™ - Definitive Edition": "Dragon Quest XI (Original & DE)",
     "Dying Light": "Dying Light",
     "ELDEN RING": "Elden Ring",
+    "ELDEN RING NIGHTREIGN": "Elden Ring: Nightreign",
     "EVERSPACE™ 2": "EVERSPACE 2",
     "Far Cry 2": "Far Cry 2 (dx10) · Far Cry 3 (dx11)",
     "Far Cry 3": "Far Cry 2 (dx10) · Far Cry 3 (dx11)",
@@ -621,6 +622,10 @@
     },
     "Elden Ring": {
       "url": "https://www.nexusmods.com/eldenring/mods/8163",
+      "label": "Get on Nexus"
+    },
+    "Elden Ring: Nightreign": {
+      "url": "https://www.nexusmods.com/eldenringnightreign/mods/48",
       "label": "Get on Nexus"
     },
     "GreedFall: The Dying World": {

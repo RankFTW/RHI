@@ -22,6 +22,7 @@
 - Forza Horizon 6 — added PCGW URL override.
 - Blacklisted DLC/skin entries: Forza Horizon 5 DLCs, Arkham Knight skins, SkinBatmanInc, SkinBatmanNoel, New 52 Skins Pack.
 - Stellar Blade — added Unreal Engine override (was not auto-detected).
+- Elden Ring: Nightreign — redirected to Nexus Mods download.
 
 ## v1.9.5
 
