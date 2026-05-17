@@ -39,6 +39,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IDxvkService _dxvkService;
     private readonly IOptiScalerWikiService _optiScalerWikiService;
     private readonly IHdrDatabaseService _hdrDatabaseService;
+    private readonly INexusUpdateService _nexusUpdateService;
     private readonly GitHubETagCache _etagCache;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
@@ -473,6 +474,7 @@ public partial class MainViewModel : ObservableObject
         IDxvkService dxvkService,
         IOptiScalerWikiService optiScalerWikiService,
         IHdrDatabaseService hdrDatabaseService,
+        INexusUpdateService nexusUpdateService,
         GitHubETagCache etagCache)
     {
         _http = http;
@@ -506,6 +508,7 @@ public partial class MainViewModel : ObservableObject
         _dxvkService = dxvkService;
         _optiScalerWikiService = optiScalerWikiService;
         _hdrDatabaseService = hdrDatabaseService;
+        _nexusUpdateService = nexusUpdateService;
         _etagCache = etagCache;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();
@@ -541,6 +544,7 @@ public partial class MainViewModel : ObservableObject
         // Subscribe to installer events — on install we'll perform a full refresh
         LoadNameMappings();
         LoadThemeAndDensity();
+        _nexusUpdateService.LoadBaselines();
     }
 
     // --- persisted settings: delegated to GameNameService ---

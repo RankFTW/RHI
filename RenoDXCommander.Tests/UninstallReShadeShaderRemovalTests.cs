@@ -80,6 +80,7 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
             new StubDxvkService(),
             new StubOptiScalerWikiService(),
             new StubHdrDatabaseService(),
+            new StubNexusUpdateService(),
             new GitHubETagCache());
 
         // Inject cards via reflection

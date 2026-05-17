@@ -243,4 +243,37 @@ internal static class NativeInterop
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    // ── Win32 Open File Dialog (fallback for WinRT FileOpenPicker COM failures) ──
+
+    [DllImport("comdlg32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    internal static extern bool GetOpenFileName(ref OpenFileName ofn);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct OpenFileName
+    {
+        public int structSize;
+        public IntPtr hwndOwner;
+        public IntPtr hInstance;
+        public string filter;
+        public string customFilter;
+        public int maxCustFilter;
+        public int filterIndex;
+        public string file;
+        public int maxFile;
+        public string fileTitle;
+        public int maxFileTitle;
+        public string initialDir;
+        public string title;
+        public int flags;
+        public short fileOffset;
+        public short fileExtension;
+        public string defExt;
+        public IntPtr custData;
+        public IntPtr hook;
+        public string templateName;
+        public IntPtr reservedPtr;
+        public int reservedInt;
+        public int flagsEx;
+    }
 }

@@ -24,6 +24,10 @@ public class AddonPackService : IAddonPackService
     private static readonly string VersionsJsonPath =
         Path.Combine(StagingDir, "versions.json");
 
+    private static readonly string DeploymentsJsonPath =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "addon_deployments.json");
+
     private readonly HttpClient _http;
     private List<AddonEntry> _packs = new();
     private readonly SemaphoreSlim _downloadLock = new(1, 1);
@@ -443,50 +447,18 @@ public class AddonPackService : IAddonPackService
             }
         }
 
-        // 5. Remove stale addon files — only remove files that RHI's addon manager could have deployed.
-        // Build the set of all known addon filenames from the available packs list.
-        // Include all possible naming variants: sanitized name, DeployFileName, URL-derived name, and OriginalName.
-        var knownAddonFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var versions = LoadVersions();
-        foreach (var pack in _packs)
+        // Record deployed files in the tracker
+        var deployments = LoadDeployments();
+        if (!deployments.TryGetValue(installPath, out var trackedFiles))
         {
-            var sn = SanitizeFileName(pack.PackageName);
-            knownAddonFileNames.Add(sn + ".addon32");
-            knownAddonFileNames.Add(sn + ".addon64");
-            // DeployFileName variants
-            if (!string.IsNullOrEmpty(pack.DeployFileName))
-            {
-                knownAddonFileNames.Add(pack.DeployFileName + ".addon32");
-                knownAddonFileNames.Add(pack.DeployFileName + ".addon64");
-            }
-            // URL-derived filename variants
-            foreach (var url in new[] { pack.DownloadUrl, pack.DownloadUrl32, pack.DownloadUrl64 })
-            {
-                if (string.IsNullOrEmpty(url)) continue;
-                try
-                {
-                    var urlFile = Path.GetFileNameWithoutExtension(new Uri(url).AbsolutePath);
-                    if (urlFile.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
-                        || urlFile.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase))
-                        urlFile = Path.GetFileNameWithoutExtension(urlFile);
-                    if (!string.IsNullOrEmpty(urlFile))
-                    {
-                        knownAddonFileNames.Add(urlFile + ".addon32");
-                        knownAddonFileNames.Add(urlFile + ".addon64");
-                    }
-                }
-                catch { }
-            }
-            // OriginalName variants from versions.json
-            if (versions.TryGetValue(pack.PackageName, out var vInfo))
-            {
-                if (!string.IsNullOrEmpty(vInfo.OriginalName32))
-                    knownAddonFileNames.Add(vInfo.OriginalName32 + ".addon32");
-                if (!string.IsNullOrEmpty(vInfo.OriginalName64))
-                    knownAddonFileNames.Add(vInfo.OriginalName64 + ".addon64");
-            }
+            trackedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            deployments[installPath] = trackedFiles;
         }
+        foreach (var f in deployedFileNames)
+            trackedFiles.Add(f);
 
+        // 5. Remove stale addon files — only remove files that RHI previously deployed to this path
+        //    and that are no longer in the active selection. User-placed files are never touched.
         try
         {
             foreach (var file in Directory.EnumerateFiles(installPath))
@@ -498,8 +470,8 @@ public class AddonPackService : IAddonPackService
 
                 var fileName = Path.GetFileName(file);
 
-                // Only touch files that match a known addon manager pack name
-                if (!knownAddonFileNames.Contains(fileName))
+                // Only touch files that RHI previously deployed (in the tracker)
+                if (!trackedFiles.Contains(fileName))
                     continue;
 
                 // Don't remove files we just deployed
@@ -509,6 +481,7 @@ public class AddonPackService : IAddonPackService
                 try
                 {
                     File.Delete(file);
+                    trackedFiles.Remove(fileName);
                     CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Removed stale addon '{fileName}' from '{installPath}'.");
                 }
                 catch (Exception ex)
@@ -521,6 +494,9 @@ public class AddonPackService : IAddonPackService
         {
             CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Failed to enumerate deploy directory for stale removal — {ex.Message}");
         }
+
+        // Save updated tracker
+        SaveDeployments(deployments);
 
         CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployment complete for '{gameName}'. Deployed {deployedFileNames.Count} addon(s).");
     }
@@ -786,6 +762,56 @@ public class AddonPackService : IAddonPackService
     internal static string GetStagingDir() => StagingDir;
     internal static string GetCachePath() => CachePath;
     internal static string GetVersionsJsonPath() => VersionsJsonPath;
+
+    // ── Deployment tracker ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Loads the deployment tracker: maps install path → set of addon filenames RHI deployed there.
+    /// </summary>
+    private static Dictionary<string, HashSet<string>> LoadDeployments()
+    {
+        try
+        {
+            if (!File.Exists(DeploymentsJsonPath)) return new(StringComparer.OrdinalIgnoreCase);
+            var json = File.ReadAllText(DeploymentsJsonPath);
+            var raw = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
+            if (raw == null) return new(StringComparer.OrdinalIgnoreCase);
+            var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (path, files) in raw)
+                result[path] = new HashSet<string>(files, StringComparer.OrdinalIgnoreCase);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AddonPackService.LoadDeployments] Failed — {ex.Message}");
+            return new(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>
+    /// Saves the deployment tracker to disk.
+    /// </summary>
+    private static void SaveDeployments(Dictionary<string, HashSet<string>> deployments)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(DeploymentsJsonPath);
+            if (dir != null) Directory.CreateDirectory(dir);
+            // Convert HashSet to List for JSON serialization
+            var raw = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (path, files) in deployments)
+            {
+                if (files.Count > 0)
+                    raw[path] = files.ToList();
+            }
+            var json = JsonSerializer.Serialize(raw, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(DeploymentsJsonPath, json);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AddonPackService.SaveDeployments] Failed — {ex.Message}");
+        }
+    }
 }
 
 /// <summary>

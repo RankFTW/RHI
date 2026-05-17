@@ -431,9 +431,10 @@ public partial class DetailPanelBuilder
                     ? (object)new TextBlock { Text = card.ExternalDisplayLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
                     : extLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.UseNormalReShade ? false : true;
-                _window.DetailRdxInstallBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
-                _window.DetailRdxInstallBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
-                _window.DetailRdxInstallBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+                var isNexusUpdate = card.Status == GameStatus.UpdateAvailable;
+                _window.DetailRdxInstallBtn.Background = UIFactory.GetBrush(isNexusUpdate ? "#201838" : "#182840");
+                _window.DetailRdxInstallBtn.Foreground = UIFactory.GetBrush(isNexusUpdate ? "#B898E8" : "#7AACDD");
+                _window.DetailRdxInstallBtn.BorderBrush = UIFactory.GetBrush(isNexusUpdate ? "#3A2860" : "#2A4468");
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
                 _window.DetailRdxInstallBtn.Opacity = rdxGreyed ? 0.35 : 1.0;
                 _window.DetailRdxInstallBtn.IsHitTestVisible = !card.UseNormalReShade;

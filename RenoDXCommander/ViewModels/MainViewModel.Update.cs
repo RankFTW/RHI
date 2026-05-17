@@ -824,12 +824,56 @@ public partial class MainViewModel
             skipRef: _settingsViewModel.GlobalSkipRefUpdates);
 
         // ── Rate-limit guard: if earlier checks triggered 403, skip remaining API calls ──
+        // Note: Nexus check uses a different API (GraphQL, not GitHub) so it runs regardless
         if (_etagCache.IsRateLimited)
         {
-            _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] GitHub API rate limited — skipping remaining update checks");
+            _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] GitHub API rate limited — skipping remaining GitHub-based update checks");
+
+            // Still run the Nexus check (uses Nexus GraphQL API, not GitHub)
+            try
+            {
+                var nexusModsToCheck = cards
+                    .Where(c => !c.ExcludeFromUpdateAllRenoDx
+                        && (c.Status == GameStatus.Installed || c.Status == GameStatus.Available || c.Status == GameStatus.NotInstalled))
+                    .Select(c =>
+                    {
+                        string? nexusUrl = null;
+                        if (c.IsExternalOnly && !string.IsNullOrEmpty(c.ExternalUrl)
+                            && c.ExternalUrl.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase))
+                            nexusUrl = c.ExternalUrl;
+                        else if (!string.IsNullOrEmpty(c.NexusUrl))
+                            nexusUrl = c.NexusUrl;
+                        return (c.GameName, NexusUrl: nexusUrl, c.RdxInstalledVersion);
+                    })
+                    .Where(x => !string.IsNullOrEmpty(x.NexusUrl))
+                    .Select(x => (x.GameName, x.NexusUrl!, x.RdxInstalledVersion))
+                    .ToList();
+
+                if (nexusModsToCheck.Count > 0)
+                {
+                    var nexusUpdated = await _nexusUpdateService.CheckForUpdatesAsync(nexusModsToCheck).ConfigureAwait(false);
+                    if (nexusUpdated.Count > 0)
+                    {
+                        DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            foreach (var card in cards.Where(c => nexusUpdated.Contains(c.GameName)))
+                            {
+                                if (card.Status == GameStatus.Installed)
+                                    card.Status = GameStatus.UpdateAvailable;
+                            }
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Nexus update check failed (rate-limited path) — {ex.Message}");
+            }
+
             // Record successful check time even if rate-limited, so we don't hammer the API again immediately
             _settingsViewModel.LastUpdateCheckUtc = DateTime.UtcNow.ToString("o");
             SaveSettingsPublic();
+            SaveLibrary();
             _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] Update check complete (partial, rate limited) — cooldown timestamp saved");
             return;
         }
@@ -945,9 +989,55 @@ public partial class MainViewModel
             _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK update check failed — {ex.Message}");
         }
 
+        // ── Nexus Mods update check (external-only games with Nexus URLs) ─────────
+        try
+        {
+            // For external-only games, the Nexus URL is in ExternalUrl (set by manifest forceExternalOnly).
+            // For wiki-matched games with both Snapshot+Nexus, it's in NexusUrl (from GameMod).
+            var nexusModsToCheck = cards
+                .Where(c => !c.ExcludeFromUpdateAllRenoDx
+                    && (c.Status == GameStatus.Installed || c.Status == GameStatus.Available || c.Status == GameStatus.NotInstalled))
+                .Select(c =>
+                {
+                    // Resolve the Nexus URL: ExternalUrl for external-only, NexusUrl for wiki-matched
+                    string? nexusUrl = null;
+                    if (c.IsExternalOnly && !string.IsNullOrEmpty(c.ExternalUrl)
+                        && c.ExternalUrl.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase))
+                        nexusUrl = c.ExternalUrl;
+                    else if (!string.IsNullOrEmpty(c.NexusUrl))
+                        nexusUrl = c.NexusUrl;
+                    return (c.GameName, NexusUrl: nexusUrl, c.RdxInstalledVersion);
+                })
+                .Where(x => !string.IsNullOrEmpty(x.NexusUrl))
+                .Select(x => (x.GameName, x.NexusUrl!, x.RdxInstalledVersion))
+                .ToList();
+
+            if (nexusModsToCheck.Count > 0)
+            {
+                var nexusUpdated = await _nexusUpdateService.CheckForUpdatesAsync(nexusModsToCheck).ConfigureAwait(false);
+                if (nexusUpdated.Count > 0)
+                {
+                    DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        foreach (var card in cards.Where(c => nexusUpdated.Contains(c.GameName)))
+                        {
+                            if (card.Status == GameStatus.Installed)
+                                card.Status = GameStatus.UpdateAvailable;
+                        }
+                        // Nexus updates do NOT contribute to Update All button
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Nexus update check failed — {ex.Message}");
+        }
+
         // Record successful check time
         _settingsViewModel.LastUpdateCheckUtc = DateTime.UtcNow.ToString("o");
         SaveSettingsPublic();
+        SaveLibrary();
         _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] Update check complete — cooldown timestamp saved");
     }
 }

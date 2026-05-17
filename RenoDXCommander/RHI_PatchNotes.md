@@ -3,16 +3,23 @@
 ### New Features
 
 - **Auto-delete downloaded addons** — When the addon file watcher detects and installs an addon from the watch folder (Downloads by default), the source file is automatically deleted after successful installation. Keeps your Downloads folder clean.
+- **Nexus Mods update check** — External-only games with Nexus downloads are now checked for updates via the Nexus GraphQL v2 API (no API key required). When a Nexus mod is updated, the install button turns purple and shows "Update RenoDX". Games with both Snapshot and Nexus downloads show "Also available on Nexus Mods" in the Info popup. Uses the same 4-hour cooldown as other update checks. Nexus updates do not contribute to Update All.
 
 ### Bug Fixes
 
 - Fixed "Update All" skipping games with DLL overrides enabled (e.g. Neverness To Everness). Games with custom DLL filenames are now correctly included in batch updates.
 - Fixed "Update Inclusion" button not opening the dialog on some systems (XamlRoot null at build time, now resolved at click time).
+- Fixed update indicators (purple buttons/dots) being lost on app restart. Update statuses are now persisted and restored correctly across sessions.
+- Fixed global addon toggle removing manually-placed addon files. Stale removal now only deletes files that RHI itself deployed — user-placed addons are never touched.
+- Fixed "Add Game" button failing with COMException on some systems. Replaced WinRT FileOpenPicker with Win32 native file dialog to avoid COM threading conflicts during background scanning.
+- Fixed LumaBoost (and other single-file shader repos) not deploying to game folders. Shader extraction now handles repos without a `Shaders/` subdirectory.
 
 ### Manifest Updates
 
 - Until Dawn™ — moved from UE-Extended to native HDR games.
 - Batman™: Arkham Knight — added PCGW URL override (AppID redirect not working).
+- Forza Horizon 6 — added PCGW URL override.
+- Blacklisted DLC/skin entries: Forza Horizon 5 DLCs, Arkham Knight skins, SkinBatmanInc, SkinBatmanNoel, New 52 Skins Pack.
 
 ## v1.9.5
 

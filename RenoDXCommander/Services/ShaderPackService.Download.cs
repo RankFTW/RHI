@@ -207,7 +207,23 @@ public partial class ShaderPackService
                     }
                 }
 
-                if (rootDir == null || string.IsNullOrEmpty(relInRoot)) continue;
+                if (rootDir == null || string.IsNullOrEmpty(relInRoot))
+                {
+                    // Fallback: if the file is a shader (.fx/.fxh) at the repo root (no Shaders/ subdirectory),
+                    // treat it as a shader file. Common for single-file shader repos like LumaBoost.
+                    var keyExt = Path.GetExtension(key);
+                    if (keyExt.Equals(".fx", StringComparison.OrdinalIgnoreCase) || keyExt.Equals(".fxh", StringComparison.OrdinalIgnoreCase))
+                    {
+                        rootDir = ShadersDir;
+                        // Strip the GitHub archive root folder (e.g. "LumaBoost-main/LumaBoost.fx" → "LumaBoost.fx")
+                        var slashIdx = key.IndexOf('/');
+                        relInRoot = slashIdx >= 0 ? key.Substring(slashIdx + 1) : key;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
 
                 // Skip shaders that are known to fail compilation
                 var fileName = Path.GetFileName(relInRoot);
@@ -330,7 +346,21 @@ public partial class ShaderPackService
                     if (idx >= 0) { rootDir = dir; relInRoot = key.Substring(idx + 1 + token.Length); break; }
                     if (key.StartsWith(token, StringComparison.OrdinalIgnoreCase)) { rootDir = dir; relInRoot = key.Substring(token.Length); break; }
                 }
-                if (rootDir == null || string.IsNullOrEmpty(relInRoot)) continue;
+                if (rootDir == null || string.IsNullOrEmpty(relInRoot))
+                {
+                    // Fallback: root-level .fx/.fxh files (no Shaders/ subdirectory)
+                    var fileExt = Path.GetExtension(key);
+                    if (fileExt.Equals(".fx", StringComparison.OrdinalIgnoreCase) || fileExt.Equals(".fxh", StringComparison.OrdinalIgnoreCase))
+                    {
+                        rootDir = ShadersDir;
+                        var slashIdx = key.IndexOf('/');
+                        relInRoot = slashIdx >= 0 ? key.Substring(slashIdx + 1) : key;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
                 // Skip excluded shaders so they are never recorded or deployed
                 var recFileName = Path.GetFileName(relInRoot);
                 if (rootDir == ShadersDir && ExcludedShaderFiles.Contains(recFileName)) continue;

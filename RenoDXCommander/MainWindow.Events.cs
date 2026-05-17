@@ -1001,25 +1001,41 @@ public sealed partial class MainWindow
 
     private async void AddGameButton_Click(object sender, RoutedEventArgs e)
     {
-        // Step 1: Pick the game executable
-        var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
-        filePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.ComputerFolder;
-        filePicker.FileTypeFilter.Add(".exe");
+        _crashReporter.Log("[MainWindow.AddGameButton_Click] Button clicked");
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-        WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
+        _crashReporter.Log($"[MainWindow.AddGameButton_Click] hwnd={hwnd}");
 
-        Windows.Storage.StorageFile? file;
-        try { file = await filePicker.PickSingleFileAsync(); }
+        // Use Win32 OpenFileDialog as primary method — WinRT FileOpenPicker has
+        // COM threading issues on some systems when background work is active.
+        string? filePath = null;
+        try
+        {
+            filePath = await Task.Run(() =>
+            {
+                var ofn = new NativeInterop.OpenFileName();
+                ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
+                ofn.hwndOwner = hwnd;
+                ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
+                ofn.file = new string(new char[260]);
+                ofn.maxFile = ofn.file.Length;
+                ofn.title = "Select Game Executable";
+                ofn.flags = 0x00080000 | 0x00001000; // OFN_EXPLORER | OFN_FILEMUSTEXIST
+
+                return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
+            });
+        }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[MainWindow.AddGameButton_Click] File picker failed — {ex.Message}");
+            _crashReporter.Log($"[MainWindow.AddGameButton_Click] Win32 file dialog failed — {ex.GetType().Name}: {ex.Message}");
             return;
         }
-        if (file == null) return;
+
+        _crashReporter.Log($"[MainWindow.AddGameButton_Click] Dialog result: {(filePath != null ? filePath : "null (cancelled)")}");
+        if (string.IsNullOrEmpty(filePath)) return;
 
         // Use the exe's parent folder as the install path
-        var folder = Path.GetDirectoryName(file.Path);
+        var folder = Path.GetDirectoryName(filePath);
         if (string.IsNullOrEmpty(folder)) return;
 
         // Pre-populate the game name from the folder name
@@ -1036,7 +1052,7 @@ public sealed partial class MainWindow
                 Spacing = 10,
                 Children =
                 {
-                    new TextBlock { Text = $"Selected: {file.Path}", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush), FontSize = 11 },
+                    new TextBlock { Text = $"Selected: {filePath}", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush), FontSize = 11 },
                     new TextBlock { Text = "Enter the game name:", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush) },
                     nameBox
                 }

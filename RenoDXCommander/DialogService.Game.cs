@@ -271,6 +271,12 @@ public partial class DialogService
             AddHyperlinkBlock(panel, result.UrlLabel ?? "View wiki page", result.Url, linkColour);
         }
 
+        // ── "Also available on Nexus" link (Snapshot+Nexus games only) ───────
+        if (!card.IsExternalOnly && card.Mod?.SnapshotUrl != null && !string.IsNullOrEmpty(card.NexusUrl))
+        {
+            AddHyperlinkBlock(panel, "Also available on Nexus Mods", card.NexusUrl, linkColour);
+        }
+
         // ── HDR Gaming Database link (supplementary) ─────────────────────────
         if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
         {

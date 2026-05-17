@@ -180,9 +180,7 @@ public partial class DetailPanelBuilder
 
         _window.DetailHideBtn.Tag = card;
         _window.DetailHideIcon.Text = card.IsHidden ? "Show" : "Hide";
-        _window.DetailHideBtn.Foreground = card.IsHidden
-            ? UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
-            : UIFactory.Brush(ResourceKeys.TextDisabledBrush);
+        _window.DetailHideBtn.Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
         // Folder management buttons
         _window.DetailFolderBtn.Tag = card;

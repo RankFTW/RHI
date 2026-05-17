@@ -1786,7 +1786,9 @@ public partial class MainViewModel
         foreach (var c in _allCards)
         {
             var flags = new List<string>();
-            if (c.Status == GameStatus.UpdateAvailable) flags.Add("RDX");
+            // Don't persist RDX UpdateAvailable for external-only games — those are
+            // handled by NexusUpdateService baselines and shouldn't trigger Update All
+            if (c.Status == GameStatus.UpdateAvailable && !c.IsExternalOnly) flags.Add("RDX");
             if (c.RsStatus == GameStatus.UpdateAvailable) flags.Add("RS");
             if (c.UlStatus == GameStatus.UpdateAvailable) flags.Add("UL");
             if (c.DcStatus == GameStatus.UpdateAvailable) flags.Add("DC");
@@ -2125,6 +2127,17 @@ public partial class MainViewModel
         _filterViewModel.ApplyFilter();
 
         // Refresh the Update All button state from cached update statuses
+        // Restore Nexus update indicators from persisted baselines
+        var cachedNexusUpdates = _nexusUpdateService.GetCachedUpdates();
+        if (cachedNexusUpdates.Count > 0)
+        {
+            foreach (var card in _allCards.Where(c => cachedNexusUpdates.Contains(c.GameName)
+                && c.IsExternalOnly && c.Status == GameStatus.Installed && !c.ExcludeFromUpdateAllRenoDx))
+            {
+                card.Status = GameStatus.UpdateAvailable;
+            }
+            _crashReporter.Log($"[MainViewModel] Restored {cachedNexusUpdates.Count} Nexus update indicator(s) from cache");
+        }
         NotifyUpdateButtonChanged();
 
         // 12. Cards are ready — suppress skeleton and show game list simultaneously.
@@ -2500,13 +2513,15 @@ public partial class MainViewModel
             if (existingByName.TryGetValue(fresh.GameName, out var existing))
             {
                 // Update mutable properties in-place so WinUI bindings fire
-                existing.Status             = fresh.Status;
-                existing.RsStatus           = fresh.RsStatus;
-                existing.UlStatus           = fresh.UlStatus;
-                existing.DcStatus           = fresh.DcStatus;
-                existing.OsStatus           = fresh.OsStatus;
-                existing.RefStatus          = fresh.RefStatus;
-                existing.LumaStatus         = fresh.LumaStatus;
+                // Preserve UpdateAvailable status if the fresh scan shows Installed
+                // (the update check already determined an update exists — don't lose it)
+                existing.Status             = (existing.Status == GameStatus.UpdateAvailable && fresh.Status == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.Status;
+                existing.RsStatus           = (existing.RsStatus == GameStatus.UpdateAvailable && fresh.RsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.RsStatus;
+                existing.UlStatus           = (existing.UlStatus == GameStatus.UpdateAvailable && fresh.UlStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.UlStatus;
+                existing.DcStatus           = (existing.DcStatus == GameStatus.UpdateAvailable && fresh.DcStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.DcStatus;
+                existing.OsStatus           = (existing.OsStatus == GameStatus.UpdateAvailable && fresh.OsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.OsStatus;
+                existing.RefStatus          = (existing.RefStatus == GameStatus.UpdateAvailable && fresh.RefStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.RefStatus;
+                existing.LumaStatus         = (existing.LumaStatus == GameStatus.UpdateAvailable && fresh.LumaStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.LumaStatus;
                 existing.Mod                = fresh.Mod;
                 existing.InstalledRecord    = fresh.InstalledRecord;
                 existing.RsRecord           = fresh.RsRecord;

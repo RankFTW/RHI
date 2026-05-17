@@ -81,6 +81,7 @@ public partial class App : Application
             ?? throw new InvalidOperationException("IAuxInstallService must be AuxInstallService"));
         services.AddSingleton<IREFrameworkService, REFrameworkService>();
         services.AddSingleton<INexusModsService, NexusModsService>();
+        services.AddSingleton<INexusUpdateService, NexusUpdateService>();
         services.AddSingleton<ISteamAppIdResolver, SteamAppIdResolver>();
         services.AddSingleton<IPcgwService, PcgwService>();
         services.AddSingleton<IUltrawideFixService, UltrawideFixService>();

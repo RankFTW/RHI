@@ -67,6 +67,7 @@ internal static class TestHelpers
             new StubDxvkService(),
             new StubOptiScalerWikiService(),
             new StubHdrDatabaseService(),
+            new StubNexusUpdateService(),
             new GitHubETagCache());
     }
 
@@ -307,5 +308,16 @@ internal static class TestHelpers
         public Dictionary<string, string>? CachedData { get; set; }
         public Task<Dictionary<string, string>> FetchAsync(IProgress<string>? progress = null)
             => Task.FromResult(CachedData ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+    }
+
+    internal class StubNexusUpdateService : INexusUpdateService
+    {
+        public Task<HashSet<string>> CheckForUpdatesAsync(
+            IReadOnlyList<(string GameName, string NexusUrl, string? InstalledVersion)> modsToCheck)
+            => Task.FromResult(new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+        public void ResetBaseline(string gameName) { }
+        public HashSet<string> GetCachedUpdates() => new(StringComparer.OrdinalIgnoreCase);
+        public void LoadBaselines() { }
+        public void SaveBaselines() { }
     }
 }
