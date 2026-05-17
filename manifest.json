@@ -366,6 +366,7 @@
     "Satisfactory": "Unreal",
     "Shadow of the Tomb Raider: Definitive Edition": "Foundation",
     "Starfield": "Creation Engine",
+    "Stellar Blade": "Unreal Engine",
     "Terraria": "Scrungus Engine",
     "The Elder Scrolls III: Morrowind": "Creation Engine",
     "The Elder Scrolls V: Skyrim Special Edition": "Creation Engine",
@@ -756,5 +757,8 @@
 
   "legacyReShadeVersions": {
     "Max Payne 3": "6.4.1"
+  },
+
+  "launchExeOverrides": {
   }
 }
