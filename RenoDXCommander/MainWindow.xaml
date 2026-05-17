@@ -347,6 +347,17 @@
                                     </Grid.ColumnDefinitions>
                                     <!-- Left: external links -->
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                                        <Button x:Name="DetailLaunchBtn" x:FieldModifier="internal"
+                                                Background="#1A3A20"
+                                                Foreground="#6AE87A"
+                                                BorderBrush="#2A5A30" BorderThickness="1"
+                                                CornerRadius="6" Padding="10,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11" FontWeight="SemiBold"
+                                                Click="LaunchGame_Click"
+                                                ToolTipService.ToolTip="Launch this game">
+                                            <TextBlock Text="▶ Launch" FontSize="11"/>
+                                        </Button>
+                                        <Border Width="1" Background="{StaticResource BorderSubtleBrush}" Margin="4,2"/>
                                         <Button x:Name="DetailNexusModsBtn" x:FieldModifier="internal"
                                                 Background="{StaticResource SurfaceOverlayBrush}"
                                                 Foreground="{StaticResource ChipTextBrush}"
@@ -394,16 +405,6 @@
                                     </StackPanel>
                                     <!-- Right: game actions -->
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-                                        <Button x:Name="DetailLaunchBtn" x:FieldModifier="internal"
-                                                Background="#1A3A20"
-                                                Foreground="#6AE87A"
-                                                BorderBrush="#2A5A30" BorderThickness="1"
-                                                CornerRadius="6" Padding="10,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11" FontWeight="SemiBold"
-                                                Click="LaunchGame_Click"
-                                                ToolTipService.ToolTip="Launch this game">
-                                            <TextBlock Text="▶ Launch" FontSize="11"/>
-                                        </Button>
                                         <Button x:Name="DetailHideBtn" x:FieldModifier="internal"
                                                 Background="{StaticResource SurfaceOverlayBrush}"
                                                 Foreground="{StaticResource ChipTextBrush}"

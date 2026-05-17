@@ -284,6 +284,9 @@ public sealed partial class MainWindow : Window
 
     // ── Game list selection ──────────────────────────────────────────────────────
 
+    private DispatcherTimer? _selectionDebounceTimer;
+    private GameCardViewModel? _pendingSelectionCard;
+
     private void GameList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (GameList.SelectedItem is GameCardViewModel card)
@@ -297,12 +300,27 @@ public sealed partial class MainWindow : Window
                     ScrollToCard(card);
                     break;
                 case ViewLayout.Detail:
-                    // In detail mode, populate the detail panel as before
-                    PopulateDetailPanel(card);
-                    DetailPanel.Visibility = Visibility.Visible;
-                    BuildOverridesPanel(card);
-                    OverridesContainer.Visibility = Visibility.Visible;
-                    ManagementContainer.Visibility = Visibility.Visible;
+                    // Debounce detail panel rebuild — wait 80ms after last selection change
+                    _pendingSelectionCard = card;
+                    if (_selectionDebounceTimer == null)
+                    {
+                        _selectionDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+                        _selectionDebounceTimer.Tick += (s, ev) =>
+                        {
+                            _selectionDebounceTimer.Stop();
+                            var target = _pendingSelectionCard;
+                            if (target != null && target == ViewModel.SelectedGame)
+                            {
+                                PopulateDetailPanel(target);
+                                DetailPanel.Visibility = Visibility.Visible;
+                                BuildOverridesPanel(target);
+                                OverridesContainer.Visibility = Visibility.Visible;
+                                ManagementContainer.Visibility = Visibility.Visible;
+                            }
+                        };
+                    }
+                    _selectionDebounceTimer.Stop();
+                    _selectionDebounceTimer.Start();
                     break;
                 case ViewLayout.Compact:
                     // Rebuild current compact page for newly selected game, retaining page index

@@ -765,11 +765,15 @@ public class AddonPackService : IAddonPackService
 
     // ── Deployment tracker ────────────────────────────────────────────────────────
 
+    private static readonly object _deploymentsLock = new();
+
     /// <summary>
     /// Loads the deployment tracker: maps install path → set of addon filenames RHI deployed there.
     /// </summary>
     private static Dictionary<string, HashSet<string>> LoadDeployments()
     {
+        lock (_deploymentsLock)
+        {
         try
         {
             if (!File.Exists(DeploymentsJsonPath)) return new(StringComparer.OrdinalIgnoreCase);
@@ -786,6 +790,7 @@ public class AddonPackService : IAddonPackService
             CrashReporter.Log($"[AddonPackService.LoadDeployments] Failed — {ex.Message}");
             return new(StringComparer.OrdinalIgnoreCase);
         }
+        }
     }
 
     /// <summary>
@@ -793,6 +798,8 @@ public class AddonPackService : IAddonPackService
     /// </summary>
     private static void SaveDeployments(Dictionary<string, HashSet<string>> deployments)
     {
+        lock (_deploymentsLock)
+        {
         try
         {
             var dir = Path.GetDirectoryName(DeploymentsJsonPath);
@@ -810,6 +817,7 @@ public class AddonPackService : IAddonPackService
         catch (Exception ex)
         {
             CrashReporter.Log($"[AddonPackService.SaveDeployments] Failed — {ex.Message}");
+        }
         }
     }
 }
