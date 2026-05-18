@@ -1517,8 +1517,14 @@ public partial class MainViewModel
                     : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs
                         ? mRs
                         : ResolveAutoReShadeFilename(card.DetectedApis));
-            _crashReporter.Log($"[InstallReShadeAsync] {card.GameName}: DllOverrideEnabled={card.DllOverrideEnabled}, " +
-                $"DetectedApis=[{string.Join(",", card.DetectedApis)}], filenameOverride={rsFilenameOverride ?? "(null → dxgi.dll)"}");
+            var effectiveChannel = card.UseNormalReShade ? "(Normal/NoAddons)" : ResolveReShadeChannel(card.GameName);
+            var filenameSource = card.DllOverrideEnabled ? "UserDllOverride"
+                : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } ? "ManifestDllOverride" : "AutoDetect");
+            _crashReporter.Log($"[InstallReShadeAsync] {card.GameName}: " +
+                $"channel={effectiveChannel}, useNormalReShade={card.UseNormalReShade}, " +
+                $"DllOverrideEnabled={card.DllOverrideEnabled}, filenameSource={filenameSource}, " +
+                $"filenameOverride={rsFilenameOverride ?? "dxgi.dll"}, " +
+                $"DetectedApis=[{string.Join(",", card.DetectedApis)}], is32Bit={card.Is32Bit}");
 
             var record = await _auxInstaller.InstallReShadeAsync(card.GameName, card.InstallPath,
                 shaderModeOverride: card.ShaderModeOverride,

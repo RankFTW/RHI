@@ -5,6 +5,7 @@
 - **Game Launch** — Launch your games straight from RHI! Hit the new green "▶ Launch" button or double-click any game in the sidebar. Steam games launch through Steam (with overlay and playtime tracking), everything else launches directly. Set a custom exe per game in Overrides if auto-detection picks the wrong one.
 - **Nexus Mods Update Alerts** — RHI now automatically checks if your Nexus-hosted mods have been updated. When a new version drops, the button turns purple with "Update RenoDX" — click it to go straight to the Nexus page. No API key needed, no setup required. Games with both Snapshot and Nexus versions show a handy "Also available on Nexus Mods" link in the Info popup.
 - **Auto-cleanup for downloaded addons** — Addon files detected and installed from your Downloads folder are now automatically deleted after successful installation. No more clutter.
+- **"No Addons" in RS Channel dropdown** — The separate "ReShade Without Addon Support" toggle has been merged into the RS Channel selector. Options are now: Global, Stable, Nightly, No Addons, Legacy.
 
 ### Bug Fixes
 
@@ -14,6 +15,8 @@
 - Fixed global addon toggle removing manually-placed addon files. Stale removal now only deletes files that RHI itself deployed — user-placed addons are never touched.
 - Fixed "Add Game" button failing with COMException on some systems. Replaced WinRT FileOpenPicker with Win32 native file dialog to avoid COM threading conflicts during background scanning.
 - Fixed LumaBoost (and other single-file shader repos) not deploying to game folders. Shader extraction now handles repos without a `Shaders/` subdirectory.
+- Fixed shader packs being downloaded multiple times concurrently, causing file lock errors and potential UI freezes during install. Each pack now has a per-pack download lock.
+- Fixed `addon_deployments.json` file contention when deploying addons to multiple games simultaneously.
 
 ### Manifest Updates
 

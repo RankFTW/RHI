@@ -1,4 +1,5 @@
 // ShaderPackService.Download.cs — Pack download, extraction, version resolution, and extracted-file tracking
+using System.Collections.Concurrent;
 using System.Text.Json;
 using SharpCompress.Archives;
 
@@ -6,6 +7,13 @@ namespace RenoDXCommander.Services;
 
 public partial class ShaderPackService
 {
+    // Per-pack download lock — prevents the same pack from being downloaded concurrently
+    // when EnsureLatestAsync is called from both the cache phase and background scan phase.
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _packLocks = new(StringComparer.OrdinalIgnoreCase);
+
+    private static SemaphoreSlim GetPackLock(string packId)
+        => _packLocks.GetOrAdd(packId, _ => new SemaphoreSlim(1, 1));
+
     // ── Main entry point ──────────────────────────────────────────────────────────
 
     /// <summary>
@@ -71,6 +79,15 @@ public partial class ShaderPackService
         ShaderPack pack,
         IProgress<string>? progress)
     {
+        var packLock = GetPackLock(pack.Id);
+        if (!await packLock.WaitAsync(0))
+        {
+            // Another call is already downloading this pack — skip
+            CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Skipped — already being downloaded by another task");
+            return;
+        }
+        try
+        {
         // ── GhRelease packs: skip the API call if already cached and extracted ──
         // The API call is only needed to discover the latest version/URL.
         // If we already have a stored version with extracted files, we're up to date.
@@ -262,6 +279,8 @@ public partial class ShaderPackService
         SaveStoredVersion(pack.Id, versionToken);
         progress?.Report($"{pack.DisplayName} updated.");
         CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Done. Version = {versionToken}");
+        }
+        finally { packLock.Release(); }
     }
 
     // ── Extracted-file tracking ───────────────────────────────────────────────────

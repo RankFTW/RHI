@@ -960,7 +960,7 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(channelLabel,
             "Override the global ReShade build channel for this game.\nVulkan games: changing this affects ALL Vulkan games.");
 
-        var channelItems = new[] { "Global", "Stable", "Nightly", "Legacy..." };
+        var channelItems = new[] { "Global", "Stable", "Nightly", "No Addons", "Legacy..." };
         // For Vulkan games, show the effective Vulkan-wide override (any Vulkan game's override applies to all)
         var currentChannelOverride = _window.ViewModel.GetReShadeChannelOverride(gameName);
         if (currentChannelOverride == null && card.RequiresVulkanInstall)
@@ -974,9 +974,13 @@ public partial class DetailPanelBuilder
         // If a legacy version is active, add it to the dropdown items
         var channelItemsList = new List<string>(channelItems);
         string defaultChannelSelection;
-        if (MainViewModel.IsLegacyVersion(currentChannelOverride))
+        if (card.UseNormalReShade)
         {
-            channelItemsList.Insert(3, currentChannelOverride!);
+            defaultChannelSelection = "No Addons";
+        }
+        else if (MainViewModel.IsLegacyVersion(currentChannelOverride))
+        {
+            channelItemsList.Insert(4, currentChannelOverride!);
             defaultChannelSelection = currentChannelOverride!;
         }
         else
@@ -997,9 +1001,14 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
 
+        bool channelComboInitializing = true;
+
         channelCombo.SelectionChanged += async (s, ev) =>
         {
             var selected = channelCombo.SelectedItem as string;
+            if (channelComboInitializing) return;
+            if (string.IsNullOrEmpty(selected)) return;
+            CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' selection changed to: '{selected}'");
 
             // ── "Legacy..." opens the version picker dialog ──
             if (selected == "Legacy...")
@@ -1054,6 +1063,12 @@ public partial class DetailPanelBuilder
 
                 _window.ViewModel.SetReShadeChannelOverride(capturedName, pickedVersion);
 
+                // Clear No Addons mode if active (legacy is an addon build)
+                var targetCardLegacy = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCardLegacy != null && targetCardLegacy.UseNormalReShade)
+                    _window.ViewModel.SetUseNormalReShade(targetCardLegacy, false);
+
                 // Update dropdown: remove old legacy version, add new one
                 var oldLegacy = channelItemsList.FirstOrDefault(v => MainViewModel.IsLegacyVersion(v) && v != "Legacy...");
                 if (oldLegacy != null) channelItemsList.Remove(oldLegacy);
@@ -1065,17 +1080,60 @@ public partial class DetailPanelBuilder
 
                 var targetCard2 = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                if (targetCard2 != null && targetCard2.IsRsInstalled)
+                if (targetCard2 != null)
                     await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(targetCard2);
 
                 _window.ViewModel.NotifyUpdateButtonChanged();
+
+                // Rebuild overrides panel to reflect the new legacy version in the dropdown
+                var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (refreshCard != null)
+                    BuildOverridesPanel(refreshCard);
                 return;
             }
 
             // ── If a legacy version is already selected and user picks it again, do nothing ──
-            if (MainViewModel.IsLegacyVersion(selected) && selected != "Legacy...")
+            if (selected != "Global" && selected != "Stable" && selected != "Nightly"
+                && selected != "No Addons" && selected != "Legacy..."
+                && MainViewModel.IsLegacyVersion(selected))
             {
                 return;
+            }
+
+            // ── "No Addons" — switch to normal (non-addon) ReShade ──
+            if (selected == "No Addons")
+            {
+                CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' → No Addons mode");
+                var targetCardNoAddon = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCardNoAddon != null && !targetCardNoAddon.UseNormalReShade)
+                {
+                    _window.ViewModel.SetUseNormalReShade(targetCardNoAddon, true);
+                    // Clear any channel override since we're switching to normal
+                    _window.ViewModel.SetReShadeChannelOverride(capturedName, null);
+                    // Auto-install the normal (no-addon) version
+                    if (targetCardNoAddon.RsStatus == GameStatus.NotInstalled || targetCardNoAddon.IsRsInstalled)
+                        await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(targetCardNoAddon);
+                }
+                defaultChannelSelection = "No Addons";
+                // Rebuild to grey out addon controls
+                var refreshCardNoAddon = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (refreshCardNoAddon != null)
+                    BuildOverridesPanel(refreshCardNoAddon);
+                return;
+            }
+
+            // ── Switching away from "No Addons" — re-enable addon ReShade ──
+            {
+                var targetCardReEnable = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCardReEnable != null && targetCardReEnable.UseNormalReShade)
+                {
+                    CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' → leaving No Addons mode, re-enabling addon support");
+                    _window.ViewModel.SetUseNormalReShade(targetCardReEnable, false);
+                }
             }
 
             string? channelValue = selected switch
@@ -1084,6 +1142,7 @@ public partial class DetailPanelBuilder
                 "Nightly" => "Nightly",
                 _ => null,
             };
+            CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' → channelValue={channelValue ?? "Global (null)"}");
 
             var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                 c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
@@ -1151,6 +1210,7 @@ public partial class DetailPanelBuilder
             else
             {
                 // ── Non-Vulkan game: per-game only ──
+                CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' → setting per-game override to: {channelValue ?? "(null/Global)"}");
                 _window.ViewModel.SetReShadeChannelOverride(capturedName, channelValue);
 
                 // Auto-reinstall ReShade with the new channel if it's currently installed
@@ -1158,6 +1218,12 @@ public partial class DetailPanelBuilder
                 {
                     await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(targetCard);
                 }
+
+                // Rebuild overrides panel to reflect update inclusion changes
+                var refreshCard2 = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (refreshCard2 != null)
+                    BuildOverridesPanel(refreshCard2);
             }
 
             _window.ViewModel.NotifyUpdateButtonChanged();
@@ -1167,6 +1233,7 @@ public partial class DetailPanelBuilder
         Grid.SetRow(channelCombo, 1); Grid.SetColumn(channelCombo, 2);
         bitnessPanel.Children.Add(channelLabel);
         bitnessPanel.Children.Add(channelCombo);
+        channelComboInitializing = false;
 
         // ── Global update inclusion (compact: button + summary) ──────────────────
         var capturedCard = card;
@@ -1372,8 +1439,7 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
         // ── Settings row (preset selector + Normal ReShade toggle) ──
-        // Forward-declare normalReShadeToggle so the reset handler can reference it
-        ToggleSwitch normalReShadeToggle = null!;
+        // Forward-declare variables so the reset handler can reference them
 
         // Forward-declare DXVK toggles so the reset handler can reference them
         ToggleSwitch dxvkToggle = null!;
@@ -1478,8 +1544,7 @@ public partial class DetailPanelBuilder
             if (_window.ViewModel.IsWikiExcluded(capturedName))
                 _window.ViewModel.ToggleWikiExclusion(capturedName);
 
-            // Reset Normal ReShade toggle
-            normalReShadeToggle.IsOn = false;
+            // Reset Normal ReShade (via channel combo)
             {
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
@@ -1601,48 +1666,6 @@ public partial class DetailPanelBuilder
             }
         };
         manageLeftColumn.Children.Add(presetBtn);
-
-        // ── Normal ReShade toggle (now in left column, below preset) ─────────
-        normalReShadeToggle = new ToggleSwitch
-        {
-            Header = "ReShade Without Addon Support",
-            IsOn = card.UseNormalReShade,
-            OnContent = "On",
-            OffContent = "Off",
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-            IsEnabled = !isLumaMode,
-        };
-        ToolTipService.SetToolTip(normalReShadeToggle,
-            "When enabled, this game uses normal ReShade (without addon support). All managed addons will be removed and addon install buttons will be disabled.");
-        normalReShadeToggle.Toggled += (s, ev) =>
-        {
-            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
-            if (normalReShadeToggle.IsOn != targetCard.UseNormalReShade)
-            {
-                _window.ViewModel.SetUseNormalReShade(targetCard, normalReShadeToggle.IsOn);
-
-                // When normal ReShade is enabled, force addon toggle off and disable it
-                if (normalReShadeToggle.IsOn)
-                {
-                    addonToggle.IsOn = false;
-                    addonToggle.IsEnabled = false;
-                    selectAddonsBtn.IsEnabled = false;
-                    selectAddonsBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
-                    selectAddonsBtn.Foreground = UIFactory.Brush(ResourceKeys.TextDisabledBrush);
-                    selectAddonsBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
-                }
-                else
-                {
-                    // Re-enable addon toggle when switching back to addon ReShade
-                    addonToggle.IsEnabled = true;
-                    addonToggle.IsOn = true;
-                }
-            }
-        };
-        manageLeftColumn.Children.Add(normalReShadeToggle);
 
         // ── Launch executable override (right column) ────────────────────────
         var launchExeLabel = new TextBlock
