@@ -169,6 +169,7 @@
     "LEGO® Builder's Journey",
     "MIO: Memories in Orbit",
     "Northern Journey",
+    "Outer Wilds",
     "REANIMAL",
     "Resident Evil",
     "Spark the Electric Jester 3",
@@ -614,9 +615,15 @@
     "Assassin's Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
     "Cities: Skylines": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
     "CODE VEIN II": "https://marat569.github.io/renodx/renodx-codevein2.addon64",
+    "Death's Door": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Descenders": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
     "Far Cry 2": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
     "Far Cry 3": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
-    "Jedi Fallen Order": "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64"
+    "Haste": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Jedi Fallen Order": "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64",
+    "Outer Wilds": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Spark the Electric Jester 3": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "XF Extreme Formula": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64"
   },
 
   "forceExternalOnly": {
