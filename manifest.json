@@ -678,7 +678,13 @@
 
   "authorOverrides": {
     "Assassin's Creed": "Musa",
-    "GreedFall: The Dying World": "RankFTW"
+    "Death's Door": "Voosh",
+    "Descenders": "Voosh",
+    "GreedFall: The Dying World": "RankFTW",
+    "Haste": "Voosh",
+    "Outer Wilds": "Voosh",
+    "Spark the Electric Jester 3": "Voosh",
+    "XF Extreme Formula": "Voosh"
   },
 
   "nexusUrlOverrides": {
