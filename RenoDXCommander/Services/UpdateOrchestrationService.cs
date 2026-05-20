@@ -187,12 +187,18 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         }
 
         // ── Vulkan games (global layer DLL) ───────────────────────────────────
-        var vulkanTargets = UpdateAllEligible(allCards)
-            .Where(c => !c.ExcludeFromUpdateAllReShade)
-            .Where(c => c.RsStatus == GameStatus.Installed || c.RsStatus == GameStatus.UpdateAvailable)
+NVAPIWrapper integration        // Since all Vulkan games share the same global layer DLL, if ANY Vulkan game
+        // is excluded from ReShade updates, skip the layer update entirely.
+        var allVulkanInstalled = UpdateAllEligible(allCards)
             .Where(c => c.RequiresVulkanInstall)
+            .Where(c => c.RsStatus == GameStatus.Installed || c.RsStatus == GameStatus.UpdateAvailable)
             .Where(c => !c.IsLumaMode)
             .ToList();
+
+        bool anyVulkanExcluded = allVulkanInstalled.Any(c => c.ExcludeFromUpdateAllReShade);
+        var vulkanTargets = anyVulkanExcluded
+            ? new List<GameCardViewModel>()
+            : allVulkanInstalled;
 
         if (vulkanTargets.Count > 0)
         {

@@ -471,9 +471,25 @@ public partial class MainViewModel
     {
         var set = _gameNameService.UpdateAllExcludedReShade;
         if (!set.Remove(gameName)) set.Add(gameName);
-        SaveNameMappings();
+        bool isExcluded = set.Contains(gameName);
+
         var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card != null) card.ExcludeFromUpdateAllReShade = set.Contains(gameName);
+        if (card != null) card.ExcludeFromUpdateAllReShade = isExcluded;
+
+        // Vulkan games share a global layer — propagate exclusion to ALL Vulkan games
+        if (card?.RequiresVulkanInstall == true)
+        {
+            foreach (var vCard in _allCards.Where(c => c.RequiresVulkanInstall && !c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (isExcluded)
+                    set.Add(vCard.GameName);
+                else
+                    set.Remove(vCard.GameName);
+                vCard.ExcludeFromUpdateAllReShade = isExcluded;
+            }
+        }
+
+        SaveNameMappings();
         NotifyUpdateButtonChanged();
     }
 
