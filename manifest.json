@@ -787,4 +787,21 @@
 
   "launchExeOverrides": {
   }
+,
+  "dlssSkipGames": [
+    "FATAL FRAME / PROJECT ZERO: Maiden of Black Water",
+    "Max Payne 3",
+    "Dragon Age Inquisition",
+    "Gothic II: Gold Classic",
+    "Solasta: Crown of the Magister",
+    "Terraria",
+    "Wartales",
+    "Hollow Knight: Silksong",
+    "Stardew Valley",
+    "Outer Wilds",
+    "Pathologic 2",
+    "Deadly Premonition 2",
+    "The Elder Scrolls III: Morrowind",
+    "Remember Me"
+  ]
 }
