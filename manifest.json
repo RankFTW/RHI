@@ -393,7 +393,7 @@
   },
 
   "graphicsApiOverrides": {
-    "Zero Parades": "DirectX12",
+    "Zero Parades": "DX12",
     "Assassin's Creed": "DX10",
     "Assassin's Creed Origins": "DX11",
     "Assassin's Creed® Origins": "DX11",
