@@ -290,6 +290,32 @@ public static class GameReportEncoder
         if (card.IsLumaMode)
             components.Add(new() { ["name"] = "Luma", ["status"] = card.LumaStatusText, ["version"] = "", ["filename"] = "" });
 
+        // DLSS / Streamline
+        Dictionary<string, object?>? dlssInfo = null;
+        if (card.HasAnyDlssStreamline)
+        {
+            dlssInfo = new Dictionary<string, object?>
+            {
+                ["dlssVersion"] = card.DlssInstalledVersion,
+                ["dlssPath"] = card.DlssDetection?.DlssPath,
+                ["dlssdVersion"] = card.DlssdInstalledVersion,
+                ["dlssdPath"] = card.DlssDetection?.DlssdPath,
+                ["dlssgVersion"] = card.DlssgInstalledVersion,
+                ["dlssgPath"] = card.DlssDetection?.DlssgPath,
+                ["streamlineVersion"] = card.StreamlineInstalledVersion,
+                ["streamlineFolder"] = card.DlssDetection?.StreamlineFolder,
+            };
+
+            // Add preset info if available
+            var presetService = vm.DlssPresetServiceInstance;
+            if (presetService.IsSupported)
+            {
+                dlssInfo["srPreset"] = presetService.GetSrPreset(gameName, card.InstallPath);
+                dlssInfo["rrPreset"] = presetService.GetRrPreset(gameName, card.InstallPath);
+                dlssInfo["fgPreset"] = presetService.GetFgPreset(gameName, card.InstallPath);
+            }
+        }
+
         // Overrides
         var shaderMode = vm.GetPerGameShaderMode(gameName);
         var addonMode = vm.GetPerGameAddonMode(gameName);
@@ -354,6 +380,7 @@ public static class GameReportEncoder
             ["components"] = components,
             ["overrides"] = overrides,
             ["addons"] = addons,
+            ["dlssStreamline"] = dlssInfo,
             ["userNote"] = userNote,
             ["rhiVersion"] = vm.UpdateServiceInstance.CurrentVersion.ToString(),
             ["timestamp"] = DateTime.UtcNow.ToString("O"),

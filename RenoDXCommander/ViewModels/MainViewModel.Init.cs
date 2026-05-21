@@ -110,6 +110,12 @@ public partial class MainViewModel
     {
         IsLoading = true;
         if (!_hasInitialized) DisplayedGames.Clear();
+
+        // Capture update statuses BEFORE clearing cards — needed to restore them after rebuild
+        var prevUpdateStatus = new Dictionary<string, (GameStatus mod, GameStatus rs, GameStatus dc, GameStatus ul, GameStatus refFw, GameStatus os, GameStatus dxvk)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in _allCards)
+            prevUpdateStatus[c.GameName] = (c.Status, c.RsStatus, c.DcStatus, c.UlStatus, c.RefStatus, c.OsStatus, c.DxvkStatus);
+
         _allCards.Clear();
         _originalDetectedNames.Clear();
 
@@ -359,9 +365,7 @@ public partial class MainViewModel
             // Snapshot update statuses from old cards so they survive the rebuild.
             // The background CheckForUpdatesAsync will re-verify, but this avoids
             // a visual gap where the update badge disappears until the network check completes.
-            var prevUpdateStatus = new Dictionary<string, (GameStatus mod, GameStatus rs, GameStatus dc, GameStatus ul, GameStatus refFw, GameStatus os, GameStatus dxvk)>(StringComparer.OrdinalIgnoreCase);
-            foreach (var c in _allCards)
-                prevUpdateStatus[c.GameName] = (c.Status, c.RsStatus, c.DcStatus, c.UlStatus, c.RefStatus, c.OsStatus, c.DxvkStatus);
+            // (prevUpdateStatus was captured at the top of InitializeAsync before _allCards.Clear())
 
             SubStatusText = "Matching mods and checking install status...";
 
@@ -1466,13 +1470,33 @@ public partial class MainViewModel
             }
 
             // ── DLSS / Streamline detection ──────────────────────────────────────
-            if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            bool dlssSkipped = _manifest?.DlssSkipGames?.Contains(game.Name, StringComparer.OrdinalIgnoreCase) == true
+                || _dlssStreamlineService.ShouldSkipScan(game.Name);
+            if (!dlssSkipped && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
             {
                 try
                 {
-                    var dlssDetection = _dlssStreamlineService.Detect(installPath);
-                    if (dlssDetection.HasAny)
-                        newCard.ApplyDlssDetection(dlssDetection);
+                    // Try fast path first (trusted cached paths — no recursive scan)
+                    var fastResult = _dlssStreamlineService.TryFastDetect(game.Name);
+                    if (fastResult != null)
+                    {
+                        newCard.ApplyDlssDetection(fastResult);
+                    }
+                    else
+                    {
+                        // Full recursive scan
+                        var dlssDetection = _dlssStreamlineService.Detect(installPath);
+                        if (dlssDetection.HasAny)
+                        {
+                            newCard.ApplyDlssDetection(dlssDetection);
+                            _dlssStreamlineService.RecordDlssFound(game.Name);
+                            _dlssStreamlineService.RecordTrustedPath(game.Name, dlssDetection);
+                        }
+                        else
+                        {
+                            _dlssStreamlineService.RecordNoDlssFound(game.Name);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

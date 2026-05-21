@@ -115,6 +115,7 @@ public partial class OptiScalerService : IOptiScalerService
     private readonly IDllOverrideService _dllOverrideService;
     private readonly GitHubETagCache _etagCache;
     private readonly Lazy<IDxvkService> _dxvkServiceLazy;
+    private readonly Lazy<IDlssStreamlineService> _dlssStreamlineServiceLazy;
 
     // ── Backing fields ────────────────────────────────────────────────────────
     private bool _hasUpdate;
@@ -125,13 +126,15 @@ public partial class OptiScalerService : IOptiScalerService
         IAuxInstallService auxInstaller,
         IDllOverrideService dllOverrideService,
         GitHubETagCache etagCache,
-        Lazy<IDxvkService> dxvkServiceLazy)
+        Lazy<IDxvkService> dxvkServiceLazy,
+        Lazy<IDlssStreamlineService> dlssStreamlineServiceLazy)
     {
         _http = http;
         _auxInstaller = auxInstaller;
         _dllOverrideService = dllOverrideService;
         _etagCache = etagCache;
         _dxvkServiceLazy = dxvkServiceLazy;
+        _dlssStreamlineServiceLazy = dlssStreamlineServiceLazy;
     }
 
     // ── Properties ────────────────────────────────────────────────────────────

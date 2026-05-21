@@ -8,7 +8,7 @@ public partial class DlssStreamlineService
 
     public async Task SwapDlssAsync(string dllPath, string version)
     {
-        var entry = _manifest?.Dlss?.FirstOrDefault(e => e.Version == version);
+        var entry = _manifest?.Dlss?.FirstOrDefault(e => FormatVersion(e.Version) == version || e.Version == version);
         if (entry == null)
         {
             CrashReporter.Log($"[DlssStreamlineService.SwapDlssAsync] Version '{version}' not found in manifest");
@@ -33,7 +33,7 @@ public partial class DlssStreamlineService
 
     public async Task SwapDlssdAsync(string dllPath, string version)
     {
-        var entry = _manifest?.Dlssd?.FirstOrDefault(e => e.Version == version);
+        var entry = _manifest?.Dlssd?.FirstOrDefault(e => FormatVersion(e.Version) == version || e.Version == version);
         if (entry == null)
         {
             CrashReporter.Log($"[DlssStreamlineService.SwapDlssdAsync] Version '{version}' not found in manifest");
@@ -58,7 +58,7 @@ public partial class DlssStreamlineService
 
     public async Task SwapDlssgAsync(string dllPath, string version)
     {
-        var entry = _manifest?.Dlssg?.FirstOrDefault(e => e.Version == version);
+        var entry = _manifest?.Dlssg?.FirstOrDefault(e => FormatVersion(e.Version) == version || e.Version == version);
         if (entry == null)
         {
             CrashReporter.Log($"[DlssStreamlineService.SwapDlssgAsync] Version '{version}' not found in manifest");
@@ -83,7 +83,7 @@ public partial class DlssStreamlineService
 
     public async Task SwapStreamlineAsync(string gameFolder, string version)
     {
-        var entry = _manifest?.Streamline?.FirstOrDefault(e => e.Version == version);
+        var entry = _manifest?.Streamline?.FirstOrDefault(e => FormatVersion(e.Version) == version || e.Version == version);
         if (entry == null)
         {
             CrashReporter.Log($"[DlssStreamlineService.SwapStreamlineAsync] Version '{version}' not found in manifest");

@@ -10,6 +10,8 @@
 ### Bug Fixes
 
 - Fixed Vulkan ReShade update exclusion not propagating to all Vulkan games. Since all Vulkan games share the same global layer DLL, excluding one now correctly excludes all of them from ReShade updates.
+- Fixed update indicators (purple buttons, green dots) disappearing after Refresh. Update statuses are now correctly preserved across manual refreshes.
+- Fixed DLSS detection skipping OptiScaler's bridging copies and correctly targeting the game's actual DLSS DLLs when both are present.
 
 ### OptiScaler Integration
 

@@ -270,6 +270,13 @@ public class RemoteManifest
     public Dictionary<string, string>? DxvkApiOverrides { get; set; }
 
     /// <summary>
+    /// Games known to not have DLSS/Streamline DLLs. Skips the expensive recursive
+    /// directory scan during BuildCards for these games.
+    /// </summary>
+    [JsonPropertyName("dlssSkipGames")]
+    public List<string>? DlssSkipGames { get; set; }
+
+    /// <summary>
     /// List of legacy ReShade versions available in the per-game version picker.
     /// Managed server-side — when a new stable releases, the old version is added here.
     /// </summary>

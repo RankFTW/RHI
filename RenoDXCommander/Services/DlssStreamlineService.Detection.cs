@@ -90,31 +90,71 @@ public partial class DlssStreamlineService
         }
 
         // Check if the path is inside a "Bin" or "Binaries" folder.
-        // Games often have DLLs in sibling folders (e.g. Bin\Win64Shared vs Bin\Win64MasterMasterSteamPGO).
-        // Go up to the parent of Bin/Binaries to search the entire game tree.
+        // - "Binaries" (Unreal Engine): {GameRoot}\{ContentFolder}\Binaries\{Platform}
+        //   Need grandparent of Binaries to reach {GameRoot} where Engine\ lives.
+        //   But only if grandparent isn't a store library folder (common, steamapps, etc.)
+        // - "Bin" (CryEngine, etc.): {GameRoot}\Bin\{Platform}
+        //   Need parent of Bin to reach {GameRoot} where sibling Bin folders live.
         var normalized = installPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var current = normalized;
 
-        // Walk up looking for a "Bin" or "Binaries" ancestor
         while (!string.IsNullOrEmpty(current))
         {
             var dirName = Path.GetFileName(current);
-            if (string.Equals(dirName, "Bin", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(dirName, "Binaries", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(dirName, "Binaries", StringComparison.OrdinalIgnoreCase))
             {
-                // Go up one more level to the game root
-                var gameRoot = Path.GetDirectoryName(current);
-                if (gameRoot != null && Directory.Exists(gameRoot))
-                    return gameRoot;
+                var parent = Path.GetDirectoryName(current);
+                var grandparent = parent != null ? Path.GetDirectoryName(parent) : null;
+
+                // Only use grandparent if it's safe (not a store library root or drive root)
+                if (grandparent != null && Directory.Exists(grandparent) && !IsStoreLibraryFolder(grandparent))
+                    return grandparent;
+                // Fallback to parent (the content folder or game root)
+                if (parent != null && Directory.Exists(parent))
+                    return parent;
+                break;
+            }
+            else if (string.Equals(dirName, "Bin", StringComparison.OrdinalIgnoreCase))
+            {
+                var parent = Path.GetDirectoryName(current);
+                if (parent != null && Directory.Exists(parent))
+                    return parent;
                 break;
             }
 
-            var parent = Path.GetDirectoryName(current);
-            if (parent == current) break; // reached root
-            current = parent;
+            var up = Path.GetDirectoryName(current);
+            if (up == current) break;
+            current = up;
         }
 
         return installPath;
+    }
+
+    /// <summary>
+    /// Returns true if the given path is a known store library folder that should NOT
+    /// be used as a search root (would scan all games in the library).
+    /// </summary>
+    private static bool IsStoreLibraryFolder(string path)
+    {
+        var name = Path.GetFileName(path);
+        if (string.IsNullOrEmpty(name)) return true; // drive root
+
+        // Check for known store library folder names
+        if (string.Equals(name, "common", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "steamapps", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "SteamLibrary", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "EpicGames", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "GOG Games", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "WindowsApps", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "Program Files", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "Program Files (x86)", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Drive root check (e.g. "D:\")
+        if (Path.GetDirectoryName(path) == null)
+            return true;
+
+        return false;
     }
 
     /// <summary>

@@ -105,6 +105,8 @@ public partial class App : Application
         services.AddSingleton<Lazy<IDxvkService>>(sp => new Lazy<IDxvkService>(() => sp.GetRequiredService<IDxvkService>()));
         services.AddSingleton<IDlssStreamlineService, DlssStreamlineService>();
         services.AddSingleton<DlssPresetService>();
+        // Lazy<IDlssStreamlineService> breaks the circular dependency between OptiScalerService ↔ DlssStreamlineService
+        services.AddSingleton<Lazy<IDlssStreamlineService>>(sp => new Lazy<IDlssStreamlineService>(() => sp.GetRequiredService<IDlssStreamlineService>()));
 
         services.AddSingleton<MainViewModel>();
 

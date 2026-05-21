@@ -1774,6 +1774,17 @@ public partial class DetailPanelBuilder
                 }
             }
 
+            // Reset DLSS presets to Default
+            {
+                var presetSvc = _window.ViewModel.DlssPresetServiceInstance;
+                if (presetSvc.IsSupported)
+                {
+                    presetSvc.SetSrPreset(capturedName, card.InstallPath, 0);
+                    presetSvc.SetRrPreset(capturedName, card.InstallPath, 0);
+                    presetSvc.SetFgPreset(capturedName, card.InstallPath, 0);
+                }
+            }
+
             CrashReporter.Log($"[DetailPanelBuilder.BuildOverridesPanel] Overrides reset for: {capturedName}");
 
             // Only reselect if the game name actually changed

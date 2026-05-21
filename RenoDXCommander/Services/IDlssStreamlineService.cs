@@ -105,10 +105,45 @@ public interface IDlssStreamlineService
     string? GetNewestDlssVersion();
 
     /// <summary>
+    /// Returns true if this game has been scanned 3+ times with no DLSS found.
+    /// </summary>
+    bool ShouldSkipScan(string gameName);
+
+    /// <summary>
+    /// Records that a scan found no DLSS for this game.
+    /// </summary>
+    void RecordNoDlssFound(string gameName);
+
+    /// <summary>
+    /// Records that DLSS was found — removes the game from the skip cache.
+    /// </summary>
+    void RecordDlssFound(string gameName);
+
+    /// <summary>
+    /// Attempts fast detection using trusted cached paths. Returns null if full scan needed.
+    /// </summary>
+    DlssDetectionResult? TryFastDetect(string gameName);
+
+    /// <summary>
+    /// Records a successful detection for trusted path confirmation.
+    /// </summary>
+    void RecordTrustedPath(string gameName, DlssDetectionResult detection);
+
+    /// <summary>
     /// Returns the cached path for the newest DLSS SR DLL, downloading if needed.
     /// Used by OptiScaler to source its DLSS DLL.
     /// </summary>
     Task<string?> EnsureNewestDlssCachedAsync();
+
+    /// <summary>
+    /// Returns the cached path for the newest DLSS RR DLL, downloading if needed.
+    /// </summary>
+    Task<string?> EnsureNewestDlssdCachedAsync();
+
+    /// <summary>
+    /// Returns the cached path for the newest DLSS FG DLL, downloading if needed.
+    /// </summary>
+    Task<string?> EnsureNewestDlssgCachedAsync();
 }
 
 /// <summary>

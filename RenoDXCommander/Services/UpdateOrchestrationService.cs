@@ -187,7 +187,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         }
 
         // ── Vulkan games (global layer DLL) ───────────────────────────────────
-NVAPIWrapper integration        // Since all Vulkan games share the same global layer DLL, if ANY Vulkan game
+        // Since all Vulkan games share the same global layer DLL, if ANY Vulkan game
         // is excluded from ReShade updates, skip the layer update entirely.
         var allVulkanInstalled = UpdateAllEligible(allCards)
             .Where(c => c.RequiresVulkanInstall)
