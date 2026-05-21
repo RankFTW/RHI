@@ -260,6 +260,7 @@
   },
 
   "installPathOverrides": {
+    "Gothic II: Gold Classic": "system",
     "ARMORED CORE™ VI FIRES OF RUBICON™": "Game",
     "Batman: Arkham Asylum GOTY Edition": "Binaries",
     "Borderlands: The Pre-Sequel": "Binaries\\Win32",
