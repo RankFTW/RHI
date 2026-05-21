@@ -104,6 +104,7 @@
   ],
 
   "sixtyFourBitGames": [
+    "Zero Parades",
     "BeamNG.drive",
     "Control",
     "Control Ultimate Edition",
@@ -392,6 +393,7 @@
   },
 
   "graphicsApiOverrides": {
+    "Zero Parades": "DirectX12",
     "Assassin's Creed": "DX10",
     "Assassin's Creed Origins": "DX11",
     "Assassin's Creed® Origins": "DX11",
