@@ -323,9 +323,24 @@ public sealed partial class MainWindow : Window
                     _selectionDebounceTimer.Start();
                     break;
                 case ViewLayout.Compact:
-                    // Rebuild current compact page for newly selected game, retaining page index
-                    _compactViewBuilder?.RebuildCurrentPage(
-                        card, ViewModel.CompactPageIndex);
+                    // Debounce compact page rebuild — same pattern as Detail mode
+                    _pendingSelectionCard = card;
+                    if (_selectionDebounceTimer == null)
+                    {
+                        _selectionDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+                        _selectionDebounceTimer.Tick += (s, ev) =>
+                        {
+                            _selectionDebounceTimer.Stop();
+                            var target = _pendingSelectionCard;
+                            if (target != null && target == ViewModel.SelectedGame)
+                            {
+                                _compactViewBuilder?.RebuildCurrentPage(
+                                    target, ViewModel.CompactPageIndex);
+                            }
+                        };
+                    }
+                    _selectionDebounceTimer.Stop();
+                    _selectionDebounceTimer.Start();
                     break;
             }
         }

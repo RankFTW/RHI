@@ -220,6 +220,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 {
                     if (File.Exists(layer64))
                     {
+                        // Skip copy if files are identical (same size = same version, avoids unnecessary UAC)
+                        var stagedSize = new FileInfo(staged64).Length;
+                        var layerSize = new FileInfo(layer64).Length;
+                        if (stagedSize != layerSize)
+                        {
                         try
                         {
                             File.Copy(staged64, layer64, overwrite: true);
@@ -245,6 +250,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                         {
                             _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Vulkan layer 64-bit copy failed (file locked?) — {ioEx.Message}");
                         }
+                        }
+                        else
+                        {
+                            _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Vulkan layer 64-bit DLL already up to date — skipping copy");
+                        }
                     }
                     else
                     {
@@ -262,6 +272,10 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 if (File.Exists(staged32) && new FileInfo(staged32).Length > AuxInstallService.MinReShadeSize
                     && File.Exists(layer32))
                 {
+                    var stagedSize32 = new FileInfo(staged32).Length;
+                    var layerSize32 = new FileInfo(layer32).Length;
+                    if (stagedSize32 != layerSize32)
+                    {
                     try
                     {
                         File.Copy(staged32, layer32, overwrite: true);
@@ -282,6 +296,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     catch (Exception ex32)
                     {
                         _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] 32-bit Vulkan layer copy failed — {ex32.Message}");
+                    }
+                    }
+                    else
+                    {
+                        _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Vulkan layer 32-bit DLL already up to date — skipping copy");
                     }
                 }
             }

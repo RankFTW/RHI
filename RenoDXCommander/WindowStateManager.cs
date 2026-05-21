@@ -30,7 +30,7 @@ public class WindowStateManager
     // Compact-mode size locking
     private bool _sizeLocked;
     private bool _sizeLoggedOnce;
-    private (int W, int H) _compactSize = (1110, 750); // Fixed compact dimensions
+    private (int W, int H) _compactSize = (1110, 820); // Fixed compact dimensions (fits overrides page with DLSS/Streamline)
 
     public WindowStateManager(Window window, IntPtr hwnd, DragDropHandler dragDropHandler, ICrashReporter crashReporter)
     {

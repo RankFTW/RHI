@@ -836,9 +836,12 @@ public partial class MainViewModel
                     // Cache says an addon was here but the file is gone — rescan
                     addonOnDisk = ScanForInstalledAddon(installPath, effectiveMod);
                 }
-                // else: cache says "" (no addon found on previous scan) — trust it
-                // and skip the expensive recursive scan. A Full Refresh clears the
-                // cache, so newly installed addons will be found on the next rescan.
+                else
+                {
+                    // Cache says "" (no addon on previous scan) — do a quick direct check
+                    // in case the user installed one since the last full scan.
+                    addonOnDisk = ScanForInstalledAddonQuick(installPath, effectiveMod);
+                }
             }
             else if (safeAddonCache.TryGetValue(cacheKey, out _))
             {
@@ -1485,7 +1488,11 @@ public partial class MainViewModel
                     else
                     {
                         // Full recursive scan
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
                         var dlssDetection = _dlssStreamlineService.Detect(installPath);
+                        sw.Stop();
+                        if (sw.ElapsedMilliseconds > 200)
+                            _crashReporter.Log($"[BuildCards] DLSS scan for '{game.Name}' took {sw.ElapsedMilliseconds}ms (full scan, fast path missed)");
                         if (dlssDetection.HasAny)
                         {
                             newCard.ApplyDlssDetection(dlssDetection);

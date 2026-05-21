@@ -139,7 +139,7 @@ public class CompactViewBuilder
             }
         }
 
-        // Center content vertically in compact mode (all pages)
+        // Disable scrolling in compact mode — window is sized to fit all content
         _window.DetailScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
         detailPanel.VerticalAlignment = VerticalAlignment.Center;
     }

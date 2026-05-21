@@ -2,20 +2,21 @@
 
 ### New Features
 
-- **DLSS & Streamline Manager** — Full version management for NVIDIA DLSS and Streamline DLLs. Swap DLSS Super Resolution, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. All versions are downloaded on-demand and cached locally. Backups are created automatically with `.original` extension — restore anytime with one click.
+- **DLSS & Streamline Manager** — Full version management for NVIDIA DLSS and Streamline DLLs. Swap DLSS Super Resolution, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. All versions are downloaded on-demand and cached locally. Backups are created automatically with `.original` extension — restore anytime with one click. Smart detection finds DLLs regardless of folder structure (Unreal Engine, Unity, CryEngine, WindowsApps). Correctly distinguishes game DLSS files from OptiScaler's bridging copies.
 - **DLSS Preset Control** — Change DLSS presets per-game directly from RHI. Set SR presets (J, K, L, M), RR presets (D, E), and FG presets (A, B) without needing NVIDIA Profile Inspector. Changes apply instantly to the NVIDIA driver profile.
 - **Custom DLSS/Streamline Files** — Drop your own DLLs into the Custom folders and select "Custom" from the version dropdown to deploy them.
-- **Smart Detection** — Automatically finds DLSS and Streamline DLLs regardless of where they are in the game folder tree. Works with any folder structure including Unreal Engine, Unity, CryEngine, and WindowsApps packages.
 
 ### Bug Fixes
 
 - Fixed Vulkan ReShade update exclusion not propagating to all Vulkan games. Since all Vulkan games share the same global layer DLL, excluding one now correctly excludes all of them from ReShade updates.
 - Fixed update indicators (purple buttons, green dots) disappearing after Refresh. Update statuses are now correctly preserved across manual refreshes.
-- Fixed DLSS detection skipping OptiScaler's bridging copies and correctly targeting the game's actual DLSS DLLs when both are present.
+- Fixed compact view becoming unresponsive when rapidly navigating with arrow keys. Added 150ms selection debounce to prevent UI thread overload from rapid panel rebuilds.
+- Fixed unnecessary UAC/admin prompt during Update All for users with Vulkan games. The Vulkan ReShade layer was being recopied to ProgramData on every run even when already up to date.
+- Fixed manually-installed RenoDX addons (e.g. from Nexus Mods) not being detected after a normal Refresh. The addon file cache was trusting stale "no addon" entries instead of rechecking.
 
 ### OptiScaler Integration
 
-- OptiScaler now sources DLSS DLLs from the shared version cache. If you've downloaded a DLSS version via the new manager, OptiScaler will use it automatically — no duplicate downloads.
+- OptiScaler now sources DLSS DLLs from the shared version cache (no more third-party CDN dependency). If you've downloaded a DLSS version via the new manager, OptiScaler will use it automatically.
 
 ---
 
