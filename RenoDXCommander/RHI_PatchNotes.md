@@ -19,6 +19,10 @@
 
 - OptiScaler now sources DLSS DLLs from the shared version cache (no more third-party CDN dependency). If you've downloaded a DLSS version via the new manager, OptiScaler will use it automatically.
 
+### Improvements
+
+- Game Report (Copy Report) now includes all collected data: update exclusions, addon selections, DLSS/Streamline versions and paths, and preset values.
+
 ---
 
 ## v1.9.6

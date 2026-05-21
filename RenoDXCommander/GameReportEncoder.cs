@@ -175,11 +175,39 @@ public static class GameReportEncoder
             if (ov["addonMode"] is string am && !string.IsNullOrEmpty(am)) ovLines.Add($"Addon Mode: {am}");
             if (ov["launchExe"] is string le && !string.IsNullOrEmpty(le)) ovLines.Add($"Launch Exe: `{le}`");
 
+            // Update exclusions
+            var excluded = new List<string>();
+            if ((bool?)ov["updateExcludedRS"] == true) excluded.Add("RS");
+            if ((bool?)ov["updateExcludedRDX"] == true) excluded.Add("RDX");
+            if ((bool?)ov["updateExcludedUL"] == true) excluded.Add("RL");
+            if ((bool?)ov["updateExcludedDC"] == true) excluded.Add("DC");
+            if ((bool?)ov["updateExcludedOS"] == true) excluded.Add("OS");
+            if (excluded.Count > 0) ovLines.Add($"Update Excluded: {string.Join(", ", excluded)}");
+
             if (ovLines.Count > 0)
             {
                 sb.AppendLine("## Overrides");
                 sb.AppendLine();
                 foreach (var l in ovLines) sb.AppendLine($"- {l}");
+                sb.AppendLine();
+            }
+        }
+
+        // Addons
+        if (r["addons"] is Dictionary<string, object?> addons)
+        {
+            var addonLines = new List<string>();
+            if (addons["mode"] is string mode && mode != "Global") addonLines.Add($"Mode: {mode}");
+            if (addons["enabled"] is List<string> enabled && enabled.Count > 0)
+                addonLines.Add($"Enabled: {string.Join(", ", enabled)}");
+            if (addons["perGameSelection"] is List<string> perGame && perGame.Count > 0)
+                addonLines.Add($"Per-Game Selection: {string.Join(", ", perGame)}");
+
+            if (addonLines.Count > 0)
+            {
+                sb.AppendLine("## Addons");
+                sb.AppendLine();
+                foreach (var l in addonLines) sb.AppendLine($"- {l}");
                 sb.AppendLine();
             }
         }
@@ -193,7 +221,28 @@ public static class GameReportEncoder
             sb.AppendLine();
         }
 
+        // DLSS / Streamline
+        if (r["dlssStreamline"] is Dictionary<string, object?> dlss)
+        {
+            sb.AppendLine("## DLSS / Streamline");
+            sb.AppendLine();
+            if (dlss["dlssVersion"] is string dv) sb.AppendLine($"- DLSS SR: {dv} (`{dlss["dlssPath"]}`)");
+            if (dlss["dlssdVersion"] is string ddv) sb.AppendLine($"- DLSS RR: {ddv} (`{dlss["dlssdPath"]}`)");
+            if (dlss["dlssgVersion"] is string dgv) sb.AppendLine($"- DLSS FG: {dgv} (`{dlss["dlssgPath"]}`)");
+            if (dlss["streamlineVersion"] is string slv) sb.AppendLine($"- Streamline: {slv} (`{dlss["streamlineFolder"]}`)");
+            if (dlss.TryGetValue("srPreset", out var srp) && srp is uint srVal && srVal != 0) sb.AppendLine($"- SR Preset: {PresetValueToName(srVal, DlssPresetService.SrPresets)}");
+            if (dlss.TryGetValue("rrPreset", out var rrp) && rrp is uint rrVal && rrVal != 0) sb.AppendLine($"- RR Preset: {PresetValueToName(rrVal, DlssPresetService.RrPresets)}");
+            if (dlss.TryGetValue("fgPreset", out var fgp) && fgp is uint fgVal && fgVal != 0) sb.AppendLine($"- FG Preset: {PresetValueToName(fgVal, DlssPresetService.FgPresets)}");
+            sb.AppendLine();
+        }
+
         return sb.ToString();
+    }
+
+    private static string PresetValueToName(uint value, (string Name, uint Value)[] presets)
+    {
+        var match = presets.FirstOrDefault(p => p.Value == value);
+        return match.Name ?? $"0x{value:X}";
     }
 
     private static string SanitizeFileName(string name)
