@@ -790,4 +790,20 @@
 
   "launchExeOverrides": {
   }
+,
+  "installWarnings": {
+    "FINAL FANTASY VII REMAKE INTERGRADE": {
+      "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
+    },
+    "_REFERENCE_EXAMPLE_DO_NOT_USE": {
+      "reshade": "Example ReShade warning",
+      "renodx": "Example RenoDX warning",
+      "relimiter": "Example ReLimiter warning",
+      "dc": "Example Display Commander warning",
+      "optiscaler": "Example OptiScaler warning",
+      "luma": "Example Luma warning",
+      "reframework": "Example RE Framework warning",
+      "dxvk": "Example DXVK warning"
+    }
+  }
 }
