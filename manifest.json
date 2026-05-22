@@ -792,9 +792,6 @@
   }
 ,
   "installWarnings": {
-    "Hollow Knight: Silksong": {
-      "luma": "Dio Brando request #69 taken care of for next update :D"
-    },
     "FINAL FANTASY VII REMAKE INTERGRADE": {
       "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
     },
