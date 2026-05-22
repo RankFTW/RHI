@@ -2070,6 +2070,9 @@ public partial class MainViewModel
     {
         if (card?.LumaMod == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
+        // Check for manifest-driven install warning
+        if (!await CheckInstallWarningAsync(card.GameName, "luma")) return;
+
         card.IsLumaInstalling = true;
         card.LumaActionMessage = "Installing Luma...";
         try
@@ -2130,6 +2133,50 @@ public partial class MainViewModel
         {
             card.LumaActionMessage = $"❌ Uninstall failed: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallLuma", ex, note: $"Game: {card.GameName}");
+        }
+    }
+
+    // ── Install warning helper ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Checks the manifest for a per-game, per-component install warning.
+    /// If one exists, shows a dialog. Returns true if install should proceed, false if cancelled.
+    /// </summary>
+    public async Task<bool> CheckInstallWarningAsync(string gameName, string component)
+    {
+        if (_manifest?.InstallWarnings == null) return true;
+        if (!_manifest.InstallWarnings.TryGetValue(gameName, out var warnings)) return true;
+        if (!warnings.TryGetValue(component, out var message)) return true;
+        if (string.IsNullOrEmpty(message)) return true;
+
+        try
+        {
+            Microsoft.UI.Xaml.XamlRoot? xamlRoot = null;
+            if (Microsoft.UI.Xaml.Application.Current is App app)
+            {
+                var field = typeof(App).GetField("_window", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (field?.GetValue(app) is MainWindow mw)
+                    xamlRoot = mw.Content?.XamlRoot;
+            }
+            if (xamlRoot == null) return true;
+
+            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "⚠ Install Note",
+                Content = message,
+                PrimaryButtonText = "Continue",
+                CloseButtonText = "Cancel",
+                DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.Primary,
+                XamlRoot = xamlRoot,
+            };
+
+            var result = await dialog.ShowAsync();
+            return result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary;
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainViewModel.CheckInstallWarningAsync] Dialog failed — {ex.Message}");
+            return true; // Proceed on error
         }
     }
 

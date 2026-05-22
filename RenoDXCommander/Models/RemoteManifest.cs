@@ -277,6 +277,15 @@ public class RemoteManifest
     public List<string>? DlssSkipGames { get; set; }
 
     /// <summary>
+    /// Per-game, per-component install warnings shown as a dialog before install proceeds.
+    /// Key = game name, Value = dictionary of component → warning message.
+    /// Components: reshade, renodx, relimiter, dc, optiscaler, luma, reframework, dxvk.
+    /// If the user clicks Cancel, install is aborted.
+    /// </summary>
+    [JsonPropertyName("installWarnings")]
+    public Dictionary<string, Dictionary<string, string>>? InstallWarnings { get; set; }
+
+    /// <summary>
     /// List of legacy ReShade versions available in the per-game version picker.
     /// Managed server-side — when a new stable releases, the old version is added here.
     /// </summary>

@@ -1,8 +1,16 @@
 ## v1.9.8-beta
 
+### New Features
+
+- **Install Warnings** — Per-game, per-component install warnings driven from the manifest. When a game has a known requirement (e.g. FF7R needs DX11 mode for Luma), a dialog pops up before install with the warning. User can Continue or Cancel.
+
 ### Bug Fixes
 
 - Fixed RenoDX mod install incorrectly warning about replacing the DLSS Fix global addon (`renodx-dlssfix.addon64`). Global addons are no longer treated as game-specific mods during install.
+
+### Manifest Updates
+
+- FINAL FANTASY VII REMAKE INTERGRADE — Luma install warning (DX11 mode required).
 
 ---
 

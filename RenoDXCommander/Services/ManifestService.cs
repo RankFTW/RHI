@@ -192,5 +192,7 @@ public class ManifestService : IManifestService
             m.OptiScalerGameInfo = new Dictionary<string, GameNoteEntry>(m.OptiScalerGameInfo, StringComparer.OrdinalIgnoreCase);
         if (m.LumaGameInfo != null)
             m.LumaGameInfo = new Dictionary<string, GameNoteEntry>(m.LumaGameInfo, StringComparer.OrdinalIgnoreCase);
+        if (m.InstallWarnings != null)
+            m.InstallWarnings = new Dictionary<string, Dictionary<string, string>>(m.InstallWarnings, StringComparer.OrdinalIgnoreCase);
     }
 }
