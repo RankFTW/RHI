@@ -99,15 +99,9 @@ public partial class DetailPanelBuilder
         _window.Detail32BitBadge.Visibility = card.Is32Bit ? Visibility.Visible : Visibility.Collapsed;
         _window.Detail64BitBadge.Visibility = !card.Is32Bit ? Visibility.Visible : Visibility.Collapsed;
 
-        // Wiki status badge
-        var hasWikiLabel = !string.IsNullOrEmpty(card.WikiStatusLabel);
-        _window.DetailWikiText.Text = card.WikiStatusLabel;
-        _window.DetailWikiText.Foreground = UIFactory.GetBrush(card.WikiStatusBadgeForeground);
-        _window.DetailWikiBadge.Background = UIFactory.GetBrush(card.WikiStatusBadgeBackground);
-        _window.DetailWikiBadge.BorderBrush = UIFactory.GetBrush(card.WikiStatusBadgeBorderBrush);
-        _window.DetailWikiBadge.BorderThickness = new Thickness(1);
-        _window.DetailWikiBadge.Visibility = hasWikiLabel ? Visibility.Visible : Visibility.Collapsed;
-        _window.DetailSepPlatformStatus.Visibility = hasWikiLabel ? Visibility.Visible : Visibility.Collapsed;
+        // Wiki status badge — hidden from main UI, shown inside Info button dialog instead
+        _window.DetailWikiBadge.Visibility = Visibility.Collapsed;
+        _window.DetailSepPlatformStatus.Visibility = Visibility.Collapsed;
 
         // Author badges
         _window.DetailAuthorBadgePanel.Children.Clear();

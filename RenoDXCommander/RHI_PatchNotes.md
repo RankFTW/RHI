@@ -10,6 +10,10 @@
 - DLSS and Streamline version dropdowns are now disabled for games with v1.x DLLs (e.g. Witcher 3). These legacy versions are not compatible with the newer versions available in the manager.
 - Full Refresh now clears DLSS scan caches, ensuring newly added DLLs (e.g. game update adds Ray Reconstruction) are detected.
 
+### UI Changes
+
+- RenoDX wiki status badge (Working, In Progress, etc.) moved from the main detail panel into the RenoDX Info button dialog. Cleaner main view, status still accessible.
+
 ### Manifest Updates
 
 - FINAL FANTASY VII REMAKE INTERGRADE — Luma install warning (DX11 mode required).

@@ -96,7 +96,11 @@ public class AddonInfoResolver
         {
             Content = fallbackText,
             Source = sourceType,
-            HdrAnalysisUrl = hdrUrl
+            HdrAnalysisUrl = hdrUrl,
+            WikiStatusLabel = (sourceType == InfoSourceType.Wiki && addon == AddonType.RenoDX) ? card.WikiStatusLabel : null,
+            WikiStatusBadgeBg = (sourceType == InfoSourceType.Wiki && addon == AddonType.RenoDX) ? card.WikiStatusBadgeBackground : null,
+            WikiStatusBadgeFg = (sourceType == InfoSourceType.Wiki && addon == AddonType.RenoDX) ? card.WikiStatusBadgeForeground : null,
+            WikiStatusBadgeBorder = (sourceType == InfoSourceType.Wiki && addon == AddonType.RenoDX) ? card.WikiStatusBadgeBorderBrush : null,
         };
     }
 
