@@ -100,6 +100,7 @@ public partial class MainViewModel
         _resolvedPathCache.Clear();
         _addonFileCache.Clear();
         _bitnessCache.Clear();
+        _dlssStreamlineService.ClearScanCaches();
         _forceUpdateCheck = true;
         await InitializeAsync(forceRescan: true);
     }

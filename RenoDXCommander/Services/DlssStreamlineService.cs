@@ -217,6 +217,37 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             SaveScanCache();
     }
 
+    /// <summary>
+    /// Clears the scan skip cache and invalidates trusted path entries that have null components.
+    /// Games with fully populated paths keep their trusted status.
+    /// Called on Full Refresh to detect newly added DLLs (e.g. game update adds RR/FG).
+    /// </summary>
+    public void ClearScanCaches()
+    {
+        // Clear the "no DLSS" skip cache entirely — games might have gained DLSS
+        _scanSkipCache = new(StringComparer.OrdinalIgnoreCase);
+        try { if (File.Exists(ScanSkipCachePath)) File.Delete(ScanSkipCachePath); } catch { }
+
+        // Only invalidate trusted entries with null paths (partial detection)
+        // Games with all paths populated keep their trusted status
+        EnsureTrustedCacheLoaded();
+        var toRemove = _trustedPathCache!
+            .Where(kvp => kvp.Value.DlssPath == null || kvp.Value.DlssdPath == null
+                       || kvp.Value.DlssgPath == null || kvp.Value.StreamlineFolder == null)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        if (toRemove.Count > 0)
+        {
+            foreach (var key in toRemove)
+                _trustedPathCache.Remove(key);
+            SaveTrustedCache();
+            CrashReporter.Log($"[DlssStreamlineService.ClearScanCaches] Invalidated {toRemove.Count} partial trusted entries for re-scan");
+        }
+
+        CrashReporter.Log("[DlssStreamlineService.ClearScanCaches] Cleared scan skip cache");
+    }
+
     private void EnsureScanCacheLoaded()
     {
         if (_scanSkipCache != null) return;

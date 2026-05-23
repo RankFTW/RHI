@@ -120,6 +120,12 @@ public interface IDlssStreamlineService
     void RecordDlssFound(string gameName);
 
     /// <summary>
+    /// Clears both the scan skip cache and trusted path cache.
+    /// Called on Full Refresh to force fresh detection.
+    /// </summary>
+    void ClearScanCaches();
+
+    /// <summary>
     /// Attempts fast detection using trusted cached paths. Returns null if full scan needed.
     /// </summary>
     DlssDetectionResult? TryFastDetect(string gameName);

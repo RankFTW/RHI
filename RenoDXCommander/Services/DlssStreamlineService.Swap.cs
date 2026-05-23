@@ -121,10 +121,12 @@ public partial class DlssStreamlineService
 
     public async Task SwapDlssCustomAsync(string dllPath)
     {
-        var customDll = Path.Combine(DlssCustomDir, DlssDllName);
+        // Resolve the correct custom DLL based on the target filename
+        var targetFileName = Path.GetFileName(dllPath);
+        var customDll = Path.Combine(DlssCustomDir, targetFileName);
         if (!File.Exists(customDll))
         {
-            CrashReporter.Log($"[DlssStreamlineService.SwapDlssCustomAsync] Custom DLSS DLL not found at '{customDll}'");
+            CrashReporter.Log($"[DlssStreamlineService.SwapDlssCustomAsync] Custom DLL not found at '{customDll}'");
             return;
         }
 
