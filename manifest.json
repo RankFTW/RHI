@@ -260,6 +260,7 @@
   },
 
   "installPathOverrides": {
+    "SOULCALIBUR VI": "SoulcaliburVI\\Binaries\\Win64",
     "Gothic II: Gold Classic": "system",
     "ARMORED CORE™ VI FIRES OF RUBICON™": "Game",
     "Batman: Arkham Asylum GOTY Edition": "Binaries",
@@ -291,6 +292,7 @@
   },
 
   "engineOverrides": {
+    "SOULCALIBUR VI": "Unreal Engine",
     "Alan Wake 2": "Northlight Engine",
     "Aphelion": "Unreal Engine",
     "Assassin's Creed Mirage": "Anvil",
