@@ -1324,6 +1324,25 @@
                             </Grid>
                         </Border>
 
+                        <!-- ── Mass DLSS & Streamline Deployment ───────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Mass DLSS &amp; Streamline Deployment" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                           Text="Deploy DLSS and Streamline DLL versions and DLSS presets to multiple games at once. Backs up originals automatically. Games without DLSS/Streamline or with v1.x versions are skipped."/>
+                                <Button Content="Batch Deploy"
+                                        Click="MassDlssDeploy_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                        </Border>
+
                         <!-- ── OptiScaler Settings ─────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
@@ -1435,103 +1454,42 @@
                             </Grid>
                         </Border>
 
-                        <!-- ── Global Update Checks ────────────────────────────────── -->
+                        <!-- ── Global Update Checks & Addon Watch Folder ─────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="12">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Global Update Checks" FontSize="14" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11"
-                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Disable update checks for individual components. When disabled, the component will not be checked for updates during startup or when using Update All."/>
-                                </StackPanel>
-
-                                <Grid ColumnSpacing="16" RowSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <ToggleSwitch Grid.Row="0" Grid.Column="0"
-                                                  x:Name="GlobalRdxUpdateToggle" x:FieldModifier="internal"
-                                                  Header="RenoDX"
-                                                  OnContent="On" OffContent="Off"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Toggled="GlobalRdxUpdateToggle_Toggled"/>
-
-                                    <ToggleSwitch Grid.Row="0" Grid.Column="1"
-                                                  x:Name="GlobalRsUpdateToggle" x:FieldModifier="internal"
-                                                  Header="ReShade"
-                                                  OnContent="On" OffContent="Off"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Toggled="GlobalRsUpdateToggle_Toggled"/>
-
-                                    <ToggleSwitch Grid.Row="0" Grid.Column="2"
-                                                  x:Name="GlobalUlUpdateToggle" x:FieldModifier="internal"
-                                                  Header="ReLimiter"
-                                                  OnContent="On" OffContent="Off"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Toggled="GlobalUlUpdateToggle_Toggled"/>
-
-                                    <ToggleSwitch Grid.Row="1" Grid.Column="0"
-                                                  x:Name="GlobalDcUpdateToggle" x:FieldModifier="internal"
-                                                  Header="Display Commander"
-                                                  OnContent="On" OffContent="Off"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Toggled="GlobalDcUpdateToggle_Toggled"/>
-
-                                    <ToggleSwitch Grid.Row="1" Grid.Column="1"
-                                                  x:Name="GlobalOsUpdateToggle" x:FieldModifier="internal"
-                                                  Header="OptiScaler"
-                                                  OnContent="On" OffContent="Off"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Toggled="GlobalOsUpdateToggle_Toggled"/>
-
-                                    <ToggleSwitch Grid.Row="1" Grid.Column="2"
-                                                  x:Name="GlobalRefUpdateToggle" x:FieldModifier="internal"
-                                                  Header="RE Framework"
-                                                  OnContent="On" OffContent="Off"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Toggled="GlobalRefUpdateToggle_Toggled"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ── Custom Shaders & Addon Watch Folder ─────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <Grid ColumnSpacing="0" RowSpacing="8">
+                            <Grid ColumnSpacing="0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="25"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Custom Shaders -->
+                                <!-- Left: Global Update Checks -->
                                 <Grid Grid.Column="0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Spacing="8">
-                                        <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
+                                    <StackPanel Grid.Row="0" Spacing="4">
+                                        <TextBlock Text="Global Update Checks" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs. Files are sourced from %LocalAppData%\RHI\reshade\Custom\."/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Disable update checks for individual components. When disabled, the component will not be checked for updates during startup or when using Update All."/>
                                     </StackPanel>
-                                    <ToggleSwitch Grid.Row="1" x:Name="CustomShadersToggle" x:FieldModifier="internal"
-                                                  Header="Use Custom Shaders"
-                                                  Toggled="CustomShadersToggle_Toggled"
-                                                  OnContent="Enabled — deploying from custom directories"
-                                                  OffContent="Disabled — using shader packs"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Margin="0,8,0,0"/>
+                                    <Button Grid.Row="1" x:Name="GlobalUpdateInclusionBtn"
+                                            Content="Update Inclusion"
+                                            Click="GlobalUpdateInclusion_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"
+                                            Margin="0,8,0,0"/>
+                                    <TextBlock Grid.Row="2" x:Name="GlobalUpdateSummaryText" x:FieldModifier="internal"
+                                               FontSize="11" TextWrapping="Wrap"
+                                               Margin="0,4,0,0"/>
                                 </Grid>
 
                                 <!-- Vertical divider -->
@@ -1577,28 +1535,63 @@
                             </Grid>
                         </Border>
 
-                        <!-- ── Shader Cache ────────────────────────────────────────── -->
+                        <!-- ── Custom Shaders & Shader Cache ───────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <Grid ColumnSpacing="0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Spacing="8">
-                                    <TextBlock Text="Shader Cache" FontSize="13" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="When enabled, all shader packs are downloaded and cached on startup. When disabled, shader packs are only downloaded when needed (e.g. when you select them or install ReShade). Existing cached shaders are kept either way."/>
-                                </StackPanel>
-                                <ToggleSwitch Grid.Column="1"
-                                              x:Name="CacheAllShadersToggle" x:FieldModifier="internal"
-                                              Header="Cache All Shaders"
-                                              Toggled="CacheAllShadersToggle_Toggled"
-                                              OnContent="On" OffContent="Off"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                              VerticalAlignment="Center"
-                                              Margin="16,0,0,0"/>
+
+                                <!-- Left: Custom Shaders -->
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs. Files are sourced from %LocalAppData%\RHI\reshade\Custom\."/>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Row="1" x:Name="CustomShadersToggle" x:FieldModifier="internal"
+                                                  Header="Use Custom Shaders"
+                                                  Toggled="CustomShadersToggle_Toggled"
+                                                  OnContent="Enabled — deploying from custom directories"
+                                                  OffContent="Disabled — using shader packs"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Margin="0,8,0,0"/>
+                                </Grid>
+
+                                <!-- Vertical divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch"
+                                        Margin="12,0,12,0"/>
+
+                                <!-- Right: Shader Cache -->
+                                <Grid Grid.Column="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Shader Cache" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="When enabled, all shader packs are downloaded and cached on startup. When disabled, shader packs are only downloaded when needed (e.g. when you select them or install ReShade). Existing cached shaders are kept either way."/>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Row="1"
+                                                  x:Name="CacheAllShadersToggle" x:FieldModifier="internal"
+                                                  Header="Cache All Shaders"
+                                                  Toggled="CacheAllShadersToggle_Toggled"
+                                                  OnContent="On" OffContent="Off"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
+                                                  Margin="0,8,0,0"/>
+                                </Grid>
                             </Grid>
                         </Border>
 
@@ -1647,15 +1640,15 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- ── Mass INI Deployment ─────────────────────────────────── -->
+                        <!-- ── Mass Deployment ─────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="12">
-                                <TextBlock Text="Mass INI Deployment" FontSize="14" FontWeight="SemiBold"
+                                <TextBlock Text="Mass Deployment" FontSize="14" FontWeight="SemiBold"
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11"
                                            Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Deploy INI files from your AppData templates to ALL games that have the corresponding component installed. This will overwrite existing INI files in game folders. Custom hotkey and screenshot path settings are preserved during deployment."/>
+                                           Text="Deploy INI files or ReShade presets to multiple games at once. INI deployment overwrites existing files in game folders — custom hotkey and screenshot path settings are preserved."/>
 
                                 <Grid ColumnSpacing="12" RowSpacing="8">
                                     <Grid.ColumnDefinitions>
@@ -1663,6 +1656,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
@@ -1702,51 +1696,16 @@
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,7" FontSize="12"
                                             HorizontalAlignment="Stretch"/>
+
+                                    <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                            Content="Mass Preset Install"
+                                            Click="MassPresetInstall_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
                                 </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ── Mass ReShade Preset Install ─────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="12">
-                                <TextBlock Text="Mass ReShade Preset Install" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11"
-                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Deploy ReShade presets from your presets folder to multiple games at once. Select a preset, choose which games to deploy to, and optionally install the required shader packs. Presets must already be in the presets folder — use the per-game preset selector or drag-and-drop to add new presets first."/>
-
-                                <Button Content="Mass Preset Install"
-                                        Click="MassPresetInstall_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}"
-                                        Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ── Preferences ────────────────────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Preferences" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <ToggleSwitch x:Name="SkipUpdateToggle" x:FieldModifier="internal"
-                                              Header="Skip update check on launch"
-                                              Toggled="SkipUpdateToggle_Toggled"
-                                              OnContent="Disabled — RHI will not check for updates"
-                                              OffContent="Enabled — RHI checks for updates on launch"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="When enabled, RHI skips the automatic update check that runs on every launch."/>
-                                <ToggleSwitch x:Name="VerboseLoggingToggle" x:FieldModifier="internal"
-                                              Header="Verbose Logging"
-                                              Toggled="VerboseLoggingToggle_Toggled"
-                                              OnContent="Enabled — all activity logged to session log"
-                                              OffContent="Disabled — only crash/error reports saved"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                           Text="When enabled, every action is logged to the session log for debugging. Disable for normal use."/>
                             </StackPanel>
                         </Border>
 
@@ -1754,34 +1713,30 @@
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Crash &amp; Error Logs" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Data &amp; Custom Files" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="20">
-                                    If the app crashes or behaves unexpectedly, a report is automatically saved to AppData.
-                                    Send any <Run Text="crash_*.txt" FontFamily="Consolas" Foreground="{StaticResource TextTertiaryBrush}"/> files to the developer.
+                                    All RHI data is stored in AppData. Drop custom ReShade, DLSS, or Streamline DLLs into the Custom folder to use them as per-game overrides. The Logs folder contains session usage logs useful for troubleshooting.
                                 </TextBlock>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button x:Name="OpenAppDataBtn"
+                                            Content="Open AppData Folder"
+                                            Click="OpenAppDataFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                    <Button x:Name="OpenCustomBtn"
+                                            Content="Open Custom Folder"
+                                            Click="OpenCustomFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
                                     <Button x:Name="OpenLogsBtn"
                                             Content="Open Logs Folder"
                                             Click="OpenLogsFolder_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    <Button x:Name="OpenDownloadsBtn"
-                                            Content="Open Downloads Cache"
-                                            Click="OpenDownloadsFolder_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
                                 </StackPanel>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
-                                    Logs: <Run Text="%LocalAppData%\RHI\logs\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
-                                </TextBlock>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
-                                    Downloads: <Run Text="%LocalAppData%\RHI\downloads\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
-                                </TextBlock>
-                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18">
-                                    ReShade staging: <Run Text="%LocalAppData%\RHI\reshade\" FontFamily="Consolas" Foreground="{StaticResource InlineDescriptionBrush}"/>
-                                </TextBlock>
                             </StackPanel>
                         </Border>
 

@@ -1,5 +1,6 @@
 // MainWindow.Events.cs — Button click handlers and user-initiated event handlers.
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -689,12 +690,6 @@ public sealed partial class MainWindow
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.SettingsButton_Click(sender, e);
 
-    private void SkipUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.SkipUpdateToggle_Toggled(sender, e);
-
-    private void VerboseLoggingToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.VerboseLoggingToggle_Toggled(sender, e);
-
     private async void PatchNotesLink_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -709,6 +704,12 @@ public sealed partial class MainWindow
 
     private void OpenLogsFolder_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.OpenLogsFolder_Click(sender, e);
+
+    private void OpenAppDataFolder_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.OpenAppDataFolder_Click(sender, e);
+
+    private void OpenCustomFolder_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.OpenCustomFolder_Click(sender, e);
 
     private void OpenDownloadsFolder_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.OpenDownloadsFolder_Click(sender, e);
@@ -755,23 +756,8 @@ public sealed partial class MainWindow
     private void OsDlssInputsToggle_Toggled(object sender, RoutedEventArgs e)
         => _settingsHandler.OsDlssInputsToggle_Toggled(sender, e);
 
-    private void GlobalRdxUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.GlobalRdxUpdateToggle_Toggled(sender, e);
-
-    private void GlobalRsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.GlobalRsUpdateToggle_Toggled(sender, e);
-
-    private void GlobalUlUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.GlobalUlUpdateToggle_Toggled(sender, e);
-
-    private void GlobalDcUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.GlobalDcUpdateToggle_Toggled(sender, e);
-
-    private void GlobalOsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.GlobalOsUpdateToggle_Toggled(sender, e);
-
-    private void GlobalRefUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.GlobalRefUpdateToggle_Toggled(sender, e);
+    private async void GlobalUpdateInclusion_Click(object sender, RoutedEventArgs e)
+        => await _settingsHandler.GlobalUpdateInclusion_ClickAsync(sender, e);
 
     private void CacheAllShadersToggle_Toggled(object sender, RoutedEventArgs e)
         => _settingsHandler.CacheAllShadersToggle_Toggled(sender, e);
@@ -793,6 +779,21 @@ public sealed partial class MainWindow
 
     private async void MassPresetInstall_Click(object sender, RoutedEventArgs e)
         => await _massDeployHandler.MassPresetInstall_ClickAsync(Content.XamlRoot);
+
+    private async void MassDlssDeploy_Click(object sender, RoutedEventArgs e)
+    {
+        var dlssService = App.Services.GetRequiredService<IDlssStreamlineService>();
+        var dialog = new MassDlssDeployDialog(ViewModel, dlssService, Content.XamlRoot, onComplete: () =>
+        {
+            // Rebuild the detail panel for the currently selected game so versions update
+            if (ViewModel.SelectedGame is { } selectedCard)
+            {
+                PopulateDetailPanel(selectedCard);
+                BuildOverridesPanel(selectedCard);
+            }
+        });
+        await dialog.ShowAsync();
+    }
 
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {

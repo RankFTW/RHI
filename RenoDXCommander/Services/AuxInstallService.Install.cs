@@ -79,10 +79,19 @@ public partial class AuxInstallService
         }
 
         if (!File.Exists(rsStagedPath))
+        {
+            if (string.Equals(effectiveChannel, ChannelCustom, StringComparison.OrdinalIgnoreCase))
+                throw new FileNotFoundException(
+                    $"Custom ReShade DLL not found.\n" +
+                    $"Expected: {rsStagedPath}\n" +
+                    $"Place your {(use32Bit ? "ReShade32.dll" : "ReShade64.dll")} in:\n" +
+                    $"{DlssStreamlineService.RsCustomDir}");
+
             throw new FileNotFoundException(
                 $"ReShade DLLs not found in staging directory.\n" +
                 $"Expected: {rsStagedPath}\n" +
                 $"Please restart RHI to download ReShade from reshade.me.");
+        }
 
         // ── Back up foreign DLL at destination ──────────────────────────────────
         BackupForeignDll(destPath);

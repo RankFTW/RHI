@@ -64,7 +64,7 @@ public partial class MainViewModel
     public string? GetReShadeChannelOverride(string gameName)
         => _reShadeChannelOverrides.TryGetValue(gameName, out var value) ? value : null;
 
-    /// <summary>Sets the per-game ReShade channel override. Null removes the override (use global); "Stable" or "Nightly" sets it. Any other value is a legacy version string.</summary>
+    /// <summary>Sets the per-game ReShade channel override. Null removes the override (use global); "Stable" or "Nightly" sets it. "Custom" uses user-supplied DLLs. Any other value is a legacy version string.</summary>
     public void SetReShadeChannelOverride(string gameName, string? value)
     {
         var previousValue = _reShadeChannelOverrides.TryGetValue(gameName, out var prev) ? prev : null;
@@ -75,13 +75,13 @@ public partial class MainViewModel
             _reShadeChannelOverrides[gameName] = value;
         SaveNameMappings();
 
-        // Auto-manage update exclusion for legacy versions
-        bool wasLegacy = IsLegacyVersion(previousValue);
-        bool isLegacy = IsLegacyVersion(value);
+        // Auto-manage update exclusion for legacy and custom versions
+        bool wasExcluded = IsLegacyVersion(previousValue) || string.Equals(previousValue, "Custom", StringComparison.OrdinalIgnoreCase);
+        bool isExcluded = IsLegacyVersion(value) || string.Equals(value, "Custom", StringComparison.OrdinalIgnoreCase);
 
-        if (isLegacy && !wasLegacy)
+        if (isExcluded && !wasExcluded)
         {
-            // Entering legacy — exclude from ReShade updates
+            // Entering legacy/custom — exclude from ReShade updates
             if (!_updateAllExcludedReShade.Contains(gameName))
             {
                 _updateAllExcludedReShade.Add(gameName);
@@ -89,21 +89,22 @@ public partial class MainViewModel
                 if (card != null) card.ExcludeFromUpdateAllReShade = true;
             }
         }
-        else if (!isLegacy && wasLegacy)
+        else if (!isExcluded && wasExcluded)
         {
-            // Leaving legacy — re-include in ReShade updates
+            // Leaving legacy/custom — re-include in ReShade updates
             _updateAllExcludedReShade.Remove(gameName);
             var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
             if (card != null) card.ExcludeFromUpdateAllReShade = false;
         }
     }
 
-    /// <summary>Returns true if the channel value is a legacy version string (not null, not "Stable", not "Nightly").</summary>
+    /// <summary>Returns true if the channel value is a legacy version string (not null, not "Stable", not "Nightly", not "Custom").</summary>
     public static bool IsLegacyVersion(string? channel)
     {
         if (string.IsNullOrEmpty(channel)) return false;
         if (string.Equals(channel, "Stable", StringComparison.OrdinalIgnoreCase)) return false;
         if (string.Equals(channel, "Nightly", StringComparison.OrdinalIgnoreCase)) return false;
+        if (string.Equals(channel, "Custom", StringComparison.OrdinalIgnoreCase)) return false;
         return true;
     }
 

@@ -43,8 +43,9 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     private static readonly string DlssdCacheDir = Path.Combine(BaseStagingDir, "DLSS-D");
     private static readonly string DlssgCacheDir = Path.Combine(BaseStagingDir, "DLSS-G");
     private static readonly string StreamlineCacheDir = Path.Combine(BaseStagingDir, "Streamline");
-    private static readonly string DlssCustomDir = Path.Combine(BaseStagingDir, "DLSS-Custom");
-    private static readonly string StreamlineCustomDir = Path.Combine(BaseStagingDir, "Streamline-Custom");
+    private static readonly string DlssCustomDir = Path.Combine(BaseStagingDir, "Custom", "DLSS");
+    private static readonly string StreamlineCustomDir = Path.Combine(BaseStagingDir, "Custom", "Streamline");
+    private static readonly string CustomBaseDir = Path.Combine(BaseStagingDir, "Custom");
 
     // ── Manifest URL ──────────────────────────────────────────────────────────
 
@@ -79,9 +80,67 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         // Try load cached manifest synchronously for immediate availability
         LoadCachedManifest();
 
+        // Migrate old custom folders to new unified Custom\ structure
+        MigrateCustomFolders();
+
         // Ensure custom folders exist so users can drop files in
         try { Directory.CreateDirectory(DlssCustomDir); } catch { }
         try { Directory.CreateDirectory(StreamlineCustomDir); } catch { }
+        try { Directory.CreateDirectory(RsCustomDir); } catch { }
+    }
+
+    /// <summary>Custom ReShade folder path — exposed for AuxInstallService.</summary>
+    public static string RsCustomDir => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "Custom", "ReShade");
+
+    /// <summary>
+    /// One-time migration: moves files from old DLSS-Custom/Streamline-Custom to Custom\DLSS and Custom\Streamline.
+    /// </summary>
+    private static void MigrateCustomFolders()
+    {
+        try
+        {
+            var oldDlssCustom = Path.Combine(BaseStagingDir, "DLSS-Custom");
+            var oldStreamlineCustom = Path.Combine(BaseStagingDir, "Streamline-Custom");
+
+            MigrateFolder(oldDlssCustom, DlssCustomDir);
+            MigrateFolder(oldStreamlineCustom, StreamlineCustomDir);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.MigrateCustomFolders] Migration failed — {ex.Message}");
+        }
+    }
+
+    private static void MigrateFolder(string oldPath, string newPath)
+    {
+        if (!Directory.Exists(oldPath)) return;
+
+        var files = Directory.GetFiles(oldPath);
+        if (files.Length == 0)
+        {
+            // Empty old folder — just delete it
+            try { Directory.Delete(oldPath, false); } catch { }
+            return;
+        }
+
+        Directory.CreateDirectory(newPath);
+        foreach (var file in files)
+        {
+            var destFile = Path.Combine(newPath, Path.GetFileName(file));
+            if (!File.Exists(destFile))
+                File.Move(file, destFile);
+            else
+                File.Delete(file); // new location already has the file
+        }
+
+        // Remove old folder if now empty
+        try
+        {
+            if (Directory.GetFiles(oldPath).Length == 0 && Directory.GetDirectories(oldPath).Length == 0)
+                Directory.Delete(oldPath, false);
+        }
+        catch { }
     }
 
     // ── Manifest fetching ─────────────────────────────────────────────────────

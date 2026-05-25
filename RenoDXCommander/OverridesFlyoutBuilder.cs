@@ -810,7 +810,7 @@ public class OverridesFlyoutBuilder
         Grid.SetColumn(apiPanel, 1);
 
         // ── ReShade Channel Override ──
-        var channelItems = new[] { "Global", "Stable", "Nightly", "Legacy..." };
+        var channelItems = new[] { "Global", "Stable", "Nightly", "Custom", "Legacy..." };
         // For Vulkan games, show the effective Vulkan-wide override (any Vulkan game's override applies to all)
         var currentChannelOverride = ViewModel.GetReShadeChannelOverride(capturedName);
         if (currentChannelOverride == null && card.RequiresVulkanInstall)
@@ -825,9 +825,13 @@ public class OverridesFlyoutBuilder
         // If a legacy version is active, add it to the dropdown items
         var channelItemsList = new List<string>(channelItems);
         string defaultChannelSelection;
-        if (MainViewModel.IsLegacyVersion(currentChannelOverride))
+        if (string.Equals(currentChannelOverride, "Custom", StringComparison.OrdinalIgnoreCase))
         {
-            channelItemsList.Insert(3, currentChannelOverride!); // Insert before "Legacy..."
+            defaultChannelSelection = "Custom";
+        }
+        else if (MainViewModel.IsLegacyVersion(currentChannelOverride))
+        {
+            channelItemsList.Insert(channelItemsList.IndexOf("Legacy..."), currentChannelOverride!);
             defaultChannelSelection = currentChannelOverride!;
         }
         else
@@ -929,8 +933,111 @@ public class OverridesFlyoutBuilder
             }
 
             // ── If a legacy version is already selected and user picks it again, do nothing ──
-            if (MainViewModel.IsLegacyVersion(selected) && selected != "Legacy...")
+            if (MainViewModel.IsLegacyVersion(selected) && selected != "Legacy..." && selected != "Custom")
             {
+                return;
+            }
+
+            // ── "Custom" — use user-supplied ReShade DLLs ──
+            if (selected == "Custom")
+            {
+                CrashReporter.Log($"[OverridesFlyoutBuilder.RSChannel] '{capturedName}' → Custom ReShade");
+
+                if (!AuxInstallService.IsCustomReShadeAvailable())
+                {
+                    var customPath = DlssStreamlineService.RsCustomDir;
+                    var linkBtn = new HyperlinkButton
+                    {
+                        Content = customPath,
+                        FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
+                        FontSize = 12,
+                        Padding = new Thickness(0),
+                    };
+                    linkBtn.Click += (_, _) =>
+                    {
+                        System.IO.Directory.CreateDirectory(customPath);
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(customPath) { UseShellExecute = true });
+                    };
+                    var warnContent = new StackPanel { Spacing = 8 };
+                    warnContent.Children.Add(new TextBlock
+                    {
+                        Text = "No custom ReShade DLLs found.\n\nPlace your ReShade64.dll and/or ReShade32.dll in:",
+                        TextWrapping = TextWrapping.Wrap,
+                    });
+                    warnContent.Children.Add(linkBtn);
+
+                    var warnDialog = new ContentDialog
+                    {
+                        Title = "Custom ReShade Not Found",
+                        Content = warnContent,
+                        CloseButtonText = "OK",
+                        XamlRoot = _window.Content.XamlRoot,
+                        RequestedTheme = ElementTheme.Dark,
+                    };
+                    await DialogService.ShowSafeAsync(warnDialog);
+                    channelCombo.SelectedItem = defaultChannelSelection;
+                    return;
+                }
+
+                var targetCardCustom = ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+
+                // Vulkan game: affects ALL Vulkan games
+                if (targetCardCustom?.RequiresVulkanInstall == true)
+                {
+                    var vDialog = new ContentDialog
+                    {
+                        Title = "Vulkan ReShade Channel Override",
+                        Content = "Vulkan games share a global ReShade layer.\n\n" +
+                            "Changing the channel for this game will change it for ALL Vulkan games.",
+                        PrimaryButtonText = "Apply to All Vulkan Games",
+                        CloseButtonText = "Cancel",
+                        XamlRoot = _window.Content.XamlRoot,
+                        RequestedTheme = ElementTheme.Dark,
+                    };
+                    var vResult = await DialogService.ShowSafeAsync(vDialog);
+                    if (vResult != ContentDialogResult.Primary)
+                    {
+                        channelCombo.SelectedItem = defaultChannelSelection;
+                        return;
+                    }
+
+                    // Apply to ALL Vulkan games
+                    foreach (var vCard in ViewModel.AllCards.Where(c => c.RequiresVulkanInstall))
+                    {
+                        ViewModel.SetReShadeChannelOverride(vCard.GameName, "Custom");
+                        vCard.NotifyAll();
+                    }
+
+                    // Copy custom DLL to ProgramData Vulkan layer
+                    try
+                    {
+                        var layerDir = VulkanLayerService.LayerDirectory;
+                        var stagedPath64 = AuxInstallService.GetCustomReShadePathStatic(false);
+                        var stagedPath32 = AuxInstallService.GetCustomReShadePathStatic(true);
+                        var layer64 = Path.Combine(layerDir, VulkanLayerService.LayerDllName);
+                        var layer32 = Path.Combine(layerDir, "ReShade32.dll");
+
+                        if (File.Exists(stagedPath64) && File.Exists(layer64))
+                            AuxInstallService.CopyFileWithElevation(stagedPath64, layer64);
+                        if (File.Exists(stagedPath32) && File.Exists(layer32))
+                            AuxInstallService.CopyFileWithElevation(stagedPath32, layer32);
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[OverridesFlyoutBuilder] Failed to update Vulkan layer with custom ReShade — {ex.Message}");
+                    }
+                }
+                else
+                {
+                    // Non-Vulkan: per-game only
+                    ViewModel.SetReShadeChannelOverride(capturedName, "Custom");
+                    if (targetCardCustom != null && targetCardCustom.IsRsInstalled)
+                        await ViewModel.InstallReShadeCommand.ExecuteAsync(targetCardCustom);
+                }
+
+                defaultChannelSelection = "Custom";
+                ViewModel.NotifyUpdateButtonChanged();
                 return;
             }
 

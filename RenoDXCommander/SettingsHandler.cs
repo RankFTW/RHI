@@ -39,8 +39,6 @@ public class SettingsHandler
         _window.SettingsPanel.Visibility = Visibility.Visible;
         _window.LoadingPanel.Visibility = Visibility.Collapsed;
         // Sync toggle state with ViewModel
-        _window.SkipUpdateToggle.IsOn = ViewModel.SkipUpdateCheck;
-        _window.VerboseLoggingToggle.IsOn = ViewModel.VerboseLogging;
         _window.CustomShadersToggle.IsOn = ViewModel.Settings.UseCustomShaders;
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  HDR mod manager by RankFTW";
         // Populate addon watch folder textbox
@@ -94,13 +92,8 @@ public class SettingsHandler
         bool showDlss = !string.Equals(gpuType, "NVIDIA", StringComparison.OrdinalIgnoreCase);
         _window.OsDlssInputsToggle.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
 
-        // Initialize Global Update Checks toggles (inverted: ON = updates enabled, skip = false)
-        _window.GlobalRdxUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipRdxUpdates;
-        _window.GlobalRsUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipRsUpdates;
-        _window.GlobalUlUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipUlUpdates;
-        _window.GlobalDcUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipDcUpdates;
-        _window.GlobalOsUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipOsUpdates;
-        _window.GlobalRefUpdateToggle.IsOn = !ViewModel.Settings.GlobalSkipRefUpdates;
+        // Initialize Global Update Checks summary
+        RefreshGlobalUpdateSummary();
         _window.CacheAllShadersToggle.IsOn = ViewModel.Settings.CacheAllShaders;
 
         // Initialize DXVK variant combo
@@ -130,29 +123,13 @@ public class SettingsHandler
         _window.GameViewPanel.Visibility = Visibility.Visible;
     }
 
-    public void SkipUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.SkipUpdateCheck = toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
+    // SkipUpdateToggle and VerboseLoggingToggle removed from UI — logic retained in ViewModel
 
     public void BetaOptInToggle_Toggled(object sender, RoutedEventArgs e)
     {
         if (sender is ToggleSwitch toggle)
         {
             ViewModel.BetaOptIn = toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public void VerboseLoggingToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.VerboseLogging = toggle.IsOn;
             ViewModel.SaveSettingsPublic();
         }
     }
@@ -247,14 +224,32 @@ public class SettingsHandler
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "RHI", "logs");
         System.IO.Directory.CreateDirectory(logsDir);
-        CrashReporter.Log("[SettingsHandler.OpenLogsFolder_Click] User opened logs folder from About panel");
+        CrashReporter.Log("[SettingsHandler.OpenLogsFolder_Click] User opened logs folder");
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logsDir) { UseShellExecute = true });
+    }
+
+    public void OpenAppDataFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var appDataDir = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI");
+        System.IO.Directory.CreateDirectory(appDataDir);
+        CrashReporter.Log("[SettingsHandler.OpenAppDataFolder_Click] User opened AppData folder");
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(appDataDir) { UseShellExecute = true });
+    }
+
+    public void OpenCustomFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var customDir = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "Custom");
+        System.IO.Directory.CreateDirectory(customDir);
+        CrashReporter.Log("[SettingsHandler.OpenCustomFolder_Click] User opened Custom folder");
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(customDir) { UseShellExecute = true });
     }
 
     public void OpenDownloadsFolder_Click(object sender, RoutedEventArgs e)
     {
         System.IO.Directory.CreateDirectory(DownloadPaths.Root);
-        CrashReporter.Log("[SettingsHandler.OpenDownloadsFolder_Click] User opened downloads cache folder from About panel");
+        CrashReporter.Log("[SettingsHandler.OpenDownloadsFolder_Click] User opened downloads cache folder");
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(DownloadPaths.Root) { UseShellExecute = true });
     }
 
@@ -664,63 +659,87 @@ public class SettingsHandler
         }
     }
 
-    public void GlobalRdxUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+    public async Task GlobalUpdateInclusion_ClickAsync(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is ToggleSwitch toggle)
+        var settings = ViewModel.Settings;
+        var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
+        if (xamlRoot == null) return;
+
+        var rsCheck = new CheckBox { Content = "ReShade", IsChecked = !settings.GlobalSkipRsUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+        var rdxCheck = new CheckBox { Content = "RenoDX", IsChecked = !settings.GlobalSkipRdxUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+        var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !settings.GlobalSkipUlUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+        var dcCheck = new CheckBox { Content = "Display Commander", IsChecked = !settings.GlobalSkipDcUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+        var osCheck = new CheckBox { Content = "OptiScaler", IsChecked = !settings.GlobalSkipOsUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+        var refCheck = new CheckBox { Content = "RE Framework", IsChecked = !settings.GlobalSkipRefUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+
+        var checkPanel = new StackPanel { Spacing = 0 };
+        checkPanel.Children.Add(new TextBlock { Text = "Include components in Update All globally:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
+        checkPanel.Children.Add(rsCheck);
+        checkPanel.Children.Add(rdxCheck);
+        checkPanel.Children.Add(ulCheck);
+        checkPanel.Children.Add(dcCheck);
+        checkPanel.Children.Add(osCheck);
+        checkPanel.Children.Add(refCheck);
+
+        var dialog = new ContentDialog
         {
-            ViewModel.Settings.GlobalSkipRdxUpdates = !toggle.IsOn;
+            Title = "Global Update Inclusion",
+            Content = checkPanel,
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            XamlRoot = xamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result == ContentDialogResult.Primary)
+        {
+            settings.GlobalSkipRsUpdates = !(rsCheck.IsChecked == true);
+            settings.GlobalSkipRdxUpdates = !(rdxCheck.IsChecked == true);
+            settings.GlobalSkipUlUpdates = !(ulCheck.IsChecked == true);
+            settings.GlobalSkipDcUpdates = !(dcCheck.IsChecked == true);
+            settings.GlobalSkipOsUpdates = !(osCheck.IsChecked == true);
+            settings.GlobalSkipRefUpdates = !(refCheck.IsChecked == true);
             ViewModel.SaveSettingsPublic();
+            RefreshGlobalUpdateSummary();
         }
     }
 
-    public void GlobalRsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
+    public void RefreshGlobalUpdateSummary()
     {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is ToggleSwitch toggle)
+        var tb = _window.GlobalUpdateSummaryText;
+        tb.Inlines.Clear();
+        var settings = ViewModel.Settings;
+        var items = new (string label, bool isOn)[]
         {
-            ViewModel.Settings.GlobalSkipRsUpdates = !toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public void GlobalUlUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is ToggleSwitch toggle)
+            ("RS", !settings.GlobalSkipRsUpdates),
+            ("RDX", !settings.GlobalSkipRdxUpdates),
+            ("RL", !settings.GlobalSkipUlUpdates),
+            ("DC", !settings.GlobalSkipDcUpdates),
+            ("OS", !settings.GlobalSkipOsUpdates),
+            ("REF", !settings.GlobalSkipRefUpdates),
+        };
+        for (int i = 0; i < items.Length; i++)
         {
-            ViewModel.Settings.GlobalSkipUlUpdates = !toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public void GlobalDcUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.Settings.GlobalSkipDcUpdates = !toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public void GlobalOsUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.Settings.GlobalSkipOsUpdates = !toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
-        }
-    }
-
-    public void GlobalRefUpdateToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is ToggleSwitch toggle)
-        {
-            ViewModel.Settings.GlobalSkipRefUpdates = !toggle.IsOn;
-            ViewModel.SaveSettingsPublic();
+            var (label, isOn) = items[i];
+            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            {
+                Text = $"{label}: ",
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            });
+            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            {
+                Text = isOn ? "On" : "Off",
+                Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
+            });
+            if (i < items.Length - 1)
+            {
+                tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+                {
+                    Text = "  ·  ",
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                });
+            }
         }
     }
 

@@ -172,28 +172,82 @@ public class DlssPresetService
         if (_cachedProfiles.TryGetValue(gameName, out var exactProfile))
             return exactProfile;
 
-        // Try matching by exe names in the install path
+        // Try matching by exe names in the install path (recursive to handle subdirectories)
         if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
         {
             try
             {
-                var exeNames = Directory.GetFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly)
-                    .Select(Path.GetFileName)
-                    .Where(n => n != null)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var exeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles(installPath, "*.exe", SearchOption.AllDirectories))
+                        exeNames.Add(Path.GetFileName(file));
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Fallback to top-level only if recursive fails (WindowsApps etc.)
+                    foreach (var file in Directory.GetFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly))
+                        exeNames.Add(Path.GetFileName(file)!);
+                }
 
+                CrashReporter.Log($"[DlssPresetService.FindProfile] '{gameName}' — found {exeNames.Count} exe(s) in '{installPath}': {string.Join(", ", exeNames.Take(5))}");
+
+                // Try matching profile applications against exe names
                 foreach (var profile in _cachedProfiles.Values)
                 {
                     foreach (var app in profile.Applications)
                     {
                         if (exeNames.Contains(app.ApplicationName))
+                        {
+                            CrashReporter.Log($"[DlssPresetService.FindProfile] Matched profile '{profile.Name}' via app '{app.ApplicationName}'");
                             return profile;
+                        }
                     }
                 }
+
+                // Try matching profile NAME against exe names (custom profiles named after the exe)
+                foreach (var exeName in exeNames)
+                {
+                    if (_cachedProfiles.TryGetValue(exeName, out var exeProfile))
+                    {
+                        CrashReporter.Log($"[DlssPresetService.FindProfile] Matched profile '{exeProfile.Name}' via profile name == exe name");
+                        return exeProfile;
+                    }
+                }
+
+                // Try fuzzy title match (strip special characters like colons, compare case-insensitive)
+                var normalizedGameName = NormalizeForMatch(gameName);
+                foreach (var kvp in _cachedProfiles)
+                {
+                    if (NormalizeForMatch(kvp.Key) == normalizedGameName)
+                    {
+                        CrashReporter.Log($"[DlssPresetService.FindProfile] Matched profile '{kvp.Key}' via fuzzy title match for '{gameName}'");
+                        return kvp.Value;
+                    }
+                }
+
+                CrashReporter.Log($"[DlssPresetService.FindProfile] No profile matched any exe in '{installPath}'");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DlssPresetService.FindProfile] Error scanning '{installPath}' — {ex.Message}");
+            }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Normalizes a string for fuzzy matching by removing special characters and lowercasing.
+    /// </summary>
+    private static string NormalizeForMatch(string input)
+    {
+        var sb = new System.Text.StringBuilder(input.Length);
+        foreach (var c in input)
+        {
+            if (char.IsLetterOrDigit(c) || c == ' ')
+                sb.Append(char.ToLowerInvariant(c));
+        }
+        return sb.ToString();
     }
 }

@@ -2,6 +2,9 @@
 
 ### New Features
 
+- **Batch DLSS & Streamline Deploy** — New "Batch Deploy" button in Settings lets you update DLSS SR, RR, FG, and Streamline across multiple games at once. Select games from a checklist, pick versions from dropdowns, and deploy. Originals are backed up automatically. Games already at the selected version or with v1.x DLLs are skipped. Includes a "Restore All" button to revert selected games to their original DLLs.
+- **Custom ReShade Channel** — New "Custom" option in the RS Channel dropdown. Drop your own ReShade64.dll/ReShade32.dll into the Custom\ReShade folder and select "Custom" per-game to deploy them. Games on Custom are excluded from automatic ReShade updates. Version is read from the DLL's file metadata.
+- **Unified Custom Folder** — DLSS-Custom and Streamline-Custom folders consolidated into `%LocalAppData%\RHI\Custom\` with subfolders: `DLSS\`, `Streamline\`, and `ReShade\`. Existing files are migrated automatically on first launch.
 - **Install Warnings** — Per-game, per-component install warnings driven from the manifest. When a game has a known requirement (e.g. FF7R needs DX11 mode for Luma), a dialog pops up before install with the warning. User can Continue or Cancel.
 - **Message of the Day** — RHI can now display announcements to all users on launch. Messages are fetched from GitHub (`motd.md`) and shown once per unique message (tracked by content hash). When the file is empty or unchanged, nothing is shown.
 
@@ -10,16 +13,19 @@
 - Fixed RenoDX mod install incorrectly warning about replacing the DLSS Fix global addon (`renodx-dlssfix.addon64`). Global addons are no longer treated as game-specific mods during install.
 - DLSS and Streamline version dropdowns are now disabled for games with v1.x DLLs (e.g. Witcher 3). These legacy versions are not compatible with the newer versions available in the manager.
 - Full Refresh now clears DLSS scan caches, ensuring newly added DLLs (e.g. game update adds Ray Reconstruction) are detected.
+- Fixed DLSS presets not applying for games with custom NVIDIA driver profiles (e.g. GreedFall 2). Custom profiles named after the exe are now matched correctly.
 
 ### UI Changes
 
 - RenoDX wiki status badge (Working, In Progress, etc.) moved from the main detail panel into the RenoDX Info button dialog. Cleaner main view, status still accessible.
+- Settings page reorganized: "Crash & Error Logs" renamed to "Data & Custom Files" with AppData/Custom folder buttons. Global Update Checks replaced with a compact "Update Inclusion" button + summary line (matching the per-game overrides style). Custom Shaders and Shader Cache merged into one row. Addon Watch Folder moved up next to Global Update Checks. Mass INI Deployment and Mass Preset Install combined into a single "Mass Deployment" section. Verbose Logging and Skip Update Check toggles removed.
 
 ### Manifest Updates
 
 - FINAL FANTASY VII REMAKE INTERGRADE — Luma install warning (DX11 mode required).
 - SOULCALIBUR VI — install path override to `SoulcaliburVI\Binaries\Win64`, Unreal Engine override.
 - Gothic II: Gold Classic — Nexus Mods game page link.
+- Far Cry® 2: Fortune's Edition — PCGW URL override for GOG version.
 
 ---
 

@@ -49,13 +49,14 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     }
 
     /// <summary>
-    /// Returns true if the channel value is a legacy version string (not null, not "Stable", not "Nightly").
+    /// Returns true if the channel value is a legacy version string (not null, not "Stable", not "Nightly", not "Custom").
     /// </summary>
     public static bool IsLegacyVersion(string? channel)
     {
         if (string.IsNullOrEmpty(channel)) return false;
         return !string.Equals(channel, ChannelStable, StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(channel, ChannelNightly, StringComparison.OrdinalIgnoreCase);
+            && !string.Equals(channel, ChannelNightly, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(channel, ChannelCustom, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -100,10 +101,11 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     // Channel constants
     public const string ChannelStable = "Stable";
     public const string ChannelNightly = "Nightly";
+    public const string ChannelCustom = "Custom";
 
     /// <summary>
     /// Returns the correct staged DLL path for the given channel and bitness.
-    /// Handles "Stable", "Nightly", and legacy version strings (e.g. "6.4.1").
+    /// Handles "Stable", "Nightly", "Custom", and legacy version strings (e.g. "6.4.1").
     /// </summary>
     public static string GetStagedPathForChannel(string channel, bool use32Bit)
     {
@@ -111,8 +113,27 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
             return use32Bit ? RsNightlyStagedPath32 : RsNightlyStagedPath64;
         if (string.Equals(channel, ChannelStable, StringComparison.OrdinalIgnoreCase))
             return use32Bit ? RsStagedPath32 : RsStagedPath64;
+        if (string.Equals(channel, ChannelCustom, StringComparison.OrdinalIgnoreCase))
+            return GetCustomReShadePathStatic(use32Bit);
         // Legacy version string (e.g. "6.4.1")
         return GetLegacyStagedPath(channel, use32Bit);
+    }
+
+    /// <summary>
+    /// Returns the path to the custom ReShade DLL for the given bitness.
+    /// </summary>
+    public static string GetCustomReShadePathStatic(bool use32Bit)
+    {
+        var dll = use32Bit ? RsStaged32 : RsStaged64;
+        return Path.Combine(DlssStreamlineService.RsCustomDir, dll);
+    }
+
+    /// <summary>
+    /// Returns true if custom ReShade DLLs are available (at least one bitness).
+    /// </summary>
+    public static bool IsCustomReShadeAvailable()
+    {
+        return File.Exists(GetCustomReShadePathStatic(false)) || File.Exists(GetCustomReShadePathStatic(true));
     }
 
     /// <summary>
