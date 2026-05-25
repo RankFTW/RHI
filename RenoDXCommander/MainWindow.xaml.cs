@@ -154,6 +154,8 @@ public sealed partial class MainWindow : Window
         CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.UpdateCheck");
         // Show patch notes on first launch after update
         ShowPatchNotesIfNewVersionAsync().SafeFireAndForget("MainWindow.PatchNotes");
+        // Show MOTD if there's a new message
+        ShowMotdIfNewAsync().SafeFireAndForget("MainWindow.Motd");
         // Register .addon64/.addon32 file associations (per-user, no admin)
         FileAssociationService.Register(crashReporter);
         // Watch Downloads folder for addon files

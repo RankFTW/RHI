@@ -261,4 +261,52 @@ public partial class DialogService
 
         await DialogService.ShowSafeAsync(dlg);
     }
+
+    // ── MOTD Dialog ─────────────────────────────────────────────────────────────
+
+    public async Task ShowMotdIfNewAsync()
+    {
+        try
+        {
+            // Wait until XamlRoot is ready
+            while (_window.Content.XamlRoot == null)
+                await Task.Delay(200);
+
+            // Wait for UI to settle and other startup dialogs to finish
+            await Task.Delay(2000);
+
+            var motd = await Services.MotdService.CheckAsync(ViewModel.HttpClient);
+            if (motd == null) return;
+
+            _dispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    var dlg = new ContentDialog
+                    {
+                        Title = "📢 Message from RHI",
+                        Content = new ScrollViewer
+                        {
+                            Content = new TextBlock
+                            {
+                                Text = motd,
+                                TextWrapping = TextWrapping.Wrap,
+                                IsTextSelectionEnabled = true,
+                            },
+                            MaxHeight = 400,
+                        },
+                        CloseButtonText = "OK",
+                        XamlRoot = _window.Content.XamlRoot,
+                        RequestedTheme = ElementTheme.Dark,
+                    };
+                    await DialogService.ShowSafeAsync(dlg);
+                }
+                catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowMotdIfNewAsync] Dialog failed — {ex.Message}"); }
+            });
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DialogService.ShowMotdIfNewAsync] MOTD check error — {ex.Message}");
+        }
+    }
 }

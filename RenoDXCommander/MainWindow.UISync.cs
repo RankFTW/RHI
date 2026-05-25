@@ -255,6 +255,9 @@ public sealed partial class MainWindow
     private async Task ShowPatchNotesIfNewVersionAsync()
         => await _dialogService.ShowPatchNotesIfNewVersionAsync();
 
+    private async Task ShowMotdIfNewAsync()
+        => await _dialogService.ShowMotdIfNewAsync();
+
     private async Task ShowPatchNotesDialogAsync()
         => await _dialogService.ShowPatchNotesDialogAsync();
 

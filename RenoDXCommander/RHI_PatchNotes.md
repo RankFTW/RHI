@@ -3,6 +3,7 @@
 ### New Features
 
 - **Install Warnings** — Per-game, per-component install warnings driven from the manifest. When a game has a known requirement (e.g. FF7R needs DX11 mode for Luma), a dialog pops up before install with the warning. User can Continue or Cancel.
+- **Message of the Day** — RHI can now display announcements to all users on launch. Messages are fetched from GitHub (`motd.md`) and shown once per unique message (tracked by content hash). When the file is empty or unchanged, nothing is shown.
 
 ### Bug Fixes
 
@@ -17,6 +18,8 @@
 ### Manifest Updates
 
 - FINAL FANTASY VII REMAKE INTERGRADE — Luma install warning (DX11 mode required).
+- SOULCALIBUR VI — install path override to `SoulcaliburVI\Binaries\Win64`, Unreal Engine override.
+- Gothic II: Gold Classic — Nexus Mods game page link.
 
 ---
 
