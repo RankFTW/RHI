@@ -89,6 +89,9 @@ public interface IGameNameService
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     Dictionary<string, string> LaunchExeOverrides { get; }
 
+    /// <summary>Per-game launch arguments. Key = game name, Value = arguments string.</summary>
+    Dictionary<string, string> LaunchArgsOverrides { get; }
+
     /// <summary>Maps current (renamed) game name to original store-detected name.</summary>
     Dictionary<string, string> OriginalDetectedNames { get; }
 

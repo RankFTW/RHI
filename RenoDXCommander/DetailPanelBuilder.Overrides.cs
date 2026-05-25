@@ -1634,7 +1634,7 @@ public partial class DetailPanelBuilder
         // ── Right column: "Launch executable" (grid-aligned with left column) ──
         var shadersAddonsRightColumn = new Grid { RowSpacing = 6 };
         shadersAddonsRightColumn.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 0: label + spacer (matches left title + sub-labels)
-        shadersAddonsRightColumn.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 1: textbox (aligns with combos)
+        shadersAddonsRightColumn.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 1: exe path + args side by side
         shadersAddonsRightColumn.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 2: buttons (aligns with preset btn)
 
         // Label + spacer to match left column's "Shaders and Addons" title + sub-label row
@@ -1672,8 +1672,36 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[capturedName] = newPath;
             _window.ViewModel.SaveSettingsPublic();
         };
-        Grid.SetRow(launchExeBox, 1);
-        shadersAddonsRightColumn.Children.Add(launchExeBox);
+
+        var currentLaunchArgs = _window.ViewModel.GameNameServiceInstance.LaunchArgsOverrides
+            .TryGetValue(capturedName, out var savedArgs) ? savedArgs : "";
+        var launchArgsBox = new TextBox
+        {
+            Text = currentLaunchArgs,
+            PlaceholderText = "Launch arguments",
+            FontSize = 11,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        launchArgsBox.LostFocus += (s, ev) =>
+        {
+            var newArgs = launchArgsBox.Text.Trim();
+            if (string.IsNullOrEmpty(newArgs))
+                _window.ViewModel.GameNameServiceInstance.LaunchArgsOverrides.Remove(capturedName);
+            else
+                _window.ViewModel.GameNameServiceInstance.LaunchArgsOverrides[capturedName] = newArgs;
+            _window.ViewModel.SaveSettingsPublic();
+        };
+
+        var launchBoxRow = new Grid { ColumnSpacing = 8 };
+        launchBoxRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        launchBoxRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        Grid.SetColumn(launchExeBox, 0);
+        Grid.SetColumn(launchArgsBox, 1);
+        launchBoxRow.Children.Add(launchExeBox);
+        launchBoxRow.Children.Add(launchArgsBox);
+
+        Grid.SetRow(launchBoxRow, 1);
+        shadersAddonsRightColumn.Children.Add(launchBoxRow);
 
         var launchBtnRow = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 8, 0, 0) };
         launchBtnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1875,8 +1903,10 @@ public partial class DetailPanelBuilder
 
             // Reset launch exe override
             _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
+            _window.ViewModel.GameNameServiceInstance.LaunchArgsOverrides.Remove(capturedName);
             _window.ViewModel.SaveSettingsPublic();
             launchExeBox.Text = "";
+            launchArgsBox.Text = "";
 
             // Revert card properties to auto-detected values
             {

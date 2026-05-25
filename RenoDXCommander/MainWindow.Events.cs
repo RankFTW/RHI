@@ -1465,13 +1465,19 @@ public sealed partial class MainWindow
         try
         {
             var gameName = card.GameName;
+            var launchArgs = ViewModel.GameNameServiceInstance.LaunchArgsOverrides
+                .TryGetValue(gameName, out var args) ? args : null;
 
             // 1. User override (absolute path)
             if (ViewModel.GameNameServiceInstance.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
                 && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
             {
-                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via user override: {userExe}");
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe) { UseShellExecute = true });
+                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via user override: {userExe} {launchArgs}");
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe)
+                {
+                    Arguments = launchArgs ?? "",
+                    UseShellExecute = true,
+                });
                 return;
             }
 
@@ -1483,19 +1489,35 @@ public sealed partial class MainWindow
                 var fullPath = Path.Combine(card.InstallPath, manifestExe);
                 if (File.Exists(fullPath))
                 {
-                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via manifest override: {fullPath}");
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath) { UseShellExecute = true });
+                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via manifest override: {fullPath} {launchArgs}");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath)
+                    {
+                        Arguments = launchArgs ?? "",
+                        UseShellExecute = true,
+                    });
                     return;
                 }
             }
 
-            // 3. Steam protocol
+            // 3. Steam protocol (use -applaunch when args are set for reliable arg passing)
             var steamAppId = card.DetectedGame?.SteamAppId;
             if (steamAppId != null && steamAppId > 0)
             {
-                var steamUri = $"steam://rungameid/{steamAppId}";
-                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
+                if (!string.IsNullOrEmpty(launchArgs))
+                {
+                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam -applaunch {steamAppId} {launchArgs}");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("steam.exe")
+                    {
+                        Arguments = $"-applaunch {steamAppId} {launchArgs}",
+                        UseShellExecute = true,
+                    });
+                }
+                else
+                {
+                    var steamUri = $"steam://rungameid/{steamAppId}";
+                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
+                }
                 return;
             }
 
@@ -1503,18 +1525,21 @@ public sealed partial class MainWindow
             if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
             {
                 var exes = Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly);
-                // Prefer exe matching game name or folder name, exclude known non-game exes
                 var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                     { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "launcher" };
                 var gameExe = exes
                     .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
-                    .OrderByDescending(e => new FileInfo(e).Length) // largest exe is usually the game
+                    .OrderByDescending(e => new FileInfo(e).Length)
                     .FirstOrDefault();
 
                 if (gameExe != null)
                 {
-                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via auto-detected exe: {gameExe}");
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe) { UseShellExecute = true });
+                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via auto-detected exe: {gameExe} {launchArgs}");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe)
+                    {
+                        Arguments = launchArgs ?? "",
+                        UseShellExecute = true,
+                    });
                     return;
                 }
             }

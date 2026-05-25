@@ -3,10 +3,11 @@
 ### New Features
 
 - **Batch DLSS & Streamline Deploy** — New "Batch Deploy" button in Settings lets you update DLSS SR, RR, FG, and Streamline across multiple games at once. Select games from a checklist, pick versions from dropdowns, and deploy. Originals are backed up automatically. Games already at the selected version or with v1.x DLLs are skipped. Includes a "Restore All" button to revert selected games to their original DLLs.
-- **Custom ReShade Channel** — New "Custom" option in the RS Channel dropdown. Drop your own ReShade64.dll/ReShade32.dll into the Custom\ReShade folder and select "Custom" per-game to deploy them. Games on Custom are excluded from automatic ReShade updates. Version is read from the DLL's file metadata.
+- **Custom ReShade Channel** — New "Custom" option in the RS Channel dropdown. Drop your own ReShade64.dll/ReShade32.dll into the Custom\ReShade folder and select "Custom" per-game to deploy them. Games on Custom are excluded from automatic ReShade updates. Version is read from the DLL's file metadata. Useful for deploying RenoVK or other custom ReShade builds.
 - **Unified Custom Folder** — DLSS-Custom and Streamline-Custom folders consolidated into `%LocalAppData%\RHI\Custom\` with subfolders: `DLSS\`, `Streamline\`, and `ReShade\`. Existing files are migrated automatically on first launch.
 - **Install Warnings** — Per-game, per-component install warnings driven from the manifest. When a game has a known requirement (e.g. FF7R needs DX11 mode for Luma), a dialog pops up before install with the warning. User can Continue or Cancel.
 - **Message of the Day** — RHI can now display announcements to all users on launch. Messages are fetched from GitHub (`motd.md`) and shown once per unique message (tracked by content hash). When the file is empty or unchanged, nothing is shown.
+- **Launch Arguments** — Set per-game launch arguments from the Overrides panel (next to the launch executable path). Arguments are passed to the game on launch. Steam games use `-applaunch` for reliable argument passing while preserving overlay and playtime tracking.
 
 ### Bug Fixes
 
