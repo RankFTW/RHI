@@ -1505,12 +1505,23 @@ public sealed partial class MainWindow
             {
                 if (!string.IsNullOrEmpty(launchArgs))
                 {
-                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam -applaunch {steamAppId} {launchArgs}");
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("steam.exe")
+                    var steamExe = GetSteamExePath();
+                    if (steamExe != null)
                     {
-                        Arguments = $"-applaunch {steamAppId} {launchArgs}",
-                        UseShellExecute = true,
-                    });
+                        _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam -applaunch {steamAppId} {launchArgs}");
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamExe)
+                        {
+                            Arguments = $"-applaunch {steamAppId} {launchArgs}",
+                            UseShellExecute = true,
+                        });
+                    }
+                    else
+                    {
+                        // Fallback: use URL protocol (args may not pass reliably)
+                        var steamUri = $"steam://rungameid/{steamAppId}";
+                        _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam URL (args may not apply): {steamUri}");
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
+                    }
                 }
                 else
                 {
@@ -1550,6 +1561,23 @@ public sealed partial class MainWindow
         {
             _crashReporter.Log($"[MainWindow.LaunchGame] Failed to launch '{card.GameName}' — {ex.Message}");
         }
+    }
+
+    private static string? GetSteamExePath()
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Valve\Steam")
+                         ?? Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Valve\Steam");
+            var installPath = key?.GetValue("InstallPath") as string;
+            if (!string.IsNullOrEmpty(installPath))
+            {
+                var exe = Path.Combine(installPath, "steam.exe");
+                if (File.Exists(exe)) return exe;
+            }
+        }
+        catch { }
+        return null;
     }
 
     internal async void BrowseFolder_Click(object sender, RoutedEventArgs e)
