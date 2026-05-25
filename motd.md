@@ -1,0 +1,1 @@
+Welcome to RHI! This is the new Message of the Day system — when there's something important to share (breaking changes, new features, or community news), it'll show up here on launch. You'll only see each message once.
