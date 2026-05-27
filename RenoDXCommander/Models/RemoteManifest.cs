@@ -307,4 +307,24 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("launchExeOverrides")]
     public Dictionary<string, string>? LaunchExeOverrides { get; set; }
+
+    /// <summary>
+    /// Games that should be split into multiple entries (e.g. collections with multiple games in one folder).
+    /// Key = detected game name, Value = list of sub-games with their own name and relative sub-path.
+    /// The original detected entry is suppressed and replaced by the split entries.
+    /// </summary>
+    [JsonPropertyName("splitGames")]
+    public Dictionary<string, List<SplitGameEntry>>? SplitGames { get; set; }
+}
+
+/// <summary>
+/// Represents a sub-game within a split game collection.
+/// </summary>
+public class SplitGameEntry
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("subPath")]
+    public string SubPath { get; set; } = "";
 }

@@ -9,6 +9,7 @@
 - **Message of the Day** — RHI can now display announcements to all users on launch. Messages are fetched from GitHub (`motd.md`) and shown once per unique message (tracked by content hash). When the file is empty or unchanged, nothing is shown.
 - **Launch Arguments** — Set per-game launch arguments from the Overrides panel (next to the launch executable path). Arguments are passed to the game on launch. Steam games use `-applaunch` for reliable argument passing while preserving overlay and playtime tracking.
 - **Epic Games Store Launch** — Epic games now launch through the Epic protocol URL instead of direct exe, fixing "please launch through the Epic launcher" errors for EOS-protected games. Works silently without bringing the launcher to the foreground.
+- **Multi-Game Split** — Games that contain multiple titles in one folder (e.g. Mass Effect Legendary Edition) can now be split into separate entries via the manifest. Each sub-game gets its own card with independent ReShade, DLSS, and mod management.
 
 ### Bug Fixes
 
@@ -18,6 +19,7 @@
 - Fixed DLSS presets not applying for games with custom NVIDIA driver profiles (e.g. GreedFall 2). Custom profiles named after the exe are now matched correctly.
 - Fixed DLSS scan cache file contention when the cache phase and background scan write simultaneously. Both `dlss_trusted_paths.json` and `dlss_scan_cache.json` now use a shared lock to prevent concurrent write failures.
 - Fixed DLSS detection scanning into sibling game folders for GOG Galaxy installs (e.g. BioShock Infinite falsely showing Fort Solis's DLSS). The search root guard now recognizes `Games` as a library folder.
+- Fixed DXVK Update All overwriting per-game Lilium HDR variant with the global Development/Stable variant. Update All now respects per-game DXVK variant overrides.
 
 ### UI Changes
 
@@ -30,6 +32,8 @@
 - SOULCALIBUR VI — install path override to `SoulcaliburVI\Binaries\Win64`, Unreal Engine override.
 - Gothic II: Gold Classic — Nexus Mods game page link.
 - Far Cry® 2: Fortune's Edition — PCGW URL override for GOG version.
+- Mass Effect™ Legendary Edition — split into 3 separate entries (ME1, ME2, ME3) for independent mod management.
+- DRAGON QUEST® XI S: Echoes of an Elusive Age™ — wiki name override for Epic version (was using Generic UE instead of the specific DQ addon).
 
 ---
 

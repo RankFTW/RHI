@@ -605,6 +605,44 @@ public partial class MainViewModel
         var genericUnreal = MakeGenericUnreal();
         var genericUnity  = MakeGenericUnity();
 
+        // ── Apply splitGames manifest entries ─────────────────────────────────
+        if (_manifest?.SplitGames != null && _manifest.SplitGames.Count > 0)
+        {
+            var expanded = new List<DetectedGame>();
+            foreach (var game in detectedGames)
+            {
+                if (_manifest.SplitGames.TryGetValue(game.Name, out var splits) && splits.Count > 0)
+                {
+                    // Replace the single entry with N split entries
+                    var basePath = game.InstallPath;
+                    // If the detected path already includes a subpath (e.g. from installPathOverrides),
+                    // go up to the common root first
+                    foreach (var split in splits)
+                    {
+                        var splitPath = Path.Combine(basePath, split.SubPath);
+                        if (Directory.Exists(splitPath))
+                        {
+                            expanded.Add(new DetectedGame
+                            {
+                                Name = split.Name,
+                                InstallPath = splitPath,
+                                Source = game.Source,
+                                SteamAppId = game.SteamAppId,
+                                EpicCatalogNamespace = game.EpicCatalogNamespace,
+                                EpicAppName = game.EpicAppName,
+                            });
+                        }
+                    }
+                    _crashReporter.Log($"[BuildCards] Split '{game.Name}' into {splits.Count} sub-games");
+                }
+                else
+                {
+                    expanded.Add(game);
+                }
+            }
+            detectedGames = expanded;
+        }
+
         // Load RE Framework install records for matching to cards
         var refRecords = _refService.GetRecords();
 

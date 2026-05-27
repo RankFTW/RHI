@@ -683,18 +683,40 @@ public partial class MainViewModel
         var dxvkCards = GetUpdateAllDxvkEligibleCards(_allCards);
         if (dxvkCards.Count == 0) return;
 
-        // Ensure latest DXVK staging is available before updating games
+        // Ensure global variant staging is available
         if (!_dxvkService.IsStagingReady)
         {
             try { await _dxvkService.EnsureStagingAsync(); }
             catch (Exception ex) { _crashReporter.Log($"[UpdateAllDxvkAsync] Staging failed — {ex.Message}"); return; }
         }
 
+        var globalVariant = _dxvkService.SelectedVariant;
+
         foreach (var card in dxvkCards)
         {
-            try { await _dxvkService.UpdateAsync(card); }
+            try
+            {
+                // Resolve per-game variant (may differ from global)
+                var effectiveVariant = ResolveDxvkVariant(card.GameName);
+                if (effectiveVariant != globalVariant)
+                {
+                    // Switch to per-game variant, ensure its staging is ready
+                    _dxvkService.SelectedVariant = effectiveVariant;
+                    if (!_dxvkService.IsStagingReady)
+                        await _dxvkService.EnsureStagingAsync();
+                }
+                else if (_dxvkService.SelectedVariant != globalVariant)
+                {
+                    _dxvkService.SelectedVariant = globalVariant;
+                }
+
+                await _dxvkService.UpdateAsync(card);
+            }
             catch (Exception ex) { _crashReporter.Log($"[UpdateAllDxvkAsync] Failed for '{card.GameName}': {ex.Message}"); }
         }
+
+        // Restore global variant
+        _dxvkService.SelectedVariant = globalVariant;
 
         DispatcherQueue?.TryEnqueue(() =>
         {

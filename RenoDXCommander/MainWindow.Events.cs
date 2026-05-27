@@ -1532,8 +1532,8 @@ public sealed partial class MainWindow
                 return;
             }
 
-            // 4. Epic Games Store protocol
-            if (!string.IsNullOrEmpty(card.DetectedGame?.EpicAppName))
+            // 4. Epic Games Store protocol (skip if args set — protocol doesn't support game args)
+            if (!string.IsNullOrEmpty(card.DetectedGame?.EpicAppName) && string.IsNullOrEmpty(launchArgs))
             {
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
