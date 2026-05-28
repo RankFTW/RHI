@@ -20,6 +20,7 @@ This document covers every feature in RHI. For a quick overview, see the [README
 - [OptiScaler](#optiscaler)
 - [Shader Packs](#shader-packs)
 - [ReShade Addon Management](#reshade-addon-management)
+- [Game Launch](#game-launch)
 - [Per-Game Overrides](#per-game-overrides)
 - [ReShade Presets](#reshade-presets)
 - [Nexus Mods and PCGamingWiki Links](#nexus-mods-and-pcgamingwiki-links)
@@ -105,15 +106,15 @@ Click **Settings** in the toolbar. Click **Back to Games** to return. The Settin
 |---------|-------------|
 | Add Game | Manually add a game that wasn't auto-detected. Select the game's exe and name it. |
 | Full Refresh | Clears all caches (API detection, shader, PCGW, etc.) and re-scans everything from disk. Bypasses the 4-hour update check cooldown. |
-| Preferences | Skip Update Check on Launch, Verbose Logging, Shader Cache toggle, Custom Shaders toggle. |
 | Screenshot Path | Set a global screenshot save path written to all managed reshade.ini files. Optional per-game subfolder toggle. Browse and Open buttons. |
 | Hotkeys | ReShade UI Hotkey, ReShade Screenshot Key (default: Print Screen), ReLimiter OSD Hotkey, OptiScaler Overlay Hotkey (default: Insert). Each applies to all managed INI files. |
-| Logs and Cache | Open Logs Folder, Open Downloads Cache, ReShade staging path. |
+| Data & Custom Files | Open AppData folder, Custom folder (DLSS/Streamline/ReShade custom DLLs), and Logs folder. |
+| Update Inclusion | Button opens a dialog with per-component toggles for global update checks. Summary line shows current state. |
+| Addon Watch Folder | Configure the folder watched for new addon files (default: Downloads). |
 | OptiScaler Settings | GPU type (NVIDIA / AMD / Intel), DLSS input toggle (AMD/Intel only), overlay hotkey, Apply to All Games button, OptiScaler Compatibility List link. |
-| Global Update Check Toggles | Disable update checks for individual components: RenoDX, ReShade, ReLimiter, Display Commander, OptiScaler. |
 | Shared OSD Presets | Toggle for ReLimiter — when enabled, all games share the same OSD presets from a central file. "Apply to All Games" writes the setting to all deployed relimiter.ini files. |
-| Mass INI Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with the corresponding component installed. |
-| Mass ReShade Preset Install | Select presets from the presets folder, choose target games via a checkbox picker with Select All / Deselect All, and optionally install required shader packs. |
+| Mass Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with the corresponding component installed. Also includes Mass Preset Install — select presets, choose target games, and optionally install required shader packs. |
+| Batch DLSS & Streamline Deploy | Update DLSS SR, RR, FG, and Streamline across multiple games at once. Select games from a checklist, pick versions from dropdowns, and deploy. Also supports batch DLSS preset selection (SR/RR/FG) and auto-creates NVIDIA driver profiles for games that don't have one. Includes a "Restore" button to revert selected games to their original DLLs and reset presets to default. |
 | RE Framework Exclusion | Globally exclude RE Framework from Update All. The per-game version of this toggle appears in the Update Inclusion dialog for RE Engine games. |
 | Build Channels | Choose between Stable and Nightly builds for ReShade, and Development, Stable, or Lilium HDR for DXVK. All variants are downloaded simultaneously — switching is instant. Per-game overrides in the Overrides panel let you mix variants across your library. |
 
@@ -164,6 +165,10 @@ If a game is installed on multiple platforms (e.g. Steam and Xbox), both copies 
 ### DLC Collapsing
 
 DLC and expansion packs that share the base game's install folder are automatically collapsed to the base game entry, keeping the sidebar clean.
+
+### Multi-Game Split
+
+Games that contain multiple titles in one folder (e.g. Mass Effect Legendary Edition) can be split into separate entries via the remote manifest `splitGames` field. Each sub-game gets its own card with independent ReShade, DLSS, and mod management. Split entries inherit the parent's store, AppID, and platform badge.
 
 ---
 
@@ -283,6 +288,16 @@ Pin any game to a specific older ReShade version from the RS Channel dropdown in
 - **Manifest-forced versions** — the manifest can force specific games to a legacy version (e.g. Max Payne 3 → 6.4.1). Users can override this to Global/Stable/Nightly if desired.
 - **Addon warning** — a warning is shown when selecting legacy versions, as older ReShade versions may not support newer addon formats.
 
+### Custom ReShade
+
+The RS Channel dropdown includes a "Custom" option for deploying your own ReShade builds (e.g. RenoVK or modified versions).
+
+- **Custom folder** — place `ReShade64.dll` and/or `ReShade32.dll` in `%LocalAppData%\RHI\Custom\ReShade\`.
+- **Version display** — the version is read from the DLL's file metadata.
+- **Update exclusion** — games on Custom are automatically excluded from ReShade update checks.
+- **Vulkan support** — Custom ReShade is deployed to the global Vulkan layer when selected for a Vulkan game (with UAC elevation).
+- **Missing DLL warning** — if no custom DLL exists when selected, a warning dialog shows the folder path and reverts the selection.
+
 ### Copy INI
 
 The Copy INI button (📋) on the ReShade row copies `reshade.ini` from the AppData INI folder to the game directory. If the game already has a `reshade.ini`, existing game-specific settings (addon configs, effect toggles, custom keybinds) are preserved — only template keys are overwritten.
@@ -351,6 +366,16 @@ Luma-specific notes are sourced from both the Luma wiki and the remote manifest.
 ### Trusted Downloads
 
 Luma downloads are restricted to trusted GitHub URLs under `https://github.com/Filoppi/` to prevent arbitrary file downloads.
+
+### Drag-and-Drop / File Watcher Install
+
+Drag a Luma mod archive (zip or 7z) from Explorer, Discord, or Nexus onto the RHI window to install it manually. The file watcher also auto-detects Luma archives in your Downloads folder (triggered by "luma" in the filename).
+
+- **Game picker** — always shown, pre-selecting the currently selected game or a fuzzy-matched game based on the filename.
+- **All variants supported** — full packages (with custom ReShade), addon-only mods, and shader-only mods.
+- **ReShade fallback** — if the archive doesn't include `dxgi.dll`, RHI deploys its own cached stable ReShade automatically.
+- **Multi-folder archives** — archives with extra folders (Alternatives, Debug, Optional) are handled automatically. Folders starting with `(` are filtered out. If multiple valid game folders remain, a folder picker dialog is shown.
+- **Post-install** — Luma mode is enabled, shaders are deployed using the same global/per-game selection as normal ReShade installs, and reshade.ini is configured with your screenshot path and hotkeys.
 
 ---
 
@@ -590,6 +615,30 @@ On startup, RHI checks all downloaded addons for updates using GitHub release ta
 
 ---
 
+## Game Launch
+
+Launch games directly from RHI using the green "▶ Launch" button in the detail panel header, or double-click any game in the sidebar.
+
+### Launch Priority Chain
+
+RHI resolves the launch method using this priority order:
+
+1. **User exe override** — absolute path set in the Overrides panel.
+2. **Manifest exe override** — relative path from the remote manifest (resolved against InstallPath).
+3. **Steam** — uses `steam.exe -applaunch {appId}` with the full path to `steam.exe` from the registry. Preserves overlay and playtime tracking. Falls back to `steam://rungameid/` URL protocol if the registry path isn't found.
+4. **Epic Games Store** — uses `com.epicgames.launcher://apps/{AppName}?action=launch&silent=true` protocol URL. Skipped when launch arguments are set (protocol doesn't support game args).
+5. **Direct exe** — auto-detects the largest `.exe` in the install path, excluding known non-game names (UnityCrashHandler, CrashReporter, unins000, launcher).
+
+### Launch Arguments
+
+Set per-game launch arguments from the Overrides panel (next to the launch executable path). Arguments are appended to the game process. For Steam games, arguments are passed via `-applaunch`. Epic protocol launch is skipped when arguments are set (falls through to direct exe).
+
+### Epic Games Store
+
+Epic games launch through the Epic protocol URL, which handles EOS authentication automatically. The `AppName` is read from Epic manifest `.item` files during detection. DRM-free Epic games can also be launched directly via exe.
+
+---
+
 ## Per-Game Overrides
 
 The Overrides section appears below Components in the detail panel. All controls save immediately when changed.
@@ -606,8 +655,10 @@ The Overrides section appears below Components in the detail panel. All controls
 | Rendering Path | For dual-API games — switches between DirectX and Vulkan ReShade. |
 | Bitness override | Auto, 32-bit, or 64-bit. Overrides PE header detection. |
 | Graphics API override | Auto, DirectX8, DirectX9, DirectX10, DX11/DX12, Vulkan, OpenGL. |
-| RS Channel override | Global, Stable, Nightly, No Addons, or Legacy (specific version). Overrides the global ReShade build channel for this game. Vulkan games: applies to all Vulkan games. Legacy pins to a specific older version and excludes from updates. |
+| RS Channel override | Global, Stable, Nightly, No Addons, Custom, or Legacy (specific version). Overrides the global ReShade build channel for this game. Vulkan games: applies to all Vulkan games. Legacy pins to a specific older version and excludes from updates. Custom deploys user-provided DLLs from the Custom\ReShade folder. |
 | DXVK mode | Off, Global, Development, Stable, or Lilium HDR. Off disables DXVK. Global uses the global variant setting. Others set a per-game variant override and enable DXVK. |
+| Launch executable | Override the auto-detected game exe for the Launch button. |
+| Launch arguments | Per-game command-line arguments passed to the game on launch. |
 | OptiScaler DLL name | Override the OptiScaler proxy DLL filename. |
 | Select ReShade Preset | Deploy preset files from the presets folder. |
 | Copy Report | Generate a diagnostic code for Discord or GitHub issues. |
@@ -805,6 +856,7 @@ RHI supports drag-and-drop for adding games and installing mods. Works even when
 |-----------|-------------|
 | Game `.exe` | Opens an add-game dialog with auto-detected engine, inferred game root, and suggested name. |
 | `.addon64` / `.addon32` | Opens an install dialog with a game picker. Auto-selects based on filename, falls back to the currently selected game. |
+| `.zip`, `.7z` (Luma mod) | Detected by `Luma/d3dcompiler_47*.dll` marker inside the archive. Shows a game picker filtered to Luma-enabled games. Installs with ReShade fallback and shader deployment. |
 | `.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`, `.tgz` | Extracted using bundled 7-Zip. Addon files inside are found and offered for install. |
 | ReShade preset `.ini` | Validated, saved to the presets folder, deployed to a chosen game, with optional auto shader install. |
 | URL (`.url` shortcut) | Parsed and processed as an addon download URL. |
@@ -823,7 +875,7 @@ The default watch folder is the system Downloads directory (configurable in Sett
 
 ### Archive Auto-Install
 
-The watch folder also detects `.zip`, `.7z`, and `.rar` archives containing "renodx" in the filename. When a matching archive appears (e.g. from a Nexus Mods download), RHI automatically extracts it, finds the addon files inside, and starts the install flow.
+The watch folder also detects `.zip`, `.7z`, and `.rar` archives containing "renodx" or "luma" in the filename. When a matching archive appears (e.g. from a Nexus Mods download), RHI checks if it's a Luma mod (by looking for `Luma/d3dcompiler_47*.dll` inside) and routes it to the Luma install flow with a game picker. Non-Luma archives are extracted normally and addon files inside are offered for install.
 
 ### Named Pipe Forwarding
 
@@ -899,6 +951,12 @@ RHI fetches a remote manifest from GitHub on every launch, providing game-specif
 | `nexusUrlOverrides` | Manual Nexus Mods URL overrides. |
 | `steamAppIdOverrides` | Manual Steam AppID overrides for PCGW resolution. |
 | `pcgwUrlOverrides` | Manual PCGW URL overrides. |
+| `splitGames` | Split multi-title folders into separate entries (e.g. Mass Effect LE → ME1, ME2, ME3). |
+| `installWarnings` | Per-game, per-component install warnings shown before install proceeds. |
+| `legacyReShadeAvailable` | Array of legacy ReShade versions available in the picker. |
+| `legacyReShadeVersions` | Map game name → forced legacy ReShade version. |
+| `dlssSkipGames` | Games known to not have DLSS — skips expensive recursive scan. |
+| `launchExeOverrides` | Per-game launch exe path (relative to InstallPath). |
 
 ---
 
@@ -946,8 +1004,11 @@ Everything is stored under `%LOCALAPPDATA%\RHI\`:
 | `DLSS-D\{version}\` | Versioned DLSS RR cache. |
 | `DLSS-G\{version}\` | Versioned DLSS FG cache. |
 | `Streamline\{version}\` | Versioned Streamline cache (all `sl.*.dll` files). |
-| `DLSS-Custom\` | User-provided custom DLSS DLL. |
-| `Streamline-Custom\` | User-provided custom Streamline DLLs. |
+| `DLSS-Custom\` | Legacy custom DLSS folder (migrated to `Custom\DLSS\` on first launch). |
+| `Streamline-Custom\` | Legacy custom Streamline folder (migrated to `Custom\Streamline\` on first launch). |
+| `Custom\DLSS\` | User-provided custom DLSS DLLs. |
+| `Custom\Streamline\` | User-provided custom Streamline DLLs. |
+| `Custom\ReShade\` | User-provided custom ReShade DLLs (ReShade64.dll / ReShade32.dll). |
 | `dlss_manifest.json` | Cached DLSS/Streamline version manifest. |
 | `dlss_scan_cache.json` | Games confirmed to have no DLSS (auto-skip after 3 scans). |
 | `dlss_trusted_paths.json` | Confirmed DLL paths for fast detection (skip recursive scan). |
@@ -963,6 +1024,8 @@ Everything is stored under `%LOCALAPPDATA%\RHI\`:
 | `logs\` | Session logs (timestamped) and crash reports. Max 10 logs kept on disk. |
 | `reports\` | Saved game reports from Copy Report. |
 | `nexus_games.json` | Cached Nexus Mods game catalogue (24-hour TTL). |
+| `nexus_baselines.json` | Nexus update check baselines (last-seen timestamps per game). |
+| `motd_hash.txt` | SHA256 hash of the last-shown Message of the Day (deduplication). |
 | `steam_appid_cache.json` | Cached Steam AppID lookups (permanent). |
 
 ### Session Logging

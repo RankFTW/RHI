@@ -13,15 +13,15 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **One-click everything** — install, update, or remove ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, and Luma Framework per game.
 - **Keeps things in sync** — Update All checks every component across every game. One button, done.
 - **42 shader packs** — global or per-game shader selection with automatic dependency resolution.
-- **Drag-and-drop** — drop an .exe to add a game, drop a mod to install it, drop a preset to deploy it with auto shader install.
+- **Drag-and-drop** — drop an .exe to add a game, drop a mod to install it, drop a preset to deploy it with auto shader install. Luma mod archives (zip/7z) are detected automatically and install with a game picker.
 - **OptiScaler built in** — upscaler redirection (DLSS/FSR/XeSS) with automatic DLSS DLL downloads, ReShade coexistence, and INI management.
 - **DLSS & Streamline Manager** — swap DLSS SR, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. Set DLSS presets per-game (J, K, L, M for SR; D, E for RR; A, B for FG) without NVIDIA Profile Inspector.
 - **UW Fix & Ultra+ links** — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
-- **Game Launch** — launch games directly from RHI. Steam games launch through Steam (with overlay and playtime tracking), everything else launches directly. Set a custom exe per game in Overrides.
+- **Game Launch** — launch games directly from RHI. Steam games launch through Steam (with overlay and playtime tracking), Epic games use the Epic protocol, everything else launches directly. Set a custom exe and launch arguments per game in Overrides.
 - **Nexus Mods Update Alerts** — automatic update detection for Nexus-hosted mods. No API key needed.
 - **Three view modes** — Detail View, Grid View, and Compact View. Pick what fits your workflow.
 - **Smart about updates** — rate-limit aware, cooldown-based update checks, and cached shader packs that skip unnecessary API calls.
-- **ReShade build channels** — choose between Stable (reshade.me) and Nightly (GitHub Actions) builds in Settings. Per-game overrides let you mix channels across your library.
+- **ReShade build channels** — choose between Stable (reshade.me), Nightly (GitHub Actions), or Custom (your own DLLs) builds in Settings. Per-game overrides let you mix channels across your library.
 - **Legacy ReShade** — pin any game to a specific older ReShade version (6.0.0+) from the RS Channel dropdown. Available versions managed server-side.
 - **DXVK variants** — choose between Development (nightly), Stable (tagged releases), and Lilium HDR (scRGB HDR output) in Settings. Per-game overrides available.
 
