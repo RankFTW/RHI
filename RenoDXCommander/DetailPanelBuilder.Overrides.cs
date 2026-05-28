@@ -1362,6 +1362,10 @@ public partial class DetailPanelBuilder
         bitnessPanel.Children.Add(channelCombo);
         channelComboInitializing = false;
 
+        // Disable RS Channel when Luma mode is active (Luma bundles its own ReShade)
+        if (card.IsLumaMode)
+            channelCombo.IsEnabled = false;
+
         // ── Global update inclusion (compact: button + summary) ──────────────────
         var capturedCard = card;
 

@@ -2,7 +2,7 @@
 
 ### New Features
 
-- **Batch DLSS & Streamline Deploy** — New "Batch Deploy" button in Settings lets you update DLSS SR, RR, FG, and Streamline across multiple games at once. Select games from a checklist, pick versions from dropdowns, and deploy. Originals are backed up automatically. Games already at the selected version or with v1.x DLLs are skipped. Includes a "Restore All" button to revert selected games to their original DLLs.
+- **Batch DLSS & Streamline Deploy** — New "Batch Deploy" button in Settings lets you update DLSS SR, RR, FG, and Streamline across multiple games at once. Select games from a checklist, pick versions from dropdowns, and deploy. Originals are backed up automatically. Games already at the selected version or with v1.x DLLs are skipped. Also supports batch DLSS preset selection (SR/RR/FG) and auto-creates NVIDIA driver profiles for games that don't have one. Includes a "Restore" button to revert selected games to their original DLLs and reset presets to default.
 - **Custom ReShade Channel** — New "Custom" option in the RS Channel dropdown. Drop your own ReShade64.dll/ReShade32.dll into the Custom\ReShade folder and select "Custom" per-game to deploy them. Games on Custom are excluded from automatic ReShade updates. Version is read from the DLL's file metadata. Useful for deploying RenoVK or other custom ReShade builds.
 - **Unified Custom Folder** — DLSS-Custom and Streamline-Custom folders consolidated into `%LocalAppData%\RHI\Custom\` with subfolders: `DLSS\`, `Streamline\`, and `ReShade\`. Existing files are migrated automatically on first launch.
 - **Install Warnings** — Per-game, per-component install warnings driven from the manifest. When a game has a known requirement (e.g. FF7R needs DX11 mode for Luma), a dialog pops up before install with the warning. User can Continue or Cancel.
@@ -20,11 +20,18 @@
 - Fixed DLSS scan cache file contention when the cache phase and background scan write simultaneously. Both `dlss_trusted_paths.json` and `dlss_scan_cache.json` now use a shared lock to prevent concurrent write failures.
 - Fixed DLSS detection scanning into sibling game folders for GOG Galaxy installs (e.g. BioShock Infinite falsely showing Fort Solis's DLSS). The search root guard now recognizes `Games` as a library folder.
 - Fixed DXVK Update All overwriting per-game Lilium HDR variant with the global Development/Stable variant. Update All now respects per-game DXVK variant overrides.
+- Fixed Guide button in the Help menu pointing to an old URL.
 
 ### UI Changes
 
 - RenoDX wiki status badge (Working, In Progress, etc.) moved from the main detail panel into the RenoDX Info button dialog. Cleaner main view, status still accessible.
 - Settings page reorganized: "Crash & Error Logs" renamed to "Data & Custom Files" with AppData/Custom folder buttons. Global Update Checks replaced with a compact "Update Inclusion" button + summary line (matching the per-game overrides style). Custom Shaders and Shader Cache merged into one row. Addon Watch Folder moved up next to Global Update Checks. Mass INI Deployment and Mass Preset Install combined into a single "Mass Deployment" section. Verbose Logging and Skip Update Check toggles removed.
+
+### Luma Changes
+
+- Luma toggle button moved to the right side of the Components header. Dynamic info text now explains whether the game is auto-configured for Luma or manually toggleable. Toggle text shortened to "Luma ON" / "Luma OFF".
+- Luma installs now deploy shaders using the same global/per-game shader selection as normal ReShade installs (previously hardcoded to Lilium only).
+- Fixed Luma uninstall leaving behind a `reshade-shaders-original` folder. The shader folder is now properly deleted instead of renamed.
 
 ### Manifest Updates
 

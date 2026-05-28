@@ -525,11 +525,14 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="Components" FontSize="13" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
-                                    <ToggleButton x:Name="DetailLumaToggle" x:FieldModifier="internal" Grid.Column="3"
+                                    <TextBlock x:Name="DetailLumaInfoText" x:FieldModifier="internal" Grid.Column="3"
+                                               FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" Visibility="Collapsed"/>
+                                    <ToggleButton x:Name="DetailLumaToggle" x:FieldModifier="internal" Grid.Column="4" Grid.ColumnSpan="2"
                                                   Click="LumaToggle_Click" Visibility="Collapsed"
                                                   Padding="10,4" MinHeight="0" MinWidth="0"
                                                   CornerRadius="6" BorderThickness="1" FontSize="11"
-                                                  HorizontalAlignment="Center">
+                                                  HorizontalAlignment="Stretch">
                                         <TextBlock x:Name="DetailLumaToggleText" x:FieldModifier="internal" FontSize="11"/>
                                     </ToggleButton>
                                 </Grid>

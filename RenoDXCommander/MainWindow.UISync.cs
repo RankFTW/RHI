@@ -216,7 +216,7 @@ public sealed partial class MainWindow
 
     internal void UpdateLumaToggleStyle(bool isLumaMode)
     {
-        DetailLumaToggleText.Text = isLumaMode ? "Click to disable Luma" : "Click to enable Luma";
+        DetailLumaToggleText.Text = isLumaMode ? "Luma ON" : "Luma OFF";
         if (isLumaMode)
         {
             DetailLumaToggle.Background = Brush(ResourceKeys.AccentGreenBgBrush);

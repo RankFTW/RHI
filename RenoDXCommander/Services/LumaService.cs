@@ -254,6 +254,7 @@ public class LumaService : ILumaService
     public async Task<LumaInstalledRecord> InstallAsync(
         LumaMod mod,
         string gameInstallPath,
+        IEnumerable<string>? selectedShaderPacks = null,
         IProgress<(string message, double percent)>? progress = null)
     {
         if (mod.DownloadUrl == null)
@@ -361,12 +362,11 @@ public class LumaService : ILumaService
             installedFiles.Add(destName);
         }
 
-        // ── Deploy Lilium shader pack (Minimum mode = Lilium only) ────────────────
+        // ── Deploy shaders (same as normal ReShade — respects global/per-game selection) ──
         progress?.Report(("Deploying shaders...", 95));
         try
         {
-            // Deploy only the Lilium HDR shader pack by ID
-            _shaderPackService.DeployToGameFolder(gameInstallPath, new[] { "Lilium" });
+            _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks);
 
             // Track deployed shader files for clean uninstall
             var rsDir = Path.Combine(gameInstallPath, ShaderPackService.GameReShadeShaders);
@@ -377,7 +377,6 @@ public class LumaService : ILumaService
                     var relToGame = Path.GetRelativePath(gameInstallPath, file);
                     installedFiles.Add(relToGame);
                 }
-                // Also track the marker file if present
                 var marker = Path.Combine(rsDir, ".rdxc-managed");
                 if (File.Exists(marker))
                     installedFiles.Add(Path.GetRelativePath(gameInstallPath, marker));
@@ -431,6 +430,14 @@ public class LumaService : ILumaService
         // (e.g. .\ue4ss) are found and deleted during uninstall.
         var addonDeployPath = ModInstallService.GetAddonDeployPath(record.InstallPath);
 
+        // Remove the RDXC-managed reshade-shaders folder via ShaderPackService
+        // (must happen before individual file deletion removes the marker file)
+        try
+        {
+            _shaderPackService.RemoveFromGameFolder(record.InstallPath);
+        }
+        catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] ShaderPackService cleanup failed — {ex.Message}"); }
+
         foreach (var relPath in record.InstalledFiles)
         {
             var fullPath = Path.Combine(record.InstallPath, relPath);
@@ -453,14 +460,6 @@ public class LumaService : ILumaService
             }
         }
 
-        // Remove the RDXC-managed reshade-shaders folder via ShaderPackService
-        // (handles the marker file and directory cleanup properly)
-        try
-        {
-            _shaderPackService.RemoveFromGameFolder(record.InstallPath);
-        }
-        catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] ShaderPackService cleanup failed — {ex.Message}"); }
-
         // Remove the Luma folder if it exists (entirely RHI-managed)
         var lumaDir = Path.Combine(record.InstallPath, "Luma");
         try
@@ -481,6 +480,15 @@ public class LumaService : ILumaService
                 CleanEmptyDirs(rsDir);
         }
         catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] Failed to clean empty dirs in '{rsDir}' — {ex.Message}"); }
+
+        // Remove reshade-shaders-original if it was created during uninstall
+        var rsOrigDir = Path.Combine(record.InstallPath, ShaderPackService.GameReShadeOriginal);
+        try
+        {
+            if (Directory.Exists(rsOrigDir))
+                Directory.Delete(rsOrigDir, recursive: true);
+        }
+        catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] Failed to remove reshade-shaders-original — {ex.Message}"); }
 
         RemoveRecord(record.GameName, record.InstallPath);
     }

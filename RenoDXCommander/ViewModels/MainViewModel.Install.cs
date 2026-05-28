@@ -2077,9 +2077,11 @@ public partial class MainViewModel
         card.LumaActionMessage = "Installing Luma...";
         try
         {
+            var selectedPacks = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
             var record = await _lumaService.InstallAsync(
                 card.LumaMod,
                 card.InstallPath,
+                selectedPacks,
                 new Progress<(string msg, double pct)>(p =>
                 {
                     DispatcherQueue?.TryEnqueue(() =>

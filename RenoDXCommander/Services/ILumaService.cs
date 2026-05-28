@@ -12,6 +12,7 @@ public interface ILumaService
     Task<LumaInstalledRecord> InstallAsync(
         LumaMod mod,
         string gameInstallPath,
+        IEnumerable<string>? selectedShaderPacks = null,
         IProgress<(string message, double percent)>? progress = null);
 
     void Uninstall(LumaInstalledRecord record);

@@ -53,6 +53,12 @@ public class DlssPresetService
 
     public bool IsSupported => _isSupported;
 
+    /// <summary>When true, SetPreset will auto-create NVIDIA profiles for games that don't have one.</summary>
+    public bool AutoCreateProfiles { get; set; } = true;
+
+    /// <summary>Counter for profiles created during the current batch operation. Reset before use.</summary>
+    public int ProfilesCreatedCount { get; set; }
+
     /// <summary>
     /// Initializes NVAPI. Call once during app startup.
     /// No-op if NVIDIA drivers are not installed.
@@ -144,8 +150,18 @@ public class DlssPresetService
             var profile = FindProfile(gameName, installPath);
             if (profile == null)
             {
-                CrashReporter.Log($"[DlssPresetService.SetPreset] No profile found for '{gameName}'");
-                return false;
+                if (!AutoCreateProfiles)
+                {
+                    CrashReporter.Log($"[DlssPresetService.SetPreset] No profile found for '{gameName}' (auto-create disabled)");
+                    return false;
+                }
+                // Auto-create a profile for this game
+                profile = CreateProfileForGame(gameName, installPath);
+                if (profile == null)
+                {
+                    CrashReporter.Log($"[DlssPresetService.SetPreset] No profile found and could not create one for '{gameName}'");
+                    return false;
+                }
             }
 
             profile.SetSetting(settingId, preset);
@@ -249,5 +265,54 @@ public class DlssPresetService
                 sb.Append(char.ToLowerInvariant(c));
         }
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Creates a new NVIDIA driver profile for a game that doesn't have one.
+    /// Uses the largest exe in the install path as the application name.
+    /// </summary>
+    private DriverSettingsProfile? CreateProfileForGame(string gameName, string installPath)
+    {
+        if (_session == null || _cachedProfiles == null) return null;
+        if (string.IsNullOrEmpty(installPath) || !Directory.Exists(installPath)) return null;
+
+        try
+        {
+            // Find the game exe (largest exe, excluding known non-game names)
+            var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "launcher" };
+            string? gameExe = null;
+            try
+            {
+                gameExe = Directory.GetFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly)
+                    .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
+                    .OrderByDescending(e => new FileInfo(e).Length)
+                    .Select(Path.GetFileName)
+                    .FirstOrDefault();
+            }
+            catch { }
+
+            if (string.IsNullOrEmpty(gameExe)) return null;
+
+            // Create the profile
+            var profile = DriverSettingsProfile.CreateProfile(_session, gameName, null);
+
+            // Add the exe as an application
+            ProfileApplication.CreateApplication(profile, gameExe, gameName, "", Array.Empty<string>(), false, "");
+
+            _session.Save();
+
+            // Cache the new profile
+            _cachedProfiles.TryAdd(gameName, profile);
+
+            CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Created profile '{gameName}' with app '{gameExe}'");
+            ProfilesCreatedCount++;
+            return profile;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Failed for '{gameName}' — {ex.Message}");
+            return null;
+        }
     }
 }

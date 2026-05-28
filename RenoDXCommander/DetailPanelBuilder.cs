@@ -200,16 +200,25 @@ public partial class DetailPanelBuilder
         _window.DetailUltraPlusBtn.Tag = card;
         _window.DetailUltraPlusBtn.Visibility = card.HasUltraPlusUrl ? Visibility.Visible : Visibility.Collapsed;
 
-        // Luma toggle row (full-width, above Luma install row)
+        // Luma toggle and info text (shown when game supports Luma)
         if (card.LumaBadgeVisibility == Visibility.Visible)
         {
             _window.DetailLumaToggle.Visibility = Visibility.Visible;
             _window.DetailLumaToggle.IsChecked = card.IsLumaMode;
             _window.UpdateLumaToggleStyle(card.IsLumaMode);
+
+            // Dynamic info text explaining Luma support
+            _window.DetailLumaInfoText.Visibility = Visibility.Visible;
+            var isAutoLuma = _window.ViewModel.Manifest?.LumaDefaultGames
+                ?.Any(g => g.Equals(card.GameName, StringComparison.OrdinalIgnoreCase)) == true;
+            _window.DetailLumaInfoText.Text = isAutoLuma
+                ? "This game is automatically configured for Luma HDR. Both RenoDX and Luma are supported. Toggle →"
+                : "This game supports both RenoDX and Luma HDR. Use the toggle to switch →";
         }
         else
         {
             _window.DetailLumaToggle.Visibility = Visibility.Collapsed;
+            _window.DetailLumaInfoText.Visibility = Visibility.Collapsed;
         }
 
         // Populate component rows

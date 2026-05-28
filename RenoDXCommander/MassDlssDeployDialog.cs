@@ -117,7 +117,7 @@ public class MassDlssDeployDialog
         var rrPresetCombo = BuildPresetCombo(DlssPresetService.RrPresets);
         var fgPresetCombo = BuildPresetCombo(DlssPresetService.FgPresets);
 
-        var rightPanel = new StackPanel { Spacing = 12, Width = 260 };
+        var rightPanel = new StackPanel { Spacing = 8, Width = 280 };
         rightPanel.Children.Add(BuildDropdownSection("DLSS Super Resolution", dlssCombo));
         rightPanel.Children.Add(BuildDropdownSection("DLSS Ray Reconstruction", dlssdCombo));
         rightPanel.Children.Add(BuildDropdownSection("DLSS Frame Generation", dlssgCombo));
@@ -133,6 +133,17 @@ public class MassDlssDeployDialog
         rightPanel.Children.Add(BuildDropdownSection("SR Preset", srPresetCombo));
         rightPanel.Children.Add(BuildDropdownSection("RR Preset", rrPresetCombo));
         rightPanel.Children.Add(BuildDropdownSection("FG Preset", fgPresetCombo));
+
+        // Auto-create profiles checkbox
+        var autoCreateCheck = new CheckBox
+        {
+            Content = "Auto-create NVIDIA profiles",
+            IsChecked = true,
+            FontSize = 11,
+            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
+            Margin = new Thickness(0, 4, 0, 0),
+        };
+        rightPanel.Children.Add(autoCreateCheck);
 
         // ── Separator ──
         var separator = new Border
@@ -171,7 +182,7 @@ public class MassDlssDeployDialog
 
         if (result == ContentDialogResult.Primary)
         {
-            await ExecuteDeployAsync(eligibleCards, checkBoxes, dlssCombo, dlssdCombo, dlssgCombo, slCombo, srPresetCombo, rrPresetCombo, fgPresetCombo);
+            await ExecuteDeployAsync(eligibleCards, checkBoxes, dlssCombo, dlssdCombo, dlssgCombo, slCombo, srPresetCombo, rrPresetCombo, fgPresetCombo, autoCreateCheck.IsChecked == true);
         }
         else if (result == ContentDialogResult.Secondary)
         {
@@ -183,7 +194,8 @@ public class MassDlssDeployDialog
         List<GameCardViewModel> eligibleCards,
         List<CheckBox> checkBoxes,
         ComboBox dlssCombo, ComboBox dlssdCombo, ComboBox dlssgCombo, ComboBox slCombo,
-        ComboBox srPresetCombo, ComboBox rrPresetCombo, ComboBox fgPresetCombo)
+        ComboBox srPresetCombo, ComboBox rrPresetCombo, ComboBox fgPresetCombo,
+        bool autoCreateProfiles)
     {
         var dlssVersion = dlssCombo.SelectedItem as string;
         var dlssdVersion = dlssdCombo.SelectedItem as string;
@@ -202,7 +214,14 @@ public class MassDlssDeployDialog
 
         int dlssCount = 0, dlssdCount = 0, dlssgCount = 0, slCount = 0;
         int srPresetCount = 0, rrPresetCount = 0, fgPresetCount = 0, presetMissedCount = 0;
+        int profilesCreatedCount = 0;
         int skippedNoComponent = 0, skippedV1 = 0, skippedAlreadyAtVersion = 0;
+
+        // Set auto-create flag on preset service
+        var presetService = App.Services.GetRequiredService<DlssPresetService>();
+        var previousAutoCreate = presetService.AutoCreateProfiles;
+        presetService.AutoCreateProfiles = autoCreateProfiles;
+        presetService.ProfilesCreatedCount = 0;
 
         // Show progress
         var progressText = new TextBlock
@@ -351,7 +370,7 @@ public class MassDlssDeployDialog
             // ── Apply presets ──
             if (anyPresetSelected)
             {
-                var presetService = App.Services.GetRequiredService<DlssPresetService>();
+                var profileCountBefore = presetService.IsSupported ? 0 : -1; // can't track if not supported
                 bool presetApplied = false;
 
                 if (srPresetSelection != NoneOption)
@@ -385,6 +404,9 @@ public class MassDlssDeployDialog
         // Close progress dialog by dismissing it
         progressDialog.Hide();
 
+        // Restore auto-create flag
+        presetService.AutoCreateProfiles = previousAutoCreate;
+
         // ── Show results ──
         var report = new System.Text.StringBuilder();
         if (dlssCount > 0) report.AppendLine($"DLSS SR deployed to {dlssCount} game(s)");
@@ -394,6 +416,8 @@ public class MassDlssDeployDialog
         if (srPresetCount > 0) report.AppendLine($"SR Preset applied to {srPresetCount} game(s)");
         if (rrPresetCount > 0) report.AppendLine($"RR Preset applied to {rrPresetCount} game(s)");
         if (fgPresetCount > 0) report.AppendLine($"FG Preset applied to {fgPresetCount} game(s)");
+        if (autoCreateProfiles && presetService.ProfilesCreatedCount > 0)
+            report.AppendLine($"NVIDIA profiles created: {presetService.ProfilesCreatedCount}");
         if (skippedAlreadyAtVersion > 0) report.AppendLine($"\nSkipped: {skippedAlreadyAtVersion} (already at selected version)");
         if (skippedNoComponent > 0) report.AppendLine($"Skipped: {skippedNoComponent} (component not present)");
         if (skippedV1 > 0) report.AppendLine($"Skipped: {skippedV1} (v1.x incompatible)");
@@ -524,6 +548,7 @@ public class MassDlssDeployDialog
             ItemsSource = items,
             SelectedIndex = 0,
             FontSize = 12,
+            CornerRadius = new CornerRadius(6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
     }
@@ -553,6 +578,7 @@ public class MassDlssDeployDialog
             ItemsSource = items,
             SelectedIndex = 0,
             FontSize = 12,
+            CornerRadius = new CornerRadius(6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
     }

@@ -116,7 +116,7 @@ public sealed partial class MainWindow
     private void SupportGuide_Click(object sender, RoutedEventArgs e)
     {
         _ = Windows.System.Launcher.LaunchUriAsync(
-            new Uri("https://github.com/RankFTW/rdxc-manifest?tab=readme-ov-file#renodx-commander--detailed-guide"));
+            new Uri("https://github.com/RankFTW/RHI/blob/main/docs/DETAILED_GUIDE.md"));
     }
 
     private void SupportKofi_Click(object sender, RoutedEventArgs e)
