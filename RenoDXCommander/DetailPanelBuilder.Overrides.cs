@@ -1386,6 +1386,7 @@ public partial class DetailPanelBuilder
             isDxvkEnabled: card.DxvkEnabled);
 
         var toggleRow = new StackPanel { Spacing = 0 };
+        ToolTipService.SetToolTip(updateInclusionBtn, "Choose which components are included in Update All for this game.");
         toggleRow.Children.Add(updateInclusionBtn);
         toggleRow.Children.Add(updateSummaryText);
 
@@ -1667,6 +1668,8 @@ public partial class DetailPanelBuilder
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ToolTipService.SetToolTip(launchExeBox,
+            "Override the executable used when launching this game. Leave blank for auto-detection (largest exe in install folder).");
         launchExeBox.LostFocus += (s, ev) =>
         {
             var newPath = launchExeBox.Text.Trim();
@@ -1686,6 +1689,10 @@ public partial class DetailPanelBuilder
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        var argsTooltip = "Command-line arguments passed to the game on launch. Saves on focus lost.";
+        if (card.Source.Equals("Epic", StringComparison.OrdinalIgnoreCase))
+            argsTooltip += "\n\nNote: Setting arguments disables Epic protocol launch. EOS-protected games may fail to launch with arguments.";
+        ToolTipService.SetToolTip(launchArgsBox, argsTooltip);
         launchArgsBox.LostFocus += (s, ev) =>
         {
             var newArgs = launchArgsBox.Text.Trim();
@@ -1746,6 +1753,7 @@ public partial class DetailPanelBuilder
             }
         };
         Grid.SetColumn(browseLaunchBtn, 0);
+        ToolTipService.SetToolTip(browseLaunchBtn, "Browse for a game executable to use as the launch target.");
         launchBtnRow.Children.Add(browseLaunchBtn);
 
         var resetLaunchBtn = new Button
@@ -1767,6 +1775,7 @@ public partial class DetailPanelBuilder
             _window.ViewModel.SaveSettingsPublic();
         };
         Grid.SetColumn(resetLaunchBtn, 1);
+        ToolTipService.SetToolTip(resetLaunchBtn, "Clear the launch executable override and revert to auto-detection.");
         launchBtnRow.Children.Add(resetLaunchBtn);
         Grid.SetRow(launchBtnRow, 2);
         shadersAddonsRightColumn.Children.Add(launchBtnRow);
@@ -2097,6 +2106,7 @@ public partial class DetailPanelBuilder
                 }
             };
             slCol.Children.Add(dlssRestoreBtn);
+            ToolTipService.SetToolTip(dlssRestoreBtn, "Restore all DLSS and Streamline DLLs to their original game versions and reset presets to Default.");
 
             Grid.SetColumn(slCol, 6);
             dlssRowGrid.Children.Add(slCol);
@@ -2254,6 +2264,7 @@ public partial class DetailPanelBuilder
             Tag = card,
         };
         changeFolderBtn.Click += (s, ev) => _window.BrowseFolder_Click(s, ev);
+        ToolTipService.SetToolTip(changeFolderBtn, "Change the install folder for this game. Use when auto-detection picked the wrong directory.");
         Grid.SetColumn(changeFolderBtn, 0);
         mgmtRow.Children.Add(changeFolderBtn);
 
@@ -2275,6 +2286,7 @@ public partial class DetailPanelBuilder
             Tag = card,
         };
         removeGameBtn.Click += (s, ev) => _window.RemoveManualGame_Click(s, ev);
+        ToolTipService.SetToolTip(removeGameBtn, "Reset the install folder to auto-detected, or remove a manually added game entirely.");
         Grid.SetColumn(removeGameBtn, 2);
         mgmtRow.Children.Add(removeGameBtn);
 
@@ -2301,6 +2313,7 @@ public partial class DetailPanelBuilder
             peer?.Invoke();
         };
         Grid.SetColumn(mgmtResetOverridesBtn, 4);
+        ToolTipService.SetToolTip(mgmtResetOverridesBtn, "Reset all per-game overrides back to defaults (DLL names, channels, shaders, addons, DXVK, launch settings, update inclusion).");
         mgmtRow.Children.Add(mgmtResetOverridesBtn);
 
         var sep3 = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
@@ -2327,6 +2340,7 @@ public partial class DetailPanelBuilder
                 await GameReportEncoder.ShowAndCopyAsync(_window.Content.XamlRoot, targetCard, _window.ViewModel);
         };
         Grid.SetColumn(reportBtn, 6);
+        ToolTipService.SetToolTip(reportBtn, "Copy a diagnostic report for this game to the clipboard. Useful for Discord or GitHub support.");
         mgmtRow.Children.Add(reportBtn);
 
         _window.ManagementPanel.Children.Add(mgmtRow);

@@ -411,7 +411,8 @@
                                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                                 CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
                                                 FontSize="11"
-                                                Click="HideButton_Click">
+                                                Click="HideButton_Click"
+                                                ToolTipService.ToolTip="Hide this game from the sidebar (find it again in the Hidden filter)">
                                             <TextBlock x:Name="DetailHideIcon" x:FieldModifier="internal" FontSize="11"/>
                                         </Button>
                                         <Button x:Name="DetailFavBtn" x:FieldModifier="internal"
