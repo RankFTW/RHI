@@ -15,7 +15,7 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **42 shader packs** — global or per-game shader selection with automatic dependency resolution.
 - **Drag-and-drop** — drop an .exe to add a game, drop a mod to install it, drop a preset to deploy it with auto shader install. Luma mod archives (zip/7z) are detected automatically and install with a game picker.
 - **OptiScaler built in** — upscaler redirection (DLSS/FSR/XeSS) with automatic DLSS DLL downloads, ReShade coexistence, and INI management.
-- **DLSS & Streamline Manager** — swap DLSS SR, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. Set DLSS presets per-game (J, K, L, M for SR; D, E for RR; A, B for FG) without NVIDIA Profile Inspector.
+- **DLSS & Streamline Manager** — swap DLSS SR, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. Set DLSS presets per-game (J, K, L, M for SR; D, E for RR; A, B for FG) without NVIDIA Profile Inspector. Batch Deploy lets you update versions and presets across multiple games at once.
 - **UW Fix & Ultra+ links** — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
 - **Game Launch** — launch games directly from RHI. Steam games launch through Steam (with overlay and playtime tracking), Epic games use the Epic protocol, everything else launches directly. Set a custom exe and launch arguments per game in Overrides.
 - **Nexus Mods Update Alerts** — automatic update detection for Nexus-hosted mods. No API key needed.
