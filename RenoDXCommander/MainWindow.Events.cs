@@ -648,6 +648,16 @@ public sealed partial class MainWindow
         var url = card.IsExternalOnly ? card.ExternalUrl : (card.NexusUrl ?? card.DiscordUrl ?? card.ExternalUrl);
         if (!string.IsNullOrEmpty(url))
             await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+
+        // Reset Nexus baseline when user clicks the update button — they're acknowledging the update
+        if (card.Status == GameStatus.UpdateAvailable && card.IsExternalOnly)
+        {
+            var nexusService = App.Services.GetRequiredService<INexusUpdateService>();
+            nexusService.ResetBaseline(card.GameName);
+            card.Status = GameStatus.Installed;
+            card.NotifyAll();
+            ViewModel.NotifyUpdateButtonChanged();
+        }
     }
 
     private async void NameLink_Click(object sender, RoutedEventArgs e)

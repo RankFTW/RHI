@@ -255,6 +255,10 @@ public class LumaService : ILumaService
         LumaMod mod,
         string gameInstallPath,
         IEnumerable<string>? selectedShaderPacks = null,
+        string? screenshotSavePath = null,
+        string? overlayHotkey = null,
+        string? screenshotHotkey = null,
+        string? gameName = null,
         IProgress<(string message, double percent)>? progress = null)
     {
         if (mod.DownloadUrl == null)
@@ -319,7 +323,7 @@ public class LumaService : ILumaService
             _auxFileService.EnsureInisDir();
             if (File.Exists(AuxInstallService.RsIniPath))
             {
-                _auxFileService.MergeRsIni(gameInstallPath);
+                _auxFileService.MergeRsIni(gameInstallPath, screenshotSavePath, overlayHotkey, screenshotHotkey, gameName);
                 installedFiles.Add("reshade.ini");
             }
         }
@@ -339,6 +343,11 @@ public class LumaService : ILumaService
             foreach (var entry in archive.Entries)
             {
                 if (string.IsNullOrEmpty(entry.Name)) continue; // skip directory entries
+
+                // Skip reshade.ini from the zip — RHI deploys its own version with user settings
+                if (entry.Name.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase))
+                    continue;
 
                 // Route .addon files to the addon deploy path
                 var isAddonFile = entry.Name.EndsWith(".addon", StringComparison.OrdinalIgnoreCase)

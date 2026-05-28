@@ -21,6 +21,7 @@
 - Fixed DLSS detection scanning into sibling game folders for GOG Galaxy installs (e.g. BioShock Infinite falsely showing Fort Solis's DLSS). The search root guard now recognizes `Games` as a library folder.
 - Fixed DXVK Update All overwriting per-game Lilium HDR variant with the global Development/Stable variant. Update All now respects per-game DXVK variant overrides.
 - Fixed Guide button in the Help menu pointing to an old URL.
+- Fixed Nexus update indicator persisting after re-downloading the mod. Clicking the "Update RenoDX" button now resets the baseline immediately — the click is treated as acknowledgement that the user is aware of the update. Note: Nexus update detection uses the mod page's last-modified timestamp, which can change for page edits (not just new versions). This may occasionally flag updates when only the description was changed.
 
 ### UI Changes
 
@@ -32,6 +33,7 @@
 - Luma toggle button moved to the right side of the Components header. Dynamic info text now explains whether the game is auto-configured for Luma or manually toggleable. Toggle text shortened to "Luma ON" / "Luma OFF".
 - Luma installs now deploy shaders using the same global/per-game shader selection as normal ReShade installs (previously hardcoded to Lilium only).
 - Fixed Luma uninstall leaving behind a `reshade-shaders-original` folder. The shader folder is now properly deleted instead of renamed.
+- Fixed Luma installs not applying screenshot save path, overlay hotkey, or screenshot hotkey to reshade.ini. These settings are now passed through correctly, matching normal ReShade installs.
 
 ### Manifest Updates
 

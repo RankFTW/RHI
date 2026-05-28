@@ -13,6 +13,10 @@ public interface ILumaService
         LumaMod mod,
         string gameInstallPath,
         IEnumerable<string>? selectedShaderPacks = null,
+        string? screenshotSavePath = null,
+        string? overlayHotkey = null,
+        string? screenshotHotkey = null,
+        string? gameName = null,
         IProgress<(string message, double percent)>? progress = null);
 
     void Uninstall(LumaInstalledRecord record);

@@ -621,6 +621,8 @@ public partial class MainViewModel
                 card.Status                 = GameStatus.Installed;
                 card.FadeMessage(m => card.ActionMessage = m, "✅ Installed! Press Home in-game to open ReShade.");
                 _crashReporter.Log($"[MainViewModel.InstallModAsync] Install complete: {card.GameName} — {record.AddonFileName}");
+                // Reset Nexus baseline so update indicator clears after install
+                _nexusUpdateService.ResetBaseline(card.GameName);
                 // Update the addon file cache so the next Refresh finds the installed file
                 // instead of using the stale "no addon" entry from before the install.
                 if (!string.IsNullOrEmpty(card.InstallPath))
@@ -2082,6 +2084,10 @@ public partial class MainViewModel
                 card.LumaMod,
                 card.InstallPath,
                 selectedPacks,
+                BuildScreenshotSavePath(card.GameName),
+                _settingsViewModel.OverlayHotkey,
+                _settingsViewModel.ScreenshotHotkey,
+                card.GameName,
                 new Progress<(string msg, double pct)>(p =>
                 {
                     DispatcherQueue?.TryEnqueue(() =>
