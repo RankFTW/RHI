@@ -87,10 +87,10 @@ public class SettingsHandler
         if (gpuCombo.SelectedIndex < 0)
             gpuCombo.SelectedIndex = 0; // Default to NVIDIA
 
-        // Initialize DLSS toggle and visibility
-        _window.OsDlssInputsToggle.IsOn = ViewModel.Settings.OsDlssInputs;
+        // Initialize DLSS inputs combo and visibility
+        _window.OsDlssInputsCombo.SelectedIndex = ViewModel.Settings.OsDlssInputs ? 0 : 1; // 0=Yes, 1=No
         bool showDlss = !string.Equals(gpuType, "NVIDIA", StringComparison.OrdinalIgnoreCase);
-        _window.OsDlssInputsToggle.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
+        _window.OsDlssInputsPanel.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
 
         // Initialize Global Update Checks summary
         RefreshGlobalUpdateSummary();
@@ -659,17 +659,17 @@ public class SettingsHandler
             ViewModel.Settings.OsGpuType = selected;
             ViewModel.SaveSettingsPublic();
 
-            // Show DLSS toggle only for AMD or Intel
+            // Show DLSS inputs combo only for AMD or Intel
             bool showDlss = !string.Equals(selected, "NVIDIA", StringComparison.OrdinalIgnoreCase);
-            _window.OsDlssInputsToggle.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
+            _window.OsDlssInputsPanel.Visibility = showDlss ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
-    public void OsDlssInputsToggle_Toggled(object sender, RoutedEventArgs e)
+    public void OsDlssInputsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ToggleSwitch toggle)
+        if (sender is ComboBox combo && combo.SelectedIndex >= 0)
         {
-            ViewModel.Settings.OsDlssInputs = toggle.IsOn;
+            ViewModel.Settings.OsDlssInputs = combo.SelectedIndex == 0; // 0=Yes, 1=No
             ViewModel.SaveSettingsPublic();
         }
     }

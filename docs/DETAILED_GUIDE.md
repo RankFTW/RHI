@@ -111,10 +111,11 @@ Click **Settings** in the toolbar. Click **Back to Games** to return. The Settin
 | Data & Custom Files | Open AppData folder, Custom folder (DLSS/Streamline/ReShade custom DLLs), and Logs folder. |
 | Update Inclusion | Button opens a dialog with per-component toggles for global update checks. Summary line shows current state. |
 | Addon Watch Folder | Configure the folder watched for new addon files (default: Downloads). |
-| OptiScaler Settings | GPU type (NVIDIA / AMD / Intel), DLSS input toggle (AMD/Intel only), overlay hotkey, Apply to All Games button, OptiScaler Compatibility List link. |
+| OptiScaler Settings | GPU type (NVIDIA / AMD / Intel), DLSS input selector (Yes/No, AMD/Intel only), overlay hotkey, Apply to All Games button. |
 | Shared OSD Presets | Toggle for ReLimiter — when enabled, all games share the same OSD presets from a central file. "Apply to All Games" writes the setting to all deployed relimiter.ini files. |
 | Mass Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with the corresponding component installed. Also includes Mass Preset Install — select presets, choose target games, and optionally install required shader packs. |
 | Batch DLSS & Streamline Deploy | Update DLSS SR, RR, FG, and Streamline across multiple games at once. Select games from a checklist, pick versions from dropdowns, and deploy. Also supports batch DLSS preset selection (SR/RR/FG) and auto-creates NVIDIA driver profiles for games that don't have one. Includes a "Restore" button to revert selected games to their original DLLs and reset presets to default. |
+| DLSS On-Screen Indicator | Enable or disable the DLSS text overlay that NVIDIA shows in the corner of games. Global system setting (affects all games), requires admin privileges. |
 | RE Framework Exclusion | Globally exclude RE Framework from Update All. The per-game version of this toggle appears in the Update Inclusion dialog for RE Engine games. |
 | Build Channels | Choose between Stable and Nightly builds for ReShade, and Development, Stable, or Lilium HDR for DXVK. All variants are downloaded simultaneously — switching is instant. Per-game overrides in the Overrides panel let you mix variants across your library. |
 
@@ -513,7 +514,7 @@ RHI seeds a default `OptiScaler.ini` to the AppData INI folder. `LoadReshade=tru
 ### OptiScaler Settings (Settings Page)
 
 - **GPU type** — NVIDIA, AMD, or Intel. Determines which INI template is used and whether OptiPatcher is deployed.
-- **DLSS input toggle** — AMD/Intel only. Controls whether DLSS inputs are replaced.
+- **DLSS input selector** — AMD/Intel only (hidden for NVIDIA). Controls whether DLSS inputs are replaced. Shown as a Yes/No dropdown next to the GPU type selector.
 - **Overlay hotkey** — default: Insert. Written as Windows Virtual Key Code hex values.
 - **Apply to All Games** — writes the current settings to all game folders where OptiScaler is installed.
 

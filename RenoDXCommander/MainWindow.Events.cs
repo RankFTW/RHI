@@ -763,8 +763,8 @@ public sealed partial class MainWindow
     private void OsGpuCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.OsGpuCombo_SelectionChanged(sender, e);
 
-    private void OsDlssInputsToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.OsDlssInputsToggle_Toggled(sender, e);
+    private void OsDlssInputsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.OsDlssInputsCombo_SelectionChanged(sender, e);
 
     private async void GlobalUpdateInclusion_Click(object sender, RoutedEventArgs e)
         => await _settingsHandler.GlobalUpdateInclusion_ClickAsync(sender, e);

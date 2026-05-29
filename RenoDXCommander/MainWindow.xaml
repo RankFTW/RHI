@@ -1385,9 +1385,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>  <!-- Row 0: Titles + descriptions -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 1: GPU combo | OS hotkey combo -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 2: DLSS toggle | OS Apply -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 3: Compatibility link -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 1: GPU combo + DLSS inputs | Hotkey + Apply -->
                                 </Grid.RowDefinitions>
 
                                 <!-- ── Row 0: Titles + descriptions ── -->
@@ -1399,7 +1397,7 @@
                                                Text="Configure GPU type and DLSS input settings for OptiScaler installations. DLSS input toggle is for AMD/Intel GPUs only — NVIDIA users do not need it."/>
                                 </StackPanel>
 
-                                <Border Grid.Row="0" Grid.RowSpan="4" Grid.Column="1" Width="1"
+                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch"
                                         Margin="12,0,12,0"/>
@@ -1412,157 +1410,162 @@
                                                Text="OptiScaler overlay toggle key"/>
                                 </StackPanel>
 
-                                <!-- ── Row 1: GPU combo | OS hotkey combo ── -->
-                                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
-                                    <TextBlock Text="GPU Type" FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <ComboBox x:Name="OsGpuCombo" x:FieldModifier="internal"
+                                <!-- ── Row 1: GPU combo + DLSS inputs combo (side by side) | OS hotkey combo ── -->
+                                <Grid Grid.Row="1" Grid.Column="0" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="GPU Type" FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <ComboBox x:Name="OsGpuCombo" x:FieldModifier="internal"
+                                                  FontSize="12"
+                                                  HorizontalAlignment="Stretch"
+                                                  Background="{StaticResource SurfaceInputBrush}"
+                                                  Foreground="{StaticResource TextSecondaryBrush}"
+                                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                  SelectionChanged="OsGpuCombo_SelectionChanged">
+                                            <x:String>NVIDIA</x:String>
+                                            <x:String>AMD</x:String>
+                                            <x:String>Intel</x:String>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Spacing="4" x:Name="OsDlssInputsPanel" x:FieldModifier="internal" Visibility="Collapsed">
+                                        <TextBlock Text="Use DLSS Inputs" FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <ComboBox x:Name="OsDlssInputsCombo" x:FieldModifier="internal"
+                                                  FontSize="12"
+                                                  HorizontalAlignment="Stretch"
+                                                  Background="{StaticResource SurfaceInputBrush}"
+                                                  Foreground="{StaticResource TextSecondaryBrush}"
+                                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                  SelectionChanged="OsDlssInputsCombo_SelectionChanged">
+                                            <x:String>Yes</x:String>
+                                            <x:String>No</x:String>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="1" Grid.Column="2" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" x:Name="OsHotkeyCombo" x:FieldModifier="internal"
                                               FontSize="12"
                                               HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Bottom"
                                               Background="{StaticResource SurfaceInputBrush}"
                                               Foreground="{StaticResource TextSecondaryBrush}"
                                               BorderBrush="{StaticResource BorderSubtleBrush}"
-                                              SelectionChanged="OsGpuCombo_SelectionChanged">
-                                        <x:String>NVIDIA</x:String>
-                                        <x:String>AMD</x:String>
-                                        <x:String>Intel</x:String>
+                                              SelectionChanged="OsHotkeyCombo_SelectionChanged">
+                                        <x:String>Insert</x:String>
+                                        <x:String>Home</x:String>
+                                        <x:String>End</x:String>
+                                        <x:String>Delete</x:String>
+                                        <x:String>Page Up</x:String>
+                                        <x:String>Page Down</x:String>
+                                        <x:String>F1</x:String>
+                                        <x:String>F2</x:String>
+                                        <x:String>F3</x:String>
+                                        <x:String>F4</x:String>
+                                        <x:String>F5</x:String>
+                                        <x:String>F6</x:String>
+                                        <x:String>F7</x:String>
+                                        <x:String>F8</x:String>
+                                        <x:String>F9</x:String>
+                                        <x:String>F10</x:String>
+                                        <x:String>F11</x:String>
+                                        <x:String>F12</x:String>
                                     </ComboBox>
-                                </StackPanel>
+                                    <Button Grid.Column="1" x:Name="ApplyOsHotkeyBtn" x:FieldModifier="internal"
+                                            Content="Apply to All Games"
+                                            Click="ApplyOsHotkey_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Bottom"/>
+                                </Grid>
 
-                                <ComboBox Grid.Row="1" Grid.Column="2" x:Name="OsHotkeyCombo" x:FieldModifier="internal"
-                                          FontSize="12"
-                                          HorizontalAlignment="Stretch"
-                                          Background="{StaticResource SurfaceInputBrush}"
-                                          Foreground="{StaticResource TextSecondaryBrush}"
-                                          BorderBrush="{StaticResource BorderSubtleBrush}"
-                                          SelectionChanged="OsHotkeyCombo_SelectionChanged">
-                                    <x:String>Insert</x:String>
-                                    <x:String>Home</x:String>
-                                    <x:String>End</x:String>
-                                    <x:String>Delete</x:String>
-                                    <x:String>Page Up</x:String>
-                                    <x:String>Page Down</x:String>
-                                    <x:String>F1</x:String>
-                                    <x:String>F2</x:String>
-                                    <x:String>F3</x:String>
-                                    <x:String>F4</x:String>
-                                    <x:String>F5</x:String>
-                                    <x:String>F6</x:String>
-                                    <x:String>F7</x:String>
-                                    <x:String>F8</x:String>
-                                    <x:String>F9</x:String>
-                                    <x:String>F10</x:String>
-                                    <x:String>F11</x:String>
-                                    <x:String>F12</x:String>
-                                </ComboBox>
-
-                                <!-- ── Row 2: DLSS toggle | OS Apply ── -->
-                                <ToggleSwitch Grid.Row="2" Grid.Column="0" x:Name="OsDlssInputsToggle" x:FieldModifier="internal"
-                                              Header="Use DLSS inputs"
-                                              OnContent="Enabled — spoofing active"
-                                              OffContent="Disabled — no spoofing"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                              VerticalAlignment="Center"
-                                              Visibility="Collapsed"
-                                              Toggled="OsDlssInputsToggle_Toggled"/>
-
-                                <Button Grid.Row="2" Grid.Column="2" x:Name="ApplyOsHotkeyBtn" x:FieldModifier="internal"
-                                        Content="Apply to All Games"
-                                        Click="ApplyOsHotkey_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}"
-                                        Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"/>
-
-                                <HyperlinkButton Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
-                                                 Content="OptiScaler Compatibility List"
-                                                 NavigateUri="https://github.com/optiscaler/OptiScaler/wiki/Compatibility-List"
-                                                 FontSize="12"
-                                                 Foreground="{StaticResource AccentBlueBrush}"
-                                                 HorizontalAlignment="Left"
-                                                 Padding="0,4"/>
                             </Grid>
                         </Border>
 
                         <!-- ── Global Update Checks & Addon Watch Folder ─────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <Grid ColumnSpacing="0">
+                            <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>  <!-- Row 0: Titles + descriptions -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 1: Controls -->
+                                    <RowDefinition Height="Auto"/>  <!-- Row 2: Summary text -->
+                                </Grid.RowDefinitions>
 
-                                <!-- Left: Global Update Checks -->
-                                <Grid Grid.Column="0">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Spacing="4">
-                                        <TextBlock Text="Global Update Checks" FontSize="14" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Disable update checks for individual components. When disabled, the component will not be checked for updates during startup or when using Update All."/>
-                                    </StackPanel>
-                                    <Button Grid.Row="1" x:Name="GlobalUpdateInclusionBtn"
-                                            Content="Update Inclusion"
-                                            Click="GlobalUpdateInclusion_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"
-                                            Margin="0,8,0,0"/>
-                                    <TextBlock Grid.Row="2" x:Name="GlobalUpdateSummaryText" x:FieldModifier="internal"
-                                               FontSize="11" TextWrapping="Wrap"
-                                               Margin="0,4,0,0"/>
-                                </Grid>
+                                <!-- Row 0 Left: Title + description -->
+                                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
+                                    <TextBlock Text="Global Update Checks" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Disable update checks for individual components. When disabled, the component will not be checked for updates during startup or when using Update All."/>
+                                </StackPanel>
 
                                 <!-- Vertical divider -->
-                                <Border Grid.Column="1" Width="1"
+                                <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch"
                                         Margin="12,0,12,0"/>
 
-                                <!-- Right: Addon Watch Folder -->
-                                <Grid Grid.Column="2">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Spacing="8">
-                                        <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="RHI watches this folder for RenoDX addon files (.addon64/.addon32) and archives containing them. Defaults to your Downloads folder."/>
-                                    </StackPanel>
-                                    <Grid Grid.Row="1" ColumnSpacing="8" Margin="0,8,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="AddonWatchFolderBox" x:FieldModifier="internal"
-                                                 Grid.Column="0"
-                                                 PlaceholderText="Downloads folder (default)"
-                                                 FontSize="12"
-                                                 Background="{StaticResource SurfaceInputBrush}"
-                                                 Foreground="{StaticResource TextSecondaryBrush}"
-                                                 BorderBrush="{StaticResource BorderSubtleBrush}"/>
-                                        <Button Grid.Column="1" Content="Browse" Click="BrowseAddonWatchFolder_Click"
-                                                Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                                CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                        <Button Grid.Column="2" Content="Reset" Click="ResetAddonWatchFolder_Click"
-                                                Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    </Grid>
+                                <!-- Row 0 Right: Title + description -->
+                                <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="RHI watches this folder for RenoDX addon files (.addon64/.addon32) and archives containing them. Defaults to your Downloads folder."/>
+                                </StackPanel>
+
+                                <!-- Row 1 Left: Update Inclusion button -->
+                                <Button Grid.Row="1" Grid.Column="0" x:Name="GlobalUpdateInclusionBtn"
+                                        Content="Update Inclusion"
+                                        Click="GlobalUpdateInclusion_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
+
+                                <!-- Row 1 Right: Watch folder path + Browse + Reset -->
+                                <Grid Grid.Row="1" Grid.Column="2" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="AddonWatchFolderBox" x:FieldModifier="internal"
+                                             Grid.Column="0"
+                                             PlaceholderText="Downloads folder (default)"
+                                             FontSize="12"
+                                             Background="{StaticResource SurfaceInputBrush}"
+                                             Foreground="{StaticResource TextSecondaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"/>
+                                    <Button Grid.Column="1" Content="Browse" Click="BrowseAddonWatchFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                    <Button Grid.Column="2" Content="Reset" Click="ResetAddonWatchFolder_Click"
+                                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
                                 </Grid>
+
+                                <!-- Row 2 Left: Summary text -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" x:Name="GlobalUpdateSummaryText" x:FieldModifier="internal"
+                                           FontSize="11" TextWrapping="Wrap"/>
                             </Grid>
                         </Border>
 
