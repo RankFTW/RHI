@@ -38,6 +38,7 @@
   <ItemGroup>
     <Content Include="icon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
     <Content Include="7z.exe">
@@ -152,4 +153,11 @@
     <PackageReference Include="NvAPIWrapper.Net" Version="0.8.1.101" />
     <PackageReference Include="SharpCompress" Version="0.37.2" />
   </ItemGroup>
+
+  <Target Name="CopyWindowIconToPublishDirectory" AfterTargets="Publish">
+    <Copy
+      SourceFiles="$(MSBuildProjectDirectory)\icon.ico"
+      DestinationFolder="$(PublishDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
 </Project>
