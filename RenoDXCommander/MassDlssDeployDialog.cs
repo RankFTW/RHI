@@ -485,7 +485,7 @@ public class MassDlssDeployDialog
             var detection = card.DlssDetection;
             if (detection == null) continue;
 
-            progressText.Text = LocalizationService.Text($"Restoring {card.GameName}...");
+            LocalizationService.SetText(progressText, $"Restoring {card.GameName}...");
             await Task.Delay(1);
 
             // Restore DLL backups
@@ -553,11 +553,12 @@ public class MassDlssDeployDialog
 
         foreach (var item in items)
         {
-            combo.Items.Add(new ComboBoxItem
+            var comboItem = new ComboBoxItem
             {
-                Content = LocalizationService.Text(item),
                 Tag = item,
-            });
+            };
+            LocalizationService.SetContent(comboItem, item);
+            combo.Items.Add(comboItem);
         }
 
         return combo;
@@ -566,13 +567,14 @@ public class MassDlssDeployDialog
     private static StackPanel BuildDropdownSection(string label, ComboBox combo)
     {
         var panel = new StackPanel { Spacing = 4 };
-        panel.Children.Add(new TextBlock
+        var labelBlock = new TextBlock
         {
-            Text = label,
             FontSize = 12,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 210, 230)),
-        });
+        };
+        LocalizationService.SetText(labelBlock, label);
+        panel.Children.Add(labelBlock);
         panel.Children.Add(combo);
         return panel;
     }
@@ -593,11 +595,12 @@ public class MassDlssDeployDialog
 
         foreach (var item in items)
         {
-            combo.Items.Add(new ComboBoxItem
+            var comboItem = new ComboBoxItem
             {
-                Content = LocalizationService.Text(item),
                 Tag = item,
-            });
+            };
+            LocalizationService.SetContent(comboItem, item);
+            combo.Items.Add(comboItem);
         }
 
         return combo;

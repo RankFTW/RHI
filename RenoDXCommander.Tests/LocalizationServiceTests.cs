@@ -123,6 +123,7 @@ public class LocalizationServiceTests
             Assert.Equal("自动检测（或粘贴路径）", LocalizationService.Text("Auto-detect (or paste path)"));
             Assert.Equal("⬇  安装 ReShade", LocalizationService.Text("⬇  Install ReShade"));
             Assert.Equal("↺  重装 RenoDX", LocalizationService.Text("↺  Reinstall RenoDX"));
+            Assert.Equal("v1.9.8  ·  RankFTW 制作的 HDR 模组管理器", LocalizationService.Text("v1.9.8  ·  HDR mod manager by RankFTW"));
             Assert.Equal("覆盖启动此游戏时使用的可执行文件。留空则自动检测（安装文件夹中最大的 exe）。",
                 LocalizationService.Text("Override the executable used when launching this game. Leave blank for auto-detection (largest exe in install folder)."));
             Assert.Equal("更改此游戏的渠道会影响所有 Vulkan 游戏。",
@@ -151,6 +152,45 @@ public class LocalizationServiceTests
 
             Assert.Equal("Refresh", LocalizationService.Text("Refresh"));
             Assert.Equal("12 shown", LocalizationService.Format("{0} shown", 12));
+        }
+        finally
+        {
+            LocalizationService.SetLanguagePreference(LocalizationService.EnglishLanguage);
+        }
+    }
+
+    [Fact]
+    public void ResolveSourceText_RecoversEnglishSourceFromChineseDisplayText()
+    {
+        try
+        {
+            LocalizationService.SetLanguagePreference(LocalizationService.EnglishLanguage);
+
+            Assert.Equal("All Games", LocalizationService.ResolveSourceText("全部游戏"));
+            Assert.Equal("Installed", LocalizationService.ResolveSourceText("已安装"));
+            Assert.Equal("Hide", LocalizationService.ResolveSourceText("隐藏"));
+            Assert.Equal("Browse", LocalizationService.ResolveSourceText("浏览"));
+            Assert.Equal("Patch Notes", LocalizationService.ResolveSourceText("更新说明"));
+            Assert.Equal("Shaders/Addons", LocalizationService.ResolveSourceText("着色器/插件"));
+            Assert.Equal("Update Inclusion", LocalizationService.ResolveSourceText("更新范围"));
+            Assert.Equal("⬇ Install ReShade", LocalizationService.ResolveSourceText("⬇  安装 ReShade"));
+            Assert.Equal("Refresh", LocalizationService.Text(LocalizationService.ResolveSourceText("刷新")));
+        }
+        finally
+        {
+            LocalizationService.SetLanguagePreference(LocalizationService.EnglishLanguage);
+        }
+    }
+
+    [Fact]
+    public void ResolveSourceText_UsesPreferredSourceForAmbiguousChineseText()
+    {
+        try
+        {
+            LocalizationService.SetLanguagePreference(LocalizationService.EnglishLanguage);
+
+            Assert.Equal("Close", LocalizationService.ResolveSourceText("关闭", "Close"));
+            Assert.Equal("Off", LocalizationService.ResolveSourceText("关闭", "Off"));
         }
         finally
         {

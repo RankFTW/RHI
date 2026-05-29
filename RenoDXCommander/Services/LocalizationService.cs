@@ -23,6 +23,8 @@ public static class LocalizationService
     private static string _effectiveLanguage = ResolveEffectiveLanguage(AutoLanguage, CultureInfo.CurrentUICulture);
 
     private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
+    private static readonly Lazy<IReadOnlyDictionary<string, string>> SimplifiedChineseSourceLookup =
+        new(BuildSimplifiedChineseSourceLookup);
 
     public static event EventHandler? LanguageChanged;
 
@@ -142,18 +144,72 @@ public static class LocalizationService
         };
     }
 
+    internal static string ResolveSourceText(string? displayedText, params string[] preferredSources)
+    {
+        if (string.IsNullOrEmpty(displayedText))
+            return displayedText ?? "";
+
+        var normalizedDisplayed = NormalizeSourceText(displayedText);
+        foreach (var preferredSource in preferredSources)
+        {
+            if (string.IsNullOrWhiteSpace(preferredSource))
+                continue;
+
+            var normalizedPreferred = NormalizeSourceText(preferredSource);
+            if (string.Equals(normalizedDisplayed, normalizedPreferred, StringComparison.Ordinal))
+                return PreserveEdgeWhitespace(displayedText, preferredSource);
+
+            if (SimplifiedChinese.TryGetValue(normalizedPreferred, out var preferredTranslation)
+                && string.Equals(normalizedDisplayed, NormalizeSourceText(preferredTranslation), StringComparison.Ordinal))
+                return PreserveEdgeWhitespace(displayedText, preferredSource);
+        }
+
+        if (SimplifiedChineseSourceLookup.Value.TryGetValue(normalizedDisplayed, out var sourceText))
+            return PreserveEdgeWhitespace(displayedText, sourceText);
+
+        return displayedText;
+    }
+
+    public static void SetText(TextBlock textBlock, string? sourceText, params string[] preferredSources)
+    {
+        var source = ResolveSourceText(sourceText, preferredSources);
+        textBlock.SetValue(OriginalTextProperty, source);
+        textBlock.Text = Text(source);
+    }
+
+    public static void SetText(Run run, string? sourceText, params string[] preferredSources)
+    {
+        var source = ResolveSourceText(sourceText, preferredSources);
+        run.SetValue(OriginalTextProperty, source);
+        run.Text = Text(source);
+    }
+
+    public static void SetContent(ContentControl contentControl, string? sourceText, params string[] preferredSources)
+    {
+        var source = ResolveSourceText(sourceText, preferredSources);
+        contentControl.SetValue(OriginalContentProperty, source);
+        contentControl.Content = Text(source);
+    }
+
+    public static void SetToolTip(DependencyObject element, string? sourceText, params string[] preferredSources)
+    {
+        var source = ResolveSourceText(sourceText, preferredSources);
+        element.SetValue(OriginalToolTipProperty, source);
+        ToolTipService.SetToolTip(element, Text(source));
+    }
+
     public static void ApplyTo(ContentDialog dialog)
     {
         if (dialog.Title is string title)
-            dialog.Title = Text(title);
+            dialog.Title = Text(ResolveSourceText(title));
         if (dialog.Content is string content)
-            dialog.Content = Text(content);
+            dialog.Content = Text(ResolveSourceText(content));
         else if (dialog.Content is DependencyObject contentObject)
             ApplyTo(contentObject);
 
-        dialog.PrimaryButtonText = Text(dialog.PrimaryButtonText);
-        dialog.SecondaryButtonText = Text(dialog.SecondaryButtonText);
-        dialog.CloseButtonText = Text(dialog.CloseButtonText);
+        dialog.PrimaryButtonText = Text(ResolveSourceText(dialog.PrimaryButtonText));
+        dialog.SecondaryButtonText = Text(ResolveSourceText(dialog.SecondaryButtonText));
+        dialog.CloseButtonText = Text(ResolveSourceText(dialog.CloseButtonText, "Close"));
     }
 
     public static void ApplyTo(DependencyObject? root)
@@ -275,13 +331,7 @@ public static class LocalizationService
         if (string.IsNullOrWhiteSpace(textBlock.Text))
             return;
 
-        var original = (string?)textBlock.GetValue(OriginalTextProperty);
-        if (original == null)
-        {
-            original = textBlock.Text;
-            textBlock.SetValue(OriginalTextProperty, original);
-        }
-
+        var original = GetOrSetOriginal(textBlock, OriginalTextProperty, textBlock.Text);
         textBlock.Text = Text(original);
     }
 
@@ -290,13 +340,7 @@ public static class LocalizationService
         if (string.IsNullOrWhiteSpace(run.Text))
             return;
 
-        var original = (string?)run.GetValue(OriginalTextProperty);
-        if (original == null)
-        {
-            original = run.Text;
-            run.SetValue(OriginalTextProperty, original);
-        }
-
+        var original = GetOrSetOriginal(run, OriginalTextProperty, run.Text);
         run.Text = Text(original);
     }
 
@@ -305,13 +349,7 @@ public static class LocalizationService
         if (string.IsNullOrWhiteSpace(textBox.PlaceholderText))
             return;
 
-        var original = (string?)textBox.GetValue(OriginalPlaceholderTextProperty);
-        if (original == null)
-        {
-            original = textBox.PlaceholderText;
-            textBox.SetValue(OriginalPlaceholderTextProperty, original);
-        }
-
+        var original = GetOrSetOriginal(textBox, OriginalPlaceholderTextProperty, textBox.PlaceholderText);
         textBox.PlaceholderText = Text(original);
     }
 
@@ -320,13 +358,7 @@ public static class LocalizationService
         if (string.IsNullOrWhiteSpace(comboBox.PlaceholderText))
             return;
 
-        var original = (string?)comboBox.GetValue(OriginalPlaceholderTextProperty);
-        if (original == null)
-        {
-            original = comboBox.PlaceholderText;
-            comboBox.SetValue(OriginalPlaceholderTextProperty, original);
-        }
-
+        var original = GetOrSetOriginal(comboBox, OriginalPlaceholderTextProperty, comboBox.PlaceholderText);
         comboBox.PlaceholderText = Text(original);
     }
 
@@ -335,13 +367,7 @@ public static class LocalizationService
         if (header is not string text || string.IsNullOrWhiteSpace(text))
             return;
 
-        var original = (string?)element.GetValue(OriginalHeaderProperty);
-        if (original == null)
-        {
-            original = text;
-            element.SetValue(OriginalHeaderProperty, original);
-        }
-
+        var original = GetOrSetOriginal(element, OriginalHeaderProperty, text);
         setHeader(Text(original));
     }
 
@@ -350,13 +376,7 @@ public static class LocalizationService
         if (contentControl.Content is not string content || string.IsNullOrWhiteSpace(content))
             return;
 
-        var original = (string?)contentControl.GetValue(OriginalContentProperty);
-        if (original == null)
-        {
-            original = content;
-            contentControl.SetValue(OriginalContentProperty, original);
-        }
-
+        var original = GetOrSetOriginal(contentControl, OriginalContentProperty, content);
         contentControl.Content = Text(original);
     }
 
@@ -379,13 +399,14 @@ public static class LocalizationService
         if (value is not string text || string.IsNullOrWhiteSpace(text))
             return;
 
-        var original = (string?)toggleSwitch.GetValue(property);
-        if (original == null)
+        var preferredSources = part switch
         {
-            original = text;
-            toggleSwitch.SetValue(property, original);
-        }
+            TogglePart.OnContent => new[] { "On" },
+            TogglePart.OffContent => new[] { "Off" },
+            _ => Array.Empty<string>(),
+        };
 
+        var original = GetOrSetOriginal(toggleSwitch, property, text, preferredSources);
         var translated = Text(original);
         switch (part)
         {
@@ -406,13 +427,7 @@ public static class LocalizationService
         if (string.IsNullOrWhiteSpace(menuItem.Text))
             return;
 
-        var original = (string?)menuItem.GetValue(OriginalTextProperty);
-        if (original == null)
-        {
-            original = menuItem.Text;
-            menuItem.SetValue(OriginalTextProperty, original);
-        }
-
+        var original = GetOrSetOriginal(menuItem, OriginalTextProperty, menuItem.Text);
         menuItem.Text = Text(original);
     }
 
@@ -421,13 +436,7 @@ public static class LocalizationService
         if (string.IsNullOrWhiteSpace(subItem.Text))
             return;
 
-        var original = (string?)subItem.GetValue(OriginalTextProperty);
-        if (original == null)
-        {
-            original = subItem.Text;
-            subItem.SetValue(OriginalTextProperty, original);
-        }
-
+        var original = GetOrSetOriginal(subItem, OriginalTextProperty, subItem.Text);
         subItem.Text = Text(original);
     }
 
@@ -436,23 +445,33 @@ public static class LocalizationService
         var tooltip = ToolTipService.GetToolTip(element);
         if (tooltip is string tooltipText && !string.IsNullOrWhiteSpace(tooltipText))
         {
-            var original = (string?)element.GetValue(OriginalToolTipProperty);
-            if (original == null)
-            {
-                original = tooltipText;
-                element.SetValue(OriginalToolTipProperty, original);
-            }
-
+            var original = GetOrSetOriginal(element, OriginalToolTipProperty, tooltipText);
             ToolTipService.SetToolTip(element, Text(original));
         }
         else if (tooltip is ToolTip { Content: string content } tooltipElement)
         {
-            tooltipElement.Content = Text(content);
+            var original = GetOrSetOriginal(tooltipElement, OriginalContentProperty, content);
+            tooltipElement.Content = Text(original);
         }
         else if (tooltip is DependencyObject tooltipObject)
         {
             ApplyTo(tooltipObject);
         }
+    }
+
+    private static string GetOrSetOriginal(
+        DependencyObject element,
+        DependencyProperty property,
+        string displayedText,
+        params string[] preferredSources)
+    {
+        var original = (string?)element.GetValue(property);
+        if (original != null)
+            return original;
+
+        original = ResolveSourceText(displayedText, preferredSources);
+        element.SetValue(property, original);
+        return original;
     }
 
     private static string TranslateDynamicEnglish(string english)
@@ -469,7 +488,11 @@ public static class LocalizationService
 
         var trimmed = english.Trim();
 
-        var match = Regex.Match(trimmed, @"^Updated (?<count>\d+) (?<file>.+?) file(?<plural>s?)\.$", RegexOptions.IgnoreCase);
+        var match = Regex.Match(trimmed, @"^v(?<version>.+?)\s+·\s+HDR mod manager by RankFTW$", RegexOptions.IgnoreCase);
+        if (match.Success)
+            return $"v{match.Groups["version"].Value}  ·  {Text("HDR mod manager by RankFTW")}";
+
+        match = Regex.Match(trimmed, @"^Updated (?<count>\d+) (?<file>.+?) file(?<plural>s?)\.$", RegexOptions.IgnoreCase);
         if (match.Success)
             return $"已更新 {match.Groups["count"].Value} 个 {match.Groups["file"].Value} 文件。";
 
@@ -787,6 +810,19 @@ public static class LocalizationService
         var leading = source.Length - source.TrimStart().Length;
         var trailing = source.Length - source.TrimEnd().Length;
         return source[..leading] + translated + source[(source.Length - trailing)..];
+    }
+
+    private static IReadOnlyDictionary<string, string> BuildSimplifiedChineseSourceLookup()
+    {
+        var lookup = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (source, translated) in SimplifiedChinese)
+        {
+            var normalizedTranslated = NormalizeSourceText(translated);
+            if (!string.IsNullOrWhiteSpace(normalizedTranslated) && !lookup.ContainsKey(normalizedTranslated))
+                lookup[normalizedTranslated] = source;
+        }
+
+        return lookup;
     }
 
     private enum TogglePart

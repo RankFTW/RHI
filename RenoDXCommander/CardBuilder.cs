@@ -239,7 +239,6 @@ public partial class CardBuilder
             {
                 var infoBtn = new Button
                 {
-                    Content = "Wiki",
                     Tag = card,
                     FontSize = 11,
                     Padding = new Thickness(6, 2, 6, 2),
@@ -250,7 +249,8 @@ public partial class CardBuilder
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                 };
-                ToolTipService.SetToolTip(infoBtn, "Open discussion / instructions");
+                LocalizationService.SetContent(infoBtn, "Wiki");
+                LocalizationService.SetToolTip(infoBtn, "Open discussion / instructions");
                 infoBtn.Click += _window.CardInfoLink_Click;
                 infoRow.Children.Add(infoBtn);
             }
@@ -258,7 +258,6 @@ public partial class CardBuilder
             {
                 var notesBtn = new Button
                 {
-                    Content = "Info",
                     Tag = card,
                     DataContext = card.IsLumaMode ? AddonType.Luma : AddonType.RenoDX,
                     FontSize = 11,
@@ -270,7 +269,8 @@ public partial class CardBuilder
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                 };
-                ToolTipService.SetToolTip(notesBtn, "View notes");
+                LocalizationService.SetContent(notesBtn, "Info");
+                LocalizationService.SetToolTip(notesBtn, "View notes");
                 notesBtn.Click += _window.InfoButton_Click;
                 infoRow.Children.Add(notesBtn);
             }
@@ -291,7 +291,7 @@ public partial class CardBuilder
             BorderThickness = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Right,
         };
-        ToolTipService.SetToolTip(overridesBtn, "Overrides");
+        LocalizationService.SetToolTip(overridesBtn, "Overrides");
         overridesBtn.Click += _window.CardOverridesButton_Click;
         Grid.SetColumn(overridesBtn, 1);
         bottomRow.Children.Add(overridesBtn);

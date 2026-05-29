@@ -632,14 +632,14 @@ public partial class DragDropHandler
                             _window.DispatcherQueue.TryEnqueue(() =>
                             {
                                 progressBar.Value = pct;
-                                progressText.Text = LocalizationService.Text($"Downloading {filename}... {downloaded / 1024} KB ({pct:F0}%)");
+                                LocalizationService.SetText(progressText, $"Downloading {filename}... {downloaded / 1024} KB ({pct:F0}%)");
                             });
                         }
                         else
                         {
                             _window.DispatcherQueue.TryEnqueue(() =>
                             {
-                                progressText.Text = LocalizationService.Text($"Downloading {filename}... {downloaded / 1024} KB");
+                                LocalizationService.SetText(progressText, $"Downloading {filename}... {downloaded / 1024} KB");
                             });
                         }
                     }

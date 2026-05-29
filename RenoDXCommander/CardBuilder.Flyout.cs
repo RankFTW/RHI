@@ -146,7 +146,7 @@ public partial class CardBuilder
             // External-only: use same BuildComponentRow format but with external button styling
             var isNexusUpdate = card.Status == GameStatus.UpdateAvailable;
             rdxRow = BuildComponentRow(card, "RenoDX", "RDX",
-                card.IsRdxInstalled ? (card.RdxInstalledVersion ?? LocalizationService.Text("Installed")) : "",
+                card.IsRdxInstalled ? (card.RdxInstalledVersion ?? "Installed") : "",
                 card.IsRdxInstalled ? "#5ECB7D" : "#5A6880",
                 card.ExternalDisplayLabel,
                 true, card.IsRdxInstalled,
@@ -399,12 +399,12 @@ public partial class CardBuilder
         // Status text (colored)
         var statusBlock = new TextBlock
         {
-            Text = statusText,
             FontSize = 11,
             Foreground = UIFactory.GetBrush(statusColor),
             VerticalAlignment = VerticalAlignment.Center,
             Tag = "StatusText",
         };
+        LocalizationService.SetText(statusBlock, statusText);
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);
 
@@ -442,7 +442,7 @@ public partial class CardBuilder
         // Store the AddonType on DataContext for the click handler to identify which addon
         infoBtn.DataContext = addonType;
         ApplyCardInfoButtonStyle(infoBtn, sourceType);
-        ToolTipService.SetToolTip(infoBtn, LocalizationService.Text(tooltip));
+        LocalizationService.SetToolTip(infoBtn, tooltip);
         infoBtn.Click += _window.InfoButton_Click;
         Grid.SetColumn(infoBtn, 2);
         row.Children.Add(infoBtn);
@@ -450,7 +450,6 @@ public partial class CardBuilder
         // Install/update button
         var installBtn = new Button
         {
-            Content = actionLabel,
             Tag = card,
             FontSize = 11,
             Padding = new Thickness(8, 3, 8, 3),
@@ -462,6 +461,7 @@ public partial class CardBuilder
             BorderBrush = UIFactory.GetBrush(btnBorderBrush ?? "#2A4468"),
             CornerRadius = new CornerRadius(6),
         };
+        LocalizationService.SetContent(installBtn, actionLabel);
         // Store component tag for the click handler to identify which component
         installBtn.DataContext = componentTag;
         installBtn.Click += _window.CardComponentInstall_Click;
@@ -495,7 +495,7 @@ public partial class CardBuilder
         if (componentTag == "OS")
             copyBtn.Click += _window.CardCopyOsIni_Click;
         if (copyConfigTooltip != null)
-            ToolTipService.SetToolTip(copyBtn, copyConfigTooltip);
+            LocalizationService.SetToolTip(copyBtn, copyConfigTooltip);
         Grid.SetColumn(copyBtn, 4);
         row.Children.Add(copyBtn);
 
@@ -541,7 +541,7 @@ public partial class CardBuilder
         {
             if (child is TextBlock tb && tb.Tag as string == "StatusText")
             {
-                tb.Text = LocalizationService.Text(statusText);
+                LocalizationService.SetText(tb, statusText);
                 tb.Foreground = UIFactory.GetBrush(statusColor);
             }
             else if (child is Button btn)
@@ -566,12 +566,12 @@ public partial class CardBuilder
 
                         var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
                         ApplyCardInfoButtonStyle(btn, sourceType);
-                        ToolTipService.SetToolTip(btn, LocalizationService.Text(tooltip));
+                        LocalizationService.SetToolTip(btn, tooltip);
                     }
                 }
                 else if (col == 3) // install button
                 {
-                    btn.Content = LocalizationService.Text(actionLabel);
+                    LocalizationService.SetContent(btn, actionLabel);
                     btn.IsEnabled = installEnabled;
                     if (btnBackground != null)
                         btn.Background = UIFactory.GetBrush(btnBackground);

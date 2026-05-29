@@ -42,7 +42,7 @@ public class SettingsHandler
         // Sync toggle state with ViewModel
         _window.CustomShadersToggle.IsOn = ViewModel.Settings.UseCustomShaders;
         SyncLanguageCombo();
-        _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  {LocalizationService.Text("HDR mod manager by RankFTW")}";
+        LocalizationService.SetText(_window.AboutVersionText, $"v{CrashReporter.AppVersion}  ·  HDR mod manager by RankFTW");
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
         // Populate screenshot path and per-game toggle
@@ -784,16 +784,18 @@ public class SettingsHandler
         for (int i = 0; i < items.Length; i++)
         {
             var (label, isOn) = items[i];
-            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            var labelRun = new Microsoft.UI.Xaml.Documents.Run
             {
                 Text = $"{label}: ",
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            });
-            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            };
+            tb.Inlines.Add(labelRun);
+            var stateRun = new Microsoft.UI.Xaml.Documents.Run
             {
-                Text = LocalizationService.Text(isOn ? "On" : "Off"),
                 Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-            });
+            };
+            LocalizationService.SetText(stateRun, isOn ? "On" : "Off");
+            tb.Inlines.Add(stateRun);
             if (i < items.Length - 1)
             {
                 tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run

@@ -277,7 +277,7 @@ public sealed partial class MainWindow
 
     internal void UpdateLumaToggleStyle(bool isLumaMode)
     {
-        DetailLumaToggleText.Text = LocalizationService.Text(isLumaMode ? "Luma ON" : "Luma OFF");
+        LocalizationService.SetText(DetailLumaToggleText, isLumaMode ? "Luma ON" : "Luma OFF");
         if (isLumaMode)
         {
             DetailLumaToggle.Background = Brush(ResourceKeys.AccentGreenBgBrush);

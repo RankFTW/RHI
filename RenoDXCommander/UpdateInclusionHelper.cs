@@ -41,16 +41,18 @@ public static class UpdateInclusionHelper
         for (int i = 0; i < items.Count; i++)
         {
             var (label, isOn) = items[i];
-            summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            var labelRun = new Microsoft.UI.Xaml.Documents.Run
             {
                 Text = $"{label}: ",
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            });
-            summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            };
+            summaryTb.Inlines.Add(labelRun);
+            var stateRun = new Microsoft.UI.Xaml.Documents.Run
             {
-                Text = LocalizationService.Text(isOn ? "On" : "Off"),
                 Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-            });
+            };
+            LocalizationService.SetText(stateRun, isOn ? "On" : "Off");
+            summaryTb.Inlines.Add(stateRun);
             if (i < items.Count - 1)
             {
                 summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
@@ -85,7 +87,6 @@ public static class UpdateInclusionHelper
 
         var button = new Button
         {
-            Content = "Update Inclusion",
             Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
@@ -95,6 +96,7 @@ public static class UpdateInclusionHelper
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        LocalizationService.SetContent(button, "Update Inclusion");
 
         button.Click += async (s, ev) =>
         {
