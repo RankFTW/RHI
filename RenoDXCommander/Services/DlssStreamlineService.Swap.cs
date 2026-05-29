@@ -241,17 +241,18 @@ public partial class DlssStreamlineService
             Directory.CreateDirectory(cacheDir);
             var tempZip = Path.Combine(cacheDir, "download.zip.tmp");
 
-            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
                 CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheAsync] Download failed ({response.StatusCode}) for {url}");
                 return;
             }
 
-            using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+            using (var stream = await response.Content.ReadAsStreamAsync(cts.Token).ConfigureAwait(false))
             using (var file = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, useAsync: true))
             {
-                await stream.CopyToAsync(file).ConfigureAwait(false);
+                await stream.CopyToAsync(file, cts.Token).ConfigureAwait(false);
             }
 
             // Extract the DLL from the zip
@@ -274,6 +275,10 @@ public partial class DlssStreamlineService
             // Clean up temp zip
             try { File.Delete(tempZip); } catch { }
         }
+        catch (OperationCanceledException)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheAsync] Download timed out for {url}");
+        }
         catch (Exception ex)
         {
             CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheAsync] Error — {ex.Message}");
@@ -290,17 +295,18 @@ public partial class DlssStreamlineService
             Directory.CreateDirectory(cacheDir);
             var tempZip = Path.Combine(cacheDir, "download.zip.tmp");
 
-            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
                 CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheStreamlineAsync] Download failed ({response.StatusCode}) for {url}");
                 return;
             }
 
-            using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+            using (var stream = await response.Content.ReadAsStreamAsync(cts.Token).ConfigureAwait(false))
             using (var file = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, useAsync: true))
             {
-                await stream.CopyToAsync(file).ConfigureAwait(false);
+                await stream.CopyToAsync(file, cts.Token).ConfigureAwait(false);
             }
 
             // Extract all sl.*.dll files from the zip (flat structure)
@@ -322,6 +328,10 @@ public partial class DlssStreamlineService
 
             // Clean up temp zip
             try { File.Delete(tempZip); } catch { }
+        }
+        catch (OperationCanceledException)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheStreamlineAsync] Download timed out for {url}");
         }
         catch (Exception ex)
         {
