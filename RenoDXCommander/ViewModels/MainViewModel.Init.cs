@@ -201,7 +201,7 @@ public partial class MainViewModel
             if (hasCachedLibrary)
             {
                 // Initialize DLSS preset service early (needed for preset dropdowns in detail panel)
-                Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed (cache path) — {ex.Message}"); } });
+                await Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed (cache path) — {ex.Message}"); } });
                 await LoadCacheAndBuildCardsAsync(savedLib!);
                 _ = RunBackgroundScanAndMergeAsync(savedLib!);
                 return;

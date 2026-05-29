@@ -23,6 +23,7 @@
 - Fixed Guide button in the Help menu pointing to an old URL.
 - Fixed Nexus update indicator persisting after re-downloading the mod. Clicking the "Update RenoDX" button now resets the baseline immediately — the click is treated as acknowledgement that the user is aware of the update. Note: Nexus update detection uses the mod page's last-modified timestamp, which can change for page edits (not just new versions). This may occasionally flag updates when only the description was changed.
 - Fixed Update All button not highlighting purple after Refresh when games have pending updates. The button state was only recalculated during the background update check, which could be skipped by the 4-hour cooldown.
+- Fixed DLSS presets showing "Default" on app launch instead of the actual configured preset (e.g. "B" for Frame Generation). The preset service initialization was racing with the panel build — navigating away and back would show the correct value.
 
 ### UI Changes
 
