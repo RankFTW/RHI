@@ -811,6 +811,11 @@
       { "name": "Mass Effect 1 (Legendary Edition)", "subPath": "Game\\ME1\\Binaries\\Win64" },
       { "name": "Mass Effect 2 (Legendary Edition)", "subPath": "Game\\ME2\\Binaries\\Win64" },
       { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
+    ],
+    "Mass Effect Legendary Edition": [
+      { "name": "Mass Effect 1 (Legendary Edition)", "subPath": "Game\\ME1\\Binaries\\Win64" },
+      { "name": "Mass Effect 2 (Legendary Edition)", "subPath": "Game\\ME2\\Binaries\\Win64" },
+      { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
     ]
   },
   "installWarnings": {
