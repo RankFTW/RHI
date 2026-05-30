@@ -1,3 +1,18 @@
+## v1.9.9-beta
+
+### Bug Fixes
+
+- Fixed Batch DLSS Deploy getting stuck indefinitely when a download hangs. Added a 120-second timeout to DLSS and Streamline DLL downloads — if a download stalls, it's skipped and the next game is processed.
+
+### Manifest Updates
+
+- 007 First Light — redirected to Nexus Mods (author: Musa). Previously pointed to Discord.
+- Directive 8020 — added to UE-Extended games list with native HDR info note.
+- Mass Effect™ Legendary Edition — added EA App / Game Pass variant (without ™) to splitGames so the split works regardless of store.
+- All UE-Extended game notes updated: replaced manual ReShade.ini Set_Path editing instructions with "In the RenoDX UI under Advanced Settings, set Upgrade Path to Off."
+
+---
+
 ## v1.9.8
 
 ### New Features
