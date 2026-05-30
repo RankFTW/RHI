@@ -835,9 +835,11 @@ public sealed partial class MainWindow
         }
         catch (System.ComponentModel.Win32Exception)
         {
-            // User cancelled UAC — revert the combo
+            // User cancelled UAC — revert the combo without re-triggering the handler
             _crashReporter.Log("[DlssIndicatorCombo] UAC cancelled — reverting selection");
+            _dlssIndicatorInitializing = true;
             combo.SelectedIndex = combo.SelectedIndex == 0 ? 1 : 0;
+            _dlssIndicatorInitializing = false;
         }
         catch (Exception ex)
         {

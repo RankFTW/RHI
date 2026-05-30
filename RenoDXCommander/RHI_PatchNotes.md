@@ -4,6 +4,7 @@
 
 - Fixed Batch DLSS Deploy getting stuck indefinitely when a download hangs. Added a 120-second timeout to DLSS and Streamline DLL downloads — if a download stalls, it's skipped and the next game is processed.
 - Fixed "Restore All" button in the DLSS/Streamline section not visually standing out when backups exist. The button now uses blue accent styling when enabled (matching other action buttons) instead of the muted surface color.
+- Fixed DLSS On-Screen Indicator toggle causing an infinite UAC prompt loop when the user clicks No/Cancel. The combo now suppresses the handler while reverting.
 
 ### Manifest Updates
 
