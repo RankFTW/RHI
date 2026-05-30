@@ -2082,18 +2082,19 @@ public partial class DetailPanelBuilder
             bool hasNonDefaultPreset = (presetService.IsSupported && hasDlss && presetService.GetSrPreset(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlssd && presetService.GetRrPreset(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlssg && presetService.GetFgPreset(card.GameName, card.InstallPath) != 0);
+            bool restoreEnabled = card.HasAnyDlssBackup || hasNonDefaultPreset;
             var dlssRestoreBtn = new Button
             {
                 Content = "Restore All",
                 FontSize = 11,
                 Height = 32,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+                Background = restoreEnabled ? UIFactory.Brush(ResourceKeys.AccentBlueBgBrush) : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                Foreground = restoreEnabled ? UIFactory.Brush(ResourceKeys.AccentBlueBrush) : UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                BorderBrush = restoreEnabled ? UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush) : UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),
-                IsEnabled = card.HasAnyDlssBackup || hasNonDefaultPreset,
+                IsEnabled = restoreEnabled,
             };
             dlssRestoreBtn.Click += (s, ev) =>
             {
