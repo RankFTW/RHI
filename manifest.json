@@ -642,6 +642,10 @@
   },
 
   "forceExternalOnly": {
+    "007 First Light": {
+      "url": "https://www.nexusmods.com/007firstlight/mods/37",
+      "label": "Get on Nexus"
+    },
     "Cyberpunk 2077": {
       "url": "https://discord.gg/gF4GRJWZ2A",
       "label": "Get on Discord"
@@ -692,6 +696,7 @@
   },
 
   "authorOverrides": {
+    "007 First Light": "Musa",
     "Assassin's Creed": "Musa",
     "Death's Door": "Voosh",
     "Descenders": "Voosh",
