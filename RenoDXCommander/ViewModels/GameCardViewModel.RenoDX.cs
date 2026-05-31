@@ -45,10 +45,10 @@ public partial class GameCardViewModel
     public string UeExtendedBackground => UseUeExtended ? "#201838" : "#1E242C";
     public string UeExtendedForeground => UseUeExtended ? "#B898E8" : "#6B7A8E";
     public string UeExtendedBorderBrush => UseUeExtended ? "#3A2860" : "#283240";
-    // Visible on all UE cards that don't have a named mod (generic UE) — not legacy, not native HDR
+    // Visible on all UE cards — not legacy, not native HDR
     public Visibility UeExtendedToggleVisibility =>
         (EngineHint.Contains("Unreal") && !EngineHint.Contains("Legacy")
-         && !IsNativeHdrGame && (IsGenericMod || Mod == null || Mod.IsGenericUnreal))
+         && !IsNativeHdrGame)
             ? Visibility.Visible : Visibility.Collapsed;
 
     // ── Combined status for simplified card ──────────────────────────────────────

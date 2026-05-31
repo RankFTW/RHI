@@ -2119,6 +2119,15 @@ public partial class DetailPanelBuilder
                 }
             };
             slCol.Children.Add(dlssRestoreBtn);
+            // Override column opacity so the Restore All button isn't dimmed by the SL column's 0.4 opacity.
+            // Manually dim the SL label and version combo if Streamline isn't present.
+            if (restoreEnabled && !slEnabled)
+            {
+                slCol.Opacity = 1.0;
+                // Dim the label and version combo (first 2 children) but not the button
+                foreach (var child in slCol.Children.Take(2).OfType<UIElement>())
+                    child.Opacity = 0.4;
+            }
             ToolTipService.SetToolTip(dlssRestoreBtn, "Restore all DLSS and Streamline DLLs to their original game versions and reset presets to Default.");
 
             Grid.SetColumn(slCol, 6);

@@ -140,6 +140,9 @@ public partial class MainViewModel
     public const string UeExtendedFile   = "renodx-ue-extended.addon64";
     public const string GenericUnrealFile = "renodx-unrealengine.addon64";
 
+    /// <summary>Stores the original named mod SnapshotUrl per game when UE-Extended is toggled ON, so it can be restored when toggled OFF.</summary>
+    private readonly Dictionary<string, string> _ueExtendedOriginalUrls = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Toggles the UE-Extended mode for a Generic UE card.
     /// When ON: Mod.SnapshotUrl → marat569 URL; if the standard generic file is on disk it is deleted.
@@ -149,12 +152,8 @@ public partial class MainViewModel
     public void ToggleUeExtended(GameCardViewModel card)
     {
         if (card == null) return;
-        // Allow toggle for any UE card that shows the button:
-        // IsGenericMod covers most cases, but also allow cards where Mod is null or IsGenericUnreal
-        bool isEligible = card.IsGenericMod
-                          || card.Mod == null
-                          || (card.Mod?.IsGenericUnreal == true);
-        if (!isEligible) return;
+        // Allow toggle for any UE card that shows the button
+        if (card.UeExtendedToggleVisibility != Microsoft.UI.Xaml.Visibility.Visible) return;
 
         bool nowExtended = !card.UseUeExtended;
 
@@ -164,21 +163,77 @@ public partial class MainViewModel
             _ueExtendedGames.Remove(card.GameName);
         SaveNameMappings();
 
+        // Store the original named mod URL before swapping (for restoring later)
+        string? originalModUrl = null;
+        if (card.Mod != null && !card.Mod.IsGenericUnreal && card.Mod.SnapshotUrl != UeExtendedUrl)
+            originalModUrl = card.Mod.SnapshotUrl;
+
         // Swap the SnapshotUrl on the card's Mod in-place
-        if (card.Mod != null)
-            card.Mod.SnapshotUrl = nowExtended ? UeExtendedUrl : WikiService.GenericUnrealUrl;
+        if (nowExtended)
+        {
+            // Store original URL for restoration
+            if (originalModUrl != null)
+                _ueExtendedOriginalUrls[card.GameName] = originalModUrl;
+
+            if (card.Mod != null)
+                card.Mod.SnapshotUrl = UeExtendedUrl;
+            else
+                card.Mod = new GameMod
+                {
+                    Name = "Generic Unreal Engine",
+                    Maintainer = "ShortFuse",
+                    SnapshotUrl = UeExtendedUrl,
+                    Status = "✅",
+                    IsGenericUnreal = true,
+                };
+        }
+        else
+        {
+            // Restore original named mod URL
+            if (card.Mod != null)
+            {
+                if (_ueExtendedOriginalUrls.TryGetValue(card.GameName, out var savedUrl))
+                {
+                    card.Mod.SnapshotUrl = savedUrl;
+                    _ueExtendedOriginalUrls.Remove(card.GameName);
+                }
+                else
+                    card.Mod.SnapshotUrl = WikiService.GenericUnrealUrl;
+            }
+        }
 
         // Delete the opposing addon file from disk (if present)
         if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
         {
             try
             {
-                var deleteFile = nowExtended ? GenericUnrealFile : UeExtendedFile;
-                var deletePath = Path.Combine(card.InstallPath, deleteFile);
-                if (File.Exists(deletePath))
+                // When toggling ON: delete the named mod file or generic UE file
+                // When toggling OFF: delete the UE-Extended file
+                if (nowExtended)
                 {
-                    File.Delete(deletePath);
-                    _crashReporter.Log($"[MainViewModel.ToggleUeExtended] Deleted {deleteFile} from {card.InstallPath}");
+                    // Delete whatever addon is currently installed (named mod or generic)
+                    if (card.InstalledAddonFileName != null)
+                    {
+                        var deletePath = Path.Combine(card.InstallPath, card.InstalledAddonFileName);
+                        if (File.Exists(deletePath))
+                        {
+                            File.Delete(deletePath);
+                            _crashReporter.Log($"[MainViewModel.ToggleUeExtended] Deleted {card.InstalledAddonFileName} from {card.InstallPath}");
+                        }
+                    }
+                    // Also try deleting the generic UE file
+                    var genericPath = Path.Combine(card.InstallPath, GenericUnrealFile);
+                    if (File.Exists(genericPath)) File.Delete(genericPath);
+                }
+                else
+                {
+                    // Delete UE-Extended file
+                    var extPath = Path.Combine(card.InstallPath, UeExtendedFile);
+                    if (File.Exists(extPath))
+                    {
+                        File.Delete(extPath);
+                        _crashReporter.Log($"[MainViewModel.ToggleUeExtended] Deleted {UeExtendedFile} from {card.InstallPath}");
+                    }
                 }
             }
             catch (Exception ex)
@@ -187,11 +242,10 @@ public partial class MainViewModel
             }
         }
 
-        // The toggle has swapped the target addon file. The old file was deleted above,
-        // so the card is no longer "installed" — reset to Available and clear the record.
-        // Leaving a stale InstalledRecord with the old RemoteFileSize would cause
-        // CheckForUpdateAsync to compare the new URL's size against the old addon's size
-        // and fire a false "update available" on the next refresh.
+        // Check if mod was installed before we clear the record
+        bool wasInstalled = card.InstalledRecord != null;
+
+        // Clear the install record — the old addon was deleted
         if (card.InstalledRecord != null)
         {
             _installer.RemoveRecord(card.InstalledRecord);
@@ -202,7 +256,14 @@ public partial class MainViewModel
         }
 
         card.UseUeExtended = nowExtended;
+        card.IsGenericMod = nowExtended || (card.Mod?.IsGenericUnreal == true);
         card.NotifyAll();
+
+        // Auto-install if the previous addon was installed
+        if (wasInstalled)
+        {
+            _ = InstallModAsync(card);
+        }
     }
 
     [RelayCommand] public void SetFilter(string filter) => _filterViewModel.SetFilter(filter);

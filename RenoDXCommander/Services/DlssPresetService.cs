@@ -62,6 +62,7 @@ public class DlssPresetService
         ("58% — Balanced", 58),
         ("54% — Balanced Performance", 54),
         ("50% — Performance", 50),
+        ("49% — 007 Fix", 49),
         ("45% — Extra Performance", 45),
         ("41% — High Performance", 41),
         ("37% — Extreme Performance", 37),
@@ -236,6 +237,11 @@ public class DlssPresetService
                     return false;
                 }
             }
+            else if (AutoCreateProfiles && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            {
+                // Ensure the game's exe is registered in the profile's Applications list
+                EnsureExeRegistered(profile, gameName, installPath);
+            }
 
             profile.SetSetting(settingId, preset);
             _session.Save();
@@ -386,6 +392,54 @@ public class DlssPresetService
         {
             CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Failed for '{gameName}' — {ex.Message}");
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Ensures the game's exe is registered in the profile's Applications list.
+    /// If no exe from the install path is found in the profile, adds the largest exe.
+    /// This is needed because NVIDIA applies settings based on the Applications list,
+    /// not the profile name — a profile matched by title without the exe registered won't work.
+    /// </summary>
+    private void EnsureExeRegistered(DriverSettingsProfile profile, string gameName, string installPath)
+    {
+        try
+        {
+            // Get exe names from install path
+            var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "launcher" };
+            var exeFiles = new List<string>();
+            try
+            {
+                exeFiles = Directory.GetFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly)
+                    .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
+                    .Where(e => !Path.GetFileName(e).Contains(" - copy", StringComparison.OrdinalIgnoreCase)
+                             && !Path.GetFileName(e).Contains(" copy", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            catch { return; }
+
+            if (exeFiles.Count == 0) return;
+
+            // Check if any exe is already registered
+            var registeredApps = profile.Applications.Select(a => a.ApplicationName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var exe in exeFiles)
+            {
+                if (registeredApps.Contains(Path.GetFileName(exe)))
+                    return; // Already registered
+            }
+
+            // Not registered — add the largest exe
+            var gameExe = exeFiles.OrderByDescending(e => new FileInfo(e).Length).Select(Path.GetFileName).FirstOrDefault();
+            if (string.IsNullOrEmpty(gameExe)) return;
+
+            ProfileApplication.CreateApplication(profile, gameExe, gameName, "", Array.Empty<string>(), false, "");
+            _session?.Save();
+            CrashReporter.Log($"[DlssPresetService.EnsureExeRegistered] Added '{gameExe}' to profile '{profile.Name}' for '{gameName}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.EnsureExeRegistered] Failed for '{gameName}' — {ex.Message}");
         }
     }
 }

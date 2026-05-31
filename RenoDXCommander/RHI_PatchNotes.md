@@ -3,18 +3,19 @@
 ### New Features
 
 - **DLSS Render Scale Override** — Set a custom DLSS render resolution scale per-game for both SR and Ray Reconstruction. Choose from named presets (DLAA, Ultra Quality, Quality, Performance, etc.) or enter any custom percentage from 33-100%. Found below the preset dropdown in the DLSS/Streamline section. Overrides the game's built-in DLSS quality mode selection.
+- **UE-Extended on All Unreal Games** — The UE-Extended toggle now appears on ALL Unreal Engine games, including those with a named RenoDX mod. Toggle ON to switch from the game-specific mod to UE-Extended; toggle OFF to switch back. If the mod was installed, the swap happens automatically. Useful when UE-Extended provides better results than the named mod.
 
 ### Bug Fixes
 
 - Fixed Batch DLSS Deploy getting stuck indefinitely when a download hangs. Added a 120-second timeout to DLSS and Streamline DLL downloads — if a download stalls, it's skipped and the next game is processed.
-- Fixed "Restore All" button in the DLSS/Streamline section not visually standing out when backups exist. The button now uses blue accent styling when enabled (matching other action buttons) instead of the muted surface color.
+- Fixed "Restore All" button in the DLSS/Streamline section not visually standing out when backups exist. The button now uses blue accent styling when enabled and stays fully visible even when the Streamline column is greyed out.
 - Fixed DLSS On-Screen Indicator toggle causing an infinite UAC prompt loop when the user clicks No/Cancel. The combo now suppresses the handler while reverting.
+- Fixed DLSS presets and render scale not applying in-game for profiles matched by title/fuzzy match. The game's exe is now automatically registered in the NVIDIA profile's Applications list if it isn't already.
 
 ### Manifest Updates
 
-- 007 First Light — redirected to Nexus Mods (author: Musa). Previously pointed to Discord.
-- Anno 117 - Pax Romana — install path override to `Bin\Win64`, 64-bit override, DX12 API override. Fixes DLSS/Streamline not being detected (was scanning the wrong folder).
 - Directive 8020 — added to UE-Extended games list with native HDR info note.
+- Anno 117 - Pax Romana — install path override to `Bin\Win64`, 64-bit override, DX12 API override. Fixes DLSS/Streamline not being detected (was scanning the wrong folder).
 - Mass Effect™ Legendary Edition — added EA App / Game Pass variant (without ™) to splitGames so the split works regardless of store.
 - All UE-Extended game notes updated: replaced manual ReShade.ini Set_Path editing instructions with "In the RenoDX UI under Advanced Settings, set Upgrade Path to Off."
 
