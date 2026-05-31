@@ -2014,7 +2014,9 @@ public partial class DetailPanelBuilder
                     tc.RefreshDlssVersions(dlssService);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
                 },
-                (preset) => { presetService.SetSrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
+                (preset) => { presetService.SetSrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
+                currentRenderScale: presetService.IsSupported && srEnabled ? presetService.GetSrRenderScale(card.GameName, card.InstallPath) : 0u,
+                onRenderScaleSelected: (pct) => { presetService.SetSrRenderScale(card.GameName, card.InstallPath, pct); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
             Grid.SetColumn(srCol, 0);
             dlssRowGrid.Children.Add(srCol);
 
@@ -2034,7 +2036,9 @@ public partial class DetailPanelBuilder
                     tc.RefreshDlssVersions(dlssService);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
                 },
-                (preset) => { presetService.SetRrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
+                (preset) => { presetService.SetRrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
+                currentRenderScale: presetService.IsSupported && hasDlssd ? presetService.GetRrRenderScale(card.GameName, card.InstallPath) : 0u,
+                onRenderScaleSelected: (pct) => { presetService.SetRrRenderScale(card.GameName, card.InstallPath, pct); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
             Grid.SetColumn(rrCol, 2);
             dlssRowGrid.Children.Add(rrCol);
 
@@ -2081,7 +2085,9 @@ public partial class DetailPanelBuilder
             // Enabled when any backup exists OR any preset is non-default
             bool hasNonDefaultPreset = (presetService.IsSupported && hasDlss && presetService.GetSrPreset(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlssd && presetService.GetRrPreset(card.GameName, card.InstallPath) != 0)
-                || (presetService.IsSupported && hasDlssg && presetService.GetFgPreset(card.GameName, card.InstallPath) != 0);
+                || (presetService.IsSupported && hasDlssg && presetService.GetFgPreset(card.GameName, card.InstallPath) != 0)
+                || (presetService.IsSupported && hasDlss && presetService.GetSrRenderScale(card.GameName, card.InstallPath) != 0)
+                || (presetService.IsSupported && hasDlssd && presetService.GetRrRenderScale(card.GameName, card.InstallPath) != 0);
             bool restoreEnabled = card.HasAnyDlssBackup || hasNonDefaultPreset;
             var dlssRestoreBtn = new Button
             {
@@ -2106,6 +2112,8 @@ public partial class DetailPanelBuilder
                     presetService.SetSrPreset(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetRrPreset(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetFgPreset(targetCard.GameName, targetCard.InstallPath, 0);
+                    presetService.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, 0);
+                    presetService.SetRrRenderScale(targetCard.GameName, targetCard.InstallPath, 0);
                     targetCard.RefreshDlssVersions(dlssService);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));
                 }
@@ -2352,12 +2360,13 @@ public partial class DetailPanelBuilder
     }
 
     /// <summary>
-    /// Builds a single DLSS/Streamline column with label, version ComboBox, and optional preset ComboBox.
+    /// Builds a single DLSS/Streamline column with label, version ComboBox, optional preset ComboBox, and optional render scale ComboBox.
     /// </summary>
     private StackPanel BuildDlssColumn(string label, bool isPresent,
         IReadOnlyList<string> availableVersions, string? installedVersion,
         (string Name, uint Value)[]? presets, uint currentPreset,
-        Func<string, Task> onVersionSelected, Action<uint>? onPresetSelected)
+        Func<string, Task> onVersionSelected, Action<uint>? onPresetSelected,
+        uint currentRenderScale = 0, Action<uint>? onRenderScaleSelected = null)
     {
         var col = new StackPanel { Spacing = 4, Opacity = isPresent ? 1.0 : 0.4 };
 
@@ -2439,6 +2448,98 @@ public partial class DetailPanelBuilder
             };
             presetInit = false;
             col.Children.Add(presetCombo);
+        }
+
+        // Render Scale ComboBox (only for SR and RR)
+        if (onRenderScaleSelected != null && isPresent)
+        {
+            var rsOptions = DlssPresetService.RenderScaleOptions;
+            var rsItems = rsOptions.Select(o => o.Name).ToList();
+
+            // Determine current selection
+            int rsIdx = 0; // Off
+            if (currentRenderScale > 0)
+            {
+                // Check if it matches a named option
+                int namedIdx = Array.FindIndex(rsOptions, o => o.Value == currentRenderScale);
+                if (namedIdx >= 0)
+                    rsIdx = namedIdx;
+                else
+                    rsIdx = rsItems.Count - 1; // Custom
+            }
+
+            // If Custom is selected, show the percentage in the item text
+            if (rsIdx == rsItems.Count - 1 && currentRenderScale > 0)
+                rsItems[^1] = $"Custom ({currentRenderScale}%)";
+
+            var rsCombo = new ComboBox
+            {
+                ItemsSource = rsItems,
+                SelectedIndex = rsIdx,
+                FontSize = 11,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                IsEnabled = isPresent,
+            };
+            ToolTipService.SetToolTip(rsCombo,
+                "Override the DLSS render resolution scale. Off = game controls the scale.\nNamed presets set a fixed percentage. Custom lets you enter any value from 33-100%.");
+
+            bool rsInit = true;
+            rsCombo.SelectionChanged += (s, ev) =>
+            {
+                if (rsInit) return;
+                var idx = rsCombo.SelectedIndex;
+                if (idx < 0 || idx >= rsOptions.Length) return;
+
+                if (rsOptions[idx].Name == "Custom")
+                {
+                    // Show a TextBox inline — replace the combo temporarily
+                    var parent = rsCombo.Parent as StackPanel;
+                    if (parent == null) return;
+                    var comboIdx = parent.Children.IndexOf(rsCombo);
+                    var inputBox = new TextBox
+                    {
+                        PlaceholderText = "33-100",
+                        FontSize = 11,
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        MaxLength = 3,
+                    };
+                    inputBox.KeyDown += (ks, ke) =>
+                    {
+                        if (ke.Key == Windows.System.VirtualKey.Enter)
+                        {
+                            if (uint.TryParse(inputBox.Text, out var val) && val >= 33 && val <= 100)
+                            {
+                                onRenderScaleSelected(val);
+                            }
+                            else
+                            {
+                                // Invalid — revert to Off
+                                onRenderScaleSelected(0);
+                            }
+                        }
+                        else if (ke.Key == Windows.System.VirtualKey.Escape)
+                        {
+                            // Cancel — revert
+                            onRenderScaleSelected(currentRenderScale);
+                        }
+                    };
+                    inputBox.LostFocus += (ls, le) =>
+                    {
+                        if (uint.TryParse(inputBox.Text, out var val) && val >= 33 && val <= 100)
+                            onRenderScaleSelected(val);
+                        else
+                            onRenderScaleSelected(currentRenderScale); // revert
+                    };
+                    parent.Children[comboIdx] = inputBox;
+                    inputBox.Focus(FocusState.Programmatic);
+                }
+                else
+                {
+                    onRenderScaleSelected(rsOptions[idx].Value);
+                }
+            };
+            rsInit = false;
+            col.Children.Add(rsCombo);
         }
 
         return col;

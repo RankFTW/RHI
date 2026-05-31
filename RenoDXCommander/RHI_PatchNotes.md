@@ -1,5 +1,9 @@
 ## v1.9.9-beta
 
+### New Features
+
+- **DLSS Render Scale Override** — Set a custom DLSS render resolution scale per-game for both SR and Ray Reconstruction. Choose from named presets (DLAA, Ultra Quality, Quality, Performance, etc.) or enter any custom percentage from 33-100%. Found below the preset dropdown in the DLSS/Streamline section. Overrides the game's built-in DLSS quality mode selection.
+
 ### Bug Fixes
 
 - Fixed Batch DLSS Deploy getting stuck indefinitely when a download hangs. Added a 120-second timeout to DLSS and Streamline DLL downloads — if a download stalls, it's skipped and the next game is processed.

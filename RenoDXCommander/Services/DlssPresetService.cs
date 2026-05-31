@@ -15,6 +15,13 @@ public class DlssPresetService
     private const uint NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID = 0x10E41DF3;
     private const uint NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID = 0x10E41DF7;
     private const uint NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID = 0x10E41DF1;
+    private const uint NGX_DLSS_SR_RENDER_SCALE_ID = 0x10AFB768; // SR Render Scale mode (Default=3, Custom=6)
+    private const uint NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID = 0x10E41DF5; // SR Render Scale custom value (percentage as uint)
+    private const uint NGX_DLSS_RR_RENDER_SCALE_ID = 0x10BD9423; // RR Render Scale mode
+    private const uint NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID = 0x10C7D4A2; // RR Render Scale custom value
+
+    private const uint RENDER_SCALE_DEFAULT = 0x03;
+    private const uint RENDER_SCALE_CUSTOM = 0x06;
 
     // ── Preset values ─────────────────────────────────────────────────────────
     public static readonly (string Name, uint Value)[] SrPresets =
@@ -38,6 +45,28 @@ public class DlssPresetService
         ("Default", 0x00000000),
         ("A", 0x00000001),
         ("B", 0x00000002),
+    ];
+
+    /// <summary>Named render scale options for SR and RR. "Custom" is handled separately via a TextBox.</summary>
+    public static readonly (string Name, uint Value)[] RenderScaleOptions =
+    [
+        ("Off", 0),
+        ("100% — DLAA", 100),
+        ("99% — DLAA [If 100% Breaks]", 99),
+        ("88% — DLAA Lite", 88),
+        ("83% — Ultra Quality+", 83),
+        ("77% — Ultra Quality", 77),
+        ("72% — High Quality", 72),
+        ("67% — Quality", 67),
+        ("62% — Balanced Quality", 62),
+        ("58% — Balanced", 58),
+        ("54% — Balanced Performance", 54),
+        ("50% — Performance", 50),
+        ("45% — Extra Performance", 45),
+        ("41% — High Performance", 41),
+        ("37% — Extreme Performance", 37),
+        ("33% — Ultra Performance", 33),
+        ("Custom", 0xFFFFFFFF), // Sentinel — actual value comes from TextBox
     ];
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -114,6 +143,50 @@ public class DlssPresetService
 
     public bool SetFgPreset(string gameName, string installPath, uint preset)
         => SetPreset(gameName, installPath, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
+
+    // ── Get render scale ──────────────────────────────────────────────────────
+
+    /// <summary>Returns the current SR render scale percentage (0 = Off/Default, 33-100 = active).</summary>
+    public uint GetSrRenderScale(string gameName, string installPath)
+    {
+        var mode = GetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_ID);
+        if (mode != RENDER_SCALE_CUSTOM) return 0;
+        return GetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID);
+    }
+
+    /// <summary>Returns the current RR render scale percentage (0 = Off/Default, 33-100 = active).</summary>
+    public uint GetRrRenderScale(string gameName, string installPath)
+    {
+        var mode = GetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_ID);
+        if (mode != RENDER_SCALE_CUSTOM) return 0;
+        return GetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID);
+    }
+
+    // ── Set render scale ──────────────────────────────────────────────────────
+
+    /// <summary>Sets the SR render scale. 0 = reset to Default. 33-100 = set custom percentage.</summary>
+    public bool SetSrRenderScale(string gameName, string installPath, uint percentage)
+    {
+        if (percentage == 0)
+        {
+            SetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_ID, RENDER_SCALE_DEFAULT);
+            return SetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID, 0);
+        }
+        SetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_ID, RENDER_SCALE_CUSTOM);
+        return SetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID, percentage);
+    }
+
+    /// <summary>Sets the RR render scale. 0 = reset to Default. 33-100 = set custom percentage.</summary>
+    public bool SetRrRenderScale(string gameName, string installPath, uint percentage)
+    {
+        if (percentage == 0)
+        {
+            SetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_ID, RENDER_SCALE_DEFAULT);
+            return SetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID, 0);
+        }
+        SetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_ID, RENDER_SCALE_CUSTOM);
+        return SetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID, percentage);
+    }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
