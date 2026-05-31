@@ -16,6 +16,48 @@ public partial class DetailPanelBuilder
         "hid.dll", "version.dll", "opengl32.dll", "dbghelp.dll",
         "vulkan-1.dll", "winmm.dll",
     ];
+
+    private sealed class LocalizedComboOption(string value)
+    {
+        public string Value { get; } = value;
+
+        public override string ToString() => LocalizationService.Text(Value);
+    }
+
+    private static IReadOnlyList<LocalizedComboOption> LocalizedOptions(IEnumerable<string> values) =>
+        values.Select(value => new LocalizedComboOption(value)).ToArray();
+
+    private static string? SelectedComboValue(ComboBox comboBox)
+    {
+        return comboBox.SelectedItem switch
+        {
+            LocalizedComboOption option => option.Value,
+            ComboBoxItem { Tag: string tag } => tag,
+            ComboBoxItem { Content: string content } => content,
+            string value => value,
+            _ => comboBox.SelectedItem?.ToString(),
+        };
+    }
+
+    private static void SetSelectedComboValue(ComboBox comboBox, string value)
+    {
+        IEnumerable<object?> items = comboBox.ItemsSource is System.Collections.IEnumerable source
+            ? source.Cast<object?>()
+            : comboBox.Items.Cast<object?>();
+
+        var match = items.FirstOrDefault(item => item switch
+        {
+            LocalizedComboOption option => option.Value.Equals(value, StringComparison.OrdinalIgnoreCase),
+            ComboBoxItem { Tag: string tag } => tag.Equals(value, StringComparison.OrdinalIgnoreCase),
+            ComboBoxItem { Content: string content } => content.Equals(value, StringComparison.OrdinalIgnoreCase),
+            string text => text.Equals(value, StringComparison.OrdinalIgnoreCase),
+            _ => false,
+        });
+
+        if (match != null)
+            comboBox.SelectedItem = match;
+    }
+
     public void BuildOverridesPanel(GameCardViewModel card)
     {
         _window.OverridesPanel.Children.Clear();
@@ -555,16 +597,16 @@ public partial class DetailPanelBuilder
         var wikiExcludeItems = new[] { "Included", "Excluded" };
         var wikiExcludeCombo = new ComboBox
         {
-            ItemsSource = wikiExcludeItems,
-            SelectedItem = _window.ViewModel.IsWikiExcluded(gameName) ? "Excluded" : "Included",
+            ItemsSource = LocalizedOptions(wikiExcludeItems),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        SetSelectedComboValue(wikiExcludeCombo, _window.ViewModel.IsWikiExcluded(gameName) ? "Excluded" : "Included");
         ToolTipService.SetToolTip(wikiExcludeCombo,
             "Included = this game is looked up on the RenoDX and Luma wikis. Excluded = skip wiki lookups for this game.");
         wikiExcludeCombo.SelectionChanged += (s, ev) =>
         {
-            var selected = wikiExcludeCombo.SelectedItem as string;
+            var selected = SelectedComboValue(wikiExcludeCombo);
             bool shouldExclude = selected == "Excluded";
             if (shouldExclude != _window.ViewModel.IsWikiExcluded(capturedName))
                 _window.ViewModel.ToggleWikiExclusion(capturedName);
@@ -665,19 +707,19 @@ public partial class DetailPanelBuilder
 
         var shaderModeCombo = new ComboBox
         {
-            ItemsSource = shaderModeItems,
-            SelectedItem = effectiveShaderDisplay,
+            ItemsSource = LocalizedOptions(shaderModeItems),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = !card.UseNormalReShade,
         };
+        SetSelectedComboValue(shaderModeCombo, effectiveShaderDisplay);
         ToolTipService.SetToolTip(shaderModeCombo,
             "Global = use global shader selection. Custom = use custom shader directories. Select = pick per-game packs. Off = no shaders.");
 
         shaderModeCombo.SelectionChanged += async (s, ev) =>
         {
             if (shaderComboInitializing) return;
-            var selected = shaderModeCombo.SelectedItem as string;
+            var selected = SelectedComboValue(shaderModeCombo);
             if (string.IsNullOrEmpty(selected)) return;
             CrashReporter.Log($"[DetailPanelBuilder.ShaderMode] '{capturedName}' selection changed to: '{selected}'");
 
@@ -702,7 +744,7 @@ public partial class DetailPanelBuilder
                 {
                     // Cancelled — revert to previous
                     shaderComboInitializing = true;
-                    shaderModeCombo.SelectedItem = effectiveShaderDisplay;
+                    SetSelectedComboValue(shaderModeCombo, effectiveShaderDisplay);
                     shaderComboInitializing = false;
                 }
                 return;
@@ -793,17 +835,17 @@ public partial class DetailPanelBuilder
 
         var bitnessCombo = new ComboBox
         {
-            ItemsSource = bitnessItems,
-            SelectedItem = defaultBitnessSelection,
+            ItemsSource = LocalizedOptions(bitnessItems),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        SetSelectedComboValue(bitnessCombo, defaultBitnessSelection);
         ToolTipService.SetToolTip(bitnessCombo,
             "Override the auto-detected bitness for this game. Auto uses PE header detection. 32-bit or 64-bit forces the value.");
 
         bitnessCombo.SelectionChanged += (s, e) =>
         {
-            var selected = bitnessCombo.SelectedItem as string;
+            var selected = SelectedComboValue(bitnessCombo);
             string? overrideValue = selected switch
             {
                 "32-bit" => "32",
@@ -888,17 +930,17 @@ public partial class DetailPanelBuilder
 
         var apiCombo = new ComboBox
         {
-            ItemsSource = apiDropdownItems,
-            SelectedItem = defaultApiSelection,
+            ItemsSource = LocalizedOptions(apiDropdownItems),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        SetSelectedComboValue(apiCombo, defaultApiSelection);
         ToolTipService.SetToolTip(apiCombo,
             "Override the detected graphics API for this game.\nAuto uses PE header scanning. Reset Overrides reverts to auto-detection.");
 
         apiCombo.SelectionChanged += (s, ev) =>
         {
-            var selected = apiCombo.SelectedItem as string;
+            var selected = SelectedComboValue(apiCombo);
 
             // Map dropdown label to enum names for persistence
             List<string>? apiEnumNames = selected switch
@@ -1002,11 +1044,11 @@ public partial class DetailPanelBuilder
 
         var channelCombo = new ComboBox
         {
-            ItemsSource = channelItemsList,
-            SelectedItem = defaultChannelSelection,
+            ItemsSource = LocalizedOptions(channelItemsList),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        SetSelectedComboValue(channelCombo, defaultChannelSelection);
         ToolTipService.SetToolTip(channelCombo,
             "Override the global ReShade build channel for this game.\nGlobal = use Settings default. Vulkan games: changing this affects ALL Vulkan games.");
 
@@ -1014,7 +1056,7 @@ public partial class DetailPanelBuilder
 
         channelCombo.SelectionChanged += async (s, ev) =>
         {
-            var selected = channelCombo.SelectedItem as string;
+            var selected = SelectedComboValue(channelCombo);
             if (channelComboInitializing) return;
             if (string.IsNullOrEmpty(selected)) return;
             CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' selection changed to: '{selected}'");
@@ -1025,7 +1067,7 @@ public partial class DetailPanelBuilder
                 var legacyVersions = _window.ViewModel.Manifest?.LegacyReShadeAvailable;
                 if (legacyVersions == null || legacyVersions.Count == 0)
                 {
-                    channelCombo.SelectedItem = defaultChannelSelection;
+                    SetSelectedComboValue(channelCombo, defaultChannelSelection);
                     return;
                 }
 
@@ -1056,7 +1098,7 @@ public partial class DetailPanelBuilder
                 var pickerResult = await DialogService.ShowSafeAsync(pickerDialog);
                 if (pickerResult != ContentDialogResult.Primary || radioButtons.SelectedItem is not string pickedVersion)
                 {
-                    channelCombo.SelectedItem = defaultChannelSelection;
+                    SetSelectedComboValue(channelCombo, defaultChannelSelection);
                     return;
                 }
 
@@ -1065,7 +1107,7 @@ public partial class DetailPanelBuilder
                     var success = await AuxInstallService.DownloadLegacyReShadeAsync(pickedVersion, _window.ViewModel.HttpClient);
                     if (!success)
                     {
-                        channelCombo.SelectedItem = defaultChannelSelection;
+                        SetSelectedComboValue(channelCombo, defaultChannelSelection);
                         return;
                     }
                 }
@@ -1083,8 +1125,8 @@ public partial class DetailPanelBuilder
                 if (oldLegacy != null) channelItemsList.Remove(oldLegacy);
                 if (!channelItemsList.Contains(pickedVersion))
                     channelItemsList.Insert(3, pickedVersion);
-                channelCombo.ItemsSource = channelItemsList;
-                channelCombo.SelectedItem = pickedVersion;
+                channelCombo.ItemsSource = LocalizedOptions(channelItemsList);
+                SetSelectedComboValue(channelCombo, pickedVersion);
                 defaultChannelSelection = pickedVersion;
 
                 var targetCard2 = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -1148,7 +1190,7 @@ public partial class DetailPanelBuilder
                         RequestedTheme = ElementTheme.Dark,
                     };
                     await DialogService.ShowSafeAsync(warnDialog);
-                    channelCombo.SelectedItem = defaultChannelSelection;
+                    SetSelectedComboValue(channelCombo, defaultChannelSelection);
                     return;
                 }
 
@@ -1171,7 +1213,7 @@ public partial class DetailPanelBuilder
                     var vResult = await DialogService.ShowSafeAsync(vDialog);
                     if (vResult != ContentDialogResult.Primary)
                     {
-                        channelCombo.SelectedItem = defaultChannelSelection;
+                        SetSelectedComboValue(channelCombo, defaultChannelSelection);
                         return;
                     }
 
@@ -1291,7 +1333,7 @@ public partial class DetailPanelBuilder
                     var result = await DialogService.ShowSafeAsync(dialog);
                     if (result != ContentDialogResult.Primary)
                     {
-                        channelCombo.SelectedItem = defaultChannelSelection;
+                        SetSelectedComboValue(channelCombo, defaultChannelSelection);
                         return;
                     }
                 }
@@ -1472,19 +1514,19 @@ public partial class DetailPanelBuilder
 
         var addonModeCombo = new ComboBox
         {
-            ItemsSource = addonModeItems,
-            SelectedItem = currentAddonMode == "Off" ? "Off" : (currentAddonMode == "Select" ? "Select" : "Global"),
+            ItemsSource = LocalizedOptions(addonModeItems),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = !card.UseNormalReShade,
         };
+        SetSelectedComboValue(addonModeCombo, currentAddonMode == "Off" ? "Off" : (currentAddonMode == "Select" ? "Select" : "Global"));
         ToolTipService.SetToolTip(addonModeCombo,
             "Global = use global addon set. Select = pick per-game addons. Off = no addons for this game.");
 
         addonModeCombo.SelectionChanged += async (s, ev) =>
         {
             if (addonComboInitializing) return;
-            var selected = addonModeCombo.SelectedItem as string;
+            var selected = SelectedComboValue(addonModeCombo);
             if (string.IsNullOrEmpty(selected)) return;
             CrashReporter.Log($"[DetailPanelBuilder.AddonMode] '{capturedName}' selection changed to: '{selected}'");
 
@@ -1517,7 +1559,7 @@ public partial class DetailPanelBuilder
                     };
                     await DialogService.ShowSafeAsync(infoDlg);
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    SetSelectedComboValue(addonModeCombo, currentAddonMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = false;
                     return;
                 }
@@ -1536,7 +1578,7 @@ public partial class DetailPanelBuilder
                 else
                 {
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    SetSelectedComboValue(addonModeCombo, currentAddonMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = false;
                 }
                 return;
@@ -1744,7 +1786,7 @@ public partial class DetailPanelBuilder
                 ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
                 ofn.file = new string(new char[260]);
                 ofn.maxFile = ofn.file.Length;
-                ofn.title = "Select Game Executable";
+                ofn.title = LocalizationService.Text("Select Game Executable");
                 ofn.initialDir = card.InstallPath;
                 ofn.flags = 0x00080000 | 0x00001000;
                 return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
@@ -1810,10 +1852,10 @@ public partial class DetailPanelBuilder
             detectedBox.Text = originalStoreName ?? gameName;
             wikiBox.Text = "";
             shaderComboInitializing = true;
-            shaderModeCombo.SelectedItem = "Global";
+            SetSelectedComboValue(shaderModeCombo, "Global");
             shaderComboInitializing = false;
             addonComboInitializing = true;
-            addonModeCombo.SelectedItem = "Global";
+            SetSelectedComboValue(addonModeCombo, "Global");
             addonComboInitializing = false;
             if (renderPathCombo != null) renderPathCombo.SelectedItem = "DirectX";
             dllOverrideToggle.IsOn = false;
@@ -1829,7 +1871,7 @@ public partial class DetailPanelBuilder
             if (_window.ViewModel.IsUpdateAllExcludedOs(capturedName))
                 _window.ViewModel.ToggleUpdateAllExclusionOs(capturedName);
             UpdateInclusionHelper.RefreshSummary(updateSummaryText, _window.ViewModel, capturedName, card.IsREEngineGame, card.DxvkEnabled);
-            wikiExcludeCombo.SelectedItem = "Included";
+            SetSelectedComboValue(wikiExcludeCombo, "Included");
 
             // Persist all reset values immediately
             var resetName = (originalStoreName ?? gameName).Trim();
@@ -1907,15 +1949,15 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.ToggleUpdateAllExclusionDxvk(capturedName);
 
             // Reset bitness override to Auto
-            bitnessCombo.SelectedItem = "Auto";
+            SetSelectedComboValue(bitnessCombo, "Auto");
             _window.ViewModel.SetBitnessOverride(capturedName, null);
 
             // Reset API overrides
-            apiCombo.SelectedItem = "Auto";
+            SetSelectedComboValue(apiCombo, "Auto");
             _window.ViewModel.SetApiOverride(capturedName, null);
 
             // Reset ReShade channel override
-            channelCombo.SelectedItem = "Global";
+            SetSelectedComboValue(channelCombo, "Global");
             _window.ViewModel.SetReShadeChannelOverride(capturedName, null);
 
             // Reset launch exe override
@@ -2152,12 +2194,12 @@ public partial class DetailPanelBuilder
 
             var dxvkModeCombo = new ComboBox
             {
-                ItemsSource = dxvkModeItems,
-                SelectedItem = defaultDxvkSelection,
+                ItemsSource = LocalizedOptions(dxvkModeItems),
                 FontSize = 12,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 IsEnabled = card.IsDxvkToggleEnabled && card.DxvkInstallEnabled,
             };
+            SetSelectedComboValue(dxvkModeCombo, defaultDxvkSelection);
             if (card.DxvkToggleTooltip != null)
                 ToolTipService.SetToolTip(dxvkModeCombo, card.DxvkToggleTooltip);
             else
@@ -2168,7 +2210,7 @@ public partial class DetailPanelBuilder
 
             dxvkModeCombo.SelectionChanged += async (s, ev) =>
             {
-                var selected = dxvkModeCombo.SelectedItem as string;
+                var selected = SelectedComboValue(dxvkModeCombo);
                 if (string.IsNullOrEmpty(selected)) return;
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
@@ -2202,7 +2244,7 @@ public partial class DetailPanelBuilder
                         _window.ViewModel.DxvkServiceInstance.SelectedVariant = resolvedVariant;
                         await _window.ViewModel.HandleDxvkToggleAsync(targetCard, true, _window.Content.XamlRoot);
                         _window.ViewModel.DxvkServiceInstance.SelectedVariant = savedVariant;
-                        if (!targetCard.DxvkEnabled) dxvkModeCombo.SelectedItem = "Off";
+                        if (!targetCard.DxvkEnabled) SetSelectedComboValue(dxvkModeCombo, "Off");
                         _window.PopulateDetailPanel(targetCard);
                         BuildOverridesPanel(targetCard);
                     }
@@ -2349,6 +2391,9 @@ public partial class DetailPanelBuilder
         mgmtRow.Children.Add(reportBtn);
 
         _window.ManagementPanel.Children.Add(mgmtRow);
+
+        LocalizationService.ApplyTo(_window.OverridesPanel);
+        LocalizationService.ApplyTo(_window.ManagementPanel);
     }
 
     /// <summary>
@@ -2392,7 +2437,7 @@ public partial class DetailPanelBuilder
 
         var versionCombo = new ComboBox
         {
-            ItemsSource = items,
+            ItemsSource = LocalizedOptions(items),
             SelectedIndex = selectedIndex,
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -2403,7 +2448,7 @@ public partial class DetailPanelBuilder
         versionCombo.SelectionChanged += async (s, ev) =>
         {
             if (versionInit) return;
-            var selected = versionCombo.SelectedItem as string;
+            var selected = SelectedComboValue(versionCombo);
             if (!string.IsNullOrEmpty(selected))
                 await onVersionSelected(selected);
         };
@@ -2422,7 +2467,7 @@ public partial class DetailPanelBuilder
 
             var presetCombo = new ComboBox
             {
-                ItemsSource = presetItems,
+                ItemsSource = LocalizedOptions(presetItems),
                 SelectedIndex = presetIdx,
                 FontSize = 11,
                 HorizontalAlignment = HorizontalAlignment.Stretch,

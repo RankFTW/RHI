@@ -116,13 +116,14 @@ public partial class DialogService
         }
         bool gateReleased = false;
         downloadDlg.Closed += (_, _) => { if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); } };
+        LocalizationService.ApplyTo(downloadDlg);
         var dialogTask = downloadDlg.ShowAsync();
 
         var progress = new Progress<(string msg, double pct)>(p =>
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
-                progressText.Text = p.msg;
+                LocalizationService.SetText(progressText, p.msg);
                 progressBar.Value = p.pct;
             });
         });
@@ -135,9 +136,9 @@ public partial class DialogService
             // Download failed — update dialog to show error with a Close button
             _dispatcherQueue.TryEnqueue(() =>
             {
-                progressText.Text = "❌ Download failed. Please try again later or download manually from GitHub.";
+                LocalizationService.SetText(progressText, "❌ Download failed. Please try again later or download manually from GitHub.");
                 progressBar.Value = 0;
-                downloadDlg.CloseButtonText = "Close";
+                downloadDlg.CloseButtonText = LocalizationService.Text("Close");
             });
             return;
         }

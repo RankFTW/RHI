@@ -44,6 +44,7 @@ public sealed partial class MainWindow : Window
     {
         ViewModel = viewModel;
         _crashReporter = crashReporter;
+        LocalizationService.SetLanguagePreference(ViewModel.Settings.Language);
         InitializeComponent();
         InitializeSkeletons();
         _cardBuilder = new CardBuilder(this);
@@ -144,6 +145,8 @@ public sealed partial class MainWindow : Window
         UpdatePageVisibility();
         // Show version in status bar
         StatusBarVersionText.Text = $"v{Services.CrashReporter.AppVersion}";
+        LocalizationService.LanguageChanged += LocalizationService_LanguageChanged;
+        ApplyLocalization();
         // Always show the ✕ clear button on search box
         SearchBox.Loaded += (_, _) => VisualStateManager.GoToState(SearchBox, "ButtonVisible", false);
         ViewModel.InitializeAsync().SafeFireAndForget("MainWindow.Init");
@@ -199,6 +202,7 @@ public sealed partial class MainWindow : Window
     {
         // Unsubscribe from ViewModel property changes to avoid leaks (Requirement 8.5)
         ViewModel.PropertyChanged -= OnViewModelChanged;
+        LocalizationService.LanguageChanged -= LocalizationService_LanguageChanged;
 
         // Unsubscribe detail panel builder from current card's PropertyChanged
         if (_detailPanelBuilder.CurrentDetailCard != null)

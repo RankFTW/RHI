@@ -18,6 +18,47 @@ public class OverridesFlyoutBuilder
     private readonly MainWindow _window;
     private readonly ICrashReporter _crashReporter;
 
+    private sealed class LocalizedComboOption(string value)
+    {
+        public string Value { get; } = value;
+
+        public override string ToString() => LocalizationService.Text(Value);
+    }
+
+    private static IReadOnlyList<LocalizedComboOption> LocalizedOptions(IEnumerable<string> values) =>
+        values.Select(value => new LocalizedComboOption(value)).ToArray();
+
+    private static string? SelectedComboValue(ComboBox comboBox)
+    {
+        return comboBox.SelectedItem switch
+        {
+            LocalizedComboOption option => option.Value,
+            ComboBoxItem { Tag: string tag } => tag,
+            ComboBoxItem { Content: string content } => content,
+            string value => value,
+            _ => comboBox.SelectedItem?.ToString(),
+        };
+    }
+
+    private static void SetSelectedComboValue(ComboBox comboBox, string value)
+    {
+        IEnumerable<object?> items = comboBox.ItemsSource is System.Collections.IEnumerable source
+            ? source.Cast<object?>()
+            : comboBox.Items.Cast<object?>();
+
+        var match = items.FirstOrDefault(item => item switch
+        {
+            LocalizedComboOption option => option.Value.Equals(value, StringComparison.OrdinalIgnoreCase),
+            ComboBoxItem { Tag: string tag } => tag.Equals(value, StringComparison.OrdinalIgnoreCase),
+            ComboBoxItem { Content: string content } => content.Equals(value, StringComparison.OrdinalIgnoreCase),
+            string text => text.Equals(value, StringComparison.OrdinalIgnoreCase),
+            _ => false,
+        });
+
+        if (match != null)
+            comboBox.SelectedItem = match;
+    }
+
     public OverridesFlyoutBuilder(MainWindow window, ICrashReporter crashReporter)
     {
         _window = window;
@@ -120,6 +161,8 @@ public class OverridesFlyoutBuilder
             BorderBrush = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x28, 0x32, 0x40)),
             Padding = new Thickness(8, 4, 8, 4),
         };
+        ToolTipService.SetToolTip(gameNameBox,
+            "The display name for this game. Edit and press Enter to rename. Reset reverts to the auto-detected store name.");
         wikiNameBox = new TextBox
         {
             Header = "Wiki mod name",
@@ -132,6 +175,8 @@ public class OverridesFlyoutBuilder
             BorderBrush = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x28, 0x32, 0x40)),
             Padding = new Thickness(8, 4, 8, 4),
         };
+        ToolTipService.SetToolTip(wikiNameBox,
+            "Override the name used to look up this game on the RenoDX/Luma wiki. Leave blank to use the game name. Press Enter to save.");
 
         var nameResetBtn = new Button
         {
@@ -199,16 +244,16 @@ public class OverridesFlyoutBuilder
         var wikiExcludeItems = new[] { "Included", "Excluded" };
         var wikiExcludeCombo = new ComboBox
         {
-            ItemsSource = wikiExcludeItems,
-            SelectedItem = ViewModel.IsWikiExcluded(gameName) ? "Excluded" : "Included",
+            ItemsSource = LocalizedOptions(wikiExcludeItems),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        SetSelectedComboValue(wikiExcludeCombo, ViewModel.IsWikiExcluded(gameName) ? "Excluded" : "Included");
         ToolTipService.SetToolTip(wikiExcludeCombo,
             "Included = this game is looked up on the RenoDX and Luma wikis. Excluded = skip wiki lookups for this game.");
         wikiExcludeCombo.SelectionChanged += (s, ev) =>
         {
-            var selected = wikiExcludeCombo.SelectedItem as string;
+            var selected = SelectedComboValue(wikiExcludeCombo);
             bool shouldExclude = selected == "Excluded";
             if (shouldExclude != ViewModel.IsWikiExcluded(capturedName))
                 ViewModel.ToggleWikiExclusion(capturedName);
@@ -698,17 +743,17 @@ public class OverridesFlyoutBuilder
 
         bitnessCombo = new ComboBox
         {
-            ItemsSource = bitnessItems,
-            SelectedItem = defaultBitnessSelection,
+            ItemsSource = LocalizedOptions(bitnessItems),
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        SetSelectedComboValue(bitnessCombo, defaultBitnessSelection);
         ToolTipService.SetToolTip(bitnessCombo,
             "Override the auto-detected bitness for this game.");
 
         bitnessCombo.SelectionChanged += (s, e) =>
         {
-            var selected = bitnessCombo.SelectedItem as string;
+            var selected = SelectedComboValue(bitnessCombo);
             string? overrideValue = selected switch
             {
                 "32-bit" => "32",
@@ -753,15 +798,15 @@ public class OverridesFlyoutBuilder
 
         apiCombo = new ComboBox
         {
-            ItemsSource = apiDropdownItems,
-            SelectedItem = defaultApiSelection,
+            ItemsSource = LocalizedOptions(apiDropdownItems),
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        SetSelectedComboValue(apiCombo, defaultApiSelection);
 
         apiCombo.SelectionChanged += (s, ev) =>
         {
-            var selected = apiCombo.SelectedItem as string;
+            var selected = SelectedComboValue(apiCombo);
             List<string>? apiEnumNames = selected switch
             {
                 "DirectX8" => new() { "DirectX8" },
@@ -846,17 +891,17 @@ public class OverridesFlyoutBuilder
 
         var channelCombo = new ComboBox
         {
-            ItemsSource = channelItemsList,
-            SelectedItem = defaultChannelSelection,
+            ItemsSource = LocalizedOptions(channelItemsList),
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        SetSelectedComboValue(channelCombo, defaultChannelSelection);
         ToolTipService.SetToolTip(channelCombo,
             "Override the global ReShade build channel for this game.\nVulkan games: changing this affects ALL Vulkan games.");
 
         channelCombo.SelectionChanged += async (s, ev) =>
         {
-            var selected = channelCombo.SelectedItem as string;
+            var selected = SelectedComboValue(channelCombo);
 
             // ── "Legacy..." opens the version picker dialog ──
             if (selected == "Legacy...")
@@ -864,7 +909,7 @@ public class OverridesFlyoutBuilder
                 var legacyVersions = ViewModel.Manifest?.LegacyReShadeAvailable;
                 if (legacyVersions == null || legacyVersions.Count == 0)
                 {
-                    channelCombo.SelectedItem = defaultChannelSelection;
+                    SetSelectedComboValue(channelCombo, defaultChannelSelection);
                     return;
                 }
 
@@ -896,7 +941,7 @@ public class OverridesFlyoutBuilder
                 var pickerResult = await DialogService.ShowSafeAsync(pickerDialog);
                 if (pickerResult != ContentDialogResult.Primary || radioButtons.SelectedItem is not string pickedVersion)
                 {
-                    channelCombo.SelectedItem = defaultChannelSelection;
+                    SetSelectedComboValue(channelCombo, defaultChannelSelection);
                     return;
                 }
 
@@ -906,7 +951,7 @@ public class OverridesFlyoutBuilder
                     var success = await AuxInstallService.DownloadLegacyReShadeAsync(pickedVersion, ViewModel.HttpClient);
                     if (!success)
                     {
-                        channelCombo.SelectedItem = defaultChannelSelection;
+                        SetSelectedComboValue(channelCombo, defaultChannelSelection);
                         return;
                     }
                 }
@@ -919,8 +964,8 @@ public class OverridesFlyoutBuilder
                 if (oldLegacy != null) channelItemsList.Remove(oldLegacy);
                 if (!channelItemsList.Contains(pickedVersion))
                     channelItemsList.Insert(3, pickedVersion);
-                channelCombo.ItemsSource = channelItemsList;
-                channelCombo.SelectedItem = pickedVersion;
+                channelCombo.ItemsSource = LocalizedOptions(channelItemsList);
+                SetSelectedComboValue(channelCombo, pickedVersion);
                 defaultChannelSelection = pickedVersion;
 
                 var targetCard2 = ViewModel.AllCards.FirstOrDefault(c =>
@@ -975,7 +1020,7 @@ public class OverridesFlyoutBuilder
                         RequestedTheme = ElementTheme.Dark,
                     };
                     await DialogService.ShowSafeAsync(warnDialog);
-                    channelCombo.SelectedItem = defaultChannelSelection;
+                    SetSelectedComboValue(channelCombo, defaultChannelSelection);
                     return;
                 }
 
@@ -998,7 +1043,7 @@ public class OverridesFlyoutBuilder
                     var vResult = await DialogService.ShowSafeAsync(vDialog);
                     if (vResult != ContentDialogResult.Primary)
                     {
-                        channelCombo.SelectedItem = defaultChannelSelection;
+                        SetSelectedComboValue(channelCombo, defaultChannelSelection);
                         return;
                     }
 
@@ -1070,7 +1115,7 @@ public class OverridesFlyoutBuilder
                     var result = await DialogService.ShowSafeAsync(dialog);
                     if (result != ContentDialogResult.Primary)
                     {
-                        channelCombo.SelectedItem = defaultChannelSelection;
+                        SetSelectedComboValue(channelCombo, defaultChannelSelection);
                         return;
                     }
                 }
@@ -1204,19 +1249,19 @@ public class OverridesFlyoutBuilder
 
         var shaderModeCombo = new ComboBox
         {
-            ItemsSource = shaderModeItems,
-            SelectedItem = effectiveShaderDisplay,
+            ItemsSource = LocalizedOptions(shaderModeItems),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = !card.UseNormalReShade,
         };
+        SetSelectedComboValue(shaderModeCombo, effectiveShaderDisplay);
         ToolTipService.SetToolTip(shaderModeCombo,
             "Global = use global shader selection. Custom = use custom shader directories. Select = pick per-game packs. Off = no shaders.");
 
         shaderModeCombo.SelectionChanged += async (s, ev) =>
         {
             if (shaderComboInitializing) return;
-            var selected = shaderModeCombo.SelectedItem as string;
+            var selected = SelectedComboValue(shaderModeCombo);
             if (string.IsNullOrEmpty(selected)) return;
 
             if (selected == "Select")
@@ -1234,7 +1279,7 @@ public class OverridesFlyoutBuilder
                 else
                 {
                     shaderComboInitializing = true;
-                    shaderModeCombo.SelectedItem = effectiveShaderDisplay;
+                    SetSelectedComboValue(shaderModeCombo, effectiveShaderDisplay);
                     shaderComboInitializing = false;
                 }
                 return;
@@ -1280,19 +1325,19 @@ public class OverridesFlyoutBuilder
 
         var addonModeCombo = new ComboBox
         {
-            ItemsSource = addonModeItems,
-            SelectedItem = currentAddonMode == "Off" ? "Off" : (currentAddonMode == "Select" ? "Select" : "Global"),
+            ItemsSource = LocalizedOptions(addonModeItems),
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = !card.UseNormalReShade,
         };
+        SetSelectedComboValue(addonModeCombo, currentAddonMode == "Off" ? "Off" : (currentAddonMode == "Select" ? "Select" : "Global"));
         ToolTipService.SetToolTip(addonModeCombo,
             "Global = use global addon set. Select = pick per-game addons. Off = no addons for this game.");
 
         addonModeCombo.SelectionChanged += async (s, ev) =>
         {
             if (addonComboInitializing) return;
-            var selected = addonModeCombo.SelectedItem as string;
+            var selected = SelectedComboValue(addonModeCombo);
             if (string.IsNullOrEmpty(selected)) return;
 
             if (selected == "Select")
@@ -1305,7 +1350,7 @@ public class OverridesFlyoutBuilder
                 if (addonPackService == null)
                 {
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    SetSelectedComboValue(addonModeCombo, currentAddonMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = false;
                     return;
                 }
@@ -1324,7 +1369,7 @@ public class OverridesFlyoutBuilder
                 else
                 {
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    SetSelectedComboValue(addonModeCombo, currentAddonMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = false;
                 }
                 return;
@@ -1381,6 +1426,8 @@ public class OverridesFlyoutBuilder
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ToolTipService.SetToolTip(launchExeBox,
+            "Override the executable used when launching this game. Leave blank for auto-detection (largest exe in install folder).");
         launchExeBox.LostFocus += (s, ev) =>
         {
             var newPath = launchExeBox.Text.Trim();
@@ -1484,7 +1531,7 @@ public class OverridesFlyoutBuilder
                 ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
                 ofn.file = new string(new char[260]);
                 ofn.maxFile = ofn.file.Length;
-                ofn.title = "Select Game Executable";
+                ofn.title = LocalizationService.Text("Select Game Executable");
                 ofn.initialDir = card.InstallPath;
                 ofn.flags = 0x00080000 | 0x00001000;
                 return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
@@ -1497,6 +1544,7 @@ public class OverridesFlyoutBuilder
             }
         };
         Grid.SetColumn(browseLaunchBtn, 0);
+        ToolTipService.SetToolTip(browseLaunchBtn, "Browse for a game executable to use as the launch target.");
         launchBtnRow.Children.Add(browseLaunchBtn);
 
         var resetLaunchBtn = new Button
@@ -1518,6 +1566,7 @@ public class OverridesFlyoutBuilder
             ViewModel.SaveSettingsPublic();
         };
         Grid.SetColumn(resetLaunchBtn, 1);
+        ToolTipService.SetToolTip(resetLaunchBtn, "Clear the launch executable override and revert to auto-detection.");
         launchBtnRow.Children.Add(resetLaunchBtn);
 
         launchBtnRow.Margin = new Thickness(0, 8, 0, 0);
@@ -1566,12 +1615,12 @@ public class OverridesFlyoutBuilder
 
             var dxvkModeCombo = new ComboBox
             {
-                ItemsSource = dxvkModeItems,
-                SelectedItem = defaultDxvkSelection,
+                ItemsSource = LocalizedOptions(dxvkModeItems),
                 FontSize = 12,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 IsEnabled = card.IsDxvkToggleEnabled && card.DxvkInstallEnabled,
             };
+            SetSelectedComboValue(dxvkModeCombo, defaultDxvkSelection);
             if (card.DxvkToggleTooltip != null)
                 ToolTipService.SetToolTip(dxvkModeCombo, card.DxvkToggleTooltip);
             else
@@ -1582,7 +1631,7 @@ public class OverridesFlyoutBuilder
 
             dxvkModeCombo.SelectionChanged += async (s, ev) =>
             {
-                var selected = dxvkModeCombo.SelectedItem as string;
+                var selected = SelectedComboValue(dxvkModeCombo);
                 if (string.IsNullOrEmpty(selected)) return;
                 var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
@@ -1614,7 +1663,7 @@ public class OverridesFlyoutBuilder
                         ViewModel.DxvkServiceInstance.SelectedVariant = resolvedVariant;
                         await ViewModel.HandleDxvkToggleAsync(targetCard, true, _window.Content.XamlRoot);
                         ViewModel.DxvkServiceInstance.SelectedVariant = savedVariant;
-                        if (!targetCard.DxvkEnabled) dxvkModeCombo.SelectedItem = "Off";
+                        if (!targetCard.DxvkEnabled) SetSelectedComboValue(dxvkModeCombo, "Off");
                     }
                     else
                     {
@@ -1655,13 +1704,13 @@ public class OverridesFlyoutBuilder
             gameNameBox.Text = originalStoreName ?? gameName;
             wikiNameBox.Text = "";
             shaderComboInitializing = true;
-            shaderModeCombo.SelectedItem = "Global";
+            SetSelectedComboValue(shaderModeCombo, "Global");
             shaderComboInitializing = false;
             addonComboInitializing = true;
-            addonModeCombo.SelectedItem = "Global";
+            SetSelectedComboValue(addonModeCombo, "Global");
             addonComboInitializing = false;
             dllOverrideToggle.IsOn = false;
-            wikiExcludeCombo.SelectedItem = "Included";
+            SetSelectedComboValue(wikiExcludeCombo, "Included");
 
             // Persist all reset values immediately
             var resetName = (originalStoreName ?? gameName).Trim();
@@ -1728,11 +1777,11 @@ public class OverridesFlyoutBuilder
             }
 
             // Reset bitness and API overrides
-            bitnessCombo.SelectedItem = "Auto";
+            SetSelectedComboValue(bitnessCombo, "Auto");
             ViewModel.SetBitnessOverride(capturedName, null);
-            apiCombo.SelectedItem = "Auto";
+            SetSelectedComboValue(apiCombo, "Auto");
             ViewModel.SetApiOverride(capturedName, null);
-            channelCombo.SelectedItem = "Global";
+            SetSelectedComboValue(channelCombo, "Global");
             ViewModel.SetReShadeChannelOverride(capturedName, null);
             if (card.IsDxvkToggleVisible)
             {
@@ -1750,6 +1799,8 @@ public class OverridesFlyoutBuilder
                     _window.RebuildCardGrid();
             }
         };
+
+        LocalizationService.ApplyTo(panel);
 
         // Style the flyout presenter to allow scrolling and set max dimensions
         var flyoutStyle = new Style(typeof(FlyoutPresenter));

@@ -81,6 +81,7 @@ public partial class DialogService
         }
         try
         {
+            LocalizationService.ApplyTo(dialog);
             return await dialog.ShowAsync();
         }
         catch (Exception ex)

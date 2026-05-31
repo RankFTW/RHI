@@ -197,14 +197,14 @@ public class MassDlssDeployDialog
         ComboBox srPresetCombo, ComboBox rrPresetCombo, ComboBox fgPresetCombo,
         bool autoCreateProfiles)
     {
-        var dlssVersion = dlssCombo.SelectedItem as string;
-        var dlssdVersion = dlssdCombo.SelectedItem as string;
-        var dlssgVersion = dlssgCombo.SelectedItem as string;
-        var slVersion = slCombo.SelectedItem as string;
+        var dlssVersion = GetSelectedValue(dlssCombo);
+        var dlssdVersion = GetSelectedValue(dlssdCombo);
+        var dlssgVersion = GetSelectedValue(dlssgCombo);
+        var slVersion = GetSelectedValue(slCombo);
 
-        var srPresetSelection = srPresetCombo.SelectedItem as string;
-        var rrPresetSelection = rrPresetCombo.SelectedItem as string;
-        var fgPresetSelection = fgPresetCombo.SelectedItem as string;
+        var srPresetSelection = GetSelectedValue(srPresetCombo);
+        var rrPresetSelection = GetSelectedValue(rrPresetCombo);
+        var fgPresetSelection = GetSelectedValue(fgPresetCombo);
 
         // Nothing selected at all
         bool anyDllSelected = dlssVersion != NoneOption || dlssdVersion != NoneOption || dlssgVersion != NoneOption || slVersion != NoneOption;
@@ -485,7 +485,7 @@ public class MassDlssDeployDialog
             var detection = card.DlssDetection;
             if (detection == null) continue;
 
-            progressText.Text = $"Restoring {card.GameName}...";
+            LocalizationService.SetText(progressText, $"Restoring {card.GameName}...");
             await Task.Delay(1);
 
             // Restore DLL backups
@@ -543,26 +543,38 @@ public class MassDlssDeployDialog
         items.AddRange(versions);
         items.Add(CustomOption);
 
-        return new ComboBox
+        var combo = new ComboBox
         {
-            ItemsSource = items,
             SelectedIndex = 0,
             FontSize = 12,
             CornerRadius = new CornerRadius(6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+
+        foreach (var item in items)
+        {
+            var comboItem = new ComboBoxItem
+            {
+                Tag = item,
+            };
+            LocalizationService.SetContent(comboItem, item);
+            combo.Items.Add(comboItem);
+        }
+
+        return combo;
     }
 
     private static StackPanel BuildDropdownSection(string label, ComboBox combo)
     {
         var panel = new StackPanel { Spacing = 4 };
-        panel.Children.Add(new TextBlock
+        var labelBlock = new TextBlock
         {
-            Text = label,
             FontSize = 12,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 210, 230)),
-        });
+        };
+        LocalizationService.SetText(labelBlock, label);
+        panel.Children.Add(labelBlock);
         panel.Children.Add(combo);
         return panel;
     }
@@ -573,13 +585,34 @@ public class MassDlssDeployDialog
         foreach (var (name, _) in presets)
             items.Add(name);
 
-        return new ComboBox
+        var combo = new ComboBox
         {
-            ItemsSource = items,
             SelectedIndex = 0,
             FontSize = 12,
             CornerRadius = new CornerRadius(6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+
+        foreach (var item in items)
+        {
+            var comboItem = new ComboBoxItem
+            {
+                Tag = item,
+            };
+            LocalizationService.SetContent(comboItem, item);
+            combo.Items.Add(comboItem);
+        }
+
+        return combo;
+    }
+
+    private static string GetSelectedValue(ComboBox combo)
+    {
+        return combo.SelectedItem switch
+        {
+            ComboBoxItem { Tag: string tag } => tag,
+            string value => value,
+            _ => NoneOption,
         };
     }
 

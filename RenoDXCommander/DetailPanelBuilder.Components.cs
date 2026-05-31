@@ -37,11 +37,17 @@ public partial class DetailPanelBuilder
     /// </summary>
     private static object WithInfoArrow(string label, bool hasInfo, bool isUpdate, Button? btn = null)
     {
+        var sourceLabel = LocalizationService.ResolveSourceText(label);
         if (!hasInfo || isUpdate)
         {
             // Reset to default centered alignment when no arrow
             if (btn != null) btn.HorizontalContentAlignment = HorizontalAlignment.Center;
-            return label;
+            if (btn != null)
+            {
+                LocalizationService.SetContent(btn, sourceLabel);
+                return btn.Content;
+            }
+            return LocalizationService.Text(sourceLabel);
         }
 
         // Stretch content so the Grid fills the full button width
@@ -49,13 +55,14 @@ public partial class DetailPanelBuilder
 
         var grid = new Grid();
 
-        grid.Children.Add(new TextBlock
+        var labelBlock = new TextBlock
         {
-            Text = label,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-        });
+        };
+        LocalizationService.SetText(labelBlock, sourceLabel);
+        grid.Children.Add(labelBlock);
 
         grid.Children.Add(new TextBlock
         {
@@ -66,6 +73,20 @@ public partial class DetailPanelBuilder
         });
 
         return grid;
+    }
+
+    private static TextBlock MakeLocalizedTextBlock(
+        string sourceText,
+        Windows.UI.Text.TextDecorations textDecorations,
+        HorizontalAlignment horizontalAlignment = HorizontalAlignment.Center)
+    {
+        var textBlock = new TextBlock
+        {
+            TextDecorations = textDecorations,
+            HorizontalAlignment = horizontalAlignment,
+        };
+        LocalizationService.SetText(textBlock, sourceText);
+        return textBlock;
     }
 
     /// <summary>
@@ -89,7 +110,7 @@ public partial class DetailPanelBuilder
         }
 
         var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
-        ToolTipService.SetToolTip(infoBtn, tooltip);
+        LocalizationService.SetToolTip(infoBtn, tooltip);
 
         if (sourceType is InfoSourceType.None)
         {
@@ -128,7 +149,7 @@ public partial class DetailPanelBuilder
         _window.DetailRefRow.Visibility = card.RefRowVisibility;
         if (card.RefRowVisibility == Visibility.Visible)
         {
-            _window.DetailRefStatus.Text = card.RefStatusText;
+            LocalizationService.SetText(_window.DetailRefStatus, card.RefStatusText);
             _window.DetailRefStatus.Foreground = UIFactory.GetBrush(card.RefStatusColor);
             _window.DetailRefStatus.TextDecorations = card.IsRefInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
@@ -160,13 +181,13 @@ public partial class DetailPanelBuilder
                 {
                     var vulkanVersion = AuxInstallService.ReadInstalledVersion(
                         VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
-                    _window.DetailRsStatus.Text = (vulkanVersion ?? "Installed") + "\n(Vulkan)";
+                    LocalizationService.SetText(_window.DetailRsStatus, $"{vulkanVersion ?? "Installed"}\n(Vulkan)");
                     _window.DetailRsStatus.Foreground = UIFactory.GetBrush("#5ECB7D");
                     _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
                 }
                 else
                 {
-                    _window.DetailRsStatus.Text = "Ready";
+                    LocalizationService.SetText(_window.DetailRsStatus, "Ready");
                     _window.DetailRsStatus.Foreground = UIFactory.GetBrush("#A0AABB");
                     _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.None;
                 }
@@ -187,7 +208,7 @@ public partial class DetailPanelBuilder
             else
             {
                 // Standard DX ReShade install path
-                _window.DetailRsStatus.Text = card.RsStatusText;
+                LocalizationService.SetText(_window.DetailRsStatus, card.RsStatusText);
                 _window.DetailRsStatus.Foreground = UIFactory.GetBrush(card.RsStatusColor);
                 _window.DetailRsStatus.TextDecorations = card.IsRsInstalled
                     ? Windows.UI.Text.TextDecorations.Underline
@@ -239,7 +260,7 @@ public partial class DetailPanelBuilder
             _window.DetailUlLabel.TextDecorations = ulStrike;
             _window.DetailUlLabel.Opacity = ulGreyed ? 0.35 : 1.0;
 
-            _window.DetailUlStatus.Text = card.UlStatusText;
+            LocalizationService.SetText(_window.DetailUlStatus, card.UlStatusText);
             _window.DetailUlStatus.Foreground = UIFactory.GetBrush(card.UlStatusColor);
             _window.DetailUlStatus.TextDecorations = card.IsUlInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
@@ -250,7 +271,7 @@ public partial class DetailPanelBuilder
             var ulLabel = WithInfoArrow(card.UlActionLabel, HasRealInfoContent(card, AddonType.ReLimiter), card.UlStatus == GameStatus.UpdateAvailable, _window.DetailUlInstallBtn);
             if (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade)
             {
-                _window.DetailUlInstallBtn.Content = new TextBlock { Text = card.UlActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center };
+                _window.DetailUlInstallBtn.Content = MakeLocalizedTextBlock(card.UlActionLabel, Windows.UI.Text.TextDecorations.Strikethrough);
                 _window.DetailUlInstallBtn.HorizontalContentAlignment = HorizontalAlignment.Center;
             }
             else
@@ -289,7 +310,7 @@ public partial class DetailPanelBuilder
             _window.DetailDcLabel.TextDecorations = dcStrike;
             _window.DetailDcLabel.Opacity = dcGreyed ? 0.35 : 1.0;
 
-            _window.DetailDcStatus.Text = card.DcStatusText;
+            LocalizationService.SetText(_window.DetailDcStatus, card.DcStatusText);
             _window.DetailDcStatus.Foreground = UIFactory.GetBrush(card.DcStatusColor);
             _window.DetailDcStatus.TextDecorations = card.IsDcInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
@@ -300,7 +321,7 @@ public partial class DetailPanelBuilder
             var dcLabel = WithInfoArrow(card.DcActionLabel, HasRealInfoContent(card, AddonType.DisplayCommander), card.DcStatus == GameStatus.UpdateAvailable, _window.DetailDcInstallBtn);
             if (card.IsUlInstalled || card.UseNormalReShade)
             {
-                _window.DetailDcInstallBtn.Content = new TextBlock { Text = card.DcActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center };
+                _window.DetailDcInstallBtn.Content = MakeLocalizedTextBlock(card.DcActionLabel, Windows.UI.Text.TextDecorations.Strikethrough);
                 _window.DetailDcInstallBtn.HorizontalContentAlignment = HorizontalAlignment.Center;
             }
             else
@@ -346,7 +367,7 @@ public partial class DetailPanelBuilder
         }
         if (card.OsRowVisibility == Visibility.Visible)
         {
-            _window.DetailOsStatus.Text = card.OsStatusText;
+            LocalizationService.SetText(_window.DetailOsStatus, card.OsStatusText);
             _window.DetailOsStatus.Foreground = UIFactory.GetBrush(card.OsStatusColor);
             if (!osGreyed)
             {
@@ -382,13 +403,13 @@ public partial class DetailPanelBuilder
         _window.DetailDxvkRow.Visibility = card.DxvkRowVisibility;
         if (card.DxvkRowVisibility == Visibility.Visible)
         {
-            _window.DetailDxvkStatus.Text = card.DxvkStatusText;
+            LocalizationService.SetText(_window.DetailDxvkStatus, card.DxvkStatusText);
             _window.DetailDxvkStatus.Foreground = UIFactory.GetBrush(card.DxvkStatusColor);
             _window.DetailDxvkStatus.TextDecorations = card.IsDxvkInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailDxvkInstallBtn.Tag = card;
-            _window.DetailDxvkInstallBtn.Content = card.DxvkActionLabel;
+            LocalizationService.SetContent(_window.DetailDxvkInstallBtn, card.DxvkActionLabel);
             _window.DetailDxvkInstallBtn.IsEnabled = card.DxvkInstallEnabled;
             _window.DetailDxvkInstallBtn.Background = UIFactory.GetBrush(card.DxvkBtnBackground);
             _window.DetailDxvkInstallBtn.Foreground = UIFactory.GetBrush(card.DxvkBtnForeground);
@@ -418,7 +439,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxLabel.TextDecorations = extStrike;
                 _window.DetailRdxLabel.Opacity = rdxGreyed ? 0.35 : 1.0;
 
-                _window.DetailRdxStatus.Text = card.IsRdxInstalled ? (card.RdxInstalledVersion ?? "Installed") : "";
+                LocalizationService.SetText(_window.DetailRdxStatus, card.IsRdxInstalled ? (card.RdxInstalledVersion ?? "Installed") : "");
                 _window.DetailRdxStatus.Foreground = UIFactory.GetBrush("#5ECB7D");
                 _window.DetailRdxStatus.TextDecorations = card.UseNormalReShade
                     ? Windows.UI.Text.TextDecorations.Strikethrough
@@ -428,7 +449,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
                 var extLabel = WithInfoArrow(card.ExternalDisplayLabel, HasRealInfoContent(card, AddonType.RenoDX), card.Status == GameStatus.UpdateAvailable, _window.DetailRdxInstallBtn);
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
-                    ? (object)new TextBlock { Text = card.ExternalDisplayLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
+                    ? (object)MakeLocalizedTextBlock(card.ExternalDisplayLabel, Windows.UI.Text.TextDecorations.Strikethrough)
                     : extLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.UseNormalReShade ? false : true;
                 var isNexusUpdate = card.Status == GameStatus.UpdateAvailable;
@@ -452,7 +473,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxLabel.TextDecorations = rdxStrike;
                 _window.DetailRdxLabel.Opacity = rdxGreyed ? 0.35 : 1.0;
 
-                _window.DetailRdxStatus.Text = card.RdxStatusText;
+                LocalizationService.SetText(_window.DetailRdxStatus, card.RdxStatusText);
                 _window.DetailRdxStatus.Foreground = UIFactory.GetBrush(card.RdxStatusColor);
                 _window.DetailRdxStatus.TextDecorations = card.UseNormalReShade
                     ? Windows.UI.Text.TextDecorations.Strikethrough
@@ -462,7 +483,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
                 var rdxLabel = WithInfoArrow(card.InstallActionLabel, HasRealInfoContent(card, AddonType.RenoDX), card.Status == GameStatus.UpdateAvailable, _window.DetailRdxInstallBtn);
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
-                    ? (object)new TextBlock { Text = card.InstallActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
+                    ? (object)MakeLocalizedTextBlock(card.InstallActionLabel, Windows.UI.Text.TextDecorations.Strikethrough)
                     : rdxLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.UseNormalReShade ? false : card.CanInstall;
                 _window.DetailRdxInstallBtn.Background = UIFactory.GetBrush(card.InstallBtnBackground);
@@ -483,7 +504,7 @@ public partial class DetailPanelBuilder
         if (isLumaMode)
         {
             _window.DetailLumaRow.Visibility = Visibility.Visible;
-            _window.DetailLumaStatus.Text = card.LumaStatusText;
+            LocalizationService.SetText(_window.DetailLumaStatus, card.LumaStatusText);
             _window.DetailLumaStatus.Foreground = UIFactory.GetBrush(card.LumaStatusColor);
             _window.DetailLumaInstallBtn.Tag = card;
             _window.DetailLumaInstallBtn.Content = WithInfoArrow(card.LumaActionLabel, HasRealInfoContent(card, AddonType.Luma), card.LumaStatus == GameStatus.UpdateAvailable, _window.DetailLumaInstallBtn);
@@ -510,7 +531,7 @@ public partial class DetailPanelBuilder
             _window.DetailUeExtendedBtn.Opacity = 1;
             _window.DetailUeExtendedBtn.IsHitTestVisible = true;
             _window.DetailUeExtendedBtn.Tag = card;
-            ToolTipService.SetToolTip(_window.DetailUeExtendedBtn,
+            LocalizationService.SetToolTip(_window.DetailUeExtendedBtn,
                 card.UseUeExtended ? "Disable UE Extended" : "Enable UE Extended");
             // Visual indicator: green when enabled, default when off
             if (card.UseUeExtended)
@@ -539,44 +560,44 @@ public partial class DetailPanelBuilder
         _window.DetailRefProgress.Visibility = card.RefRowVisibility == Visibility.Visible ? card.RefProgressVisibility : Visibility.Collapsed;
         _window.DetailRefProgress.Value = card.RefProgress;
         _window.DetailRefMessage.Visibility = card.RefRowVisibility == Visibility.Visible ? card.RefMessageVisibility : Visibility.Collapsed;
-        _window.DetailRefMessage.Text = card.RefActionMessage;
+        LocalizationService.SetText(_window.DetailRefMessage, card.RefActionMessage);
         _window.DetailRefMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.RefActionMessage));
         _window.DetailRsProgress.Visibility = card.RsProgressVisibility;
         _window.DetailRsProgress.Value = card.RsProgress;
         _window.DetailRsMessage.Visibility = card.RsMessageVisibility;
-        _window.DetailRsMessage.Text = card.RsActionMessage;
+        LocalizationService.SetText(_window.DetailRsMessage, card.RsActionMessage);
         _window.DetailRsMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.RsActionMessage));
         _window.DetailUlProgress.Visibility = card.UlRowVisibility == Visibility.Visible ? card.UlProgressVisibility : Visibility.Collapsed;
         _window.DetailUlProgress.Value = card.UlProgress;
         _window.DetailUlMessage.Visibility = card.UlRowVisibility == Visibility.Visible ? card.UlMessageVisibility : Visibility.Collapsed;
-        _window.DetailUlMessage.Text = card.UlActionMessage;
+        LocalizationService.SetText(_window.DetailUlMessage, card.UlActionMessage);
         _window.DetailUlMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.UlActionMessage));
         _window.DetailDcProgress.Visibility = card.DcRowVisibility == Visibility.Visible ? card.DcProgressVisibility : Visibility.Collapsed;
         _window.DetailDcProgress.Value = card.DcProgress;
         _window.DetailDcMessage.Visibility = card.DcRowVisibility == Visibility.Visible ? card.DcMessageVisibility : Visibility.Collapsed;
-        _window.DetailDcMessage.Text = card.DcActionMessage;
+        LocalizationService.SetText(_window.DetailDcMessage, card.DcActionMessage);
         _window.DetailDcMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DcActionMessage));
         _window.DetailOsProgress.Visibility = card.OsRowVisibility == Visibility.Visible ? card.OsProgressVisibility : Visibility.Collapsed;
         _window.DetailOsProgress.Value = card.OsProgress;
         _window.DetailOsMessage.Visibility = card.OsRowVisibility == Visibility.Visible ? card.OsMessageVisibility : Visibility.Collapsed;
-        _window.DetailOsMessage.Text = card.OsActionMessage;
+        LocalizationService.SetText(_window.DetailOsMessage, card.OsActionMessage);
         _window.DetailOsMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.OsActionMessage));
         _window.DetailDxvkProgress.Visibility = card.DxvkRowVisibility == Visibility.Visible ? card.DxvkProgressVisibility : Visibility.Collapsed;
         _window.DetailDxvkProgress.Value = card.DxvkProgress;
         _window.DetailDxvkMessage.Visibility = card.DxvkRowVisibility == Visibility.Visible
             ? (string.IsNullOrEmpty(card.DxvkActionMessage) ? Visibility.Collapsed : Visibility.Visible)
             : Visibility.Collapsed;
-        _window.DetailDxvkMessage.Text = card.DxvkActionMessage;
+        LocalizationService.SetText(_window.DetailDxvkMessage, card.DxvkActionMessage);
         _window.DetailDxvkMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DxvkActionMessage));
         _window.DetailRdxProgress.Visibility = card.ProgressVisibility;
         _window.DetailRdxProgress.Value = card.InstallProgress;
         _window.DetailRdxMessage.Visibility = card.MessageVisibility;
-        _window.DetailRdxMessage.Text = card.ActionMessage;
+        LocalizationService.SetText(_window.DetailRdxMessage, card.ActionMessage);
         _window.DetailRdxMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.ActionMessage));
         _window.DetailLumaProgress.Visibility = card.LumaProgressVisibility;
         _window.DetailLumaProgress.Value = card.LumaProgress;
         _window.DetailLumaMessage.Visibility = card.LumaMessageVisibility;
-        _window.DetailLumaMessage.Text = card.LumaActionMessage;
+        LocalizationService.SetText(_window.DetailLumaMessage, card.LumaActionMessage);
         _window.DetailLumaMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.LumaActionMessage));
     }
 
@@ -587,6 +608,11 @@ public partial class DetailPanelBuilder
         {
             if (_currentDetailCard == null) return;
             UpdateDetailComponentRows(_currentDetailCard);
+
+            if (e.PropertyName is "IsHidden" or "HideButtonLabel")
+            {
+                LocalizationService.SetText(_window.DetailHideIcon, _currentDetailCard.IsHidden ? "Show" : "Hide");
+            }
 
             // Refresh 32-bit / 64-bit badge when bitness changes
             if (e.PropertyName is "Is32Bit" or "Is32BitBadgeVisibility")

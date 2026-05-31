@@ -24,6 +24,7 @@ public class SettingsHandler
     internal string _currentUlHotkeyString = "F12";
     internal string _currentOsHotkeyString = "Insert";
     internal string _currentScreenshotHotkeyString = "44,0,0,0";
+    private bool _syncingLanguageCombo;
 
     public SettingsHandler(MainWindow window)
     {
@@ -40,7 +41,8 @@ public class SettingsHandler
         _window.LoadingPanel.Visibility = Visibility.Collapsed;
         // Sync toggle state with ViewModel
         _window.CustomShadersToggle.IsOn = ViewModel.Settings.UseCustomShaders;
-        _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  HDR mod manager by RankFTW";
+        SyncLanguageCombo();
+        LocalizationService.SetText(_window.AboutVersionText, $"v{CrashReporter.AppVersion}  ·  HDR mod manager by RankFTW");
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
         // Populate screenshot path and per-game toggle
@@ -155,6 +157,51 @@ public class SettingsHandler
         {
             ViewModel.Settings.UseCustomShaders = toggle.IsOn;
             ViewModel.SaveSettingsPublic();
+        }
+    }
+
+    public void LanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingLanguageCombo)
+            return;
+
+        if (sender is not ComboBox combo || combo.SelectedItem is not ComboBoxItem item)
+            return;
+
+        var preference = item.Tag as string;
+        if (string.IsNullOrWhiteSpace(preference))
+            return;
+
+        var normalized = LocalizationService.NormalizePreference(preference);
+        if (string.Equals(ViewModel.Settings.Language, normalized, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        ViewModel.Settings.Language = normalized;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void SyncLanguageCombo()
+    {
+        _syncingLanguageCombo = true;
+        try
+        {
+            var current = LocalizationService.NormalizePreference(ViewModel.Settings.Language);
+            for (var i = 0; i < _window.LanguageCombo.Items.Count; i++)
+            {
+                if (_window.LanguageCombo.Items[i] is ComboBoxItem item
+                    && item.Tag is string tag
+                    && string.Equals(LocalizationService.NormalizePreference(tag), current, StringComparison.OrdinalIgnoreCase))
+                {
+                    _window.LanguageCombo.SelectedIndex = i;
+                    return;
+                }
+            }
+
+            _window.LanguageCombo.SelectedIndex = 0;
+        }
+        finally
+        {
+            _syncingLanguageCombo = false;
         }
     }
 
@@ -737,16 +784,18 @@ public class SettingsHandler
         for (int i = 0; i < items.Length; i++)
         {
             var (label, isOn) = items[i];
-            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            var labelRun = new Microsoft.UI.Xaml.Documents.Run
             {
                 Text = $"{label}: ",
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            });
-            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            };
+            tb.Inlines.Add(labelRun);
+            var stateRun = new Microsoft.UI.Xaml.Documents.Run
             {
-                Text = isOn ? "On" : "Off",
                 Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-            });
+            };
+            LocalizationService.SetText(stateRun, isOn ? "On" : "Off");
+            tb.Inlines.Add(stateRun);
             if (i < items.Length - 1)
             {
                 tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run

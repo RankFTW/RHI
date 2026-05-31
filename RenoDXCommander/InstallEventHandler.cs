@@ -380,7 +380,7 @@ public class InstallEventHandler
 
         // Directly update the badge text based on the new state
         string newLabel = card.UseUeExtended ? "UE Extended" : "Generic UE";
-        _window.DetailGenericText.Text = newLabel;
+        LocalizationService.SetText(_window.DetailGenericText, newLabel);
 
         // Update the UE button styling
         if (card.UseUeExtended)
@@ -397,13 +397,13 @@ public class InstallEventHandler
         }
 
         // Update tooltip
-        ToolTipService.SetToolTip(_window.DetailUeExtendedBtn,
+        LocalizationService.SetToolTip(_window.DetailUeExtendedBtn,
             card.UseUeExtended ? "Disable UE Extended" : "Enable UE Extended");
 
         // Show inline message or warning dialog
         if (card.UseUeExtended)
         {
-            _window.DetailRsMessage.Text = "⚡ UE-Extended enabled — check Discord to confirm this game is compatible.";
+            LocalizationService.SetText(_window.DetailRsMessage, "⚡ UE-Extended enabled — check Discord to confirm this game is compatible.");
             _window.DetailRsMessage.Foreground = Brush(ResourceKeys.AccentPurpleBrush);
             _window.DetailRsMessage.Visibility = Visibility.Visible;
             // Show compatibility warning dialog
@@ -411,7 +411,7 @@ public class InstallEventHandler
         }
         else
         {
-            _window.DetailRsMessage.Text = "UE-Extended disabled.";
+            LocalizationService.SetText(_window.DetailRsMessage, "UE-Extended disabled.");
             _window.DetailRsMessage.Foreground = Brush(ResourceKeys.TextTertiaryBrush);
             _window.DetailRsMessage.Visibility = Visibility.Visible;
         }

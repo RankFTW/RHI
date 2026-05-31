@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml;
 using RenoDXCommander.Models;
+using RenoDXCommander.Services;
 
 namespace RenoDXCommander.ViewModels;
 
@@ -14,7 +15,7 @@ public partial class GameCardViewModel
 
     // ── Luma badge + button visibility ─────────────────────────────────────────────
     public Visibility LumaBadgeVisibility => (LumaFeatureEnabled && IsLumaAvailable) ? Visibility.Visible : Visibility.Collapsed;
-    public string LumaBadgeLabel => IsLumaMode ? "Luma ON" : "Luma";
+    public string LumaBadgeLabel => IsLumaMode ? L("Luma ON") : "Luma";
     public string LumaBadgeBackground => IsLumaMode ? "#122818" : "#1A2030";
     public string LumaBadgeForeground => IsLumaMode ? "#5ECB7D" : "#6B7A8E";
     public string LumaBadgeBorderBrush => IsLumaMode ? "#1E4028" : "#283240";
@@ -29,25 +30,25 @@ public partial class GameCardViewModel
     public bool IsLumaNotInstalling => !IsLumaInstalling;
     public Visibility LumaProgressVisibility => IsLumaInstalling ? Visibility.Visible : Visibility.Collapsed;
     public Visibility LumaMessageVisibility => string.IsNullOrEmpty(LumaActionMessage) ? Visibility.Collapsed : Visibility.Visible;
-    public string LumaActionLabel => IsLumaInstalling ? "Installing..."
-        : LumaStatus == GameStatus.UpdateAvailable ? "⬆  Update Luma"
-        : LumaStatus == GameStatus.Installed ? "↺  Reinstall Luma"
-        : "⬇  Install Luma";
+    public string LumaActionLabel => IsLumaInstalling ? L("Installing...")
+        : LumaStatus == GameStatus.UpdateAvailable ? L("⬆  Update Luma")
+        : LumaStatus == GameStatus.Installed ? L("↺  Reinstall Luma")
+        : L("⬇  Install Luma");
 
     // Component table: Luma short status/action (consistent with RS/DC/RDX)
-    public string LumaStatusText => IsLumaInstalling ? "Installing…"
-        : LumaStatus == GameStatus.UpdateAvailable ? "Update"
+    public string LumaStatusText => IsLumaInstalling ? L("Installing…")
+        : LumaStatus == GameStatus.UpdateAvailable ? L("Update")
         : LumaStatus == GameStatus.Installed
-            ? (LumaRecord?.InstalledBuildNumber > 0 ? $"Build {LumaRecord.InstalledBuildNumber}" : "Installed")
-        : "Ready";
+            ? (LumaRecord?.InstalledBuildNumber > 0 ? LocalizationService.Format("Build {0}", LumaRecord.InstalledBuildNumber) : L("Installed"))
+        : L("Ready");
     public string LumaStatusColor => IsLumaInstalling ? "#D4A856"
         : LumaStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : LumaStatus == GameStatus.Installed       ? "#5ECB7D"
         : "#A0AABB";
     public string LumaShortAction => IsLumaInstalling ? "…"
-        : LumaStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : LumaStatus == GameStatus.Installed       ? "↺ Reinstall"
-        : "⬇ Install";
+        : LumaStatus == GameStatus.UpdateAvailable ? L("⬆ Update")
+        : LumaStatus == GameStatus.Installed       ? L("↺ Reinstall")
+        : L("⬇ Install");
 
     public string LumaBtnBackground  => LumaStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string LumaBtnForeground  => LumaStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";

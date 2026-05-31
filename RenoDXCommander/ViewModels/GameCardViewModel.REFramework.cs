@@ -13,10 +13,10 @@ public partial class GameCardViewModel
 
     // ── REF computed properties ───────────────────────────────────────────────────
 
-    public string RefActionLabel => RefIsInstalling ? "Installing..."
-        : RefStatus == GameStatus.UpdateAvailable ? "⬆  Update RE Framework"
-        : RefStatus == GameStatus.Installed ? "↺  Reinstall RE Framework"
-        : "⬇  Install RE Framework";
+    public string RefActionLabel => RefIsInstalling ? L("Installing...")
+        : RefStatus == GameStatus.UpdateAvailable ? L("⬆  Update RE Framework")
+        : RefStatus == GameStatus.Installed ? L("↺  Reinstall RE Framework")
+        : L("⬇  Install RE Framework");
 
     public string RefBtnBackground  => RefStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string RefBtnForeground  => RefStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
@@ -26,18 +26,18 @@ public partial class GameCardViewModel
     public Visibility RefMessageVisibility  => string.IsNullOrEmpty(RefActionMessage) ? Visibility.Collapsed : Visibility.Visible;
     public Visibility RefDeleteVisibility   => RefStatus == GameStatus.Installed || RefStatus == GameStatus.UpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
 
-    public string RefStatusText => RefIsInstalling ? "Installing…"
-        : RefStatus == GameStatus.UpdateAvailable ? "Update"
-        : RefStatus == GameStatus.Installed ? (RefInstalledVersion ?? "Installed")
-        : "Ready";
+    public string RefStatusText => RefIsInstalling ? L("Installing…")
+        : RefStatus == GameStatus.UpdateAvailable ? L("Update")
+        : RefStatus == GameStatus.Installed ? (RefInstalledVersion ?? L("Installed"))
+        : L("Ready");
     public string RefStatusColor => RefIsInstalling ? "#D4A856"
         : RefStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : RefStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string RefShortAction => RefIsInstalling ? "…"
-        : RefStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : RefStatus == GameStatus.Installed ? "↺ Reinstall"
-        : "⬇ Install";
+        : RefStatus == GameStatus.UpdateAvailable ? L("⬆ Update")
+        : RefStatus == GameStatus.Installed ? L("↺ Reinstall")
+        : L("⬇ Install");
 
     public bool IsRefNotInstalling => !RefIsInstalling;
     public bool IsRefInstalled => RefStatus == GameStatus.Installed || RefStatus == GameStatus.UpdateAvailable;

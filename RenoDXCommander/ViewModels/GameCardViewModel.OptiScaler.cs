@@ -24,10 +24,10 @@ public partial class GameCardViewModel
     public string OsStatusDot => OsStatus == GameStatus.UpdateAvailable ? "🟢"
         : OsStatus == GameStatus.Installed ? "🟢" : "⚪";
 
-    public string OsActionLabel => OsIsInstalling ? "Installing..."
-        : OsStatus == GameStatus.UpdateAvailable ? "⬆  Update OptiScaler"
-        : OsStatus == GameStatus.Installed ? "↺  Reinstall OptiScaler"
-        : "⬇  Install OptiScaler";
+    public string OsActionLabel => OsIsInstalling ? L("Installing...")
+        : OsStatus == GameStatus.UpdateAvailable ? L("⬆  Update OptiScaler")
+        : OsStatus == GameStatus.Installed ? L("↺  Reinstall OptiScaler")
+        : L("⬇  Install OptiScaler");
 
     public string OsBtnBackground  => OsStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string OsBtnForeground  => OsStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
@@ -39,18 +39,18 @@ public partial class GameCardViewModel
     public Visibility OsDeleteVisibility   => OsStatus == GameStatus.Installed
         || OsStatus == GameStatus.UpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
 
-    public string OsStatusText => OsIsInstalling ? "Installing…"
-        : OsStatus == GameStatus.UpdateAvailable ? "Update"
-        : OsStatus == GameStatus.Installed ? (OsInstalledVersion ?? "Installed")
-        : "Ready";
+    public string OsStatusText => OsIsInstalling ? L("Installing…")
+        : OsStatus == GameStatus.UpdateAvailable ? L("Update")
+        : OsStatus == GameStatus.Installed ? (OsInstalledVersion ?? L("Installed"))
+        : L("Ready");
     public string OsStatusColor => OsIsInstalling ? "#D4A856"
         : OsStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : OsStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string OsShortAction => OsIsInstalling ? "…"
-        : OsStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : OsStatus == GameStatus.Installed ? "↺ Reinstall"
-        : "⬇ Install";
+        : OsStatus == GameStatus.UpdateAvailable ? L("⬆ Update")
+        : OsStatus == GameStatus.Installed ? L("↺ Reinstall")
+        : L("⬇ Install");
 
     public bool IsOsNotInstalling => !OsIsInstalling;
     public bool IsOsInstalled => OsStatus == GameStatus.Installed

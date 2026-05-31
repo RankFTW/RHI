@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using RenoDXCommander.Services;
 
 namespace RenoDXCommander;
 
@@ -77,13 +78,14 @@ public static class UIFactory
             Fill = GetBrush(colorHex),
             VerticalAlignment = VerticalAlignment.Center,
         });
-        panel.Children.Add(new TextBlock
+        var labelBlock = new TextBlock
         {
-            Text = label,
             FontSize = 11,
             Foreground = GetBrush("#A0AABB"),
             VerticalAlignment = VerticalAlignment.Center,
-        });
+        };
+        LocalizationService.SetText(labelBlock, label);
+        panel.Children.Add(labelBlock);
         return panel;
     }
 
@@ -108,12 +110,13 @@ public static class UIFactory
         double fontSize = 12,
         string foregroundKey = "TextPrimaryBrush")
     {
-        return new TextBlock
+        var label = new TextBlock
         {
-            Text = text,
             FontSize = fontSize,
             Foreground = Brush(foregroundKey),
         };
+        LocalizationService.SetText(label, text);
+        return label;
     }
 
     /// <summary>
@@ -131,9 +134,8 @@ public static class UIFactory
         string fgHex = "#7AACDD",
         string borderHex = "#2A4468")
     {
-        return new Button
+        var button = new Button
         {
-            Content = content,
             Tag = tag,
             FontSize = 11,
             Padding = new Thickness(8, 3, 8, 3),
@@ -143,5 +145,7 @@ public static class UIFactory
             BorderBrush = GetBrush(borderHex),
             CornerRadius = new CornerRadius(6),
         };
+        LocalizationService.SetContent(button, content);
+        return button;
     }
 }

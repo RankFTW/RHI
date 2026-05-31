@@ -46,17 +46,17 @@ public partial class GameCardViewModel
             var effectiveInstalling = (LumaFeatureEnabled && IsLumaMode && LumaMod != null)
                 ? IsLumaInstalling : IsInstalling;
 
-            if (effectiveInstalling) return "Installing...";
+            if (effectiveInstalling) return L("Installing...");
             if (IsManaged)
             {
                 // Any component has an update available → show update icon
                 if (effectiveStatus == GameStatus.UpdateAvailable
                     || RsStatus == GameStatus.UpdateAvailable
                     || LumaStatus == GameStatus.UpdateAvailable)
-                    return "⬆  Manage";
-                return "↺  Manage";
+                    return L("⬆  Manage");
+                return L("↺  Manage");
             }
-            return "⬇  Install";
+            return L("⬇  Install");
         }
     }
 
@@ -100,12 +100,12 @@ public partial class GameCardViewModel
 
     // ── Derived display ───────────────────────────────────────────────────────────
 
-    public string WikiStatusLabel => WikiStatus == "✅" ? "✅ Working"
-                                   : WikiStatus == "🚧" ? "🚧 In Progress"
-                                   : WikiStatus == "?"  ? "⚠️ May Work"
-                                   : WikiStatus == "💬" ? "💬 Discord"
-                                   : WikiStatus == "🌐" ? "🌐 Nexus"
-                                   : WikiStatus == "—" && IsGenericMod ? "⚠️ May Work"
+    public string WikiStatusLabel => WikiStatus == "✅" ? L("✅ Working")
+                                   : WikiStatus == "🚧" ? L("🚧 In Progress")
+                                   : WikiStatus == "?"  ? L("⚠️ May Work")
+                                   : WikiStatus == "💬" ? L("💬 Discord")
+                                   : WikiStatus == "🌐" ? L("🌐 Nexus")
+                                   : WikiStatus == "—" && IsGenericMod ? L("⚠️ May Work")
                                    : "";
 
     /// <summary>
@@ -199,7 +199,7 @@ public partial class GameCardViewModel
     public bool HasUwFixUrl        => !string.IsNullOrEmpty(UwFixUrl);
     public bool HasUltraPlusUrl    => !string.IsNullOrEmpty(UltraPlusUrl);
     public bool HasNameUrl            => !string.IsNullOrEmpty(NameUrl);
-    public string HideButtonLabel     => IsHidden ? "👁 Show" : "🚫 Hide";
+    public string HideButtonLabel     => IsHidden ? L("👁 Show") : L("🚫 Hide");
     public string StarForeground       => IsFavourite ? "#FFD700" : "#282840";
     public Visibility IsFavouriteVisibility      => IsFavourite ? Visibility.Visible : Visibility.Collapsed;
     public Visibility IsNotFavouriteVisibility   => IsFavourite ? Visibility.Collapsed : Visibility.Visible;

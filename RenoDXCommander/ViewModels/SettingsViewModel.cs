@@ -45,6 +45,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _lastUpdateCheckUtc = "";
     [ObservableProperty] private string _dxvkVariant = "Development";
     [ObservableProperty] private string _reShadeChannel = "Stable";
+    [ObservableProperty] private string _language = LocalizationService.AutoLanguage;
 
     /// <summary>
     /// Optional callback invoked after any settings-specific property changes,
@@ -63,6 +64,13 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnVerboseLoggingChanged(bool value)
     {
         CrashReporter.VerboseLogging = value;
+    }
+
+    partial void OnLanguageChanged(string value)
+    {
+        Language = LocalizationService.NormalizePreference(value);
+        LocalizationService.SetLanguagePreference(Language);
+        SettingsChanged?.Invoke();
     }
 
     // ── Settings file I/O ─────────────────────────────────────────────────────────
@@ -191,6 +199,10 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("LastUpdateCheckUtc", out var luc)) LastUpdateCheckUtc = luc;
         if (s.TryGetValue("DxvkVariant", out var dvVal)) DxvkVariant = dvVal ?? "Development";
         if (s.TryGetValue("ReShadeChannel", out var rscVal)) ReShadeChannel = rscVal ?? "Stable";
+        Language = s.TryGetValue("Language", out var langVal)
+            ? LocalizationService.NormalizePreference(langVal)
+            : LocalizationService.AutoLanguage;
+        LocalizationService.SetLanguagePreference(Language);
     }
 
     /// <summary>
@@ -230,6 +242,7 @@ public partial class SettingsViewModel : ObservableObject
         s["LastUpdateCheckUtc"] = LastUpdateCheckUtc;
         s["DxvkVariant"] = DxvkVariant;
         s["ReShadeChannel"] = ReShadeChannel;
+        s["Language"] = LocalizationService.NormalizePreference(Language);
     }
 
     public void LoadThemeAndDensity()

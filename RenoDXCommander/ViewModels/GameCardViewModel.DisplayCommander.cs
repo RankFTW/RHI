@@ -12,11 +12,11 @@ public partial class GameCardViewModel
     public string DcStatusDot => DcStatus == GameStatus.UpdateAvailable ? "🟢"
         : DcStatus == GameStatus.Installed ? "🟢" : "⚪";
 
-    public string DcActionLabel => DcIsInstalling ? "Installing..."
-        : !IsRsInstalled ? "⚠  ReShade required"
-        : DcStatus == GameStatus.UpdateAvailable ? "⬆  Update DC"
-        : DcStatus == GameStatus.Installed ? "↺  Reinstall DC"
-        : "⬇  Install DC";
+    public string DcActionLabel => DcIsInstalling ? L("Installing...")
+        : !IsRsInstalled ? L("⚠  ReShade required")
+        : DcStatus == GameStatus.UpdateAvailable ? L("⬆  Update DC")
+        : DcStatus == GameStatus.Installed ? L("↺  Reinstall DC")
+        : L("⬇  Install DC");
 
     public string DcBtnBackground  => DcStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string DcBtnForeground  => DcStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
@@ -27,18 +27,18 @@ public partial class GameCardViewModel
     public Visibility DcDeleteVisibility   => DcStatus == GameStatus.Installed || DcStatus == GameStatus.UpdateAvailable
         ? Visibility.Visible : Visibility.Collapsed;
 
-    public string DcStatusText => DcIsInstalling ? "Installing…"
-        : DcStatus == GameStatus.UpdateAvailable ? "Update"
-        : DcStatus == GameStatus.Installed ? (DcInstalledVersion ?? "Installed")
-        : "Ready";
+    public string DcStatusText => DcIsInstalling ? L("Installing…")
+        : DcStatus == GameStatus.UpdateAvailable ? L("Update")
+        : DcStatus == GameStatus.Installed ? (DcInstalledVersion ?? L("Installed"))
+        : L("Ready");
     public string DcStatusColor => DcIsInstalling ? "#D4A856"
         : DcStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : DcStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string DcShortAction => DcIsInstalling ? "…"
-        : DcStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : DcStatus == GameStatus.Installed ? "↺ Reinstall"
-        : "⬇ Install";
+        : DcStatus == GameStatus.UpdateAvailable ? L("⬆ Update")
+        : DcStatus == GameStatus.Installed ? L("↺ Reinstall")
+        : L("⬇ Install");
 
     public bool IsDcNotInstalling => !DcIsInstalling;
     public bool IsDcInstalled => DcStatus == GameStatus.Installed || DcStatus == GameStatus.UpdateAvailable;

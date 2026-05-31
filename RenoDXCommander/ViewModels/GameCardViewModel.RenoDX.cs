@@ -13,15 +13,15 @@ public partial class GameCardViewModel
     {
         get
         {
-            if (IsInstalling) return "Installing...";
+            if (IsInstalling) return L("Installing...");
             if (!IsRsInstalled && Mod?.SnapshotUrl != null && !IsExternalOnly)
-                return "⚠  ReShade required";
+                return L("⚠  ReShade required");
             // No mod available and nothing manually installed
             if (Mod?.SnapshotUrl == null && !IsExternalOnly && string.IsNullOrEmpty(InstalledAddonFileName))
-                return "No RenoDX mod available";
-            return Status == GameStatus.UpdateAvailable ? "⬆  Update RenoDX"
-                 : Status == GameStatus.Installed       ? "↺  Reinstall RenoDX"
-                 : "⬇  Install RenoDX";
+                return L("No RenoDX mod available");
+            return Status == GameStatus.UpdateAvailable ? L("⬆  Update RenoDX")
+                 : Status == GameStatus.Installed       ? L("↺  Reinstall RenoDX")
+                 : L("⬇  Install RenoDX");
         }
     }
 
@@ -29,10 +29,10 @@ public partial class GameCardViewModel
 
     public string GenericModLabel => IsGenericMod
         ? (EngineHint.Contains("Unity")
-           ? "Generic Unity"
-           : (IsNativeHdrGame ? "UE Extended Native HDR"
-              : (IsManifestUeExtended || UseUeExtended) ? "UE Extended"
-              : "Generic UE"))
+           ? L("Generic Unity")
+           : (IsNativeHdrGame ? L("UE Extended Native HDR")
+              : (IsManifestUeExtended || UseUeExtended) ? L("UE Extended")
+              : L("Generic UE")))
         : "";
 
     // Update button colours — purple when an update is available, normal blue otherwise
@@ -41,7 +41,7 @@ public partial class GameCardViewModel
     public string InstallBtnBorderBrush => Status == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     // UE-Extended toggle label and styling
-    public string UeExtendedLabel      => UseUeExtended ? "⚡ UE Extended ON" : "⚡ UE Extended";
+    public string UeExtendedLabel      => UseUeExtended ? L("⚡ UE Extended ON") : L("⚡ UE Extended");
     public string UeExtendedBackground => UseUeExtended ? "#201838" : "#1E242C";
     public string UeExtendedForeground => UseUeExtended ? "#B898E8" : "#6B7A8E";
     public string UeExtendedBorderBrush => UseUeExtended ? "#3A2860" : "#283240";
@@ -67,17 +67,17 @@ public partial class GameCardViewModel
     {
         get
         {
-            if (AnyInstalling) return "Installing…";
+            if (AnyInstalling) return L("Installing…");
             if (IsExternalOnly)
             {
                 // External-only: no RenoDX to install, only ReShade
-                if (RsStatus == GameStatus.UpdateAvailable) return "⬆  Update ReShade";
-                if (RsStatus == GameStatus.Installed) return "↺  Reinstall ReShade";
-                return "⬇  Install ReShade";
+                if (RsStatus == GameStatus.UpdateAvailable) return L("⬆  Update ReShade");
+                if (RsStatus == GameStatus.Installed) return L("↺  Reinstall ReShade");
+                return L("⬇  Install ReShade");
             }
-            if (AnyUpdateAvailable) return "⬆  Update All";
-            if (Status == GameStatus.Installed) return "↺  Reinstall All";
-            return "⬇  Install All";
+            if (AnyUpdateAvailable) return L("⬆  Update All");
+            if (Status == GameStatus.Installed) return L("↺  Reinstall All");
+            return L("⬇  Install All");
         }
     }
 
@@ -103,18 +103,18 @@ public partial class GameCardViewModel
     public string ChevronBorderThickness => ReinstallRowVisibility == Visibility.Visible ? "1,1,0,1" : "1";
 
     // ── Component table: RDX short status text + short action labels ─────────────
-    public string RdxStatusText => IsInstalling ? "Installing…"
-        : Status == GameStatus.UpdateAvailable ? (RdxInstalledVersion ?? "Update")
-        : Status == GameStatus.Installed       ? (RdxInstalledVersion ?? "Installed")
-        : Mod?.SnapshotUrl != null             ? "Ready" : "—";
+    public string RdxStatusText => IsInstalling ? L("Installing…")
+        : Status == GameStatus.UpdateAvailable ? (RdxInstalledVersion ?? L("Update"))
+        : Status == GameStatus.Installed       ? (RdxInstalledVersion ?? L("Installed"))
+        : Mod?.SnapshotUrl != null             ? L("Ready") : "—";
     public string RdxStatusColor => IsInstalling ? "#D4A856"
         : Status == GameStatus.UpdateAvailable ? "#B898E8"
         : Status == GameStatus.Installed       ? "#5ECB7D"
         : Mod?.SnapshotUrl != null             ? "#A0AABB" : "#404858";
     public string RdxShortAction => IsInstalling ? "…"
-        : Status == GameStatus.UpdateAvailable ? "⬆ Update"
-        : Status == GameStatus.Installed       ? "↺ Reinstall"
-        : "⬇ Install";
+        : Status == GameStatus.UpdateAvailable ? L("⬆ Update")
+        : Status == GameStatus.Installed       ? L("↺ Reinstall")
+        : L("⬇ Install");
 
     // Negated installing flag — used for IsEnabled bindings to avoid converter in DataTemplate
     public bool IsNotInstalling => !IsInstalling;
@@ -143,10 +143,10 @@ public partial class GameCardViewModel
     // ── External link label: "Update" when Nexus update available, "Redownload" when installed ──
     public string ExternalDisplayLabel =>
         Status == GameStatus.UpdateAvailable && IsRdxInstalled
-            ? "⬆  Update RenoDX"
+            ? L("⬆  Update RenoDX")
             : IsRdxInstalled && !string.IsNullOrEmpty(ExternalLabel)
-                ? "↺  " + ExternalLabel.Replace("Download", "Redownload")
-                : "⬇  " + ExternalLabel;
+                ? "↺  " + L(ExternalLabel.Replace("Download", "Redownload"))
+                : "⬇  " + L(ExternalLabel);
 
     // Compact list item highlight — purple when any component has an update available
     private bool AnyUpdateAvailable => Status == GameStatus.UpdateAvailable

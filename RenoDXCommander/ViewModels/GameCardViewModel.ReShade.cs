@@ -26,23 +26,23 @@ public partial class GameCardViewModel
     {
         get
         {
-            if (RsIsInstalling) return "Installing...";
+            if (RsIsInstalling) return L("Installing...");
             // RE Engine games require REFramework before ReShade can be installed
             // (unless user has excluded REF via Update Inclusion toggle)
             if (IsREEngineGame && !IsRefInstalled && !EffectiveLumaMode && !ExcludeFromUpdateAllRef)
-                return "⚠  RE Framework required";
+                return L("⚠  RE Framework required");
             if (RequiresVulkanInstall)
             {
                 bool layerInstalled = IsLayerInstalledFunc();
                 if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
-                    return "⬆  Update Vulkan ReShade";
-                if (layerInstalled && IsVulkanRsActive) return "↺  Reinstall Vulkan ReShade";
-                if (layerInstalled) return "⬇  Install Vulkan ReShade";
-                return "⬇  Install Vulkan Layer";
+                    return L("⬆  Update Vulkan ReShade");
+                if (layerInstalled && IsVulkanRsActive) return L("↺  Reinstall Vulkan ReShade");
+                if (layerInstalled) return L("⬇  Install Vulkan ReShade");
+                return L("⬇  Install Vulkan Layer");
             }
-            return RsStatus == GameStatus.UpdateAvailable ? "⬆  Update ReShade"
-                 : RsStatus == GameStatus.Installed       ? "↺  Reinstall ReShade"
-                 : "⬇  Install ReShade";
+            return RsStatus == GameStatus.UpdateAvailable ? L("⬆  Update ReShade")
+                 : RsStatus == GameStatus.Installed       ? L("↺  Reinstall ReShade")
+                 : L("⬇  Install ReShade");
         }
     }
 
@@ -58,10 +58,10 @@ public partial class GameCardViewModel
                                                ? Visibility.Visible : Visibility.Collapsed;
 
     // Component table: RS short status text + short action labels
-    public string RsStatusText => RsIsInstalling ? "Installing…"
-        : RsStatus == GameStatus.UpdateAvailable ? (RsInstalledVersion ?? "Update")
-        : RsStatus == GameStatus.Installed       ? (RsInstalledVersion ?? "Installed")
-        : "Ready";
+    public string RsStatusText => RsIsInstalling ? L("Installing…")
+        : RsStatus == GameStatus.UpdateAvailable ? (RsInstalledVersion ?? L("Update"))
+        : RsStatus == GameStatus.Installed       ? (RsInstalledVersion ?? L("Installed"))
+        : L("Ready");
     public string RsStatusColor => RsIsInstalling ? "#D4A856"
         : RsStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : RsStatus == GameStatus.Installed       ? "#5ECB7D"
@@ -79,14 +79,14 @@ public partial class GameCardViewModel
             {
                 bool layerInstalled = IsLayerInstalledFunc();
                 if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
-                    return "⬆ Update";
-                if (layerInstalled && IsVulkanRsActive) return "↺ Reinstall";
-                if (layerInstalled) return "⬇ Vulkan RS";
-                return "⬇ Install";
+                    return L("⬆ Update");
+                if (layerInstalled && IsVulkanRsActive) return L("↺ Reinstall");
+                if (layerInstalled) return L("⬇ Vulkan RS");
+                return L("⬇ Install");
             }
-            return RsStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-                 : RsStatus == GameStatus.Installed       ? "↺ Reinstall"
-                 : "⬇ Install";
+            return RsStatus == GameStatus.UpdateAvailable ? L("⬆ Update")
+                 : RsStatus == GameStatus.Installed       ? L("↺ Reinstall")
+                 : L("⬇ Install");
         }
     }
 

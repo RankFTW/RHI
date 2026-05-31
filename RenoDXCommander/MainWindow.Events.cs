@@ -280,6 +280,7 @@ public sealed partial class MainWindow
         if (flyout.Target is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
         var content = _cardBuilder.BuildInstallFlyoutContent(card);
+        LocalizationService.ApplyTo(content);
 
         var scrollViewer = new ScrollViewer
         {
@@ -967,14 +968,14 @@ public sealed partial class MainWindow
             var name = nameBox.Text?.Trim() ?? "";
             if (string.IsNullOrEmpty(name))
             {
-                errorText.Text = "Please enter a filter name.";
+                LocalizationService.SetText(errorText, "Please enter a filter name.");
                 errorText.Visibility = Visibility.Visible;
                 args.Cancel = true;
                 return;
             }
             if (ViewModel.Filter.CustomFilterNameExists(name))
             {
-                errorText.Text = $"A filter named \"{name}\" already exists.";
+                LocalizationService.SetText(errorText, $"A filter named \"{name}\" already exists.");
                 errorText.Visibility = Visibility.Visible;
                 args.Cancel = true;
                 return;
@@ -1392,6 +1393,9 @@ public sealed partial class MainWindow
 
     private void ReShadeChannelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.ReShadeChannelCombo_SelectionChanged(sender, e);
+
+    private void LanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.LanguageCombo_SelectionChanged(sender, e);
 
     private async void DetailOsStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {

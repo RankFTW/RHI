@@ -1069,6 +1069,37 @@
                     <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
                                 HorizontalAlignment="Center">
 
+                        <!-- ── Language ───────────────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="260"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="8">
+                                    <TextBlock Text="Language" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Choose the display language. Automatic uses Windows display language at launch and falls back to English for unsupported languages."/>
+                                </StackPanel>
+                                <ComboBox x:Name="LanguageCombo" x:FieldModifier="internal"
+                                          Grid.Column="1"
+                                          FontSize="12"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Center"
+                                          Background="{StaticResource SurfaceInputBrush}"
+                                          Foreground="{StaticResource TextSecondaryBrush}"
+                                          BorderBrush="{StaticResource BorderSubtleBrush}"
+                                          SelectionChanged="LanguageCombo_SelectionChanged">
+                                    <ComboBoxItem Tag="auto" Content="Automatic (system language)"/>
+                                    <ComboBoxItem Tag="en-US" Content="English"/>
+                                    <ComboBoxItem Tag="zh-CN" Content="Simplified Chinese"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
                         <!-- ── Add Game & Full Refresh ─────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">

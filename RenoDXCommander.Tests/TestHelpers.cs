@@ -37,7 +37,7 @@ internal static class TestHelpers
             gameDetectionService, wikiService, manifestService, installer, auxInstaller,
             gameLibraryService, peHeaderService, lumaService, rsUpdateService, shaderPackService);
 
-        return new MainViewModel(
+        var vm = new MainViewModel(
             new HttpClient(),
             installer,
             auxInstaller,
@@ -52,6 +52,7 @@ internal static class TestHelpers
             lumaService,
             rsUpdateService,
             normalRsUpdateService,
+            new ReShadeNightlyService(new HttpClient()),
             settingsVm,
             filterVm,
             updateOrch,
@@ -68,7 +69,12 @@ internal static class TestHelpers
             new StubOptiScalerWikiService(),
             new StubHdrDatabaseService(),
             new StubNexusUpdateService(),
+            new StubDlssStreamlineService(),
+            new DlssPresetService(),
             new GitHubETagCache());
+
+        LocalizationService.SetLanguagePreference(LocalizationService.EnglishLanguage);
+        return vm;
     }
 
     // ── Stub implementations ──────────────────────────────────────────────────
@@ -126,7 +132,7 @@ internal static class TestHelpers
     private class StubGameLibraryService : IGameLibraryService
     {
         public SavedGameLibrary? Load() => null;
-        public void Save(List<DetectedGame> games, Dictionary<string, bool> addonCache, HashSet<string> hiddenGames, HashSet<string> favouriteGames, List<DetectedGame> manualGames, Dictionary<string, string>? engineTypeCache = null, Dictionary<string, string>? resolvedPathCache = null, Dictionary<string, string>? addonFileCache = null, Dictionary<string, MachineType>? bitnessCache = null, string? lastSelectedGame = null, HashSet<string>? dxvkEnabledGames = null, Dictionary<string, string>? dxvkInstalledVersions = null, HashSet<string>? excludeFromUpdateAllDxvk = null) { }
+        public void Save(List<DetectedGame> games, Dictionary<string, bool> addonCache, HashSet<string> hiddenGames, HashSet<string> favouriteGames, List<DetectedGame> manualGames, Dictionary<string, string>? engineTypeCache = null, Dictionary<string, string>? resolvedPathCache = null, Dictionary<string, string>? addonFileCache = null, Dictionary<string, MachineType>? bitnessCache = null, string? lastSelectedGame = null, HashSet<string>? dxvkEnabledGames = null, Dictionary<string, string>? dxvkInstalledVersions = null, HashSet<string>? excludeFromUpdateAllDxvk = null, Dictionary<string, string>? updateAvailableSnapshot = null, Dictionary<string, DlssPathCache>? dlssPathsCache = null) { }
         public List<DetectedGame> ToDetectedGames(SavedGameLibrary lib) => new();
         public List<DetectedGame> ToManualGames(SavedGameLibrary lib) => new();
     }
@@ -246,6 +252,7 @@ internal static class TestHelpers
     {
         public Task InitAsync() => Task.CompletedTask;
         public string? ResolveUrl(string gameName, RemoteManifest? manifest) => null;
+        public string? ResolveSource(string gameName, RemoteManifest? manifest) => null;
     }
 
     internal class StubUltraPlusService : IUltraPlusService
@@ -320,5 +327,36 @@ internal static class TestHelpers
         public HashSet<string> GetCachedUpdates() => new(StringComparer.OrdinalIgnoreCase);
         public void LoadBaselines() { }
         public void SaveBaselines() { }
+    }
+
+    internal class StubDlssStreamlineService : IDlssStreamlineService
+    {
+        public IReadOnlyList<string> DlssVersions => Array.Empty<string>();
+        public IReadOnlyList<string> DlssdVersions => Array.Empty<string>();
+        public IReadOnlyList<string> DlssgVersions => Array.Empty<string>();
+        public IReadOnlyList<string> StreamlineVersions => Array.Empty<string>();
+        public Task FetchManifestAsync() => Task.CompletedTask;
+        public DlssDetectionResult Detect(string installPath) => new();
+        public Task SwapDlssAsync(string dllPath, string version) => Task.CompletedTask;
+        public Task SwapDlssdAsync(string dllPath, string version) => Task.CompletedTask;
+        public Task SwapDlssgAsync(string dllPath, string version) => Task.CompletedTask;
+        public Task SwapStreamlineAsync(string gameFolder, string version) => Task.CompletedTask;
+        public Task SwapDlssCustomAsync(string dllPath) => Task.CompletedTask;
+        public Task SwapStreamlineCustomAsync(string gameFolder) => Task.CompletedTask;
+        public void Restore(string dllPath) { }
+        public void RestoreStreamline(string gameFolder) { }
+        public void RestoreAll(DlssDetectionResult detection) { }
+        public string? GetFileVersion(string dllPath) => null;
+        public bool HasBackup(string dllPath) => false;
+        public string? GetNewestDlssVersion() => null;
+        public bool ShouldSkipScan(string gameName) => false;
+        public void RecordNoDlssFound(string gameName) { }
+        public void RecordDlssFound(string gameName) { }
+        public void ClearScanCaches() { }
+        public DlssDetectionResult? TryFastDetect(string gameName, string installPath) => null;
+        public void RecordTrustedPath(string gameName, DlssDetectionResult detection) { }
+        public Task<string?> EnsureNewestDlssCachedAsync() => Task.FromResult<string?>(null);
+        public Task<string?> EnsureNewestDlssdCachedAsync() => Task.FromResult<string?>(null);
+        public Task<string?> EnsureNewestDlssgCachedAsync() => Task.FromResult<string?>(null);
     }
 }

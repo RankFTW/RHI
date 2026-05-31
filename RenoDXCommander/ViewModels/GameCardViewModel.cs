@@ -1,10 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using RenoDXCommander.Models;
+using RenoDXCommander.Services;
 
 namespace RenoDXCommander.ViewModels;
 
 public partial class GameCardViewModel : ObservableObject
 {
+    private static string L(string text) => LocalizationService.Text(text);
+
     // ── Core observable properties ────────────────────────────────────────────────
     [ObservableProperty] private string _gameName = "";
     [ObservableProperty] private string _maintainer = "";

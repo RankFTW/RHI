@@ -168,7 +168,7 @@ public partial class DetailPanelBuilder
 
         // Utility buttons — set Tag for event handlers
         _window.DetailFavBtn.Tag = card;
-        _window.DetailFavIcon.Text = "Favourite";
+        LocalizationService.SetText(_window.DetailFavIcon, "Favourite");
         var favColor = card.IsFavourite
             ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
             : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
@@ -178,7 +178,7 @@ public partial class DetailPanelBuilder
             : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
 
         _window.DetailHideBtn.Tag = card;
-        _window.DetailHideIcon.Text = card.IsHidden ? "Show" : "Hide";
+        LocalizationService.SetText(_window.DetailHideIcon, card.IsHidden ? "Show" : "Hide");
         _window.DetailHideBtn.Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
         // Folder management buttons
