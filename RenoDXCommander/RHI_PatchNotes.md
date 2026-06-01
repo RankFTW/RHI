@@ -11,6 +11,8 @@
 - Fixed "Restore All" button in the DLSS/Streamline section not visually standing out when backups exist. The button now uses blue accent styling when enabled and stays fully visible even when the Streamline column is greyed out.
 - Fixed DLSS On-Screen Indicator toggle causing an infinite UAC prompt loop when the user clicks No/Cancel. The combo now suppresses the handler while reverting.
 - Fixed DLSS presets and render scale not applying in-game for profiles matched by title/fuzzy match. The game's exe is now automatically registered in the NVIDIA profile's Applications list if it isn't already.
+- Install warning dialogs now show the game name in the title so it's clear which game triggered the warning.
+- Fixed Luma install warning dialog popping up during Update All. The warning is now correctly skipped during batch updates.
 
 ### Manifest Updates
 

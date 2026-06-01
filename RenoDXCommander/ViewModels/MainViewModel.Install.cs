@@ -2137,13 +2137,12 @@ public partial class MainViewModel
         card.NotifyAll();
     }
 
-    [RelayCommand]
-    public async Task InstallLumaAsync(GameCardViewModel? card)
+    public async Task InstallLumaAsync(GameCardViewModel? card, bool skipWarning = false)
     {
         if (card?.LumaMod == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
-        // Check for manifest-driven install warning
-        if (!await CheckInstallWarningAsync(card.GameName, "luma")) return;
+        // Check for manifest-driven install warning (skip during Update All)
+        if (!skipWarning && !await CheckInstallWarningAsync(card.GameName, "luma")) return;
 
         card.IsLumaInstalling = true;
         card.LumaActionMessage = "Installing Luma...";
@@ -2240,7 +2239,7 @@ public partial class MainViewModel
 
             var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
             {
-                Title = "⚠ Install Note",
+                Title = $"⚠ Install Note — {gameName}",
                 Content = message,
                 PrimaryButtonText = "Continue",
                 CloseButtonText = "Cancel",
