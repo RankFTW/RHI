@@ -1,5 +1,6 @@
 // DragDropHandler.Exe.cs — Exe drop processing: game root inference, name inference, and game addition.
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Models;
@@ -15,6 +16,34 @@ public partial class DragDropHandler
     {
         var exeDir  = Path.GetDirectoryName(exePath)!;
         var exeName = Path.GetFileNameWithoutExtension(exePath);
+
+        // ── Emulator detection: Ryujinx.exe → Ryubing ────────────────────────
+        var emulatorService = App.Services.GetRequiredService<IEmulatorService>();
+        if (emulatorService.IsRyubingExe(exePath))
+        {
+            _crashReporter.Log($"[DragDropHandler.ProcessDroppedExe] Detected Ryubing emulator at '{exePath}'");
+            var emuGame = new DetectedGame
+            {
+                Name = "Ryubing",
+                InstallPath = exeDir,
+                Source = "Manual",
+            };
+            ViewModel.AddManualGame(emuGame);
+
+            // Mark the card as an emulator
+            var card = ViewModel.AllCards.FirstOrDefault(c =>
+                c.GameName.Equals("Ryubing", StringComparison.OrdinalIgnoreCase));
+            if (card != null)
+            {
+                card.IsEmulator = true;
+                card.EngineHint = "Emulator";
+                card.NotifyAll();
+            }
+
+            // Scan for sub-games and create cards
+            ViewModel.CreateEmulatorSubGameCards(exeDir);
+            return;
+        }
 
         // ── Determine the game root folder ────────────────────────────────────
         var gameRoot = InferGameRoot(exeDir);

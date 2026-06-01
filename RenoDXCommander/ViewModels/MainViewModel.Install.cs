@@ -1,6 +1,7 @@
 ﻿// MainViewModel.Install.cs -- Install/uninstall commands for RenoDX, ReShade, ReLimiter, RE Framework, and Luma.
 
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 
@@ -142,6 +143,83 @@ public partial class MainViewModel
 
     /// <summary>Stores the original named mod SnapshotUrl per game when UE-Extended is toggled ON, so it can be restored when toggled OFF.</summary>
     private readonly Dictionary<string, string> _ueExtendedOriginalUrls = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Creates sub-game cards for an emulator based on manifest entries and detected metadata.
+    /// </summary>
+    public void CreateEmulatorSubGameCards(string emulatorPath)
+    {
+        var emulatorService = App.Services.GetRequiredService<IEmulatorService>();
+        var manifest = _manifestService.LoadCached();
+
+        // Get available emulator games from manifest
+        var emulatorGames = manifest?.EmulatorGames?.GetValueOrDefault("Ryubing");
+        if (emulatorGames == null || emulatorGames.Count == 0)
+        {
+            _crashReporter.Log("[MainViewModel.CreateEmulatorSubGameCards] No Ryubing games in manifest");
+            return;
+        }
+
+        // Scan Ryubing metadata for played games
+        var detectedGames = emulatorService.ScanRyubingGames();
+        _crashReporter.Log($"[MainViewModel.CreateEmulatorSubGameCards] Found {detectedGames.Count} Ryubing games in metadata");
+
+        foreach (var detected in detectedGames)
+        {
+            // Only create cards for games that have a manifest entry
+            if (!emulatorGames.TryGetValue(detected.TitleId.ToLowerInvariant(), out var manifestEntry))
+            {
+                // Try uppercase too
+                if (!emulatorGames.TryGetValue(detected.TitleId, out manifestEntry))
+                    continue;
+            }
+
+            // Skip if card already exists
+            var cardName = manifestEntry.Name;
+            if (_allCards.Any(c => c.GameName.Equals(cardName, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            // Resolve ROM path
+            var romPath = emulatorService.ResolveRomPath(detected.TitleId);
+
+            // Check if addon is already installed in the subfolder
+            var addonDir = Path.Combine(emulatorPath, "_rhi_emulator", detected.TitleId);
+            var addonFileName = Path.GetFileName(new Uri(manifestEntry.SnapshotUrl).LocalPath);
+            var isInstalled = File.Exists(Path.Combine(addonDir, addonFileName));
+
+            var card = new GameCardViewModel
+            {
+                GameName = cardName,
+                InstallPath = emulatorPath,
+                Source = "Ryubing",
+                Maintainer = manifestEntry.Author,
+                IsEmulatorGame = true,
+                EmulatorTitleId = detected.TitleId,
+                EmulatorParentPath = emulatorPath,
+                EmulatorRomPath = romPath,
+                IsManuallyAdded = true,
+                EngineHint = "Emulator",
+                Mod = new GameMod
+                {
+                    Name = cardName,
+                    Maintainer = manifestEntry.Author,
+                    SnapshotUrl = manifestEntry.SnapshotUrl,
+                    Status = "✅",
+                },
+                Status = isInstalled ? GameStatus.Installed : GameStatus.Available,
+                InstalledAddonFileName = isInstalled ? addonFileName : null,
+            };
+
+            _allCards.Add(card);
+            _crashReporter.Log($"[MainViewModel.CreateEmulatorSubGameCards] Created card for '{cardName}' (titleId: {detected.TitleId})");
+        }
+
+        // Refresh the filter to show new cards
+        _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
+        _filterViewModel.SetAllCards(_allCards);
+        _filterViewModel.ApplyFilter();
+        SaveLibrary();
+    }
 
     /// <summary>
     /// Toggles the UE-Extended mode for a Generic UE card.

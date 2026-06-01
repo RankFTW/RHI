@@ -315,6 +315,13 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("splitGames")]
     public Dictionary<string, List<SplitGameEntry>>? SplitGames { get; set; }
+
+    /// <summary>
+    /// Emulator game entries keyed by emulator name (e.g. "Ryubing"), then by title ID.
+    /// Each entry maps a Nintendo title ID to its RenoDX mod info.
+    /// </summary>
+    [JsonPropertyName("emulatorGames")]
+    public Dictionary<string, Dictionary<string, EmulatorManifestEntry>>? EmulatorGames { get; set; }
 }
 
 /// <summary>
@@ -327,4 +334,19 @@ public class SplitGameEntry
 
     [JsonPropertyName("subPath")]
     public string SubPath { get; set; } = "";
+}
+
+/// <summary>
+/// Represents a single emulator game entry in the manifest.
+/// </summary>
+public class EmulatorManifestEntry
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("snapshotUrl")]
+    public string SnapshotUrl { get; set; } = "";
+
+    [JsonPropertyName("author")]
+    public string Author { get; set; } = "";
 }

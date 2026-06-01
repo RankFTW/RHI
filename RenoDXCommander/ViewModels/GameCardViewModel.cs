@@ -125,6 +125,11 @@ public partial class GameCardViewModel : ObservableObject
     public string? LumaNotesUrl  { get; set; }
     public string? LumaNotesUrlLabel { get; set; }
     public bool IsManuallyAdded { get; set; }
+    public bool IsEmulator { get; set; }
+    public bool IsEmulatorGame { get; set; }
+    public string? EmulatorTitleId { get; set; }
+    public string? EmulatorParentPath { get; set; }
+    public string? EmulatorRomPath { get; set; }
     public DetectedGame? DetectedGame         { get; set; }
     public InstalledModRecord? InstalledRecord { get; set; }
 
