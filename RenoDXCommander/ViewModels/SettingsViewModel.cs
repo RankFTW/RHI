@@ -32,6 +32,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _osGpuType = "NVIDIA";
     [ObservableProperty] private bool _osDlssInputs = true;
     [ObservableProperty] private bool _osFirstTimeWarningDismissed;
+    [ObservableProperty] private bool _ueExtendedWarningDismissed;
     [ObservableProperty] private bool _perGameScreenshotFolders;
     [ObservableProperty] private bool _addonWarningDismissed;
     [ObservableProperty] private List<string> _enabledGlobalAddons = new();
@@ -169,6 +170,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("OsFirstTimeWarningDismissed", out var osftwVal))
             OsFirstTimeWarningDismissed = osftwVal == "true";
 
+        if (s.TryGetValue("UeExtendedWarningDismissed", out var uewdVal))
+            UeExtendedWarningDismissed = uewdVal == "true";
+
         if (s.TryGetValue("PerGameScreenshotFolders", out var pgsfVal))
             PerGameScreenshotFolders = pgsfVal == "true";
 
@@ -217,6 +221,7 @@ public partial class SettingsViewModel : ObservableObject
         s["OsGpuType"] = OsGpuType;
         s["OsDlssInputs"] = OsDlssInputs ? "true" : "false";
         s["OsFirstTimeWarningDismissed"] = OsFirstTimeWarningDismissed ? "true" : "false";
+        s["UeExtendedWarningDismissed"] = UeExtendedWarningDismissed ? "true" : "false";
         s["PerGameScreenshotFolders"] = PerGameScreenshotFolders ? "true" : "false";
         s["AddonWarningDismissed"] = AddonWarningDismissed ? "true" : "false";
         s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);

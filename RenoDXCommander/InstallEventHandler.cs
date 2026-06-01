@@ -403,17 +403,17 @@ public class InstallEventHandler
         // Show inline message or warning dialog
         if (card.UseUeExtended)
         {
-            _window.DetailRsMessage.Text = "⚡ UE-Extended enabled — check Discord to confirm this game is compatible.";
-            _window.DetailRsMessage.Foreground = Brush(ResourceKeys.AccentPurpleBrush);
-            _window.DetailRsMessage.Visibility = Visibility.Visible;
             // Show compatibility warning dialog
             _ = _window.ShowUeExtendedWarningAsync(card);
+            // Force a full panel rebuild to show UE-Extended state
+            _window.PopulateDetailPanel(card);
+            _window.BuildOverridesPanel(card);
         }
         else
         {
-            _window.DetailRsMessage.Text = "UE-Extended disabled.";
-            _window.DetailRsMessage.Foreground = Brush(ResourceKeys.TextTertiaryBrush);
-            _window.DetailRsMessage.Visibility = Visibility.Visible;
+            // Force a full panel rebuild to restore the correct mod info (name, author, badges)
+            _window.PopulateDetailPanel(card);
+            _window.BuildOverridesPanel(card);
         }
     }
 

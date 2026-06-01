@@ -164,16 +164,13 @@ public partial class MainViewModel
         SaveNameMappings();
 
         // Store the original named mod URL before swapping (for restoring later)
-        string? originalModUrl = null;
-        if (card.Mod != null && !card.Mod.IsGenericUnreal && card.Mod.SnapshotUrl != UeExtendedUrl)
-            originalModUrl = card.Mod.SnapshotUrl;
+        string? originalModUrl = card.Mod?.SnapshotUrl;
 
         // Swap the SnapshotUrl on the card's Mod in-place
         if (nowExtended)
         {
-            // Store original URL for restoration
-            if (originalModUrl != null)
-                _ueExtendedOriginalUrls[card.GameName] = originalModUrl;
+            // Store original URL for restoration (may be null for Nexus-only games)
+            _ueExtendedOriginalUrls[card.GameName] = originalModUrl ?? "";
 
             if (card.Mod != null)
                 card.Mod.SnapshotUrl = UeExtendedUrl;
@@ -194,11 +191,11 @@ public partial class MainViewModel
             {
                 if (_ueExtendedOriginalUrls.TryGetValue(card.GameName, out var savedUrl))
                 {
-                    card.Mod.SnapshotUrl = savedUrl;
+                    card.Mod.SnapshotUrl = string.IsNullOrEmpty(savedUrl) ? null : savedUrl;
                     _ueExtendedOriginalUrls.Remove(card.GameName);
                 }
                 else
-                    card.Mod.SnapshotUrl = WikiService.GenericUnrealUrl;
+                    card.Mod.SnapshotUrl = null; // No saved URL — assume Nexus-only
             }
         }
 
@@ -256,14 +253,26 @@ public partial class MainViewModel
         }
 
         card.UseUeExtended = nowExtended;
-        card.IsGenericMod = nowExtended || (card.Mod?.IsGenericUnreal == true);
+        if (nowExtended)
+        {
+            card.IsGenericMod = true;
+            card.IsExternalOnly = false; // UE-Extended has a direct download URL
+        }
+        else
+        {
+            // Restore IsGenericMod — it's a named mod if the URL isn't the generic UE one
+            bool hasNamedMod = card.Mod?.SnapshotUrl != null
+                && card.Mod.SnapshotUrl != WikiService.GenericUnrealUrl
+                && card.Mod.SnapshotUrl != UeExtendedUrl;
+            bool isNexusOnly = card.Mod?.SnapshotUrl == null
+                && (card.NexusUrl != null || card.DiscordUrl != null);
+            card.IsGenericMod = !hasNamedMod && !isNexusOnly;
+            card.IsExternalOnly = isNexusOnly;
+        }
         card.NotifyAll();
 
-        // Auto-install if the previous addon was installed
-        if (wasInstalled)
-        {
-            _ = InstallModAsync(card);
-        }
+        // Auto-install if the previous addon was installed AND the new target has a direct download
+        // REMOVED: No auto-install on toggle. User must click Install manually.
     }
 
     [RelayCommand] public void SetFilter(string filter) => _filterViewModel.SetFilter(filter);

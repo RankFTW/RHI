@@ -743,13 +743,16 @@ public partial class DialogService
     {
         try
         {
+            // Check if user has dismissed this warning permanently
+            if (_window.ViewModel.Settings.UeExtendedWarningDismissed) return;
+
             while (_window.Content.XamlRoot == null)
                 await Task.Delay(100);
 
             var hasNotes = !string.IsNullOrWhiteSpace(card.Notes);
             var notesHint = hasNotes
-                ? "\n\nCheck the Notes section for any additional compatibility information for this game."
-                : "\n\nNo specific notes are available for this game — check the RDXC Discord for community reports.";
+                ? "\n\nCheck the Info button for any additional compatibility information for this game."
+                : "\n\nNo specific notes are available for this game — check the RenoDX Discord for community reports.";
 
             var dlg = new ContentDialog
             {
@@ -759,17 +762,25 @@ public partial class DialogService
                     TextWrapping = TextWrapping.Wrap,
                     FontSize     = 13,
                     Text         = "Not all Unreal Engine games are compatible with UE-Extended.\n\n" +
-                                   "UE-Extended uses a different injection method that works better " +
-                                   "with some games but may cause crashes or issues with others." +
+                                   "UE-Extended uses a generic injection method that works with most " +
+                                   "Unreal Engine games but may cause crashes or visual issues with others. " +
+                                   "If the game has a named RenoDX mod, that mod is specifically tailored " +
+                                   "for the game and may provide better results." +
                                    notesHint,
                 },
                 PrimaryButtonText   = "OK, I understand",
+                SecondaryButtonText = "Don't show again",
                 XamlRoot            = _window.Content.XamlRoot,
                 Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
                 RequestedTheme      = ElementTheme.Dark,
             };
 
-            await DialogService.ShowSafeAsync(dlg);
+            var result = await DialogService.ShowSafeAsync(dlg);
+            if (result == ContentDialogResult.Secondary)
+            {
+                _window.ViewModel.Settings.UeExtendedWarningDismissed = true;
+                _window.ViewModel.SaveSettingsPublic();
+            }
         }
         catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowUeExtendedWarningAsync] Failed to show UE warning for '{card.GameName}' — {ex.Message}"); }
     }
