@@ -821,51 +821,6 @@
       { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
     ]
   },
-
-  "emulatorGames": {
-    "Ryubing": {
-      "0100152000022000": {
-        "name": "Mario Kart 8 Deluxe",
-        "snapshotUrl": "https://www.nexusmods.com/mariokart8deluxe/mods/57",
-        "author": "Souperman9"
-      },
-      "010028600ebda000": {
-        "name": "Metroid Dread",
-        "snapshotUrl": "https://gamebanana.com/mods/680225",
-        "author": "Souperman9"
-      },
-      "01003bc0000a0000": {
-        "name": "Splatoon 2",
-        "snapshotUrl": "https://gamebanana.com/mods/680587",
-        "author": "Souperman9"
-      },
-      "0100c2500fc20000": {
-        "name": "Splatoon 3",
-        "snapshotUrl": "https://gamebanana.com/mods/681111",
-        "author": "Souperman9"
-      },
-      "01007ef00011e000": {
-        "name": "The Legend of Zelda: Breath of the Wild",
-        "snapshotUrl": "https://www.nexusmods.com/legendofzeldabreathofthewild/mods/100",
-        "author": "Souperman9"
-      },
-      "0100f2c0115b6000": {
-        "name": "The Legend of Zelda: Tears of the Kingdom",
-        "snapshotUrl": "https://www.nexusmods.com/legendofzeldatearsofthekingdom/mods/175",
-        "author": "Souperman9"
-      },
-      "0100e95004038000": {
-        "name": "Xenoblade Chronicles X: Definitive Edition",
-        "snapshotUrl": "https://www.nexusmods.com/xenobladechroniclesx/mods/12",
-        "author": "Souperman9"
-      },
-      "0100453019aa8000": {
-        "name": "Xenoblade Chronicles X: Definitive Edition",
-        "snapshotUrl": "https://www.nexusmods.com/xenobladechroniclesx/mods/12",
-        "author": "Souperman9"
-      }
-    }
-  },
   "installWarnings": {
     "FINAL FANTASY VII REMAKE INTERGRADE": {
       "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
