@@ -51,22 +51,16 @@ public class DlssPresetService
     public static readonly (string Name, uint Value)[] RenderScaleOptions =
     [
         ("Off", 0),
-        ("100% — DLAA", 100),
-        ("99% — DLAA [If 100% Breaks]", 99),
-        ("88% — DLAA Lite", 88),
-        ("83% — Ultra Quality+", 83),
-        ("77% — Ultra Quality", 77),
-        ("72% — High Quality", 72),
-        ("67% — Quality", 67),
-        ("62% — Balanced Quality", 62),
-        ("58% — Balanced", 58),
-        ("54% — Balanced Performance", 54),
-        ("50% — Performance", 50),
-        ("49% — 007 Fix", 49),
-        ("45% — Extra Performance", 45),
-        ("41% — High Performance", 41),
-        ("37% — Extreme Performance", 37),
-        ("33% — Ultra Performance", 33),
+        ("100% DLAA", 100),
+        ("99% DLAA Alt", 99),
+        ("88% DLAA Lite", 88),
+        ("77% Ultra Quality", 77),
+        ("75% Quality+", 75),
+        ("67% Quality", 67),
+        ("58% Balanced", 58),
+        ("50% Performance", 50),
+        ("45% Performance-", 45),
+        ("33% Ultra Perf", 33),
         ("Custom", 0xFFFFFFFF), // Sentinel — actual value comes from TextBox
     ];
 

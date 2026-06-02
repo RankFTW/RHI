@@ -77,6 +77,7 @@
     "Marvel's Midnight Suns",
     "Mortal Kombat 1",
     "Nobody Wants to Die",
+    "REANIMAL",
     "Returnal",
     "Still Wakes the Deep",
     "Until Dawn™"
@@ -175,7 +176,6 @@
     "MIO: Memories in Orbit",
     "Northern Journey",
     "Outer Wilds",
-    "REANIMAL",
     "Resident Evil",
     "Spark the Electric Jester 3",
     "Stardew Valley",
@@ -457,17 +457,17 @@
 
   "gameNotes": {
     "CODE VEIN II": {
-      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nIn the RenoDX UI under Advanced Settings, set Upgrade Path to Off.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
+      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
       "notesUrl": "https://github.com/RankFTW/rdxc-manifest/releases/download/Engine.ini/Engine.ini",
       "notesUrlLabel": "Engine.ini"
     },
     "Crisol: Theater of Idols": {
-      "notes": "ℹ️ Game supports UE-Extended using Native HDR.\n\nIn the RenoDX UI under Advanced Settings, set Upgrade Path to Off.",
+      "notes": "ℹ️ Game supports UE-Extended using Native HDR.\n\nHDR must be enabled in the game's display settings.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
     "Directive 8020": {
-      "notes": "ℹ️ Game supports UE-Extended using Native HDR.\n\nIn the RenoDX UI under Advanced Settings, set Upgrade Path to Off.",
+      "notes": "ℹ️ Game supports UE-Extended using Native HDR.\n\nHDR must be enabled in the game's display settings.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
@@ -492,12 +492,12 @@
       "notesUrlLabel": null
     },
     "Dragon's Dogma 2": {
-      "notes": "⚠️ You must download REFramework in order to use ReShade and RenoDX in this title.\n",
-      "notesUrl": "https://github.com/praydog/REFramework-nightly/releases",
-      "notesUrlLabel": "Download the latest version of REFramework here."
+      "notes": "⚠️ RE Framework is required for ReShade and RenoDX in this title.\n\nInstall it from the RE Framework row above.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     },
     "Echoes of the End: Enhanced Edition": {
-      "notes": "ℹ️ Game supports UE-Extended using Native HDR\n\nIn the RenoDX UI under Advanced Settings, set Upgrade Path to Off.",
+      "notes": "ℹ️ Game supports UE-Extended using Native HDR.\n\nHDR must be enabled in the game's display settings.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
@@ -547,7 +547,7 @@
       "notesUrlLabel": null
     },
     "High On Life 2": {
-      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nIn the RenoDX UI under Advanced Settings, set Upgrade Path to Off.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
+      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
       "notesUrl": "https://github.com/RankFTW/rdxc-manifest/releases/download/Engine.ini/Engine.ini",
       "notesUrlLabel": "Engine.ini"
     },
@@ -557,12 +557,12 @@
       "notesUrlLabel": "Max Payne 3 RenoDX Nexus Mod"
     },
     "Monster Hunter Wilds": {
-      "notes": "⚠️ You must download REFramework in order to use ReShade and RenoDX in this title.\n",
-      "notesUrl": "https://github.com/praydog/REFramework-nightly/releases",
-      "notesUrlLabel": "Download the latest version of REFramework here."
+      "notes": "⚠️ RE Framework is required for ReShade and RenoDX in this title.\n\nInstall it from the RE Framework row above.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     },
     "Nobody Wants to Die": {
-      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nIn the RenoDX UI under Advanced Settings, set Upgrade Path to Off.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
+      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
       "notesUrl": "https://github.com/RankFTW/rdxc-manifest/releases/download/Engine.ini/Engine.ini",
       "notesUrlLabel": "Engine.ini"
     },
@@ -577,14 +577,14 @@
       "notesUrlLabel": "Native HDR added"
     },
     "Resident Evil Requiem": {
-      "notes": "⚠️ You must download REFramework in order to use ReShade and RenoDX in this title.\n",
-      "notesUrl": "https://github.com/praydog/REFramework-nightly/releases",
-      "notesUrlLabel": "Download the latest version of REFramework here."
+      "notes": "⚠️ RE Framework is required for ReShade and RenoDX in this title.\n\nInstall it from the RE Framework row above.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     },
     "Street Fighter™ 6": {
-      "notes": "⚠️ You must download REFramework in order to use ReShade and RenoDX in this title.\n",
-      "notesUrl": "https://github.com/praydog/REFramework-nightly/releases",
-      "notesUrlLabel": "Download the latest version of REFramework here."
+      "notes": "⚠️ RE Framework is required for ReShade and RenoDX in this title.\n\nInstall it from the RE Framework row above.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     },
     "Terraria": {
       "notes": "⚠️ Terraria requires admin privileges to install ReShade. RHI creates a symlink in the GAC directory, which needs elevated permissions. If the install fails, try running RHI as administrator.",
@@ -592,7 +592,7 @@
       "notesUrlLabel": null
     },
     "Titan Quest II": {
-      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nThe only way to enable native HDR is by using the Ultra Plus mod which is linked below\n\nIn the RenoDX UI under Advanced Settings, set Upgrade Path to Off.\n\nGame screen will go black while in inventory while using UE-Extended in this title\n\nDownload Ultra Plus mod here, Ultra Plus Mod Manager recommended:",
+      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nThe only way to enable native HDR is by using the Ultra Plus mod which is linked below.\n\nGame screen will go black while in inventory while using UE-Extended in this title.\n\nDownload Ultra Plus mod here, Ultra Plus Mod Manager recommended:",
       "notesUrl": "https://www.nexusmods.com/titanquest2/mods/11",
       "notesUrlLabel": "UltraPlus Mod"
     },
@@ -602,9 +602,74 @@
       "notesUrlLabel": null
     },
     "Until Dawn™": {
-      "notes": "ℹ️ This game supports UE-Extended using native HDR.\n\nHDR must be enabled in the game's display settings.\nIn the RenoDX UI under Advanced Settings, set Upgrade Path to Off.",
+      "notes": "ℹ️ Game supports UE-Extended using native HDR.\n\nHDR must be enabled in the game's display settings.",
       "notesUrl": null,
       "notesUrlLabel": null
+    },
+    "1348 Ex Voto": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/1348exvoto/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "Conan Exiles": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/conanexiles/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "EVERSPACE 2": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/everspace2/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "Ghostrunner 2": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/ghostrunner2/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "INDUSTRIA 2": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/industria2/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "Luna Abyss": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/lunaabyss/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "Metal Gear Solid Δ: Snake Eater": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/metalgearsoliddelta/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "Quarantine Zone: The Last Check": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/quarantinezone/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "RoboCop: Rogue City": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/robocop/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "S.T.A.L.K.E.R. 2: Heart of Chornobyl": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/stalker2/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "Samson": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/samson/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "Star Wars Jedi: Fallen Order": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/fallenorder/",
+      "notesUrlLabel": "Ultra+"
+    },
+    "Subnautica 2": {
+      "notes": "ℹ️ Native HDR can be enabled using Ultra+.",
+      "notesUrl": "https://theultraplace.com/games/subnautica2/",
+      "notesUrlLabel": "Ultra+"
     }
   },
 
