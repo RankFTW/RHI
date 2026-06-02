@@ -74,6 +74,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.InstallProgress = p.pct;
                 });
                 var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName).ConfigureAwait(false);
+
+                // Apply [renodx] Native HDR settings for UE-Extended games
+                if (card.UseUeExtended)
+                    AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+
                 dispatcherQueue?.TryEnqueue(() =>
                 {
                     card.InstalledRecord        = record;

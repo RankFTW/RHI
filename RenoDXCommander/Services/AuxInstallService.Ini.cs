@@ -274,6 +274,78 @@ public partial class AuxInstallService
         File.Copy(DcIniPath, Path.Combine(deployPath, "DisplayCommander.ini"), overwrite: true);
     }
 
+    // ── Native HDR / UE-Extended [renodx] section ───────────────────────────────
+
+    /// <summary>
+    /// Ensures the [renodx] section exists in the game's reshade.ini with all Native HDR
+    /// settings disabled. This is required for games flagged as nativeHdrGames or ueExtendedGames
+    /// when UE-Extended is installed, so the user doesn't need to configure these manually.
+    /// If the [renodx] section already exists with the correct keys, no changes are made.
+    /// Other sections in the file are preserved untouched.
+    /// </summary>
+    public static void ApplyRenoDxNativeHdrSettings(string gameDir)
+    {
+        var iniFilePath = Path.Combine(gameDir, "reshade.ini");
+        if (!File.Exists(iniFilePath)) return;
+
+        try
+        {
+            var ini = ParseIni(File.ReadAllLines(iniFilePath));
+            const string section = "renodx";
+
+            var requiredKeys = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["DumpLUTShaders"] = "0",
+                ["ForceBorderless"] = "1",
+                ["FxUpgradeRender"] = "1",
+                ["PreventFullscreen"] = "1",
+                ["SettingsMode"] = "2",
+                ["Set_Path"] = "0",
+                ["Upgrade_B10G10R10A2_UNORM"] = "0",
+                ["Upgrade_B8G8R8A8_TYPELESS"] = "0",
+                ["Upgrade_B8G8R8A8_UNORM"] = "0",
+                ["Upgrade_B8G8R8A8_UNORM_SRGB"] = "0",
+                ["Upgrade_CopyDestinations"] = "0",
+                ["Upgrade_R10G10B10A2_TYPELESS"] = "0",
+                ["Upgrade_R10G10B10A2_UNORM"] = "0",
+                ["Upgrade_R11G11B10_FLOAT"] = "0",
+                ["Upgrade_R16G16B16A16_TYPELESS"] = "0",
+                ["Upgrade_R8G8B8A8_SNORM"] = "0",
+                ["Upgrade_R8G8B8A8_TYPELESS"] = "0",
+                ["Upgrade_R8G8B8A8_UNORM"] = "0",
+                ["Upgrade_R8G8B8A8_UNORM_SRGB"] = "0",
+                ["Upgrade_SwapChainCompatibility"] = "0",
+                ["Upgrade_UseSCRGB"] = "0",
+            };
+
+            if (!ini.TryGetValue(section, out var existingKeys))
+            {
+                ini[section] = new OrderedDict(requiredKeys);
+            }
+            else
+            {
+                // Only add keys that are missing — never overwrite user-modified values
+                bool changed = false;
+                foreach (var (key, value) in requiredKeys)
+                {
+                    if (!existingKeys.ContainsKey(key))
+                    {
+                        existingKeys[key] = value;
+                        changed = true;
+                    }
+                }
+                if (!changed) return; // All keys already present — no write needed
+            }
+
+            WriteIni(iniFilePath, ini);
+            CrashReporter.Log($"[AuxInstallService.ApplyRenoDxNativeHdrSettings] Applied [renodx] section to '{iniFilePath}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.ApplyRenoDxNativeHdrSettings] Failed for '{gameDir}' — {ex.Message}");
+        }
+    }
+
     // ── Screenshot path application ───────────────────────────────────────────────
 
     /// <summary>

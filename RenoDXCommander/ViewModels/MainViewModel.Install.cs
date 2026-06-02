@@ -679,6 +679,10 @@ public partial class MainViewModel
             });
             var record = await _installer.InstallAsync(card.Mod, card.InstallPath, progress, card.GameName);
 
+            // Apply [renodx] Native HDR settings for UE-Extended games
+            if (card.UseUeExtended)
+                AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+
             // Update only this card's observable properties in-place.
             // The card is already in DisplayedGames — WinUI bindings update the
             // card visually the moment each property changes. No collection
@@ -1608,6 +1612,7 @@ public partial class MainViewModel
                 overlayHotkey: _settingsViewModel.OverlayHotkey,
                 screenshotHotkey: _settingsViewModel.ScreenshotHotkey,
                 channel: card.UseNormalReShade ? null : ResolveReShadeChannel(card.GameName));
+
             DispatcherQueue?.TryEnqueue(() =>
             {
                 card.RsRecord           = record;

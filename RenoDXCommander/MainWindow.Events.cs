@@ -73,6 +73,7 @@ public sealed partial class MainWindow
             }
             else
                 AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
+
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
             bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
             card.RsActionMessage = presetDeployed
@@ -95,6 +96,7 @@ public sealed partial class MainWindow
             var overlayHotkey = ViewModel.Settings.OverlayHotkey;
             var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
             AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
+
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
             bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
             card.LumaActionMessage = presetDeployed
@@ -397,6 +399,7 @@ public sealed partial class MainWindow
             }
             else
                 AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
+
             card.RsActionMessage = "✅ reshade.ini merged into game folder.";
         }
         catch (Exception ex)

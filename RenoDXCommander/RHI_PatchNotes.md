@@ -4,6 +4,7 @@
 
 - **DLSS Render Scale Override** — Set a custom DLSS render resolution scale per-game for both SR and Ray Reconstruction. Choose from named presets (DLAA, Ultra Quality, Quality, Performance, etc.) or enter any custom percentage from 33-100%. Found below the preset dropdown in the DLSS/Streamline section. Overrides the game's built-in DLSS quality mode selection.
 - **UE-Extended on All Unreal Games** — The UE-Extended toggle now appears on ALL Unreal Engine games, including those with a named RenoDX mod. Toggle ON to switch from the game-specific mod to UE-Extended; toggle OFF to switch back. If the mod was installed, the swap happens automatically. Useful when UE-Extended provides better results than the named mod.
+- **UE-Extended auto-configured for native HDR** — When installing UE-Extended, reshade.ini is now automatically configured to upgrade the game's native HDR (enabled via in-game options, Engine.ini edits, or Ultra+ mods) instead of the SDR path. Users who want to upgrade SDR instead will need to set "Upgrade Path" to On in the RenoDX Advanced Settings.
 
 ### Bug Fixes
 
@@ -20,6 +21,8 @@
 - Anno 117 - Pax Romana — install path override to `Bin\Win64`, 64-bit override, DX12 API override. Fixes DLSS/Streamline not being detected (was scanning the wrong folder).
 - Mass Effect™ Legendary Edition — added EA App / Game Pass variant (without ™) to splitGames so the split works regardless of store.
 - All UE-Extended game notes updated: replaced manual ReShade.ini Set_Path editing instructions with "In the RenoDX UI under Advanced Settings, set Upgrade Path to Off."
+- Black Myth: Wukong — added to native HDR games list.
+- LEGO® Batman™: Legacy of the Dark Knight — added to native HDR games list.
 
 ---
 
