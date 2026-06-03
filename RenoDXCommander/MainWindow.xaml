@@ -425,6 +425,27 @@
                                                 ToolTipService.ToolTip="Toggle favourite">
                                             <TextBlock x:Name="DetailFavIcon" x:FieldModifier="internal" FontSize="11" Text="Favourite"/>
                                         </Button>
+                                        <Button x:Name="DetailFolderBtn" x:FieldModifier="internal"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                Click="OpenFolder_Click"
+                                                ToolTipService.ToolTip="Open game folder in Explorer">
+                                            <TextBlock Text="Folder" TextDecorations="Underline"/>
+                                        </Button>
+                                        <Button x:Name="DetailAppDataBtn" x:FieldModifier="internal"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                Click="OpenAppData_Click"
+                                                Visibility="Collapsed"
+                                                ToolTipService.ToolTip="Open game config folder in Explorer">
+                                            <TextBlock Text="Config" TextDecorations="Underline"/>
+                                        </Button>
                                     </StackPanel>
                                 </Grid>
 
@@ -494,26 +515,6 @@
                                         <TextBlock x:Name="DetailWikiText" x:FieldModifier="internal" FontSize="11"/>
                                     </Border>
                                 </controls:WrapPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top" Margin="16,0,0,0">
-
-                                        <Button x:Name="DetailFolderBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11" Content="Browse"
-                                                Click="OpenFolder_Click"
-                                                ToolTipService.ToolTip="Open game folder in Explorer"/>
-                                        <Button x:Name="DetailAppDataBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11" Content="AppData"
-                                                Click="OpenAppData_Click"
-                                                Visibility="Collapsed"
-                                                ToolTipService.ToolTip="Open game AppData config folder in Explorer"/>
-                                    </StackPanel>
                                 </Grid>
                             </StackPanel>
                         </Border>

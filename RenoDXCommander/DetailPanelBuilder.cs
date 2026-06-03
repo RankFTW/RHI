@@ -35,6 +35,8 @@ public partial class DetailPanelBuilder
         cursorProp?.SetValue(_window.DetailPcgwBtn, handCursor);
         cursorProp?.SetValue(_window.DetailUwFixBtn, handCursor);
         cursorProp?.SetValue(_window.DetailUltraPlusBtn, handCursor);
+        cursorProp?.SetValue(_window.DetailFolderBtn, handCursor);
+        cursorProp?.SetValue(_window.DetailAppDataBtn, handCursor);
     }
 
     /// <summary>Gets the currently displayed detail card (if any).</summary>

@@ -3,7 +3,7 @@
 ## New Features
 
 - **Auto Engine.ini HDR deployment** — When installing UE-Extended, Engine.ini HDR settings are now automatically deployed to the game's AppData config folder. The project name is auto-detected from the install path (folder above `Binaries\`). File is set read-only to prevent the engine from overwriting. No manual Engine.ini editing required anymore.
-- **AppData button** — New "AppData" button in the detail panel header (next to Browse) for Unreal Engine games. Opens the game's `%LocalAppData%` config folder in Explorer. Only visible when the folder exists.
+- **AppData button** — New "Config" button in the detail panel header (alongside Hide, Favourite, Folder) for Unreal Engine games. Opens the game's config folder in Explorer. Only visible when the folder exists.
 - **Luma + RenoDX coexistence** — Games in the manifest `lumaRenodxCompat` list can now have both Luma and RenoDX installed simultaneously. The RenoDX row stays visible in Luma mode, and toggling Luma ON no longer uninstalls RenoDX. First game: Persona 5 Royal.
 - **Render scale presets trimmed** — Simplified from 16 options to 10 with shorter names that fit the dropdown width. Added 45% Performance- to fill the gap between 50% and 33%.
 
@@ -12,6 +12,7 @@
 - Fixed RenoDX Info button not showing wiki status badge (✅ Working, 🚧 In Progress) for games that have a wiki entry but no notes text. Affected many games with Nexus links.
 - Fixed RenoDX delete/uninstall button missing for `lumaRenodxCompat` games in Luma mode.
 - Fixed Engine.ini deployment destroying duplicate keys (e.g. 40+ `Paths=` entries in `[Core.System]`). Switched from ParseIni/WriteIni rewrite to append-based approach that preserves all existing content.
+- Fixed manually added games (drag-drop or Add Game) not detecting existing Display Commander, OptiScaler, DXVK, or DLSS/Streamline installations until Refresh. These are now scanned in the background immediately after adding.
 
 ## Manifest Updates
 

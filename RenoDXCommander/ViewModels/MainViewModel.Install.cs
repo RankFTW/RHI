@@ -658,6 +658,122 @@ public partial class MainViewModel
         _filterViewModel.SetAllCards(_allCards);
         _filterViewModel.ApplyFilter();
         _filterViewModel.UpdateCounts();
+
+        // Background scan for components not detected synchronously (DC, OptiScaler, DXVK, DLSS/Streamline)
+        _ = Task.Run(() => ScanManualGameComponentsAsync(card));
+    }
+
+    /// <summary>
+    /// Runs background detection for Display Commander, OptiScaler, DXVK, and DLSS/Streamline
+    /// on a manually added game, then updates the card on the UI thread.
+    /// </summary>
+    private async Task ScanManualGameComponentsAsync(GameCardViewModel card)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath))
+                return;
+
+            var installPath = card.InstallPath;
+            var gameName = card.GameName;
+            var is32Bit = card.Is32Bit;
+            var auxRecords = _auxInstaller.LoadAll();
+
+            // ── Display Commander ─────────────────────────────────────────────────
+            GameStatus dcStatus = GameStatus.NotInstalled;
+            string? dcFile = null;
+            string? dcVersion = null;
+
+            var dcFileName = is32Bit ? "DisplayCommander.addon32" : "DisplayCommander.addon64";
+            var addonDeployPath = ModInstallService.GetAddonDeployPath(installPath);
+            if (File.Exists(Path.Combine(addonDeployPath, dcFileName))
+                || File.Exists(Path.Combine(installPath, dcFileName)))
+            {
+                dcStatus = GameStatus.Installed;
+                dcFile = dcFileName;
+                dcVersion = AuxInstallService.ReadInstalledVersion(installPath, dcFileName)
+                         ?? AuxInstallService.ReadInstalledVersion(addonDeployPath, dcFileName);
+            }
+            else
+            {
+                var dcRec = auxRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                    r.AddonType == "DisplayCommander");
+                if (dcRec != null && File.Exists(Path.Combine(dcRec.InstallPath, dcRec.InstalledAs)))
+                {
+                    dcStatus = GameStatus.Installed;
+                    dcFile = dcRec.InstalledAs;
+                    dcVersion = AuxInstallService.ReadInstalledVersion(dcRec.InstallPath, dcRec.InstalledAs);
+                }
+            }
+
+            // ── OptiScaler ────────────────────────────────────────────────────────
+            GameStatus osStatus = GameStatus.NotInstalled;
+            string? osFile = null;
+            string? osVersion = null;
+
+            var osRec = auxRecords.FirstOrDefault(r =>
+                r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                r.AddonType == OptiScalerService.AddonType);
+            if (osRec != null && File.Exists(Path.Combine(osRec.InstallPath, osRec.InstalledAs)))
+            {
+                osStatus = GameStatus.Installed;
+                osFile = osRec.InstalledAs;
+                osVersion = AuxInstallService.ReadInstalledVersion(osRec.InstallPath, osRec.InstalledAs);
+            }
+
+            // ── DXVK ──────────────────────────────────────────────────────────────
+            string? dxvkVersion = null;
+            var dxvkRecords = _dxvkService.LoadAllRecords();
+            var dxvkRec = dxvkRecords.FirstOrDefault(r =>
+                r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+            if (dxvkRec != null)
+            {
+                dxvkVersion = dxvkRec.DxvkVersion;
+            }
+            else
+            {
+                dxvkVersion = _dxvkService.DetectInstallation(installPath, card.GraphicsApi);
+            }
+
+            // ── DLSS/Streamline ───────────────────────────────────────────────────
+            var dlssDetection = _dlssStreamlineService.Detect(installPath);
+
+            // ── Update card on UI thread ──────────────────────────────────────────
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                if (dcStatus == GameStatus.Installed)
+                {
+                    card.DcStatus = dcStatus;
+                    card.DcInstalledFile = dcFile;
+                    card.DcInstalledVersion = dcVersion;
+                }
+
+                if (osStatus == GameStatus.Installed)
+                {
+                    card.OsStatus = osStatus;
+                    card.OsInstalledFile = osFile;
+                    card.OsInstalledVersion = osVersion;
+                }
+
+                if (dxvkVersion != null)
+                {
+                    card.DxvkStatus = GameStatus.Installed;
+                    card.DxvkInstalledVersion = dxvkVersion;
+                    if (dxvkRec != null)
+                        card.DxvkRecord = dxvkRec;
+                }
+
+                if (dlssDetection.HasAny)
+                    card.ApplyDlssDetection(dlssDetection);
+
+                card.NotifyAll();
+            });
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainViewModel.ScanManualGameComponentsAsync] Failed for '{card.GameName}' — {ex.Message}");
+        }
     }
 
     [RelayCommand]
