@@ -2,7 +2,7 @@
 
 ## New Features
 
-- **Auto Engine.ini HDR deployment** — When installing UE-Extended, Engine.ini HDR settings are now automatically deployed to the game's AppData config folder. The project name is auto-detected from the install path (folder above `Binaries\`). File is set read-only to prevent the engine from overwriting. No manual Engine.ini editing required anymore.
+- **Auto Engine.ini HDR deployment** — When installing UE-Extended, Engine.ini HDR settings are now automatically deployed to the game's AppData config folder. The project name is auto-detected from the install path (folder above `Binaries\`). File is set read-only to prevent the engine from overwriting. No manual Engine.ini editing required anymore. Note: if the game also has an in-game HDR setting, make sure that's enabled too.
 - **AppData button** — New "Config" button in the detail panel header (alongside Hide, Favourite, Folder) for Unreal Engine games. Opens the game's config folder in Explorer. Only visible when the folder exists.
 - **Luma + RenoDX coexistence** — Games in the manifest `lumaRenodxCompat` list can now have both Luma and RenoDX installed simultaneously. The RenoDX row stays visible in Luma mode, and toggling Luma ON no longer uninstalls RenoDX. First game: Persona 5 Royal.
 - **Render scale presets trimmed** — Simplified from 16 options to 10 with shorter names that fit the dropdown width. Added 45% Performance- to fill the gap between 50% and 33%.
