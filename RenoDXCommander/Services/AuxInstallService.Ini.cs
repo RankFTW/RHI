@@ -351,6 +351,8 @@ public partial class AuxInstallService
     /// <summary>
     /// Resolves the UE project name from the game install path by finding the folder
     /// immediately above "Binaries" in the path hierarchy.
+    /// If that folder doesn't have a matching AppData directory, tries the grandparent
+    /// (handles cases like SMT5V where path is {Game}\Project\Binaries\Win64 and AppData uses {Game}).
     /// Returns null if Binaries is not found in the path.
     /// </summary>
     internal static string? ResolveUeProjectName(string installPath)
@@ -361,26 +363,78 @@ public partial class AuxInstallService
         for (int i = parts.Length - 1; i > 0; i--)
         {
             if (parts[i].Equals("Binaries", StringComparison.OrdinalIgnoreCase))
-                return parts[i - 1];
+            {
+                var candidate = parts[i - 1];
+
+                // Verify the candidate has a matching AppData folder
+                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var candidateDir = Path.Combine(localAppData, candidate);
+
+                if (Directory.Exists(candidateDir))
+                    return candidate;
+
+                // Fallback: try grandparent (folder above the candidate)
+                if (i - 2 >= 0)
+                {
+                    var grandparent = parts[i - 2];
+                    var grandparentDir = Path.Combine(localAppData, grandparent);
+                    if (Directory.Exists(grandparentDir))
+                        return grandparent;
+                }
+
+                // No AppData folder found — return the candidate anyway (will create on deploy)
+                return candidate;
+            }
         }
         return null;
     }
 
     /// <summary>
     /// Resolves the Engine.ini config directory for a UE game.
-    /// Checks %LocalAppData%\{ProjectName}\Saved\Config\ for existing platform folders.
+    /// Checks %LocalAppData%\{ProjectName}\Saved\Config\ first, then
+    /// %USERPROFILE%\Documents\My Games\{GameName}\Saved\Config\ as fallback.
     /// Priority: WinGDK > Windows > WindowsNoEditor. Creates Windows if none exist.
     /// Returns null if project name cannot be resolved.
     /// </summary>
-    internal static string? ResolveEngineIniDir(string installPath, string? projectNameOverride = null)
+    internal static string? ResolveEngineIniDir(string installPath, string? projectNameOverride = null, string? gameName = null)
     {
         var projectName = projectNameOverride ?? ResolveUeProjectName(installPath);
         if (string.IsNullOrEmpty(projectName)) return null;
 
+        // Try %LocalAppData%\{ProjectName}\Saved\Config\ first
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var configBase = Path.Combine(localAppData, projectName, "Saved", "Config");
 
-        // Check existing platform folders in priority order
+        var result = FindPlatformConfigDir(configBase);
+        if (result != null) return result;
+
+        // Fallback: Documents\My Games\{GameName}\Saved\Config\
+        if (!string.IsNullOrEmpty(gameName))
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var myGamesConfig = Path.Combine(docs, "My Games", gameName, "Saved", "Config");
+            result = FindPlatformConfigDir(myGamesConfig);
+            if (result != null) return result;
+
+            // Also try with stripped ® ™ symbols
+            var stripped = gameName.Replace("®", "").Replace("™", "").Replace("©", "").Trim();
+            if (stripped != gameName)
+            {
+                myGamesConfig = Path.Combine(docs, "My Games", stripped, "Saved", "Config");
+                result = FindPlatformConfigDir(myGamesConfig);
+                if (result != null) return result;
+            }
+        }
+
+        // Nothing found — create in LocalAppData as default
+        var windows = Path.Combine(configBase, "Windows");
+        Directory.CreateDirectory(windows);
+        return windows;
+    }
+
+    /// <summary>Checks a config base path for existing platform subfolders (WinGDK > Windows > WindowsNoEditor).</summary>
+    private static string? FindPlatformConfigDir(string configBase)
+    {
         var winGdk = Path.Combine(configBase, "WinGDK");
         if (Directory.Exists(winGdk)) return winGdk;
 
@@ -390,9 +444,7 @@ public partial class AuxInstallService
         var windowsNoEditor = Path.Combine(configBase, "WindowsNoEditor");
         if (Directory.Exists(windowsNoEditor)) return windowsNoEditor;
 
-        // None exist — create Windows as default (UE5)
-        Directory.CreateDirectory(windows);
-        return windows;
+        return null;
     }
 
     /// <summary>
@@ -401,11 +453,11 @@ public partial class AuxInstallService
     /// Only appends missing sections/keys — never modifies existing content.
     /// Sets the file to read-only after writing to prevent the engine from overwriting.
     /// </summary>
-    public static void ApplyEngineIniHdrSettings(string installPath, string? projectNameOverride = null)
+    public static void ApplyEngineIniHdrSettings(string installPath, string? projectNameOverride = null, string? gameName = null)
     {
         try
         {
-            var configDir = ResolveEngineIniDir(installPath, projectNameOverride);
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName);
             if (configDir == null)
             {
                 CrashReporter.Log($"[AuxInstallService.ApplyEngineIniHdrSettings] Could not resolve config dir for '{installPath}'");

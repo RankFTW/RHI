@@ -81,7 +81,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
                 // Deploy Engine.ini HDR settings for all UE-Extended games
                 if (card.UseUeExtended)
-                    AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride);
+                    AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
 
                 dispatcherQueue?.TryEnqueue(() =>
                 {

@@ -27,6 +27,12 @@
 - All UE-Extended game notes updated: removed 'set Upgrade Path to Off' instructions — RHI now configures this automatically on install.
 - Black Myth: Wukong — added to native HDR games list.
 - LEGO® Batman™: Legacy of the Dark Knight — added to native HDR games list.
+- Of Ash and Steel — added to native HDR games list.
+- REANIMAL — moved from wikiUnlinks to native HDR games list.
+- Persona 5 Royal — added to lumaRenodxCompat, removed from wikiUnlinks.
+- LEGO Batman — added engineIniPathOverride (project name: "Dinner").
+- Added Ultra+ HDR toggle notes for 13 games (1348 Ex Voto, Conan Exiles, EVERSPACE 2, Ghostrunner 2, INDUSTRIA 2, Luna Abyss, Metal Gear Solid Delta, Quarantine Zone, RoboCop Rogue City, S.T.A.L.K.E.R. 2, Samson, Star Wars Jedi Fallen Order, Subnautica 2).
+- Updated RE Framework game notes — removed external download links (now bundled).
 
 ---
 

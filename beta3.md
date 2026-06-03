@@ -11,6 +11,7 @@
 
 - Fixed RenoDX Info button not showing wiki status badge (✅ Working, 🚧 In Progress) for games that have a wiki entry but no notes text. Affected many games with Nexus links.
 - Fixed RenoDX delete/uninstall button missing for `lumaRenodxCompat` games in Luma mode.
+- Fixed Engine.ini deployment destroying duplicate keys (e.g. 40+ `Paths=` entries in `[Core.System]`). Switched from ParseIni/WriteIni rewrite to append-based approach that preserves all existing content.
 
 ## Manifest Updates
 
@@ -22,5 +23,7 @@
 - Added "Native HDR can be enabled using Ultra+" notes for 13 games with Ultra+ HDR toggles.
 - Updated RE Framework game notes — removed external download links (now bundled).
 - Added Black Myth: Wukong and LEGO Batman to `nativeHdrGames`.
+- Added Of Ash and Steel to `nativeHdrGames`.
 - Added REANIMAL to `nativeHdrGames`, removed from `wikiUnlinks`.
 - Removed Persona 5 Royal from `wikiUnlinks`.
+- Added LEGO Batman `engineIniPathOverride` (project name: "Dinner").

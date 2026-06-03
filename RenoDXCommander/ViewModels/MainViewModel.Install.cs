@@ -687,7 +687,7 @@ public partial class MainViewModel
 
             // Deploy Engine.ini HDR settings for all UE-Extended games
             if (card.UseUeExtended)
-                AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride);
+                AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
 
             // Update only this card's observable properties in-place.
             // The card is already in DisplayedGames — WinUI bindings update the
