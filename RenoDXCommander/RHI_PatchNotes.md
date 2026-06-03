@@ -34,6 +34,9 @@
 - LEGO Batman — added engineIniPathOverride (project name: "Dinner").
 - Added Ultra+ HDR toggle notes for 13 games (1348 Ex Voto, Conan Exiles, EVERSPACE 2, Ghostrunner 2, INDUSTRIA 2, Luna Abyss, Metal Gear Solid Delta, Quarantine Zone, RoboCop Rogue City, S.T.A.L.K.E.R. 2, Samson, Star Wars Jedi Fallen Order, Subnautica 2).
 - Updated RE Framework game notes — removed external download links (now bundled).
+- Neverness To Everness — added dllNameOverride (ReShade as d3d12.dll), game note, DQ7R UW fix link.
+- Directive 8020, SMT5V — added engineIniPathOverrides.
+- Added to native HDR games: Assetto Corsa Rally, Causal Loop, Cthulhu: The Cosmic Abyss, Directive 8020, Echoes of the End, Kaku: Ancient Seal, Luna Abyss, Neverness To Everness, Samson, Star Trek: Resurgence, Subnautica 2, The Sinking City Remastered, Vampire: The Masquerade - Bloodlines 2.
 
 ---
 

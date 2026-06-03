@@ -28,3 +28,8 @@
 - Added REANIMAL to `nativeHdrGames`, removed from `wikiUnlinks`.
 - Removed Persona 5 Royal from `wikiUnlinks`.
 - Added LEGO Batman `engineIniPathOverride` (project name: "Dinner").
+- Added Directive 8020 and SMT5V `engineIniPathOverrides`.
+- Neverness To Everness — dllNameOverride (ReShade as d3d12.dll), game note added.
+- DQ7R — UW fix link added.
+- Added to native HDR games: Assetto Corsa Rally, Causal Loop, Cthulhu: The Cosmic Abyss, Directive 8020, Echoes of the End, Kaku: Ancient Seal, Luna Abyss, Neverness To Everness, Samson, Star Trek: Resurgence, Subnautica 2, The Sinking City Remastered, Vampire: The Masquerade - Bloodlines 2.
+- Moved Directive 8020 and Echoes of the End from `ueExtendedGames` to `nativeHdrGames`.
