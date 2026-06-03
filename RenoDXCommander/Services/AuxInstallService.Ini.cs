@@ -397,7 +397,8 @@ public partial class AuxInstallService
 
     /// <summary>
     /// Deploys HDR settings to the game's Engine.ini in %LocalAppData%.
-    /// Merges settings without overwriting existing user values.
+    /// Uses a line-based approach to preserve duplicate keys (common in UE Engine.ini).
+    /// Only appends missing sections/keys — never modifies existing content.
     /// Sets the file to read-only after writing to prevent the engine from overwriting.
     /// </summary>
     public static void ApplyEngineIniHdrSettings(string installPath, string? projectNameOverride = null)
@@ -421,57 +422,79 @@ public partial class AuxInstallService
                     File.SetAttributes(engineIniPath, attrs & ~FileAttributes.ReadOnly);
             }
 
-            var ini = File.Exists(engineIniPath)
-                ? ParseIni(File.ReadAllLines(engineIniPath))
-                : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+            // Read existing content as raw lines (preserves duplicate keys)
+            var existingLines = File.Exists(engineIniPath) ? File.ReadAllLines(engineIniPath) : Array.Empty<string>();
+            var existingText = string.Join("\n", existingLines);
 
-            // HDR settings to merge
-            var hdrSettings = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+            // HDR settings to ensure exist — grouped by section
+            var requiredEntries = new (string Section, string Key, string Value)[]
             {
-                ["SystemSettings"] = new(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["r.AllowHDR"] = "1",
-                    ["r.HDR.EnableHDROutput"] = "1",
-                    ["r.HDR.Display.OutputDevice"] = "3",
-                    ["r.HDR.Display.ColorGamut"] = "2",
-                    ["r.HDR.UI.CompositeMode"] = "1",
-                },
-                ["/Script/Engine.RendererSettings"] = new(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["r.LUT.UpdateEveryFrame"] = "1",
-                },
+                ("SystemSettings", "r.AllowHDR", "1"),
+                ("SystemSettings", "r.HDR.EnableHDROutput", "1"),
+                ("SystemSettings", "r.HDR.Display.OutputDevice", "3"),
+                ("SystemSettings", "r.HDR.Display.ColorGamut", "2"),
+                ("SystemSettings", "r.HDR.UI.CompositeMode", "1"),
+                ("/Script/Engine.RendererSettings", "r.LUT.UpdateEveryFrame", "1"),
             };
 
-            bool changed = false;
-            foreach (var (section, keys) in hdrSettings)
+            // Check which keys are already present (case-insensitive key search)
+            var linesToAppend = new List<string>();
+            var sectionsNeeded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var (section, key, value) in requiredEntries)
             {
-                if (!ini.TryGetValue(section, out var existingKeys))
-                {
-                    ini[section] = new OrderedDict(keys);
-                    changed = true;
-                }
-                else
-                {
-                    foreach (var (key, value) in keys)
-                    {
-                        if (!existingKeys.ContainsKey(key))
-                        {
-                            existingKeys[key] = value;
-                            changed = true;
-                        }
-                    }
-                }
+                // Check if key=value already exists anywhere in the file
+                bool found = existingLines.Any(l =>
+                    l.TrimStart().StartsWith(key + "=", StringComparison.OrdinalIgnoreCase));
+
+                if (!found)
+                    sectionsNeeded.Add(section);
             }
 
-            if (!changed)
+            if (sectionsNeeded.Count == 0)
             {
-                // All keys already present — just ensure read-only is set
+                // All keys already present — just ensure read-only
                 if (File.Exists(engineIniPath))
                     File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
                 return;
             }
 
-            WriteIni(engineIniPath, ini);
+            // Build lines to append per section
+            var appendBuilder = new System.Text.StringBuilder();
+            var groupedBySection = requiredEntries
+                .Where(e => !existingLines.Any(l => l.TrimStart().StartsWith(e.Key + "=", StringComparison.OrdinalIgnoreCase)))
+                .GroupBy(e => e.Section, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var group in groupedBySection)
+            {
+                var sectionHeader = $"[{group.Key}]";
+                // Check if section already exists in file
+                bool sectionExists = existingLines.Any(l =>
+                    l.Trim().Equals(sectionHeader, StringComparison.OrdinalIgnoreCase));
+
+                if (!sectionExists)
+                {
+                    appendBuilder.AppendLine();
+                    appendBuilder.AppendLine(sectionHeader);
+                }
+                else
+                {
+                    // Find the section and insert keys after it — but since we're appending,
+                    // UE INI allows keys under a repeated section header at the end
+                    appendBuilder.AppendLine();
+                    appendBuilder.AppendLine(sectionHeader);
+                }
+
+                foreach (var entry in group)
+                    appendBuilder.AppendLine($"{entry.Key}={entry.Value}");
+            }
+
+            // Append to file (preserves all existing content)
+            var appendText = appendBuilder.ToString();
+            if (!existingText.EndsWith("\n") && !existingText.EndsWith("\r\n") && existingText.Length > 0)
+                appendText = "\n" + appendText;
+
+            File.AppendAllText(engineIniPath, appendText);
 
             // Set read-only to prevent engine from overwriting on launch
             File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
