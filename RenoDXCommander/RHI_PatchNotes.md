@@ -1,10 +1,12 @@
-## v1.9.9-beta2
+## v1.9.9-beta3
 
 ### New Features
 
 - **DLSS Render Scale Override** — Set a custom DLSS render resolution scale per-game for both SR and Ray Reconstruction. Choose from named presets (DLAA, Ultra Quality, Quality, Performance, etc.) or enter any custom percentage from 33-100%. Found below the preset dropdown in the DLSS/Streamline section. Overrides the game's built-in DLSS quality mode selection. Not compatible with OptiScaler.
 - **UE-Extended on All Unreal Games** — The UE-Extended toggle now appears on ALL Unreal Engine games, including those with a named RenoDX mod. Toggle ON to switch from the game-specific mod to UE-Extended; toggle OFF to switch back. If the mod was installed, the swap happens automatically. Useful when UE-Extended provides better results than the named mod.
 - **UE-Extended auto-configured for native HDR** — When installing UE-Extended, reshade.ini is now automatically configured to upgrade the game's native HDR (enabled via in-game options, Engine.ini edits, or Ultra+ mods) instead of the SDR path. Users who want to upgrade SDR instead will need to set "Upgrade Path" to On in the RenoDX Advanced Settings.
+- **Auto Engine.ini HDR deployment** — When installing UE-Extended, Engine.ini HDR settings are now automatically deployed to the game's AppData config folder. The project name is auto-detected from the install path. File is set read-only to prevent the engine from overwriting. Manifest `engineIniPathOverrides` available as fallback for games where auto-detection is incorrect.
+- **Luma + RenoDX coexistence** — Games in the manifest `lumaRenodxCompat` list can now have both Luma and RenoDX installed simultaneously. The RenoDX row stays visible in Luma mode for these games, and toggling Luma ON no longer uninstalls RenoDX. Useful for Luma mods that only add DLSS/upscaling but not HDR.
 
 ### Bug Fixes
 
@@ -14,6 +16,7 @@
 - Fixed DLSS presets and render scale not applying in-game for profiles matched by title/fuzzy match. The game's exe is now automatically registered in the NVIDIA profile's Applications list if it isn't already.
 - Install warning dialogs now show the game name in the title so it's clear which game triggered the warning.
 - Fixed Luma install warning dialog popping up during Update All. The warning is now correctly skipped during batch updates.
+- Fixed RenoDX Info button not showing wiki status badge for games that have a wiki entry but no notes text. The status (✅ Working, 🚧 In Progress, etc.) now displays correctly for all wiki-listed games.
 
 ### Manifest Updates
 

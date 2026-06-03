@@ -134,6 +134,12 @@ public partial class GameCardViewModel : ObservableObject
     /// <summary>Set by MainViewModel for games in the manifest ueExtendedGames list (but NOT native HDR).</summary>
     public bool IsManifestUeExtended { get; set; }
 
+    /// <summary>Set by MainViewModel for games in the manifest lumaRenodxCompat list — allows RenoDX alongside Luma.</summary>
+    public bool LumaRenodxCompatible { get; set; }
+
+    /// <summary>Set by MainViewModel for games in the manifest engineIniPathOverrides — overrides auto-detected project name for Engine.ini deployment.</summary>
+    public string? EngineIniProjectOverride { get; set; }
+
     /// <summary>
     /// Per-property fade tokens — ensures only the latest message for each property is cleared.
     /// </summary>

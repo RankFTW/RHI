@@ -253,6 +253,9 @@ public class AddonInfoResolver
         // Also check the NameUrl (wiki page link)
         if (!string.IsNullOrEmpty(card.NameUrl))
             return true;
+        // Also check if we have a valid wiki status (not the default "—")
+        if (!string.IsNullOrEmpty(card.WikiStatus) && card.WikiStatus != "—")
+            return true;
         return false;
     }
 
@@ -261,6 +264,10 @@ public class AddonInfoResolver
         if (!HasRenoDXWikiContent(card)) return null;
 
         var content = card.Mod?.Notes ?? "";
+        // If no notes text, use the fallback description so the dialog isn't empty
+        if (string.IsNullOrWhiteSpace(content))
+            content = FallbackRenoDX;
+
         return new AddonInfoResult
         {
             Content = content,

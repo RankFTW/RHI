@@ -1206,6 +1206,8 @@ public partial class MainViewModel
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 IsNativeHdrGame        = isNativeHdr,
                 IsManifestUeExtended   = useUeExt && !isNativeHdr,
+                LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
+                EngineIniProjectOverride = _manifest?.EngineIniPathOverrides?.TryGetValue(game.Name, out var eiOverride) == true ? eiOverride : null,
                 RsRecord               = rsRec,
                 RsStatus               = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
                 RsInstalledFile        = rsRec?.InstalledAs,
@@ -2712,6 +2714,8 @@ public partial class MainViewModel
                 existing.LumaNotesUrlLabel      = fresh.LumaNotesUrlLabel;
                 existing.IsNativeHdrGame        = fresh.IsNativeHdrGame;
                 existing.IsManifestUeExtended   = fresh.IsManifestUeExtended;
+                existing.LumaRenodxCompatible   = fresh.LumaRenodxCompatible;
+                existing.EngineIniProjectOverride = fresh.EngineIniProjectOverride;
                 existing.DllOverrideEnabled      = fresh.DllOverrideEnabled;
                 existing.ExcludeFromUpdateAllReShade = fresh.ExcludeFromUpdateAllReShade;
                 existing.ExcludeFromUpdateAllRenoDx  = fresh.ExcludeFromUpdateAllRenoDx;

@@ -16,6 +16,12 @@ public class RemoteManifest
     [JsonPropertyName("nativeHdrGames")]
     public List<string>? NativeHdrGames { get; set; }
 
+    [JsonPropertyName("lumaRenodxCompat")]
+    public List<string>? LumaRenodxCompat { get; set; }
+
+    [JsonPropertyName("engineIniPathOverrides")]
+    public Dictionary<string, string>? EngineIniPathOverrides { get; set; }
+
     [JsonPropertyName("blacklist")]
     public List<string>? Blacklist { get; set; }
 

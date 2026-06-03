@@ -583,6 +583,8 @@ public partial class MainViewModel
             UseUeExtended          = useUeExt,
             IsNativeHdrGame        = isNativeHdr,
             IsManifestUeExtended   = useUeExt && !isNativeHdr,
+            LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
+            EngineIniProjectOverride = _manifest?.EngineIniPathOverrides?.TryGetValue(game.Name, out var eiOverride2) == true ? eiOverride2 : null,
             ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
             ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
             ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
@@ -682,6 +684,10 @@ public partial class MainViewModel
             // Apply [renodx] Native HDR settings for UE-Extended games
             if (card.UseUeExtended)
                 AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+
+            // Deploy Engine.ini HDR settings for all UE-Extended games
+            if (card.UseUeExtended)
+                AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride);
 
             // Update only this card's observable properties in-place.
             // The card is already in DisplayedGames — WinUI bindings update the
@@ -2030,8 +2036,8 @@ public partial class MainViewModel
             _lumaEnabledGames.Add(card.GameName);
             _lumaDisabledGames.Remove(card.GameName);
 
-            // Remove RenoDX mod if installed
-            if (card.InstalledRecord != null)
+            // Remove RenoDX mod if installed (skip for lumaRenodxCompat games)
+            if (card.InstalledRecord != null && !card.LumaRenodxCompatible)
             {
                 try
                 {

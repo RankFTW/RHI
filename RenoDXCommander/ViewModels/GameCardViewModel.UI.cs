@@ -216,15 +216,15 @@ public partial class GameCardViewModel
     public Visibility MessageVisibility          => string.IsNullOrEmpty(ActionMessage) ? Visibility.Collapsed : Visibility.Visible;
     public Visibility ExternalBtnVisibility      => IsExternalOnly && !EffectiveLumaMode && CombinedRowVisibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
     public Visibility ExtraLinkVisibility        => HasExtraLinks ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility InstalledFileLabelVisible  => !string.IsNullOrEmpty(InstalledAddonFileName) && !EffectiveLumaMode ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility InstalledFileLabelVisible  => !string.IsNullOrEmpty(InstalledAddonFileName) && (!EffectiveLumaMode || LumaRenodxCompatible) ? Visibility.Visible : Visibility.Collapsed;
     public Visibility InstallOnlyBtnVisibility   => (!IsExternalOnly && Mod?.SnapshotUrl != null
                                                       && Status == GameStatus.Available
                                                       && Is32BitUeWipVisibility == Visibility.Collapsed
-                                                      && !EffectiveLumaMode)
+                                                      && (!EffectiveLumaMode || LumaRenodxCompatible))
                                                       ? Visibility.Visible : Visibility.Collapsed;
     public Visibility ReinstallRowVisibility     => (!IsExternalOnly && Mod?.SnapshotUrl != null
                                                       && (Status == GameStatus.Installed || Status == GameStatus.UpdateAvailable)
-                                                      && !EffectiveLumaMode)
+                                                      && (!EffectiveLumaMode || LumaRenodxCompatible))
                                                       ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DualBitInstallVisibility   => Visibility.Collapsed;
     public Visibility UpdateBadgeVisibility      => ((Status == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllRenoDx)

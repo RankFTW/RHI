@@ -375,7 +375,7 @@ public partial class DetailPanelBuilder
         }
 
         // RenoDX row (also used for external-only / Discord link)
-        bool showRdx = !isLumaMode;
+        bool showRdx = !isLumaMode || card.LumaRenodxCompatible;
         _window.DetailRdxRow.Visibility = showRdx ? Visibility.Visible : Visibility.Collapsed;
 
         // DXVK row — visible only when DxvkEnabled is true
@@ -505,7 +505,7 @@ public partial class DetailPanelBuilder
         else _window.DetailLumaRow.Visibility = Visibility.Collapsed;
 
         // UE-Extended flyout (inline in RenoDX row, column 3)
-        if (card.UeExtendedToggleVisibility == Visibility.Visible && !isLumaMode)
+        if (card.UeExtendedToggleVisibility == Visibility.Visible && (!isLumaMode || card.LumaRenodxCompatible))
         {
             _window.DetailUeExtendedBtn.Opacity = 1;
             _window.DetailUeExtendedBtn.IsHitTestVisible = true;

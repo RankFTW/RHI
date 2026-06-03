@@ -55,8 +55,8 @@ public partial class GameCardViewModel
 
     public bool IsLumaInstalled => LumaStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
 
-    // In Luma mode: hide RenoDX row (also hidden when IsExternalOnly)
-    public Visibility RenoDxRowVisibility => (EffectiveLumaMode || IsExternalOnly) ? Visibility.Collapsed : Visibility.Visible;
+    // In Luma mode: hide RenoDX row (also hidden when IsExternalOnly) — unless game is in lumaRenodxCompat
+    public Visibility RenoDxRowVisibility => ((EffectiveLumaMode && !LumaRenodxCompatible) || IsExternalOnly) ? Visibility.Collapsed : Visibility.Visible;
 
     // ── Targeted notification: LumaStatus changed ─────────────────────────────────
     private void NotifyLumaStatusDependents()

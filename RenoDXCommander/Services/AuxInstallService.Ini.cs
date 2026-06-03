@@ -346,6 +346,144 @@ public partial class AuxInstallService
         }
     }
 
+    // ── Engine.ini HDR auto-deployment ────────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves the UE project name from the game install path by finding the folder
+    /// immediately above "Binaries" in the path hierarchy.
+    /// Returns null if Binaries is not found in the path.
+    /// </summary>
+    internal static string? ResolveUeProjectName(string installPath)
+    {
+        var normalized = installPath.Replace('/', '\\').TrimEnd('\\');
+        var parts = normalized.Split('\\');
+
+        for (int i = parts.Length - 1; i > 0; i--)
+        {
+            if (parts[i].Equals("Binaries", StringComparison.OrdinalIgnoreCase))
+                return parts[i - 1];
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Resolves the Engine.ini config directory for a UE game.
+    /// Checks %LocalAppData%\{ProjectName}\Saved\Config\ for existing platform folders.
+    /// Priority: WinGDK > Windows > WindowsNoEditor. Creates Windows if none exist.
+    /// Returns null if project name cannot be resolved.
+    /// </summary>
+    internal static string? ResolveEngineIniDir(string installPath, string? projectNameOverride = null)
+    {
+        var projectName = projectNameOverride ?? ResolveUeProjectName(installPath);
+        if (string.IsNullOrEmpty(projectName)) return null;
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var configBase = Path.Combine(localAppData, projectName, "Saved", "Config");
+
+        // Check existing platform folders in priority order
+        var winGdk = Path.Combine(configBase, "WinGDK");
+        if (Directory.Exists(winGdk)) return winGdk;
+
+        var windows = Path.Combine(configBase, "Windows");
+        if (Directory.Exists(windows)) return windows;
+
+        var windowsNoEditor = Path.Combine(configBase, "WindowsNoEditor");
+        if (Directory.Exists(windowsNoEditor)) return windowsNoEditor;
+
+        // None exist — create Windows as default (UE5)
+        Directory.CreateDirectory(windows);
+        return windows;
+    }
+
+    /// <summary>
+    /// Deploys HDR settings to the game's Engine.ini in %LocalAppData%.
+    /// Merges settings without overwriting existing user values.
+    /// Sets the file to read-only after writing to prevent the engine from overwriting.
+    /// </summary>
+    public static void ApplyEngineIniHdrSettings(string installPath, string? projectNameOverride = null)
+    {
+        try
+        {
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride);
+            if (configDir == null)
+            {
+                CrashReporter.Log($"[AuxInstallService.ApplyEngineIniHdrSettings] Could not resolve config dir for '{installPath}'");
+                return;
+            }
+
+            var engineIniPath = Path.Combine(configDir, "Engine.ini");
+
+            // Remove read-only if present so we can write
+            if (File.Exists(engineIniPath))
+            {
+                var attrs = File.GetAttributes(engineIniPath);
+                if (attrs.HasFlag(FileAttributes.ReadOnly))
+                    File.SetAttributes(engineIniPath, attrs & ~FileAttributes.ReadOnly);
+            }
+
+            var ini = File.Exists(engineIniPath)
+                ? ParseIni(File.ReadAllLines(engineIniPath))
+                : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+            // HDR settings to merge
+            var hdrSettings = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["SystemSettings"] = new(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["r.AllowHDR"] = "1",
+                    ["r.HDR.EnableHDROutput"] = "1",
+                    ["r.HDR.Display.OutputDevice"] = "3",
+                    ["r.HDR.Display.ColorGamut"] = "2",
+                    ["r.HDR.UI.CompositeMode"] = "1",
+                },
+                ["/Script/Engine.RendererSettings"] = new(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["r.LUT.UpdateEveryFrame"] = "1",
+                },
+            };
+
+            bool changed = false;
+            foreach (var (section, keys) in hdrSettings)
+            {
+                if (!ini.TryGetValue(section, out var existingKeys))
+                {
+                    ini[section] = new OrderedDict(keys);
+                    changed = true;
+                }
+                else
+                {
+                    foreach (var (key, value) in keys)
+                    {
+                        if (!existingKeys.ContainsKey(key))
+                        {
+                            existingKeys[key] = value;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+
+            if (!changed)
+            {
+                // All keys already present — just ensure read-only is set
+                if (File.Exists(engineIniPath))
+                    File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
+                return;
+            }
+
+            WriteIni(engineIniPath, ini);
+
+            // Set read-only to prevent engine from overwriting on launch
+            File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
+
+            CrashReporter.Log($"[AuxInstallService.ApplyEngineIniHdrSettings] Applied HDR settings to '{engineIniPath}' (read-only)");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.ApplyEngineIniHdrSettings] Failed for '{installPath}' — {ex.Message}");
+        }
+    }
+
     // ── Screenshot path application ───────────────────────────────────────────────
 
     /// <summary>

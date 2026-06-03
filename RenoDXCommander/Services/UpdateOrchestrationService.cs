@@ -79,6 +79,10 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 if (card.UseUeExtended)
                     AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
+                // Deploy Engine.ini HDR settings for all UE-Extended games
+                if (card.UseUeExtended)
+                    AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride);
+
                 dispatcherQueue?.TryEnqueue(() =>
                 {
                     card.InstalledRecord        = record;
