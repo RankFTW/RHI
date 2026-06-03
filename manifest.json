@@ -444,6 +444,7 @@
   "dllNameOverrides": {
     "Aliens: Dark Descent": { "reshade": "dxgi.dll", "dc": "" },
     "Borderlands: The Pre-Sequel": { "reshade": "d3d9.dll", "dc": "" },
+    "Neverness To Everness": { "reshade": "d3d12.dll", "dc": "" },
     "Ori and the Blind Forest: Definitive Edition": { "reshade": "dxgi.dll", "dc": "" },
     "Terraria": { "reshade": "d3d9.dll", "dc": "" },
     "The Elder Scrolls III: Morrowind": { "reshade": "opengl32.dll", "dc": "" }
