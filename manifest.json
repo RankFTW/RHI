@@ -101,7 +101,9 @@
     "Persona 5 Royal"
   ],
 
-  "engineIniPathOverrides": {},
+  "engineIniPathOverrides": {
+    "LEGO® Batman™: Legacy of the Dark Knight": "Dinner"
+  },
 
   "thirtyTwoBitGames": [
     "Assassin's Creed",

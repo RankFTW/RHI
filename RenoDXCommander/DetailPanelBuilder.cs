@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
+using System.IO;
 
 namespace RenoDXCommander;
 
@@ -183,6 +184,21 @@ public partial class DetailPanelBuilder
 
         // Folder management buttons
         _window.DetailFolderBtn.Tag = card;
+
+        // AppData button — visible only for UE games with a resolvable AppData config folder
+        _window.DetailAppDataBtn.Tag = card;
+        var ueProjectName = card.EngineIniProjectOverride
+            ?? AuxInstallService.ResolveUeProjectName(card.InstallPath ?? "");
+        if (!string.IsNullOrEmpty(ueProjectName))
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var appDataDir = Path.Combine(localAppData, ueProjectName);
+            _window.DetailAppDataBtn.Visibility = Directory.Exists(appDataDir) ? Visibility.Visible : Visibility.Collapsed;
+        }
+        else
+        {
+            _window.DetailAppDataBtn.Visibility = Visibility.Collapsed;
+        }
 
         // PCGW link button
         _window.DetailPcgwBtn.Tag = card;

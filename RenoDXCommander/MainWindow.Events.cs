@@ -1670,6 +1670,22 @@ public sealed partial class MainWindow
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(card.InstallPath) { UseShellExecute = true });
     }
 
+    private void OpenAppData_Click(object sender, RoutedEventArgs e)
+    {
+        var card = GetCardFromSender(sender);
+        if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
+
+        var projectName = card.EngineIniProjectOverride
+            ?? AuxInstallService.ResolveUeProjectName(card.InstallPath);
+        if (string.IsNullOrEmpty(projectName)) return;
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var appDataDir = System.IO.Path.Combine(localAppData, projectName);
+
+        if (System.IO.Directory.Exists(appDataDir))
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(appDataDir) { UseShellExecute = true });
+    }
+
     internal void RemoveManualGame_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender);

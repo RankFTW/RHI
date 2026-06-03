@@ -504,6 +504,15 @@
                                                 FontSize="11" Content="Browse"
                                                 Click="OpenFolder_Click"
                                                 ToolTipService.ToolTip="Open game folder in Explorer"/>
+                                        <Button x:Name="DetailAppDataBtn" x:FieldModifier="internal"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11" Content="AppData"
+                                                Click="OpenAppData_Click"
+                                                Visibility="Collapsed"
+                                                ToolTipService.ToolTip="Open game AppData config folder in Explorer"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
