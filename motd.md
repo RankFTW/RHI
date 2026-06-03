@@ -1,2 +1,1 @@
-Welcome to RHI 1.9.8! This is probably the biggest update I've worked on in a while. I've tried to fix as many bugs as possible that I could find myself and was made aware of as well as cleaning up the UI somewhat and adding additional features. Nothing is perfect so if you find anything wrong just let me know. Hope you all enjoy it.
-
+RHI v1.9.9-beta3 is now available for testing. This build adds automatic reshade.ini and Engine.ini HDR configuration for UE-Extended games, Luma + RenoDX coexistence, a Config folder button, and several bug fixes. If you have time to try it out and report any issues, it would be a huge help. Grab it from the RHI channel on the Ultra+ or RenoDX Discord servers.
