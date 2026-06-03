@@ -561,6 +561,11 @@
       "notesUrl": "https://github.com/RankFTW/rdxc-manifest/releases/download/Engine.ini/Engine.ini",
       "notesUrlLabel": "Engine.ini"
     },
+    "Neverness to Everness": {
+      "notes": "ℹ️ RHI handles installation instructions automatically. Just click Install.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    },
     "Max Payne 3": {
       "notes": "⚠️ The RenoDX mod for Max Payne 3 requires a separate Nexus mod to function. Download and follow the instructions on the Nexus page.",
       "notesUrl": "https://www.nexusmods.com/maxpayne3/mods/218",
