@@ -1677,13 +1677,42 @@ public sealed partial class MainWindow
 
         var projectName = card.EngineIniProjectOverride
             ?? AuxInstallService.ResolveUeProjectName(card.InstallPath);
-        if (string.IsNullOrEmpty(projectName)) return;
 
+        // Try %LocalAppData%\{projectName}\
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var appDataDir = System.IO.Path.Combine(localAppData, projectName);
+        if (!string.IsNullOrEmpty(projectName))
+        {
+            var appDataDir = System.IO.Path.Combine(localAppData, projectName);
+            if (System.IO.Directory.Exists(appDataDir))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(appDataDir) { UseShellExecute = true });
+                return;
+            }
+        }
 
-        if (System.IO.Directory.Exists(appDataDir))
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(appDataDir) { UseShellExecute = true });
+        // Fallback: Documents\My Games\{gameName}\
+        if (!string.IsNullOrEmpty(card.GameName))
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var myGamesDir = System.IO.Path.Combine(docs, "My Games", card.GameName);
+            if (System.IO.Directory.Exists(myGamesDir))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(myGamesDir) { UseShellExecute = true });
+                return;
+            }
+
+            // Try stripped name
+            var stripped = card.GameName.Replace("®", "").Replace("™", "").Replace("©", "").Trim();
+            if (stripped != card.GameName)
+            {
+                myGamesDir = System.IO.Path.Combine(docs, "My Games", stripped);
+                if (System.IO.Directory.Exists(myGamesDir))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(myGamesDir) { UseShellExecute = true });
+                    return;
+                }
+            }
+        }
     }
 
     internal void RemoveManualGame_Click(object sender, RoutedEventArgs e)

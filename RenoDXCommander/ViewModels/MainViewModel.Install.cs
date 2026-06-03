@@ -242,6 +242,13 @@ public partial class MainViewModel
         // Check if mod was installed before we clear the record
         bool wasInstalled = card.InstalledRecord != null;
 
+        // Clean up UE-Extended auto-configured settings when toggling OFF
+        if (!nowExtended && wasInstalled && !string.IsNullOrEmpty(card.InstallPath))
+        {
+            AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
+            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+        }
+
         // Clear the install record — the old addon was deleted
         if (card.InstalledRecord != null)
         {
@@ -753,6 +760,14 @@ public partial class MainViewModel
         // Clear the addon file cache so the next Refresh doesn't think a file is still there.
         if (!string.IsNullOrEmpty(card.InstallPath))
             _addonFileCache[card.InstallPath.ToLowerInvariant()] = "";
+
+        // Clean up UE-Extended auto-configured settings when uninstalling
+        if (card.UseUeExtended && !string.IsNullOrEmpty(card.InstallPath))
+        {
+            AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
+            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+        }
+
         SaveLibrary();
         _filterViewModel.UpdateCounts();
     }

@@ -346,6 +346,117 @@ public partial class AuxInstallService
         }
     }
 
+    /// <summary>
+    /// Removes the [renodx] section from reshade.ini when UE-Extended is uninstalled.
+    /// </summary>
+    public static void RemoveRenoDxNativeHdrSettings(string gameDir)
+    {
+        var iniFilePath = Path.Combine(gameDir, "reshade.ini");
+        if (!File.Exists(iniFilePath)) return;
+
+        try
+        {
+            var ini = ParseIni(File.ReadAllLines(iniFilePath));
+            if (ini.Remove("renodx"))
+            {
+                WriteIni(iniFilePath, ini);
+                CrashReporter.Log($"[AuxInstallService.RemoveRenoDxNativeHdrSettings] Removed [renodx] section from '{iniFilePath}'");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.RemoveRenoDxNativeHdrSettings] Failed for '{gameDir}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes the HDR settings from Engine.ini that were deployed by ApplyEngineIniHdrSettings.
+    /// Removes read-only, filters out the specific keys, removes empty section headers,
+    /// and deletes the file if nothing meaningful remains.
+    /// </summary>
+    public static void RemoveEngineIniHdrSettings(string installPath, string? projectNameOverride = null, string? gameName = null)
+    {
+        try
+        {
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName);
+            if (configDir == null) return;
+
+            var engineIniPath = Path.Combine(configDir, "Engine.ini");
+            if (!File.Exists(engineIniPath)) return;
+
+            // Remove read-only so we can modify
+            var attrs = File.GetAttributes(engineIniPath);
+            if (attrs.HasFlag(FileAttributes.ReadOnly))
+                File.SetAttributes(engineIniPath, attrs & ~FileAttributes.ReadOnly);
+
+            var keysToRemove = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "r.AllowHDR",
+                "r.HDR.EnableHDROutput",
+                "r.HDR.Display.OutputDevice",
+                "r.HDR.Display.ColorGamut",
+                "r.HDR.UI.CompositeMode",
+                "r.LUT.UpdateEveryFrame",
+            };
+
+            var lines = File.ReadAllLines(engineIniPath).ToList();
+            var filtered = new List<string>();
+
+            foreach (var line in lines)
+            {
+                var trimmed = line.TrimStart();
+                // Check if this line is one of our HDR keys
+                var isHdrKey = keysToRemove.Any(k =>
+                    trimmed.StartsWith(k + "=", StringComparison.OrdinalIgnoreCase));
+                if (!isHdrKey)
+                    filtered.Add(line);
+            }
+
+            // Remove empty section headers (section header followed by nothing or another section header)
+            var cleaned = new List<string>();
+            for (int i = 0; i < filtered.Count; i++)
+            {
+                var line = filtered[i];
+                // Is this a section header?
+                if (line.TrimStart().StartsWith('[') && line.Contains(']'))
+                {
+                    // Check if next non-empty line is another section header or end of file
+                    bool hasContent = false;
+                    for (int j = i + 1; j < filtered.Count; j++)
+                    {
+                        if (string.IsNullOrWhiteSpace(filtered[j])) continue;
+                        if (filtered[j].TrimStart().StartsWith('[')) break;
+                        hasContent = true;
+                        break;
+                    }
+                    if (!hasContent) continue; // Skip empty section header
+                }
+                cleaned.Add(line);
+            }
+
+            // Trim trailing empty lines
+            while (cleaned.Count > 0 && string.IsNullOrWhiteSpace(cleaned[^1]))
+                cleaned.RemoveAt(cleaned.Count - 1);
+
+            if (cleaned.Count == 0 || cleaned.All(string.IsNullOrWhiteSpace))
+            {
+                // File is empty — delete it
+                File.Delete(engineIniPath);
+                CrashReporter.Log($"[AuxInstallService.RemoveEngineIniHdrSettings] Deleted empty Engine.ini at '{engineIniPath}'");
+            }
+            else
+            {
+                File.WriteAllLines(engineIniPath, cleaned);
+                // Don't set read-only — let the game manage its own config now
+                CrashReporter.Log($"[AuxInstallService.RemoveEngineIniHdrSettings] Removed HDR settings from '{engineIniPath}'");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.RemoveEngineIniHdrSettings] Failed for '{installPath}' — {ex.Message}");
+        }
+    }
+
     // ── Engine.ini HDR auto-deployment ────────────────────────────────────────────
 
     /// <summary>

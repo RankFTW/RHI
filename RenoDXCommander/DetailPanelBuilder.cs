@@ -185,20 +185,10 @@ public partial class DetailPanelBuilder
         // Folder management buttons
         _window.DetailFolderBtn.Tag = card;
 
-        // AppData button — visible only for UE games with a resolvable AppData config folder
+        // AppData button — visible only for UE games with a resolvable AppData/Documents config folder
         _window.DetailAppDataBtn.Tag = card;
-        var ueProjectName = card.EngineIniProjectOverride
-            ?? AuxInstallService.ResolveUeProjectName(card.InstallPath ?? "");
-        if (!string.IsNullOrEmpty(ueProjectName))
-        {
-            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var appDataDir = Path.Combine(localAppData, ueProjectName);
-            _window.DetailAppDataBtn.Visibility = Directory.Exists(appDataDir) ? Visibility.Visible : Visibility.Collapsed;
-        }
-        else
-        {
-            _window.DetailAppDataBtn.Visibility = Visibility.Collapsed;
-        }
+        var appDataPath = ResolveGameConfigRoot(card);
+        _window.DetailAppDataBtn.Visibility = appDataPath != null ? Visibility.Visible : Visibility.Collapsed;
 
         // PCGW link button
         _window.DetailPcgwBtn.Tag = card;
@@ -244,5 +234,43 @@ public partial class DetailPanelBuilder
 
         // Populate component rows
         UpdateDetailComponentRows(card);
+    }
+
+    /// <summary>
+    /// Resolves the top-level game config directory (for the AppData button).
+    /// Checks %LocalAppData%\{projectName}\ and Documents\My Games\{gameName}\.
+    /// Returns the path if found, null otherwise.
+    /// </summary>
+    private static string? ResolveGameConfigRoot(GameCardViewModel card)
+    {
+        var projectName = card.EngineIniProjectOverride
+            ?? AuxInstallService.ResolveUeProjectName(card.InstallPath ?? "");
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        // Check %LocalAppData%\{projectName}\
+        if (!string.IsNullOrEmpty(projectName))
+        {
+            var dir = Path.Combine(localAppData, projectName);
+            if (Directory.Exists(dir)) return dir;
+        }
+
+        // Check Documents\My Games\{gameName}\
+        if (!string.IsNullOrEmpty(card.GameName))
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var myGamesDir = Path.Combine(docs, "My Games", card.GameName);
+            if (Directory.Exists(myGamesDir)) return myGamesDir;
+
+            // Try stripped name (® ™ ©)
+            var stripped = card.GameName.Replace("®", "").Replace("™", "").Replace("©", "").Trim();
+            if (stripped != card.GameName)
+            {
+                myGamesDir = Path.Combine(docs, "My Games", stripped);
+                if (Directory.Exists(myGamesDir)) return myGamesDir;
+            }
+        }
+
+        return null;
     }
 }

@@ -103,6 +103,7 @@
   ],
 
   "engineIniPathOverrides": {
+    "Directive 8020": "Directive8020",
     "LEGO® Batman™: Legacy of the Dark Knight": "Dinner",
     "Shin Megami Tensei V: Vengeance": "SMT5V"
   },
