@@ -11,3 +11,4 @@
 - ReShade uninstall now also removes reshade.ini, ReShade2.ini, ReShadePreset.ini, and reshade.log from the game folder.
 - ReLimiter uninstall now also removes relimiter.ini, log files, and CSV files from the game folder.
 - Fixed INI merge button not applying [renodx] UE-Extended section when UE-Extended was already installed. Now injects the section on INI deploy if the mod is active.
+- Fixed managed addons (DLSS Fix, DevKit) never auto-updating due to the rolling "snapshot" release tag being used as the version token. Now uses Content-Length for update detection on rolling-tag releases.

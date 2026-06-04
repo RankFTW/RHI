@@ -656,15 +656,25 @@ public class AddonPackService : IAddonPackService
                 if (segments[i].Equals("download", StringComparison.OrdinalIgnoreCase) && i > 0 &&
                     segments[i - 1].Equals("releases", StringComparison.OrdinalIgnoreCase))
                 {
-                    return segments[i + 1]; // the tag name
+                    var tag = segments[i + 1];
+                    // Skip rolling tags that never change — fall through to HEAD check
+                    if (!tag.Equals("snapshot", StringComparison.OrdinalIgnoreCase)
+                        && !tag.Equals("latest", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return tag;
+                    }
+                    break; // Fall through to HEAD request
                 }
             }
 
-            // Fall back to HEAD request for ETag/Last-Modified
+            // Fall back to HEAD request for ETag/Last-Modified/Content-Length
             var req = new HttpRequestMessage(HttpMethod.Head, url);
             req.Headers.Add("User-Agent", "RHI");
             var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode) return "unknown";
+            // Prefer Content-Length (most reliable for binary files)
+            var contentLength = resp.Content.Headers.ContentLength;
+            if (contentLength.HasValue) return contentLength.Value.ToString();
             var etag = resp.Headers.ETag?.Tag;
             var modified = resp.Content.Headers.LastModified?.ToString("O");
             return etag ?? modified ?? "unknown";
