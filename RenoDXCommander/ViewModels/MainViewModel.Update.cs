@@ -617,6 +617,13 @@ public partial class MainViewModel
                 OnPropertyChanged(nameof(UpdateAllBtnForeground));
                 OnPropertyChanged(nameof(UpdateAllBtnBorder));
             });
+
+        // Update emulator cards (bundle re-download)
+        var emuCards = _allCards
+            .Where(c => c.IsEmulator && c.Status == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRenoDx)
+            .ToList();
+        foreach (var card in emuCards)
+            await InstallEmulatorAddonsAsync(card);
     }
 
     public async Task UpdateAllReShadeAsync()
@@ -1054,6 +1061,57 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Nexus update check failed — {ex.Message}");
+        }
+
+        // ── Emulator update check (check each bundled addon for size changes) ──
+        try
+        {
+            var emuCards = cards.Where(c => c.IsEmulator && c.Status == GameStatus.Installed && c.EmulatorAddonNames?.Count > 0).ToList();
+            foreach (var emuCard in emuCards)
+            {
+                var deployPath = ModInstallService.GetAddonDeployPath(emuCard.InstallPath);
+                bool anyUpdate = false;
+
+                foreach (var wikiName in emuCard.EmulatorAddonNames!)
+                {
+                    var mod = _allMods.FirstOrDefault(m => m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
+                    if (mod?.SnapshotUrl == null) continue;
+
+                    var fileName = Path.GetFileName(mod.SnapshotUrl);
+                    var localFile = Path.Combine(deployPath, fileName);
+                    if (!File.Exists(localFile)) { anyUpdate = true; break; } // Missing addon = needs install
+
+                    // Check remote size
+                    try
+                    {
+                        var headResp = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, mod.SnapshotUrl)).ConfigureAwait(false);
+                        if (headResp.IsSuccessStatusCode && headResp.Content.Headers.ContentLength.HasValue)
+                        {
+                            var localSize = new FileInfo(localFile).Length;
+                            if (headResp.Content.Headers.ContentLength.Value != localSize)
+                            {
+                                anyUpdate = true;
+                                break;
+                            }
+                        }
+                    }
+                    catch { /* Skip on error — don't flag as update */ }
+                }
+
+                if (anyUpdate)
+                {
+                    DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        emuCard.Status = GameStatus.UpdateAvailable;
+                        HasUpdatesAvailable = AnyUpdateAvailable;
+                        OnPropertyChanged(nameof(AnyUpdateAvailable));
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Emulator update check failed — {ex.Message}");
         }
 
         // Record successful check time

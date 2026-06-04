@@ -22,6 +22,9 @@ public class RemoteManifest
     [JsonPropertyName("engineIniPathOverrides")]
     public Dictionary<string, string>? EngineIniPathOverrides { get; set; }
 
+    [JsonPropertyName("emulatorGames")]
+    public Dictionary<string, EmulatorConfig>? EmulatorGames { get; set; }
+
     [JsonPropertyName("blacklist")]
     public List<string>? Blacklist { get; set; }
 
@@ -333,4 +336,14 @@ public class SplitGameEntry
 
     [JsonPropertyName("subPath")]
     public string SubPath { get; set; } = "";
+}
+
+/// <summary>
+/// Configuration for an emulator in the manifest (e.g. Ryubing).
+/// Contains the list of wiki game names whose addons should be bundled.
+/// </summary>
+public class EmulatorConfig
+{
+    [JsonPropertyName("addons")]
+    public List<string> Addons { get; set; } = new();
 }

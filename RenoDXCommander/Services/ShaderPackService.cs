@@ -102,6 +102,15 @@ public partial class ShaderPackService : IShaderPackService
             Category    : PackCategory.Recommended
         ),
         new(
+            Id          : "CrosireLegacy",
+            DisplayName : "crosire reshade-shaders (legacy)",
+            Kind        : SourceKind.DirectUrl,
+            Url         : "https://github.com/crosire/reshade-shaders/archive/refs/heads/legacy.zip",
+            IsMinimum   : false,
+            Description : "Legacy ReShade effects (older versions removed from master)",
+            Category    : PackCategory.Extra
+        ),
+        new(
             Id          : "PumboAutoHDR",
             DisplayName : "PumboAutoHDR",
             Kind        : SourceKind.GhRelease,
@@ -118,7 +127,7 @@ public partial class ShaderPackService : IShaderPackService
             Url         : "https://github.com/smolbbsoop/smolbbsoopshaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
             Description : "HDR utility shaders and effects",
-            Category    : PackCategory.Recommended
+            Category    : PackCategory.Extra
         ),
         new(
             Id          : "MaxG2DSimpleHDR",
@@ -127,7 +136,7 @@ public partial class ShaderPackService : IShaderPackService
             Url         : "https://github.com/MaxG2D/ReshadeSimpleHDRShaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
             Description : "Simple HDR bloom, lens flare, and tone mapping",
-            Category    : PackCategory.Recommended
+            Category    : PackCategory.Extra
         ),
         new(
             Id          : "ClshortfuseShaders",
@@ -145,7 +154,7 @@ public partial class ShaderPackService : IShaderPackService
             Url         : "https://github.com/CreepySasquatch/potatoFX/archive/refs/heads/main.zip",
             IsMinimum   : false,
             Description : "Lightweight post-processing effects for low-end hardware",
-            Category    : PackCategory.Recommended
+            Category    : PackCategory.Extra
         ),
         new(
             Id          : "Azen",
@@ -476,7 +485,8 @@ public partial class ShaderPackService : IShaderPackService
     /// Exposes pack metadata for the picker UI — returns every known pack's Id and DisplayName.
     /// </summary>
     public IReadOnlyList<(string Id, string DisplayName, PackCategory Category)> AvailablePacks { get; } =
-        Packs.Select(p => (p.Id, p.DisplayName, p.Category)).ToList().AsReadOnly();
+        Packs.OrderBy(p => p.Category).ThenBy(p => p.DisplayName, StringComparer.OrdinalIgnoreCase)
+             .Select(p => (p.Id, p.DisplayName, p.Category)).ToList().AsReadOnly();
 
     /// <summary>
     /// Returns the short description for a pack, or null if none is set.

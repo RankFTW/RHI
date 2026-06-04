@@ -16,6 +16,20 @@ public partial class DragDropHandler
         var exeDir  = Path.GetDirectoryName(exePath)!;
         var exeName = Path.GetFileNameWithoutExtension(exePath);
 
+        // ── Ryubing emulator detection ────────────────────────────────────────
+        if (Path.GetFileName(exePath).Equals("Ryujinx.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            var emuGame = new DetectedGame
+            {
+                Name = "Ryubing",
+                InstallPath = exeDir,
+                Source = "Manual",
+            };
+            ViewModel.AddManualGame(emuGame);
+            _crashReporter.Log($"[DragDropHandler.ProcessDroppedExe] Detected Ryubing emulator at '{exeDir}'");
+            return;
+        }
+
         // ── Determine the game root folder ────────────────────────────────────
         var gameRoot = InferGameRoot(exeDir);
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedExe] Inferred game root '{gameRoot}' from exe dir '{exeDir}'");

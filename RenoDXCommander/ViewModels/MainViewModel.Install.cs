@@ -421,8 +421,10 @@ public partial class MainViewModel
             }
         }
 
-        // Scan disk for any renodx-* addon file already installed
-        var addonOnDisk = ScanForInstalledAddon(scanPath, effectiveMod);
+        // Scan disk for any renodx-* addon file already installed (skip for emulator cards)
+        var addonOnDisk = game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : ScanForInstalledAddon(scanPath, effectiveMod);
         if (addonOnDisk != null && record == null)
         {
             record = new InstalledModRecord
@@ -611,6 +613,42 @@ public partial class MainViewModel
 
         card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
 
+        // ── Emulator setup ────────────────────────────────────────────────────
+        if (game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase))
+        {
+            card.IsEmulator = true;
+            card.VulkanRenderingPath = "Vulkan"; // Force Vulkan ReShade
+            if (_manifest?.EmulatorGames?.TryGetValue("Ryubing", out var emuConfig) == true)
+            {
+                card.EmulatorAddonNames = emuConfig.Addons;
+                // Set up a synthetic Mod so the RenoDX row shows an install button
+                card.Mod = new GameMod
+                {
+                    Name = "Ryubing (9 games)",
+                    Maintainer = "Souperman9",
+                    SnapshotUrl = "emulator-bundle", // Sentinel — triggers bundle install
+                    Status = "✅",
+                };
+
+                // Detect if addons are already installed
+                var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
+                int foundCount = 0;
+                foreach (var wikiName in emuConfig.Addons)
+                {
+                    var emuMod = _allMods.FirstOrDefault(m => m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
+                    if (emuMod?.SnapshotUrl == null) continue;
+                    var fileName = Path.GetFileName(emuMod.SnapshotUrl);
+                    if (File.Exists(Path.Combine(deployPath, fileName)) || File.Exists(Path.Combine(card.InstallPath, fileName)))
+                        foundCount++;
+                }
+                if (foundCount > 0)
+                {
+                    card.Status = GameStatus.Installed;
+                    card.InstalledAddonFileName = $"{foundCount} addons";
+                }
+            }
+        }
+
         // For Vulkan games, RS is installed when reshade.ini exists in the game folder.
         if (card.RequiresVulkanInstall)
         {
@@ -776,9 +814,157 @@ public partial class MainViewModel
         }
     }
 
+    /// <summary>
+    /// Installs all emulator addons (bundle download) for a Ryubing card.
+    /// Resolves snapshot URLs from the wiki-scraped mod list, downloads each addon,
+    /// and deploys to the emulator's install path.
+    /// </summary>
+    private async Task InstallEmulatorAddonsAsync(GameCardViewModel card)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath) || card.EmulatorAddonNames == null)
+            return;
+
+        card.IsInstalling = true;
+        card.ActionMessage = "Installing emulator addons...";
+        _crashReporter.Log($"[MainViewModel.InstallEmulatorAddonsAsync] Starting bundle install for {card.GameName}");
+
+        int installed = 0;
+        int failed = 0;
+        var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
+
+        try
+        {
+            foreach (var wikiName in card.EmulatorAddonNames)
+            {
+                // Resolve URL from wiki-scraped mod list
+                var mod = _allMods.FirstOrDefault(m =>
+                    m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
+                if (mod?.SnapshotUrl == null)
+                {
+                    _crashReporter.Log($"[InstallEmulatorAddonsAsync] Skipping '{wikiName}' — not found in wiki or no snapshot URL");
+                    failed++;
+                    continue;
+                }
+
+                var fileName = Path.GetFileName(mod.SnapshotUrl);
+                card.ActionMessage = $"Downloading {wikiName}... ({installed + 1}/{card.EmulatorAddonNames.Count})";
+
+                try
+                {
+                    var cachePath = Path.Combine(DownloadPaths.RenoDX, fileName);
+                    var destPath = Path.Combine(deployPath, fileName);
+
+                    // Download to cache
+                    using var response = await _http.GetAsync(mod.SnapshotUrl);
+                    response.EnsureSuccessStatusCode();
+
+                    var tempPath = cachePath + ".tmp";
+                    using (var netStream = await response.Content.ReadAsStreamAsync())
+                    using (var cacheFile = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        await netStream.CopyToAsync(cacheFile);
+                    }
+                    if (File.Exists(cachePath)) File.Delete(cachePath);
+                    File.Move(tempPath, cachePath);
+
+                    // Deploy to game folder
+                    File.Copy(cachePath, destPath, overwrite: true);
+                    installed++;
+                    _crashReporter.Log($"[InstallEmulatorAddonsAsync] Deployed '{fileName}' for '{wikiName}'");
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[InstallEmulatorAddonsAsync] Failed to install '{wikiName}' — {ex.Message}");
+                    failed++;
+                }
+            }
+
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.Status = installed > 0 ? GameStatus.Installed : GameStatus.Available;
+                card.InstalledAddonFileName = $"{installed} addons";
+                card.ActionMessage = failed == 0
+                    ? $"✅ {installed} addons installed!"
+                    : $"✅ {installed} installed, {failed} failed.";
+                card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+                card.NotifyAll();
+                SaveLibrary();
+                _filterViewModel.UpdateCounts();
+            });
+        }
+        catch (Exception ex)
+        {
+            card.ActionMessage = $"❌ Failed: {ex.Message}";
+            _crashReporter.WriteCrashReport("InstallEmulatorAddonsAsync", ex, note: $"Game: {card.GameName}");
+        }
+        finally
+        {
+            card.IsInstalling = false;
+        }
+    }
+
+    /// <summary>
+    /// Uninstalls all emulator addons by removing addon files from the deploy path.
+    /// </summary>
+    private void UninstallEmulatorAddons(GameCardViewModel card)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath) || card.EmulatorAddonNames == null) return;
+
+        _crashReporter.Log($"[MainViewModel.UninstallEmulatorAddons] Removing emulator addons for {card.GameName}");
+        var deployPath = ModInstallService.GetAddonDeployPath(card.InstallPath);
+        int removed = 0;
+
+        foreach (var wikiName in card.EmulatorAddonNames)
+        {
+            var mod = _allMods.FirstOrDefault(m =>
+                m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
+            if (mod?.SnapshotUrl == null) continue;
+
+            var fileName = Path.GetFileName(mod.SnapshotUrl);
+            var filePath = Path.Combine(deployPath, fileName);
+            if (File.Exists(filePath))
+            {
+                try { File.Delete(filePath); removed++; }
+                catch (Exception ex) { _crashReporter.Log($"[UninstallEmulatorAddons] Failed to delete '{fileName}' — {ex.Message}"); }
+            }
+
+            // Also check emulator root (in case AddonPath wasn't set)
+            var rootPath = Path.Combine(card.InstallPath, fileName);
+            if (rootPath != filePath && File.Exists(rootPath))
+            {
+                try { File.Delete(rootPath); removed++; }
+                catch (Exception ex) { _crashReporter.Log($"[UninstallEmulatorAddons] Failed to delete '{fileName}' from root — {ex.Message}"); }
+            }
+        }
+
+        card.Status = GameStatus.Available;
+        card.InstalledAddonFileName = null;
+        card.ActionMessage = $"✖ {removed} addons removed.";
+        card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+        card.NotifyAll();
+        SaveLibrary();
+        _filterViewModel.UpdateCounts();
+    }
+
     [RelayCommand]
     public async Task InstallModAsync(GameCardViewModel? card)
     {
+        // ── Emulator bundle install ───────────────────────────────────────────
+        if (card != null && card.IsEmulator)
+        {
+            // Resolve addon names from manifest if not already set on the card
+            if (card.EmulatorAddonNames == null || card.EmulatorAddonNames.Count == 0)
+            {
+                if (_manifest?.EmulatorGames?.TryGetValue("Ryubing", out var emuCfg) == true)
+                    card.EmulatorAddonNames = emuCfg.Addons;
+            }
+            if (card.EmulatorAddonNames?.Count > 0)
+            {
+                await InstallEmulatorAddonsAsync(card);
+                return;
+            }
+        }
+
         // Install invoked
         if (card?.Mod?.SnapshotUrl == null) return;
 
@@ -864,6 +1050,13 @@ public partial class MainViewModel
     [RelayCommand]
     public void UninstallMod(GameCardViewModel? card)
     {
+        // ── Emulator bundle uninstall ─────────────────────────────────────────
+        if (card != null && card.IsEmulator && card.EmulatorAddonNames?.Count > 0)
+        {
+            UninstallEmulatorAddons(card);
+            return;
+        }
+
         if (card?.InstalledRecord == null) return;
         _crashReporter.Log($"[MainViewModel.UninstallMod] Uninstalling: {card.GameName}");
         _installer.Uninstall(card.InstalledRecord);
@@ -1118,6 +1311,20 @@ public partial class MainViewModel
             if (File.Exists(legacyPath32)) File.Delete(legacyPath32);
             var legacyDirect32 = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName32);
             if (File.Exists(legacyDirect32)) File.Delete(legacyDirect32);
+
+            // Remove relimiter.ini from both deploy path and game folder
+            var ulIniPath = Path.Combine(deployPath, "relimiter.ini");
+            if (File.Exists(ulIniPath)) File.Delete(ulIniPath);
+            var ulIniDirect = Path.Combine(card.InstallPath, "relimiter.ini");
+            if (File.Exists(ulIniDirect)) File.Delete(ulIniDirect);
+
+            // Remove relimiter log and csv files (relimiter_*.log, relimiter_*.csv)
+            try
+            {
+                foreach (var f in Directory.GetFiles(card.InstallPath, "relimiter*.log")) File.Delete(f);
+                foreach (var f in Directory.GetFiles(card.InstallPath, "relimiter*.csv")) File.Delete(f);
+            }
+            catch { /* best effort */ }
 
             card.UlInstalledFile = null;
             card.UlInstalledVersion = null;
