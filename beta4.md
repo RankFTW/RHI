@@ -1,5 +1,9 @@
 # v1.9.9-beta4 Changes (from beta3)
 
+## New Features
+
+- **Ryubing emulator support** — Drag `Ryujinx.exe` into RHI to add Ryubing as a game. Install RenoDX downloads all 9 Souperman9 Switch game addons in one click (Mario Kart 8, Zelda BotW/TotK, Metroid Dread, Splatoon 2/3, Luigi's Mansion 3, Monster Hunter Generations Ultimate, Xenoblade Chronicles X DE). Addons self-detect which game is running — no swapping needed. Requires RenoVK (custom Vulkan ReShade) in the Custom folder. Update detection checks each addon individually. Uninstall removes all 9.
+
 ## Bug Fixes
 
 - Fixed OptiScaler uninstall potentially deleting the game's DLSS DLLs when no backup existed. Now only removes DLSS files if a .original backup is present (confirming OptiScaler deployed them).

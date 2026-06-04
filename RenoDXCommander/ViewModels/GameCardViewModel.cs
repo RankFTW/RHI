@@ -140,6 +140,12 @@ public partial class GameCardViewModel : ObservableObject
     /// <summary>Set by MainViewModel for games in the manifest engineIniPathOverrides — overrides auto-detected project name for Engine.ini deployment.</summary>
     public string? EngineIniProjectOverride { get; set; }
 
+    /// <summary>True if this card represents an emulator (e.g. Ryubing). Affects install flow (bundle download).</summary>
+    public bool IsEmulator { get; set; }
+
+    /// <summary>List of wiki game names whose addons should be installed for this emulator.</summary>
+    public List<string>? EmulatorAddonNames { get; set; }
+
     /// <summary>
     /// Per-property fade tokens — ensures only the latest message for each property is cleared.
     /// </summary>

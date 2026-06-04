@@ -846,13 +846,16 @@ public partial class MainViewModel
             // Always scan disk for renodx-* addon files — catches manual installs and
             // games not yet on the wiki that already have a mod installed.
             // Use the addon file cache to skip expensive recursive scans on subsequent launches.
+            // Skip for emulator cards — they manage their own addon state.
             string? addonOnDisk = null;
             var cacheKey = installPath.ToLowerInvariant();
+            bool isEmulatorGame = game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase);
 
-            // If we have a DB record, always verify the file is still on disk — never
-            // rely on the addon file cache alone, because the cache may be stale
-            // (e.g. mod was installed/uninstalled since the last BuildCards).
-            if (record != null)
+            if (isEmulatorGame)
+            {
+                // Emulator cards skip addon scan — handled by emulator setup below
+            }
+            else if (record != null)
             {
                 var expectedFile = record.AddonFileName;
                 if (!string.IsNullOrEmpty(expectedFile)
@@ -1214,6 +1217,41 @@ public partial class MainViewModel
                 RsInstalledVersion     = rsRec != null ? AuxInstallService.ReadInstalledVersion(rsRec.InstallPath, rsRec.InstalledAs) : null,
                 IsREEngineGame         = engine == EngineType.REEngine,
             };
+
+            // ── Emulator detection ─────────────────────────────────────────────────
+            if (game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase))
+            {
+                newCard.IsEmulator = true;
+                newCard.VulkanRenderingPath = "Vulkan";
+                if (_manifest?.EmulatorGames?.TryGetValue("Ryubing", out var emuConfigBc) == true)
+                {
+                    newCard.EmulatorAddonNames = emuConfigBc.Addons;
+                    newCard.Mod = new GameMod
+                    {
+                        Name = "Ryubing (9 games)",
+                        Maintainer = "Souperman9",
+                        SnapshotUrl = "emulator-bundle",
+                        Status = "✅",
+                    };
+
+                    // Detect existing addons
+                    var emuDeployPath = ModInstallService.GetAddonDeployPath(installPath);
+                    int emuFoundCount = 0;
+                    foreach (var wikiName in emuConfigBc.Addons)
+                    {
+                        var emuMod = _allMods.FirstOrDefault(m => m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
+                        if (emuMod?.SnapshotUrl == null) continue;
+                        var emuFileName = Path.GetFileName(emuMod.SnapshotUrl);
+                        if (File.Exists(Path.Combine(emuDeployPath, emuFileName)) || File.Exists(Path.Combine(installPath, emuFileName)))
+                            emuFoundCount++;
+                    }
+                    if (emuFoundCount > 0)
+                    {
+                        newCard.Status = GameStatus.Installed;
+                        newCard.InstalledAddonFileName = $"{emuFoundCount} addons";
+                    }
+                }
+            }
 
             // ── Luma matching ──────────────────────────────────────────────────────
             newCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(newCard.DetectedApis);
@@ -2130,6 +2168,24 @@ public partial class MainViewModel
 
             // Dual-API state
             newCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(newCard.DetectedApis);
+
+            // ── Emulator detection (cached path) ───────────────────────────────
+            if (game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase))
+            {
+                newCard.IsEmulator = true;
+                newCard.VulkanRenderingPath = "Vulkan";
+                if (_manifest?.EmulatorGames?.TryGetValue("Ryubing", out var emuConfigCache) == true)
+                {
+                    newCard.EmulatorAddonNames = emuConfigCache.Addons;
+                    newCard.Mod = new GameMod
+                    {
+                        Name = "Ryubing (9 games)",
+                        Maintainer = "Souperman9",
+                        SnapshotUrl = "emulator-bundle",
+                        Status = "✅",
+                    };
+                }
+            }
 
             // Display Commander from aux record (no filesystem scanning)
             if (dcRec != null)

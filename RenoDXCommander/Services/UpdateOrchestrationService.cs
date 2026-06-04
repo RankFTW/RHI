@@ -54,6 +54,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             .Where(c => !c.ExcludeFromUpdateAllRenoDx)
             .Where(c => c.Status == GameStatus.Installed || c.Status == GameStatus.UpdateAvailable)
             .Where(c => c.Mod?.SnapshotUrl != null)
+            .Where(c => !c.IsEmulator) // Emulator cards handled separately below
             .ToList();
 
         foreach (var card in targets)

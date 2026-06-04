@@ -1,4 +1,4 @@
-## v1.9.9-beta3
+## v1.9.9-beta4
 
 ### New Features
 
@@ -8,6 +8,7 @@
 - **Auto Engine.ini HDR deployment** — When installing UE-Extended, Engine.ini HDR settings are now automatically deployed to the game's AppData config folder. The project name is auto-detected from the install path. File is set read-only to prevent the engine from overwriting. Manifest `engineIniPathOverrides` available as fallback for games where auto-detection is incorrect. Note: if the game also has an in-game HDR setting, make sure that's enabled too.
 - **AppData button** — New "Config" button in the detail panel header (alongside Hide, Favourite, Folder) for Unreal Engine games. Opens the game's config folder in Explorer. Only visible when the folder exists.
 - **Luma + RenoDX coexistence** — Games in the manifest `lumaRenodxCompat` list can now have both Luma and RenoDX installed simultaneously. The RenoDX row stays visible in Luma mode for these games, and toggling Luma ON no longer uninstalls RenoDX. Useful for Luma mods that only add DLSS/upscaling but not HDR.
+- **Ryubing emulator support** — Drag `Ryujinx.exe` into RHI to add Ryubing as a game. Install RenoDX downloads all 9 Souperman9 Switch game addons in one click (Mario Kart 8, Zelda BotW/TotK, Metroid Dread, Splatoon 2/3, etc.). Addons self-detect which game is running — no swapping needed. Requires RenoVK (custom Vulkan ReShade) in the Custom folder.
 
 ### Bug Fixes
 
