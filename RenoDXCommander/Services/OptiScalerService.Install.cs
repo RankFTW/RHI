@@ -480,8 +480,9 @@ public partial class OptiScalerService
             }
 
             // ── 2b. Delete deployed nvngx_dlss.dll and restore original ─────
+            // Safety: only delete if .original backup exists (confirms OptiScaler deployed it)
             var gameDlssPath = Path.Combine(gameDir, DlssDllFileName);
-            if (File.Exists(gameDlssPath))
+            if (File.Exists(gameDlssPath) && File.Exists(gameDlssPath + ".original"))
             {
                 File.Delete(gameDlssPath);
                 CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted {DlssDllFileName}");
@@ -490,7 +491,7 @@ public partial class OptiScalerService
 
             // ── 2c. Delete deployed nvngx_dlssd.dll and restore original ────
             var gameDlssdPath = Path.Combine(gameDir, DlssdDllFileName);
-            if (File.Exists(gameDlssdPath))
+            if (File.Exists(gameDlssdPath) && File.Exists(gameDlssdPath + ".original"))
             {
                 File.Delete(gameDlssdPath);
                 CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted {DlssdDllFileName}");
@@ -499,7 +500,7 @@ public partial class OptiScalerService
 
             // ── 2d. Delete deployed nvngx_dlssg.dll and restore original ────
             var gameDlssgPath = Path.Combine(gameDir, DlssgDllFileName);
-            if (File.Exists(gameDlssgPath))
+            if (File.Exists(gameDlssgPath) && File.Exists(gameDlssgPath + ".original"))
             {
                 File.Delete(gameDlssgPath);
                 CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted {DlssgDllFileName}");

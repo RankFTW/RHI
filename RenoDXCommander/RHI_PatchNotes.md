@@ -19,6 +19,7 @@
 - Fixed Luma install warning dialog popping up during Update All. The warning is now correctly skipped during batch updates.
 - Fixed RenoDX Info button not showing wiki status badge for games that have a wiki entry but no notes text. The status (✅ Working, 🚧 In Progress, etc.) now displays correctly for all wiki-listed games.
 - Fixed manually added games (drag-drop or Add Game) not detecting existing Display Commander, OptiScaler, DXVK, or DLSS/Streamline installations until Refresh. These are now scanned in the background immediately after adding.
+- Fixed OptiScaler uninstall potentially deleting the game's DLSS DLLs when no backup existed. Now only removes DLSS files if a .original backup is present (confirming OptiScaler deployed them).
 
 ### Manifest Updates
 
