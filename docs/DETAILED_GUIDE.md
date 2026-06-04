@@ -15,6 +15,8 @@ This document covers every feature in RHI. For a quick overview, see the [README
 - [RenoDX](#renodx)
 - [RE Framework](#re-framework)
 - [Luma Framework](#luma-framework)
+- [UE-Extended Auto-Configuration](#ue-extended-auto-configuration)
+- [Ryubing Emulator Support](#ryubing-emulator-support)
 - [Frame Rate Limiters](#frame-rate-limiters)
 - [DLSS & Streamline Manager](#dlss--streamline-manager)
 - [OptiScaler](#optiscaler)
@@ -377,6 +379,68 @@ Drag a Luma mod archive (zip or 7z) from Explorer, Discord, or Nexus onto the RH
 - **ReShade fallback** — if the archive doesn't include `dxgi.dll`, RHI deploys its own cached stable ReShade automatically.
 - **Multi-folder archives** — archives with extra folders (Alternatives, Debug, Optional) are handled automatically. Folders starting with `(` are filtered out. If multiple valid game folders remain, a folder picker dialog is shown.
 - **Post-install** — Luma mode is enabled, shaders are deployed using the same global/per-game selection as normal ReShade installs, and reshade.ini is configured with your screenshot path and hotkeys.
+
+### Luma + RenoDX Coexistence
+
+Games in the manifest `lumaRenodxCompat` list can have both Luma and RenoDX installed simultaneously. When enabled:
+- The RenoDX row stays visible in Luma mode
+- Toggling Luma ON does not uninstall the RenoDX addon
+- The UE-Extended toggle remains accessible
+- Install/uninstall buttons for RenoDX work independently of Luma state
+
+This is for Luma mods that only add DLSS/upscaling but not HDR — RenoDX provides the HDR upgrade alongside.
+
+---
+
+## UE-Extended Auto-Configuration
+
+When installing UE-Extended (the generic Unreal Engine RenoDX mod), RHI automatically configures two files:
+
+### reshade.ini — [renodx] Section
+
+A `[renodx]` section is inserted with `Set_Path=0` and all `Upgrade_*=0` keys disabled. This tells RenoDX to upgrade the game's native HDR path instead of the SDR path. The section is:
+- Only added when installing/updating UE-Extended (not during ReShade install)
+- Also added when clicking the INI merge button if UE-Extended is already installed
+- Removed when UE-Extended is uninstalled or the toggle is turned OFF
+- Never overwrites existing user-modified values
+
+### Engine.ini — HDR Settings
+
+Engine.ini HDR settings (`r.AllowHDR=1`, `r.HDR.EnableHDROutput=1`, etc.) are deployed to the game's `%LocalAppData%` config folder:
+- Project name auto-detected from the folder above `Binaries\` in the install path
+- Checks `%LocalAppData%\{project}\Saved\Config\` for platform subfolders (WinGDK > Windows > WindowsNoEditor)
+- Also checks `Documents\My Games\{gameName}\Saved\Config\` as fallback
+- File set read-only to prevent the engine from overwriting
+- Manifest `engineIniPathOverrides` available for games where auto-detection fails
+- The "Config" button in the detail panel header opens the resolved config folder
+
+---
+
+## Ryubing Emulator Support
+
+Drag `Ryujinx.exe` into RHI to add Ryubing as a game. It appears as a single card managing all Switch game addons.
+
+### Setup
+
+1. Place RenoVK (custom Vulkan ReShade) as `ReShade64.dll` in `%LocalAppData%\RHI\Custom\ReShade\`
+2. Set RS Channel to Custom in Overrides
+3. Install ReShade (Vulkan layer — requires admin)
+4. Click Install RenoDX — downloads all 9 Souperman9 addons
+
+### How It Works
+
+- All 9 addons are deployed to the emulator's folder simultaneously
+- Each addon reads the emulator's log to detect which game is running and self-selects
+- One shared `reshade.ini` for all games
+- No addon swapping needed between games
+
+### Supported Games
+
+Luigi's Mansion 3, Mario Kart 8 Deluxe, Metroid Dread, Monster Hunter Generations Ultimate, Splatoon 2, Splatoon 3, The Legend of Zelda: Breath of the Wild, The Legend of Zelda: Tears of the Kingdom, Xenoblade Chronicles X: Definitive Edition.
+
+### Updates
+
+Each addon is checked individually for updates (Content-Length comparison). If any has a newer version, the card shows purple. Update All re-downloads changed addons.
 
 ---
 

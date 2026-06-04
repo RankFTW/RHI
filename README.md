@@ -14,6 +14,10 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **Keeps things in sync** — Update All checks every component across every game. One button, done.
 - **42 shader packs** — global or per-game shader selection with automatic dependency resolution.
 - **Drag-and-drop** — drop an .exe to add a game, drop a mod to install it, drop a preset to deploy it with auto shader install. Luma mod archives (zip/7z) are detected automatically and install with a game picker.
+- **UE-Extended auto-configuration** — when installing UE-Extended, reshade.ini and Engine.ini are configured automatically for native HDR games. No manual INI editing needed.
+- **Ryubing emulator support** — drag Ryujinx.exe to add Ryubing. Install RenoDX downloads all 9 Souperman9 Switch game addons in one click. Addons self-detect which game is running.
+- **DLSS Render Scale Override** — force a custom DLSS render resolution per-game (33-100%) for both SR and Ray Reconstruction.
+- **Luma + RenoDX coexistence** — manifest-driven support for games that can run both Luma and RenoDX simultaneously.
 - **OptiScaler built in** — upscaler redirection (DLSS/FSR/XeSS) with automatic DLSS DLL downloads, ReShade coexistence, and INI management.
 - **DLSS & Streamline Manager** — swap DLSS SR, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. Set DLSS presets per-game (J, K, L, M for SR; D, E for RR; A, B for FG) without NVIDIA Profile Inspector. Batch Deploy lets you update versions and presets across multiple games at once.
 - **UW Fix & Ultra+ links** — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
@@ -50,7 +54,7 @@ Every component has one-click install, update detection, and uninstall. Per-addo
 
 ### Shader Packs & Presets
 
-42 shader packs (Essential, Recommended, Extra) with global or per-game selection. Drag a ReShade preset `.ini` onto the window and RHI deploys it to a game, then offers to auto-install the required shader packs by parsing the preset's `Techniques` line.
+43 shader packs (Essential, Recommended, Extra) sorted alphabetically within each category, with global or per-game selection. Drag a ReShade preset `.ini` onto the window and RHI deploys it to a game, then offers to auto-install the required shader packs by parsing the preset's `Techniques` line.
 
 ### ReShade Addon Manager
 
