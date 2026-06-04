@@ -119,6 +119,22 @@
     "Shin Megami Tensei V: Vengeance": "SMT5V"
   },
 
+  "emulatorGames": {
+    "Ryubing": {
+      "addons": [
+        "Luigi's Mansion 3",
+        "Mario Kart 8 Deluxe",
+        "Metroid Dread",
+        "Monster Hunter Generations Ultimate",
+        "Splatoon 2",
+        "Splatoon 3",
+        "The Legend of Zelda: Breath of the Wild",
+        "The Legend of Zelda: Tears of the Kingdom",
+        "Xenoblade Chronicles X: Definitive Edition"
+      ]
+    }
+  },
+
   "thirtyTwoBitGames": [
     "Assassin's Creed",
     "Batman: Arkham Asylum GOTY Edition",
@@ -866,6 +882,11 @@
   "reshadeGameInfo": {
     "Max Payne 3": {
       "notes": "⚠️ ReShade 6.4.1 is required for RenoDX compatibility with this game. This has been automatically set in Overrides (RS Channel).\n\nIf you want to use a newer ReShade version, change the RS Channel in the Overrides panel — but RenoDX may not work correctly.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    },
+    "Ryubing": {
+      "notes": "⚠️ Ryubing requires RenoVK (a custom Vulkan ReShade build).\n\nPlace the RenoVK DLL in the Custom ReShade folder, then set RS Channel to Custom in Overrides.",
       "notesUrl": null,
       "notesUrlLabel": null
     }
