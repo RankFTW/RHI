@@ -383,6 +383,19 @@ public partial class AuxInstallService
         // when we deployed ours, restore it now that RS has been uninstalled.
         if (!string.IsNullOrEmpty(record.InstallPath))
             _shaderPackService.RestoreOriginalIfPresent(record.InstallPath);
+
+        // ── ReShade cleanup: remove associated INI/log files ──────────────────
+        if (!string.IsNullOrEmpty(record.InstallPath)
+            && (record.AddonType == TypeReShade || record.AddonType == TypeReShadeNormal))
+        {
+            var installDir = record.InstallPath;
+            foreach (var file in new[] { "reshade.ini", "ReShade2.ini", "ReShadePreset.ini", "reshade.log" })
+            {
+                var filePath = Path.Combine(installDir, file);
+                if (File.Exists(filePath))
+                    try { File.Delete(filePath); } catch { /* best effort */ }
+            }
+        }
     }
 
     /// <inheritdoc />

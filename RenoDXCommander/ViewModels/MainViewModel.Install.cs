@@ -1312,6 +1312,20 @@ public partial class MainViewModel
             var legacyDirect32 = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName32);
             if (File.Exists(legacyDirect32)) File.Delete(legacyDirect32);
 
+            // Remove relimiter.ini from both deploy path and game folder
+            var ulIniPath = Path.Combine(deployPath, "relimiter.ini");
+            if (File.Exists(ulIniPath)) File.Delete(ulIniPath);
+            var ulIniDirect = Path.Combine(card.InstallPath, "relimiter.ini");
+            if (File.Exists(ulIniDirect)) File.Delete(ulIniDirect);
+
+            // Remove relimiter log and csv files (relimiter_*.log, relimiter_*.csv)
+            try
+            {
+                foreach (var f in Directory.GetFiles(card.InstallPath, "relimiter*.log")) File.Delete(f);
+                foreach (var f in Directory.GetFiles(card.InstallPath, "relimiter*.csv")) File.Delete(f);
+            }
+            catch { /* best effort */ }
+
             card.UlInstalledFile = null;
             card.UlInstalledVersion = null;
             card.UlStatus = GameStatus.NotInstalled;

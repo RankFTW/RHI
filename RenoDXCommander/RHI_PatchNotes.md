@@ -21,6 +21,10 @@
 - Fixed RenoDX Info button not showing wiki status badge for games that have a wiki entry but no notes text. The status (✅ Working, 🚧 In Progress, etc.) now displays correctly for all wiki-listed games.
 - Fixed manually added games (drag-drop or Add Game) not detecting existing Display Commander, OptiScaler, DXVK, or DLSS/Streamline installations until Refresh. These are now scanned in the background immediately after adding.
 - Fixed OptiScaler uninstall potentially deleting the game's DLSS DLLs when no backup existed. Now only removes DLSS files if a .original backup is present (confirming OptiScaler deployed them).
+- ReShade uninstall now also removes reshade.ini, ReShade2.ini, ReShadePreset.ini, and reshade.log from the game folder.
+- ReLimiter uninstall now also removes relimiter.ini, log files, and CSV files from the game folder.
+- Fixed INI merge button not applying [renodx] UE-Extended section when UE-Extended was already installed. Now injects the section on INI deploy if the mod is active.
+- Shader pack list reorganized: Recommended slimmed to 3 HDR-relevant packs, all others moved to Extra, sorted alphabetically within each category. Added crosire reshade-shaders (legacy) pack.
 
 ### Manifest Updates
 
