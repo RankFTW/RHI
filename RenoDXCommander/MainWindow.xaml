@@ -1831,7 +1831,7 @@
                                 </StackPanel>
 
                                 <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="20"
-                                           Text="A desktop manager for HDR game mods on Windows. Auto-detects your game libraries and installs ReShade, RenoDX, and Luma Framework mods in a few clicks."/>
+                                           Text="The all-in-one HDR mod manager for PC games. Auto-detects games from 8 storefronts, manages ReShade, RenoDX, OptiScaler, DLSS/Streamline, frame limiters, DXVK, RE Framework, Luma, and 43 shader packs — all with one-click install, update, and per-game configuration."/>
 
                                 <!-- What it does -->
                                 <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="14,10"
@@ -1845,21 +1845,6 @@
                                 </Border>
 
                                 <!-- Disclaimer -->
-                                <Border Background="{StaticResource AccentPurpleBgBrush}" CornerRadius="8" Padding="14,10"
-                                        BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="Disclaimer" FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource AccentAmberBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="18">
-                                            <Run Text="RHI is an unofficial third-party tool, "/>
-                                            <Run Text="not affiliated with or endorsed by the RenoDX project, Crosire, pmnoxx, or the Luma Framework."
-                                                 FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                        </TextBlock>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="All mod files are fetched directly from their official sources and are not modified. RenoDX addons come from official GitHub snapshots. ReShade with full addon support is downloaded from reshade.me. 7-Zip is bundled under the LGPL licence for archive extraction."/>
-                                    </StackPanel>
-                                </Border>
-
                                 <!-- Single-player warning -->
                                 <Border Background="{StaticResource AccentRedBgBrush}" CornerRadius="8" Padding="14,10"
                                         BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1">
@@ -1867,7 +1852,7 @@
                                         <TextBlock Text="Single-player only" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource AccentRedBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="RHI installs ReShade with full addon support and OptiScaler, which may be flagged by anti-cheat in online or multiplayer games. Uninstall ReShade and OptiScaler before playing online."/>
+                                                   Text="RHI installs ReShade with full addon support, OptiScaler, and can swap DLSS/Streamline DLLs. These modifications may be flagged by anti-cheat in online or multiplayer games. Uninstall ReShade, OptiScaler, and restore DLSS/Streamline defaults before playing online."/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -1918,7 +1903,7 @@
                                 <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                                     <StackPanel Spacing="3">
                                         <TextBlock FontSize="12">
-                                            <Run Text="Luma Framework" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
+                                            <Run Text="Luma Framework" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
                                             <Run Text=" by Pumbo (Filoppi)" Foreground="{StaticResource TextTertiaryBrush}"/>
                                             <Run Text="  ·  Source-available" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
                                         </TextBlock>
@@ -1994,6 +1979,38 @@
                                     </StackPanel>
                                 </Border>
 
+                                <!-- RE Framework -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="RE Framework" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by praydog" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  MIT Licence" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="Modding framework required for ReShade injection on RE Engine games. Downloaded from nightly builds on GitHub."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/praydog/REFramework-nightly" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/praydog/REFramework-nightly"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- OptiScaler -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="OptiScaler" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by OptiScaler contributors" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  Source-available" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="Upscaler redirection layer enabling DLSS, FSR, and XeSS across different GPU vendors. Downloaded from GitHub releases."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/optiscaler/OptiScaler" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/optiscaler/OptiScaler"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
                                 <!-- Lazorr -->
                                 <Border Background="{StaticResource SurfaceStatusBarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                                     <StackPanel Spacing="3">
@@ -2064,6 +2081,12 @@
                                 <HyperlinkButton NavigateUri="https://github.com/RankFTW" Padding="0">
                                     <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">RankFTW GitHub</TextBlock>
                                 </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://github.com/praydog/REFramework-nightly" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">RE Framework — github.com/praydog/REFramework-nightly</TextBlock>
+                                </HyperlinkButton>
+                                <HyperlinkButton NavigateUri="https://github.com/optiscaler/OptiScaler" Padding="0">
+                                    <TextBlock Foreground="{StaticResource AccentBlueBrush}" FontSize="12">OptiScaler — github.com/optiscaler/OptiScaler</TextBlock>
+                                </HyperlinkButton>
                                 <HyperlinkButton NavigateUri="https://ko-fi.com/rankftw" Padding="0">
                                     <TextBlock Foreground="{StaticResource AccentRedBrush}" FontSize="12">Support RHI on Ko-Fi</TextBlock>
                                 </HyperlinkButton>
@@ -2094,7 +2117,7 @@
                 <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
                            FontSize="10" Foreground="{StaticResource AccentAmberDimBrush}"
                            TextTrimming="CharacterEllipsis" MaxLines="1"
-                           Text="⚠ Single-player only — ReShade with addon support and OptiScaler may trigger anti-cheat in online/multiplayer games"/>
+                           Text="⚠ ReShade, OptiScaler, and DLSS/Streamline modifications may trigger anti-cheat in online/multiplayer games"/>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right"
                             VerticalAlignment="Center" Spacing="8">
                     <TextBlock x:Name="StatusBarVersionText" x:FieldModifier="internal"

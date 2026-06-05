@@ -341,6 +341,8 @@ public partial class MainViewModel
                 {
                     _addonPackService.DeployAddonsForGame(gameName, card.InstallPath, is32Bit,
                         useGlobalSet: true, perGameSelection: new List<string>());
+                    // Remove DLSS Fix INI settings since no addons are active
+                    ApplyOrRemoveDlssFixIni(card, new List<string>(), true);
                     return;
                 }
 
@@ -351,6 +353,8 @@ public partial class MainViewModel
                 {
                     _addonPackService.DeployAddonsForGame(gameName, card.InstallPath, is32Bit,
                         useGlobalSet: true, perGameSelection: new List<string>());
+                    // Remove DLSS Fix INI settings since no addons are active
+                    ApplyOrRemoveDlssFixIni(card, new List<string>(), true);
                     return;
                 }
 
@@ -368,12 +372,81 @@ public partial class MainViewModel
 
                 _addonPackService.DeployAddonsForGame(gameName, card.InstallPath, is32Bit,
                     useGlobalSet, selection);
+
+                // Apply/remove DLSS Fix INI settings based on whether DLSS Fix is now deployed
+                ApplyOrRemoveDlssFixIni(card, selection, useGlobalSet);
             }
             catch (Exception ex)
             {
                 _crashReporter.Log($"[MainViewModel.DeployAddonsForCard] Failed for '{gameName}' — {ex.Message}");
             }
         });
+    }
+
+    /// <summary>
+    /// Writes or removes [RENODX-DLSSFIX] section and [ADDON] LoadFromDllMain in reshade.ini
+    /// based on whether DLSS Fix is deployed and the game has DLSS/Streamline paths detected.
+    /// </summary>
+    private void ApplyOrRemoveDlssFixIni(GameCardViewModel card, List<string>? perGameSelection, bool useGlobalSet)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+
+        var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
+        if (!File.Exists(iniPath)) return;
+
+        // Determine if DLSS Fix is in the active addon selection
+        bool dlssFixActive;
+        if (perGameSelection != null)
+            dlssFixActive = perGameSelection.Any(n => n.Contains("DLSS Fix", StringComparison.OrdinalIgnoreCase));
+        else if (useGlobalSet)
+            dlssFixActive = _settingsViewModel.EnabledGlobalAddons?.Any(n => n.Contains("DLSS Fix", StringComparison.OrdinalIgnoreCase)) == true;
+        else
+            dlssFixActive = false;
+
+        try
+        {
+            var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+
+            if (dlssFixActive && card.HasStreamline && card.DlssDetection != null)
+            {
+                // Add [ADDON] LoadFromDllMain
+                if (!ini.ContainsKey("ADDON"))
+                    ini["ADDON"] = new AuxInstallService.OrderedDict();
+                ini["ADDON"]["LoadFromDllMain"] = "renodx-dlssfix.addon64";
+
+                // Add [RENODX-DLSSFIX] section with paths
+                if (!ini.ContainsKey("RENODX-DLSSFIX"))
+                    ini["RENODX-DLSSFIX"] = new AuxInstallService.OrderedDict();
+
+                if (!string.IsNullOrEmpty(card.DlssDetection.DlssPath))
+                    ini["RENODX-DLSSFIX"]["DLSSPath"] = card.DlssDetection.DlssPath;
+                if (!string.IsNullOrEmpty(card.DlssDetection.StreamlineInterposerPath))
+                    ini["RENODX-DLSSFIX"]["StreamlinePath"] = card.DlssDetection.StreamlineInterposerPath;
+
+                AuxInstallService.WriteIni(iniPath, ini);
+                _crashReporter.Log($"[ApplyOrRemoveDlssFixIni] Applied DLSS Fix INI settings for '{card.GameName}'");
+            }
+            else
+            {
+                // Remove DLSS Fix sections if present
+                bool changed = false;
+                if (ini.Remove("RENODX-DLSSFIX")) changed = true;
+                if (ini.TryGetValue("ADDON", out var addonSection) && addonSection.ContainsKey("LoadFromDllMain"))
+                {
+                    var val = addonSection["LoadFromDllMain"];
+                    if (val.Contains("dlssfix", StringComparison.OrdinalIgnoreCase))
+                    {
+                        addonSection.Remove("LoadFromDllMain");
+                        changed = true;
+                    }
+                }
+                if (changed) AuxInstallService.WriteIni(iniPath, ini);
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[ApplyOrRemoveDlssFixIni] Failed for '{card.GameName}' — {ex.Message}");
+        }
     }
 
     /// <summary>

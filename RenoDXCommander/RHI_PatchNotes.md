@@ -2,48 +2,40 @@
 
 ### New Features
 
-- **DLSS Render Scale Override** — Set a custom DLSS render resolution scale per-game for both SR and Ray Reconstruction. Choose from named presets (DLAA, Ultra Quality, Quality, Performance, etc.) or enter any custom percentage from 33-100%. Found below the preset dropdown in the DLSS/Streamline section. Overrides the game's built-in DLSS quality mode selection. Not compatible with OptiScaler.
-- **UE-Extended on All Unreal Games** — The UE-Extended toggle now appears on ALL Unreal Engine games, including those with a named RenoDX mod. Toggle ON to switch from the game-specific mod to UE-Extended; toggle OFF to switch back. If the mod was installed, the swap happens automatically. Useful when UE-Extended provides better results than the named mod.
-- **UE-Extended auto-configured for native HDR** — When installing UE-Extended, reshade.ini is now automatically configured to upgrade the game's native HDR (enabled via in-game options, Engine.ini edits, or Ultra+ mods) instead of the SDR path. Users who want to upgrade SDR instead will need to set "Upgrade Path" to On in the RenoDX Advanced Settings.
-- **Auto Engine.ini HDR deployment** — When installing UE-Extended, Engine.ini HDR settings are now automatically deployed to the game's AppData config folder. The project name is auto-detected from the install path. File is set read-only to prevent the engine from overwriting. Manifest `engineIniPathOverrides` available as fallback for games where auto-detection is incorrect. Note: if the game also has an in-game HDR setting, make sure that's enabled too.
-- **AppData button** — New "Config" button in the detail panel header (alongside Hide, Favourite, Folder) for Unreal Engine games. Opens the game's config folder in Explorer. Only visible when the folder exists.
-- **Luma + RenoDX coexistence** — Games in the manifest `lumaRenodxCompat` list can now have both Luma and RenoDX installed simultaneously. The RenoDX row stays visible in Luma mode for these games, and toggling Luma ON no longer uninstalls RenoDX. Useful for Luma mods that only add DLSS/upscaling but not HDR.
-- **Ryubing emulator support** — Drag `Ryujinx.exe` into RHI to add Ryubing as a game. Install RenoDX downloads all 9 Souperman9 Switch game addons in one click (Mario Kart 8, Zelda BotW/TotK, Metroid Dread, Splatoon 2/3, etc.). Addons self-detect which game is running — no swapping needed. Requires RenoVK (custom Vulkan ReShade) in the Custom folder.
+- **UE-Extended overhaul** — The UE-Extended toggle now appears on ALL Unreal Engine games (including those with named mods). When installing UE-Extended, RHI automatically configures reshade.ini for native HDR and deploys Engine.ini HDR settings to the game's AppData config folder. No manual INI editing required. A new "Config" button in the detail panel opens the game's config folder. Users who want to upgrade SDR instead will need to set "Upgrade Path" to On in RenoDX Advanced Settings AND remove the lines from Engine.ini.
+- **DLSS Render Scale Override** — Force a custom DLSS render resolution per-game for both SR and Ray Reconstruction. Choose from named presets (DLAA, Quality, Performance, etc.) or enter any custom percentage. Not compatible with OptiScaler.
+- **DLSS Fix auto-configuration (beta)** — When the DLSS Fix addon is deployed, reshade.ini is automatically configured with the correct DLSSPath and StreamlinePath for each game. Only activates for games with Streamline detected. Settings are removed when DLSS Fix is uninstalled.
+- **Ryubing emulator support** — Drag `Ryujinx.exe` into RHI to add Ryubing. Install RenoDX downloads all 9 Souperman9 Switch game addons in one click. Addons self-detect which game is running — no swapping needed. Requires RenoVK in the Custom ReShade folder.
+- **Luma + RenoDX coexistence** — Games in the manifest `lumaRenodxCompat` list can now have both Luma and RenoDX installed simultaneously. Useful for Luma mods that only add DLSS/upscaling but not HDR.
+
+### Improvements
+
+- Shader pack list reorganized: Recommended slimmed to 3 HDR-relevant packs, all others moved to Extra, sorted alphabetically. Added crosire reshade-shaders (legacy) pack.
+- About page overhauled: updated description, added RE Framework and OptiScaler credits/links, removed outdated disclaimer.
+- Uninstall cleanup: ReShade now removes reshade.ini/log files, ReLimiter removes relimiter.ini/log/csv files.
+- Anti-cheat warning updated to include DLSS/Streamline modifications.
 
 ### Bug Fixes
 
-- Fixed Batch DLSS Deploy getting stuck indefinitely when a download hangs. Added a 120-second timeout to DLSS and Streamline DLL downloads — if a download stalls, it's skipped and the next game is processed.
-- Fixed "Restore All" button in the DLSS/Streamline section not visually standing out when backups exist. The button now uses blue accent styling when enabled and stays fully visible even when the Streamline column is greyed out.
-- Fixed DLSS On-Screen Indicator toggle causing an infinite UAC prompt loop when the user clicks No/Cancel. The combo now suppresses the handler while reverting.
-- Fixed DLSS presets and render scale not applying in-game for profiles matched by title/fuzzy match. The game's exe is now automatically registered in the NVIDIA profile's Applications list if it isn't already.
-- Install warning dialogs now show the game name in the title so it's clear which game triggered the warning.
-- Fixed Luma install warning dialog popping up during Update All. The warning is now correctly skipped during batch updates.
-- Fixed RenoDX Info button not showing wiki status badge for games that have a wiki entry but no notes text. The status (✅ Working, 🚧 In Progress, etc.) now displays correctly for all wiki-listed games.
-- Fixed manually added games (drag-drop or Add Game) not detecting existing Display Commander, OptiScaler, DXVK, or DLSS/Streamline installations until Refresh. These are now scanned in the background immediately after adding.
-- Fixed OptiScaler uninstall potentially deleting the game's DLSS DLLs when no backup existed. Now only removes DLSS files if a .original backup is present (confirming OptiScaler deployed them).
-- ReShade uninstall now also removes reshade.ini, ReShade2.ini, ReShadePreset.ini, and reshade.log from the game folder.
-- ReLimiter uninstall now also removes relimiter.ini, log files, and CSV files from the game folder.
-- Fixed INI merge button not applying [renodx] UE-Extended section when UE-Extended was already installed. Now injects the section on INI deploy if the mod is active.
-- Shader pack list reorganized: Recommended slimmed to 3 HDR-relevant packs, all others moved to Extra, sorted alphabetically within each category. Added crosire reshade-shaders (legacy) pack.
-- Fixed managed addons (DLSS Fix, DevKit) never auto-updating due to the rolling "snapshot" release tag being used as the version token. Now uses Content-Length for update detection on rolling-tag releases.
+- Fixed Batch DLSS Deploy hanging indefinitely on stalled downloads (120s timeout added).
+- Fixed DLSS On-Screen Indicator toggle causing an infinite UAC prompt loop on cancel.
+- Fixed DLSS presets and render scale not applying for profiles matched by title/fuzzy match — game exe now auto-registered in NVIDIA profile.
+- Fixed OptiScaler uninstall deleting the game's DLSS DLLs when no .original backup existed.
+- Fixed RenoDX Info button not showing wiki status badge for games with wiki entries but no notes text.
+- Fixed manually added games not detecting DC, OptiScaler, DXVK, or DLSS/Streamline until Refresh.
+- Fixed managed addons (DLSS Fix, DevKit) never auto-updating due to rolling "snapshot" tag.
+- Fixed INI merge button not applying [renodx] UE-Extended section when mod was already installed.
+- Fixed Luma install warning popping up during Update All.
 
 ### Manifest Updates
 
-- Directive 8020 — added to UE-Extended games list with native HDR info note.
-- Anno 117 - Pax Romana — install path override to `Bin\Win64`, 64-bit override, DX12 API override. Fixes DLSS/Streamline not being detected (was scanning the wrong folder).
-- Mass Effect™ Legendary Edition — added EA App / Game Pass variant (without ™) to splitGames so the split works regardless of store.
-- All UE-Extended game notes updated: removed 'set Upgrade Path to Off' instructions — RHI now configures this automatically on install.
-- Black Myth: Wukong — added to native HDR games list.
-- LEGO® Batman™: Legacy of the Dark Knight — added to native HDR games list.
-- Of Ash and Steel — added to native HDR games list.
-- REANIMAL — moved from wikiUnlinks to native HDR games list.
+- Added 15+ games to native HDR list (Black Myth Wukong, Avowed, Lies of P, Returnal, etc.)
+- Added Ultra+ HDR toggle notes for 13 games.
+- Added engineIniPathOverrides for games with non-standard AppData folders.
 - Persona 5 Royal — added to lumaRenodxCompat, removed from wikiUnlinks.
-- LEGO Batman — added engineIniPathOverride (project name: "Dinner").
-- Added Ultra+ HDR toggle notes for 13 games (1348 Ex Voto, Conan Exiles, EVERSPACE 2, Ghostrunner 2, INDUSTRIA 2, Luna Abyss, Metal Gear Solid Delta, Quarantine Zone, RoboCop Rogue City, S.T.A.L.K.E.R. 2, Samson, Star Wars Jedi Fallen Order, Subnautica 2).
 - Updated RE Framework game notes — removed external download links (now bundled).
-- Neverness To Everness — added dllNameOverride (ReShade as d3d12.dll), game note, DQ7R UW fix link.
-- Directive 8020, SMT5V — added engineIniPathOverrides.
-- Added to native HDR games: Assetto Corsa Rally, Causal Loop, Cthulhu: The Cosmic Abyss, Directive 8020, Echoes of the End, Kaku: Ancient Seal, Luna Abyss, Neverness To Everness, Samson, Star Trek: Resurgence, Subnautica 2, The Sinking City Remastered, Vampire: The Masquerade - Bloodlines 2.
+- Removed 'set Upgrade Path to Off' from all game notes — RHI handles this automatically.
+- Neverness To Everness — dllNameOverride (ReShade as d3d12.dll).
 
 ---
 
