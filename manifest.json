@@ -330,7 +330,6 @@
     "Mirror's Edge": "Binaries",
     "Mortal Kombat 11": "Binaries\\Retail",
     "Of Ash and Steel": "ofAshAndSteelGame\\Binaries\\Win64",
-    "Outward": "Outward_Defed",
     "Project Motor Racing": "x64",
     "SILENT HILL 2": "SHProto\\Binaries\\Win64",
     "Satisfactory": "Engine\\Binaries\\Win64",
@@ -937,6 +936,10 @@
       { "name": "Mass Effect 1 (Legendary Edition)", "subPath": "Game\\ME1\\Binaries\\Win64" },
       { "name": "Mass Effect 2 (Legendary Edition)", "subPath": "Game\\ME2\\Binaries\\Win64" },
       { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
+    ],
+    "Outward": [
+      { "name": "Outward", "subPath": "" },
+      { "name": "Outward Definitive Edition", "subPath": "Outward_Defed" }
     ]
   },
   "installWarnings": {
