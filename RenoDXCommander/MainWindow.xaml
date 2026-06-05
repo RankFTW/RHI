@@ -1840,7 +1840,7 @@
                                         <TextBlock Text="What RHI does" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Scans Steam, GOG, Epic, EA App, Ubisoft, Xbox/Game Pass, Battle.net, and Rockstar for installed games. Provides one-click install, update, and uninstall for ReShade, RenoDX addons, and Luma Framework mods. Manages shader packs and per-game overrides."/>
+                                                   Text="Scans Steam, GOG, Epic, EA App, Ubisoft, Xbox/Game Pass, Battle.net, and Rockstar for installed games. Provides one-click install, update, and uninstall for ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma Framework, and DXVK. Manages DLSS/Streamline version swaps, DLSS presets, 43 shader packs, per-game overrides, and Ryubing emulator support. Automatically configures Engine.ini and reshade.ini for UE-Extended native HDR games."/>
                                     </StackPanel>
                                 </Border>
 
@@ -1891,7 +1891,7 @@
                                             <Run Text="  ·  MIT Licence" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
                                         </TextBlock>
                                         <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" Margin="0,0,0,0" TextWrapping="Wrap"
-                                                   Text="HDR mod framework powering 150+ games. The entire reason this app exists."/>
+                                                   Text="HDR mod framework powering 800+ games. The entire reason this app exists."/>
                                         <HyperlinkButton NavigateUri="https://github.com/clshortfuse/renodx" Padding="0,2,0,0" FontSize="11">
                                             <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/clshortfuse/renodx"/>
                                         </HyperlinkButton>
@@ -1923,7 +1923,7 @@
                                             <Run Text="  ·  Source-available" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
                                         </TextBlock>
                                         <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
-                                                   Text="DX11 modding framework adding HDR support and graphics improvements via the ReShade addon system. Mods are downloaded from official GitHub releases. Experimental integration — not fully supported."/>
+                                                   Text="DX11 modding framework adding HDR support and graphics improvements via the ReShade addon system. Mods are downloaded from official GitHub releases. Drag-and-drop install with auto-detection, update checking, and per-game toggle."/>
                                         <HyperlinkButton NavigateUri="https://github.com/Filoppi/Luma-Framework" Padding="0,2,0,0" FontSize="11">
                                             <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/Filoppi/Luma-Framework"/>
                                         </HyperlinkButton>
