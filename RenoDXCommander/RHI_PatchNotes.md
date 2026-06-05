@@ -36,6 +36,7 @@
 - Updated RE Framework game notes — removed external download links (now bundled).
 - Removed 'set Upgrade Path to Off' from all game notes — RHI handles this automatically.
 - Neverness To Everness — dllNameOverride (ReShade as d3d12.dll).
+- Gothic 1 Remake — added to native HDR list.
 
 ---
 

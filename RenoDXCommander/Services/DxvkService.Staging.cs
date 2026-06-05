@@ -180,7 +180,7 @@ public partial class DxvkService
         var apiUrl = StandardGitHubApi;
 
         // ── Fetch latest release metadata from GitHub API ────────────────
-        string json;
+        string? json;
         try
         {
             json = await _etagCache.GetWithETagAsync(_http, apiUrl).ConfigureAwait(false);
@@ -294,7 +294,7 @@ public partial class DxvkService
         var apiUrl = LiliumGitHubApi;
 
         // ── Fetch latest release metadata from GitHub API ────────────────
-        string json;
+        string? json;
         try
         {
             json = await _etagCache.GetWithETagAsync(_http, apiUrl).ConfigureAwait(false);
@@ -856,7 +856,7 @@ public partial class DxvkService
         var apiUrl = StandardGitHubApi;
 
         // ── 2. Fetch latest release tag from GitHub API ──────────────────
-        string json;
+        string? json;
         try
         {
             json = await _etagCache.GetWithETagAsync(_http, apiUrl).ConfigureAwait(false);

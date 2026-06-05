@@ -65,7 +65,7 @@ public class LiliumShaderService : ILiliumShaderService
             progress?.Report("Checking Lilium HDR shaders...");
 
             // ── 1. Fetch latest release metadata ─────────────────────────────────
-            string json;
+            string? json;
             try
             {
                 json = await _etagCache.GetWithETagAsync(_http, GhApiUrl).ConfigureAwait(false);

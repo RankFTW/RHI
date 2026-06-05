@@ -161,11 +161,6 @@ public sealed partial class MainWindow
             new Uri("https://github.com/RankFTW/ReLimiter"));
     }
 
-    private void LinkDcGithub_Click(object sender, RoutedEventArgs e)
-    {
-        _ = Windows.System.Launcher.LaunchUriAsync(
-            new Uri("https://github.com/pmnoxx/display-commander"));
-    }
 
     // ── Views menu handlers ───────────────────────────────────────────────────
 

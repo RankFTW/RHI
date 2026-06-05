@@ -23,7 +23,7 @@ public partial class OptiScalerService
             progress?.Report(("Checking OptiScaler release...", 5));
 
             // ── 2. Fetch latest release metadata from GitHub API ─────────────────
-            string json;
+            string? json;
             try
             {
                 json = await _etagCache.GetWithETagAsync(_http, GitHubReleasesApi).ConfigureAwait(false);
@@ -301,7 +301,7 @@ public partial class OptiScalerService
         try
         {
             // ── 1. Fetch latest release tag from GitHub API ──────────────────
-            string json;
+            string? json;
             try
             {
                 json = await _etagCache.GetWithETagAsync(_http, GitHubReleasesApi).ConfigureAwait(false);
@@ -398,7 +398,7 @@ public partial class OptiScalerService
             progress?.Report(("Checking OptiPatcher release...", 0));
 
             // ── 1. Fetch rolling release metadata from GitHub API ────────────
-            string json;
+            string? json;
             try
             {
                 json = await _etagCache.GetWithETagAsync(_http, OptiPatcherReleasesApi).ConfigureAwait(false);
@@ -523,7 +523,7 @@ public partial class OptiScalerService
     {
         try
         {
-            string json;
+            string? json;
             try
             {
                 json = await _etagCache.GetWithETagAsync(_http, OptiPatcherReleasesApi).ConfigureAwait(false);

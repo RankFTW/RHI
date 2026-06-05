@@ -155,13 +155,6 @@ public partial class AuxInstallService
     }
 
     /// <summary>Returns true if the game name matches Red Dead Redemption 2 or Max Payne 3 (case-insensitive).
-    /// These games use the dedicated reshade.rdr2.ini template with special depth buffer settings.</summary>
-    internal static bool UsesRdr2Template(string gameName) =>
-        gameName.Contains("Red Dead Redemption 2", StringComparison.OrdinalIgnoreCase) ||
-        gameName.Equals("RDR2", StringComparison.OrdinalIgnoreCase) ||
-        gameName.Contains("Max Payne 3", StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>Returns true if the game name matches Red Dead Redemption 2 or Max Payne 3 (case-insensitive).
     /// These games use the dedicated reshade.rdr2.ini template.</summary>
     internal static bool IsRdr2(string gameName) =>
         gameName.Contains("Red Dead Redemption 2", StringComparison.OrdinalIgnoreCase) ||

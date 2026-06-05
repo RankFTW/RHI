@@ -310,7 +310,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         if (toRemove.Count > 0)
         {
             foreach (var key in toRemove)
-                _trustedPathCache.Remove(key);
+                _trustedPathCache!.Remove(key);
             SaveTrustedCache();
             CrashReporter.Log($"[DlssStreamlineService.ClearScanCaches] Invalidated {toRemove.Count} partial trusted entries for re-scan");
         }

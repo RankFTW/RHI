@@ -87,7 +87,6 @@
                                 <MenuFlyoutItem Text="Luma Wiki" Click="LinkLumaWiki_Click"/>
                                 <MenuFlyoutItem Text="RHI GitHub" Click="LinkRhiGithub_Click"/>
                                 <MenuFlyoutItem Text="ReLimiter GitHub" Click="LinkReLimiterGithub_Click"/>
-                                <MenuFlyoutItem Text="Display Commander GitHub" Click="LinkDcGithub_Click"/>
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>

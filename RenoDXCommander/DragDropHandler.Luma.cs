@@ -110,7 +110,6 @@ public partial class DragDropHandler
             // Folder picker callback for archives with multiple game folders
             async Task<string?> FolderPicker(List<string> folders)
             {
-                string? result = null;
                 var tcs = new TaskCompletionSource<string?>();
                 _window.DispatcherQueue.TryEnqueue(async () =>
                 {

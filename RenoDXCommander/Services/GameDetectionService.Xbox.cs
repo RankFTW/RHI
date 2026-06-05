@@ -40,7 +40,7 @@ public partial class GameDetectionService
                         continue;
 
                     // Get the install location
-                    string installLocation;
+                    string? installLocation;
                     try
                     {
                         installLocation = package.InstalledLocation?.Path;

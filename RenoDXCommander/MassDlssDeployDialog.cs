@@ -214,7 +214,6 @@ public class MassDlssDeployDialog
 
         int dlssCount = 0, dlssdCount = 0, dlssgCount = 0, slCount = 0;
         int srPresetCount = 0, rrPresetCount = 0, fgPresetCount = 0, presetMissedCount = 0;
-        int profilesCreatedCount = 0;
         int skippedNoComponent = 0, skippedV1 = 0, skippedAlreadyAtVersion = 0;
 
         // Set auto-create flag on preset service
@@ -300,7 +299,7 @@ public class MassDlssDeployDialog
                 {
                     var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssPath));
                     if (installed == dlssVersion) { skippedAlreadyAtVersion++; }
-                    else { await _dlssService.SwapDlssAsync(detection.DlssPath, dlssVersion); dlssCount++; }
+                    else { await _dlssService.SwapDlssAsync(detection.DlssPath, dlssVersion!); dlssCount++; }
                 }
             }
             else if (dlssVersion != NoneOption && detection.DlssPath == null) { skippedNoComponent++; }
@@ -321,7 +320,7 @@ public class MassDlssDeployDialog
                 {
                     var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssdPath));
                     if (installed == dlssdVersion) { skippedAlreadyAtVersion++; }
-                    else { await _dlssService.SwapDlssdAsync(detection.DlssdPath, dlssdVersion); dlssdCount++; }
+                    else { await _dlssService.SwapDlssdAsync(detection.DlssdPath, dlssdVersion!); dlssdCount++; }
                 }
             }
             else if (dlssdVersion != NoneOption && detection.DlssdPath == null) { skippedNoComponent++; }
@@ -342,7 +341,7 @@ public class MassDlssDeployDialog
                 {
                     var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.DlssgPath));
                     if (installed == dlssgVersion) { skippedAlreadyAtVersion++; }
-                    else { await _dlssService.SwapDlssgAsync(detection.DlssgPath, dlssgVersion); dlssgCount++; }
+                    else { await _dlssService.SwapDlssgAsync(detection.DlssgPath, dlssgVersion!); dlssgCount++; }
                 }
             }
             else if (dlssgVersion != NoneOption && detection.DlssgPath == null) { skippedNoComponent++; }
@@ -362,7 +361,7 @@ public class MassDlssDeployDialog
                 {
                     var installed = DlssStreamlineService.FormatVersion(_dlssService.GetFileVersion(detection.StreamlineInterposerPath!));
                     if (installed == slVersion) { skippedAlreadyAtVersion++; }
-                    else { await _dlssService.SwapStreamlineAsync(detection.StreamlineFolder, slVersion); slCount++; }
+                    else { await _dlssService.SwapStreamlineAsync(detection.StreamlineFolder, slVersion!); slCount++; }
                 }
             }
             else if (slVersion != NoneOption && detection.StreamlineFolder == null) { skippedNoComponent++; }
