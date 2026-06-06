@@ -29,14 +29,13 @@
 
 ### Manifest Updates
 
-- Added 15+ games to native HDR list (Black Myth Wukong, Avowed, Lies of P, Returnal, etc.)
+- Added 17+ games to native HDR list (Black Myth Wukong, Avowed, Lies of P, Returnal, Gothic 1 Remake, Star Trek: Voyager, etc.)
 - Added Ultra+ HDR toggle notes for 13 games.
 - Added engineIniPathOverrides for games with non-standard AppData folders.
 - Persona 5 Royal — added to lumaRenodxCompat, removed from wikiUnlinks.
 - Updated RE Framework game notes — removed external download links (now bundled).
 - Removed 'set Upgrade Path to Off' from all game notes — RHI handles this automatically.
 - Neverness To Everness — dllNameOverride (ReShade as d3d12.dll).
-- Gothic 1 Remake — added to native HDR list.
 - Outward — split into Outward (original) + Outward Definitive Edition.
 
 ---
