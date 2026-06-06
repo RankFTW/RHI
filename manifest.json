@@ -497,17 +497,17 @@
 
   "gameNotes": {
     "CODE VEIN II": {
-      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
-      "notesUrl": "https://github.com/RankFTW/rdxc-manifest/releases/download/Engine.ini/Engine.ini",
-      "notesUrlLabel": "Engine.ini"
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     },
     "Crisol: Theater of Idols": {
-      "notes": "ℹ️ Game supports UE-Extended using Native HDR.\n\nHDR must be enabled in the game's display settings.",
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
     "Directive 8020": {
-      "notes": "ℹ️ Game supports UE-Extended using Native HDR.\n\nHDR must be enabled in the game's display settings.",
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
@@ -537,7 +537,12 @@
       "notesUrlLabel": null
     },
     "Echoes of the End: Enhanced Edition": {
-      "notes": "ℹ️ Game supports UE-Extended using Native HDR.\n\nHDR must be enabled in the game's display settings.",
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    },
+    "Gothic 1 Remake": {
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
@@ -587,9 +592,9 @@
       "notesUrlLabel": null
     },
     "High On Life 2": {
-      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
-      "notesUrl": "https://github.com/RankFTW/rdxc-manifest/releases/download/Engine.ini/Engine.ini",
-      "notesUrlLabel": "Engine.ini"
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     },
     "Neverness to Everness": {
       "notes": "ℹ️ RHI handles installation instructions automatically. Just click Install.",
@@ -607,12 +612,12 @@
       "notesUrlLabel": null
     },
     "Nobody Wants to Die": {
-      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nCreate an Engine.ini in the game's Appdata folder with the following information:\n\n[SystemSettings]\nr.AllowHDR=1\nr.HDR.EnableHDROutput=1\nr.HDR.Display.OutputDevice=3\nr.HDR.Display.ColorGamut=2\nr.HDR.UI.CompositeMode=1\n\n[/Script/Engine.RendererSettings]\nr.LUT.UpdateEveryFrame=1\n\nYou can download a preconfigured Engine.ini here:",
-      "notesUrl": "https://github.com/RankFTW/rdxc-manifest/releases/download/Engine.ini/Engine.ini",
-      "notesUrlLabel": "Engine.ini"
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     },
     "Of Ash and Steel": {
-      "notes": "ℹ️ Works with UE-Extended - Upgrades SDR to HDR",
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
@@ -637,7 +642,7 @@
       "notesUrlLabel": null
     },
     "Titan Quest II": {
-      "notes": "⚠️ This game supports UE-Extended using native HDR. Additional steps must be taken for this to work.\n\nThe only way to enable native HDR is by using the Ultra Plus mod which is linked below.\n\nGame screen will go black while in inventory while using UE-Extended in this title.\n\nDownload Ultra Plus mod here, Ultra Plus Mod Manager recommended:",
+      "notes": "⚠️ Native HDR requires the Ultra Plus mod (linked below). Game screen will go black while in inventory while using UE-Extended.",
       "notesUrl": "https://www.nexusmods.com/titanquest2/mods/11",
       "notesUrlLabel": "UltraPlus Mod"
     },
@@ -647,7 +652,7 @@
       "notesUrlLabel": null
     },
     "Until Dawn™": {
-      "notes": "ℹ️ Game supports UE-Extended using native HDR.\n\nHDR must be enabled in the game's display settings.",
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
