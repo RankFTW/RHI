@@ -10,7 +10,7 @@
 
 ### Improvements
 
-- Shader pack list reorganized: Recommended slimmed to 3 HDR-relevant packs, all others moved to Extra, sorted alphabetically. Added crosire reshade-shaders (legacy) pack.
+- Shader pack list reorganized: Recommended slimmed to 4 HDR-relevant packs (crosire master, PumboAutoHDR, clshortfuse, MaxG2D Simple HDR), all others moved to Extra, sorted alphabetically. Added crosire reshade-shaders (legacy) pack.
 - About page overhauled: updated description, added RE Framework and OptiScaler credits/links, removed outdated disclaimer.
 - Uninstall cleanup: ReShade now removes reshade.ini/log files, ReLimiter removes relimiter.ini/log/csv files.
 - Anti-cheat warning updated to include DLSS/Streamline modifications.
