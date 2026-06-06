@@ -136,7 +136,7 @@ public partial class ShaderPackService : IShaderPackService
             Url         : "https://github.com/MaxG2D/ReshadeSimpleHDRShaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
             Description : "Simple HDR bloom, lens flare, and tone mapping",
-            Category    : PackCategory.Extra
+            Category    : PackCategory.Recommended
         ),
         new(
             Id          : "ClshortfuseShaders",
