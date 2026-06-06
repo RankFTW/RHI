@@ -672,7 +672,7 @@ Each game's override panel has an Addons dropdown:
 ### Special Addons
 
 - **RenoDX DevKit** — always available in the manager alongside official addons, with 32-bit and 64-bit variants.
-- **DLSS Fix** — makes ReShade draw on native game frames instead of frame gen frames, and hides DLSS upscaling from ReShade. 64-bit only.
+- **DLSS Fix** — makes ReShade draw on native game frames instead of frame gen frames, and hides DLSS upscaling from ReShade. 64-bit only. When deployed, RHI automatically configures reshade.ini with the correct `DLSSPath` and `StreamlinePath` for each game (only for games with Streamline detected). These settings are removed when DLSS Fix is uninstalled or addon mode is set to Off.
 
 ### Auto-Update
 

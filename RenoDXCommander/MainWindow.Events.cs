@@ -1435,6 +1435,16 @@ public sealed partial class MainWindow
                 new Uri("https://github.com/pmnoxx/display-commander/releases/tag/latest_build"));
     }
 
+    private async void DetailLumaStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        var card = ViewModel.SelectedGame;
+        if (card == null) return;
+
+        if (card.IsLumaInstalled)
+            await Windows.System.Launcher.LaunchUriAsync(
+                new Uri("https://github.com/Filoppi/Luma-Framework/releases"));
+    }
+
     private async void DetailRsStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         if (ViewModel.SelectedGame?.RsStatus == Models.GameStatus.Installed)

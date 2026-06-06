@@ -485,6 +485,9 @@ public partial class DetailPanelBuilder
             _window.DetailLumaRow.Visibility = Visibility.Visible;
             _window.DetailLumaStatus.Text = card.LumaStatusText;
             _window.DetailLumaStatus.Foreground = UIFactory.GetBrush(card.LumaStatusColor);
+            _window.DetailLumaStatus.TextDecorations = card.IsLumaInstalled
+                ? Windows.UI.Text.TextDecorations.Underline
+                : Windows.UI.Text.TextDecorations.None;
             _window.DetailLumaInstallBtn.Tag = card;
             _window.DetailLumaInstallBtn.Content = WithInfoArrow(card.LumaActionLabel, HasRealInfoContent(card, AddonType.Luma), card.LumaStatus == GameStatus.UpdateAvailable, _window.DetailLumaInstallBtn);
             _window.DetailLumaInstallBtn.IsEnabled = card.IsLumaNotInstalling;

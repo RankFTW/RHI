@@ -689,7 +689,9 @@
                                     <TextBlock Grid.Column="0" Text="Luma" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                     <TextBlock x:Name="DetailLumaStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
-                                               VerticalAlignment="Center" HorizontalTextAlignment="Center"/>
+                                               VerticalAlignment="Center" HorizontalTextAlignment="Center"
+                                               PointerPressed="DetailLumaStatus_PointerPressed"
+                                               PointerEntered="LinkText_PointerEntered" PointerExited="LinkText_PointerExited"/>
                                     <Button x:Name="DetailLumaInfoBtn" x:FieldModifier="internal" Grid.Column="2"
                                             Content="Info" FontSize="11" Padding="6,2,6,2"
                                             Background="{StaticResource SurfaceOverlayBrush}"

@@ -2,7 +2,7 @@
 
 ### New Features
 
-- **UE-Extended overhaul** — The UE-Extended toggle now appears on ALL Unreal Engine games (including those with named mods). When installing UE-Extended, RHI automatically configures reshade.ini for native HDR and deploys Engine.ini HDR settings to the game's AppData config folder. No manual INI editing required. A new "Config" button in the detail panel opens the game's config folder. Users who want to upgrade SDR instead will need to set "Upgrade Path" to On in RenoDX Advanced Settings AND remove the lines from Engine.ini.
+- **UE-Extended overhaul** — The UE-Extended toggle now appears on ALL Unreal Engine games (including those with named mods). When installing UE-Extended, RHI automatically configures reshade.ini for native HDR and deploys Engine.ini HDR settings to the game's AppData config folder. No manual INI editing required. A new "Config" button in the detail panel opens the game's config folder. If the game has an in-game HDR option, make sure to enable that too. Users who want to upgrade SDR instead will need to set "Upgrade Path" to On in RenoDX Advanced Settings AND remove the lines from Engine.ini.
 - **DLSS Render Scale Override** — Force a custom DLSS render resolution per-game for both SR and Ray Reconstruction. Choose from named presets (DLAA, Quality, Performance, etc.) or enter any custom percentage. Not compatible with OptiScaler.
 - **DLSS Fix auto-configuration (beta)** — When the DLSS Fix addon is deployed, reshade.ini is automatically configured with the correct DLSSPath and StreamlinePath for each game. Only activates for games with Streamline detected. Settings are removed when DLSS Fix is uninstalled.
 - **Ryubing emulator support** — Drag `Ryujinx.exe` into RHI to add Ryubing. Install RenoDX downloads all 9 Souperman9 Switch game addons in one click. Addons self-detect which game is running — no swapping needed. Requires RenoVK in the Custom ReShade folder.
@@ -37,6 +37,7 @@
 - Removed 'set Upgrade Path to Off' from all game notes — RHI handles this automatically.
 - Neverness To Everness — dllNameOverride (ReShade as d3d12.dll).
 - Gothic 1 Remake — added to native HDR list.
+- Outward — split into Outward (original) + Outward Definitive Edition.
 
 ---
 
