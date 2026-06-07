@@ -1,1 +1,1 @@
-1.9.9 leaving beta in 24 hours. If you have any issues still to be fixed then please report them now. Thank you all.
+I am going to be away from the 8th of June until the 12th of June as my wife is dragging me on holiday. Support will be limited in this time. Thank you all.
