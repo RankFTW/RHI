@@ -543,7 +543,7 @@
       "notesUrlLabel": null
     },
     "Gothic 1 Remake": {
-      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
+      "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.\n\n⚠️ Turn off 'SDR EOTF Emulation' in RenoDX Settings.",
       "notesUrl": null,
       "notesUrlLabel": null
     },
