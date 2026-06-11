@@ -117,6 +117,9 @@ public partial class DlssStreamlineService
         }
 
         CrashReporter.Log($"[DlssStreamlineService.SwapStreamlineAsync] Replaced {replaced} Streamline DLLs in '{gameFolder}' with {version}");
+
+        // Remove custom marker since a versioned Streamline is now active
+        RemoveCustomStreamlineMarker(gameFolder);
     }
 
     public async Task SwapDlssCustomAsync(string dllPath)
@@ -154,6 +157,9 @@ public partial class DlssStreamlineService
                 replaced++;
             }
         }
+
+        // Write marker file so the UI knows Custom is active
+        WriteCustomStreamlineMarker(gameFolder);
 
         CrashReporter.Log($"[DlssStreamlineService.SwapStreamlineCustomAsync] Replaced {replaced} Streamline DLLs with custom files");
     }
@@ -203,6 +209,9 @@ public partial class DlssStreamlineService
         }
 
         CrashReporter.Log($"[DlssStreamlineService.RestoreStreamline] Restored Streamline in '{gameFolder}'");
+
+        // Remove custom marker since we're reverting to originals
+        RemoveCustomStreamlineMarker(gameFolder);
     }
 
     public void RestoreAll(DlssDetectionResult detection)
@@ -337,5 +346,25 @@ public partial class DlssStreamlineService
         {
             CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheStreamlineAsync] Error — {ex.Message}");
         }
+    }
+
+    // ── Custom Streamline marker ──────────────────────────────────────────────
+
+    private const string CustomStreamlineMarker = "_rhi_custom_streamline";
+
+    /// <summary>Returns true if the custom Streamline marker file exists in the game folder.</summary>
+    public static bool IsCustomStreamlineActive(string gameFolder)
+        => File.Exists(Path.Combine(gameFolder, CustomStreamlineMarker));
+
+    private static void WriteCustomStreamlineMarker(string gameFolder)
+    {
+        try { File.WriteAllText(Path.Combine(gameFolder, CustomStreamlineMarker), "Custom Streamline deployed by RHI"); }
+        catch { }
+    }
+
+    private static void RemoveCustomStreamlineMarker(string gameFolder)
+    {
+        try { var path = Path.Combine(gameFolder, CustomStreamlineMarker); if (File.Exists(path)) File.Delete(path); }
+        catch { }
     }
 }

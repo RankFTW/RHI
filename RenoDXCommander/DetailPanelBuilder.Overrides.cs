@@ -1976,7 +1976,7 @@ public partial class DetailPanelBuilder
 
             _window.OverridesPanel.Children.Add(new TextBlock
             {
-                Text = "DLSS / Streamline",
+                Text = "DLSS / Streamline / ReBAR",
                 FontSize = 12,
                 Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
                 Margin = new Thickness(0, 0, 0, 4),
@@ -2067,8 +2067,13 @@ public partial class DetailPanelBuilder
             // SL column (no preset)
             // Disable for Streamline v1.x (not compatible with v2.x+ versions in manifest)
             bool slEnabled = hasStreamline && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true);
+            // Check if custom Streamline marker exists — override version to "Custom"
+            var slInstalledVersion = (hasStreamline && !string.IsNullOrEmpty(card.DlssDetection?.StreamlineFolder)
+                && DlssStreamlineService.IsCustomStreamlineActive(card.DlssDetection.StreamlineFolder))
+                ? "Custom"
+                : card.StreamlineInstalledVersion;
             var slCol = BuildDlssColumn("Streamline", slEnabled, dlssService.StreamlineVersions,
-                card.StreamlineInstalledVersion, null, 0,
+                slInstalledVersion, null, 0,
                 async (version) =>
                 {
                     var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
@@ -2132,6 +2137,163 @@ public partial class DetailPanelBuilder
 
             Grid.SetColumn(slCol, 6);
             dlssRowGrid.Children.Add(slCol);
+
+            // ── ReBAR column (5th) — stacked Enable, Mode, Size Limit ──
+            if (presetService.IsSupported)
+            {
+                // Add divider
+                var rebarDivider = new Border
+                {
+                    Width = 1,
+                    Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
+                    Margin = new Thickness(0, 0, 0, 0),
+                };
+                dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                Grid.SetColumn(rebarDivider, 7);
+                dlssRowGrid.Children.Add(rebarDivider);
+
+                // ReBAR column
+                dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                bool rebarEnabled = presetService.GetReBarEnabled(card.GameName, card.InstallPath ?? "");
+                uint rebarMode = presetService.GetReBarMode(card.GameName, card.InstallPath ?? "");
+                ulong rebarSizeLimit = presetService.GetReBarSizeLimit(card.GameName, card.InstallPath ?? "");
+
+                var rebarCol = new StackPanel { Spacing = 4 };
+                var rebarLabel = new TextBlock { Text = "ReBAR", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+                ToolTipService.SetToolTip(rebarLabel, "Resizable BAR — allows the CPU to access full GPU VRAM at once. Can improve performance by 5-10% in some titles. RTX 30+ and BIOS support required.");
+                rebarCol.Children.Add(rebarLabel);
+
+                // Enable dropdown
+                var rebarEnableCombo = new ComboBox
+                {
+                    ItemsSource = new[] { "Off", "On" },
+                    SelectedIndex = rebarEnabled ? 1 : 0,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(rebarEnableCombo, "Off = ReBAR disabled (driver default). On = Force-enable ReBAR for this game.");
+
+                var rebarComboInit = true;
+                rebarEnableCombo.SelectionChanged += (s, ev) =>
+                {
+                    if (rebarComboInit) return;
+                    var selected = rebarEnableCombo.SelectedItem as string;
+                    bool enabling = selected == "On";
+                    CrashReporter.Log($"[ReBAR.SelectionChanged] enabling={enabling}");
+
+                    presetService.SetReBarEnabled(card.GameName, card.InstallPath ?? "", enabling, rebarMode);
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
+                };
+                rebarCol.Children.Add(rebarEnableCombo);
+                rebarComboInit = false; // Must be set immediately after adding to visual tree
+
+                // Mode dropdown
+                var modeItems = DlssPresetService.ReBarModes.Select(m => m.Name).ToArray();
+                int modeIdx = Array.FindIndex(DlssPresetService.ReBarModes, m => m.Value == rebarMode);
+                if (modeIdx < 0) modeIdx = 0;
+
+                var rebarModeCombo = new ComboBox
+                {
+                    ItemsSource = modeItems,
+                    SelectedIndex = modeIdx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                    IsEnabled = rebarEnabled,
+                };
+                ToolTipService.SetToolTip(rebarModeCombo, "Standard = conservative. Optimized = aggressive driver scheduling (used by NVIDIA-whitelisted titles).");
+
+                var modeComboInit = true;
+                rebarModeCombo.SelectionChanged += async (s, ev) =>
+                {
+                    if (modeComboInit) return;
+                    int idx = rebarModeCombo.SelectedIndex;
+                    if (idx < 0) return;
+                    uint newMode = DlssPresetService.ReBarModes[idx].Value;
+
+                    if (newMode == 0x00000002 && !presetService.ReBarOptimizedWarningAcknowledged)
+                    {
+                        var dontShow = new CheckBox
+                        {
+                            Content = "Don't show this warning again",
+                            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                            Margin = new Thickness(0, 8, 0, 0),
+                        };
+                        var panel = new StackPanel();
+                        panel.Children.Add(new TextBlock
+                        {
+                            Text = "⚠ OPTIMIZED MODE\n\n"
+                                + "This uses aggressive driver scheduling used by NVIDIA-whitelisted games.\n"
+                                + "May provide better performance but increases crash risk in unsupported titles.\n\n"
+                                + "Continue?",
+                            TextWrapping = TextWrapping.Wrap,
+                            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                            FontSize = 13,
+                        });
+                        panel.Children.Add(dontShow);
+
+                        var dialog = new ContentDialog
+                        {
+                            Title = "⚠ Optimized Mode",
+                            Content = panel,
+                            PrimaryButtonText = "Continue",
+                            CloseButtonText = "Cancel",
+                            XamlRoot = _window.Content.XamlRoot,
+                            RequestedTheme = ElementTheme.Dark,
+                        };
+                        var result = await DialogService.ShowSafeAsync(dialog);
+                        if (result != ContentDialogResult.Primary)
+                        {
+                            modeComboInit = true;
+                            rebarModeCombo.SelectedIndex = 0;
+                            modeComboInit = false;
+                            return;
+                        }
+                        if (dontShow.IsChecked == true)
+                            presetService.ReBarOptimizedWarningAcknowledged = true;
+                    }
+
+                    presetService.SetReBarMode(card.GameName, card.InstallPath ?? "", newMode);
+                };
+                rebarCol.Children.Add(rebarModeCombo);
+                modeComboInit = false;
+                var sizeItems = DlssPresetService.ReBarSizeLimits.Select(sl => sl.Name).ToArray();
+                int sizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, sl => sl.Value == rebarSizeLimit);
+                if (sizeIdx < 0) sizeIdx = 1; // Default to 1GB
+
+                var rebarSizeCombo = new ComboBox
+                {
+                    ItemsSource = sizeItems,
+                    SelectedIndex = sizeIdx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                    IsEnabled = rebarEnabled,
+                };
+                ToolTipService.SetToolTip(rebarSizeCombo, "BAR size limit. 1GB is default. 512MB can reduce stutters in some titles. Larger values may help games with large textures.");
+
+                var sizeComboInit = true;
+                rebarSizeCombo.SelectionChanged += (s, ev) =>
+                {
+                    if (sizeComboInit) return;
+                    int idx = rebarSizeCombo.SelectedIndex;
+                    if (idx < 0) return;
+                    ulong newSize = DlssPresetService.ReBarSizeLimits[idx].Value;
+                    presetService.SetReBarSizeLimit(card.GameName, card.InstallPath ?? "", newSize);
+                };
+                rebarCol.Children.Add(rebarSizeCombo);
+                sizeComboInit = false;
+                if (!rebarEnabled)
+                {
+                    rebarModeCombo.Opacity = 0.4;
+                    rebarSizeCombo.Opacity = 0.4;
+                }
+
+                Grid.SetColumn(rebarCol, 8);
+                dlssRowGrid.Children.Add(rebarCol);
+            }
 
             _window.OverridesPanel.Children.Add(dlssRowGrid);
         }
@@ -2395,15 +2557,22 @@ public partial class DetailPanelBuilder
         int selectedIndex = 0;
         if (installedVersion != null && isPresent)
         {
-            for (int i = 0; i < availableVersions.Count; i++)
+            if (installedVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
             {
-                if (installedVersion.Equals(availableVersions[i], StringComparison.OrdinalIgnoreCase)
-                    || availableVersions[i].StartsWith(installedVersion + ".", StringComparison.OrdinalIgnoreCase)
-                    || availableVersions[i].StartsWith(installedVersion, StringComparison.OrdinalIgnoreCase)
-                    || installedVersion.StartsWith(availableVersions[i], StringComparison.OrdinalIgnoreCase))
+                selectedIndex = items.Count - 1; // "Custom" is always last
+            }
+            else
+            {
+                for (int i = 0; i < availableVersions.Count; i++)
                 {
-                    selectedIndex = i + 1;
-                    break;
+                    if (installedVersion.Equals(availableVersions[i], StringComparison.OrdinalIgnoreCase)
+                        || availableVersions[i].StartsWith(installedVersion + ".", StringComparison.OrdinalIgnoreCase)
+                        || availableVersions[i].StartsWith(installedVersion, StringComparison.OrdinalIgnoreCase)
+                        || installedVersion.StartsWith(availableVersions[i], StringComparison.OrdinalIgnoreCase))
+                    {
+                        selectedIndex = i + 1;
+                        break;
+                    }
                 }
             }
         }

@@ -1,3 +1,27 @@
+## v2.0.0-beta1
+
+### New Features
+
+- **ReBAR (Resizable BAR) Control** — Force-enable NVIDIA Resizable BAR per-game directly from RHI. Three controls in the DLSS/Streamline section: Enable (Off/On), Mode (Standard/Optimized), and Size Limit (512MB–32GB). Optimized mode uses NVIDIA's aggressive driver scheduling for whitelisted-level performance. Requires RTX 30+ with BIOS ReBAR support. UAC prompt on each change (driver settings require admin). Changes are verified in NVIDIA Profile Inspector.
+
+### Improvements
+
+- Compact view window size increased by 5% (1166×861) to accommodate the ReBAR section without overflow.
+
+### Bug Fixes
+
+- Fixed Streamline "Custom" selection reverting to a version number after panel rebuild. A marker file now tracks custom deployments so the dropdown persists correctly.
+
+### Manifest Updates
+
+- Borderlands 4, Gothic 1 Remake, S.T.A.L.K.E.R. 2: Heart of Chornobyl, SILENT HILL f, Split Fiction, Star Trek: Voyager - Across the Unknown, WUCHANG: Fallen Feathers — added to native HDR list.
+- Stellar Blade — install path override (SB\Binaries\Win64).
+- Outward — split into Outward (original) + Outward Definitive Edition.
+- Gothic 1 Remake — game note: disable SDR EOTF Emulation in RenoDX.
+- Updated all native HDR game notes to reflect auto Engine.ini deployment.
+
+---
+
 ## v1.9.9
 
 ### New Features
