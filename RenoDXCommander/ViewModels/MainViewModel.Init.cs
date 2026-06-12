@@ -2302,7 +2302,7 @@ public partial class MainViewModel
                         case "OS":   if (newCard.OsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllOs) newCard.OsStatus = GameStatus.UpdateAvailable; break;
                         case "REF":  if (newCard.RefStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllRef) newCard.RefStatus = GameStatus.UpdateAvailable; break;
                         case "DXVK": if (newCard.DxvkStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDxvk) newCard.DxvkStatus = GameStatus.UpdateAvailable; break;
-                        case "LUMA": if (newCard.LumaStatus != GameStatus.NotInstalled) newCard.LumaStatus = GameStatus.UpdateAvailable; break;
+                        case "LUMA": newCard.LumaStatus = GameStatus.UpdateAvailable; break;
                     }
                 }
             }

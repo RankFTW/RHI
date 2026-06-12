@@ -524,7 +524,8 @@ public partial class MainViewModel
                 (c.DcStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDc) ||
                 (c.OsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllOs) ||
                 (c.DxvkStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDxvk) ||
-                (c.RefStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRef)));
+                (c.RefStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRef) ||
+                (c.LumaStatus == GameStatus.UpdateAvailable)));
 
     // Button colours — purple when updates available, dim when idle
     public string UpdateAllBtnBackground => AnyUpdateAvailable ? "#201838" : "#1E242C";

@@ -966,5 +966,19 @@
       "reframework": "Example RE Framework warning",
       "dxvk": "Example DXVK warning"
     }
-  }
+  },
+
+  "dlssSkipGames": [
+    "Deadly Premonition 2",
+    "Dragon Age Inquisition",
+    "Gothic II: Gold Classic",
+    "Outward",
+    "Outward Definitive Edition",
+    "Pathologic 2",
+    "Ryubing",
+    "Solasta: Crown of the Magister",
+    "Stardew Valley",
+    "Terraria",
+    "Tunguska: The Visitation - Final Cut"
+  ]
 }
