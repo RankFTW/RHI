@@ -1166,9 +1166,9 @@ public partial class MainViewModel
                 Maintainer             = effectiveMod?.Maintainer ?? "",
                 IsGenericMod           = useUeExt || (fallback != null && mod == null),
                 EngineHint             = engineOverrideLabel != null
-                                       ? (useUeExt && engine == EngineType.Unknown ? "Unreal Engine" : engineOverrideLabel)
-                                       : (useUeExt && engine == EngineType.Unknown) ? "Unreal Engine"
-                                       : engine == EngineType.Unreal       ? "Unreal Engine"
+                                       ? (useUeExt && engine == EngineType.Unknown ? FormatEngineHint(EngineType.Unreal, installPath) : engineOverrideLabel)
+                                       : (useUeExt && engine == EngineType.Unknown) ? FormatEngineHint(EngineType.Unreal, installPath)
+                                       : engine == EngineType.Unreal       ? FormatEngineHint(EngineType.Unreal, installPath)
                                        : engine == EngineType.UnrealLegacy ? "Unreal (Legacy)"
                                        : engine == EngineType.Unity        ? "Unity"
                                        : engine == EngineType.REEngine     ? "RE Engine" : "",
@@ -1672,6 +1672,17 @@ public partial class MainViewModel
         return cards;
     }
 
+    /// <summary>Formats the engine hint with UE version if detectable. E.g. "Unreal Engine 5.4".</summary>
+    private static string FormatEngineHint(EngineType engine, string installPath)
+    {
+        if (engine == EngineType.Unreal)
+        {
+            var version = GameDetectionService.DetectUeVersion(installPath);
+            return version != null ? $"Unreal Engine {version}" : "Unreal Engine";
+        }
+        return "Unreal Engine";
+    }
+
     private string BuildNotes(string gameName, GameMod effectiveMod, GameMod? fallback, Dictionary<string, string> genericNotes, bool isNativeHdr = false)
     {
         // Native HDR / UE-Extended whitelisted games always get the HDR warning,
@@ -2113,7 +2124,7 @@ public partial class MainViewModel
             // Build engine hint string
             var engineHint = engineOverrideLabel != null
                 ? engineOverrideLabel
-                : engine == EngineType.Unreal       ? "Unreal Engine"
+                : engine == EngineType.Unreal       ? FormatEngineHint(EngineType.Unreal, installPath)
                 : engine == EngineType.UnrealLegacy ? "Unreal (Legacy)"
                 : engine == EngineType.Unity        ? "Unity"
                 : engine == EngineType.REEngine     ? "RE Engine" : "";

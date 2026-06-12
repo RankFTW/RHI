@@ -44,7 +44,7 @@ public partial class GameCardViewModel
         DetectedApis.Contains(GraphicsApiType.DirectX12)
         || DetectedApis.Contains(GraphicsApiType.Vulkan)
         || (GraphicsApi == GraphicsApiType.DirectX11
-            && EngineHint is "Unreal Engine" or "Unreal (Legacy)");
+            && (EngineHint.StartsWith("Unreal Engine", StringComparison.OrdinalIgnoreCase) || EngineHint is "Unreal (Legacy)"));
 
     public bool IsDxvkToggleVisible =>
         // DX11 is intentionally excluded — DXVK on Windows provides marginal to negative

@@ -1692,10 +1692,18 @@ public sealed partial class MainWindow
         var card = GetCardFromSender(sender);
         if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
+        // Open the exact folder where Engine.ini is deployed
+        var configDir = AuxInstallService.ResolveEngineIniDir(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+        if (configDir != null && System.IO.Directory.Exists(configDir))
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(configDir) { UseShellExecute = true });
+            return;
+        }
+
+        // Fallback: open the project root in AppData
         var projectName = card.EngineIniProjectOverride
             ?? AuxInstallService.ResolveUeProjectName(card.InstallPath);
 
-        // Try %LocalAppData%\{projectName}\
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         if (!string.IsNullOrEmpty(projectName))
         {
@@ -1704,30 +1712,6 @@ public sealed partial class MainWindow
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(appDataDir) { UseShellExecute = true });
                 return;
-            }
-        }
-
-        // Fallback: Documents\My Games\{gameName}\
-        if (!string.IsNullOrEmpty(card.GameName))
-        {
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var myGamesDir = System.IO.Path.Combine(docs, "My Games", card.GameName);
-            if (System.IO.Directory.Exists(myGamesDir))
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(myGamesDir) { UseShellExecute = true });
-                return;
-            }
-
-            // Try stripped name
-            var stripped = card.GameName.Replace("®", "").Replace("™", "").Replace("©", "").Trim();
-            if (stripped != card.GameName)
-            {
-                myGamesDir = System.IO.Path.Combine(docs, "My Games", stripped);
-                if (System.IO.Directory.Exists(myGamesDir))
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(myGamesDir) { UseShellExecute = true });
-                    return;
-                }
             }
         }
     }

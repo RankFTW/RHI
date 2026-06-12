@@ -563,9 +563,9 @@ public partial class MainViewModel
             Maintainer     = effectiveMod?.Maintainer ?? "",
             IsGenericMod   = useUeExt || (fallback != null && mod == null),
             EngineHint     = engineOverrideLabel != null
-                           ? (useUeExt && engine == EngineType.Unknown ? "Unreal Engine" : engineOverrideLabel)
-                           : (useUeExt && engine == EngineType.Unknown) ? "Unreal Engine"
-                           : engine == EngineType.Unreal       ? "Unreal Engine"
+                           ? (useUeExt && engine == EngineType.Unknown ? FormatEngineHint(EngineType.Unreal, scanPath) : engineOverrideLabel)
+                           : (useUeExt && engine == EngineType.Unknown) ? FormatEngineHint(EngineType.Unreal, scanPath)
+                           : engine == EngineType.Unreal       ? FormatEngineHint(EngineType.Unreal, scanPath)
                            : engine == EngineType.UnrealLegacy ? "Unreal (Legacy)"
                            : engine == EngineType.Unity        ? "Unity"
                            : engine == EngineType.REEngine     ? "RE Engine" : "",

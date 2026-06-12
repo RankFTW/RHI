@@ -209,11 +209,6 @@ public class DlssPresetService
         ("1GB (Default)", 0x0000000040000000),
         ("2GB", 0x0000000080000000),
         ("4GB", 0x0000000100000000),
-        ("8GB", 0x0000000200000000),
-        ("12GB", 0x0000000300000000),
-        ("16GB", 0x0000000400000000),
-        ("24GB", 0x0000000600000000),
-        ("32GB", 0x0000000800000000),
     ];
 
     /// <summary>Returns true if ReBAR Feature is enabled for this game's NVIDIA profile.</summary>

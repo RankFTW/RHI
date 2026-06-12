@@ -2272,7 +2272,7 @@ public partial class DetailPanelBuilder
                     CornerRadius = new CornerRadius(6),
                     IsEnabled = rebarEnabled,
                 };
-                ToolTipService.SetToolTip(rebarSizeCombo, "BAR size limit. 1GB is default. 512MB can reduce stutters in some titles. Larger values may help games with large textures.");
+                ToolTipService.SetToolTip(rebarSizeCombo, "1GB is optimal for most games. Decrease to 512MB if a game stutters with ReBAR enabled. Increasing beyond 1GB rarely helps.");
 
                 var sizeComboInit = true;
                 rebarSizeCombo.SelectionChanged += (s, ev) =>

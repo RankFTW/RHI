@@ -24,6 +24,174 @@ public partial class GameDetectionService : IGameDetectionService
 
     // ── Engine + path detection ───────────────────────────────────────────────────
 
+    /// <summary>
+    /// Attempts to detect the Unreal Engine version from the game's install path.
+    /// Checks CrashReportClient.exe and EpicWebHelper.exe in Engine\Binaries\Win64\.
+    /// Returns a version string like "5.4" or "4.27" or null if not detectable.
+    /// </summary>
+    public static string? DetectUeVersion(string installPath)
+    {
+        if (string.IsNullOrEmpty(installPath)) return null;
+
+        try
+        {
+            // Navigate up from Binaries\Win64 to find the Engine folder
+            // installPath is typically {Root}\{Project}\Binaries\Win64
+            var normalized = installPath.Replace('/', '\\').TrimEnd('\\');
+            var parts = normalized.Split('\\');
+
+            // Find the Binaries segment to go up from
+            string? gameRoot = null;
+            for (int i = parts.Length - 1; i > 0; i--)
+            {
+                if (parts[i].Equals("Binaries", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Game root is typically the parent of the project folder (grandparent of Binaries)
+                    // But Engine folder can be at the same level as the project folder
+                    // Try multiple levels
+                    for (int up = 1; up <= 3; up++)
+                    {
+                        if (i - up < 0) break;
+                        var candidate = string.Join('\\', parts.Take(i - up + 1));
+                        var engineBin = Path.Combine(candidate, "Engine", "Binaries", "Win64");
+                        if (Directory.Exists(engineBin))
+                        {
+                            gameRoot = candidate;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            // Also try directly from installPath going up
+            if (gameRoot == null)
+            {
+                var dir = installPath;
+                for (int i = 0; i < 4; i++)
+                {
+                    var parent = Path.GetDirectoryName(dir);
+                    if (parent == null) break;
+                    var engineBin = Path.Combine(parent, "Engine", "Binaries", "Win64");
+                    if (Directory.Exists(engineBin))
+                    {
+                        gameRoot = parent;
+                        break;
+                    }
+                    dir = parent;
+                }
+            }
+
+            if (gameRoot == null)
+            {
+                // No Engine folder — try shipping exe directly
+                return ReadUeVersionFromShippingExe(installPath);
+            }
+
+            var engineWin64 = Path.Combine(gameRoot, "Engine", "Binaries", "Win64");
+
+            // Try CrashReportClient.exe first
+            var crashClient = Path.Combine(engineWin64, "CrashReportClient.exe");
+            var version = ReadUeVersionFromExe(crashClient);
+            if (version != null) return version;
+
+            // Try CrashReportClient-Win64-Shipping.exe (some games use this name)
+            var crashClientShipping = Path.Combine(engineWin64, "CrashReportClient-Win64-Shipping.exe");
+            version = ReadUeVersionFromExe(crashClientShipping);
+            if (version != null) return version;
+
+            // Try Build.version JSON file (common in UE4 games)
+            var buildVersionPath = Path.Combine(gameRoot, "Engine", "Build", "Build.version");
+            version = ReadBuildVersionJson(buildVersionPath);
+            if (version != null) return version;
+
+            // Fallback: check the game's shipping exe version
+            version = ReadUeVersionFromShippingExe(installPath);
+            if (version != null) return version;
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? ReadUeVersionFromExe(string exePath)
+    {
+        if (!File.Exists(exePath)) return null;
+        try
+        {
+            var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath);
+            if (info.FileMajorPart >= 4 && info.FileMajorPart <= 6)
+            {
+                // Return "Major.Minor.Patch" format (e.g. "5.4.3", "4.27.2")
+                if (info.FileBuildPart > 0)
+                    return $"{info.FileMajorPart}.{info.FileMinorPart}.{info.FileBuildPart}";
+                return $"{info.FileMajorPart}.{info.FileMinorPart}";
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    private static string? ReadBuildVersionJson(string buildVersionPath)
+    {
+        if (!File.Exists(buildVersionPath)) return null;
+        try
+        {
+            var json = File.ReadAllText(buildVersionPath);
+            var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("MajorVersion", out var major) &&
+                root.TryGetProperty("MinorVersion", out var minor))
+            {
+                int maj = major.GetInt32();
+                int min = minor.GetInt32();
+                if (maj >= 4 && maj <= 6)
+                {
+                    if (root.TryGetProperty("PatchVersion", out var patch) && patch.GetInt32() > 0)
+                        return $"{maj}.{min}.{patch.GetInt32()}";
+                    return $"{maj}.{min}";
+                }
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    /// <summary>
+    /// Reads the UE version from the game's shipping executable (*-Shipping.exe or largest exe).
+    /// Many UE games have the engine version baked into the exe's FileVersion.
+    /// </summary>
+    private static string? ReadUeVersionFromShippingExe(string installPath)
+    {
+        if (string.IsNullOrEmpty(installPath) || !Directory.Exists(installPath)) return null;
+        try
+        {
+            // Look for *-Shipping.exe first (standard UE naming)
+            var shippingExe = Directory.EnumerateFiles(installPath, "*-Shipping.exe", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault();
+            if (shippingExe != null)
+            {
+                var ver = ReadUeVersionFromExe(shippingExe);
+                if (ver != null) return ver;
+            }
+
+            // Fallback: largest exe in the folder (likely the game exe)
+            var largestExe = Directory.EnumerateFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly)
+                .Where(f => !Path.GetFileName(f).StartsWith("Crash", StringComparison.OrdinalIgnoreCase)
+                         && !Path.GetFileName(f).StartsWith("Unins", StringComparison.OrdinalIgnoreCase)
+                         && !Path.GetFileName(f).Contains("UnityCrash", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(f => new FileInfo(f).Length)
+                .FirstOrDefault();
+            if (largestExe != null)
+                return ReadUeVersionFromExe(largestExe);
+        }
+        catch { }
+        return null;
+    }
+
     public (string installPath, EngineType engine) DetectEngineAndPath(string rootPath)
     {
         // Check cache first to avoid redundant file system scans

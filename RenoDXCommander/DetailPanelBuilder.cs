@@ -273,6 +273,39 @@ public partial class DetailPanelBuilder
             }
         }
 
+        // Check in-game directory: {GameRoot}\{ProjectName}\Saved\
+        if (!string.IsNullOrEmpty(card.InstallPath))
+        {
+            var normalized = card.InstallPath.Replace('/', '\\').TrimEnd('\\');
+            var parts = normalized.Split('\\');
+            for (int i = parts.Length - 1; i > 0; i--)
+            {
+                if (parts[i].Equals("Binaries", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Project folder is immediately above Binaries
+                    var projectDir = string.Join('\\', parts.Take(i));
+                    var savedDir = Path.Combine(projectDir, "Saved");
+                    if (Directory.Exists(savedDir)) return projectDir;
+
+                    // Also check sibling folders in the game root
+                    if (i - 1 > 0)
+                    {
+                        var gameRoot = string.Join('\\', parts.Take(i - 1));
+                        try
+                        {
+                            foreach (var subDir in Directory.EnumerateDirectories(gameRoot))
+                            {
+                                var subSaved = Path.Combine(subDir, "Saved");
+                                if (Directory.Exists(subSaved)) return subDir;
+                            }
+                        }
+                        catch { }
+                    }
+                    break;
+                }
+            }
+        }
+
         return null;
     }
 }

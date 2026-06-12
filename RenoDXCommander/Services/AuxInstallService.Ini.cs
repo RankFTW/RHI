@@ -530,6 +530,43 @@ public partial class AuxInstallService
             }
         }
 
+        // Fallback: Config stored inside the game directory itself
+        // Pattern: {GameRoot}\{ProjectName}\Saved\Config\{Platform}\
+        // Navigate up from installPath to find Saved\Config
+        {
+            var normalized = installPath.Replace('/', '\\').TrimEnd('\\');
+            var pathParts = normalized.Split('\\');
+            for (int i = pathParts.Length - 1; i > 0; i--)
+            {
+                if (pathParts[i].Equals("Binaries", StringComparison.OrdinalIgnoreCase))
+                {
+                    // The project folder is immediately above Binaries
+                    var projectDir = string.Join('\\', pathParts.Take(i));
+                    var inGameConfig = Path.Combine(projectDir, "Saved", "Config");
+                    result = FindPlatformConfigDir(inGameConfig);
+                    if (result != null) return result;
+
+                    // Also check the game root (parent of project folder)
+                    if (i - 1 > 0)
+                    {
+                        var gameRoot = string.Join('\\', pathParts.Take(i - 1));
+                        // Scan for any subfolder with Saved\Config
+                        try
+                        {
+                            foreach (var subDir in Directory.EnumerateDirectories(gameRoot))
+                            {
+                                var subConfig = Path.Combine(subDir, "Saved", "Config");
+                                result = FindPlatformConfigDir(subConfig);
+                                if (result != null) return result;
+                            }
+                        }
+                        catch { }
+                    }
+                    break;
+                }
+            }
+        }
+
         // Nothing found — create in LocalAppData as default
         var windows = Path.Combine(configBase, "Windows");
         Directory.CreateDirectory(windows);
