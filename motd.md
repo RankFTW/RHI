@@ -1,1 +1,1 @@
-I am going to be away from the 8th of June until the 12th of June as my wife is dragging me on holiday. Support will be limited in this time. Thank you all.
+V2.0.0 beta 1 is available on Discord for testing. Find Discord link in Help section at the top of RHI. Thank you all.
