@@ -208,6 +208,7 @@ public sealed partial class MainWindow
                     DetailPanel.Visibility = Visibility.Visible;
                     BuildOverridesPanel(card);
                     OverridesContainer.Visibility = Visibility.Visible;
+                    NvidiaProfileContainer.Visibility = Visibility.Visible;
                     ManagementContainer.Visibility = Visibility.Visible;
                 }
                 break;
@@ -253,6 +254,7 @@ public sealed partial class MainWindow
                     DetailPanel.Visibility = Visibility.Visible;
                     BuildOverridesPanel(card);
                     OverridesContainer.Visibility = Visibility.Visible;
+                    NvidiaProfileContainer.Visibility = Visibility.Visible;
                     ManagementContainer.Visibility = Visibility.Visible;
                 }
                 break;
@@ -725,6 +727,9 @@ public sealed partial class MainWindow
     private void OpenLogsFolder_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.OpenLogsFolder_Click(sender, e);
 
+    private void AdminModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.AdminModeCombo_SelectionChanged(sender, e);
+
     private void OpenAppDataFolder_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.OpenAppDataFolder_Click(sender, e);
 
@@ -815,7 +820,240 @@ public sealed partial class MainWindow
         await dialog.ShowAsync();
     }
 
+    private async void DlssDefaults_Click(object sender, RoutedEventArgs e)
+    {
+        var dlssService = App.Services.GetRequiredService<IDlssStreamlineService>();
+        var presetService = App.Services.GetRequiredService<DlssPresetService>();
+        await DlssDefaultsDialog.ShowAsync(ViewModel, dlssService, presetService, Content.XamlRoot);
+        RefreshDlssDefaultsSummary();
+    }
+
+    internal void RefreshDlssDefaultsSummary()
+    {
+        var s = ViewModel.Settings;
+        DlssDefaultsSummaryPanel.Children.Clear();
+
+        bool hasAny = !string.IsNullOrEmpty(s.DefaultDlssVersion) || !string.IsNullOrEmpty(s.DefaultDlssdVersion)
+            || !string.IsNullOrEmpty(s.DefaultDlssgVersion) || !string.IsNullOrEmpty(s.DefaultStreamlineVersion)
+            || s.DefaultSrPreset != 0 || s.DefaultRrPreset != 0 || s.DefaultFgPreset != 0
+            || s.DefaultSrRenderScale != 0 || s.DefaultRrRenderScale != 0;
+
+        if (!hasAny)
+        {
+            DlssDefaultsSummaryPanel.Children.Add(new TextBlock
+            {
+                Text = "No defaults configured yet.",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            });
+            return;
+        }
+
+        // Build a 4-column grid matching the dialog layout
+        var grid = new Grid { ColumnSpacing = 12 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var srCol = new StackPanel { Spacing = 2 };
+        srCol.Children.Add(new TextBlock { Text = "DLSS", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        if (!string.IsNullOrEmpty(s.DefaultDlssVersion)) srCol.Children.Add(MakeSummaryText(s.DefaultDlssVersion));
+        if (s.DefaultSrPreset != 0) srCol.Children.Add(MakeSummaryText($"Preset {DlssPresetService.SrPresets.FirstOrDefault(p => p.Value == s.DefaultSrPreset).Name ?? "?"}"));
+        if (s.DefaultSrRenderScale != 0) srCol.Children.Add(MakeSummaryText($"{s.DefaultSrRenderScale}%"));
+        Grid.SetColumn(srCol, 0);
+        grid.Children.Add(srCol);
+
+        grid.Children.Add(MakeSummaryDivider(1));
+
+        var rrCol = new StackPanel { Spacing = 2 };
+        rrCol.Children.Add(new TextBlock { Text = "RR", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        if (!string.IsNullOrEmpty(s.DefaultDlssdVersion)) rrCol.Children.Add(MakeSummaryText(s.DefaultDlssdVersion));
+        if (s.DefaultRrPreset != 0) rrCol.Children.Add(MakeSummaryText($"Preset {DlssPresetService.RrPresets.FirstOrDefault(p => p.Value == s.DefaultRrPreset).Name ?? "?"}"));
+        if (s.DefaultRrRenderScale != 0) rrCol.Children.Add(MakeSummaryText($"{s.DefaultRrRenderScale}%"));
+        Grid.SetColumn(rrCol, 2);
+        grid.Children.Add(rrCol);
+
+        grid.Children.Add(MakeSummaryDivider(3));
+
+        var fgCol = new StackPanel { Spacing = 2 };
+        fgCol.Children.Add(new TextBlock { Text = "FG", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        if (!string.IsNullOrEmpty(s.DefaultDlssgVersion)) fgCol.Children.Add(MakeSummaryText(s.DefaultDlssgVersion));
+        if (s.DefaultFgPreset != 0) fgCol.Children.Add(MakeSummaryText($"Preset {DlssPresetService.FgPresets.FirstOrDefault(p => p.Value == s.DefaultFgPreset).Name ?? "?"}"));
+        Grid.SetColumn(fgCol, 4);
+        grid.Children.Add(fgCol);
+
+        grid.Children.Add(MakeSummaryDivider(5));
+
+        var slCol = new StackPanel { Spacing = 2 };
+        slCol.Children.Add(new TextBlock { Text = "SL", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        if (!string.IsNullOrEmpty(s.DefaultStreamlineVersion)) slCol.Children.Add(MakeSummaryText(s.DefaultStreamlineVersion));
+        Grid.SetColumn(slCol, 6);
+        grid.Children.Add(slCol);
+
+        DlssDefaultsSummaryPanel.Children.Add(grid);
+    }
+
+    private static TextBlock MakeSummaryText(string text) => new TextBlock
+    {
+        Text = text,
+        FontSize = 10,
+        Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+    };
+
+    private static Border MakeSummaryDivider(int column)
+    {
+        var div = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush), VerticalAlignment = VerticalAlignment.Stretch };
+        Grid.SetColumn(div, column);
+        return div;
+    }
+
     internal bool _dlssIndicatorInitializing = true;
+
+    internal bool _shaderCacheComboInit = true;
+
+    private void ShaderCacheSizeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.ShaderCacheSizeOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetShaderCacheSize(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private void ShaderPrecompileCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.ShaderPrecompileOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetShaderPrecompile(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private void GSyncModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.GSyncModeOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGSyncMode(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private void PreferredRefreshRateCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.PreferredRefreshRateOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetPreferredRefreshRate(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private async void ExportNvidiaProfiles_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            var games = ViewModel.AllCards
+                .Where(c => !string.IsNullOrEmpty(c.InstallPath))
+                .Select(c => (c.GameName, c.InstallPath))
+                .ToList();
+
+            // Run on background thread — FindProfile does exe scanning per game
+            var data = await Task.Run(() => presetService.ExportProfiles(games));
+
+            if (data.Count == 0)
+            {
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "Export",
+                    Content = "No custom profile settings found to export.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                });
+                return;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            var path = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RHI", "nvidia_profiles_backup.json");
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+            System.IO.File.WriteAllText(path, json);
+
+            await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Export Complete",
+                Content = $"Exported {data.Count} profile(s) to:\n{path}",
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ExportNvidiaProfiles_Click] Error: {ex.GetType().Name}: {ex.Message}");
+            await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Export Failed",
+                Content = $"An error occurred during export:\n{ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
+        }
+    }
+
+    private async void ImportNvidiaProfiles_Click(object sender, RoutedEventArgs e)
+    {
+        var path = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "nvidia_profiles_backup.json");
+
+        if (!System.IO.File.Exists(path))
+        {
+            await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Import",
+                Content = $"No backup file found at:\n{path}\n\nExport profiles first.",
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
+            return;
+        }
+
+        var json = System.IO.File.ReadAllText(path);
+        var data = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+        if (data == null || data.Count == 0) return;
+
+        var presetService = App.Services.GetRequiredService<DlssPresetService>();
+        var count = presetService.ImportProfiles(data);
+
+        await DialogService.ShowSafeAsync(new ContentDialog
+        {
+            Title = "Import Complete",
+            Content = $"Imported {count} profile(s) from backup.",
+            CloseButtonText = "OK",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        });
+    }
 
     private async void DlssIndicatorCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

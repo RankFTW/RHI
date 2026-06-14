@@ -161,7 +161,7 @@ public partial class MainViewModel : ObservableObject
 
     public void NavigateCompactPage(int delta)
     {
-        CompactPageIndex = ((CompactPageIndex + delta) % 2 + 2) % 2;
+        CompactPageIndex = ((CompactPageIndex + delta) % 3 + 3) % 3;
     }
 
     /// <summary>

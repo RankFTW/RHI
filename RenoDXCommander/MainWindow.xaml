@@ -986,12 +986,20 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- ── Overrides section ── -->
+                        <!-- ── Game Overrides section ── -->
                         <Border x:Name="OverridesContainer" x:FieldModifier="internal"
                                 Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
                                 BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                 Padding="14,12" Visibility="Collapsed">
                             <StackPanel x:Name="OverridesPanel" x:FieldModifier="internal" Spacing="6"/>
+                        </Border>
+
+                        <!-- ── Nvidia Profile Overrides section ── -->
+                        <Border x:Name="NvidiaProfileContainer" x:FieldModifier="internal"
+                                Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
+                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                Padding="14,12" Visibility="Collapsed">
+                            <StackPanel x:Name="NvidiaProfilePanel" x:FieldModifier="internal" Spacing="6"/>
                         </Border>
 
                         <!-- ── Management section (folder, reset, report) ── -->
@@ -1385,6 +1393,105 @@
                             </Grid>
                         </Border>
 
+                        <!-- ── DLSS/Streamline Defaults ────────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <Grid ColumnSpacing="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: DLSS Defaults + summary below button -->
+                                <StackPanel Grid.Column="0" Spacing="12" VerticalAlignment="Top">
+                                    <TextBlock Text="DLSS &amp; Streamline Defaults" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Configure your preferred default DLSS/Streamline versions, presets, and render scales. Use the 'Apply Defaults' button in the Nvidia Profile section to stamp these onto any game in one click."/>
+                                    <Button Content="Configure Defaults"
+                                            Click="DlssDefaults_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+                                    <!-- Current defaults displayed in column layout -->
+                                    <StackPanel x:Name="DlssDefaultsSummaryPanel" x:FieldModifier="internal" Spacing="4" Margin="0,4,0,0"/>
+                                </StackPanel>
+
+                                <!-- Divider -->
+                                <Border Grid.Column="1" Width="1" Background="{StaticResource BorderSubtleBrush}" Margin="16,0"/>
+
+                                <!-- Right: Shader Cache + Profile Export/Import -->
+                                <StackPanel Grid.Column="2" Spacing="12" VerticalAlignment="Top">
+                                    <TextBlock Text="Global Nvidia Settings" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="Shader Cache Size" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="ShaderCacheSizeCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Maximum disk space for compiled shader cache. Larger = fewer stutters on revisits. 16GB is the driver default."
+                                                      SelectionChanged="ShaderCacheSizeCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Shader Pre-Compile" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="ShaderPrecompileCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Auto-compiles shaders in the background when idle. Higher = more CPU usage during idle, faster first-time game loads."
+                                                      SelectionChanged="ShaderPrecompileCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="G-Sync Mode" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="GSyncModeCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Controls G-Sync/FreeSync variable refresh rate. Fullscreen and Windowed recommended for seamless experience."
+                                                      SelectionChanged="GSyncModeCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Preferred Refresh Rate" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="PreferredRefreshRateCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Highest available forces your max refresh rate. App Setting lets games choose their own refresh rate."
+                                                      SelectionChanged="PreferredRefreshRateCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Button Content="Export Profiles"
+                                            Click="ExportNvidiaProfiles_Click"
+                                            ToolTipService.ToolTip="Save all per-game NVIDIA profile settings (presets, VSync, latency, etc.) to a backup file. Use after configuring games to preserve settings across driver updates."
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+
+                                    <Button Content="Import Profiles"
+                                            Click="ImportNvidiaProfiles_Click"
+                                            ToolTipService.ToolTip="Restore per-game NVIDIA profile settings from a previous export. Recreates profiles and exe associations if they were wiped by a driver update."
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
                         <!-- ── OptiScaler Settings ─────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
@@ -1760,7 +1867,7 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Data &amp; Custom Files" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="20">
-                                    All RHI data is stored in AppData. Drop custom ReShade, DLSS, or Streamline DLLs into the Custom folder to use them as per-game overrides. The Logs folder contains session usage logs useful for troubleshooting.
+                                    All RHI data is stored in AppData. Drop custom ReShade, DLSS, or Streamline DLLs into the Custom folder to use them as per-game overrides. The Logs folder contains session usage logs useful for troubleshooting. Admin Mode creates a scheduled task to launch RHI with elevated privileges — required for ReBAR, Low Latency Ultra, and Smooth Motion driver settings.
                                 </TextBlock>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Button x:Name="OpenAppDataBtn"
@@ -1781,6 +1888,16 @@
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                        <TextBlock Text="Admin Mode:" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="AdminModeCombo" x:FieldModifier="internal"
+                                                  SelectionChanged="AdminModeCombo_SelectionChanged"
+                                                  FontSize="12" MinWidth="70" Padding="8,4"
+                                                  CornerRadius="8">
+                                            <ComboBoxItem Content="Off"/>
+                                            <ComboBoxItem Content="On"/>
+                                        </ComboBox>
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

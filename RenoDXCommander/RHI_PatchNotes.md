@@ -2,27 +2,37 @@
 
 ### New Features
 
-- **ReBAR (Resizable BAR) Control** — Force-enable NVIDIA Resizable BAR per-game directly from RHI. Three controls in the DLSS/Streamline section: Enable (Off/On), Mode (Standard/Optimized), and Size Limit (512MB–4GB). Optimized mode uses NVIDIA's aggressive driver scheduling for whitelisted-level performance. Requires RTX 30+ with BIOS ReBAR support. UAC prompt on each change (driver settings require admin). Changes are verified in NVIDIA Profile Inspector.
-- **UE Version Detection** — The engine badge now shows the exact Unreal Engine version (e.g. "Unreal Engine 5.4.3") when detectable from the game's files. Checks CrashReportClient.exe, Build.version, and the shipping exe. Falls back to plain "Unreal Engine" for games that strip version info.
+- **Nvidia Profile Overrides** — New dedicated panel for per-game NVIDIA driver profile settings. Two rows:
+  - **DLSS / Streamline row** — Version, Preset, and Render Scale management for SR, RR, FG, and Streamline. Quick Apply button stamps your configured defaults onto any game in one click (downloads on-demand). Restore All reverts DLLs and presets.
+  - **Driver Settings row** — VSync (Mode, Tear Control, Low Latency), ReBAR (Enable, Mode, Size Limit), Smooth Motion (Enable, APIs, Flip Pacing), Power/CPU (Power Mode, CPU Scheduling). All per-game, all with tooltips and sub-labels.
+- **DLSS & Streamline Defaults** — Configure preferred default versions, presets, and render scales in Settings. One-click apply via "Quick Apply" in the Nvidia Profile section. Dialog uses matching 4-column layout.
+- **Global Nvidia Settings** — New settings section with Shader Cache Size, Shader Pre-Compile, G-Sync Mode, and Preferred Refresh Rate controls. All read/write the global driver profile directly.
+- **Profile Export/Import** — Save all per-game NVIDIA profile settings to a backup file. Restore after driver updates — recreates profiles, exe associations, and all custom settings in one click.
+- **UE Version Detection** — Engine badge now shows exact Unreal Engine version (e.g. "Unreal Engine 5.4.3") when detectable.
 
 ### Improvements
 
-- Compact view window size increased by 5% (1166×861) to accommodate the ReBAR section without overflow.
-- Config button now opens the exact Engine.ini folder instead of the project root. Also detects config stored inside the game directory (not just AppData/Documents).
+- Detail panel reorganized into 4 sections: Components, Game Overrides, Nvidia Profile Overrides, and Management.
+- Compact view now has 3 pages: Components, Game Overrides, and Nvidia Profile + Management. Reduced window height for a tighter fit.
+- All NVIDIA profile dropdowns have sub-labels and tooltips explaining what each setting does.
+- DLSS preset tooltips explain the model generations (J/K = 1st-gen transformer, L/M = 2nd-gen with better stability).
+- Admin notice at the bottom of the Nvidia Profile section warns that most settings require elevation.
+- **Admin Mode toggle** — New Off/On combo box in Settings (Data & Custom Files section). Creates a Task Scheduler task to launch RHI with admin privileges automatically, bypassing UAC. Required for ReBAR, Low Latency Ultra, Smooth Motion, and CPU Scheduling settings.
+- Config button opens the exact Engine.ini folder. Also detects config stored inside the game directory.
 
 ### Bug Fixes
 
-- Fixed Streamline "Custom" selection reverting to a version number after panel rebuild. A marker file now tracks custom deployments so the dropdown persists correctly.
-- Fixed Luma games not triggering the purple Update All button when updates were available.
-- Fixed Luma update status not persisting after restart (cache phase restore guard was blocking it).
+- Fixed Streamline "Custom" selection reverting to a version number after panel rebuild.
+- Fixed Luma and RE Framework update status not persisting over restart. Update All button now correctly goes purple for Luma updates.
+- Fixed DXVK extraction using a random temp folder each time, causing Windows Defender to repeatedly flag the DLLs as unknown. Now uses a fixed path so exclusions persist.
 
 ### Manifest Updates
 
 - Borderlands 4, Gothic 1 Remake, High on Life 2, Crisol, ROMEO IS A DEAD MAN, S.T.A.L.K.E.R. 2: Heart of Chornobyl, SILENT HILL f, Split Fiction, Star Trek: Voyager - Across the Unknown, WUCHANG: Fallen Feathers — added to native HDR list.
-- Added `dlssSkipGames` for 11 games without DLSS — reduces background scan time by 70% (69s → 21s CPU time).
-- Stellar Blade — install path override (SB\Binaries\Win64).
+- Added `dlssSkipGames` for 11 games without DLSS — reduces background scan time by 70%.
+- Stellar Blade — install path override.
 - Outward — split into Outward (original) + Outward Definitive Edition.
-- Gothic 1 Remake — game note: disable SDR EOTF Emulation in RenoDX.
+- Gothic 1 Remake — game note added.
 - Updated all native HDR game notes to reflect auto Engine.ini deployment.
 
 ---

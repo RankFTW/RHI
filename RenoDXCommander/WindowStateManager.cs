@@ -30,7 +30,7 @@ public class WindowStateManager
     // Compact-mode size locking
     private bool _sizeLocked;
     private bool _sizeLoggedOnce;
-    private (int W, int H) _compactSize = (1166, 861); // Fixed compact dimensions (5% larger for ReBAR section)
+    private (int W, int H) _compactSize = (1166, 730); // Fixed compact dimensions (reduced height for 3-page layout)
 
     public WindowStateManager(Window window, IntPtr hwnd, DragDropHandler dragDropHandler, ICrashReporter crashReporter)
     {

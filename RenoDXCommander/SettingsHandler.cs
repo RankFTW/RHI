@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Models;
@@ -128,6 +129,39 @@ public class SettingsHandler
             _window.DlssIndicatorCombo.SelectedIndex = 1; // Default to Disabled if registry unreadable
         }
         _window._dlssIndicatorInitializing = false;
+
+        // Populate DLSS defaults summary
+        _window.RefreshDlssDefaultsSummary();
+
+        // Populate shader cache combos
+        _window._shaderCacheComboInit = true;
+        var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
+        if (presetSvc.IsSupported)
+        {
+            _window.ShaderCacheSizeCombo.ItemsSource = DlssPresetService.ShaderCacheSizeOptions.Select(o => o.Name).ToArray();
+            var cacheSize = presetSvc.GetShaderCacheSize();
+            var cacheIdx = Array.FindIndex(DlssPresetService.ShaderCacheSizeOptions, o => o.Value == cacheSize);
+            _window.ShaderCacheSizeCombo.SelectedIndex = cacheIdx >= 0 ? cacheIdx : 0;
+
+            _window.ShaderPrecompileCombo.ItemsSource = DlssPresetService.ShaderPrecompileOptions.Select(o => o.Name).ToArray();
+            var precompile = presetSvc.GetShaderPrecompile();
+            var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == precompile);
+            _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
+
+            _window.GSyncModeCombo.ItemsSource = DlssPresetService.GSyncModeOptions.Select(o => o.Name).ToArray();
+            var gsync = presetSvc.GetGSyncMode();
+            var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
+            _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 2; // Default: Fullscreen and Windowed
+
+            _window.PreferredRefreshRateCombo.ItemsSource = DlssPresetService.PreferredRefreshRateOptions.Select(o => o.Name).ToArray();
+            var refreshRate = presetSvc.GetPreferredRefreshRate();
+            var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
+            _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 1; // Default: Highest available
+        }
+        _window._shaderCacheComboInit = false;
+
+        // Initialize admin mode combo
+        InitAdminModeCombo(_window.AdminModeCombo);
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
@@ -241,6 +275,88 @@ public class SettingsHandler
         System.IO.Directory.CreateDirectory(logsDir);
         CrashReporter.Log("[SettingsHandler.OpenLogsFolder_Click] User opened logs folder");
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logsDir) { UseShellExecute = true });
+    }
+
+    private const string AdminTaskName = "RHI Admin Mode";
+    private bool _adminComboInit = true;
+
+    /// <summary>
+    /// Checks if the scheduled task exists and sets the combo box accordingly.
+    /// Called during settings page initialization.
+    /// </summary>
+    public void InitAdminModeCombo(ComboBox combo)
+    {
+        _adminComboInit = true;
+        bool taskExists = IsAdminTaskRegistered();
+        combo.SelectedIndex = taskExists ? 1 : 0; // 0=Off, 1=On
+        _adminComboInit = false;
+    }
+
+    public void AdminModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_adminComboInit) return;
+        if (sender is not ComboBox combo) return;
+
+        bool enable = combo.SelectedIndex == 1;
+        CrashReporter.Log($"[SettingsHandler.AdminModeCombo] Admin mode = {(enable ? "On" : "Off")}");
+
+        try
+        {
+            if (enable)
+                CreateAdminTask();
+            else
+                DeleteAdminTask();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.AdminModeCombo] Failed: {ex.Message}");
+            // Revert the selection on failure
+            _adminComboInit = true;
+            combo.SelectedIndex = enable ? 0 : 1;
+            _adminComboInit = false;
+        }
+    }
+
+    private static bool IsAdminTaskRegistered()
+    {
+        try
+        {
+            var result = RunSchtasks($"/Query /TN \"{AdminTaskName}\" /FO LIST");
+            return result.ExitCode == 0;
+        }
+        catch { return false; }
+    }
+
+    private static void CreateAdminTask()
+    {
+        var exePath = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
+        // Create a scheduled task that runs RHI with highest privileges, triggered at logon
+        var args = $"/Create /TN \"{AdminTaskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONLOGON /RL HIGHEST /F /DELAY 0000:00";
+        var result = RunSchtasks(args);
+        if (result.ExitCode != 0)
+            throw new InvalidOperationException($"schtasks /Create failed (exit {result.ExitCode}): {result.Output}");
+    }
+
+    private static void DeleteAdminTask()
+    {
+        var result = RunSchtasks($"/Delete /TN \"{AdminTaskName}\" /F");
+        if (result.ExitCode != 0)
+            throw new InvalidOperationException($"schtasks /Delete failed (exit {result.ExitCode}): {result.Output}");
+    }
+
+    private static (int ExitCode, string Output) RunSchtasks(string arguments)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", arguments)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        var output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
+        proc.WaitForExit(5000);
+        return (proc.ExitCode, output.Trim());
     }
 
     public void OpenAppDataFolder_Click(object sender, RoutedEventArgs e)

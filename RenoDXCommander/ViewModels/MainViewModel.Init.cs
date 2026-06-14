@@ -2311,7 +2311,7 @@ public partial class MainViewModel
                         case "UL":   if (newCard.UlStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllUl) newCard.UlStatus = GameStatus.UpdateAvailable; break;
                         case "DC":   if (newCard.DcStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDc) newCard.DcStatus = GameStatus.UpdateAvailable; break;
                         case "OS":   if (newCard.OsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllOs) newCard.OsStatus = GameStatus.UpdateAvailable; break;
-                        case "REF":  if (newCard.RefStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllRef) newCard.RefStatus = GameStatus.UpdateAvailable; break;
+                        case "REF":  if (!newCard.ExcludeFromUpdateAllRef) newCard.RefStatus = GameStatus.UpdateAvailable; break;
                         case "DXVK": if (newCard.DxvkStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDxvk) newCard.DxvkStatus = GameStatus.UpdateAvailable; break;
                         case "LUMA": newCard.LumaStatus = GameStatus.UpdateAvailable; break;
                     }

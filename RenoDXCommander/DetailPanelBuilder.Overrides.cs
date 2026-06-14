@@ -26,7 +26,7 @@ public partial class DetailPanelBuilder
         // ── Title ────────────────────────────────────────────────────────────────
         _window.OverridesPanel.Children.Add(new TextBlock
         {
-            Text = "Overrides",
+            Text = "Game Overrides",
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -1969,19 +1969,19 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(resetOverridesBtn);
 
         // ══════════════════════════════════════════════════════════════════════
-        // DLSS / Streamline section — horizontal row with version + preset dropdowns
+        // Nvidia Profile Overrides — separate section below Overrides
+        // DLSS / Streamline / ReBAR + future additions
         // ══════════════════════════════════════════════════════════════════════
+        _window.NvidiaProfilePanel.Children.Clear();
+        _window.NvidiaProfilePanel.Children.Add(new TextBlock
         {
-            _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
+            Text = "Nvidia Profile Overrides",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+        });
 
-            _window.OverridesPanel.Children.Add(new TextBlock
-            {
-                Text = "DLSS / Streamline / ReBAR",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                Margin = new Thickness(0, 0, 0, 4),
-            });
-
+        {
             var dlssService = _window.ViewModel.DlssStreamlineServiceInstance;
             var presetService = _window.ViewModel.DlssPresetServiceInstance;
             bool hasDlss = card.HasDlss;
@@ -2123,7 +2123,75 @@ public partial class DetailPanelBuilder
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));
                 }
             };
+            // Add spacer label to align buttons with the Preset/RenderScale rows in other columns
+            slCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
+
+            // Quick Apply button (created below, added here after creation)
+            // Spacer + Restore All (added after Quick Apply is created)
+            var hasDefaults = !string.IsNullOrEmpty(_window.ViewModel.Settings.DefaultDlssVersion)
+                || !string.IsNullOrEmpty(_window.ViewModel.Settings.DefaultDlssdVersion)
+                || !string.IsNullOrEmpty(_window.ViewModel.Settings.DefaultDlssgVersion)
+                || !string.IsNullOrEmpty(_window.ViewModel.Settings.DefaultStreamlineVersion)
+                || _window.ViewModel.Settings.DefaultSrPreset != 0
+                || _window.ViewModel.Settings.DefaultRrPreset != 0
+                || _window.ViewModel.Settings.DefaultFgPreset != 0
+                || _window.ViewModel.Settings.DefaultSrRenderScale != 0
+                || _window.ViewModel.Settings.DefaultRrRenderScale != 0;
+
+            var applyBtn = new Button
+            {
+                Content = "Quick Apply",
+                FontSize = 11,
+                Height = 32,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = hasDefaults ? UIFactory.Brush(ResourceKeys.AccentBlueBgBrush) : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                Foreground = hasDefaults ? UIFactory.Brush(ResourceKeys.AccentBlueBrush) : UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                BorderBrush = hasDefaults ? UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush) : UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                IsEnabled = hasDefaults && card.HasAnyDlssStreamline,
+            };
+            ToolTipService.SetToolTip(applyBtn, "Apply your configured DLSS/Streamline default versions, presets, and render scales to this game. Downloads versions on-demand if not cached.");
+            applyBtn.Click += async (s, ev) =>
+            {
+                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard?.DlssDetection == null) return;
+
+                var settings = _window.ViewModel.Settings;
+                var svc = _window.ViewModel.DlssStreamlineServiceInstance;
+                var pSvc = _window.ViewModel.DlssPresetServiceInstance;
+
+                if (!string.IsNullOrEmpty(settings.DefaultDlssVersion) && targetCard.HasDlss && targetCard.DlssDetection.DlssPath != null)
+                    await svc.SwapDlssAsync(targetCard.DlssDetection.DlssPath, settings.DefaultDlssVersion);
+                if (!string.IsNullOrEmpty(settings.DefaultDlssdVersion) && targetCard.HasDlssd && targetCard.DlssDetection.DlssdPath != null)
+                    await svc.SwapDlssdAsync(targetCard.DlssDetection.DlssdPath, settings.DefaultDlssdVersion);
+                if (!string.IsNullOrEmpty(settings.DefaultDlssgVersion) && targetCard.HasDlssg && targetCard.DlssDetection.DlssgPath != null)
+                    await svc.SwapDlssgAsync(targetCard.DlssDetection.DlssgPath, settings.DefaultDlssgVersion);
+                if (!string.IsNullOrEmpty(settings.DefaultStreamlineVersion) && targetCard.HasStreamline && targetCard.DlssDetection.StreamlineFolder != null)
+                    await svc.SwapStreamlineAsync(targetCard.DlssDetection.StreamlineFolder, settings.DefaultStreamlineVersion);
+
+                if (settings.DefaultSrPreset != 0 && targetCard.HasDlss)
+                    pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);
+                if (settings.DefaultRrPreset != 0 && targetCard.HasDlssd)
+                    pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
+                if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg)
+                    pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
+
+                if (settings.DefaultSrRenderScale != 0 && targetCard.HasDlss)
+                    pSvc.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrRenderScale);
+                if (settings.DefaultRrRenderScale != 0 && targetCard.HasDlssd)
+                    pSvc.SetRrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrRenderScale);
+
+                targetCard.RefreshDlssVersions(svc);
+                _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));
+            };
+
+            // Add buttons to SL column: Quick Apply first, then spacer, then Restore All at bottom
+            slCol.Children.Add(applyBtn);
+            slCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
             slCol.Children.Add(dlssRestoreBtn);
+
             // Override column opacity so the Restore All button isn't dimmed by the SL column's 0.4 opacity.
             // Manually dim the SL label and version combo if Streamline isn't present.
             if (restoreEnabled && !slEnabled)
@@ -2138,33 +2206,306 @@ public partial class DetailPanelBuilder
             Grid.SetColumn(slCol, 6);
             dlssRowGrid.Children.Add(slCol);
 
-            // ── ReBAR column (5th) — stacked Enable, Mode, Size Limit ──
-            if (presetService.IsSupported)
+            _window.NvidiaProfilePanel.Children.Add(dlssRowGrid);
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // Nvidia Profile Settings — VSync, Latency, Smooth Motion, Power/CPU, ReBAR
+        // ══════════════════════════════════════════════════════════════════════
+        var nvidiaPresetService = _window.ViewModel.DlssPresetServiceInstance;
+        if (nvidiaPresetService.IsSupported)
+        {
+            _window.NvidiaProfilePanel.Children.Add(UIFactory.MakeSeparator());
+
+            var nvidiaGrid = new Grid { ColumnSpacing = 12 };
+            // 4 columns with dividers between: col0 | div1 | col2 | div3 | col4 | div5 | col6
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var installPathSafe = card.InstallPath ?? "";
+
+            // ── Column 0: VSync ──
+            var vsyncCol = new StackPanel { Spacing = 4 };
+            var vsyncLabel = new TextBlock { Text = "VSync", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            ToolTipService.SetToolTip(vsyncLabel, "Vertical Sync settings — controls how the driver synchronizes frame rendering with your display's refresh rate.");
+            vsyncCol.Children.Add(vsyncLabel);
+
+            // VSync Mode
             {
-                // Add divider
-                var rebarDivider = new Border
+                vsyncCol.Children.Add(new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var options = DlssPresetService.VSyncModeOptions;
+                uint current = nvidiaPresetService.GetVSyncMode(card.GameName, installPathSafe);
+                var items = options.Select(o => o.Name).ToArray();
+                int idx = Array.FindIndex(options, o => o.Value == current);
+                if (idx < 0) idx = 0;
+                var combo = new ComboBox
                 {
-                    Width = 1,
-                    Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
-                    Margin = new Thickness(0, 0, 0, 0),
+                    ItemsSource = items,
+                    SelectedIndex = idx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
                 };
-                dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                Grid.SetColumn(rebarDivider, 7);
-                dlssRowGrid.Children.Add(rebarDivider);
+                ToolTipService.SetToolTip(combo, "VSync Mode — App Controlled: let the game decide. Force Off: disables VSync entirely. Force On: locks to refresh rate. Fast Sync: renders freely, displays latest complete frame.");
+                var init = true;
+                combo.SelectionChanged += (s, ev) =>
+                {
+                    if (init) return;
+                    int i = combo.SelectedIndex;
+                    if (i < 0 || i >= options.Length) return;
+                    nvidiaPresetService.SetVSyncMode(card.GameName, installPathSafe, options[i].Value);
+                };
+                vsyncCol.Children.Add(combo);
+                init = false;
+            }
 
-                // ReBAR column
-                dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            // VSync Tear Control
+            {
+                vsyncCol.Children.Add(new TextBlock { Text = "Tear Control", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var options = DlssPresetService.VSyncTearControlOptions;
+                uint current = nvidiaPresetService.GetVSyncTearControl(card.GameName, installPathSafe);
+                var items = options.Select(o => o.Name).ToArray();
+                int idx = Array.FindIndex(options, o => o.Value == current);
+                if (idx < 0) idx = 0;
+                var combo = new ComboBox
+                {
+                    ItemsSource = items,
+                    SelectedIndex = idx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(combo, "VSync Tear Control — Standard: normal VSync behavior. Adaptive: VSync on when FPS ≥ refresh rate, off when below (reduces stuttering at low FPS).");
+                var init = true;
+                combo.SelectionChanged += (s, ev) =>
+                {
+                    if (init) return;
+                    int i = combo.SelectedIndex;
+                    if (i < 0 || i >= options.Length) return;
+                    nvidiaPresetService.SetVSyncTearControl(card.GameName, installPathSafe, options[i].Value);
+                };
+                vsyncCol.Children.Add(combo);
+                init = false;
+            }
 
-                bool rebarEnabled = presetService.GetReBarEnabled(card.GameName, card.InstallPath ?? "");
-                uint rebarMode = presetService.GetReBarMode(card.GameName, card.InstallPath ?? "");
-                ulong rebarSizeLimit = presetService.GetReBarSizeLimit(card.GameName, card.InstallPath ?? "");
+            // Low Latency Mode (in VSync column)
+            {
+                vsyncCol.Children.Add(new TextBlock { Text = "Low Latency", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var options = DlssPresetService.LowLatencyModeOptions;
+                uint current = nvidiaPresetService.GetLowLatencyMode(card.GameName, installPathSafe);
+                var items = options.Select(o => o.Name).ToArray();
+                int idx = Array.FindIndex(options, o => o.Value == current);
+                if (idx < 0) idx = 0;
+                var combo2 = new ComboBox
+                {
+                    ItemsSource = items,
+                    SelectedIndex = idx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(combo2, "Low Latency Mode — Off: game controls frame queue. On: limits pre-rendered frames to 1 (lower latency). Ultra: just-in-time frame submission (lowest latency, may reduce FPS slightly).");
+                var init2 = true;
+                combo2.SelectionChanged += (s, ev) =>
+                {
+                    if (init2) return;
+                    int i = combo2.SelectedIndex;
+                    if (i < 0 || i >= options.Length) return;
+                    nvidiaPresetService.SetLowLatencyMode(card.GameName, installPathSafe, options[i].Value);
+                };
+                vsyncCol.Children.Add(combo2);
+                init2 = false;
+            }
 
-                var rebarCol = new StackPanel { Spacing = 4 };
-                var rebarLabel = new TextBlock { Text = "ReBAR", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
-                ToolTipService.SetToolTip(rebarLabel, "Resizable BAR — allows the CPU to access full GPU VRAM at once. Can improve performance by 5-10% in some titles. RTX 30+ and BIOS support required.");
-                rebarCol.Children.Add(rebarLabel);
+            Grid.SetColumn(vsyncCol, 0);
+            nvidiaGrid.Children.Add(vsyncCol);
+            nvidiaGrid.Children.Add(MakeDlssDivider(1));
 
-                // Enable dropdown
+            // ── Column 4: Smooth Motion ──
+            var smoothCol = new StackPanel { Spacing = 4 };
+            var smoothLabel = new TextBlock { Text = "Smooth Motion", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            ToolTipService.SetToolTip(smoothLabel, "NVIDIA Smooth Motion — driver-level frame generation. Adds interpolated frames for smoother visuals. RTX 40 Series+ required.");
+            smoothCol.Children.Add(smoothLabel);
+
+            // Enable
+            {
+                smoothCol.Children.Add(new TextBlock { Text = "Enable", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var options = DlssPresetService.SmoothMotionEnableOptions;
+                uint current = nvidiaPresetService.GetSmoothMotionEnable(card.GameName, installPathSafe);
+                var items = options.Select(o => o.Name).ToArray();
+                int idx = Array.FindIndex(options, o => o.Value == current);
+                if (idx < 0) idx = 0;
+                var combo = new ComboBox
+                {
+                    ItemsSource = items,
+                    SelectedIndex = idx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(combo, "Smooth Motion Enable — Off: disabled. On: enables driver-level frame generation (RTX 40 Series+ only).");
+                var init = true;
+                combo.SelectionChanged += (s, ev) =>
+                {
+                    if (init) return;
+                    int i = combo.SelectedIndex;
+                    if (i < 0 || i >= options.Length) return;
+                    nvidiaPresetService.SetSmoothMotionEnable(card.GameName, installPathSafe, options[i].Value);
+                };
+                smoothCol.Children.Add(combo);
+                init = false;
+            }
+
+            // APIs
+            {
+                smoothCol.Children.Add(new TextBlock { Text = "Allowed APIs", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var options = DlssPresetService.SmoothMotionApisOptions;
+                uint current = nvidiaPresetService.GetSmoothMotionApis(card.GameName, installPathSafe);
+                var items = options.Select(o => o.Name).ToArray();
+                int idx = Array.FindIndex(options, o => o.Value == current);
+                if (idx < 0) idx = 0;
+                var combo = new ComboBox
+                {
+                    ItemsSource = items,
+                    SelectedIndex = idx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(combo, "Smooth Motion APIs — which graphics APIs Smooth Motion is allowed to hook. None = disabled for all APIs.");
+                var init = true;
+                combo.SelectionChanged += (s, ev) =>
+                {
+                    if (init) return;
+                    int i = combo.SelectedIndex;
+                    if (i < 0 || i >= options.Length) return;
+                    nvidiaPresetService.SetSmoothMotionApis(card.GameName, installPathSafe, options[i].Value);
+                };
+                smoothCol.Children.Add(combo);
+                init = false;
+            }
+
+            // Flip Pacing (combined — sets both Fullscreen and Windowed together)
+            {
+                smoothCol.Children.Add(new TextBlock { Text = "Flip Pacing", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var options = DlssPresetService.SmoothMotionFlipPacingFsOptions;
+                uint current = nvidiaPresetService.GetSmoothMotionFlipPacingFs(card.GameName, installPathSafe);
+                var items = options.Select(o => o.Name).ToArray();
+                int idx = Array.FindIndex(options, o => o.Value == current);
+                if (idx < 0) idx = 0;
+                var combo = new ComboBox
+                {
+                    ItemsSource = items,
+                    SelectedIndex = idx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(combo, "Flip Pacing — Off: prioritize lower latency. On: prioritize smoother frame pacing. Sets both fullscreen and windowed modes together.");
+                var init = true;
+                combo.SelectionChanged += (s, ev) =>
+                {
+                    if (init) return;
+                    int i = combo.SelectedIndex;
+                    if (i < 0 || i >= options.Length) return;
+                    nvidiaPresetService.SetSmoothMotionFlipPacingFs(card.GameName, installPathSafe, options[i].Value);
+                    // Also set windowed pacing to the same value (use 0x00000001 for "On" instead of 0xFFFFFFFF)
+                    uint winValue = options[i].Value == 0xFFFFFFFF ? 0x00000001 : options[i].Value;
+                    nvidiaPresetService.SetSmoothMotionFlipPacingWin(card.GameName, installPathSafe, winValue);
+                };
+                smoothCol.Children.Add(combo);
+                init = false;
+            }
+
+            Grid.SetColumn(smoothCol, 4);
+            nvidiaGrid.Children.Add(smoothCol);
+            nvidiaGrid.Children.Add(MakeDlssDivider(5));
+
+            // ── Column 6: Power / CPU ──
+            var powerCol = new StackPanel { Spacing = 4 };
+            var powerLabel = new TextBlock { Text = "Power / CPU", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            ToolTipService.SetToolTip(powerLabel, "GPU power management and CPU scheduling settings. Maximum Performance prevents clock throttling; CPU Expr Modes control driver thread scheduling.");
+            powerCol.Children.Add(powerLabel);
+
+            // Power Management Mode
+            {
+                powerCol.Children.Add(new TextBlock { Text = "Power Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var options = DlssPresetService.PowerManagementOptions;
+                uint current = nvidiaPresetService.GetPowerManagementMode(card.GameName, installPathSafe);
+                var items = options.Select(o => o.Name).ToArray();
+                int idx = Array.FindIndex(options, o => o.Value == current);
+                if (idx < 0) idx = 0;
+                var combo = new ComboBox
+                {
+                    ItemsSource = items,
+                    SelectedIndex = idx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(combo, "Power Management — Adaptive: GPU clocks down at idle. Maximum: locks GPU to highest clocks. Optimal: balanced (NVIDIA recommended).");
+                var init = true;
+                combo.SelectionChanged += (s, ev) =>
+                {
+                    if (init) return;
+                    int i = combo.SelectedIndex;
+                    if (i < 0 || i >= options.Length) return;
+                    nvidiaPresetService.SetPowerManagementMode(card.GameName, installPathSafe, options[i].Value);
+                };
+                powerCol.Children.Add(combo);
+                init = false;
+            }
+
+            // CPU Expr Mode
+            {
+                powerCol.Children.Add(new TextBlock { Text = "CPU Scheduling", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var options = DlssPresetService.CpuExprModeOptions;
+                uint current = nvidiaPresetService.GetCpuExprMode(card.GameName, installPathSafe);
+                var items = options.Select(o => o.Name).ToArray();
+                int idx = Array.FindIndex(options, o => o.Value == current);
+                if (idx < 0) idx = 0;
+                var combo = new ComboBox
+                {
+                    ItemsSource = items,
+                    SelectedIndex = idx,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(combo, "CPU Expr Mode — controls driver CPU thread scheduling. Mode 0: default. Mode 1: reduced overhead. Mode 4: aggressive optimization (may improve FPS in CPU-bound games).");
+                var init = true;
+                combo.SelectionChanged += (s, ev) =>
+                {
+                    if (init) return;
+                    int i = combo.SelectedIndex;
+                    if (i < 0 || i >= options.Length) return;
+                    nvidiaPresetService.SetCpuExprMode(card.GameName, installPathSafe, options[i].Value);
+                };
+                powerCol.Children.Add(combo);
+                init = false;
+            }
+
+            Grid.SetColumn(powerCol, 6);
+            nvidiaGrid.Children.Add(powerCol);
+
+            // ── Column 8: ReBAR ──
+            var rebarCol = new StackPanel { Spacing = 4 };
+            var rebarLabel = new TextBlock { Text = "ReBAR", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            ToolTipService.SetToolTip(rebarLabel, "Resizable BAR — allows the CPU to access full GPU VRAM at once. Can improve performance by 5-10% in some titles. RTX 30+ and BIOS support required.");
+            rebarCol.Children.Add(rebarLabel);
+
+            bool rebarEnabled = nvidiaPresetService.GetReBarEnabled(card.GameName, installPathSafe);
+            uint rebarMode = nvidiaPresetService.GetReBarMode(card.GameName, installPathSafe);
+            ulong rebarSizeLimit = nvidiaPresetService.GetReBarSizeLimit(card.GameName, installPathSafe);
+
+            // Enable
+            {
+                rebarCol.Children.Add(new TextBlock { Text = "Enable", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var rebarEnableCombo = new ComboBox
                 {
                     ItemsSource = new[] { "Off", "On" },
@@ -2174,26 +2515,25 @@ public partial class DetailPanelBuilder
                     CornerRadius = new CornerRadius(6),
                 };
                 ToolTipService.SetToolTip(rebarEnableCombo, "Off = ReBAR disabled (driver default). On = Force-enable ReBAR for this game.");
-
                 var rebarComboInit = true;
                 rebarEnableCombo.SelectionChanged += (s, ev) =>
                 {
                     if (rebarComboInit) return;
                     var selected = rebarEnableCombo.SelectedItem as string;
                     bool enabling = selected == "On";
-                    CrashReporter.Log($"[ReBAR.SelectionChanged] enabling={enabling}");
-
-                    presetService.SetReBarEnabled(card.GameName, card.InstallPath ?? "", enabling, rebarMode);
+                    nvidiaPresetService.SetReBarEnabled(card.GameName, installPathSafe, enabling, rebarMode);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
                 };
                 rebarCol.Children.Add(rebarEnableCombo);
-                rebarComboInit = false; // Must be set immediately after adding to visual tree
+                rebarComboInit = false;
+            }
 
-                // Mode dropdown
+            // Mode
+            {
+                rebarCol.Children.Add(new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var modeItems = DlssPresetService.ReBarModes.Select(m => m.Name).ToArray();
                 int modeIdx = Array.FindIndex(DlssPresetService.ReBarModes, m => m.Value == rebarMode);
                 if (modeIdx < 0) modeIdx = 0;
-
                 var rebarModeCombo = new ComboBox
                 {
                     ItemsSource = modeItems,
@@ -2202,67 +2542,28 @@ public partial class DetailPanelBuilder
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                     IsEnabled = rebarEnabled,
+                    Opacity = rebarEnabled ? 1.0 : 0.4,
                 };
                 ToolTipService.SetToolTip(rebarModeCombo, "Standard = conservative. Optimized = aggressive driver scheduling (used by NVIDIA-whitelisted titles).");
-
                 var modeComboInit = true;
-                rebarModeCombo.SelectionChanged += async (s, ev) =>
+                rebarModeCombo.SelectionChanged += (s, ev) =>
                 {
                     if (modeComboInit) return;
                     int idx = rebarModeCombo.SelectedIndex;
                     if (idx < 0) return;
                     uint newMode = DlssPresetService.ReBarModes[idx].Value;
-
-                    if (newMode == 0x00000002 && !presetService.ReBarOptimizedWarningAcknowledged)
-                    {
-                        var dontShow = new CheckBox
-                        {
-                            Content = "Don't show this warning again",
-                            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                            Margin = new Thickness(0, 8, 0, 0),
-                        };
-                        var panel = new StackPanel();
-                        panel.Children.Add(new TextBlock
-                        {
-                            Text = "⚠ OPTIMIZED MODE\n\n"
-                                + "This uses aggressive driver scheduling used by NVIDIA-whitelisted games.\n"
-                                + "May provide better performance but increases crash risk in unsupported titles.\n\n"
-                                + "Continue?",
-                            TextWrapping = TextWrapping.Wrap,
-                            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                            FontSize = 13,
-                        });
-                        panel.Children.Add(dontShow);
-
-                        var dialog = new ContentDialog
-                        {
-                            Title = "⚠ Optimized Mode",
-                            Content = panel,
-                            PrimaryButtonText = "Continue",
-                            CloseButtonText = "Cancel",
-                            XamlRoot = _window.Content.XamlRoot,
-                            RequestedTheme = ElementTheme.Dark,
-                        };
-                        var result = await DialogService.ShowSafeAsync(dialog);
-                        if (result != ContentDialogResult.Primary)
-                        {
-                            modeComboInit = true;
-                            rebarModeCombo.SelectedIndex = 0;
-                            modeComboInit = false;
-                            return;
-                        }
-                        if (dontShow.IsChecked == true)
-                            presetService.ReBarOptimizedWarningAcknowledged = true;
-                    }
-
-                    presetService.SetReBarMode(card.GameName, card.InstallPath ?? "", newMode);
+                    nvidiaPresetService.SetReBarMode(card.GameName, installPathSafe, newMode);
                 };
                 rebarCol.Children.Add(rebarModeCombo);
                 modeComboInit = false;
+            }
+
+            // Size Limit
+            {
+                rebarCol.Children.Add(new TextBlock { Text = "Size Limit", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var sizeItems = DlssPresetService.ReBarSizeLimits.Select(sl => sl.Name).ToArray();
                 int sizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, sl => sl.Value == rebarSizeLimit);
                 if (sizeIdx < 0) sizeIdx = 1; // Default to 1GB
-
                 var rebarSizeCombo = new ComboBox
                 {
                     ItemsSource = sizeItems,
@@ -2271,9 +2572,9 @@ public partial class DetailPanelBuilder
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                     IsEnabled = rebarEnabled,
+                    Opacity = rebarEnabled ? 1.0 : 0.4,
                 };
                 ToolTipService.SetToolTip(rebarSizeCombo, "1GB is optimal for most games. Decrease to 512MB if a game stutters with ReBAR enabled. Increasing beyond 1GB rarely helps.");
-
                 var sizeComboInit = true;
                 rebarSizeCombo.SelectionChanged += (s, ev) =>
                 {
@@ -2281,22 +2582,28 @@ public partial class DetailPanelBuilder
                     int idx = rebarSizeCombo.SelectedIndex;
                     if (idx < 0) return;
                     ulong newSize = DlssPresetService.ReBarSizeLimits[idx].Value;
-                    presetService.SetReBarSizeLimit(card.GameName, card.InstallPath ?? "", newSize);
+                    nvidiaPresetService.SetReBarSizeLimit(card.GameName, installPathSafe, newSize);
                 };
                 rebarCol.Children.Add(rebarSizeCombo);
                 sizeComboInit = false;
-                if (!rebarEnabled)
-                {
-                    rebarModeCombo.Opacity = 0.4;
-                    rebarSizeCombo.Opacity = 0.4;
-                }
-
-                Grid.SetColumn(rebarCol, 8);
-                dlssRowGrid.Children.Add(rebarCol);
             }
 
-            _window.OverridesPanel.Children.Add(dlssRowGrid);
+            Grid.SetColumn(rebarCol, 2);
+            nvidiaGrid.Children.Add(rebarCol);
+            nvidiaGrid.Children.Add(MakeDlssDivider(3));
+
+            _window.NvidiaProfilePanel.Children.Add(nvidiaGrid);
         }
+
+        // Admin notice at the bottom of the Nvidia Profile section
+        _window.NvidiaProfilePanel.Children.Add(new TextBlock
+        {
+            Text = "⚠ Most driver profile settings require RHI to be run as admin. Restart as admin or enable Admin Mode in Settings.",
+            FontSize = 10,
+            Foreground = UIFactory.Brush(ResourceKeys.AccentAmberDimBrush),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 8, 0, 0),
+        });
 
         // ══════════════════════════════════════════════════════════════════════
         // DXVK section — separator + DXVK ComboBox (left), right reserved
@@ -2550,6 +2857,7 @@ public partial class DetailPanelBuilder
         });
 
         // Version ComboBox
+        col.Children.Add(new TextBlock { Text = "Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
         var items = new List<string> { "Default" };
         items.AddRange(availableVersions);
         items.Add("Custom");
@@ -2600,6 +2908,7 @@ public partial class DetailPanelBuilder
         // Preset ComboBox (only for SR, RR, FG)
         if (presets != null && isPresent)
         {
+            col.Children.Add(new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
             var presetItems = presets.Select(p => p.Name).ToList();
             int presetIdx = 0;
             for (int i = 0; i < presets.Length; i++)
@@ -2616,6 +2925,17 @@ public partial class DetailPanelBuilder
                 IsEnabled = isPresent,
             };
 
+            // Add tooltip explaining presets
+            string presetTooltip = label switch
+            {
+                "DLSS" => "Override the DLSS upscaling model. J/K use the 1st-gen transformer (DLSS 4.0). L/M use the 2nd-gen transformer (DLSS 4.5) with better temporal stability and less shimmer. M is tuned for Performance mode. Default lets the driver choose automatically.",
+                "Ray Reconstruction" => "Override the Ray Reconstruction denoising model. Higher presets are newer model iterations. Results are game-dependent. Default lets the driver choose automatically.",
+                "Frame Generation" => "Override the Frame Generation interpolation model. Higher presets are newer model iterations. Default lets the driver choose automatically.",
+                _ => ""
+            };
+            if (!string.IsNullOrEmpty(presetTooltip))
+                ToolTipService.SetToolTip(presetCombo, presetTooltip);
+
             bool presetInit = true;
             presetCombo.SelectionChanged += (s, ev) =>
             {
@@ -2631,6 +2951,7 @@ public partial class DetailPanelBuilder
         // Render Scale ComboBox (only for SR and RR)
         if (onRenderScaleSelected != null && isPresent)
         {
+            col.Children.Add(new TextBlock { Text = "Render Scale", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
             var rsOptions = DlssPresetService.RenderScaleOptions;
             var rsItems = rsOptions.Select(o => o.Name).ToList();
 

@@ -42,7 +42,7 @@ public class OverridesFlyoutBuilder
 
         titleRow.Children.Add(new TextBlock
         {
-            Text = "Overrides",
+            Text = "Game Overrides",
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),

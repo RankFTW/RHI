@@ -37,6 +37,7 @@ public class CompactViewBuilder
             _window.DetailPanel.Visibility = Visibility.Visible;
             _window.BuildOverridesPanel(card);
             _window.OverridesContainer.Visibility = Visibility.Visible;
+            _window.NvidiaProfileContainer.Visibility = Visibility.Visible;
             _window.ManagementContainer.Visibility = Visibility.Visible;
 
             // Add left/right padding to make room for nav arrows
@@ -64,6 +65,7 @@ public class CompactViewBuilder
             _window.DetailPanel.Visibility = Visibility.Visible;
             _window.BuildOverridesPanel(card);
             _window.OverridesContainer.Visibility = Visibility.Visible;
+            _window.NvidiaProfileContainer.Visibility = Visibility.Visible;
             _window.ManagementContainer.Visibility = Visibility.Visible;
 
             // Show the correct page
@@ -112,29 +114,35 @@ public class CompactViewBuilder
 
     /// <summary>
     /// Shows the appropriate page by toggling visibility of DetailPanel's children.
-    /// Page 0 (Game Card): Show game name, info card, component table; hide overrides + management
-    /// Page 1 (Overrides): Show overrides container only
-    /// Page 2 (Management): Show management container only
+    /// Page 0 (Components): Show game name, info card, component table; hide overrides + nvidia + management
+    /// Page 1 (Game Overrides): Show overrides container only
+    /// Page 2 (Nvidia Profile + Management): Show nvidia profile and management containers
     /// </summary>
     private void ShowPage(int pageIndex)
     {
         var detailPanel = _window.DetailPanel;
         var overridesContainer = _window.OverridesContainer;
+        var nvidiaProfileContainer = _window.NvidiaProfileContainer;
         var managementContainer = _window.ManagementContainer;
 
         foreach (var child in detailPanel.Children)
         {
             if (child is not UIElement element) continue;
 
-            if (element == overridesContainer || element == managementContainer)
+            if (element == overridesContainer)
             {
-                // Page 1: show both overrides and management together
+                // Page 1: Game Overrides only
                 element.Visibility = pageIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            else if (element == nvidiaProfileContainer || element == managementContainer)
+            {
+                // Page 2: Nvidia Profile Overrides + Management
+                element.Visibility = pageIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
             }
             else
             {
                 // All other children (game name, info card, component table, etc.)
-                // are visible on page 0 (Game Card) only
+                // are visible on page 0 (Components) only
                 element.Visibility = pageIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
             }
         }

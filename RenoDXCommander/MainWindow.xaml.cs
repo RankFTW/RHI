@@ -388,6 +388,7 @@ public sealed partial class MainWindow : Window
                                     DetailPanel.Visibility = Visibility.Visible;
                                     BuildOverridesPanel(target);
                                     OverridesContainer.Visibility = Visibility.Visible;
+                                    NvidiaProfileContainer.Visibility = Visibility.Visible;
                                     ManagementContainer.Visibility = Visibility.Visible;
                                 }
                                 else if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
@@ -421,6 +422,8 @@ public sealed partial class MainWindow : Window
                     DetailPanel.Visibility = Visibility.Collapsed;
                     OverridesPanel.Children.Clear();
                     OverridesContainer.Visibility = Visibility.Collapsed;
+                    NvidiaProfilePanel.Children.Clear();
+                    NvidiaProfileContainer.Visibility = Visibility.Collapsed;
                     ManagementPanel.Children.Clear();
                     ManagementContainer.Visibility = Visibility.Collapsed;
                     break;
@@ -429,6 +432,8 @@ public sealed partial class MainWindow : Window
                     DetailPanel.Visibility = Visibility.Collapsed;
                     OverridesPanel.Children.Clear();
                     OverridesContainer.Visibility = Visibility.Collapsed;
+                    NvidiaProfilePanel.Children.Clear();
+                    NvidiaProfileContainer.Visibility = Visibility.Collapsed;
                     ManagementPanel.Children.Clear();
                     ManagementContainer.Visibility = Visibility.Collapsed;
                     break;
