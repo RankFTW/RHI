@@ -2001,6 +2001,7 @@ public partial class DetailPanelBuilder
             // SR column
             // Disable for DLSS 1.x (not compatible with 2.x+ versions in manifest)
             bool srEnabled = hasDlss && !(card.DlssInstalledVersion?.StartsWith("1.") == true);
+            bool srDriverOverride = presetService.IsSupported && presetService.IsSrDriverOverrideActive(card.GameName, card.InstallPath ?? "");
             var srCol = BuildDlssColumn("DLSS", srEnabled, dlssService.DlssVersions,
                 card.DlssInstalledVersion, DlssPresetService.SrPresets,
                 presetService.IsSupported && srEnabled ? presetService.GetSrPreset(card.GameName, card.InstallPath) : 0u,
@@ -2016,13 +2017,16 @@ public partial class DetailPanelBuilder
                 },
                 (preset) => { presetService.SetSrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
                 currentRenderScale: presetService.IsSupported && srEnabled ? presetService.GetSrRenderScale(card.GameName, card.InstallPath) : 0u,
-                onRenderScaleSelected: (pct) => { presetService.SetSrRenderScale(card.GameName, card.InstallPath, pct); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
+                onRenderScaleSelected: (pct) => { presetService.SetSrRenderScale(card.GameName, card.InstallPath, pct); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
+                originalVersion: card.DlssDetection?.OriginalDlssVersion,
+                driverOverrideActive: srDriverOverride);
             Grid.SetColumn(srCol, 0);
             dlssRowGrid.Children.Add(srCol);
 
             dlssRowGrid.Children.Add(MakeDlssDivider(1));
 
             // RR column
+            bool rrDriverOverride = presetService.IsSupported && presetService.IsRrDriverOverrideActive(card.GameName, card.InstallPath ?? "");
             var rrCol = BuildDlssColumn("Ray Reconstruction", hasDlssd, dlssService.DlssdVersions,
                 card.DlssdInstalledVersion, DlssPresetService.RrPresets,
                 presetService.IsSupported && hasDlssd ? presetService.GetRrPreset(card.GameName, card.InstallPath) : 0u,
@@ -2038,13 +2042,16 @@ public partial class DetailPanelBuilder
                 },
                 (preset) => { presetService.SetRrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
                 currentRenderScale: presetService.IsSupported && hasDlssd ? presetService.GetRrRenderScale(card.GameName, card.InstallPath) : 0u,
-                onRenderScaleSelected: (pct) => { presetService.SetRrRenderScale(card.GameName, card.InstallPath, pct); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
+                onRenderScaleSelected: (pct) => { presetService.SetRrRenderScale(card.GameName, card.InstallPath, pct); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
+                originalVersion: card.DlssDetection?.OriginalDlssdVersion,
+                driverOverrideActive: rrDriverOverride);
             Grid.SetColumn(rrCol, 2);
             dlssRowGrid.Children.Add(rrCol);
 
             dlssRowGrid.Children.Add(MakeDlssDivider(3));
 
             // FG column
+            bool fgDriverOverride = presetService.IsSupported && presetService.IsFgDriverOverrideActive(card.GameName, card.InstallPath ?? "");
             var fgCol = BuildDlssColumn("Frame Generation", hasDlssg, dlssService.DlssgVersions,
                 card.DlssgInstalledVersion, DlssPresetService.FgPresets,
                 presetService.IsSupported && hasDlssg ? presetService.GetFgPreset(card.GameName, card.InstallPath) : 0u,
@@ -2058,7 +2065,9 @@ public partial class DetailPanelBuilder
                     tc.RefreshDlssVersions(dlssService);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
                 },
-                (preset) => { presetService.SetFgPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
+                (preset) => { presetService.SetFgPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
+                originalVersion: card.DlssDetection?.OriginalDlssgVersion,
+                driverOverrideActive: fgDriverOverride);
             Grid.SetColumn(fgCol, 4);
             dlssRowGrid.Children.Add(fgCol);
 
@@ -2084,7 +2093,8 @@ public partial class DetailPanelBuilder
                     tc.RefreshDlssVersions(dlssService);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
                 },
-                null);
+                null,
+                originalVersion: card.DlssDetection?.OriginalStreamlineVersion);
 
             // Add Restore All button into the SL column (fills the preset slot)
             // Enabled when any backup exists OR any preset is non-default
@@ -2162,25 +2172,29 @@ public partial class DetailPanelBuilder
                 var svc = _window.ViewModel.DlssStreamlineServiceInstance;
                 var pSvc = _window.ViewModel.DlssPresetServiceInstance;
 
-                if (!string.IsNullOrEmpty(settings.DefaultDlssVersion) && targetCard.HasDlss && targetCard.DlssDetection.DlssPath != null)
+                if (!string.IsNullOrEmpty(settings.DefaultDlssVersion) && targetCard.HasDlss && targetCard.DlssDetection.DlssPath != null
+                    && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
                     await svc.SwapDlssAsync(targetCard.DlssDetection.DlssPath, settings.DefaultDlssVersion);
-                if (!string.IsNullOrEmpty(settings.DefaultDlssdVersion) && targetCard.HasDlssd && targetCard.DlssDetection.DlssdPath != null)
+                if (!string.IsNullOrEmpty(settings.DefaultDlssdVersion) && targetCard.HasDlssd && targetCard.DlssDetection.DlssdPath != null
+                    && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
                     await svc.SwapDlssdAsync(targetCard.DlssDetection.DlssdPath, settings.DefaultDlssdVersion);
-                if (!string.IsNullOrEmpty(settings.DefaultDlssgVersion) && targetCard.HasDlssg && targetCard.DlssDetection.DlssgPath != null)
+                if (!string.IsNullOrEmpty(settings.DefaultDlssgVersion) && targetCard.HasDlssg && targetCard.DlssDetection.DlssgPath != null
+                    && !(targetCard.DlssgInstalledVersion?.StartsWith("1.") == true))
                     await svc.SwapDlssgAsync(targetCard.DlssDetection.DlssgPath, settings.DefaultDlssgVersion);
-                if (!string.IsNullOrEmpty(settings.DefaultStreamlineVersion) && targetCard.HasStreamline && targetCard.DlssDetection.StreamlineFolder != null)
+                if (!string.IsNullOrEmpty(settings.DefaultStreamlineVersion) && targetCard.HasStreamline && targetCard.DlssDetection.StreamlineFolder != null
+                    && !(targetCard.StreamlineInstalledVersion?.StartsWith("1.") == true))
                     await svc.SwapStreamlineAsync(targetCard.DlssDetection.StreamlineFolder, settings.DefaultStreamlineVersion);
 
-                if (settings.DefaultSrPreset != 0 && targetCard.HasDlss)
+                if (settings.DefaultSrPreset != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);
-                if (settings.DefaultRrPreset != 0 && targetCard.HasDlssd)
+                if (settings.DefaultRrPreset != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
-                if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg)
+                if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg && !(targetCard.DlssgInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
 
-                if (settings.DefaultSrRenderScale != 0 && targetCard.HasDlss)
+                if (settings.DefaultSrRenderScale != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrRenderScale);
-                if (settings.DefaultRrRenderScale != 0 && targetCard.HasDlssd)
+                if (settings.DefaultRrRenderScale != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetRrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrRenderScale);
 
                 targetCard.RefreshDlssVersions(svc);
@@ -2360,6 +2374,7 @@ public partial class DetailPanelBuilder
                     int i = combo.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
                     nvidiaPresetService.SetSmoothMotionEnable(card.GameName, installPathSafe, options[i].Value);
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
                 };
                 smoothCol.Children.Add(combo);
                 init = false;
@@ -2855,7 +2870,8 @@ public partial class DetailPanelBuilder
         IReadOnlyList<string> availableVersions, string? installedVersion,
         (string Name, uint Value)[]? presets, uint currentPreset,
         Func<string, Task> onVersionSelected, Action<uint>? onPresetSelected,
-        uint currentRenderScale = 0, Action<uint>? onRenderScaleSelected = null)
+        uint currentRenderScale = 0, Action<uint>? onRenderScaleSelected = null,
+        string? originalVersion = null, bool driverOverrideActive = false)
     {
         var col = new StackPanel { Spacing = 4, Opacity = isPresent ? 1.0 : 0.4 };
 
@@ -2869,27 +2885,48 @@ public partial class DetailPanelBuilder
 
         // Version ComboBox
         col.Children.Add(new TextBlock { Text = "Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
-        var items = new List<string> { "Default" };
-        items.AddRange(availableVersions);
+
+        // Build items list with (Default) marker on the game's original/default version
+        var items = new List<string>();
+        string? formattedOriginal = originalVersion != null ? DlssStreamlineService.FormatVersion(originalVersion) : null;
+        bool defaultInList = false;
+
+        foreach (var ver in availableVersions)
+        {
+            if (formattedOriginal != null && (ver.Equals(formattedOriginal, StringComparison.OrdinalIgnoreCase)
+                || ver.StartsWith(formattedOriginal, StringComparison.OrdinalIgnoreCase)
+                || formattedOriginal.StartsWith(ver, StringComparison.OrdinalIgnoreCase)))
+            {
+                items.Add($"{ver} (Default)");
+                defaultInList = true;
+            }
+            else
+                items.Add(ver);
+        }
         items.Add("Custom");
 
+        // If original version isn't in the managed list, insert it at top with (Default)
+        if (!defaultInList && formattedOriginal != null)
+            items.Insert(0, $"{formattedOriginal} (Default)");
+
+        // Find selected index based on installed version
         int selectedIndex = 0;
         if (installedVersion != null && isPresent)
         {
             if (installedVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
             {
-                selectedIndex = items.Count - 1; // "Custom" is always last
+                selectedIndex = items.Count - 1;
             }
             else
             {
-                for (int i = 0; i < availableVersions.Count; i++)
+                for (int i = 0; i < items.Count; i++)
                 {
-                    if (installedVersion.Equals(availableVersions[i], StringComparison.OrdinalIgnoreCase)
-                        || availableVersions[i].StartsWith(installedVersion + ".", StringComparison.OrdinalIgnoreCase)
-                        || availableVersions[i].StartsWith(installedVersion, StringComparison.OrdinalIgnoreCase)
-                        || installedVersion.StartsWith(availableVersions[i], StringComparison.OrdinalIgnoreCase))
+                    var itemBase = items[i].Replace(" (Default)", "");
+                    if (installedVersion.Equals(itemBase, StringComparison.OrdinalIgnoreCase)
+                        || itemBase.StartsWith(installedVersion, StringComparison.OrdinalIgnoreCase)
+                        || installedVersion.StartsWith(itemBase, StringComparison.OrdinalIgnoreCase))
                     {
-                        selectedIndex = i + 1;
+                        selectedIndex = i;
                         break;
                     }
                 }
@@ -2902,19 +2939,45 @@ public partial class DetailPanelBuilder
             SelectedIndex = selectedIndex,
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            IsEnabled = isPresent,
+            IsEnabled = isPresent && !driverOverrideActive,
+            Opacity = driverOverrideActive ? 0.4 : 1.0,
         };
+        if (driverOverrideActive)
+            ToolTipService.SetToolTip(versionCombo, "Driver override is active — disable it in NVIDIA App or Profile Inspector to manage this DLL in RHI.");
+
+        // Show "Driver override active" indicator below the combo when active
+        if (driverOverrideActive && isPresent)
+        {
+            col.Children.Add(versionCombo);
+            var overrideText = new TextBlock
+            {
+                Text = "⚠ Driver override active",
+                FontSize = 9,
+                Foreground = UIFactory.Brush(ResourceKeys.AccentAmberDimBrush),
+                Margin = new Thickness(0, 2, 0, 0),
+            };
+            ToolTipService.SetToolTip(overrideText, "Driver override is active — disable it in NVIDIA App or Profile Inspector to manage this DLL in RHI.");
+            col.Children.Add(overrideText);
+        }
+        else
+        {
+            col.Children.Add(versionCombo);
+        }
 
         bool versionInit = true;
         versionCombo.SelectionChanged += async (s, ev) =>
         {
             if (versionInit) return;
             var selected = versionCombo.SelectedItem as string;
-            if (!string.IsNullOrEmpty(selected))
+            if (string.IsNullOrEmpty(selected)) return;
+
+            // If it's the (Default) item, treat as "Default" (restore original)
+            if (selected.EndsWith(" (Default)"))
+                await onVersionSelected("Default");
+            else
                 await onVersionSelected(selected);
         };
         versionInit = false;
-        col.Children.Add(versionCombo);
 
         // Preset ComboBox (only for SR, RR, FG)
         if (presets != null && isPresent)

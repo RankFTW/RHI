@@ -826,6 +826,13 @@ public sealed partial class MainWindow
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
         await DlssDefaultsDialog.ShowAsync(ViewModel, dlssService, presetService, Content.XamlRoot);
         RefreshDlssDefaultsSummary();
+
+        // Rebuild the detail panel so Quick Apply button reflects new defaults state
+        if (ViewModel.SelectedGame is { } selectedCard && ViewModel.CurrentViewLayout == Models.ViewLayout.Detail)
+        {
+            PopulateDetailPanel(selectedCard);
+            BuildOverridesPanel(selectedCard);
+        }
     }
 
     internal void RefreshDlssDefaultsSummary()

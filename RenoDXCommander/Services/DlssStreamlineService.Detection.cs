@@ -48,6 +48,28 @@ public partial class DlssStreamlineService
         if (result.StreamlineInterposerPath != null)
             result.StreamlineVersion = GetFileVersion(result.StreamlineInterposerPath);
 
+        // Determine original/default versions (from .original backup if a swap was done, else current)
+        if (result.DlssPath != null)
+        {
+            var backup = result.DlssPath + ".original";
+            result.OriginalDlssVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssVersion;
+        }
+        if (result.DlssdPath != null)
+        {
+            var backup = result.DlssdPath + ".original";
+            result.OriginalDlssdVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssdVersion;
+        }
+        if (result.DlssgPath != null)
+        {
+            var backup = result.DlssgPath + ".original";
+            result.OriginalDlssgVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssgVersion;
+        }
+        if (result.StreamlineInterposerPath != null)
+        {
+            var backup = result.StreamlineInterposerPath + ".original";
+            result.OriginalStreamlineVersion = File.Exists(backup) ? GetFileVersion(backup) : result.StreamlineVersion;
+        }
+
         // Enumerate which Streamline files are actually present
         if (result.StreamlineFolder != null)
         {

@@ -149,6 +149,11 @@ public class DlssPresetService
     private const uint NGX_DLSS_RR_RENDER_SCALE_ID = 0x10BD9423; // RR Render Scale mode
     private const uint NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID = 0x10C7D4A2; // RR Render Scale custom value
 
+    // DLSS Latest DLL driver override (tells driver to inject its own bundled DLL)
+    private const uint DLSS_SR_LATEST_DLL_ID = 0x10E41E01;
+    private const uint DLSS_RR_LATEST_DLL_ID = 0x10E41E02;
+    private const uint DLSS_FG_LATEST_DLL_ID = 0x10E41E03;
+
     private const uint RENDER_SCALE_DEFAULT = 0x03;
     private const uint RENDER_SCALE_CUSTOM = 0x06;
 
@@ -262,6 +267,20 @@ public class DlssPresetService
 
     public uint GetFgPreset(string gameName, string installPath)
         => GetPreset(gameName, installPath, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID);
+
+    // ── DLSS Latest DLL driver override detection ─────────────────────────────
+
+    /// <summary>Returns true if the NVIDIA driver is overriding the game's DLSS SR DLL with its own latest version.</summary>
+    public bool IsSrDriverOverrideActive(string gameName, string installPath)
+        => GetPreset(gameName, installPath, DLSS_SR_LATEST_DLL_ID) == 1;
+
+    /// <summary>Returns true if the NVIDIA driver is overriding the game's DLSS RR DLL.</summary>
+    public bool IsRrDriverOverrideActive(string gameName, string installPath)
+        => GetPreset(gameName, installPath, DLSS_RR_LATEST_DLL_ID) == 1;
+
+    /// <summary>Returns true if the NVIDIA driver is overriding the game's DLSS FG DLL.</summary>
+    public bool IsFgDriverOverrideActive(string gameName, string installPath)
+        => GetPreset(gameName, installPath, DLSS_FG_LATEST_DLL_ID) == 1;
 
     // ── Set presets ───────────────────────────────────────────────────────────
 

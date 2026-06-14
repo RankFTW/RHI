@@ -292,7 +292,7 @@ public class SettingsHandler
         _adminComboInit = false;
     }
 
-    public void AdminModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    public async void AdminModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_adminComboInit) return;
         if (sender is not ComboBox combo) return;
@@ -306,6 +306,18 @@ public class SettingsHandler
                 CreateAdminTask();
             else
                 DeleteAdminTask();
+
+            // Show restart notice
+            await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Admin Mode",
+                Content = enable
+                    ? "Admin Mode enabled. Restart RHI for it to take effect."
+                    : "Admin Mode disabled. RHI will launch normally on next start.",
+                CloseButtonText = "OK",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
         }
         catch (Exception ex)
         {

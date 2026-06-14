@@ -414,6 +414,44 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             else { InvalidateTrustedPath(gameName); return null; }
         }
 
+        // Populate original versions from cache
+        result.OriginalDlssVersion = entry.OriginalDlssVersion;
+        result.OriginalDlssdVersion = entry.OriginalDlssdVersion;
+        result.OriginalDlssgVersion = entry.OriginalDlssgVersion;
+        result.OriginalStreamlineVersion = entry.OriginalStreamlineVersion;
+
+        // One-time backfill: if original versions aren't cached yet, read them now
+        bool needsSave = false;
+        if (result.DlssPath != null && entry.OriginalDlssVersion == null)
+        {
+            var backup = result.DlssPath + ".original";
+            result.OriginalDlssVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssVersion;
+            entry.OriginalDlssVersion = result.OriginalDlssVersion;
+            needsSave = true;
+        }
+        if (result.DlssdPath != null && entry.OriginalDlssdVersion == null)
+        {
+            var backup = result.DlssdPath + ".original";
+            result.OriginalDlssdVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssdVersion;
+            entry.OriginalDlssdVersion = result.OriginalDlssdVersion;
+            needsSave = true;
+        }
+        if (result.DlssgPath != null && entry.OriginalDlssgVersion == null)
+        {
+            var backup = result.DlssgPath + ".original";
+            result.OriginalDlssgVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssgVersion;
+            entry.OriginalDlssgVersion = result.OriginalDlssgVersion;
+            needsSave = true;
+        }
+        if (result.StreamlineInterposerPath != null && entry.OriginalStreamlineVersion == null)
+        {
+            var backup = result.StreamlineInterposerPath + ".original";
+            result.OriginalStreamlineVersion = File.Exists(backup) ? GetFileVersion(backup) : result.StreamlineVersion;
+            entry.OriginalStreamlineVersion = result.OriginalStreamlineVersion;
+            needsSave = true;
+        }
+        if (needsSave) SaveTrustedCache();
+
         return anyValid ? result : null;
     }
 
@@ -434,6 +472,11 @@ public partial class DlssStreamlineService : IDlssStreamlineService
                 existing.DlssgPath = detection.DlssgPath; existing.StreamlineFolder = detection.StreamlineFolder;
                 existing.ConfirmCount = 1;
             }
+            // Update original versions (keep existing if already set, overwrite if detection has them)
+            existing.OriginalDlssVersion ??= detection.OriginalDlssVersion;
+            existing.OriginalDlssdVersion ??= detection.OriginalDlssdVersion;
+            existing.OriginalDlssgVersion ??= detection.OriginalDlssgVersion;
+            existing.OriginalStreamlineVersion ??= detection.OriginalStreamlineVersion;
         }
         else
         {
@@ -442,6 +485,10 @@ public partial class DlssStreamlineService : IDlssStreamlineService
                 DlssPath = detection.DlssPath, DlssdPath = detection.DlssdPath,
                 DlssgPath = detection.DlssgPath, StreamlineFolder = detection.StreamlineFolder,
                 ConfirmCount = 1,
+                OriginalDlssVersion = detection.OriginalDlssVersion,
+                OriginalDlssdVersion = detection.OriginalDlssdVersion,
+                OriginalDlssgVersion = detection.OriginalDlssgVersion,
+                OriginalStreamlineVersion = detection.OriginalStreamlineVersion,
             };
         }
         SaveTrustedCache();
@@ -577,4 +624,10 @@ public class TrustedPathEntry
     public string? DlssgPath { get; set; }
     public string? StreamlineFolder { get; set; }
     public int ConfirmCount { get; set; }
+
+    // Cached original/default versions (from .original backup or initial detection)
+    public string? OriginalDlssVersion { get; set; }
+    public string? OriginalDlssdVersion { get; set; }
+    public string? OriginalDlssgVersion { get; set; }
+    public string? OriginalStreamlineVersion { get; set; }
 }

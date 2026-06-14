@@ -187,6 +187,18 @@ public class DlssDetectionResult
     /// <summary>Installed Streamline version (from sl.interposer.dll), or null.</summary>
     public string? StreamlineVersion { get; set; }
 
+    /// <summary>Original/default DLSS SR version (from .original backup if exists, else current). Cached for UI display.</summary>
+    public string? OriginalDlssVersion { get; set; }
+
+    /// <summary>Original/default DLSS RR version. Cached for UI display.</summary>
+    public string? OriginalDlssdVersion { get; set; }
+
+    /// <summary>Original/default DLSS FG version. Cached for UI display.</summary>
+    public string? OriginalDlssgVersion { get; set; }
+
+    /// <summary>Original/default Streamline version. Cached for UI display.</summary>
+    public string? OriginalStreamlineVersion { get; set; }
+
     /// <summary>True if any DLSS or Streamline DLL was found.</summary>
     public bool HasAny => DlssPath != null || DlssdPath != null || DlssgPath != null || StreamlineInterposerPath != null;
 

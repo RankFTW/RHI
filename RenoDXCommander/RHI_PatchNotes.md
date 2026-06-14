@@ -9,6 +9,7 @@
 - **Global Nvidia Settings** — New settings section with Shader Cache Size, Shader Pre-Compile, G-Sync Mode, and Preferred Refresh Rate controls. All read/write the global driver profile directly.
 - **Profile Export/Import** — Save all per-game NVIDIA profile settings to a backup file. Restore after driver updates — recreates profiles, exe associations, and all custom settings in one click.
 - **UE Version Detection** — Engine badge now shows exact Unreal Engine version (e.g. "Unreal Engine 5.4.3") when detectable.
+- **DLSS Driver Override Detection** — When NVIDIA App has "Latest DLL" enabled for a game, RHI detects this and greys out the version dropdown with a "Driver override active" warning. Prevents confusion when the driver is injecting its own DLL regardless of what's in the game folder.
 
 ### Improvements
 
@@ -26,6 +27,11 @@
 - Fixed Streamline "Custom" selection reverting to a version number after panel rebuild.
 - Fixed Luma and RE Framework update status not persisting over restart. Update All button now correctly goes purple for Luma updates.
 - Fixed DXVK extraction using a random temp folder each time, causing Windows Defender to repeatedly flag the DLLs as unknown. Now uses a fixed path so exclusions persist.
+- Fixed Quick Apply allowing DLSS/Streamline version changes on games with v1.x DLLs.
+- Fixed version dropdown showing ambiguous "Default" — now always shows the game's original DLL version with `(Default)` suffix. Original versions are cached after first detection scan for instant display.
+- Fixed Smooth Motion "Allowed APIs" and "Flip Pacing" not updating greyed state after toggling Enable.
+- Fixed Quick Apply button appearing dim after configuring defaults until manual refresh.
+- Fixed Admin Mode toggle not informing the user that a restart is needed.
 
 ### Manifest Updates
 
