@@ -2215,9 +2215,11 @@ public partial class DetailPanelBuilder
         var nvidiaPresetService = _window.ViewModel.DlssPresetServiceInstance;
         if (nvidiaPresetService.IsSupported)
         {
+            bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
+
             _window.NvidiaProfilePanel.Children.Add(UIFactory.MakeSeparator());
 
-            var nvidiaGrid = new Grid { ColumnSpacing = 12 };
+            var nvidiaGrid = new Grid { ColumnSpacing = 12, Opacity = isAdmin ? 1.0 : 0.4, IsHitTestVisible = isAdmin };
             // 4 columns with dividers between: col0 | div1 | col2 | div3 | col4 | div5 | col6
             nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             nvidiaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -2333,10 +2335,12 @@ public partial class DetailPanelBuilder
             smoothCol.Children.Add(smoothLabel);
 
             // Enable
+            bool smoothMotionEnabled;
             {
                 smoothCol.Children.Add(new TextBlock { Text = "Enable", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var options = DlssPresetService.SmoothMotionEnableOptions;
                 uint current = nvidiaPresetService.GetSmoothMotionEnable(card.GameName, installPathSafe);
+                smoothMotionEnabled = current != 0;
                 var items = options.Select(o => o.Name).ToArray();
                 int idx = Array.FindIndex(options, o => o.Value == current);
                 if (idx < 0) idx = 0;
@@ -2376,6 +2380,8 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    IsEnabled = smoothMotionEnabled,
+                    Opacity = smoothMotionEnabled ? 1.0 : 0.4,
                 };
                 ToolTipService.SetToolTip(combo, "Smooth Motion APIs — which graphics APIs Smooth Motion is allowed to hook. None = disabled for all APIs.");
                 var init = true;
@@ -2405,6 +2411,8 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    IsEnabled = smoothMotionEnabled,
+                    Opacity = smoothMotionEnabled ? 1.0 : 0.4,
                 };
                 ToolTipService.SetToolTip(combo, "Flip Pacing — Off: prioritize lower latency. On: prioritize smoother frame pacing. Sets both fullscreen and windowed modes together.");
                 var init = true;
@@ -2596,11 +2604,14 @@ public partial class DetailPanelBuilder
         }
 
         // Admin notice at the bottom of the Nvidia Profile section
+        bool isElevated = VulkanLayerService.IsRunningAsAdmin();
         _window.NvidiaProfilePanel.Children.Add(new TextBlock
         {
-            Text = "⚠ Most driver profile settings require RHI to be run as admin. Restart as admin or enable Admin Mode in Settings.",
+            Text = isElevated
+                ? "✓ Running as admin — all driver profile settings are writable."
+                : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
             FontSize = 10,
-            Foreground = UIFactory.Brush(ResourceKeys.AccentAmberDimBrush),
+            Foreground = UIFactory.Brush(isElevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 8, 0, 0),
         });

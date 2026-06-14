@@ -107,6 +107,8 @@ public static class DlssDefaultsDialog
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
+        // Override default ContentDialog max width to fit 4 columns
+        dialog.Resources["ContentDialogMaxWidth"] = 900.0;
 
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result != ContentDialogResult.Primary) return;

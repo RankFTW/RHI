@@ -145,6 +145,27 @@ public partial class App : Application
             return;
         }
 
+        // ── Admin Mode: if the scheduled task exists and we're not elevated, relaunch via task ──
+        if (!IsRunningAsAdmin() && IsAdminTaskRegistered())
+        {
+            try
+            {
+                CrashReporter.Log("[App.OnLaunched] Admin Mode enabled but not elevated — relaunching via scheduled task");
+                var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", "/Run /TN \"RHI Admin Mode\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                System.Diagnostics.Process.Start(psi);
+                Environment.Exit(0);
+                return;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[App.OnLaunched] Admin Mode relaunch failed — continuing non-elevated: {ex.Message}");
+            }
+        }
+
         CrashReporter.Log("[App.OnLaunched] Creating MainWindow");
         GraphicsApiDetector.LoadCache();
         MainViewModel.LoadGameApiCache();
@@ -217,5 +238,31 @@ public partial class App : Application
         {
             CopyDirectoryRecursive(dir, Path.Combine(destDir, Path.GetFileName(dir)));
         }
+    }
+
+    private static bool IsRunningAsAdmin()
+    {
+        using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+        var principal = new System.Security.Principal.WindowsPrincipal(identity);
+        return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+    }
+
+    private static bool IsAdminTaskRegistered()
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", "/Query /TN \"RHI Admin Mode\" /FO LIST")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            using var proc = System.Diagnostics.Process.Start(psi)!;
+            proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit(5000);
+            return proc.ExitCode == 0;
+        }
+        catch { return false; }
     }
 }

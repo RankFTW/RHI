@@ -331,17 +331,32 @@ public class SettingsHandler
     {
         var exePath = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
         // Create a scheduled task that runs RHI with highest privileges, triggered at logon
+        // Requires elevation — use runas verb to trigger UAC prompt
         var args = $"/Create /TN \"{AdminTaskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONLOGON /RL HIGHEST /F /DELAY 0000:00";
-        var result = RunSchtasks(args);
-        if (result.ExitCode != 0)
-            throw new InvalidOperationException($"schtasks /Create failed (exit {result.ExitCode}): {result.Output}");
+        var result = RunSchtasksElevated(args);
+        if (result != 0)
+            throw new InvalidOperationException($"schtasks /Create failed (exit {result})");
     }
 
     private static void DeleteAdminTask()
     {
-        var result = RunSchtasks($"/Delete /TN \"{AdminTaskName}\" /F");
-        if (result.ExitCode != 0)
-            throw new InvalidOperationException($"schtasks /Delete failed (exit {result.ExitCode}): {result.Output}");
+        var result = RunSchtasksElevated($"/Delete /TN \"{AdminTaskName}\" /F");
+        if (result != 0)
+            throw new InvalidOperationException($"schtasks /Delete failed (exit {result})");
+    }
+
+    /// <summary>Runs schtasks.exe elevated (UAC prompt) and waits for completion.</summary>
+    private static int RunSchtasksElevated(string arguments)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", arguments)
+        {
+            UseShellExecute = true,
+            Verb = "runas",
+            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+        };
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        proc.WaitForExit(15000);
+        return proc.ExitCode;
     }
 
     private static (int ExitCode, string Output) RunSchtasks(string arguments)

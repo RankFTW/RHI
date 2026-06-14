@@ -12,12 +12,13 @@
 
 ### Improvements
 
+- **Admin Mode toggle** — New Off/On combo box in Settings (Data & Custom Files section). Creates a Task Scheduler task to launch RHI with admin privileges automatically, bypassing UAC. Required for ReBAR, Low Latency Ultra, Smooth Motion, and CPU Scheduling settings.
+- Driver settings row is greyed out when not running as admin, preventing silent write failures.
 - Detail panel reorganized into 4 sections: Components, Game Overrides, Nvidia Profile Overrides, and Management.
 - Compact view now has 3 pages: Components, Game Overrides, and Nvidia Profile + Management. Reduced window height for a tighter fit.
 - All NVIDIA profile dropdowns have sub-labels and tooltips explaining what each setting does.
 - DLSS preset tooltips explain the model generations (J/K = 1st-gen transformer, L/M = 2nd-gen with better stability).
-- Admin notice at the bottom of the Nvidia Profile section warns that most settings require elevation.
-- **Admin Mode toggle** — New Off/On combo box in Settings (Data & Custom Files section). Creates a Task Scheduler task to launch RHI with admin privileges automatically, bypassing UAC. Required for ReBAR, Low Latency Ultra, Smooth Motion, and CPU Scheduling settings.
+- Admin notice at the bottom of the Nvidia Profile section indicates elevation status.
 - Config button opens the exact Engine.ini folder. Also detects config stored inside the game directory.
 
 ### Bug Fixes

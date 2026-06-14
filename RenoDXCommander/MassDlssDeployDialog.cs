@@ -154,17 +154,29 @@ public class MassDlssDeployDialog
             Margin = new Thickness(16, 0, 16, 0),
         };
 
+        // ── Right-side separator (constrains combo panel visually) ──
+        var rightSeparator = new Border
+        {
+            Width = 1,
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Margin = new Thickness(16, 0, 0, 0),
+        };
+
         // ── Main layout ──
         var mainGrid = new Grid();
+        mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         Grid.SetColumn(leftPanel, 0);
         Grid.SetColumn(separator, 1);
         Grid.SetColumn(rightPanel, 2);
+        Grid.SetColumn(rightSeparator, 3);
         mainGrid.Children.Add(leftPanel);
         mainGrid.Children.Add(separator);
         mainGrid.Children.Add(rightPanel);
+        mainGrid.Children.Add(rightSeparator);
 
         // ── Dialog ──
         var dialog = new ContentDialog
@@ -177,6 +189,7 @@ public class MassDlssDeployDialog
             XamlRoot = _xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
+        dialog.Resources["ContentDialogMaxWidth"] = 750.0;
 
         var result = await DialogService.ShowSafeAsync(dialog);
 
