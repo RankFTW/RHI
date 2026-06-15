@@ -32,6 +32,8 @@
 - Fixed Smooth Motion "Allowed APIs" and "Flip Pacing" not updating greyed state after toggling Enable.
 - Fixed Quick Apply button appearing dim after configuring defaults until manual refresh.
 - Fixed Admin Mode toggle not informing the user that a restart is needed.
+- Fixed Admin Mode scheduled task auto-starting RHI at every Windows logon.
+- Fixed overlay and screenshot hotkeys having Ctrl and Shift swapped when deployed to games via "Apply to All Games".
 
 ### Manifest Updates
 

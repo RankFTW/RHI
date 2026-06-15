@@ -34,7 +34,7 @@ public static class HotkeyManager
     };
 
     /// <summary>
-    /// Parses a KeyOverlay format string "vk,shift,ctrl,alt" into its components.
+    /// Parses a KeyOverlay format string "vk,ctrl,shift,alt" into its components.
     /// Returns (vkCode, shift, ctrl, alt). Returns default (36, false, false, false) on invalid input.
     /// </summary>
     public static (int vk, bool shift, bool ctrl, bool alt) ParseHotkeyString(string value)
@@ -43,7 +43,7 @@ public static class HotkeyManager
         {
             var parts = value.Split(',');
             if (parts.Length != 4) return (36, false, false, false);
-            return (int.Parse(parts[0]), parts[1] != "0", parts[2] != "0", parts[3] != "0");
+            return (int.Parse(parts[0]), parts[2] != "0", parts[1] != "0", parts[3] != "0");
         }
         catch
         {
@@ -53,10 +53,11 @@ public static class HotkeyManager
 
     /// <summary>
     /// Builds a KeyOverlay format string from components.
+    /// ReShade format: "vk,ctrl,shift,alt"
     /// </summary>
     public static string BuildHotkeyString(int vk, bool shift, bool ctrl, bool alt)
     {
-        return $"{vk},{(shift ? 1 : 0)},{(ctrl ? 1 : 0)},{(alt ? 1 : 0)}";
+        return $"{vk},{(ctrl ? 1 : 0)},{(shift ? 1 : 0)},{(alt ? 1 : 0)}";
     }
 
     /// <summary>

@@ -342,9 +342,10 @@ public class SettingsHandler
     private static void CreateAdminTask()
     {
         var exePath = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
-        // Create a scheduled task that runs RHI with highest privileges, triggered at logon
-        // Requires elevation — use runas verb to trigger UAC prompt
-        var args = $"/Create /TN \"{AdminTaskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONLOGON /RL HIGHEST /F /DELAY 0000:00";
+        // Create a scheduled task that runs RHI with highest privileges — no auto-start trigger.
+        // Uses /SC ONCE with a past date so the task exists but never auto-triggers.
+        // RHI launches itself through the task via "schtasks /Run" for UAC-free elevation.
+        var args = $"/Create /TN \"{AdminTaskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONCE /ST 00:00 /SD 01/01/2000 /RL HIGHEST /F";
         var result = RunSchtasksElevated(args);
         if (result != 0)
             throw new InvalidOperationException($"schtasks /Create failed (exit {result})");

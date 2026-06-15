@@ -7,6 +7,8 @@
 - Smooth Motion "Allowed APIs" and "Flip Pacing" now update their greyed state immediately after toggling Enable (matching VSync/ReBAR behaviour).
 - Quick Apply button no longer appears dim after setting defaults — panel rebuilds after the Configure Defaults dialog closes.
 - Admin Mode toggle now shows a dialog confirming a restart is needed for it to take effect.
+- Admin Mode no longer auto-starts RHI at Windows logon (was using ONLOGON trigger, now uses expired ONCE trigger — task only runs on demand).
+- Fixed overlay/screenshot hotkeys having Ctrl and Shift swapped when applied to games. ReShade's INI format is `vk,ctrl,shift,alt` — RHI was incorrectly writing `vk,shift,ctrl,alt`.
 
 ## New
 
