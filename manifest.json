@@ -344,6 +344,8 @@
   },
 
   "engineOverrides": {
+    "KINGDOM HEARTS III + Re Mind (DLC)": "Unreal Engine",
+    "Kingdom Hearts 3": "Unreal Engine",
     "SOULCALIBUR VI": "Unreal Engine",
     "Alan Wake 2": "Northlight Engine",
     "Aphelion": "Unreal Engine",
