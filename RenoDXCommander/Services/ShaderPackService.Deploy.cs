@@ -13,7 +13,7 @@ public partial class ShaderPackService
     private IEnumerable<ShaderPack> PacksForIds(IEnumerable<string> packIds)
     {
         var idSet = new HashSet<string>(packIds, StringComparer.OrdinalIgnoreCase);
-        return Packs.Where(p => idSet.Contains(p.Id));
+        return _packs.Where(p => idSet.Contains(p.Id));
     }
 
     /// <summary>
@@ -61,7 +61,7 @@ public partial class ShaderPackService
     /// </summary>
     private void DeployAllPacksIfAbsent(string destShadersDir, string destTexturesDir)
     {
-        DeployPacksIfAbsent(Packs.Select(p => p.Id), destShadersDir, destTexturesDir);
+        DeployPacksIfAbsent(_packs.Select(p => p.Id), destShadersDir, destTexturesDir);
     }
 
     /// <summary>
@@ -239,7 +239,7 @@ public partial class ShaderPackService
             if (!File.Exists(SettingsPath)) return (shaders, textures);
             var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
             if (d == null) return (shaders, textures);
-            foreach (var pack in Packs)
+            foreach (var pack in _packs)
             {
                 if (!d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json)) continue;
                 var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();

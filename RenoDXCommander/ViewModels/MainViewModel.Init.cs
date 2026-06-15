@@ -278,6 +278,9 @@ public partial class MainViewModel
             // osTask deferred until after cards display
             // dlssTask deferred until after cards display
 
+            // Apply manifest-driven shader pack overrides
+            (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);
+
             // 5. Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
             _allMods      = wikiResult.Mods ?? new();
@@ -2485,6 +2488,9 @@ public partial class MainViewModel
             try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database task failed — {ex.Message}"); }
+
+            // Apply manifest-driven shader pack overrides
+            (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);
 
             // Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;

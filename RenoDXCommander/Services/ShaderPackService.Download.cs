@@ -27,7 +27,7 @@ public partial class ShaderPackService
         IProgress<string>? progress = null)
     {
         // Run all pack checks in parallel (each is an independent hash comparison or download)
-        var tasks = Packs.Select(pack => Task.Run(async () =>
+        var tasks = _packs.Select(pack => Task.Run(async () =>
         {
             try { await EnsurePackAsync(pack, progress); }
             catch (Exception ex)
@@ -43,7 +43,7 @@ public partial class ShaderPackService
     public async Task EnsurePacksAsync(IEnumerable<string> packIds, IProgress<string>? progress = null)
     {
         var idSet = new HashSet<string>(packIds, StringComparer.OrdinalIgnoreCase);
-        var needed = Packs.Where(p => idSet.Contains(p.Id)).ToList();
+        var needed = _packs.Where(p => idSet.Contains(p.Id)).ToList();
         if (needed.Count == 0) return;
 
         var tasks = needed.Select(pack => Task.Run(async () =>
@@ -60,7 +60,7 @@ public partial class ShaderPackService
     /// </summary>
     public bool IsPackCached(string packId)
     {
-        var pack = Packs.FirstOrDefault(p => p.Id.Equals(packId, StringComparison.OrdinalIgnoreCase));
+        var pack = _packs.FirstOrDefault(p => p.Id.Equals(packId, StringComparison.OrdinalIgnoreCase));
         if (pack == null) return false;
 
         // Check if the cache zip exists and files are extracted

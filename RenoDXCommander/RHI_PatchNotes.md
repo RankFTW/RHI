@@ -10,6 +10,7 @@
 - **Profile Export/Import** — Save all per-game NVIDIA profile settings to a backup file. Restore after driver updates — recreates profiles, exe associations, and all custom settings in one click.
 - **UE Version Detection** — Engine badge now shows exact Unreal Engine version (e.g. "Unreal Engine 5.4.3") when detectable.
 - **DLSS Driver Override Detection** — When NVIDIA App has "Latest DLL" enabled for a game, RHI detects this and greys out the version dropdown with a "Driver override active" warning. Prevents confusion when the driver is injecting its own DLL regardless of what's in the game folder.
+- **Manifest-driven Shader Packs** — Shader packs can now be added, disabled, or modified from the remote manifest without an app update. New packs, URL changes, and removals all happen server-side.
 
 ### Improvements
 

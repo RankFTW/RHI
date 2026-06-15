@@ -1,5 +1,7 @@
 // ShaderPackService.cs — Class declaration, constructor, path constants, pack definitions, enums, and ShaderPack record
 
+using RenoDXCommander.Models;
+
 namespace RenoDXCommander.Services;
 
 /// <summary>
@@ -80,7 +82,7 @@ public partial class ShaderPackService : IShaderPackService
     );
 
     // Packs in order of download. IsMinimum=true → included in Minimum mode.
-    private static readonly ShaderPack[] Packs =
+    private static readonly ShaderPack[] DefaultPacks =
     {
         new(
             Id          : "Lilium",
@@ -479,25 +481,126 @@ public partial class ShaderPackService : IShaderPackService
         ),
     };
 
+    // Active packs — starts as DefaultPacks, may be overridden by manifest
+    private ShaderPack[] _packs = DefaultPacks;
+
     // ── AvailablePacks ───────────────────────────────────────────────────────────
 
     /// <summary>
     /// Exposes pack metadata for the picker UI — returns every known pack's Id and DisplayName.
     /// </summary>
-    public IReadOnlyList<(string Id, string DisplayName, PackCategory Category)> AvailablePacks { get; } =
-        Packs.OrderBy(p => p.Category).ThenBy(p => p.DisplayName, StringComparer.OrdinalIgnoreCase)
+    public IReadOnlyList<(string Id, string DisplayName, PackCategory Category)> AvailablePacks { get; private set; } =
+        DefaultPacks.OrderBy(p => p.Category).ThenBy(p => p.DisplayName, StringComparer.OrdinalIgnoreCase)
              .Select(p => (p.Id, p.DisplayName, p.Category)).ToList().AsReadOnly();
 
     /// <summary>
     /// Returns the short description for a pack, or null if none is set.
     /// </summary>
     public string? GetPackDescription(string packId) =>
-        Packs.FirstOrDefault(p => p.Id == packId)?.Description;
+        _packs.FirstOrDefault(p => p.Id == packId)?.Description;
 
     /// <summary>
     /// Returns the IDs of packs that the given pack requires (dependencies).
     /// </summary>
     public string[] GetRequiredPacks(string packId) =>
-        Packs.FirstOrDefault(p => p.Id == packId)?.Requires ?? Array.Empty<string>();
+        _packs.FirstOrDefault(p => p.Id == packId)?.Requires ?? Array.Empty<string>();
+
+    // ── Manifest overrides ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Merges remote manifest shader pack overrides into the active pack list.
+    /// Starts from DefaultPacks, applies additions/modifications/removals, then
+    /// rebuilds the AvailablePacks property.
+    /// </summary>
+    public void ApplyManifestOverrides(RemoteManifest? manifest)
+    {
+        if (manifest?.ShaderPacks == null || manifest.ShaderPacks.Count == 0)
+        {
+            _packs = DefaultPacks;
+            RebuildAvailablePacks();
+            return;
+        }
+
+        var merged = new List<ShaderPack>(DefaultPacks);
+
+        foreach (var (id, entry) in manifest.ShaderPacks)
+        {
+            // disabled → remove from list
+            if (entry.Disabled == true)
+            {
+                merged.RemoveAll(p => p.Id == id);
+                continue;
+            }
+
+            var existingIdx = merged.FindIndex(p => p.Id == id);
+            if (existingIdx >= 0)
+            {
+                // Override non-null fields on existing pack
+                var existing = merged[existingIdx];
+                merged[existingIdx] = existing with
+                {
+                    DisplayName = entry.DisplayName ?? existing.DisplayName,
+                    Kind        = TryParseKind(entry.Kind) ?? existing.Kind,
+                    Url         = entry.Url ?? existing.Url,
+                    IsMinimum   = entry.IsMinimum ?? existing.IsMinimum,
+                    AssetExt    = entry.AssetExt ?? existing.AssetExt,
+                    Description = entry.Description ?? existing.Description,
+                    Category    = TryParseCategory(entry.Category) ?? existing.Category,
+                    Requires    = entry.Requires ?? existing.Requires,
+                };
+            }
+            else
+            {
+                // New pack from manifest — requires at minimum a URL and kind
+                if (string.IsNullOrEmpty(entry.Url) || string.IsNullOrEmpty(entry.Kind))
+                    continue;
+
+                var kind = TryParseKind(entry.Kind);
+                if (kind == null) continue;
+
+                merged.Add(new ShaderPack(
+                    Id          : id,
+                    DisplayName : entry.DisplayName ?? id,
+                    Kind        : kind.Value,
+                    Url         : entry.Url,
+                    IsMinimum   : entry.IsMinimum ?? false,
+                    AssetExt    : entry.AssetExt,
+                    Description : entry.Description,
+                    Category    : TryParseCategory(entry.Category) ?? PackCategory.Extra,
+                    Requires    : entry.Requires
+                ));
+            }
+        }
+
+        _packs = merged.ToArray();
+        RebuildAvailablePacks();
+    }
+
+    private void RebuildAvailablePacks()
+    {
+        AvailablePacks = _packs
+            .OrderBy(p => p.Category)
+            .ThenBy(p => p.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .Select(p => (p.Id, p.DisplayName, p.Category))
+            .ToList()
+            .AsReadOnly();
+    }
+
+    private static SourceKind? TryParseKind(string? value) =>
+        value switch
+        {
+            "GhRelease" => SourceKind.GhRelease,
+            "DirectUrl" => SourceKind.DirectUrl,
+            _ => null
+        };
+
+    private static PackCategory? TryParseCategory(string? value) =>
+        value switch
+        {
+            "Essential"   => PackCategory.Essential,
+            "Recommended" => PackCategory.Recommended,
+            "Extra"       => PackCategory.Extra,
+            _ => null
+        };
 }
 

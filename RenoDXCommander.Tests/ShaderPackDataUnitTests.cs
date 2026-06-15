@@ -15,11 +15,11 @@ public class ShaderPackDataUnitTests
 
     // ── Reflection helpers ────────────────────────────────────────────────────────
 
-    /// <summary>Gets the static Packs array via reflection.</summary>
+    /// <summary>Gets the static DefaultPacks array via reflection.</summary>
     private static Array GetPacksArray()
     {
         var field = typeof(ShaderPackService).GetField(
-            "Packs", BindingFlags.NonPublic | BindingFlags.Static);
+            "DefaultPacks", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(field);
         return (Array)field!.GetValue(null)!;
     }

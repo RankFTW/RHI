@@ -324,6 +324,14 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("splitGames")]
     public Dictionary<string, List<SplitGameEntry>>? SplitGames { get; set; }
+
+    /// <summary>
+    /// Remote overrides for shader packs. Allows adding, modifying, or disabling
+    /// shader packs without an app update.
+    /// Key = pack Id (matches ShaderPack.Id), Value = override definition.
+    /// </summary>
+    [JsonPropertyName("shaderPacks")]
+    public Dictionary<string, ManifestShaderPack>? ShaderPacks { get; set; }
 }
 
 /// <summary>
@@ -346,4 +354,41 @@ public class EmulatorConfig
 {
     [JsonPropertyName("addons")]
     public List<string> Addons { get; set; } = new();
+}
+
+/// <summary>
+/// Manifest-driven shader pack override entry. Allows the remote manifest to
+/// add new packs, modify existing pack fields, or disable packs entirely.
+/// </summary>
+public class ManifestShaderPack
+{
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+    /// <summary>"GhRelease" or "DirectUrl"</summary>
+    [JsonPropertyName("kind")]
+    public string? Kind { get; set; }
+
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
+
+    [JsonPropertyName("isMinimum")]
+    public bool? IsMinimum { get; set; }
+
+    [JsonPropertyName("assetExt")]
+    public string? AssetExt { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    /// <summary>"Essential", "Recommended", or "Extra"</summary>
+    [JsonPropertyName("category")]
+    public string? Category { get; set; }
+
+    [JsonPropertyName("requires")]
+    public string[]? Requires { get; set; }
+
+    /// <summary>When true, the pack is removed from the active list.</summary>
+    [JsonPropertyName("disabled")]
+    public bool? Disabled { get; set; }
 }
