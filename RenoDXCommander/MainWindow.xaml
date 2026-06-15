@@ -6,7 +6,7 @@
     xmlns:vm="using:RenoDXCommander.ViewModels"
     xmlns:converters="using:RenoDXCommander.Converters"
     xmlns:controls="using:RenoDXCommander.Controls"
-    Title="ReShade HDR Installer">
+    Title="RHI">
     <Grid RequestedTheme="Dark" Background="{StaticResource SurfaceBaseBrush}" AllowDrop="True" DragOver="Grid_DragOver" Drop="Grid_Drop">
         <Grid.Resources>
             <x:Double x:Key="CardItemWidth">390</x:Double>
@@ -38,7 +38,7 @@
                         <TextBlock FontSize="15" FontWeight="Bold">
                             <Run Text="RHI" Foreground="{StaticResource AccentTealBrush}"/>
                         </TextBlock>
-                        <TextBlock Text="ReShade HDR Installer" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
+                        <TextBlock Text="Enhance every game" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -1942,23 +1942,23 @@
                                     <Image Source="icon.ico" Width="48" Height="48"/>
                                     <StackPanel VerticalAlignment="Center" Spacing="4">
                                         <TextBlock FontSize="20" FontWeight="Bold">
-                                            <Run Text="ReShade HDR Installer" Foreground="{StaticResource AccentTealBrush}"/>
+                                            <Run Text="RHI" Foreground="{StaticResource AccentTealBrush}"/>
                                         </TextBlock>
                                         <TextBlock x:Name="AboutVersionText" x:FieldModifier="internal" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                     </StackPanel>
                                 </StackPanel>
 
                                 <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextTertiaryBrush}" LineHeight="20"
-                                           Text="The all-in-one HDR mod manager for PC games. Auto-detects games from 8 storefronts, manages ReShade, RenoDX, OptiScaler, DLSS/Streamline, frame limiters, DXVK, RE Framework, Luma, and 43 shader packs — all with one-click install, update, and per-game configuration."/>
+                                           Text="The all-in-one game enhancement toolkit for PC. Auto-detects games from 8 storefronts and provides one-click management for ReShade, HDR mods, shaders, DLSS/Streamline, frame limiters, NVIDIA driver profiles, and more — all from one place."/>
 
                                 <!-- What it does -->
                                 <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="14,10"
                                         BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="What RHI does" FontSize="12" FontWeight="SemiBold"
+                                        <TextBlock Text="What RHI manages" FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Scans Steam, GOG, Epic, EA App, Ubisoft, Xbox/Game Pass, Battle.net, and Rockstar for installed games. Provides one-click install, update, and uninstall for ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma Framework, and DXVK. Manages DLSS/Streamline version swaps, DLSS presets, 43 shader packs, per-game overrides, and Ryubing emulator support. Automatically configures Engine.ini and reshade.ini for UE-Extended native HDR games."/>
+                                                   Text="ReShade &amp; shader packs · RenoDX HDR mods · Luma Framework · DLSS/Streamline version swaps &amp; presets · NVIDIA driver profile settings (VSync, Low Latency, ReBAR, Smooth Motion, Power) · OptiScaler · ReLimiter &amp; Display Commander frame limiters · RE Framework · DXVK · UE-Extended native HDR · Per-game overrides for everything."/>
                                     </StackPanel>
                                 </Border>
 
@@ -2148,7 +2148,7 @@
                                 <Border Background="{StaticResource SurfaceStatusBarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                                     <StackPanel Spacing="3">
                                         <TextBlock FontSize="12">
-                                            <Run Text="ReShade HDR Installer" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
+                                            <Run Text="RHI" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}"/>
                                             <Run Text=" by RankFTW" Foreground="{StaticResource TextTertiaryBrush}"/>
                                         </TextBlock>
                                         <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"

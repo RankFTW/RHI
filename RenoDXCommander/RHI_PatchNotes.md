@@ -21,6 +21,7 @@
 - DLSS preset tooltips explain the model generations (J/K = 1st-gen transformer, L/M = 2nd-gen with better stability).
 - Admin notice at the bottom of the Nvidia Profile section indicates elevation status.
 - Config button opens the exact Engine.ini folder. Also detects config stored inside the game directory.
+- Rebranded from "ReShade HDR Installer" to "RHI — Enhance every game". All user-facing text updated.
 
 ### Bug Fixes
 

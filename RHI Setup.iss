@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 ; Non-commercial use only
 
-#define MyAppName "ReShade HDR Installer"
+#define MyAppName "RHI"
 #define MyAppVersion "1.7.5"
 #define MyAppPublisher "RankFTW"
 #define MyAppURL "www.github.com/rankftw"

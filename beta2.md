@@ -13,6 +13,7 @@
 ## New
 
 - **DLSS Driver Override detection** — When NVIDIA App or Profile Inspector has "Latest DLL" enabled for SR, RR, or FG on a game, RHI detects this and greys out the version dropdown with "⚠ Driver override active" and a tooltip explaining how to disable it.
+- **Rebrand** — App rebranded from "ReShade HDR Installer" to just "RHI — Enhance every game". Window title, about page, installer, and all user-facing text updated.
 
 ## Known Issues
 
