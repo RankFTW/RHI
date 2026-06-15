@@ -984,6 +984,5 @@
 
   "_comment_shaderPacks": "=== SHADER PACK OVERRIDES (add/disable/update packs without app update) ===",
   "shaderPacks": {
-    "FGFX": { "disabled": true }
   }
 }
