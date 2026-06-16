@@ -159,7 +159,8 @@
     "Hades II",
     "Returnal™",
     "Stardew Valley",
-    "Superhot"
+    "Superhot",
+    "Trackmania"
   ],
 
   "lumaDefaultGames": [
@@ -474,7 +475,8 @@
     "Stardew Valley": "OGL",
     "The Witcher 3: Wild Hunt": "DX12",
     "The Witcher 3: Wild Hunt - Game of the Year Edition": "DX12",
-    "Wartales": "DX11"
+    "Wartales": "DX11",
+    "Trackmania": "DX11, DX12"
   },
 
   "dllNameOverrides": {

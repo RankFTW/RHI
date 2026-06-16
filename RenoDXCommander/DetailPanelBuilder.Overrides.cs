@@ -2889,26 +2889,35 @@ public partial class DetailPanelBuilder
 
         // Build items list with (Default) marker on the game's original/default version
         var items = new List<string>();
-        string? formattedOriginal = originalVersion != null ? DlssStreamlineService.FormatVersion(originalVersion) : null;
-        bool defaultInList = false;
 
-        foreach (var ver in availableVersions)
+        if (!isPresent)
         {
-            if (formattedOriginal != null && (ver.Equals(formattedOriginal, StringComparison.OrdinalIgnoreCase)
-                || ver.StartsWith(formattedOriginal, StringComparison.OrdinalIgnoreCase)
-                || formattedOriginal.StartsWith(ver, StringComparison.OrdinalIgnoreCase)))
-            {
-                items.Add($"{ver} (Default)");
-                defaultInList = true;
-            }
-            else
-                items.Add(ver);
+            // Game doesn't have this component — show empty/disabled state
+            items.Add("None");
         }
-        items.Add("Custom");
+        else
+        {
+            string? formattedOriginal = originalVersion != null ? DlssStreamlineService.FormatVersion(originalVersion) : null;
+            bool defaultInList = false;
 
-        // If original version isn't in the managed list, insert it at top with (Default)
-        if (!defaultInList && formattedOriginal != null)
-            items.Insert(0, $"{formattedOriginal} (Default)");
+            foreach (var ver in availableVersions)
+            {
+                if (formattedOriginal != null && (ver.Equals(formattedOriginal, StringComparison.OrdinalIgnoreCase)
+                    || ver.StartsWith(formattedOriginal, StringComparison.OrdinalIgnoreCase)
+                    || formattedOriginal.StartsWith(ver, StringComparison.OrdinalIgnoreCase)))
+                {
+                    items.Add($"{ver} (Default)");
+                    defaultInList = true;
+                }
+                else
+                    items.Add(ver);
+            }
+            items.Add("Custom");
+
+            // If original version isn't in the managed list, insert it at top with (Default)
+            if (!defaultInList && formattedOriginal != null)
+                items.Insert(0, $"{formattedOriginal} (Default)");
+        }
 
         // Find selected index based on installed version
         int selectedIndex = 0;
