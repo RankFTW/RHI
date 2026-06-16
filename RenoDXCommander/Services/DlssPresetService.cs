@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using NvAPIWrapper;
 using NvAPIWrapper.DRS;
+using RenoDXCommander.Models;
 
 namespace RenoDXCommander.Services;
 
@@ -158,7 +159,7 @@ public class DlssPresetService
     private const uint RENDER_SCALE_CUSTOM = 0x06;
 
     // ── Preset values ─────────────────────────────────────────────────────────
-    public static readonly (string Name, uint Value)[] SrPresets =
+    public static (string Name, uint Value)[] SrPresets =
     [
         ("Default", 0x00000000),
         ("J", 0x0000000A),
@@ -167,14 +168,14 @@ public class DlssPresetService
         ("M", 0x0000000D),
     ];
 
-    public static readonly (string Name, uint Value)[] RrPresets =
+    public static (string Name, uint Value)[] RrPresets =
     [
         ("Default", 0x00000000),
         ("D", 0x00000004),
         ("E", 0x00000005),
     ];
 
-    public static readonly (string Name, uint Value)[] FgPresets =
+    public static (string Name, uint Value)[] FgPresets =
     [
         ("Default", 0x00000000),
         ("A", 0x00000001),
@@ -255,6 +256,51 @@ public class DlssPresetService
             CrashReporter.Log($"[DlssPresetService.Initialize] Failed — {ex.Message}");
             _isSupported = false;
         }
+    }
+
+    // ── Manifest-driven preset overrides ─────────────────────────────────────
+
+    /// <summary>
+    /// Applies manifest-defined DLSS preset overrides. Appends new presets to
+    /// the existing arrays (after "Default", before any duplicates).
+    /// </summary>
+    public static void ApplyManifestPresets(RemoteManifest? manifest)
+    {
+        if (manifest?.DlssPresets == null) return;
+
+        if (manifest.DlssPresets.Sr is { Count: > 0 } sr)
+            SrPresets = MergePresets(SrPresets, sr);
+        if (manifest.DlssPresets.Rr is { Count: > 0 } rr)
+            RrPresets = MergePresets(RrPresets, rr);
+        if (manifest.DlssPresets.Fg is { Count: > 0 } fg)
+            FgPresets = MergePresets(FgPresets, fg);
+
+        CrashReporter.Log($"[DlssPresetService.ApplyManifestPresets] SR={SrPresets.Length}, RR={RrPresets.Length}, FG={FgPresets.Length}");
+    }
+
+    private static (string Name, uint Value)[] MergePresets(
+        (string Name, uint Value)[] existing,
+        List<ManifestPresetEntry> entries)
+    {
+        var merged = new List<(string Name, uint Value)>(existing);
+
+        foreach (var entry in entries)
+        {
+            if (string.IsNullOrEmpty(entry.Name)) continue;
+
+            if (entry.Disabled == true)
+            {
+                // Remove by name (case-insensitive), but never remove "Default"
+                if (!entry.Name.Equals("Default", StringComparison.OrdinalIgnoreCase))
+                    merged.RemoveAll(p => p.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase));
+                continue;
+            }
+
+            // Add if not already present
+            if (merged.Any(p => p.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase))) continue;
+            merged.Add((entry.Name, (uint)entry.Value));
+        }
+        return merged.ToArray();
     }
 
     // ── Get presets ───────────────────────────────────────────────────────────

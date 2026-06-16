@@ -332,6 +332,13 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("shaderPacks")]
     public Dictionary<string, ManifestShaderPack>? ShaderPacks { get; set; }
+
+    /// <summary>
+    /// DLSS preset overrides — allows adding new presets (e.g. Preset N, Preset F)
+    /// without an app update when NVIDIA introduces them.
+    /// </summary>
+    [JsonPropertyName("dlssPresets")]
+    public ManifestDlssPresets? DlssPresets { get; set; }
 }
 
 /// <summary>
@@ -389,6 +396,34 @@ public class ManifestShaderPack
     public string[]? Requires { get; set; }
 
     /// <summary>When true, the pack is removed from the active list.</summary>
+    [JsonPropertyName("disabled")]
+    public bool? Disabled { get; set; }
+}
+
+/// <summary>
+/// Manifest-driven DLSS preset additions. Allows new presets to be added
+/// (e.g. when NVIDIA introduces Preset N) without an app update.
+/// </summary>
+public class ManifestDlssPresets
+{
+    [JsonPropertyName("sr")]
+    public List<ManifestPresetEntry>? Sr { get; set; }
+
+    [JsonPropertyName("rr")]
+    public List<ManifestPresetEntry>? Rr { get; set; }
+
+    [JsonPropertyName("fg")]
+    public List<ManifestPresetEntry>? Fg { get; set; }
+}
+
+public class ManifestPresetEntry
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("value")]
+    public int Value { get; set; }
+
     [JsonPropertyName("disabled")]
     public bool? Disabled { get; set; }
 }

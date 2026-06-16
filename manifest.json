@@ -986,5 +986,9 @@
 
   "_comment_shaderPacks": "=== SHADER PACK OVERRIDES (add/disable/update packs without app update) ===",
   "shaderPacks": {
+  },
+
+  "dlssPresets": {
+    "sr": [{"name": "J", "disabled": true}, {"name": "Z", "value": 26}]
   }
 }
