@@ -1,4 +1,4 @@
-## v2.0.0-beta1
+## v2.0.0-beta2
 
 ### New Features
 
@@ -31,12 +31,7 @@
 - Fixed Streamline "Custom" selection reverting to a version number after panel rebuild.
 - Fixed Luma and RE Framework update status not persisting over restart. Update All button now correctly goes purple for Luma updates.
 - Fixed DXVK extraction using a random temp folder each time, causing Windows Defender to repeatedly flag the DLLs as unknown. Now uses a fixed path so exclusions persist.
-- Fixed Quick Apply allowing DLSS/Streamline version changes on games with v1.x DLLs.
-- Fixed version dropdown showing ambiguous "Default" — now always shows the game's original DLL version with `(Default)` suffix. Original versions are cached after first detection scan for instant display.
-- Fixed Smooth Motion "Allowed APIs" and "Flip Pacing" not updating greyed state after toggling Enable.
-- Fixed Quick Apply button appearing dim after configuring defaults until manual refresh.
-- Fixed Admin Mode toggle not informing the user that a restart is needed.
-- Fixed Admin Mode scheduled task auto-starting RHI at every Windows logon.
+- Fixed version dropdown showing ambiguous "Default" — now always shows the game's original DLL version with `(Default)` suffix. Original versions are cached for instant display.
 - Fixed overlay and screenshot hotkeys having Ctrl and Shift swapped when deployed to games via "Apply to All Games".
 
 ### Manifest Updates
