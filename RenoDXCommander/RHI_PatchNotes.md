@@ -24,7 +24,7 @@
 - DLSS preset tooltips explain the model generations (J/K = 1st-gen transformer, L/M = 2nd-gen with better stability).
 - Admin notice at the bottom of the Nvidia Profile section indicates elevation status.
 - Config button opens the exact Engine.ini folder. Also detects config stored inside the game directory.
-- Rebranded from "ReShade HDR Installer" to "RHI — Enhance every game". All user-facing text updated.
+- Rebranded from "ReShade HDR Installer" to "RHI". All user-facing text updated.
 
 ### Bug Fixes
 
@@ -33,6 +33,7 @@
 - Fixed DXVK extraction using a random temp folder each time, causing Windows Defender to repeatedly flag the DLLs as unknown. Now uses a fixed path so exclusions persist.
 - Fixed version dropdown showing ambiguous "Default" — now always shows the game's original DLL version with `(Default)` suffix. Original versions are cached for instant display.
 - Fixed overlay and screenshot hotkeys having Ctrl and Shift swapped when deployed to games via "Apply to All Games".
+- Fixed NVIDIA profile matching using generic exe names (Launcher.exe, etc.) causing wrong game profiles to be modified.
 
 ### Manifest Updates
 

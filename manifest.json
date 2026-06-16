@@ -936,6 +936,7 @@
   },
 
   "launchExeOverrides": {
+    "Returnal™": "Returnal-Win64-Shipping.exe"
   },
 
   "splitGames": {
@@ -992,5 +993,8 @@
   },
 
   "componentUrls": {
-  }
+  },
+
+  "profileExeExclusions": [
+  ]
 }

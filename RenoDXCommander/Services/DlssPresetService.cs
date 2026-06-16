@@ -204,6 +204,25 @@ public class DlssPresetService
     private Dictionary<string, DriverSettingsProfile>? _cachedProfiles;
     private bool _isSupported;
 
+    /// <summary>
+    /// Generic exe names excluded from profile matching — these appear in many games
+    /// and cause false matches against unrelated NVIDIA profiles.
+    /// </summary>
+    private static readonly HashSet<string> _defaultExcludedExeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Launcher.exe", "launcher.exe",
+        "EpicOnlineServicesInstaller.exe",
+        "UnityCrashHandler64.exe", "UnityCrashHandler32.exe",
+        "CrashReporter.exe", "CrashReportClient.exe",
+        "unins000.exe", "Uninstall.exe",
+        "dxsetup.exe", "DXSETUP.exe",
+        "vcredist_x64.exe", "vcredist_x86.exe",
+        "UE4PrereqSetup_x64.exe",
+    };
+
+    private HashSet<string> _excludedProfileExeNames = _defaultExcludedExeNames;
+    private Dictionary<string, string>? _launchExeOverrides;
+
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr LoadLibrary(string dllToLoad);
 
@@ -276,6 +295,26 @@ public class DlssPresetService
             FgPresets = MergePresets(FgPresets, fg);
 
         CrashReporter.Log($"[DlssPresetService.ApplyManifestPresets] SR={SrPresets.Length}, RR={RrPresets.Length}, FG={FgPresets.Length}");
+    }
+
+    /// <summary>
+    /// Applies manifest-driven profile matching config: additional exe exclusions
+    /// and launch exe overrides for direct profile matching.
+    /// </summary>
+    public void ApplyManifestProfileConfig(RemoteManifest? manifest)
+    {
+        if (manifest == null) return;
+
+        // Merge manifest exe exclusions with hardcoded defaults
+        if (manifest.ProfileExeExclusions is { Count: > 0 } exclusions)
+        {
+            _excludedProfileExeNames = new HashSet<string>(_defaultExcludedExeNames, StringComparer.OrdinalIgnoreCase);
+            foreach (var exe in exclusions)
+                _excludedProfileExeNames.Add(exe);
+        }
+
+        // Store launch exe overrides for direct profile matching
+        _launchExeOverrides = manifest.LaunchExeOverrides;
     }
 
     private static (string Name, uint Value)[] MergePresets(
@@ -1533,6 +1572,38 @@ $destroyDel.Invoke($hSession) | Out-Null
         if (_cachedProfiles.TryGetValue(gameName, out var exactProfile))
             return exactProfile;
 
+        // Try fuzzy title match early (strip special characters like ™, ®, colons)
+        var normalizedGameName = NormalizeForMatch(gameName);
+        foreach (var kvp in _cachedProfiles)
+        {
+            if (NormalizeForMatch(kvp.Key) == normalizedGameName)
+            {
+                CrashReporter.Log($"[DlssPresetService.FindProfile] Matched profile '{kvp.Key}' via fuzzy title match for '{gameName}'");
+                return kvp.Value;
+            }
+        }
+
+        // Try manifest launch exe override — direct match without folder scanning
+        if (_launchExeOverrides != null && _launchExeOverrides.TryGetValue(gameName, out var overrideExe) && !string.IsNullOrEmpty(overrideExe))
+        {
+            var exeName = Path.GetFileName(overrideExe);
+            foreach (var profile in _cachedProfiles.Values)
+            {
+                try
+                {
+                    foreach (var app in profile.Applications)
+                    {
+                        if (app.ApplicationName.Equals(exeName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            CrashReporter.Log($"[DlssPresetService.FindProfile] Matched profile '{profile.Name}' via manifest launchExeOverride '{exeName}'");
+                            return profile;
+                        }
+                    }
+                }
+                catch { /* Skip profiles that throw on Applications access */ }
+            }
+        }
+
         // Try matching by exe names in the install path (recursive to handle subdirectories)
         if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
         {
@@ -1550,6 +1621,9 @@ $destroyDel.Invoke($hSession) | Out-Null
                     foreach (var file in Directory.GetFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly))
                         exeNames.Add(Path.GetFileName(file)!);
                 }
+
+                // Remove generic exe names that cause false matches across games
+                exeNames.ExceptWith(_excludedProfileExeNames);
 
                 CrashReporter.Log($"[DlssPresetService.FindProfile] '{gameName}' — found {exeNames.Count} exe(s) in '{installPath}': {string.Join(", ", exeNames.Take(5))}");
 
@@ -1573,17 +1647,6 @@ $destroyDel.Invoke($hSession) | Out-Null
                     {
                         CrashReporter.Log($"[DlssPresetService.FindProfile] Matched profile '{exeProfile.Name}' via profile name == exe name");
                         return exeProfile;
-                    }
-                }
-
-                // Try fuzzy title match (strip special characters like colons, compare case-insensitive)
-                var normalizedGameName = NormalizeForMatch(gameName);
-                foreach (var kvp in _cachedProfiles)
-                {
-                    if (NormalizeForMatch(kvp.Key) == normalizedGameName)
-                    {
-                        CrashReporter.Log($"[DlssPresetService.FindProfile] Matched profile '{kvp.Key}' via fuzzy title match for '{gameName}'");
-                        return kvp.Value;
                     }
                 }
 

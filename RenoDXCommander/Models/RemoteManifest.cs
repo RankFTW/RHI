@@ -341,6 +341,13 @@ public class RemoteManifest
     public Dictionary<string, string>? ComponentUrls { get; set; }
 
     /// <summary>
+    /// Additional generic exe names to exclude from NVIDIA profile matching.
+    /// Merged with the hardcoded exclusion list at runtime.
+    /// </summary>
+    [JsonPropertyName("profileExeExclusions")]
+    public List<string>? ProfileExeExclusions { get; set; }
+
+    /// <summary>
     /// DLSS preset overrides — allows adding new presets (e.g. Preset N, Preset F)
     /// without an app update when NVIDIA introduces them.
     /// </summary>

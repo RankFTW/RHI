@@ -281,6 +281,7 @@ public partial class MainViewModel
             // Apply manifest-driven shader pack overrides
             (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);
             DlssPresetService.ApplyManifestPresets(_manifest);
+            _dlssPresetService.ApplyManifestProfileConfig(_manifest);
 
             // 5. Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
@@ -2493,6 +2494,7 @@ public partial class MainViewModel
             // Apply manifest-driven shader pack overrides
             (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);
             DlssPresetService.ApplyManifestPresets(_manifest);
+            _dlssPresetService.ApplyManifestProfileConfig(_manifest);
 
             // Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
