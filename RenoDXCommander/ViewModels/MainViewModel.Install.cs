@@ -136,7 +136,8 @@ public partial class MainViewModel
         card.NotifyAll();
     }
 
-    public const string UeExtendedUrl    = "https://marat569.github.io/renodx/renodx-ue-extended.addon64";
+    public const string DefaultUeExtendedUrl = "https://marat569.github.io/renodx/renodx-ue-extended.addon64";
+    public string UeExtendedUrl => _manifest?.ComponentUrls?.TryGetValue("ueExtended", out var url) == true && !string.IsNullOrEmpty(url) ? url : DefaultUeExtendedUrl;
     public const string UeExtendedFile   = "renodx-ue-extended.addon64";
     public const string GenericUnrealFile = "renodx-unrealengine.addon64";
 

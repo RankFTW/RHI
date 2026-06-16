@@ -11,6 +11,8 @@
 - **UE Version Detection** — Engine badge now shows exact Unreal Engine version (e.g. "Unreal Engine 5.4.3") when detectable.
 - **DLSS Driver Override Detection** — When NVIDIA App has "Latest DLL" enabled for a game, RHI detects this and greys out the version dropdown with a "Driver override active" warning. Prevents confusion when the driver is injecting its own DLL regardless of what's in the game folder.
 - **Manifest-driven Shader Packs** — Shader packs can now be added, disabled, or modified from the remote manifest without an app update. New packs, URL changes, and removals all happen server-side.
+- **Manifest-driven DLSS Presets** — DLSS SR/RR/FG preset options can be added or removed from the manifest when NVIDIA introduces new ones.
+- **Manifest-driven Component URLs** — Base download URLs (e.g. UE-Extended) can be overridden from the manifest if a repo moves.
 
 ### Improvements
 
@@ -44,6 +46,7 @@
 - Stellar Blade — install path override.
 - Outward — split into Outward (original) + Outward Definitive Edition.
 - Gothic 1 Remake — game note added.
+- KINGDOM HEARTS III — Unreal Engine override.
 - Updated all native HDR game notes to reflect auto Engine.ini deployment.
 
 ---

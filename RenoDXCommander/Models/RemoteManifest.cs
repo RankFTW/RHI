@@ -334,6 +334,13 @@ public class RemoteManifest
     public Dictionary<string, ManifestShaderPack>? ShaderPacks { get; set; }
 
     /// <summary>
+    /// Component URL overrides — allows changing base download URLs for components
+    /// without an app update (e.g. if a repo moves or a maintainer changes hosting).
+    /// </summary>
+    [JsonPropertyName("componentUrls")]
+    public Dictionary<string, string>? ComponentUrls { get; set; }
+
+    /// <summary>
     /// DLSS preset overrides — allows adding new presets (e.g. Preset N, Preset F)
     /// without an app update when NVIDIA introduces them.
     /// </summary>

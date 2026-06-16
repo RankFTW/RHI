@@ -5,6 +5,8 @@
 - **DLSS Driver Override detection** — When NVIDIA App or Profile Inspector has "Latest DLL" enabled for SR, RR, or FG on a game, RHI detects this and greys out the version dropdown with "⚠ Driver override active" and a tooltip explaining how to disable it.
 - **Rebrand** — App rebranded from "ReShade HDR Installer" to just "RHI". Window title, about page, installer, and all user-facing text updated.
 - **Manifest-driven shader packs** — Shader packs can now be added, disabled, or updated from the remote manifest without an app update. The `"shaderPacks"` field in manifest.json overrides the hardcoded defaults.
+- **Manifest-driven DLSS presets** — DLSS SR/RR/FG presets can be added or removed from the manifest. When NVIDIA introduces new presets, they appear in the dropdown without an app update.
+- **Manifest-driven component URLs** — Base download URLs (e.g. UE-Extended) can be overridden from the manifest if a repo moves.
 
 ## Fixes
 
@@ -13,7 +15,7 @@
 - Smooth Motion "Allowed APIs" and "Flip Pacing" now update their greyed state immediately after toggling Enable (matching VSync/ReBAR behaviour).
 - Quick Apply button no longer appears dim after setting defaults — panel rebuilds after the Configure Defaults dialog closes.
 - Admin Mode toggle now shows a dialog confirming a restart is needed for it to take effect.
-- Admin Mode no longer auto-starts RHI at Windows logon (was using ONLOGON trigger, now uses expired ONCE trigger — task only runs on demand).
+- Admin Mode no longer auto-starts RHI at Windows logon (was using ONLOGON trigger, now uses expired ONCE trigger — task only runs on demand). Users on beta1 should toggle Admin Mode Off then On again to recreate the task with the fixed trigger.
 - Fixed overlay/screenshot hotkeys having Ctrl and Shift swapped when applied to games. ReShade's INI format is `vk,ctrl,shift,alt` — RHI was incorrectly writing `vk,shift,ctrl,alt`.
 
 ## Known Issues
