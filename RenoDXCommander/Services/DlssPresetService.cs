@@ -463,11 +463,16 @@ public class DlssPresetService
             var profile = FindProfile(gameName, installPath);
             if (profile == null) return 0;
 
-            var setting = profile.Settings.FirstOrDefault(s => s.SettingId == REBAR_SIZE_LIMIT_ID);
-            if (setting?.CurrentValue is byte[] bytes && bytes.Length >= 8)
-                return BitConverter.ToUInt64(bytes, 0);
-            if (setting?.CurrentValue is uint dwordVal)
-                return dwordVal; // Fallback if driver reports it as DWORD
+            // Read via raw NVAPI directly — NvAPIWrapper's Settings enumeration crashes
+            // on binary/QWORD settings (BlockCopy overflow in NVDRS_SETTING_UNION).
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(profile.Handle);
+            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+            {
+                var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, REBAR_SIZE_LIMIT_ID);
+                if (rawVal.HasValue && rawVal.Value != 0)
+                    return rawVal.Value; // Lower 32 bits of the QWORD
+            }
 
             return 0;
         }
@@ -1578,7 +1583,6 @@ $destroyDel.Invoke($hSession) | Out-Null
         {
             if (NormalizeForMatch(kvp.Key) == normalizedGameName)
             {
-                CrashReporter.Log($"[DlssPresetService.FindProfile] Matched profile '{kvp.Key}' via fuzzy title match for '{gameName}'");
                 return kvp.Value;
             }
         }
@@ -1624,8 +1628,6 @@ $destroyDel.Invoke($hSession) | Out-Null
 
                 // Remove generic exe names that cause false matches across games
                 exeNames.ExceptWith(_excludedProfileExeNames);
-
-                CrashReporter.Log($"[DlssPresetService.FindProfile] '{gameName}' — found {exeNames.Count} exe(s) in '{installPath}': {string.Join(", ", exeNames.Take(5))}");
 
                 // Try matching profile applications against exe names
                 foreach (var profile in _cachedProfiles.Values)

@@ -2051,10 +2051,11 @@ public partial class DetailPanelBuilder
             dlssRowGrid.Children.Add(MakeDlssDivider(3));
 
             // FG column
+            bool fgEnabled = hasDlssg && !(card.DlssgInstalledVersion?.StartsWith("1.") == true);
             bool fgDriverOverride = presetService.IsSupported && presetService.IsFgDriverOverrideActive(card.GameName, card.InstallPath ?? "");
-            var fgCol = BuildDlssColumn("Frame Generation", hasDlssg, dlssService.DlssgVersions,
+            var fgCol = BuildDlssColumn("Frame Generation", fgEnabled, dlssService.DlssgVersions,
                 card.DlssgInstalledVersion, DlssPresetService.FgPresets,
-                presetService.IsSupported && hasDlssg ? presetService.GetFgPreset(card.GameName, card.InstallPath) : 0u,
+                presetService.IsSupported && fgEnabled ? presetService.GetFgPreset(card.GameName, card.InstallPath) : 0u,
                 async (version) =>
                 {
                     var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));

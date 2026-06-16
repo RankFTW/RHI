@@ -266,7 +266,8 @@
     "Red Dead Redemption 2": "Red Dead Redemption 2 (Vulkan)",
     "Terraria": "Terraria",
     "Total War: WARHAMMER III": "Total War: Warhammer 3",
-    "Trine 5: A Clockwork Conspiracy": "Trine 5"
+    "Trine 5: A Clockwork Conspiracy": "Trine 5",
+    "Tomb Raider": "Tomb Raider (2013)"
   },
 
   "wikiStatusOverrides": {
@@ -843,7 +844,8 @@
     "The Sinking City Remastered": "https://www.nexusmods.com/games/thesinkingcity",
     "The Witcher 3: Wild Hunt": "https://www.nexusmods.com/games/witcher3",
     "Tunguska: The Visitation - Final Cut": "https://www.nexusmods.com/games/tunguskathevisitation",
-    "X4: Timelines": "https://www.nexusmods.com/games/x4foundations"
+    "X4: Timelines": "https://www.nexusmods.com/games/x4foundations",
+    "Tomb Raider": "https://www.nexusmods.com/games/tombraider2013"
   },
 
   "pcgwUrlOverrides": {
@@ -854,7 +856,8 @@
     "Far Cry 2 Fortune's Edition": "https://www.pcgamingwiki.com/wiki/Far_Cry_2",
     "Fortnite": "https://www.pcgamingwiki.com/wiki/Fortnite",
     "Forza Horizon 6": "https://www.pcgamingwiki.com/wiki/Forza_Horizon_6",
-    "The Sinking City Remastered": "https://www.pcgamingwiki.com/wiki/The_Sinking_City_Remastered"
+    "The Sinking City Remastered": "https://www.pcgamingwiki.com/wiki/The_Sinking_City_Remastered",
+    "Tomb Raider": "https://www.pcgamingwiki.com/wiki/Tomb_Raider_(2013)"
   },
 
   "uwFixUrlOverrides": {
