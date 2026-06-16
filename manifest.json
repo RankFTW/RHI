@@ -989,6 +989,5 @@
   },
 
   "dlssPresets": {
-    "sr": [{"name": "J", "disabled": true}, {"name": "Z", "value": 26}]
   }
 }
