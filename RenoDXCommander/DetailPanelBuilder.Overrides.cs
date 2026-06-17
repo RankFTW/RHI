@@ -2173,14 +2173,19 @@ public partial class DetailPanelBuilder
                 var svc = _window.ViewModel.DlssStreamlineServiceInstance;
                 var pSvc = _window.ViewModel.DlssPresetServiceInstance;
 
+                // Check driver override state — skip DLL swaps for overridden components
+                bool srOverride = pSvc.IsSupported && pSvc.IsSrDriverOverrideActive(targetCard.GameName, targetCard.InstallPath ?? "");
+                bool rrOverride = pSvc.IsSupported && pSvc.IsRrDriverOverrideActive(targetCard.GameName, targetCard.InstallPath ?? "");
+                bool fgOverride = pSvc.IsSupported && pSvc.IsFgDriverOverrideActive(targetCard.GameName, targetCard.InstallPath ?? "");
+
                 if (!string.IsNullOrEmpty(settings.DefaultDlssVersion) && targetCard.HasDlss && targetCard.DlssDetection.DlssPath != null
-                    && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
+                    && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true) && !srOverride)
                     await svc.SwapDlssAsync(targetCard.DlssDetection.DlssPath, settings.DefaultDlssVersion);
                 if (!string.IsNullOrEmpty(settings.DefaultDlssdVersion) && targetCard.HasDlssd && targetCard.DlssDetection.DlssdPath != null
-                    && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
+                    && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true) && !rrOverride)
                     await svc.SwapDlssdAsync(targetCard.DlssDetection.DlssdPath, settings.DefaultDlssdVersion);
                 if (!string.IsNullOrEmpty(settings.DefaultDlssgVersion) && targetCard.HasDlssg && targetCard.DlssDetection.DlssgPath != null
-                    && !(targetCard.DlssgInstalledVersion?.StartsWith("1.") == true))
+                    && !(targetCard.DlssgInstalledVersion?.StartsWith("1.") == true) && !fgOverride)
                     await svc.SwapDlssgAsync(targetCard.DlssDetection.DlssgPath, settings.DefaultDlssgVersion);
                 if (!string.IsNullOrEmpty(settings.DefaultStreamlineVersion) && targetCard.HasStreamline && targetCard.DlssDetection.StreamlineFolder != null
                     && !(targetCard.StreamlineInstalledVersion?.StartsWith("1.") == true))
@@ -2207,14 +2212,17 @@ public partial class DetailPanelBuilder
             slCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
             slCol.Children.Add(dlssRestoreBtn);
 
-            // Override column opacity so the Restore All button isn't dimmed by the SL column's 0.4 opacity.
+            // Override column opacity so buttons aren't dimmed by the SL column's 0.4 opacity.
             // Manually dim the SL label and version combo if Streamline isn't present.
-            if (restoreEnabled && !slEnabled)
+            if ((hasDefaults || restoreEnabled) && !slEnabled)
             {
                 slCol.Opacity = 1.0;
-                // Dim the label and version combo (first 2 children) but not the button
-                foreach (var child in slCol.Children.Take(2).OfType<UIElement>())
-                    child.Opacity = 0.4;
+                // Dim the SL-specific children (label, version sub-label, combo, etc.) but not buttons
+                foreach (var child in slCol.Children.OfType<UIElement>())
+                {
+                    if (child != applyBtn && child != dlssRestoreBtn)
+                        child.Opacity = 0.4;
+                }
             }
             ToolTipService.SetToolTip(dlssRestoreBtn, "Restore all DLSS and Streamline DLLs to their original game versions and reset presets to Default.");
 
@@ -2890,14 +2898,16 @@ public partial class DetailPanelBuilder
         // Build items list with (Default) marker on the game's original/default version
         var items = new List<string>();
 
-        if (!isPresent)
+        if (!isPresent && installedVersion == null)
         {
-            // Game doesn't have this component — show empty/disabled state
+            // Game truly doesn't have this component — show "None"
             items.Add("None");
         }
         else
         {
-            string? formattedOriginal = originalVersion != null ? DlssStreamlineService.FormatVersion(originalVersion) : null;
+            string? formattedOriginal = originalVersion != null
+                ? DlssStreamlineService.FormatVersion(originalVersion)
+                : (installedVersion != null ? installedVersion : null);
             bool defaultInList = false;
 
             foreach (var ver in availableVersions)
