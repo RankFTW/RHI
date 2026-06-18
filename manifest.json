@@ -1012,15 +1012,6 @@
     },
     "renodx-dlssfix": {
       "description": "Makes ReShade draw on native game frames instead of generated frames. Also hides DLSS upscaling from ReShade."
-    },
-    "04": {
-      "disabled": true
-    },
-    "test-addon": {
-      "packageName": "Test Addon by RHI Dev",
-      "description": "This is a fake addon to test manifest-driven addon additions.",
-      "downloadUrl64": "https://example.com/fake-addon.addon64",
-      "repositoryUrl": "https://github.com/RankFTW/RHI"
     }
   }
 }
