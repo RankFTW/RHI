@@ -1004,5 +1004,14 @@
   },
 
   "profileExeExclusions": [
-  ]
+  ],
+
+  "addonPacks": {
+    "renodx-devkit": {
+      "description": "RenoDX development and debugging tools for shader authors"
+    },
+    "renodx-dlssfix": {
+      "description": "Makes ReShade draw on native game frames instead of generated frames. Also hides DLSS upscaling from ReShade."
+    }
+  }
 }
