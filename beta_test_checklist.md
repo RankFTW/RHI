@@ -1,44 +1,103 @@
-# v2.0.0-beta1 Test Checklist
+# v2.0.0 Full Test Checklist
 
-Focus on the new Nvidia Profile Overrides and Admin Mode features. Everything else has been tested internally.
+## Nvidia Profile Overrides (beta1)
 
-## Driver Settings (requires admin)
+### DLSS / Streamline Row
+- [ ] Change DLSS SR/RR/FG versions — downloads and swaps correctly
+- [ ] Select version with `(Default)` — restores original DLL
+- [ ] Game with no component — shows "None" greyed out
+- [ ] Game with v1.x component — shows version greyed out, not swappable
+- [ ] Select "Custom" — deploys from Custom folder
+- [ ] Change presets (J/K/L/M, D/E, A/B) — verify in NVPI
+- [ ] Change render scale — verify in NVPI
+- [ ] Quick Apply stamps all configured defaults
+- [ ] Quick Apply skips v1.x components
+- [ ] Quick Apply skips driver-overridden components
+- [ ] Restore All reverts DLLs + presets
 
-- [ ] Verify the driver settings row is greyed out when NOT running as admin
-- [ ] With admin: change VSync, Low Latency, ReBAR, Smooth Motion, Power/CPU — do values stick in NVIDIA Profile Inspector?
-- [ ] ReBAR Mode/Size greyed out when Enable is Off
-- [ ] Smooth Motion APIs/Flip Pacing greyed out when Enable is Off
-- [ ] Low Latency Ultra — does ULL actually write? (check NVPI)
-- [ ] Switch between games rapidly — do combos update without crashing?
+### Driver Override Detection (beta2)
+- [ ] "Latest DLL" ON in NVPI — version dropdown greyed, "Driver override active" shown
+- [ ] Tooltip on the warning text explains how to disable
+- [ ] Quick Apply respects driver override (skips DLL, still applies presets)
+- [ ] Quick Apply button stays blue/enabled when overrides are active
 
-## Admin Mode
+### Driver Settings Row (requires admin)
+- [ ] Row greyed out when NOT running as admin
+- [ ] Row interactive when running as admin
+- [ ] VSync Mode/Tear Control — change and verify in NVPI
+- [ ] Low Latency Off/On/Ultra — verify in NVPI
+- [ ] ReBAR Enable/Mode/Size — verify in NVPI (needs admin)
+- [ ] ReBAR Mode/Size greyed when Enable is Off
+- [ ] Smooth Motion Enable/APIs/Flip Pacing
+- [ ] APIs + Flip Pacing greyed when Enable is Off
+- [ ] Power Management Mode
+- [ ] CPU Scheduling (needs admin)
 
-- [ ] Toggle On — UAC prompt appears, combo stays on "On" after confirming
-- [ ] Cancel UAC — combo reverts to "Off"
-- [ ] Restart RHI after toggling On — does it auto-relaunch elevated (no UAC on startup)?
-- [ ] Toggle Off — task removed, next launch is non-elevated
-- [ ] Drag-drop still works when elevated (addons, Luma archives, exe files)
+## Admin Mode (beta1)
 
-## Quick Apply & Defaults
+- [ ] Toggle On — UAC prompt, combo stays "On"
+- [ ] Cancel UAC — reverts to "Off"
+- [ ] Restart dialog shown after toggle
+- [ ] Restart RHI — auto-relaunches elevated (no UAC on startup)
+- [ ] Does NOT auto-start at Windows logon
+- [ ] Toggle Off — task removed, next launch non-elevated
+- [ ] Drag-drop still works when elevated
 
-- [ ] Configure Defaults — dialog shows 4 columns, not clipped
-- [ ] Set some defaults, click Quick Apply on a game — correct versions/presets applied?
-- [ ] Quick Apply downloads versions on-demand if not cached?
-- [ ] Restore All reverts everything back to Default?
+## DLSS & Streamline Defaults (beta1)
 
-## Profile Export/Import
+- [ ] Configure Defaults dialog — 4 columns, not clipped
+- [ ] Set defaults, panel rebuilds (Quick Apply goes blue)
+- [ ] Quick Apply downloads on-demand if version not cached
 
-- [ ] Export doesn't hang (should complete in a few seconds)
-- [ ] Set some driver settings, Export, change them in NVPI, Import — do they restore?
-- [ ] Settings at 0/default are included in the export (not skipped)
+## Global Nvidia Settings (beta1)
 
-## Compact View
+- [ ] Shader Cache Size — change, verify in NVPI
+- [ ] Shader Pre-Compile — change, verify
+- [ ] G-Sync Mode — change, verify
+- [ ] Preferred Refresh Rate — change, verify
+- [ ] Values persist after reopening Settings page
 
-- [ ] 3 pages cycle correctly with nav arrows
-- [ ] Page 2 shows Nvidia Profile + Management (not overflowing)
+## Profile Export/Import (beta1)
 
-## Edge Cases
+- [ ] Export completes without hanging
+- [ ] Exported JSON has settings for RHI games
+- [ ] Import restores settings after driver update/wipe
+- [ ] 0-value settings included in export
 
-- [ ] No NVIDIA GPU — app doesn't crash, Nvidia section handles gracefully
-- [ ] Game with no DLSS/Streamline — DLSS row greyed out, driver settings still work
-- [ ] Batch Deploy dialog — separator visible on right side, combos not clipped
+## NVIDIA Profile Matching (beta3)
+
+- [ ] Games with ™/® (e.g. Returnal™) — correct profile matched
+- [ ] Games with Launcher.exe — no false match to other games
+- [ ] `launchExeOverrides` entry → direct profile match
+- [ ] Settings apply to correct game
+
+## Version Display (beta2/3)
+
+- [ ] Game at original DLL — shows `version (Default)` selected
+- [ ] Game swapped to managed version — shows that version, original has `(Default)` in list
+- [ ] Game with unmanaged original (not in our list) — version `(Default)` at top
+- [ ] v1.x components — show detected version greyed, not "None"
+- [ ] Truly absent components — show "None"
+
+## Compact View (beta1)
+
+- [ ] 3 pages cycle with nav arrows
+- [ ] Page 0 = Components, Page 1 = Game Overrides, Page 2 = Nvidia Profile + Management
+- [ ] Window height appropriate (not overflowing)
+
+## Manifest-Driven Features (beta2)
+
+- [ ] Shader pack disabled via manifest — gone from picker
+- [ ] Shader pack added via manifest — appears in picker
+- [ ] DLSS preset added via manifest — appears in dropdown
+- [ ] DLSS preset disabled via manifest — removed from dropdown
+- [ ] `componentUrls` override — UE-Extended uses manifest URL if set
+- [ ] `profileExeExclusions` — excluded exe names not used for matching
+
+## Bug Fixes to Verify
+
+- [ ] Hotkeys: Ctrl and Shift not swapped when applied to games
+- [ ] Luma/RE Framework update status persists over restart
+- [ ] DXVK extraction — no repeated Defender flags (fixed temp path)
+- [ ] Streamline "Custom" persists after panel rebuild
+- [ ] ReBAR Size Limit read — no crash on profiles with binary settings

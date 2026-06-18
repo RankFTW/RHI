@@ -7,6 +7,9 @@
 - Fixed Quick Apply swapping DLLs on games with "Driver override active" — now skips SR/RR/FG components where NVIDIA App has Latest DLL enabled.
 - Fixed DLSS FG column not being greyed out for games with v1.x Frame Generation DLLs.
 - Fixed DLSS/Streamline version dropdown showing a cached version for games that don't have the component — now shows "None".
+- Fixed "None" incorrectly showing for v1.x components that DO have files — now shows the detected version (e.g. `1.0.3 (Default)`) greyed out.
+- Fixed version dropdown falling through to a random managed version when original version cache hasn't backfilled — now falls back to installed version for the `(Default)` label.
+- Fixed Quick Apply and Restore All buttons being dimmed by the Streamline column's opacity when SL is v1.x or absent.
 - Fixed ReBAR Size Limit read crashing on profiles with pre-set binary values (NvAPIWrapper BlockCopy overflow). Now reads via raw NVAPI directly.
 - Suppressed noisy FindProfile log spam (fuzzy match + exe scan logged on every call).
 
