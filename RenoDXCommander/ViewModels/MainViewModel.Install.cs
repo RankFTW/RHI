@@ -46,13 +46,13 @@ public partial class MainViewModel
 
         if (nowExcluded)
         {
-            // Exclude: strip wiki mod and show Discord button
+            // Exclude: strip wiki mod — "No RenoDX mod available"
             card.Mod           = null;
-            card.IsExternalOnly = true;
-            card.ExternalUrl   = "https://discord.gg/gF4GRJWZ2A";
-            card.ExternalLabel = "Download from Discord";
-            card.DiscordUrl    = "https://discord.gg/gF4GRJWZ2A";
-            card.WikiStatus    = "💬";
+            card.IsExternalOnly = false;
+            card.ExternalUrl   = "";
+            card.ExternalLabel = "";
+            card.DiscordUrl    = null;
+            card.WikiStatus    = "—";
             card.Notes         = "";
             card.IsGenericMod  = false;
             if (card.Status != GameStatus.Installed)
@@ -555,8 +555,9 @@ public partial class MainViewModel
             Source         = "Manual",
             InstalledRecord = record,
             Status         = record != null ? GameStatus.Installed : GameStatus.Available,
-            WikiStatus     = (_wikiExclusions.Contains(game.Name)
-                               || (effectiveMod?.SnapshotUrl == null && effectiveMod?.DiscordUrl != null && effectiveMod?.NexusUrl == null))
+            WikiStatus     = _wikiExclusions.Contains(game.Name)
+                              ? "—"
+                              : (effectiveMod?.SnapshotUrl == null && effectiveMod?.DiscordUrl != null && effectiveMod?.NexusUrl == null)
                               ? "💬"
                               : (mod == null && fallback != null && !useUeExt && !isNativeHdr)
                                 ? "?"
@@ -574,18 +575,18 @@ public partial class MainViewModel
             InstalledAddonFileName = record?.AddonFileName,
             RdxInstalledVersion = record != null ? AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName) : null,
             IsExternalOnly  = _wikiExclusions.Contains(game.Name)
-                              ? true
+                              ? false
                               : effectiveMod?.SnapshotUrl == null &&
                                 (effectiveMod?.NexusUrl != null || effectiveMod?.DiscordUrl != null),
             ExternalUrl     = _wikiExclusions.Contains(game.Name)
-                              ? "https://discord.gg/gF4GRJWZ2A"
+                              ? ""
                               : effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "",
             ExternalLabel   = _wikiExclusions.Contains(game.Name)
-                              ? "Download from Discord"
+                              ? ""
                               : effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord",
             NexusUrl        = effectiveMod?.NexusUrl,
             DiscordUrl      = _wikiExclusions.Contains(game.Name)
-                              ? "https://discord.gg/gF4GRJWZ2A"
+                              ? null
                               : effectiveMod?.DiscordUrl,
             NameUrl         = effectiveMod?.NameUrl,
             IsManuallyAdded = true,

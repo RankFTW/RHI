@@ -187,6 +187,72 @@ public class AddonPackService : IAddonPackService
         finally { _downloadLock.Release(); }
     }
 
+    // ── Manifest-driven addon overrides ───────────────────────────────────────────
+
+    /// <summary>
+    /// Applies manifest overrides to the loaded addon pack list.
+    /// Can add new addons, override fields on existing ones, or disable addons entirely.
+    /// Call after EnsureLatestAsync has populated _packs from Addons.ini.
+    /// </summary>
+    public void ApplyManifestOverrides(RemoteManifest? manifest)
+    {
+        if (manifest?.AddonPacks == null || manifest.AddonPacks.Count == 0)
+            return;
+
+        var merged = new List<AddonEntry>(_packs);
+
+        foreach (var (id, entry) in manifest.AddonPacks)
+        {
+            // disabled → remove from list
+            if (entry.Disabled == true)
+            {
+                merged.RemoveAll(p => p.SectionId.Equals(id, StringComparison.OrdinalIgnoreCase));
+                continue;
+            }
+
+            var existingIdx = merged.FindIndex(p => p.SectionId.Equals(id, StringComparison.OrdinalIgnoreCase));
+            if (existingIdx >= 0)
+            {
+                // Override non-null fields on existing entry
+                var existing = merged[existingIdx];
+                merged[existingIdx] = existing with
+                {
+                    PackageName = entry.PackageName ?? existing.PackageName,
+                    PackageDescription = entry.Description ?? existing.PackageDescription,
+                    DownloadUrl = entry.DownloadUrl ?? existing.DownloadUrl,
+                    DownloadUrl32 = entry.DownloadUrl32 ?? existing.DownloadUrl32,
+                    DownloadUrl64 = entry.DownloadUrl64 ?? existing.DownloadUrl64,
+                    RepositoryUrl = entry.RepositoryUrl ?? existing.RepositoryUrl,
+                    EffectInstallPath = entry.EffectInstallPath ?? existing.EffectInstallPath,
+                    DeployFileName = entry.DeployFileName ?? existing.DeployFileName,
+                };
+            }
+            else
+            {
+                // New addon from manifest — requires at minimum a PackageName and at least one URL
+                if (string.IsNullOrEmpty(entry.PackageName))
+                    continue;
+                if (string.IsNullOrEmpty(entry.DownloadUrl) && string.IsNullOrEmpty(entry.DownloadUrl32) && string.IsNullOrEmpty(entry.DownloadUrl64))
+                    continue;
+
+                merged.Add(new AddonEntry(
+                    SectionId: id,
+                    PackageName: entry.PackageName,
+                    PackageDescription: entry.Description,
+                    DownloadUrl: entry.DownloadUrl,
+                    DownloadUrl32: entry.DownloadUrl32,
+                    DownloadUrl64: entry.DownloadUrl64,
+                    RepositoryUrl: entry.RepositoryUrl,
+                    EffectInstallPath: entry.EffectInstallPath,
+                    DeployFileName: entry.DeployFileName
+                ));
+            }
+        }
+
+        _packs = merged;
+        CrashReporter.Log($"[AddonPackService.ApplyManifestOverrides] Applied {manifest.AddonPacks.Count} override(s), {_packs.Count} addons active.");
+    }
+
     // ── Stub methods (implemented in subsequent tasks) ────────────────────────────
 
     /// <inheritdoc />

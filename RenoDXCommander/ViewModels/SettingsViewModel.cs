@@ -35,6 +35,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _ueExtendedWarningDismissed;
     [ObservableProperty] private bool _perGameScreenshotFolders;
     [ObservableProperty] private bool _addonWarningDismissed;
+    [ObservableProperty] private bool _mfgWarningDismissed;
     [ObservableProperty] private List<string> _enabledGlobalAddons = new();
     [ObservableProperty] private bool _globalSkipRdxUpdates;
     [ObservableProperty] private bool _globalSkipRsUpdates;
@@ -190,6 +191,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("AddonWarningDismissed", out var awdVal))
             AddonWarningDismissed = awdVal == "true";
 
+        if (s.TryGetValue("MfgWarningDismissed", out var mwdVal))
+            MfgWarningDismissed = mwdVal == "true";
+
         if (s.TryGetValue("EnabledGlobalAddons", out var egaVal))
         {
             try { EnabledGlobalAddons = JsonSerializer.Deserialize<List<string>>(egaVal) ?? new(); }
@@ -246,6 +250,7 @@ public partial class SettingsViewModel : ObservableObject
         s["UeExtendedWarningDismissed"] = UeExtendedWarningDismissed ? "true" : "false";
         s["PerGameScreenshotFolders"] = PerGameScreenshotFolders ? "true" : "false";
         s["AddonWarningDismissed"] = AddonWarningDismissed ? "true" : "false";
+        s["MfgWarningDismissed"] = MfgWarningDismissed ? "true" : "false";
         s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);
         s["GlobalSkipRdxUpdates"] = GlobalSkipRdxUpdates ? "true" : "false";
         s["GlobalSkipRsUpdates"] = GlobalSkipRsUpdates ? "true" : "false";

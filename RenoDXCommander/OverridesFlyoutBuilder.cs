@@ -720,13 +720,42 @@ public class OverridesFlyoutBuilder
                 c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
             if (targetCard != null)
             {
-                if (overrideValue == "32") targetCard.Is32Bit = true;
-                else if (overrideValue == "64") targetCard.Is32Bit = false;
+                var previousIs32Bit = targetCard.Is32Bit;
+
+                // Compute the new effective bitness
+                bool newIs32Bit;
+                if (overrideValue == "32") newIs32Bit = true;
+                else if (overrideValue == "64") newIs32Bit = false;
                 else
                 {
                     var detectedMachine = ViewModel.PeHeaderServiceInstance.DetectGameArchitecture(targetCard.InstallPath);
-                    targetCard.Is32Bit = ViewModel.ResolveIs32Bit(capturedName, detectedMachine);
+                    newIs32Bit = ViewModel.ResolveIs32Bit(capturedName, detectedMachine);
                 }
+
+                // If bitness actually changed, uninstall all components BEFORE updating card.Is32Bit
+                // (uninstall methods use card.Is32Bit to resolve filenames of deployed DLLs)
+                if (previousIs32Bit != newIs32Bit && !targetCard.RequiresVulkanInstall)
+                {
+                    if (targetCard.IsRsInstalled)
+                        ViewModel.UninstallReShade(targetCard);
+                    if (targetCard.DcStatus == GameStatus.Installed)
+                        ViewModel.UninstallDc(targetCard);
+                    if (targetCard.InstalledRecord != null)
+                        ViewModel.UninstallMod(targetCard);
+                    if (targetCard.UlStatus == GameStatus.Installed)
+                        ViewModel.UninstallUl(targetCard);
+                    if (targetCard.OsStatus == GameStatus.Installed)
+                        ViewModel.OptiScalerServiceInstance.Uninstall(targetCard);
+                    if (targetCard.DxvkStatus == GameStatus.Installed)
+                        ViewModel.UninstallDxvk(targetCard);
+                    if (targetCard.RefStatus == GameStatus.Installed)
+                        ViewModel.UninstallREFramework(targetCard);
+                    if (targetCard.LumaStatus == GameStatus.Installed)
+                        ViewModel.UninstallLuma(targetCard);
+                }
+
+                // NOW update card.Is32Bit to the new value
+                targetCard.Is32Bit = newIs32Bit;
                 targetCard.NotifyAll();
             }
         };

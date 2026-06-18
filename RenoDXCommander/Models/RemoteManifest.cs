@@ -334,6 +334,13 @@ public class RemoteManifest
     public Dictionary<string, ManifestShaderPack>? ShaderPacks { get; set; }
 
     /// <summary>
+    /// Manifest-driven addon pack overrides. Keyed by SectionId (e.g. "03", "renodx-devkit").
+    /// Can add new addons, override fields on existing ones, or disable addons entirely.
+    /// </summary>
+    [JsonPropertyName("addonPacks")]
+    public Dictionary<string, ManifestAddonPack>? AddonPacks { get; set; }
+
+    /// <summary>
     /// Component URL overrides — allows changing base download URLs for components
     /// without an app update (e.g. if a repo moves or a maintainer changes hosting).
     /// </summary>
@@ -410,6 +417,41 @@ public class ManifestShaderPack
     public string[]? Requires { get; set; }
 
     /// <summary>When true, the pack is removed from the active list.</summary>
+    [JsonPropertyName("disabled")]
+    public bool? Disabled { get; set; }
+}
+
+/// <summary>
+/// Manifest-driven addon pack override entry. Allows adding, modifying, or disabling
+/// addon entries without an app update. Keyed by SectionId in the manifest dict.
+/// </summary>
+public class ManifestAddonPack
+{
+    [JsonPropertyName("packageName")]
+    public string? PackageName { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("downloadUrl")]
+    public string? DownloadUrl { get; set; }
+
+    [JsonPropertyName("downloadUrl32")]
+    public string? DownloadUrl32 { get; set; }
+
+    [JsonPropertyName("downloadUrl64")]
+    public string? DownloadUrl64 { get; set; }
+
+    [JsonPropertyName("repositoryUrl")]
+    public string? RepositoryUrl { get; set; }
+
+    [JsonPropertyName("effectInstallPath")]
+    public string? EffectInstallPath { get; set; }
+
+    [JsonPropertyName("deployFileName")]
+    public string? DeployFileName { get; set; }
+
+    /// <summary>When true, the addon is removed from the active list.</summary>
     [JsonPropertyName("disabled")]
     public bool? Disabled { get; set; }
 }

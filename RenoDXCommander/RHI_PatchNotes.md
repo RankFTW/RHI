@@ -1,4 +1,4 @@
-## v2.0.0-beta2
+## v2.0.0-beta3
 
 ### New Features
 
@@ -13,6 +13,10 @@
 - **Manifest-driven Shader Packs** — Shader packs can now be added, disabled, or modified from the remote manifest without an app update. New packs, URL changes, and removals all happen server-side.
 - **Manifest-driven DLSS Presets** — DLSS SR/RR/FG preset options can be added or removed from the manifest when NVIDIA introduces new ones.
 - **Manifest-driven Component URLs** — Base download URLs (e.g. UE-Extended) can be overridden from the manifest if a repo moves.
+- **Multi Frame Generation Controls** — New "Multi Frame Gen" button in the Frame Generation column. Opens a per-game dialog to configure MFG Mode (Fixed/Dynamic), frame count multiplier (2x-6x), and dynamic target frame rate. Writes directly to the NVIDIA driver profile. Requires 50 Series GPU (driver 572.16+ for MFG, 595.97+ for DMFG).
+- **Driver Version Display** — The Nvidia Profile Overrides section header now shows the installed driver version.
+- **Restore Profile Defaults** — New button in the driver settings row resets the game's NVIDIA driver profile to factory defaults with a single click. Equivalent to NVIDIA App's "Restore" and NVPI's "Defaults" button.
+- **Manifest-driven Addon Packs** — Addon entries can now be added, modified, or disabled from the remote manifest. Descriptions, URLs, and deploy filenames are all overridable server-side.
 
 ### Improvements
 
@@ -34,6 +38,11 @@
 - Fixed version dropdown showing ambiguous "Default" — now always shows the game's original DLL version with `(Default)` suffix. Original versions are cached for instant display.
 - Fixed overlay and screenshot hotkeys having Ctrl and Shift swapped when deployed to games via "Apply to All Games".
 - Fixed NVIDIA profile matching using generic exe names (Launcher.exe, etc.) causing wrong game profiles to be modified.
+- Fixed wiki exclusion ("Excluded" override) incorrectly showing "Download from Discord" — now shows "No RenoDX mod available" with a disabled button.
+- Vulkan ReShade layer install now shows an actionable dialog when admin privileges are missing, offering "Enable Admin Mode" (persistent) or "Restart as Admin" (one-time).
+- Changing the bitness override now automatically uninstalls all installed components, giving a clean slate for reinstall with the correct bitness.
+- DLSS/RR/FG preset and version dropdowns now show "Driver Override Active" when NVIDIA App is controlling that setting (presets via "Use recommended", DLLs via "Latest DLL"). Quick Apply respects these overrides.
+- Fixed Power Mode showing "Adaptive" after profile restore instead of "Optimal Performance" (the actual NVIDIA default).
 
 ### Manifest Updates
 

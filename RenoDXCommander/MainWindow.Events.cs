@@ -1482,6 +1482,8 @@ public sealed partial class MainWindow
             // Use the ViewModel's AddonPackService (initialized on startup)
             var addonService = ViewModel.AddonPackServiceInstance;
             await addonService.EnsureLatestAsync();
+            // Re-apply manifest overrides (EnsureLatestAsync repopulates from Addons.ini)
+            (addonService as RenoDXCommander.Services.AddonPackService)?.ApplyManifestOverrides(ViewModel.Manifest);
             await AddonManagerDialog.ShowAsync(Content.XamlRoot, addonService,
                 ViewModel.Settings.EnabledGlobalAddons,
                 () => { ViewModel.SaveSettingsPublic(); ViewModel.DeployAllAddons(); });

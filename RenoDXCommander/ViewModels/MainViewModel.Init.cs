@@ -278,8 +278,9 @@ public partial class MainViewModel
             // osTask deferred until after cards display
             // dlssTask deferred until after cards display
 
-            // Apply manifest-driven shader pack overrides
+            // Apply manifest-driven shader pack and addon pack overrides
             (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);
+            (_addonPackService as AddonPackService)?.ApplyManifestOverrides(_manifest);
             DlssPresetService.ApplyManifestPresets(_manifest);
             _dlssPresetService.ApplyManifestProfileConfig(_manifest);
 
@@ -1162,8 +1163,9 @@ public partial class MainViewModel
                 Source                 = game.Source,
                 InstalledRecord        = record,
                 Status                 = record != null ? GameStatus.Installed : GameStatus.Available,
-                WikiStatus             = (_wikiExclusions.Contains(game.Name)
-                                           || (effectiveMod?.SnapshotUrl == null && effectiveMod?.DiscordUrl != null && effectiveMod?.NexusUrl == null))
+                WikiStatus             = _wikiExclusions.Contains(game.Name)
+                                          ? "—"
+                                          : (effectiveMod?.SnapshotUrl == null && effectiveMod?.DiscordUrl != null && effectiveMod?.NexusUrl == null)
                                           ? "💬"
                                           : (mod == null && fallback != null && !useUeExt && !isNativeHdr)
                                             ? "?"
@@ -1185,18 +1187,18 @@ public partial class MainViewModel
                 IsManuallyAdded        = game.IsManuallyAdded,
                 UseUeExtended          = useUeExt,
                 IsExternalOnly         = _wikiExclusions.Contains(game.Name)
-                                         ? true
+                                         ? false
                                          : effectiveMod?.SnapshotUrl == null &&
                                            (effectiveMod?.NexusUrl != null || effectiveMod?.DiscordUrl != null),
                 ExternalUrl            = _wikiExclusions.Contains(game.Name)
-                                         ? "https://discord.gg/gF4GRJWZ2A"
+                                         ? ""
                                          : effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "",
                 ExternalLabel          = _wikiExclusions.Contains(game.Name)
-                                         ? "Download from Discord"
+                                         ? ""
                                          : effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord",
                 NexusUrl               = effectiveMod?.NexusUrl,
                 DiscordUrl             = _wikiExclusions.Contains(game.Name)
-                                         ? "https://discord.gg/gF4GRJWZ2A"
+                                         ? null
                                          : effectiveMod?.DiscordUrl,
                 NameUrl                = effectiveMod?.NameUrl,
                 ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
@@ -2490,9 +2492,11 @@ public partial class MainViewModel
             try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database task failed — {ex.Message}"); }
+            try { await addonPackTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Addon pack await failed — {ex.Message}"); }
 
-            // Apply manifest-driven shader pack overrides
+            // Apply manifest-driven shader pack and addon pack overrides
             (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);
+            (_addonPackService as AddonPackService)?.ApplyManifestOverrides(_manifest);
             DlssPresetService.ApplyManifestPresets(_manifest);
             _dlssPresetService.ApplyManifestProfileConfig(_manifest);
 

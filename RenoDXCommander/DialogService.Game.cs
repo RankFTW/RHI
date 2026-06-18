@@ -784,4 +784,123 @@ public partial class DialogService
         }
         catch (Exception ex) { CrashReporter.Log($"[DialogService.ShowUeExtendedWarningAsync] Failed to show UE warning for '{card.GameName}' — {ex.Message}"); }
     }
+
+    // ── Vulkan Admin Required Dialog ────────────────────────────────────────────
+
+    /// <summary>
+    /// Shows a dialog when Vulkan ReShade install fails because the app isn't elevated.
+    /// Offers to enable Admin Mode (persistent), restart once as admin, or cancel.
+    /// </summary>
+    public async Task ShowVulkanAdminRequiredDialogAsync()
+    {
+        try
+        {
+            while (_window.Content.XamlRoot == null)
+                await Task.Delay(100);
+
+            var dlg = new ContentDialog
+            {
+                Title = "Administrator Privileges Required",
+                Content = new TextBlock
+                {
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 13,
+                    Text = "Installing the Vulkan ReShade layer requires writing to C:\\ProgramData\\ReShade\\ " +
+                           "and modifying system registry keys, which needs administrator privileges.\n\n" +
+                           "Enable Admin Mode — RHI will always launch elevated (no UAC prompt after setup).\n\n" +
+                           "Restart as Admin — one-time elevated restart to complete this install.",
+                },
+                PrimaryButtonText = "Enable Admin Mode",
+                SecondaryButtonText = "Restart as Admin",
+                CloseButtonText = "Cancel",
+                XamlRoot = _window.Content.XamlRoot,
+                Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            var result = await ShowSafeAsync(dlg);
+
+            if (result == ContentDialogResult.Primary)
+            {
+                // Enable Admin Mode (creates scheduled task + restarts)
+                try
+                {
+                    CreateAdminTaskAndRestart();
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[DialogService.ShowVulkanAdminRequiredDialog] Admin mode setup failed — {ex.Message}");
+                }
+            }
+            else if (result == ContentDialogResult.Secondary)
+            {
+                // One-time restart as admin
+                RestartAsAdmin();
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DialogService.ShowVulkanAdminRequiredDialog] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Creates the Admin Mode scheduled task (UAC prompt) and restarts RHI through it.
+    /// </summary>
+    private static void CreateAdminTaskAndRestart()
+    {
+        var exePath = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var taskName = "RHI Admin Mode";
+
+        // Create the task (triggers UAC)
+        var createArgs = $"/Create /TN \"{taskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONCE /ST 00:00 /SD 01/01/2000 /RL HIGHEST /F";
+        var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", createArgs)
+        {
+            UseShellExecute = true,
+            Verb = "runas",
+            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+        };
+        using var createProc = System.Diagnostics.Process.Start(psi);
+        createProc?.WaitForExit(15000);
+        if (createProc?.ExitCode != 0)
+            throw new InvalidOperationException($"schtasks /Create failed (exit {createProc?.ExitCode})");
+
+        CrashReporter.Log("[DialogService.CreateAdminTaskAndRestart] Admin task created, restarting via task...");
+
+        // Run the task to relaunch elevated (no UAC this time)
+        var runPsi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", $"/Run /TN \"{taskName}\"")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        System.Diagnostics.Process.Start(runPsi);
+
+        // Exit current instance
+        Environment.Exit(0);
+    }
+
+    /// <summary>
+    /// Restarts RHI as admin via a one-time UAC prompt (no scheduled task).
+    /// </summary>
+    private static void RestartAsAdmin()
+    {
+        var exePath = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var psi = new System.Diagnostics.ProcessStartInfo(exePath)
+        {
+            UseShellExecute = true,
+            Verb = "runas",
+        };
+
+        try
+        {
+            System.Diagnostics.Process.Start(psi);
+            CrashReporter.Log("[DialogService.RestartAsAdmin] Restarting as admin...");
+            Environment.Exit(0);
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // User cancelled UAC prompt — do nothing
+            CrashReporter.Log("[DialogService.RestartAsAdmin] User cancelled UAC prompt");
+        }
+    }
 }

@@ -818,16 +818,45 @@ public partial class DetailPanelBuilder
                 c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
             if (targetCard != null)
             {
+                var previousIs32Bit = targetCard.Is32Bit;
+
+                // Compute the new effective bitness
+                bool newIs32Bit;
                 if (overrideValue == "32")
-                    targetCard.Is32Bit = true;
+                    newIs32Bit = true;
                 else if (overrideValue == "64")
-                    targetCard.Is32Bit = false;
+                    newIs32Bit = false;
                 else
                 {
                     // "Auto" — re-resolve from auto-detection
                     var detectedMachine = _window.ViewModel.PeHeaderServiceInstance.DetectGameArchitecture(targetCard.InstallPath);
-                    targetCard.Is32Bit = _window.ViewModel.ResolveIs32Bit(capturedName, detectedMachine);
+                    newIs32Bit = _window.ViewModel.ResolveIs32Bit(capturedName, detectedMachine);
                 }
+
+                // If bitness actually changed, uninstall all components BEFORE updating card.Is32Bit
+                // (uninstall methods use card.Is32Bit to resolve filenames of deployed DLLs)
+                if (previousIs32Bit != newIs32Bit && !targetCard.RequiresVulkanInstall)
+                {
+                    if (targetCard.IsRsInstalled)
+                        _window.ViewModel.UninstallReShade(targetCard);
+                    if (targetCard.DcStatus == GameStatus.Installed)
+                        _window.ViewModel.UninstallDc(targetCard);
+                    if (targetCard.InstalledRecord != null)
+                        _window.ViewModel.UninstallMod(targetCard);
+                    if (targetCard.UlStatus == GameStatus.Installed)
+                        _window.ViewModel.UninstallUl(targetCard);
+                    if (targetCard.OsStatus == GameStatus.Installed)
+                        _window.ViewModel.OptiScalerServiceInstance.Uninstall(targetCard);
+                    if (targetCard.DxvkStatus == GameStatus.Installed)
+                        _window.ViewModel.UninstallDxvk(targetCard);
+                    if (targetCard.RefStatus == GameStatus.Installed)
+                        _window.ViewModel.UninstallREFramework(targetCard);
+                    if (targetCard.LumaStatus == GameStatus.Installed)
+                        _window.ViewModel.UninstallLuma(targetCard);
+                }
+
+                // NOW update card.Is32Bit to the new value
+                targetCard.Is32Bit = newIs32Bit;
 
                 // Update DLL naming section placeholder text to match new bitness
                 rsNameBox.PlaceholderText = targetCard.Is32Bit ? "ReShade32.dll" : "ReShade64.dll";
@@ -1973,9 +2002,13 @@ public partial class DetailPanelBuilder
         // DLSS / Streamline / ReBAR + future additions
         // ══════════════════════════════════════════════════════════════════════
         _window.NvidiaProfilePanel.Children.Clear();
+        var nvidiaHeaderText = "Nvidia Profile Overrides";
+        var driverVer = _window.ViewModel.DlssPresetServiceInstance.DriverVersionString;
+        if (!string.IsNullOrEmpty(driverVer))
+            nvidiaHeaderText += $" — Driver {driverVer}";
         _window.NvidiaProfilePanel.Children.Add(new TextBlock
         {
-            Text = "Nvidia Profile Overrides",
+            Text = nvidiaHeaderText,
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -2069,6 +2102,42 @@ public partial class DetailPanelBuilder
                 (preset) => { presetService.SetFgPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
                 originalVersion: card.DlssDetection?.OriginalDlssgVersion,
                 driverOverrideActive: fgDriverOverride);
+
+            // Add Multi Frame Generation button to FG column
+            fgCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
+            var mfgBtn = new Button
+            {
+                Content = "Multi Frame Gen",
+                FontSize = 11,
+                Height = 32,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                IsEnabled = fgEnabled && presetService.IsSupported,
+                Opacity = (fgEnabled && presetService.IsSupported) ? 1.0 : 0.4,
+            };
+            ToolTipService.SetToolTip(mfgBtn, "Configure NVIDIA Multi Frame Generation: mode, frame count multiplier, and dynamic target frame rate. Requires 50 Series GPU.");
+            mfgBtn.Click += async (s, ev) =>
+            {
+                var xamlRoot = (s as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
+                await MfgDialog.ShowAsync(
+                    presetService,
+                    _window.ViewModel.Settings,
+                    capturedName,
+                    card.InstallPath ?? "",
+                    xamlRoot,
+                    () => _window.ViewModel.SaveSettingsPublic());
+                // Rebuild panel so Restore All button reflects MFG changes
+                var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (refreshCard != null)
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(refreshCard));
+            };
+            fgCol.Children.Add(mfgBtn);
+
             Grid.SetColumn(fgCol, 4);
             dlssRowGrid.Children.Add(fgCol);
 
@@ -2103,7 +2172,8 @@ public partial class DetailPanelBuilder
                 || (presetService.IsSupported && hasDlssd && presetService.GetRrPreset(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlssg && presetService.GetFgPreset(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlss && presetService.GetSrRenderScale(card.GameName, card.InstallPath) != 0)
-                || (presetService.IsSupported && hasDlssd && presetService.GetRrRenderScale(card.GameName, card.InstallPath) != 0);
+                || (presetService.IsSupported && hasDlssd && presetService.GetRrRenderScale(card.GameName, card.InstallPath) != 0)
+                || (presetService.IsSupported && hasDlssg && presetService.GetMfgMode(card.GameName, card.InstallPath) != 0);
             bool restoreEnabled = card.HasAnyDlssBackup || hasNonDefaultPreset;
             var dlssRestoreBtn = new Button
             {
@@ -2130,6 +2200,11 @@ public partial class DetailPanelBuilder
                     presetService.SetFgPreset(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetRrRenderScale(targetCard.GameName, targetCard.InstallPath, 0);
+                    // Reset MFG settings
+                    presetService.SetMfgMode(targetCard.GameName, targetCard.InstallPath, 0);
+                    presetService.SetMfgGenerationFactor(targetCard.GameName, targetCard.InstallPath, 0);
+                    presetService.SetMfgDynamicMaxCount(targetCard.GameName, targetCard.InstallPath, 0);
+                    presetService.SetMfgDynamicTargetFps(targetCard.GameName, targetCard.InstallPath, 0);
                     targetCard.RefreshDlssVersions(dlssService);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));
                 }
@@ -2192,11 +2267,23 @@ public partial class DetailPanelBuilder
                     await svc.SwapStreamlineAsync(targetCard.DlssDetection.StreamlineFolder, settings.DefaultStreamlineVersion);
 
                 if (settings.DefaultSrPreset != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);
+                {
+                    var curSrPreset = pSvc.GetSrPreset(targetCard.GameName, targetCard.InstallPath);
+                    if (curSrPreset != 0x00FFFFFF && curSrPreset != 0x00FFFFFE)
+                        pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);
+                }
                 if (settings.DefaultRrPreset != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
+                {
+                    var curRrPreset = pSvc.GetRrPreset(targetCard.GameName, targetCard.InstallPath);
+                    if (curRrPreset != 0x00FFFFFF && curRrPreset != 0x00FFFFFE)
+                        pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
+                }
                 if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg && !(targetCard.DlssgInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
+                {
+                    var curFgPreset = pSvc.GetFgPreset(targetCard.GameName, targetCard.InstallPath);
+                    if (curFgPreset != 0x00FFFFFF && curFgPreset != 0x00FFFFFE)
+                        pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
+                }
 
                 if (settings.DefaultSrRenderScale != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrRenderScale);
@@ -2521,6 +2608,55 @@ public partial class DetailPanelBuilder
                 powerCol.Children.Add(combo);
                 init = false;
             }
+
+            // Restore Profile Defaults button (aligned with Flip Pacing combo in Smooth Motion column)
+            powerCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
+            var restoreProfileBtn = new Button
+            {
+                Content = "Restore Defaults",
+                FontSize = 11,
+                Height = 32,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                IsEnabled = nvidiaPresetService.IsSupported,
+            };
+            ToolTipService.SetToolTip(restoreProfileBtn,
+                "Restore this game's NVIDIA driver profile to factory defaults. Removes all custom settings (presets, render scale, MFG, driver overrides). This action is irreversible.");
+            restoreProfileBtn.Click += async (s, ev) =>
+            {
+                var xamlRoot = (s as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
+                var warningDialog = new ContentDialog
+                {
+                    Title = "Restore driver settings?",
+                    Content = new TextBlock
+                    {
+                        Text = $"This will restore driver settings for {capturedName} back to the factory default. This action is irreversible.",
+                        TextWrapping = TextWrapping.Wrap,
+                        FontSize = 13,
+                    },
+                    PrimaryButtonText = "Restore",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = xamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                };
+
+                var result = await DialogService.ShowSafeAsync(warningDialog);
+                if (result != ContentDialogResult.Primary) return;
+
+                var success = nvidiaPresetService.RestoreProfileDefaults(capturedName, installPathSafe);
+                if (success)
+                {
+                    var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                        c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                    if (refreshCard != null)
+                        _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(refreshCard));
+                }
+            };
+            powerCol.Children.Add(restoreProfileBtn);
 
             Grid.SetColumn(powerCol, 6);
             nvidiaGrid.Children.Add(powerCol);
@@ -2893,7 +3029,10 @@ public partial class DetailPanelBuilder
         });
 
         // Version ComboBox
-        col.Children.Add(new TextBlock { Text = "Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+        var versionLabel = new TextBlock { Text = "Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+        if (driverOverrideActive)
+            ToolTipService.SetToolTip(versionLabel, "Driver override is active — the NVIDIA driver is injecting its own DLL. Disable 'Latest DLL' in NVIDIA App or Profile Inspector to manage versions manually.");
+        col.Children.Add(versionLabel);
 
         // Build items list with (Default) marker on the game's original/default version
         var items = new List<string>();
@@ -2955,8 +3094,8 @@ public partial class DetailPanelBuilder
 
         var versionCombo = new ComboBox
         {
-            ItemsSource = items,
-            SelectedIndex = selectedIndex,
+            ItemsSource = driverOverrideActive ? new List<string> { "Driver Override Active" } : items,
+            SelectedIndex = driverOverrideActive ? 0 : selectedIndex,
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = isPresent && !driverOverrideActive,
@@ -2965,24 +3104,8 @@ public partial class DetailPanelBuilder
         if (driverOverrideActive)
             ToolTipService.SetToolTip(versionCombo, "Driver override is active — disable it in NVIDIA App or Profile Inspector to manage this DLL in RHI.");
 
-        // Show "Driver override active" indicator below the combo when active
-        if (driverOverrideActive && isPresent)
-        {
-            col.Children.Add(versionCombo);
-            var overrideText = new TextBlock
-            {
-                Text = "⚠ Driver override active",
-                FontSize = 9,
-                Foreground = UIFactory.Brush(ResourceKeys.AccentAmberDimBrush),
-                Margin = new Thickness(0, 2, 0, 0),
-            };
-            ToolTipService.SetToolTip(overrideText, "Driver override is active — disable it in NVIDIA App or Profile Inspector to manage this DLL in RHI.");
-            col.Children.Add(overrideText);
-        }
-        else
-        {
-            col.Children.Add(versionCombo);
-        }
+        // When driver override is active, tooltip is already on the combo — no extra text needed
+        col.Children.Add(versionCombo);
 
         bool versionInit = true;
         versionCombo.SelectionChanged += async (s, ev) =>
@@ -3003,11 +3126,27 @@ public partial class DetailPanelBuilder
         if (presets != null && isPresent)
         {
             col.Children.Add(new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
-            var presetItems = presets.Select(p => p.Name).ToList();
-            int presetIdx = 0;
-            for (int i = 0; i < presets.Length; i++)
+
+            // Detect "Use recommended preset" driver override (NVIDIA App sets this)
+            bool presetDriverOverride = currentPreset == 0x00FFFFFF || currentPreset == 0x00FFFFFE;
+
+            if (presetDriverOverride)
             {
-                if (presets[i].Value == currentPreset) { presetIdx = i; break; }
+                // Set tooltip on the Preset label since disabled combos can't show tooltips
+                var presetLabel = (TextBlock)col.Children[col.Children.Count - 1];
+                ToolTipService.SetToolTip(presetLabel, "Driver override is active — NVIDIA App has 'Use recommended preset' enabled. Disable it in NVIDIA App → Game Settings or Profile Inspector.");
+            }
+
+            var presetItems = presetDriverOverride
+                ? new List<string> { "Driver Override Active" }
+                : presets.Select(p => p.Name).ToList();
+            int presetIdx = 0;
+            if (!presetDriverOverride)
+            {
+                for (int i = 0; i < presets.Length; i++)
+                {
+                    if (presets[i].Value == currentPreset) { presetIdx = i; break; }
+                }
             }
 
             var presetCombo = new ComboBox
@@ -3016,9 +3155,16 @@ public partial class DetailPanelBuilder
                 SelectedIndex = presetIdx,
                 FontSize = 11,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                IsEnabled = isPresent,
+                IsEnabled = isPresent && !presetDriverOverride,
+                Opacity = presetDriverOverride ? 0.4 : 1.0,
             };
 
+            if (presetDriverOverride)
+            {
+                ToolTipService.SetToolTip(presetCombo, "The NVIDIA driver is overriding presets with 'Use recommended preset'. Disable this in NVIDIA App → Game Settings or NVIDIA Profile Inspector to use manual presets.");
+            }
+            else
+            {
             // Add tooltip explaining presets
             string presetTooltip = label switch
             {
@@ -3029,6 +3175,7 @@ public partial class DetailPanelBuilder
             };
             if (!string.IsNullOrEmpty(presetTooltip))
                 ToolTipService.SetToolTip(presetCombo, presetTooltip);
+            }
 
             bool presetInit = true;
             presetCombo.SelectionChanged += (s, ev) =>

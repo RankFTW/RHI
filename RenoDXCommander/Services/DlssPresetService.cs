@@ -17,11 +17,16 @@ public class DlssPresetService
     private static extern IntPtr NvAPI_QueryInterface(uint id);
 
     private const uint NVAPI_DRS_SET_SETTING_ID = 0x8A2CF5F5; // Primary (R610+), fallback: 0x577DD202
+    private const uint NVAPI_DRS_SET_SETTING_LEGACY_ID = 0x577DD202; // Legacy 3-param version (works for BINARY settings)
     private const uint NVAPI_DRS_GET_SETTING_ID = 0xEA99498D; // Primary (R610+), fallback: 0x73BF8338
     private const uint NVAPI_DRS_SAVE_SETTINGS_ID = 0xFCBC7E14;
+    private const uint NVAPI_DRS_RESTORE_PROFILE_DEFAULT_ID = 0xFA5B6166;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int NvAPI_DRS_SetSettingPtr_t(IntPtr hSession, IntPtr hProfile, IntPtr pSetting, uint x, uint y);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int NvAPI_DRS_SetSettingLegacy_t(IntPtr hSession, IntPtr hProfile, IntPtr pSetting);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int NvAPI_DRS_GetSettingPtr_t(IntPtr hSession, IntPtr hProfile, uint settingId, IntPtr pSetting, ref uint x);
@@ -29,22 +34,33 @@ public class DlssPresetService
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int NvAPI_DRS_SaveSettings_t(IntPtr hSession);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int NvAPI_DRS_RestoreProfileDefault_t(IntPtr hSession, IntPtr hProfile);
+
     private static NvAPI_DRS_SetSettingPtr_t? _nativeSetSettingPtr;
+    private static NvAPI_DRS_SetSettingLegacy_t? _nativeSetSettingLegacy;
     private static NvAPI_DRS_GetSettingPtr_t? _nativeGetSettingPtr;
     private static NvAPI_DRS_SaveSettings_t? _nativeSaveSettings;
+    private static NvAPI_DRS_RestoreProfileDefault_t? _nativeRestoreProfileDefault;
 
     private static void EnsureNativeFunctions()
     {
         if (_nativeSetSettingPtr != null) return;
         var setPtr = NvAPI_QueryInterface(NVAPI_DRS_SET_SETTING_ID);
+        var setLegacyPtr = NvAPI_QueryInterface(NVAPI_DRS_SET_SETTING_LEGACY_ID);
         var getPtr = NvAPI_QueryInterface(NVAPI_DRS_GET_SETTING_ID);
         var savePtr = NvAPI_QueryInterface(NVAPI_DRS_SAVE_SETTINGS_ID);
+        var restorePtr = NvAPI_QueryInterface(NVAPI_DRS_RESTORE_PROFILE_DEFAULT_ID);
         if (setPtr != IntPtr.Zero)
             _nativeSetSettingPtr = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_SetSettingPtr_t>(setPtr);
+        if (setLegacyPtr != IntPtr.Zero)
+            _nativeSetSettingLegacy = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_SetSettingLegacy_t>(setLegacyPtr);
         if (getPtr != IntPtr.Zero)
             _nativeGetSettingPtr = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_GetSettingPtr_t>(getPtr);
         if (savePtr != IntPtr.Zero)
             _nativeSaveSettings = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_SaveSettings_t>(savePtr);
+        if (restorePtr != IntPtr.Zero)
+            _nativeRestoreProfileDefault = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_RestoreProfileDefault_t>(restorePtr);
     }
 
     /// <summary>
@@ -155,6 +171,12 @@ public class DlssPresetService
     private const uint DLSS_RR_LATEST_DLL_ID = 0x10E41E02;
     private const uint DLSS_FG_LATEST_DLL_ID = 0x10E41E03;
 
+    // Multi Frame Generation (MFG) settings
+    private const uint MFG_MODE_OVERRIDE_ID = 0x10308298;       // Off=0, Fixed=2, Dynamic=4
+    private const uint MFG_GENERATION_FACTOR_ID = 0x104D6667;   // App-controlled=0, 2x=1, 3x=2, 4x=3, 5x=4, 6x=5
+    private const uint MFG_DYNAMIC_MAX_COUNT_ID = 0x10562D0F;   // Off=0, 3x=2, 4x=3, 5x=4, 6x=5
+    private const uint MFG_DYNAMIC_TARGET_FPS_ID = 0x10CF4125;  // Off=0, MaxRefresh=0x01000000, or FPS value directly
+
     private const uint RENDER_SCALE_DEFAULT = 0x03;
     private const uint RENDER_SCALE_CUSTOM = 0x06;
 
@@ -231,6 +253,9 @@ public class DlssPresetService
 
     public bool IsSupported => _isSupported;
 
+    /// <summary>The NVIDIA driver version string (e.g. "572.16") or empty if not available.</summary>
+    public string DriverVersionString { get; private set; } = "";
+
     /// <summary>When true, SetPreset will auto-create NVIDIA profiles for games that don't have one.</summary>
     public bool AutoCreateProfiles { get; set; } = true;
 
@@ -260,6 +285,15 @@ public class DlssPresetService
             FreeLibrary(handle);
 
             NVIDIA.Initialize();
+
+            // Capture driver version
+            try
+            {
+                var driverVer = NVIDIA.DriverVersion;
+                DriverVersionString = $"{driverVer / 100}.{driverVer % 100:D2}";
+            }
+            catch { DriverVersionString = ""; }
+
             _session = DriverSettingsSession.CreateAndLoad();
             _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
             foreach (var profile in _session.Profiles)
@@ -378,6 +412,174 @@ public class DlssPresetService
     public bool SetFgPreset(string gameName, string installPath, uint preset)
         => SetPreset(gameName, installPath, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
 
+    // ── Multi Frame Generation (MFG) ─────────────────────────────────────────
+
+    public uint GetMfgMode(string gameName, string installPath)
+        => GetPreset(gameName, installPath, MFG_MODE_OVERRIDE_ID);
+
+    public bool SetMfgMode(string gameName, string installPath, uint value)
+        => SetPreset(gameName, installPath, MFG_MODE_OVERRIDE_ID, value);
+
+    public uint GetMfgGenerationFactor(string gameName, string installPath)
+        => GetPreset(gameName, installPath, MFG_GENERATION_FACTOR_ID);
+
+    public bool SetMfgGenerationFactor(string gameName, string installPath, uint value)
+        => SetPreset(gameName, installPath, MFG_GENERATION_FACTOR_ID, value);
+
+    public uint GetMfgDynamicMaxCount(string gameName, string installPath)
+        => GetPreset(gameName, installPath, MFG_DYNAMIC_MAX_COUNT_ID);
+
+    public bool SetMfgDynamicMaxCount(string gameName, string installPath, uint value)
+        => SetPreset(gameName, installPath, MFG_DYNAMIC_MAX_COUNT_ID, value);
+
+    public uint GetMfgDynamicTargetFps(string gameName, string installPath)
+        => GetPreset(gameName, installPath, MFG_DYNAMIC_TARGET_FPS_ID);
+
+    public bool SetMfgDynamicTargetFps(string gameName, string installPath, uint value)
+        => SetPreset(gameName, installPath, MFG_DYNAMIC_TARGET_FPS_ID, value);
+
+    // ── Restore Profile Defaults ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Restores a game's NVIDIA driver profile to factory defaults.
+    /// All user-modified settings are removed. If the profile was user-created (not predefined by NVIDIA),
+    /// the profile is deleted entirely. Reloads the session afterward to update cached profiles.
+    /// </summary>
+    /// <returns>True if restore succeeded, false on failure or if no profile found.</returns>
+    public bool RestoreProfileDefaults(string gameName, string installPath)
+    {
+        if (!_isSupported || _session == null || _cachedProfiles == null)
+            return false;
+
+        try
+        {
+            var profile = FindProfile(gameName, installPath);
+            if (profile == null)
+            {
+                CrashReporter.Log($"[DlssPresetService.RestoreProfileDefaults] No profile found for '{gameName}'");
+                return false;
+            }
+
+            EnsureNativeFunctions();
+
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(profile.Handle);
+
+            if (sessionHandle == IntPtr.Zero || profileHandle == IntPtr.Zero)
+            {
+                CrashReporter.Log("[DlssPresetService.RestoreProfileDefaults] Could not resolve handles");
+                return false;
+            }
+
+            // Try raw NvAPI_DRS_RestoreProfileDefault first
+            if (_nativeRestoreProfileDefault != null)
+            {
+                int result = _nativeRestoreProfileDefault(sessionHandle, profileHandle);
+                CrashReporter.Log($"[DlssPresetService.RestoreProfileDefaults] NvAPI_DRS_RestoreProfileDefault returned {result} for '{gameName}'");
+
+                if (result == 0 || result == -183) // 0 = success, -183 = PROFILE_REMOVED (user-created)
+                {
+                    if (_nativeSaveSettings != null)
+                        _nativeSaveSettings(sessionHandle);
+
+                    ReloadSession();
+                    CrashReporter.Log($"[DlssPresetService.RestoreProfileDefaults] Restored defaults for '{gameName}'");
+                    return true;
+                }
+            }
+            else
+            {
+                CrashReporter.Log("[DlssPresetService.RestoreProfileDefaults] _nativeRestoreProfileDefault is null, trying DeleteProfile...");
+            }
+
+            // Fallback: delete all user-modified settings on the profile individually
+            // This preserves the profile and its applications but removes user overrides
+            try
+            {
+                var settingsToDelete = new List<uint>();
+                try
+                {
+                    foreach (var setting in profile.Settings)
+                    {
+                        settingsToDelete.Add(setting.SettingId);
+                    }
+                }
+                catch (Exception enumEx)
+                {
+                    CrashReporter.Log($"[DlssPresetService.RestoreProfileDefaults] Settings enumeration failed (binary settings?) — {enumEx.Message}");
+                    // If enumeration fails, delete all our managed setting IDs as a best effort
+                    settingsToDelete.AddRange(ManagedSettingIds);
+                    settingsToDelete.AddRange(new uint[] { MFG_MODE_OVERRIDE_ID, MFG_GENERATION_FACTOR_ID, MFG_DYNAMIC_MAX_COUNT_ID, MFG_DYNAMIC_TARGET_FPS_ID });
+                }
+
+                int deleted = 0;
+                foreach (var settingId in settingsToDelete)
+                {
+                    try { profile.DeleteSetting(settingId); deleted++; } catch { }
+                }
+
+                // Also explicitly reset settings that are invisible to NvAPIWrapper's enumeration
+                // (newer settings written via raw NVAPI — Smooth Motion, ULL, MFG)
+                // These can't be deleted via profile.DeleteSetting — use SetSettingRawNvApi to set them to 0
+                var invisibleSettings = new uint[]
+                {
+                    SMOOTH_MOTION_ENABLE_ID, SMOOTH_MOTION_APIS_ID,
+                    SMOOTH_MOTION_FLIP_PACING_FS_ID, SMOOTH_MOTION_FLIP_PACING_WIN_ID,
+                    LATENCY_ULL_ENABLE_ID, LATENCY_ULL_MODE_ID,
+                    MFG_MODE_OVERRIDE_ID, MFG_GENERATION_FACTOR_ID,
+                    MFG_DYNAMIC_MAX_COUNT_ID, MFG_DYNAMIC_TARGET_FPS_ID,
+                };
+                var sessionH = GetHandlePtr(_session.Handle);
+                // Re-find the profile after potential reload — handles may have changed
+                var freshProfile = FindProfile(gameName, installPath);
+                if (freshProfile != null && sessionH != IntPtr.Zero)
+                {
+                    var profileH = GetHandlePtr(freshProfile.Handle);
+                    if (profileH != IntPtr.Zero)
+                    {
+                        foreach (var settingId in invisibleSettings)
+                        {
+                            try { SetSettingRawNvApi(sessionH, profileH, settingId, 0); } catch { }
+                        }
+                        if (_nativeSaveSettings != null)
+                            _nativeSaveSettings(sessionH);
+                    }
+                }
+
+                _session.Save();
+                ReloadSession();
+                CrashReporter.Log($"[DlssPresetService.RestoreProfileDefaults] Deleted {deleted} settings for '{gameName}'");
+                return true;
+            }
+            catch (Exception delEx)
+            {
+                CrashReporter.Log($"[DlssPresetService.RestoreProfileDefaults] Setting deletion failed — {delEx.Message}");
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.RestoreProfileDefaults] Error for '{gameName}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    private void ReloadSession()
+    {
+        try
+        {
+            _session = DriverSettingsSession.CreateAndLoad();
+            _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in _session.Profiles)
+                _cachedProfiles.TryAdd(p.Name, p);
+        }
+        catch (Exception reloadEx)
+        {
+            CrashReporter.Log($"[DlssPresetService.ReloadSession] Session reload failed — {reloadEx.Message}");
+        }
+    }
+
     // ── Get render scale ──────────────────────────────────────────────────────
 
     /// <summary>Returns the current SR render scale percentage (0 = Off/Default, 33-100 = active).</summary>
@@ -442,6 +644,8 @@ public class DlssPresetService
         ("1GB (Default)", 0x0000000040000000),
         ("2GB", 0x0000000080000000),
         ("4GB", 0x0000000100000000),
+        ("8GB", 0x0000000200000000),
+        ("16GB", 0x0000000400000000),
     ];
 
     /// <summary>Returns true if ReBAR Feature is enabled for this game's NVIDIA profile.</summary>
@@ -463,17 +667,20 @@ public class DlssPresetService
             var profile = FindProfile(gameName, installPath);
             if (profile == null) return 0;
 
-            // Read via raw NVAPI directly — NvAPIWrapper's Settings enumeration crashes
-            // on binary/QWORD settings (BlockCopy overflow in NVDRS_SETTING_UNION).
-            var sessionHandle = GetHandlePtr(_session.Handle);
-            var profileHandle = GetHandlePtr(profile.Handle);
-            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+            // Try to read binary setting via NvAPIWrapper directly.
+            // profile.Settings enumeration crashes on BINARY settings, but we can
+            // try to read just this one setting's binary value.
+            try
             {
-                var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, REBAR_SIZE_LIMIT_ID);
-                if (rawVal.HasValue && rawVal.Value != 0)
-                    return rawVal.Value; // Lower 32 bits of the QWORD
+                var setting = profile.GetSetting(REBAR_SIZE_LIMIT_ID);
+                if (setting.CurrentValue is byte[] bytes && bytes.Length >= 8)
+                    return BitConverter.ToUInt64(bytes, 0);
+                if (setting.CurrentValue is uint dwordVal && dwordVal != 0)
+                    return dwordVal;
             }
+            catch { }
 
+            // Fallback: raw NVAPI reads DWORD position which doesn't work for BINARY
             return 0;
         }
         catch (Exception ex)
@@ -635,37 +842,9 @@ if ($null -ne $profile) {{
         if (!_isSupported || _session == null || _cachedProfiles == null)
             return false;
 
-        try
-        {
-            var profile = FindProfile(gameName, installPath);
-            if (profile == null)
-            {
-                if (!AutoCreateProfiles) return false;
-                profile = CreateProfileForGame(gameName, installPath);
-                if (profile == null) return false;
-            }
-            else if (AutoCreateProfiles && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
-            {
-                EnsureExeRegistered(profile, gameName, installPath);
-            }
-
-            var bytes = BitConverter.GetBytes(sizeBytes);
-            profile.SetSetting(REBAR_SIZE_LIMIT_ID, bytes);
-            _session.Save();
-
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Set size limit to 0x{sizeBytes:X16} for '{gameName}'");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            if (ex.Message.Contains("INVALID_USER_PRIVILEGE"))
-            {
-                CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Requires elevation for '{gameName}'");
-                return SetReBarSizeLimitElevated(gameName, installPath, sizeBytes);
-            }
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Error for '{gameName}' — {ex.Message}");
-            return false;
-        }
+        // NvAPIWrapper's in-process binary SetSetting is broken (writes wrong struct layout).
+        // Always use the PowerShell helper which calls NvAPIWrapper from a fresh process — this works correctly.
+        return SetReBarSizeLimitElevated(gameName, installPath, sizeBytes);
     }
 
     /// <summary>Sets ReBAR Size Limit via an elevated PowerShell process.</summary>
@@ -692,20 +871,24 @@ if ($null -ne $profile) {{
 }}
 ";
             File.WriteAllText(scriptPath, script);
+            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Script: bytes=0x{hexBytes}, game='{gameName}'");
 
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "powershell.exe",
                 Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
-                Verb = "runas",
-                UseShellExecute = true,
+                UseShellExecute = false,
                 CreateNoWindow = true,
-                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
             };
 
             var process = System.Diagnostics.Process.Start(psi);
-            if (process == null) return false;
+            if (process == null)
+            {
+                CrashReporter.Log("[DlssPresetService.SetReBarSizeLimitElevated] Process.Start returned null");
+                return false;
+            }
             process.WaitForExit(10000);
+            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] PS exited with code {process.ExitCode}");
             try { File.Delete(scriptPath); } catch { }
 
             _session = DriverSettingsSession.CreateAndLoad();
@@ -860,7 +1043,7 @@ if ($null -ne $profile) {{
     [
         ("Off", 0x00000000),
         ("Fullscreen only", 0x00000001),
-        ("Fullscreen and Windowed", 0x00000002),
+        ("Fullscreen / Windowed", 0x00000002),
     ];
 
     public static readonly (string Name, uint Value)[] PreferredRefreshRateOptions =
@@ -886,7 +1069,42 @@ if ($null -ne $profile) {{
     // ── Power / CPU get/set ───────────────────────────────────────────────────
 
     public uint GetPowerManagementMode(string gameName, string installPath)
-        => GetPreset(gameName, installPath, POWER_MANAGEMENT_MODE_ID);
+    {
+        // Power Management: 0 is a valid value ("Adaptive"), but when the setting
+        // doesn't exist at all, the effective default is Optimal (0x05).
+        // Use raw API to distinguish "setting absent" (null) from "explicitly 0".
+        if (!_isSupported || _session == null || _cachedProfiles == null)
+            return 0x00000005; // Default: Optimal
+
+        try
+        {
+            var profile = FindProfile(gameName, installPath);
+            if (profile == null) return 0x00000005;
+
+            // Try NvAPIWrapper first
+            var setting = profile.Settings.FirstOrDefault(s => s.SettingId == POWER_MANAGEMENT_MODE_ID);
+            if (setting?.CurrentValue is uint value)
+                return value;
+
+            // Try raw API (returns null if setting doesn't exist on profile)
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(profile.Handle);
+            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+            {
+                var rawValue = GetSettingRawNvApi(sessionHandle, profileHandle, POWER_MANAGEMENT_MODE_ID);
+                if (rawValue.HasValue)
+                    return rawValue.Value; // Setting exists — return actual value (including 0 = Adaptive)
+            }
+
+            // Setting truly doesn't exist — return NVIDIA default
+            return 0x00000005; // Optimal Performance
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.GetPowerManagementMode] Error — {ex.Message}");
+            return 0x00000005;
+        }
+    }
 
     public bool SetPowerManagementMode(string gameName, string installPath, uint value)
         => SetPreset(gameName, installPath, POWER_MANAGEMENT_MODE_ID, value);
@@ -1304,6 +1522,7 @@ $destroyDel.Invoke($hSession) | Out-Null
         REBAR_FEATURE_ID, REBAR_EXPR_MODES_ID,
         NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID, NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID,
         NGX_DLSS_SR_RENDER_SCALE_ID, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID, NGX_DLSS_RR_RENDER_SCALE_ID, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID,
+        MFG_MODE_OVERRIDE_ID, MFG_GENERATION_FACTOR_ID, MFG_DYNAMIC_MAX_COUNT_ID, MFG_DYNAMIC_TARGET_FPS_ID,
     ];
 
     /// <summary>Exports all RHI-managed NVIDIA profile settings to a dictionary for serialization.</summary>
