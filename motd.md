@@ -1,1 +1,1 @@
-V2.0.0 beta 1 is available on Discord for testing. Find Discord link in Help section at the top of RHI. Thank you all.
+V2.0.0 beta 3 is available on Discord for testing. Find Discord link in Help section at the top of RHI. Thank you all.

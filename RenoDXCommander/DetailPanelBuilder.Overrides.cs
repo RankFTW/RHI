@@ -2547,8 +2547,8 @@ public partial class DetailPanelBuilder
 
             // ── Column 6: Power / CPU ──
             var powerCol = new StackPanel { Spacing = 4 };
-            var powerLabel = new TextBlock { Text = "Power / CPU", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            ToolTipService.SetToolTip(powerLabel, "GPU power management and CPU scheduling settings. Maximum Performance prevents clock throttling; CPU Expr Modes control driver thread scheduling.");
+            var powerLabel = new TextBlock { Text = "Power", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            ToolTipService.SetToolTip(powerLabel, "GPU power management. Maximum Performance prevents clock throttling. Optimal is NVIDIA's recommended default.");
             powerCol.Children.Add(powerLabel);
 
             // Power Management Mode
@@ -2575,35 +2575,6 @@ public partial class DetailPanelBuilder
                     int i = combo.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
                     nvidiaPresetService.SetPowerManagementMode(card.GameName, installPathSafe, options[i].Value);
-                };
-                powerCol.Children.Add(combo);
-                init = false;
-            }
-
-            // CPU Expr Mode
-            {
-                powerCol.Children.Add(new TextBlock { Text = "CPU Scheduling", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
-                var options = DlssPresetService.CpuExprModeOptions;
-                uint current = nvidiaPresetService.GetCpuExprMode(card.GameName, installPathSafe);
-                var items = options.Select(o => o.Name).ToArray();
-                int idx = Array.FindIndex(options, o => o.Value == current);
-                if (idx < 0) idx = 0;
-                var combo = new ComboBox
-                {
-                    ItemsSource = items,
-                    SelectedIndex = idx,
-                    FontSize = 11,
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    CornerRadius = new CornerRadius(6),
-                };
-                ToolTipService.SetToolTip(combo, "CPU Expr Mode — controls driver CPU thread scheduling. Mode 0: default. Mode 1: reduced overhead. Mode 4: aggressive optimization (may improve FPS in CPU-bound games).");
-                var init = true;
-                combo.SelectionChanged += (s, ev) =>
-                {
-                    if (init) return;
-                    int i = combo.SelectedIndex;
-                    if (i < 0 || i >= options.Length) return;
-                    nvidiaPresetService.SetCpuExprMode(card.GameName, installPathSafe, options[i].Value);
                 };
                 powerCol.Children.Add(combo);
                 init = false;
