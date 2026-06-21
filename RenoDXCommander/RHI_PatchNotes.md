@@ -33,6 +33,7 @@
 - DLSS/Streamline section hidden entirely for games without DLSS or Streamline files. Driver settings row remains visible for all games.
 - DXVK installed version is now a clickable link to the variant's GitHub releases page.
 - "Compact" view renamed to "Simple" across all user-facing text.
+- Lilium HDR DXVK on DX9 games now deploys DXVK as `d3d9.dll` directly with Vulkan layer ReShade, enabling SM5 HDR shaders. Automatically restores local ReShade on uninstall.
 
 ### Bug Fixes
 
@@ -47,6 +48,7 @@
 - Changing the bitness override now automatically uninstalls all installed components, giving a clean slate for reinstall with the correct bitness.
 - DLSS/RR/FG preset and version dropdowns now show "Driver Override Active" when NVIDIA App is controlling that setting (presets via "Use recommended", DLLs via "Latest DLL"). Quick Apply respects these overrides.
 - Fixed Power Mode showing "Adaptive" after profile restore instead of "Optimal Performance" (the actual NVIDIA default).
+- Fixed DXVK combo "Off" not refreshing the detail panel after Lilium HDR DXVK uninstall — API badge and DXVK combo disappeared until manual Refresh.
 
 ### Manifest Updates
 

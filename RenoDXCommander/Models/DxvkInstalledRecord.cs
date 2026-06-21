@@ -33,6 +33,13 @@ public class DxvkInstalledRecord
     /// </summary>
     public bool IsProxyMode { get; set; }
 
+    /// <summary>
+    /// True when Lilium HDR DXVK is installed as d3d9.dll directly (NOT proxy mode).
+    /// Uses Vulkan layer ReShade instead of local d3d9.dll hook.
+    /// On uninstall, must restore ReShade as d3d9.dll and remove Vulkan footprint.
+    /// </summary>
+    public bool IsLiliumHdrMode { get; set; }
+
     /// <summary>Timestamp of installation.</summary>
     public DateTime InstalledAt { get; set; }
 }

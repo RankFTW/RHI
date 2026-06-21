@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 using RenoDXCommander.ViewModels;
 
@@ -87,7 +88,120 @@ public partial class DxvkService
             // ReShade stays as d3d9.dll (DX proxy), DXVK is deployed as
             // dxgi_dxvk.dll, and ReShade's [PROXY] section chains to it.
             // No Vulkan layer needed.
+            // EXCEPTION: Lilium HDR deploys DXVK as d3d9.dll directly and uses
+            // Vulkan layer ReShade for HDR shader support (SM5).
             bool useProxyMode = IsProxyModeApi(card.GraphicsApi);
+
+            if (useProxyMode && _selectedVariant == DxvkVariant.LiliumHdr)
+            {
+                // ── Lilium HDR on DX9: DXVK as d3d9.dll + Vulkan layer ReShade ──
+                progress?.Report(("Deploying Lilium HDR DXVK...", 35));
+
+                var srcDll = Path.Combine(StagingDir, archFolder, "d3d9.dll");
+                if (!File.Exists(srcDll))
+                {
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR: staged d3d9.dll not found at '{srcDll}'");
+                    progress?.Report(("DXVK d3d9.dll not found in staging", 0));
+                    return;
+                }
+
+                // Step 1: Remove existing DXVK proxy if present
+                var existingProxy = Path.Combine(card.InstallPath, ProxyDxvkDllName);
+                if (File.Exists(existingProxy))
+                {
+                    File.Delete(existingProxy);
+                    CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: removed existing dxgi_dxvk.dll proxy");
+                }
+                RemoveProxySectionFromReShadeIni(card.InstallPath);
+
+                // Step 2: Remove local ReShade d3d9.dll (will be replaced by DXVK)
+                var localReshade = Path.Combine(card.InstallPath, "d3d9.dll");
+                if (File.Exists(localReshade))
+                {
+                    // Back up ReShade DLL so we can restore on uninstall
+                    var backupPath = localReshade + ".reshade_backup";
+                    try { File.Copy(localReshade, backupPath, overwrite: true); } catch { }
+                    File.Delete(localReshade);
+                    CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: removed local ReShade d3d9.dll (backed up)");
+                }
+
+                // Step 3: Deploy Lilium DXVK as d3d9.dll
+                progress?.Report(("Deploying DXVK as d3d9.dll...", 50));
+                CopyFileWithLockHandling(srcDll, localReshade, "d3d9.dll", card.GameName);
+                CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: deployed DXVK as d3d9.dll");
+
+                // Step 4: Deploy dxvk.conf with HDR settings
+                progress?.Report(("Configuring dxvk.conf...", 60));
+                var liliumConfPath = Path.Combine(card.InstallPath, "dxvk.conf");
+                bool liliumDeployedConf = false;
+                try
+                {
+                    File.WriteAllText(liliumConfPath, DefaultDxvkConfContent + LiliumHdrConfContent_D3d9);
+                    liliumDeployedConf = true;
+                    CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: deployed dxvk.conf with HDR settings");
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR: dxvk.conf deploy failed — {ex.Message}");
+                }
+
+                // Step 5: Deploy Vulkan reshade.ini (no [PROXY] section)
+                progress?.Report(("Configuring Vulkan ReShade...", 70));
+                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName);
+                VulkanFootprintService.Create(card.InstallPath);
+                CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: deployed Vulkan reshade.ini + footprint");
+
+                // Step 5b: Set NVIDIA profile settings for HDR DXVK present mode
+                progress?.Report(("Setting NVIDIA profile...", 78));
+                try
+                {
+                    var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
+                    // "Present Method - (Vulkan/OpenGL)" = Prefer layered on DXGI Swapchain
+                    presetSvc.SetLiliumPresentMethod(card.GameName, card.InstallPath);
+                    CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: set NVIDIA present method settings");
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR: NVIDIA profile settings failed — {ex.Message}");
+                }
+
+                // Step 6: Save tracking record
+                progress?.Report(("Saving install record...", 85));
+                var liliumRecord = new DxvkInstalledRecord
+                {
+                    GameName = card.GameName,
+                    InstallPath = card.InstallPath,
+                    DxvkVersion = FormatVersionForDisplay(StagedVersion),
+                    InstalledDlls = new List<string> { "d3d9.dll" },
+                    PluginFolderDlls = new List<string>(),
+                    BackedUpFiles = new List<string>(),
+                    DeployedConf = liliumDeployedConf,
+                    InOptiScalerPlugins = false,
+                    IsProxyMode = false, // NOT proxy mode — DXVK IS d3d9.dll
+                    IsLiliumHdrMode = true,
+                    InstalledAt = DateTime.UtcNow,
+                };
+                SaveRecord(liliumRecord);
+
+                card.DxvkInstalledVersion = liliumRecord.DxvkVersion;
+                card.DxvkStatus = GameStatus.Installed;
+                card.DxvkRecord = liliumRecord;
+                card.VulkanRenderingPath = "Vulkan"; // Game now uses Vulkan layer ReShade
+                // Switch Graphics API override to Vulkan so RS detection reads the Vulkan layer
+                card.GraphicsApi = GraphicsApiType.Vulkan;
+                HasUpdate = false;
+
+                // Update RS status to reflect Vulkan layer
+                var vulkanVersion = AuxInstallService.ReadInstalledVersion(
+                    VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+                card.RsInstalledVersion = vulkanVersion;
+                card.RsStatus = GameStatus.Installed;
+                card.NotifyAll();
+
+                progress?.Report(("Lilium HDR DXVK installed!", 100));
+                CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR install complete for {card.GameName}");
+                return;
+            }
 
             if (useProxyMode)
             {
@@ -394,7 +508,59 @@ public partial class DxvkService
             }
 
             // ── 5. Coordinate ReShade mode switching ─────────────────────
-            if (record.IsProxyMode)
+            if (record.IsLiliumHdrMode)
+            {
+                // Lilium HDR mode: DXVK was d3d9.dll, ReShade was on Vulkan layer.
+                // Restore ReShade as local d3d9.dll and remove Vulkan footprint.
+                var reshadeBackup = Path.Combine(gameDir, "d3d9.dll.reshade_backup");
+                var d3d9Path = Path.Combine(gameDir, "d3d9.dll");
+                if (File.Exists(reshadeBackup) && !File.Exists(d3d9Path))
+                {
+                    File.Move(reshadeBackup, d3d9Path);
+                    CrashReporter.Log("[DxvkService.Uninstall] Lilium HDR: restored ReShade d3d9.dll from backup");
+                }
+                else if (!File.Exists(d3d9Path))
+                {
+                    // No backup — reinstall ReShade from staging
+                    var stagedRs = card.Is32Bit ? AuxInstallService.RsStagedPath32 : AuxInstallService.RsStagedPath64;
+                    if (File.Exists(stagedRs))
+                    {
+                        File.Copy(stagedRs, d3d9Path);
+                        CrashReporter.Log("[DxvkService.Uninstall] Lilium HDR: reinstalled ReShade d3d9.dll from staging");
+                    }
+                }
+                // Clean up backup file if d3d9.dll was restored
+                if (File.Exists(reshadeBackup) && File.Exists(d3d9Path))
+                {
+                    try { File.Delete(reshadeBackup); } catch { }
+                }
+                // Remove Vulkan footprint
+                VulkanFootprintService.Delete(gameDir);
+                // Delete the Vulkan reshade.ini and create a fresh standard DX one
+                var iniPath = Path.Combine(gameDir, "reshade.ini");
+                if (File.Exists(iniPath)) try { File.Delete(iniPath); } catch { }
+                AuxInstallService.MergeRsIni(gameDir, gameName: card.GameName);
+                // Reset card to non-Vulkan — re-apply API from detection/override
+                card.VulkanRenderingPath = "DirectX";
+                // Re-resolve GraphicsApi: check for manifest API override, fall back to DX9 for proxy-mode eligible games
+                var resolvedApi = GraphicsApiType.DirectX9; // Safe default for games that had Lilium HDR (DX8/DX9 only)
+                card.GraphicsApi = resolvedApi;
+                // Update RS version to reflect the restored local DLL
+                var rsFilename = card.Is32Bit ? "d3d9.dll" : "d3d9.dll"; // DX9 games always use d3d9.dll
+                var restoredRsVersion = AuxInstallService.ReadInstalledVersion(gameDir, rsFilename);
+                if (restoredRsVersion != null)
+                    card.RsInstalledVersion = restoredRsVersion;
+                // Clear NVIDIA profile present method settings
+                try
+                {
+                    var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
+                    presetSvc.ClearLiliumPresentMethod(card.GameName, card.InstallPath);
+                }
+                catch { }
+                card.NotifyAll();
+                CrashReporter.Log("[DxvkService.Uninstall] Lilium HDR: switched back to local ReShade + standard reshade.ini");
+            }
+            else if (record.IsProxyMode)
             {
                 // Proxy mode: remove [PROXY] section from reshade.ini
                 RemoveProxySectionFromReShadeIni(gameDir);

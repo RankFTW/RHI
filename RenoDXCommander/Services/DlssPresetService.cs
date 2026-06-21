@@ -438,6 +438,30 @@ public class DlssPresetService
     public bool SetMfgDynamicTargetFps(string gameName, string installPath, uint value)
         => SetPreset(gameName, installPath, MFG_DYNAMIC_TARGET_FPS_ID, value);
 
+    // ── Lilium HDR DXVK Present Method ────────────────────────────────────────
+
+    private const uint VULKAN_OGL_PRESENT_METHOD_ID = 0x20D690F8; // Present Method (Vulkan/OpenGL)
+    private const uint OGL_DX_PRESENT_METHOD_ID = 0x20324987;     // Present Method (OpenGL/DX) — includes DXVK promotion flags
+
+    /// <summary>
+    /// Sets the NVIDIA profile settings required for Lilium HDR DXVK to output HDR correctly.
+    /// Sets Vulkan present method to "layered on DXGI Swapchain" and enables DXVK promotion.
+    /// </summary>
+    public void SetLiliumPresentMethod(string gameName, string installPath)
+    {
+        SetPreset(gameName, installPath, VULKAN_OGL_PRESENT_METHOD_ID, 0x00000001); // Prefer layered on DXGI Swapchain
+        SetPreset(gameName, installPath, OGL_DX_PRESENT_METHOD_ID, 0x00080004);     // Allow DXVK Promotion (DXGI/DirectFlip)
+    }
+
+    /// <summary>
+    /// Clears the Lilium HDR present method settings (restores to Auto / default).
+    /// </summary>
+    public void ClearLiliumPresentMethod(string gameName, string installPath)
+    {
+        SetPreset(gameName, installPath, VULKAN_OGL_PRESENT_METHOD_ID, 0x00000002); // Auto (default)
+        SetPreset(gameName, installPath, OGL_DX_PRESENT_METHOD_ID, 0x00000000);     // Default (no flags)
+    }
+
     // ── Restore Profile Defaults ──────────────────────────────────────────────
 
     /// <summary>

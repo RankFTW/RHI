@@ -225,6 +225,16 @@ public partial class MainViewModel
         {
             UninstallDxvk(card);
 
+            // Re-resolve Graphics API from manifest/user overrides after uninstall.
+            // The DxvkService sets a hardcoded DX9 default for Lilium HDR uninstall,
+            // but the proper value may differ based on manifest overrides.
+            if (!string.IsNullOrEmpty(card.InstallPath))
+            {
+                card.DetectedApis = _DetectAllApisForCard(card.InstallPath, card.GameName);
+                card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
+                card.GraphicsApi = DetectGraphicsApi(card.InstallPath, EngineType.Unknown, card.GameName);
+            }
+
             // Deploy shaders after ReShade is restored as DX proxy.
             // The DxvkService reinstalls ReShade but can't resolve shader packs,
             // so we deploy them here where we have access to the shader resolver.

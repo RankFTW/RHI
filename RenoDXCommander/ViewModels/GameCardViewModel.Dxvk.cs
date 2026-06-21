@@ -53,7 +53,8 @@ public partial class GameCardViewModel
         (GraphicsApi is GraphicsApiType.DirectX8
                      or GraphicsApiType.DirectX9
                      or GraphicsApiType.DirectX10)
-        && !HasHigherApiDetected;
+        && !HasHigherApiDetected
+        || DxvkRecord?.IsLiliumHdrMode == true; // Keep visible when Lilium HDR is active (API switched to Vulkan)
 
     /// <summary>
     /// DXVK toggle is enabled when visible AND not blacklisted AND the API is not
