@@ -457,6 +457,7 @@
     "Anno 117 - Pax Romana": "DX12",
     "Zero Parades": "DX12",
     "Kingdoms of Amalur: Reckoning™": "DX9",
+    "Reckoning": "DX9",
     "Assassin's Creed": "DX10",
     "Assassin's Creed Origins": "DX11",
     "Assassin's Creed® Origins": "DX11",
@@ -852,7 +853,8 @@
     "Tunguska: The Visitation - Final Cut": "https://www.nexusmods.com/games/tunguskathevisitation",
     "X4: Timelines": "https://www.nexusmods.com/games/x4foundations",
     "Tomb Raider": "https://www.nexusmods.com/games/tombraider2013",
-    "Kingdoms of Amalur: Reckoning™": "https://www.nexusmods.com/games/kingdomsofamalurreckoning"
+    "Kingdoms of Amalur: Reckoning™": "https://www.nexusmods.com/games/kingdomsofamalurreckoning",
+    "Reckoning": "https://www.nexusmods.com/games/kingdomsofamalurreckoning"
   },
 
   "pcgwUrlOverrides": {
@@ -860,6 +862,7 @@
     "Alan Wake 2": "https://www.pcgamingwiki.com/wiki/Alan_Wake_2",
     "Batman™: Arkham Knight": "https://www.pcgamingwiki.com/wiki/Batman:_Arkham_Knight",
     "Kingdoms of Amalur: Reckoning™": "https://www.pcgamingwiki.com/wiki/Kingdoms_of_Amalur:_Reckoning",
+    "Reckoning": "https://www.pcgamingwiki.com/wiki/Kingdoms_of_Amalur:_Reckoning",
     "Far Cry® 2: Fortune's Edition": "https://www.pcgamingwiki.com/wiki/Far_Cry_2",
     "Far Cry 2 Fortune's Edition": "https://www.pcgamingwiki.com/wiki/Far_Cry_2",
     "Fortnite": "https://www.pcgamingwiki.com/wiki/Fortnite",
