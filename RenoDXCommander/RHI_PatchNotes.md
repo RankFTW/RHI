@@ -50,6 +50,7 @@
 - DLSS/RR/FG preset and version dropdowns now show "Driver Override Active" when NVIDIA App is controlling that setting (presets via "Use recommended", DLLs via "Latest DLL"). Quick Apply respects these overrides.
 - Fixed Power Mode showing "Adaptive" after profile restore instead of "Optimal Performance" (the actual NVIDIA default).
 - Fixed DXVK combo "Off" not refreshing the detail panel after Lilium HDR DXVK uninstall — API badge and DXVK combo disappeared until manual Refresh.
+- NVIDIA profile lookup is now cached per-game — eliminates ~1s UI freeze when selecting games without an existing NVIDIA profile (10+ redundant recursive exe scans reduced to 1).
 
 ### Manifest Updates
 

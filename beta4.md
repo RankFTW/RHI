@@ -11,6 +11,7 @@
 ## Fixes
 
 - Fixed DXVK combo "Off" not refreshing the detail panel correctly after Lilium HDR DXVK uninstall — API badge and DXVK combo disappeared until manual Refresh. Now re-resolves Graphics API from manifest/user overrides and updates RS version after uninstall.
+- **FindProfile lookup cache** — NVIDIA profile matching results are now cached per-game for the session. Previously, every setting read (presets, render scales, ReBAR, driver overrides) triggered a fresh profile search including recursive exe scanning (~110ms per call × 10+ calls per game selection = ~1s freeze on unmatched games). Now the expensive lookup runs once per game.
 - Removed "CPU Scheduling" dropdown from the driver settings row — the setting (`0x105E2A1D`) is actually "Freestyle Modes" (game filter support), not CPU thread scheduling. Misleading control removed.
 - Fixed ReBAR Size Limit not reading/writing correctly (binary/QWORD setting). Now reads via `profile.GetSetting()` and writes via PowerShell helper.
 - Fixed ReBAR Feature not enabling/disabling on the global base profile — now uses PowerShell helper (same elevation requirement as per-game). Delete-based disable instead of writing 0.

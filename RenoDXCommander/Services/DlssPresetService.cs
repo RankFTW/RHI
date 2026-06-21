@@ -227,6 +227,16 @@ public class DlssPresetService
     private bool _isSupported;
 
     /// <summary>
+    /// Per-game profile lookup cache. Avoids repeated expensive FindProfile calls
+    /// (recursive exe scanning, profile iteration) for the same game within a session.
+    /// Key = gameName, Value = matched profile (or null sentinel via _profileCacheMisses).
+    /// </summary>
+    private readonly Dictionary<string, DriverSettingsProfile?> _profileLookupCache = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Invalidates the per-game profile lookup cache. Call after session reload.</summary>
+    private void InvalidateProfileLookupCache() => _profileLookupCache.Clear();
+
+    /// <summary>
     /// Generic exe names excluded from profile matching — these appear in many games
     /// and cause false matches against unrelated NVIDIA profiles.
     /// </summary>
@@ -240,6 +250,7 @@ public class DlssPresetService
         "dxsetup.exe", "DXSETUP.exe",
         "vcredist_x64.exe", "vcredist_x86.exe",
         "UE4PrereqSetup_x64.exe",
+        "crashpad_handler.exe",
     };
 
     private HashSet<string> _excludedProfileExeNames = _defaultExcludedExeNames;
@@ -300,6 +311,7 @@ public class DlssPresetService
             {
                 _cachedProfiles.TryAdd(profile.Name, profile);
             }
+            InvalidateProfileLookupCache();
             _isSupported = true;
 
             CrashReporter.Log($"[DlssPresetService.Initialize] NVAPI initialized, {_cachedProfiles.Count} profiles cached");
@@ -597,6 +609,7 @@ public class DlssPresetService
             _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in _session.Profiles)
                 _cachedProfiles.TryAdd(p.Name, p);
+            InvalidateProfileLookupCache();
         }
         catch (Exception reloadEx)
         {
@@ -835,6 +848,7 @@ if ($null -ne $profile) {{
             _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in _session.Profiles)
                 _cachedProfiles.TryAdd(p.Name, p);
+            InvalidateProfileLookupCache();
 
             CrashReporter.Log($"[DlssPresetService.SetReBarElevated] Elevated process completed for '{gameName}'");
             return true;
@@ -918,6 +932,7 @@ if ($null -ne $profile) {{
             _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in _session.Profiles)
                 _cachedProfiles.TryAdd(p.Name, p);
+            InvalidateProfileLookupCache();
 
             CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Done for '{gameName}'");
             return true;
@@ -1313,6 +1328,7 @@ $destroyDel.Invoke($hSession) | Out-Null
             _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in _session.Profiles)
                 _cachedProfiles.TryAdd(p.Name, p);
+            InvalidateProfileLookupCache();
 
             CrashReporter.Log($"[DlssPresetService.SetLowLatencyElevated] Elevated process completed for '{gameName}'");
             return true;
@@ -1624,6 +1640,7 @@ $session.Save()
                 _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
                 foreach (var p in _session.Profiles)
                     _cachedProfiles.TryAdd(p.Name, p);
+                InvalidateProfileLookupCache();
             }
             catch { }
 
@@ -1693,6 +1710,7 @@ $session.Save()
                 _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
                 foreach (var p in _session.Profiles)
                     _cachedProfiles.TryAdd(p.Name, p);
+                InvalidateProfileLookupCache();
             }
             catch { }
 
@@ -2080,6 +2098,22 @@ $session.Save()
     {
         if (_cachedProfiles == null) return null;
 
+        // Check the per-game lookup cache first (avoids repeated expensive scanning)
+        if (_profileLookupCache.TryGetValue(gameName, out var cached))
+            return cached;
+
+        var result = FindProfileUncached(gameName, installPath);
+        _profileLookupCache[gameName] = result;
+        return result;
+    }
+
+    /// <summary>
+    /// The actual profile matching logic — called once per game, result is cached.
+    /// </summary>
+    private DriverSettingsProfile? FindProfileUncached(string gameName, string installPath)
+    {
+        if (_cachedProfiles == null) return null;
+
         // Try exact title match first
         if (_cachedProfiles.TryGetValue(gameName, out var exactProfile))
             return exactProfile;
@@ -2232,6 +2266,7 @@ $session.Save()
 
             // Cache the new profile
             _cachedProfiles.TryAdd(gameName, profile);
+            _profileLookupCache[gameName] = profile; // Update lookup cache too
 
             CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Created profile '{gameName}' with app '{gameExe}'");
             ProfilesCreatedCount++;
