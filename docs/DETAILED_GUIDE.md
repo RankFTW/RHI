@@ -19,6 +19,12 @@ This document covers every feature in RHI. For a quick overview, see the [README
 - [Ryubing Emulator Support](#ryubing-emulator-support)
 - [Frame Rate Limiters](#frame-rate-limiters)
 - [DLSS & Streamline Manager](#dlss--streamline-manager)
+- [DLSS & Streamline Defaults](#dlss--streamline-defaults)
+- [Nvidia Profile Overrides](#nvidia-profile-overrides)
+- [Multi Frame Generation](#multi-frame-generation)
+- [Global Nvidia Settings](#global-nvidia-settings)
+- [Admin Mode](#admin-mode)
+- [Profile Export and Import](#profile-export-and-import)
 - [OptiScaler](#optiscaler)
 - [Shader Packs](#shader-packs)
 - [ReShade Addon Management](#reshade-addon-management)
@@ -30,12 +36,12 @@ This document covers every feature in RHI. For a quick overview, see the [README
 - [Vulkan ReShade Support](#vulkan-reshade-support)
 - [DXVK](#dxvk)
 - [Foreign DLL Protection](#foreign-dll-protection)
-- [UE-Extended and Native HDR](#ue-extended-and-native-hdr)
 - [Drag-and-Drop](#drag-and-drop)
 - [Addon Auto-Detection](#addon-auto-detection)
 - [Update All](#update-all)
 - [Auto-Update](#auto-update)
 - [Remote Manifest](#remote-manifest)
+- [Message of the Day](#message-of-the-day)
 - [Performance](#performance)
 - [Data Storage](#data-storage)
 - [Troubleshooting](#troubleshooting)
@@ -45,35 +51,46 @@ This document covers every feature in RHI. For a quick overview, see the [README
 
 ## Layout and Views
 
-RHI has three view modes, a Settings page, and an About page. Your chosen view, window size, and window position are all remembered across restarts.
+RHI has three view modes, a Settings page, and an About page. Your chosen view, window size, and window position are remembered across restarts. Fresh installs default to Simple View.
 
 ### Detail View
 
-The default layout. A game list sidebar sits on the left, and a detail panel fills the right side. Selecting a game shows its full info card, component install buttons, and overrides panel.
+A game list sidebar on the left, and a multi-section detail panel on the right. Selecting a game shows four sections:
+
+1. **Components** — game info badges, install/update/uninstall buttons for each component
+2. **Game Overrides** — per-game settings (DLL naming, shaders, addons, DXVK, RS channel, bitness, API)
+3. **Nvidia Profile Overrides** — DLSS/Streamline management and driver profile settings (VSync, Latency, Smooth Motion, Power, ReBAR)
+4. **Management** — change install folder, reset overrides, copy diagnostic report
 
 ### Grid View
 
-A card-based layout showing all games as a grid. Each card displays the game name, platform icon, graphics API badge, status dots for installed components (RenoDX, ReShade, ReLimiter, Display Commander, OptiScaler), wiki status, and an update-available highlight. Click a card to open a management popout with install/uninstall controls and overrides — the same options available in Detail View.
+A card-based layout showing all games as a grid of tiles. Each card shows the game name, platform icon, API badge, installed component dots, wiki status, and update highlights. Click a card to open a management popout with the same install/uninstall controls and overrides available in Detail View.
 
-### Compact View
+### Simple View
 
-A paged layout that shows the same content as Detail View, split across three navigable pages: Game Card, Overrides, and Management. Use the arrow buttons on the sides to cycle between pages. The window locks to a fixed size in Compact View and restores your previous size when you switch back.
+A paged layout showing the same content as Detail View, split across three navigable pages:
+
+- **Page 1** — Components (game info, install buttons)
+- **Page 2** — Game Overrides
+- **Page 3** — Nvidia Profile Overrides + Management
+
+Use the arrow buttons on the sides to cycle between pages. The window locks to a fixed compact size in Simple View and restores your previous size when you switch back.
 
 ### Toolbar
 
 | Button | What it does |
 |--------|-------------|
-| Refresh | Re-scans your game library and fetches the latest mod info. After the first boot, this runs in the background without blanking the UI. |
+| Refresh | Re-scans your game library and fetches the latest mod info from all sources. |
 | Shaders/Addons | Dropdown: Global Shaders (choose shader packs) and ReShade Addons (manage addon toggles). |
 | Update All | Updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, and RE Framework across all eligible games. Lights up purple when updates are available. |
 | Links | Dropdown with quick links: RenoDX Wiki, Luma Wiki, RHI GitHub, ReLimiter GitHub, Display Commander GitHub. |
 | Help | Dropdown: Discord support channel, this guide, Ko-fi, and About page. |
-| Views | Dropdown: Compact, Detail, and Grid view. |
+| Views | Dropdown: Simple, Detail, and Grid view. |
 | Settings | Opens the Settings page. |
 
 ### Sidebar (Detail View)
 
-- **Search box** — filters games in real time as you type. Matches across game name, store, engine, graphics API, bitness, mod name, mod author, and more. You can also type "UW Fix" or "Ultra+" to filter to games with those links.
+- **Search box** — filters games in real time. Matches across game name, store, engine, graphics API, bitness, mod name, mod author, and more. Type "UW Fix" or "Ultra+" to filter to games with those links.
 - **Filter chips** — All Games, Favourites, Installed, Unreal, Unity, Other, RenoDX, Luma, Hidden. Your selected filter is saved and restored on reopen.
 - **Custom filter chips** — click the "+" button next to the search bar to save any search query as a named chip. Custom chips use a teal colour scheme. Right-click to delete.
 - **Game/installed counts** — shows how many games are visible and how many have mods installed.
@@ -83,49 +100,48 @@ A paged layout that shows the same content as Detail View, split across three na
 
 When a game is selected, the detail panel shows:
 
-- **Game name** above the info card, with mod author badge(s) on the right. Author badges link to Ko-fi donation pages where available.
-- **Info card** — a bordered section with action buttons (Nexus Mods, PCGW, UW Fix, Ultra+ on the left; Hide, Favourite on the right) and badges for platform, engine, wiki status, graphics API, UE-Extended / Native HDR, and bitness.
-- **Install path** in monospace text.
+- **Header** — game name, Launch button (green ▶), Luma toggle, mod author badge(s) linking to Ko-fi where available.
+- **Info card** — action buttons (Nexus Mods, PCGW, UW Fix, Ultra+ on the left; Hide, Favourite on the right) and badges for platform, engine, wiki status, graphics API, UE-Extended/Native HDR, and bitness.
+- **Install path** — monospace text showing the resolved game directory.
 - **Components section** — install/update/uninstall buttons for each component, with per-addon Info buttons.
-- **Overrides section** — all per-game settings inline.
+- **Game Overrides section** — all per-game settings inline.
+- **Nvidia Profile Overrides section** — DLSS/Streamline row and driver settings row.
 - **Management section** — Change install folder, Reset folder, Reset Overrides, Copy Report.
 
 ### Status Bar
 
 The bottom bar shows the game count and current operation on the left, a single-player warning in the centre, and the app version number with a Patch Notes link on the right.
 
-### Loading
-
-On startup, RHI shows a skeleton loading screen that matches your last-used view mode. On subsequent launches, the game list loads instantly from cache and the skeleton is replaced almost immediately. The full scan runs in the background and merges any changes (new games, updated statuses) into the already-visible list.
-
 ---
 
 ## Settings Page
 
-Click **Settings** in the toolbar. Click **Back to Games** to return. The Settings button is disabled during initial load to prevent navigation issues.
+Click **Settings** in the toolbar. Click **Back to Games** to return.
 
 | Section | What's in it |
 |---------|-------------|
 | Add Game | Manually add a game that wasn't auto-detected. Select the game's exe and name it. |
-| Full Refresh | Clears all caches (API detection, shader, PCGW, etc.) and re-scans everything from disk. Bypasses the 4-hour update check cooldown. |
+| Full Refresh | Clears all caches and re-scans everything from disk. Bypasses the 4-hour update check cooldown. |
 | Screenshot Path | Set a global screenshot save path written to all managed reshade.ini files. Optional per-game subfolder toggle. Browse and Open buttons. |
-| Hotkeys | ReShade UI Hotkey, ReShade Screenshot Key (default: Print Screen), ReLimiter OSD Hotkey, OptiScaler Overlay Hotkey (default: Insert). Each applies to all managed INI files. |
-| Data & Custom Files | Open AppData folder, Custom folder (DLSS/Streamline/ReShade custom DLLs), and Logs folder. |
-| Update Inclusion | Button opens a dialog with per-component toggles for global update checks. Summary line shows current state. |
-| Addon Watch Folder | Configure the folder watched for new addon files (default: Downloads). |
-| OptiScaler Settings | GPU type (NVIDIA / AMD / Intel), DLSS input selector (Yes/No, AMD/Intel only), overlay hotkey, Apply to All Games button. |
-| Shared OSD Presets | Toggle for ReLimiter — when enabled, all games share the same OSD presets from a central file. "Apply to All Games" writes the setting to all deployed relimiter.ini files. |
-| Mass Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with the corresponding component installed. Also includes Mass Preset Install — select presets, choose target games, and optionally install required shader packs. |
-| Batch DLSS & Streamline Deploy | Update DLSS SR, RR, FG, and Streamline across multiple games at once. Select games from a checklist, pick versions from dropdowns, and deploy. Also supports batch DLSS preset selection (SR/RR/FG) and auto-creates NVIDIA driver profiles for games that don't have one. Includes a "Restore" button to revert selected games to their original DLLs and reset presets to default. |
-| DLSS On-Screen Indicator | Enable or disable the DLSS text overlay that NVIDIA shows in the corner of games. Global system setting (affects all games), requires admin privileges. |
-| RE Framework Exclusion | Globally exclude RE Framework from Update All. The per-game version of this toggle appears in the Update Inclusion dialog for RE Engine games. |
-| Build Channels | Choose between Stable and Nightly builds for ReShade, and Development, Stable, or Lilium HDR for DXVK. All variants are downloaded simultaneously — switching is instant. Per-game overrides in the Overrides panel let you mix variants across your library. |
+| Hotkeys | ReShade UI Hotkey (default: Home), Screenshot Key (default: Print Screen), ReLimiter OSD Hotkey, OptiScaler Overlay Hotkey (default: Insert). Apply to All Games button. |
+| Data & Custom Files | Open AppData folder, Custom folder (DLSS/Streamline/ReShade custom DLLs), Logs folder. Admin Mode toggle (Off/On). |
+| Update Inclusion | Per-component toggles for global update checks. Summary line shows current state. |
+| Addon Watch Folder | Configure the watched folder (default: Downloads). |
+| ReShade Build Channel | Stable or Nightly. Affects the global default. Per-game overrides available in the Overrides panel. |
+| OptiScaler Settings | GPU type (NVIDIA/AMD/Intel), DLSS input selector (AMD/Intel only), overlay hotkey, Apply to All Games. |
+| Shared OSD Presets | Toggle for ReLimiter shared presets. Apply to All Games button. |
+| Mass Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with those components installed. Mass Preset Install for deploying presets to multiple games. |
+| DLSS & Streamline Defaults | Configure preferred default versions, presets, and render scales. See [DLSS & Streamline Defaults](#dlss--streamline-defaults). |
+| Batch DLSS & Streamline Deploy | Update DLSS/Streamline versions and presets across multiple games. See [Batch Deploy](#batch-dlss--streamline-deploy). |
+| DLSS On-Screen Indicator | Enable/disable the NVIDIA DLSS text overlay (global system setting, requires admin). |
+| Global Nvidia Settings | Shader Cache Size, Shader Pre-Compile, G-Sync Mode, Preferred Refresh Rate, Global ReBAR (On/Off + Size). See [Global Nvidia Settings](#global-nvidia-settings). |
+| Profile Export/Import | Back up and restore all per-game NVIDIA profile settings. See [Profile Export and Import](#profile-export-and-import). |
 
 ---
 
 ## Game Detection
 
-RHI scans all supported stores on every launch and merges newly installed games into its cached library. Games on a disconnected drive are preserved in the cache until the drive is reconnected. Per-store detection failures are isolated — one store failing won't block others.
+RHI scans all supported stores on every launch and merges newly installed games into its cached library. Games on a disconnected drive are preserved in cache until reconnected. Per-store detection failures are isolated — one store failing won't block others.
 
 ### Supported Stores
 
@@ -134,602 +150,500 @@ RHI scans all supported stores on every launch and merges newly installed games 
 | Steam | Reads `libraryfolders.vdf` and `appmanifest_*.acf` files across all library folders. |
 | GOG | Registry keys under `HKLM\SOFTWARE\GOG.com\Games`. |
 | Epic Games | Manifest `.item` files in `ProgramData\Epic\EpicGamesLauncher\Data\Manifests`. |
-| EA App | `installerdata.xml` manifests, registry keys, default EA Games folders, EA Desktop local config. |
-| Ubisoft Connect | Registry keys under `HKLM\SOFTWARE\Ubisoft\Launcher\Installs`, `settings.yml`, default games folder. |
-| Xbox / Game Pass | Windows `PackageManager` API with `MicrosoftGame.config` detection. Falls back to `.GamingRoot` parsing, registry, and folder scanning. |
-| Battle.net | Uninstall registry entries (Blizzard/Activision publisher), `Battle.net.config` default path, default folder scanning. |
-| Rockstar Games | Uninstall registry entries (Rockstar publisher), launcher `titles.dat` paths, default folder scanning. |
+| EA App | `installerdata.xml` manifests, registry keys, default EA Games folders, EA Desktop config. |
+| Ubisoft Connect | Registry keys under `HKLM\SOFTWARE\Ubisoft\Launcher\Installs`, `settings.yml`, default folder. |
+| Xbox / Game Pass | Windows `PackageManager` API with `MicrosoftGame.config` detection. Falls back to `.GamingRoot`, registry, and folder scanning. |
+| Battle.net | Uninstall registry entries, `Battle.net.config`, default folder scanning. |
+| Rockstar Games | Uninstall registry entries, launcher `titles.dat`, default folder scanning. |
 
 ### Engine Detection
 
-RHI identifies game engines to determine which mods are compatible:
-
 | Engine | How it's detected |
 |--------|------------------|
-| Unreal Engine | Unreal-specific files and folder structures. |
+| Unreal Engine | Unreal-specific files and folder structures. Version detected from CrashReportClient or Build.version when available. |
 | Unreal (Legacy) | Unreal Engine 3 games identified by legacy folder layouts. |
-| Unity | `UnityPlayer.dll`, `Mono` folder, `MonoBleedingEdge` folder, `il2cpp` folder, `GameAssembly.dll`. |
+| Unity | `UnityPlayer.dll`, `Mono`, `MonoBleedingEdge`, `il2cpp`, `GameAssembly.dll`. |
 | RE Engine | `re_chunk_000.pak` in the game directory. |
-| Custom | Engine names from the remote manifest (e.g. "Silk Engine", "Creation Engine", "Frostbite"). Displayed with a dedicated engine icon. |
-
-### 32-bit / 64-bit Detection
-
-RHI reads the PE header of the game executable to determine bitness. The remote manifest can override this with `thirtyTwoBitGames` and `sixtyFourBitGames` lists. A badge shows "32-bit" or "64-bit" on the detail panel.
+| Custom | Engine names from the remote manifest (e.g. "Silk Engine", "Frostbite"). |
 
 ### Adding Games Manually
 
-- **Add Game** (Settings page) — click the button, pick the game's executable, then name it. The install path is set to the exe's parent folder automatically.
-- **Drag and drop** — drag a game's `.exe` onto the RHI window. RHI detects the engine, infers the game root folder, and guesses the name. A confirmation dialog lets you edit the name before adding. The new game is auto-selected in the sidebar.
-
-### Multi-Platform Games
-
-If a game is installed on multiple platforms (e.g. Steam and Xbox), both copies appear in the sidebar with their respective platform icons so you can manage mods for each install independently.
-
-### DLC Collapsing
-
-DLC and expansion packs that share the base game's install folder are automatically collapsed to the base game entry, keeping the sidebar clean.
+- **Add Game** (Settings page) — click the button, pick the game's exe, then name it.
+- **Drag and drop** — drag a game's `.exe` onto the RHI window. Engine and game root are auto-detected.
 
 ### Multi-Game Split
 
-Games that contain multiple titles in one folder (e.g. Mass Effect Legendary Edition) can be split into separate entries via the remote manifest `splitGames` field. Each sub-game gets its own card with independent ReShade, DLSS, and mod management. Split entries inherit the parent's store, AppID, and platform badge.
+Games containing multiple titles in one folder (e.g. Mass Effect Legendary Edition) are split into separate entries via the remote manifest. Each sub-game gets independent mod management.
 
 ---
 
 ## Graphics API Detection
 
-RHI scans game executables using PE header import table analysis to detect which graphics APIs a game uses. Results are cached to disk so subsequent launches skip the scan entirely.
-
-### Detected APIs
+RHI scans game executables using PE header import table analysis. Results are cached to disk.
 
 | API | Badge | What RHI looks for |
 |-----|-------|--------------------|
-| DirectX 8 | DX8 | PE import of `d3d8.dll` |
-| DirectX 9 | DX9 | PE import of `d3d9.dll` |
-| DirectX 10 | DX10 | PE import of `d3d10.dll` / `d3d10_1.dll` |
-| DirectX 11 | DX11 | PE import of `d3d11.dll` |
-| DirectX 12 | DX12 | PE import of `d3d12.dll` |
-| Vulkan | VLK | PE import of `vulkan-1.dll` |
-| OpenGL | OGL | PE import of `opengl32.dll` |
+| DirectX 8 | DX8 | `d3d8.dll` import |
+| DirectX 9 | DX9 | `d3d9.dll` import |
+| DirectX 10 | DX10 | `d3d10.dll` / `d3d10_1.dll` import |
+| DirectX 11/12 | DX11/12 | `d3d11.dll` / `d3d12.dll` import |
+| Vulkan | VLK | `vulkan-1.dll` import |
+| OpenGL | OGL | `opengl32.dll` import |
 
-### Multi-Exe Scanning
+The detected API drives automatic ReShade DLL naming:
+- DX9 → `d3d9.dll`
+- OpenGL → `opengl32.dll`
+- Default → `dxgi.dll`
 
-All `.exe` files in the install directory and common subdirectories (`bin`, `binaries`, `x64`, `win64`, etc.) are scanned. This catches games like Baldur's Gate 3 that have multiple executables.
-
-### Multi-API Display
-
-Dual-API games show both APIs on the card (e.g. `DX11/12 / VLK`). Only valid combinations are displayed — DX11/12 + Vulkan is shown, but DX9 + DX12 is not.
-
-### Automatic ReShade DLL Naming
-
-The detected API drives the ReShade DLL filename:
-
-1. **User DLL override** (per-game overrides) — always wins
-2. **Manifest override** — per-game DLL name from the remote manifest
-3. **API-based** — DX9 → `d3d9.dll`, OpenGL-only → `opengl32.dll`
-4. **Default** — `dxgi.dll`
-
-When a game imports both DX9 and DX11 (e.g. Assassin's Creed Unity), DX11/DX12 takes priority over legacy DX9.
-
-### Manifest API Overrides
-
-The remote manifest supports comma-separated API tags (e.g. `"DX12, VLK"`) for games like Red Dead Redemption 2 that load Vulkan dynamically and can't be detected via PE imports alone.
+Dual-API games show both APIs (e.g. `DX11/12 / VLK`). Per-game API overrides and manifest overrides are available for games where PE detection fails.
 
 ---
 
 ## Components
 
-The detail panel shows a Components section with rows for each mod, separated by labelled dividers:
+The detail panel Components section shows rows for each managed mod:
 
-| Row | Component | Controls |
-|-----|-----------|----------|
-| ReShade | ReShade | Install / Reinstall / Update · Copy INI · Uninstall |
-| RenoDX | RenoDX mod | Install / Reinstall / Update · Info · Uninstall |
-| Luma | Luma Framework | Install / Uninstall (only shown in Luma mode) |
-| — | *"Frame limiters — Choose one"* | |
-| ReLimiter | ReLimiter | Install / Reinstall / Update · Info · Copy INI · Uninstall |
-| Display Commander | Display Commander | Install / Reinstall / Update · Info · Copy INI · Uninstall |
-| — | *"── Optional ──"* | |
-| OptiScaler | OptiScaler | Install / Reinstall / Update · Info · Copy INI · Uninstall |
+| Component | Description |
+|-----------|-------------|
+| RE Framework | Required for RE Engine games. Shown only for those games. |
+| ReShade | Core injection framework. Install/Reinstall/Update, Copy INI, Uninstall. |
+| RenoDX | HDR mod addon. Install/Update, Info, Uninstall. |
+| Luma | Luma Framework. Shown only in Luma mode. |
+| ReLimiter | Frame pacing addon. Install, Info, Copy INI, Uninstall. |
+| Display Commander | Alternative frame limiter. Install, Info, Copy INI, Uninstall. |
+| OptiScaler | Upscaler redirection. Install, Info, Copy INI, Uninstall. |
+| DXVK | DirectX-to-Vulkan. Managed via the DXVK dropdown in Overrides. |
 
 ### Per-Addon Info Buttons
 
-Every component row has an **Info** button that opens a dialog with context about that addon for the selected game. Content follows a three-tier priority:
+Every component has an **Info** button showing game-specific context:
 
-1. **Manifest notes** — game-specific notes from the remote manifest.
-2. **Wiki content** — compatibility data from the relevant wiki (OptiScaler wiki, HDR Gaming Database, RenoDX wiki).
-3. **Generic description** — a general description of what the addon does.
+1. **Manifest notes** — game-specific notes from the remote manifest
+2. **Wiki content** — compatibility data from the relevant wiki
+3. **Generic description** — what the addon does in general
 
-**ReLimiter and Display Commander** Info buttons fetch the project's `CHANGELOG.md` from GitHub and display the patch notes for the installed version plus the two previous versions, rendered as markdown.
-
-Buttons with content are highlighted in **blue**. Buttons with only a generic description use a muted style. An arrow indicator (◄) appears on the install button when the Info button has content available.
+Info buttons are highlighted **blue** when they have content. ReLimiter and Display Commander also show changelogs.
 
 ### Version Display
 
-Each component row shows the installed version number (e.g. `6.7.3`) instead of just "Installed". When an update is available, the text turns purple. After updating, it shows the new version in green.
-
-### Mod Author Badges
-
-Named mods from the RenoDX wiki display the mod author as a bordered badge. Multiple authors each get their own badge. Author badges are clickable links to Ko-fi donation pages where available. Games in Luma mode show the Luma mod author instead. Author display names can be overridden via the remote manifest.
+Each component shows its installed version number. Purple text indicates an available update.
 
 ### Dependency Enforcement
 
-- **ReShade required** — RenoDX, ReLimiter, and Display Commander require ReShade to be installed first. Their install buttons show "⚠ ReShade required" and are greyed out until ReShade is in place.
-- **RE Framework required** — RE Engine games require RE Framework before ReShade can be installed. The ReShade button shows "⚠ RE Framework required" until RE Framework is present.
+- **ReShade required** — RenoDX, ReLimiter, Display Commander require ReShade first
+- **RE Framework required** — RE Engine games need RE Framework before ReShade
 
 ---
 
 ## ReShade
 
-[ReShade](https://reshade.me) is the core injection framework that all other components build on. RHI downloads the latest ReShade build on startup and stages it locally.
+[ReShade](https://reshade.me) is the core injection framework. RHI downloads the latest build on startup and stages it locally.
 
-### Install / Update / Uninstall
+### Build Channels
 
-Click the Install button on the ReShade row. RHI places the ReShade DLL in the game folder using the correct filename (see [Automatic ReShade DLL Naming](#automatic-reshade-dll-naming)). Uninstalling removes the DLL, and if addons were deployed, those are removed too.
+The RS Channel dropdown in per-game overrides offers:
 
-### ReShade Without Addon Support
+| Channel | Description |
+|---------|-------------|
+| Global | Uses the global default (Stable or Nightly from Settings). |
+| Stable | Official reshade.me releases. |
+| Nightly | GitHub Actions nightly builds. |
+| Custom | Your own ReShade DLLs from `%LocalAppData%\RHI\Custom\ReShade\`. |
+| Legacy | Pin to a specific older version (6.0.0+). Opens a version picker. |
+| No Addons | Standard ReShade without addon support. Disables all addon rows. |
 
-The RS Channel dropdown includes a "No Addons" option that switches from addon-enabled ReShade to standard ReShade. When selected:
+Per-game channel overrides let you mix channels across your library. Legacy and Custom exclude games from ReShade update checks automatically.
 
-- All addons (RenoDX, ReLimiter, Display Commander, managed addon packs) are removed from the game folder.
-- Addon rows are dimmed and disabled.
-- The shader and addon mode dropdowns are locked.
+### Vulkan Games
 
-Select any other RS Channel option to restore addon ReShade and re-deploy addons. The setting persists per-game across restarts.
-
-### ReShade Detection Under Non-Standard Filenames
-
-If ReShade was installed using a non-standard DLL name (e.g. `d3d11.dll`, `dinput8.dll`, `version.dll`), RHI detects it via binary signature scanning. The scan matches on `reshade.me` or `crosire` strings unique to the actual ReShade binary, and rejects files over 15 MB.
-
-### Legacy ReShade Versions
-
-Pin any game to a specific older ReShade version from the RS Channel dropdown in the Overrides panel. Select "Legacy..." to open a version picker dialog listing all available legacy versions (6.0.0 onwards).
-
-- **Available versions** are managed server-side via the manifest (`legacyReShadeAvailable`) — no app update needed when new versions release.
-- **On-demand download** — legacy versions are downloaded and cached the first time they're selected. Subsequent uses of the same version are instant.
-- **Staging** — each version is cached in `%LocalAppData%\RHI\LegacyReshade\{version}\`.
-- **Update exclusion** — games on a legacy version are automatically excluded from ReShade update checks.
-- **Manifest-forced versions** — the manifest can force specific games to a legacy version (e.g. Max Payne 3 → 6.4.1). Users can override this to Global/Stable/Nightly if desired.
-- **Addon warning** — a warning is shown when selecting legacy versions, as older ReShade versions may not support newer addon formats.
-
-### Custom ReShade
-
-The RS Channel dropdown includes a "Custom" option for deploying your own ReShade builds (e.g. RenoVK or modified versions).
-
-- **Custom folder** — place `ReShade64.dll` and/or `ReShade32.dll` in `%LocalAppData%\RHI\Custom\ReShade\`.
-- **Version display** — the version is read from the DLL's file metadata.
-- **Update exclusion** — games on Custom are automatically excluded from ReShade update checks.
-- **Vulkan support** — Custom ReShade is deployed to the global Vulkan layer when selected for a Vulkan game (with UAC elevation).
-- **Missing DLL warning** — if no custom DLL exists when selected, a warning dialog shows the folder path and reverts the selection.
+Vulkan games use a global implicit layer instead of a per-game DLL. See [Vulkan ReShade Support](#vulkan-reshade-support).
 
 ### Copy INI
 
-The Copy INI button (📋) on the ReShade row copies `reshade.ini` from the AppData INI folder to the game directory. If the game already has a `reshade.ini`, existing game-specific settings (addon configs, effect toggles, custom keybinds) are preserved — only template keys are overwritten.
+Copies `reshade.ini` from the template folder to the game directory, preserving existing game-specific settings.
+
+### Foreign DLL Detection
+
+Before installing, RHI checks if an existing file belongs to another tool (DXVK, Special K, ENB) via binary signature scanning. A confirmation dialog appears before overwriting.
 
 ---
 
 ## RenoDX
 
-[RenoDX](https://github.com/clshortfuse/renodx) is an HDR mod framework that runs as a ReShade addon. RHI downloads game-specific RenoDX mods from the RenoDX wiki and installs them as `.addon64` or `.addon32` files.
+[RenoDX](https://github.com/clshortfuse/renodx) is an HDR mod framework running as a ReShade addon.
 
 ### How Mods Are Matched
 
-RHI fetches the RenoDX wiki mods list on startup and matches detected games by name. Games that don't have a named mod on the wiki fall back to generic engine addons (Unreal Engine, Unity, UE-Extended). The remote manifest can override wiki name matching for games with unusual names.
+RHI fetches the RenoDX wiki on startup and matches detected games by name. Games without a named mod fall back to generic engine addons (Unreal Engine, Unity, UE-Extended). The manifest can override name matching.
 
-### HDR Gaming Database Links
+### UE-Extended Toggle
 
-The RenoDX Info button links to the [HDR Gaming Database](https://www.hdrmods.com) when a game has an HDR analysis entry, giving you quick access to detailed HDR breakdowns.
+Unreal Engine games show a toggle to switch between the game's specific named mod and the generic UE-Extended addon. Toggling uninstalls the current addon and switches mode — the user clicks Install to get the new one.
 
 ### External-Only Games
 
-Some games are redirected to external download sources (Discord, Nexus Mods) via the remote manifest `forceExternalOnly` field. These show a badge indicating where to get the mod, and the install button opens the external link.
+Some games are redirected to Nexus Mods or Discord via the manifest. The install button opens the external link.
+
+### HDR Gaming Database
+
+The RenoDX Info button links to [hdrmods.com](https://www.hdrmods.com) entries where available.
 
 ---
 
 ## RE Framework
 
-[RE Framework](https://github.com/praydog/REFramework-nightly) by praydog is required for ReShade injection on RE Engine games (Monster Hunter Wilds, Resident Evil series, Devil May Cry 5, Street Fighter 6, Dragon's Dogma 2, etc.).
+[RE Framework](https://github.com/praydog/REFramework-nightly) is required for ReShade injection on RE Engine games.
 
-### Install / Update / Uninstall
-
-One-click install from the detail panel. Each RE Engine game downloads its own game-specific build. The DLL is cached per game so reinstalls are instant. Version tracking and auto-update checking are included — RE Framework is part of the Update All batch.
-
-### PD-Upscaler REFramework
-
-When OptiScaler is installed on Resident Evil 2, 3, 4, 7, or Village, RHI automatically downloads and installs the pd-upscaler branch of REFramework required for OptiScaler compatibility. The standard REFramework is backed up and restored when OptiScaler is uninstalled. The version display updates to show "PD-Upscaler" while OptiScaler is active.
-
-### RE Framework Exclusion
-
-RE Framework can be excluded from Update All both per-game (via the Update Inclusion dialog) and globally (via the Settings page toggle). The RE Framework checkbox only appears for RE Engine games.
+One-click install with game-specific builds. Version tracking and auto-update included. When OptiScaler is active on supported RE Engine games, the pd-upscaler branch is automatically used instead.
 
 ---
 
 ## Luma Framework
 
-[Luma Framework](https://github.com/Filoppi/Luma-Framework) by Pumbo (Filoppi) is a DX11 modding framework that adds HDR support via the ReShade addon system.
+[Luma Framework](https://github.com/Filoppi/Luma-Framework) is a DX11 HDR modding framework.
 
-### How Luma Mode Works
+### Luma Mode
 
-When a game supports Luma, a toggle appears in the Components header. Enabling Luma mode:
-
-- Hides RenoDX and standard ReShade. Only the Install Luma button is available.
-- Installing Luma deploys the mod zip, `reshade.ini`, and Lilium HDR shaders.
-- Uninstalling or toggling off removes all Luma files.
-- ReLimiter and Display Commander remain available in Luma mode.
-
-Games listed in the remote manifest `lumaDefaultGames` automatically start in Luma mode on first detection.
-
-### Luma Update Detection
-
-Luma mods check for updates automatically. When a newer Luma-Framework build is released, installed Luma games show an update badge. The installed build number is displayed in the component status (e.g. "Build 428"). Luma is included in Update All.
-
-### Luma Notes
-
-Luma-specific notes are sourced from both the Luma wiki and the remote manifest. These appear in the Luma Info button and provide game-specific setup instructions.
-
-### Trusted Downloads
-
-Luma downloads are restricted to trusted GitHub URLs under `https://github.com/Filoppi/` to prevent arbitrary file downloads.
-
-### Drag-and-Drop / File Watcher Install
-
-Drag a Luma mod archive (zip or 7z) from Explorer, Discord, or Nexus onto the RHI window to install it manually. The file watcher also auto-detects Luma archives in your Downloads folder (triggered by "luma" in the filename).
-
-- **Game picker** — always shown, pre-selecting the currently selected game or a fuzzy-matched game based on the filename.
-- **All variants supported** — full packages (with custom ReShade), addon-only mods, and shader-only mods.
-- **ReShade fallback** — if the archive doesn't include `dxgi.dll`, RHI deploys its own cached stable ReShade automatically.
-- **Multi-folder archives** — archives with extra folders (Alternatives, Debug, Optional) are handled automatically. Folders starting with `(` are filtered out. If multiple valid game folders remain, a folder picker dialog is shown.
-- **Post-install** — Luma mode is enabled, shaders are deployed using the same global/per-game selection as normal ReShade installs, and reshade.ini is configured with your screenshot path and hotkeys.
+A toggle in the Components header switches between RenoDX mode and Luma mode. When enabled:
+- RenoDX and standard ReShade rows are hidden
+- The Install Luma button appears
+- ReLimiter and Display Commander remain available
 
 ### Luma + RenoDX Coexistence
 
-Games in the manifest `lumaRenodxCompat` list can have both Luma and RenoDX installed simultaneously. When enabled:
-- The RenoDX row stays visible in Luma mode
-- Toggling Luma ON does not uninstall the RenoDX addon
-- The UE-Extended toggle remains accessible
-- Install/uninstall buttons for RenoDX work independently of Luma state
+Games in the manifest `lumaRenodxCompat` list can run both simultaneously. The RenoDX row stays visible in Luma mode for these games.
 
-This is for Luma mods that only add DLSS/upscaling but not HDR — RenoDX provides the HDR upgrade alongside.
+### Drag-and-Drop Install
+
+Drag a Luma mod archive (zip/7z) onto the window. RHI detects it by the `Luma/d3dcompiler_47*.dll` marker inside. A game picker opens, and the mod is extracted with shader deployment and reshade.ini configuration.
+
+### Luma Updates
+
+Luma mods are checked for updates and included in Update All.
 
 ---
 
 ## UE-Extended Auto-Configuration
 
-When installing UE-Extended (the generic Unreal Engine RenoDX mod), RHI automatically configures two files:
+When installing UE-Extended (generic Unreal Engine RenoDX), two files are configured automatically:
 
-### reshade.ini — [renodx] Section
+### reshade.ini
 
-A `[renodx]` section is inserted with `Set_Path=0` and all `Upgrade_*=0` keys disabled. This tells RenoDX to upgrade the game's native HDR path instead of the SDR path. The section is:
-- Only added when installing/updating UE-Extended (not during ReShade install)
-- Also added when clicking the INI merge button if UE-Extended is already installed
-- Removed when UE-Extended is uninstalled or the toggle is turned OFF
-- Never overwrites existing user-modified values
+A `[renodx]` section with `Set_Path=0` and all `Upgrade_*=0` keys. Tells RenoDX to upgrade the game's native HDR path. Only adds missing keys — never overwrites existing values. Removed on UE-Extended uninstall.
 
-### Engine.ini — HDR Settings
+### Engine.ini
 
-Engine.ini HDR settings (`r.AllowHDR=1`, `r.HDR.EnableHDROutput=1`, etc.) are deployed to the game's `%LocalAppData%` config folder:
-- Project name auto-detected from the folder above `Binaries\` in the install path
-- Checks `%LocalAppData%\{project}\Saved\Config\` for platform subfolders (WinGDK > Windows > WindowsNoEditor)
-- Also checks `Documents\My Games\{gameName}\Saved\Config\` as fallback
-- File set read-only to prevent the engine from overwriting
-- Manifest `engineIniPathOverrides` available for games where auto-detection fails
-- The "Config" button in the detail panel header opens the resolved config folder
+HDR settings (`r.AllowHDR=1`, `r.HDR.EnableHDROutput=1`, etc.) deployed to the game's config folder (`%LocalAppData%\{ProjectName}\Saved\Config\{Platform}\`). File set read-only to prevent the engine from overwriting. The Config button in the detail panel opens the resolved folder.
 
 ---
 
 ## Ryubing Emulator Support
 
-Drag `Ryujinx.exe` into RHI to add Ryubing as a game. It appears as a single card managing all Switch game addons.
+Drag `Ryujinx.exe` into RHI to add Ryubing. It appears as a single card managing Switch game addons.
 
 ### Setup
 
-1. Place RenoVK (custom Vulkan ReShade) as `ReShade64.dll` in `%LocalAppData%\RHI\Custom\ReShade\`
+1. Place RenoVK DLL in `%LocalAppData%\RHI\Custom\ReShade\` as `ReShade64.dll`
 2. Set RS Channel to Custom in Overrides
 3. Install ReShade (Vulkan layer — requires admin)
 4. Click Install RenoDX — downloads all 9 Souperman9 addons
 
-### How It Works
-
-- All 9 addons are deployed to the emulator's folder simultaneously
-- Each addon reads the emulator's log to detect which game is running and self-selects
-- One shared `reshade.ini` for all games
-- No addon swapping needed between games
-
-### Supported Games
-
-Luigi's Mansion 3, Mario Kart 8 Deluxe, Metroid Dread, Monster Hunter Generations Ultimate, Splatoon 2, Splatoon 3, The Legend of Zelda: Breath of the Wild, The Legend of Zelda: Tears of the Kingdom, Xenoblade Chronicles X: Definitive Edition.
-
-### Updates
-
-Each addon is checked individually for updates (Content-Length comparison). If any has a newer version, the card shows purple. Update All re-downloads changed addons.
+All addons are deployed simultaneously. Each reads the emulator log to detect which game is running. No swapping needed between games.
 
 ---
 
 ## Frame Rate Limiters
 
-RHI supports two frame rate limiters: [ReLimiter](https://github.com/RankFTW/ReLimiter) and [Display Commander](https://github.com/pmnoxx/display-commander). They are mutually exclusive per game — only one can be installed at a time. When one is installed, the other's row is visually dimmed with a greyed-out install button.
+Two mutually exclusive frame limiters. Only one can be installed per game.
 
 ### ReLimiter
 
-An optional per-game frame pacing addon downloaded from GitHub.
-
-- **Bitness** — RHI automatically selects `relimiter.addon64` or `relimiter.addon32` based on the game. ReLimiter v3.0.0+ is 64-bit only; 32-bit games show the row with strikethrough.
-- **INI** — a default `relimiter.ini` is seeded to the AppData INI folder on first launch. Installing ReLimiter for the first time on a game auto-copies this INI to the game directory. If the INI already exists, it's left untouched.
-- **OSD Hotkey** — configure the ReLimiter overlay hotkey from the Settings page. Applies to all managed `relimiter.ini` files.
-- **Shared OSD Presets** — when enabled in Settings, all games share the same OSD presets from a central file instead of each game having its own.
-- **Updates** — detected by comparing the cached file against the remote release using file size and SHA-256 hash.
+Frame pacing addon with configurable OSD hotkey and shared presets. 64-bit only (v3.0.0+). Default `relimiter.ini` is seeded on first install.
 
 ### Display Commander
 
-An alternative frame rate limiter, also downloaded from GitHub.
-
-- **Bitness** — supports both 32-bit and 64-bit games.
-- **DLL Naming** — a single "DLL naming overrides" toggle controls both the ReShade and DC filenames together. Each dropdown filters out the other component's current filename to prevent conflicts. Both dropdowns are editable — you can type a custom name and press Enter.
-- **INI** — a default `DisplayCommander.ini` is seeded on first launch. First-time installs auto-copy it to the game folder.
-- **Updates** — checked on startup alongside other components. Included in Update All.
+Alternative limiter supporting both 32-bit and 64-bit. DLL naming overrides toggle controls both ReShade and DC filenames together.
 
 ---
 
 ## DLSS & Streamline Manager
 
-RHI includes a full DLSS and Streamline version manager in the Overrides panel. For any game with DLSS or Streamline DLLs detected, the "DLSS / Streamline" row appears with per-component dropdowns.
+For games with DLSS or Streamline DLLs detected, the DLSS/Streamline section appears in Nvidia Profile Overrides.
 
 ### Version Swapping
 
-- **DLSS SR** (`nvngx_dlss.dll`) — choose any version independently
-- **DLSS RR** (`nvngx_dlssd.dll`) — choose any version independently
-- **DLSS FG** (`nvngx_dlssg.dll`) — choose any version independently
-- **Streamline** (`sl.*.dll`) — all files updated as a set
+| Component | DLL | Notes |
+|-----------|-----|-------|
+| DLSS SR | `nvngx_dlss.dll` | Choose any version independently |
+| DLSS RR | `nvngx_dlssd.dll` | Choose any version independently |
+| DLSS FG | `nvngx_dlssg.dll` | Choose any version independently |
+| Streamline | `sl.*.dll` | All files updated as a set |
 
-Versions are downloaded on-demand from `dlss_manifest.json` (hosted on `RankFTW/RHI`) and cached locally at `%LocalAppData%\RHI\DLSS\{version}\`, `DLSS-D\{version}\`, `DLSS-G\{version}\`, and `Streamline\{version}\`.
+Versions are downloaded on-demand and cached at `%LocalAppData%\RHI\DLSS\{version}\`, `DLSS-D\{version}\`, `DLSS-G\{version}\`, `Streamline\{version}\`.
 
 ### Backups & Restore
 
-The original game DLL is backed up with `.original` extension before swapping. Select "Default" from the dropdown to restore the original. "Restore All" reverts all components and resets presets.
-
-For Streamline, only files already present in the game folder are replaced — RHI never adds files that weren't there originally.
+Original DLLs are backed up with `.original` extension. Select the item marked with `(D)` in the dropdown to restore. "Restore DLSS/SL" button reverts all components and resets presets.
 
 ### DLSS Presets
 
-Set per-game DLSS presets directly from RHI via the NVIDIA Driver Settings API (NVAPI):
+Per-game presets written directly to NVIDIA driver profiles:
 
-| Component | Available Presets |
-|-----------|------------------|
+| Component | Presets |
+|-----------|---------|
 | SR | Default, J, K, L, M |
 | RR | Default, D, E |
 | FG | Default, A, B |
 
-Changes apply instantly to the NVIDIA driver profile. No NVIDIA Profile Inspector needed. Silently no-ops on AMD/Intel systems.
+No NVIDIA Profile Inspector needed. Changes apply instantly. Silently no-ops on AMD/Intel.
+
+### DLSS Render Scale Override
+
+Force a custom render resolution per game (33–100%) for both SR and Ray Reconstruction. Options range from 100% DLAA down to 33% Ultra Performance.
 
 ### Custom Files
 
-Place your own DLLs in the custom folders and select "Custom" from the dropdown:
-- `%LocalAppData%\RHI\DLSS-Custom\nvngx_dlss.dll`
-- `%LocalAppData%\RHI\Streamline-Custom\sl.*.dll`
+Place custom DLLs in `%LocalAppData%\RHI\Custom\DLSS\` and `Custom\Streamline\`. Select "Custom" from the dropdown.
 
-### Smart Detection
+### Driver Override Detection
 
-RHI recursively searches game folders for DLSS and Streamline DLLs regardless of folder structure. Handles:
-- Unreal Engine (`Engine\Plugins\Runtime\Nvidia\...`)
-- CryEngine (`Bin\Win64Shared`)
-- WindowsApps packages
-- Any other layout
+When NVIDIA App has "Latest DLL" or "Use recommended preset" active, RHI detects it and greys out the affected dropdown with a "Driver Override Active" warning.
 
-Correctly distinguishes game DLSS files from OptiScaler's bridging copies (skips folders containing `OptiScaler.ini`).
+### Batch Deploy
 
-Detection results are cached in two tiers:
-1. **Trusted path cache** — after 3 confirmations at the same path, future scans use direct `File.Exists` checks (~1ms vs 1-4s recursive scan)
-2. **Skip cache** — games scanned 3 times with no DLSS found are auto-exempted from future scans
+From Settings: select games via checklist, pick versions for each component, select presets, and deploy to all selected games at once. Auto-creates NVIDIA profiles for games without one. Games with v1.x DLLs are shown disabled.
 
 ---
 
+## DLSS & Streamline Defaults
+
+Configure preferred default versions, presets, and render scales from the Settings page. The "Configure Defaults" button opens a 4-column dialog (SR | RR | FG | SL) with:
+
+- **Version** dropdown per component
+- **Preset** dropdown (SR/RR/FG)
+- **Render Scale** dropdown (SR/RR only)
+
+"Default (don't change)" as the first option means that component is skipped during Quick Apply.
+
+### Quick Apply
+
+A button in the DLSS/Streamline section of the per-game Nvidia Profile Overrides panel. Applies all non-default settings from your configured defaults to the selected game in one click. Downloads versions on-demand. Skips components the game doesn't have and components with driver overrides active.
+
+---
+
+## Nvidia Profile Overrides
+
+The Nvidia Profile Overrides section appears below Game Overrides in the detail panel. It has two rows:
+
+### DLSS / Streamline Row
+
+Horizontal columns for SR, RR, FG, and SL. Each column shows:
+- Version dropdown (managed versions + Custom + Default)
+- Preset dropdown
+- Render Scale dropdown (SR/RR only)
+
+Plus Quick Apply button and Restore DLSS/SL button.
+
+Only visible when the game has DLSS or Streamline files detected.
+
+### Driver Settings Row
+
+Per-game NVIDIA driver profile settings in 4 columns:
+
+| Column | Settings |
+|--------|----------|
+| VSync | VSync Mode, VSync Tear Control, Low Latency (Off/On/Ultra) |
+| Smooth Motion | Enable (Off/On), Allowed APIs, Flip Pacing FS, Flip Pacing Win |
+| Power | Power Mode, Restore Defaults button |
+| ReBAR | Enable (Off/On/Global), Mode (Standard/Optimized), Size Limit |
+
+All settings are written per-game to the NVIDIA driver profile. **Requires admin privileges** — the entire row is greyed out when not running as admin. Enable Admin Mode in Settings for persistent elevation.
+
+---
+
+## Multi Frame Generation
+
+A "Multi Frame Gen" button in the FG column opens a per-game dialog for RTX 50 Series GPUs:
+
+| Setting | Options |
+|---------|---------|
+| FG Mode | Default / Fixed / Dynamic |
+| Frame Count | Fixed: 2x–6x. Dynamic: Up to 2x–6x |
+| Target Frame Rate | Off / Max Refresh Rate / 60–500 FPS (Dynamic only) |
+
+A first-time warning explains the RTX 50 Series requirement (driver 572.16+ for Fixed, 595.97+ for Dynamic). Restore Defaults clears MFG settings.
+
+---
+
+## Global Nvidia Settings
+
+Located in the Settings page, these write to the global/base NVIDIA driver profile (affects all games):
+
+| Setting | Options |
+|---------|---------|
+| Shader Cache Size | Off, 128MB–100GB, Unlimited |
+| Shader Pre-Compile | Disabled, Low, Medium, High |
+| G-Sync Mode | Off, Fullscreen only, Fullscreen / Windowed |
+| Preferred Refresh Rate | Application Setting, Highest Available |
+| Global ReBAR Enable | Off / On (requires admin) |
+| Global ReBAR Size | 512MB, 1GB (default), 1.5GB, 2GB, 4GB, 6GB |
+| DLSS On-Screen Indicator | Enabled / Disabled (registry-based) |
+
+When Global ReBAR is enabled, per-game ReBAR dropdowns show "Global (On/Off)" and "Global (1GB)" as the first option — selecting it inherits from global.
+
+---
+
+## Admin Mode
+
+Task Scheduler-based persistent elevation. Located in Settings → Data & Custom Files.
+
+- **Off** — RHI runs as a normal user. ReBAR, Low Latency (ULL), Smooth Motion, and some driver settings cannot be written.
+- **On** — Creates a scheduled task named "RHI Admin Mode". On subsequent launches, RHI silently relaunches through the task with admin privileges — no UAC prompt each time.
+
+Toggling On triggers a one-time UAC prompt to create the task. Toggling Off deletes it. Drag-and-drop continues to work when elevated (UIPI bypass).
+
+---
+
+## Profile Export and Import
+
+Back up all per-game NVIDIA driver profile settings to a JSON file. Located in the Settings page (Global Nvidia Settings section).
+
+### Export
+
+Scans all games in RHI, finds their matching NVIDIA profiles, and saves all settings to `%LocalAppData%\RHI\nvidia_profiles_backup.json`. Includes global profile settings (Shader Cache, G-Sync, Refresh Rate, ReBAR). Only profiles for games in RHI are exported — not all 7800+ driver profiles.
+
+### Import
+
+Reads the backup file, creates missing profiles, registers exe associations, and applies all saved settings. ReBAR settings are applied via elevated helper to ensure they persist. The session count of imported profiles is reported on completion.
+
+Use case: restore your per-game NVIDIA settings after a driver update wipes custom profiles.
 
 ---
 
 ## OptiScaler
 
-[OptiScaler](https://github.com/optiscaler/OptiScaler) is a 64-bit middleware DLL that intercepts upscaler calls (DLSS, FSR, XeSS) and redirects them to alternative backends. RHI manages the full lifecycle: download, staging, install, uninstall, update detection, INI configuration, ReShade coexistence, DLL naming, and hotkey setup.
+[OptiScaler](https://github.com/optiscaler/OptiScaler) is a 64-bit middleware that redirects upscaler calls between DLSS, FSR, and XeSS.
 
-OptiScaler appears under an "── Optional ──" separator in the detail panel. It's available for all games but only enabled for 64-bit titles. 32-bit games show the row greyed out with strikethrough.
+### Install
 
-### Install / Update / Uninstall
-
-One-click install. On first install, a warning dialog explains OptiScaler's purpose. The install copies:
-
-- `OptiScaler.dll` (renamed to the effective DLL name)
-- `OptiScaler.ini`
-- Companion files (`fakenvapi.dll`, `dlssg_to_fsr3.dll`, FidelityFX SDK DLLs)
-- DLSS DLLs (`nvngx_dlss.dll`, `nvngx_dlssd.dll`, `nvngx_dlssg.dll`)
-- OptiPatcher ASI plugin (AMD/Intel GPUs only, deployed to the `plugins` folder)
-
-Game-owned files are backed up to `.original` before overwriting and restored on uninstall. Only genuine game files are backed up — OptiScaler's own companion files are not.
-
-### DLSS Auto-Download
-
-The latest NVIDIA DLSS Super Resolution, Ray Reconstruction, and Frame Generation DLLs are automatically downloaded and staged on startup from the RHI DLSS manifest (`dlss_manifest.json` hosted on GitHub). Each DLL has independent version tracking. OptiScaler uses the newest cached version automatically.
-
-### OptiPatcher
-
-For AMD/Intel GPU users, OptiPatcher is automatically downloaded and deployed during OptiScaler install. It enables DLSS/DLSSG inputs without GPU spoofing. Version-tracked and cleaned up on OptiScaler uninstall.
+One-click install deploys OptiScaler.dll (renamed to a proxy DLL), companion files, DLSS DLLs, and OptiPatcher (AMD/Intel only). A first-time warning explains its purpose.
 
 ### ReShade Coexistence
 
-When OptiScaler is installed alongside ReShade, RHI automatically renames the ReShade DLL to `ReShade64.dll`. OptiScaler loads ReShade from this filename via `LoadReshade=true`.
-
-- Installing OptiScaler when ReShade is present → ReShade renamed to `ReShade64.dll`
-- Installing ReShade when OptiScaler is present → ReShade deployed as `ReShade64.dll`
-- Uninstalling OptiScaler → ReShade restored to its correct filename
-- While OptiScaler is installed, the ReShade DLL naming override dropdown is disabled
+When both are installed, ReShade is renamed to `ReShade64.dll`. OptiScaler loads it via `LoadReshade=true`. Uninstalling OptiScaler restores the original ReShade filename.
 
 ### DLL Naming
 
-OptiScaler.dll is renamed to a proxy DLL filename when deployed. The name is resolved using:
+OptiScaler.dll is renamed to: user DLL override → manifest override → `winmm.dll` (Vulkan) → `dxgi.dll` (default).
 
-1. **User DLL override** (per-game overrides) — always wins
-2. **Manifest override** — per-game from the remote manifest
-3. **Vulkan auto-detection** — Vulkan games automatically use `winmm.dll`
-4. **Default** — `dxgi.dll`
+### OptiScaler Wiki
 
-Supported names: `dxgi.dll`, `winmm.dll`, `d3d12.dll`, `dbghelp.dll`, `version.dll`, `wininet.dll`, `winhttp.dll`.
+The Info button shows compatibility data from the OptiScaler wiki (Working/Partially Working/Not Working, supported upscalers, notes).
 
-### INI Configuration
+### DLSS Auto-Download
 
-RHI seeds a default `OptiScaler.ini` to the AppData INI folder. `LoadReshade=true` and `LoadAsiPlugins=true` are always enforced. Pre-generated INI templates are bundled for each GPU configuration (NVIDIA, AMD/Intel with DLSS, AMD/Intel without DLSS).
-
-### OptiScaler Settings (Settings Page)
-
-- **GPU type** — NVIDIA, AMD, or Intel. Determines which INI template is used and whether OptiPatcher is deployed.
-- **DLSS input selector** — AMD/Intel only (hidden for NVIDIA). Controls whether DLSS inputs are replaced. Shown as a Yes/No dropdown next to the GPU type selector.
-- **Overlay hotkey** — default: Insert. Written as Windows Virtual Key Code hex values.
-- **Apply to All Games** — writes the current settings to all game folders where OptiScaler is installed.
-
-### OptiScaler Wiki Integration
-
-The OptiScaler Info button shows compatibility data from the OptiScaler wiki:
-
-- Working status (Working, Partially Working, Not Working)
-- Supported upscalers
-- Notes and known issues
-- Direct link to the game's wiki page
-
-Both the standard and FSR4 compatibility lists are included.
-
-### Per-Game Update Exclusion
-
-A toggle in the overrides panel lets you pin a specific OptiScaler version on certain games, excluding them from Update All.
+Latest DLSS SR, RR, and FG DLLs are staged automatically from the RHI DLSS manifest on startup.
 
 ---
 
 ## Shader Packs
 
-RHI downloads and maintains 41 ReShade shader packs, merged into a shared staging folder and deployed per-game.
+RHI maintains 46 ReShade shader packs, deployed per-game from a shared staging folder.
 
 ### Categories
 
-- **Essential** — Lilium HDR Shaders, required for HDR tone mapping. Selected by default on fresh installs.
-- **Recommended** — Core HDR and post-processing packs: crosire reshade-shaders, PumboAutoHDR, smolbbsoop shaders, MaxG2D Simple HDR Shaders, clshortfuse ReShade shaders, and potatoFX.
-- **Extra** — Community packs covering cinematic colour grading, film emulation, VR tools, CRT simulation, retro filters, screen-space reflections, global illumination, artistic effects, and more. Includes packs from SweetFX, OtisFX, Depth3D, qUINT, iMMERSE, METEOR, ZenteonFX, GShade-Shaders, CShade, prod80, CobraFX, and others.
-
-### Shader Cache
-
-The "Shader Cache" toggle on the Settings page controls whether shader packs are bulk-downloaded on startup. When disabled, packs are fetched only when needed — when you select them in the picker, install ReShade, or deploy a preset. The shader selection dialog shows a green ✓ next to each pack that's already cached locally. Existing cached shaders are never deleted by the app.
-
-Shader packs from GitHub Releases (Lilium, PumboAutoHDR) skip the GitHub API call on startup if the files are already cached and extracted.
+- **Essential** — Lilium HDR Shaders (required for HDR tone mapping). Selected by default.
+- **Recommended** — Core packs: crosire reshade-shaders, PumboAutoHDR, smolbbsoop, MaxG2D Simple HDR, clshortfuse shaders, potatoFX.
+- **Extra** — Community packs covering colour grading, film emulation, CRT simulation, VR tools, screen-space effects, and more.
 
 ### Per-Game Shader Overrides
 
-Each game can use a different subset of shader packs:
-
-- **Global** — uses the global shader selection.
-- **Select** — opens a picker to choose specific packs for that game.
-- **Custom** — uses shaders from your custom shader directories.
-
-### Shader Pack Dependencies
-
-Packs can declare dependencies. Selecting Azen in the picker automatically selects smolbbsoop shaders. The dependency is one-way — deselecting the required pack independently is still allowed.
+| Mode | Behaviour |
+|------|-----------|
+| Global | Uses the global shader selection |
+| Select | Opens a picker for game-specific packs |
+| Custom | Uses shaders from your custom directories |
+| Off | No managed shaders deployed |
 
 ### Custom Shaders
 
-Place custom shaders in `%LOCALAPPDATA%\RHI\reshade\Custom\Shaders\` and textures in `%LOCALAPPDATA%\RHI\reshade\Custom\Textures\`. Enable the Custom Shaders toggle in Settings to include them in deployments.
+Place custom shaders in `%LocalAppData%\RHI\reshade\Custom\Shaders\` and textures in `Custom\Textures\`. Enable the Custom Shaders toggle in Settings.
 
-### Deploy Destinations
+### Shader Cache
 
-| Scenario | Where shaders go |
-|----------|-----------------|
-| DLL ReShade | `<game folder>\reshade-shaders\Shaders\` and `\Textures\` |
-| Vulkan ReShade | Same path, requires `RDXC_VULKAN_FOOTPRINT` marker file |
-
-User-owned shader folders are preserved by renaming to `reshade-shaders-original` before deployment and restored when ReShade is uninstalled.
-
-### Startup Deployment
-
-On launch, shaders are automatically synced to all installed game folders in parallel. Games with ReShade installed will have the correct global or per-game shaders deployed automatically.
+Toggle in Settings. When enabled, all packs are pre-downloaded on startup. When disabled, packs fetch on-demand when needed.
 
 ---
 
 ## ReShade Addon Management
 
-RHI includes a curated addon manager for browsing, downloading, and toggling ReShade addons from the official Addons.ini list.
+A curated addon manager for ReShade addons from the official Addons.ini list.
 
-### Addon Manager
+### Global Toggles
 
-Click "ReShade Addons" in the toolbar to open the manager. A one-time warning explains that addons are advanced features. Each addon has a toggle:
-
-- **On** — downloads the addon (if not cached) and enables it globally. Deployed to all games with ReShade installed.
-- **Off** — disables the addon globally. Files stay cached for later use.
-
-### Global Deployment
-
-Enabled addons are automatically deployed when ReShade is installed on a game, removed when ReShade is uninstalled, and synced on every Refresh. The correct bitness variant (`.addon32` or `.addon64`) is selected based on the game.
+Click "ReShade Addons" in the toolbar. Toggle addons On/Off globally. Enabled addons are deployed to all games with ReShade installed.
 
 ### Per-Game Addon Overrides
 
-Each game's override panel has an Addons dropdown:
-
-- **Global** — the game uses the globally enabled addon set.
-- **Select** — opens a per-game addon picker. Choose individual addons for that game only.
-- **Off** — removes all managed addons from the game folder.
+| Mode | Behaviour |
+|------|-----------|
+| Global | Uses the globally enabled set |
+| Select | Per-game addon picker |
+| Off | Removes all managed addons |
 
 ### Special Addons
 
-- **RenoDX DevKit** — always available in the manager alongside official addons, with 32-bit and 64-bit variants.
-- **DLSS Fix** — makes ReShade draw on native game frames instead of frame gen frames, and hides DLSS upscaling from ReShade. 64-bit only. When deployed, RHI automatically configures reshade.ini with the correct `DLSSPath` and `StreamlinePath` for each game (only for games with Streamline detected). These settings are removed when DLSS Fix is uninstalled or addon mode is set to Off.
-
-### Auto-Update
-
-On startup, RHI checks all downloaded addons for updates using GitHub release tags or HTTP ETags. Newer versions are downloaded automatically.
+- **RenoDX DevKit** — development tool for mod authors
+- **DLSS Fix** — makes ReShade draw on native game frames. Auto-configures reshade.ini with DLSS/Streamline paths.
 
 ---
 
 ## Game Launch
 
-Launch games directly from RHI using the green "▶ Launch" button in the detail panel header, or double-click any game in the sidebar.
+Launch games from the green "▶ Launch" button or by double-clicking in the sidebar.
 
-### Launch Priority Chain
+### Priority Chain
 
-RHI resolves the launch method using this priority order:
-
-1. **User exe override** — absolute path set in the Overrides panel.
-2. **Manifest exe override** — relative path from the remote manifest (resolved against InstallPath).
-3. **Steam** — uses `steam.exe -applaunch {appId}` with the full path to `steam.exe` from the registry. Preserves overlay and playtime tracking. Falls back to `steam://rungameid/` URL protocol if the registry path isn't found.
-4. **Epic Games Store** — uses `com.epicgames.launcher://apps/{AppName}?action=launch&silent=true` protocol URL. Skipped when launch arguments are set (protocol doesn't support game args).
-5. **Direct exe** — auto-detects the largest `.exe` in the install path, excluding known non-game names (UnityCrashHandler, CrashReporter, unins000, launcher).
+1. User exe override (Overrides panel)
+2. Manifest exe override
+3. Steam `-applaunch` (with overlay and playtime tracking)
+4. Epic protocol URL (when no launch args set)
+5. Direct exe (largest .exe in install path)
 
 ### Launch Arguments
 
-Set per-game launch arguments from the Overrides panel (next to the launch executable path). Arguments are appended to the game process. For Steam games, arguments are passed via `-applaunch`. Epic protocol launch is skipped when arguments are set (falls through to direct exe).
-
-### Epic Games Store
-
-Epic games launch through the Epic protocol URL, which handles EOS authentication automatically. The `AppName` is read from Epic manifest `.item` files during detection. DRM-free Epic games can also be launched directly via exe.
+Set per-game command-line arguments in the Overrides panel. Steam games pass args via `-applaunch`. Epic protocol is skipped when args are set.
 
 ---
 
 ## Per-Game Overrides
 
-The Overrides section appears below Components in the detail panel. All controls save immediately when changed.
+All controls save immediately when changed.
 
-| Override | What it does |
+| Override | Description |
 |----------|-------------|
-| Game name (editable) | Rename the game. Persists across Refresh and restarts. |
-| Wiki mod name | Match to a different wiki entry (also applies to Luma matching). |
-| Wiki exclusion | Exclude the game from wiki lookups entirely. |
-| DLL naming overrides | A single toggle controls both ReShade and Display Commander filenames. Turning ON enables both dropdowns with safe defaults; turning OFF reverts both. Each dropdown is editable (type a custom name, press Enter). |
-| Update Inclusion | Button opens a dialog with checkboxes for ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, and RE Framework (RE Engine games only). A colour-coded summary line shows the current state. |
-| Shader Mode | Global / Select / Custom. |
-| Addon Mode | Global / Select. |
-| Rendering Path | For dual-API games — switches between DirectX and Vulkan ReShade. |
-| Bitness override | Auto, 32-bit, or 64-bit. Overrides PE header detection. |
-| Graphics API override | Auto, DirectX8, DirectX9, DirectX10, DX11/DX12, Vulkan, OpenGL. |
-| RS Channel override | Global, Stable, Nightly, No Addons, Custom, or Legacy (specific version). Overrides the global ReShade build channel for this game. Vulkan games: applies to all Vulkan games. Legacy pins to a specific older version and excludes from updates. Custom deploys user-provided DLLs from the Custom\ReShade folder. |
-| DXVK mode | Off, Global, Development, Stable, or Lilium HDR. Off disables DXVK. Global uses the global variant setting. Others set a per-game variant override and enable DXVK. |
-| Launch executable | Override the auto-detected game exe for the Launch button. |
-| Launch arguments | Per-game command-line arguments passed to the game on launch. |
-| OptiScaler DLL name | Override the OptiScaler proxy DLL filename. |
-| Select ReShade Preset | Deploy preset files from the presets folder. |
-| Copy Report | Generate a diagnostic code for Discord or GitHub issues. |
-| Change install folder | Pick a different install folder. |
-| Reset folder / Remove game | Reset the install folder or remove a manually added game. |
-| Reset Overrides | Reset all override settings back to defaults. |
+| Game name | Editable — rename persists across restarts |
+| Wiki mod name | Match to a different wiki entry |
+| Wiki exclusion | Exclude from wiki lookups entirely |
+| DLL naming | Toggle enables both ReShade and DC filename overrides |
+| Update Inclusion | Per-component toggles (RS, RDX, UL, DC, OS, REF) |
+| Shader Mode | Global / Select / Custom / Off |
+| Addon Mode | Global / Select / Off |
+| Bitness | Auto / 32-bit / 64-bit |
+| Graphics API | Auto / DX8 / DX9 / DX10 / DX11/12 / Vulkan / OpenGL |
+| RS Channel | Global / Stable / Nightly / Custom / Legacy / No Addons |
+| DXVK | Off / Development / Stable / Lilium HDR |
+| Launch executable | Custom exe path |
+| Launch arguments | Command-line args for the game |
+| Config button | Opens the Engine.ini config folder |
+
+### Reset Overrides
+
+Clears all per-game settings back to defaults (including DXVK, RS channel, shader/addon modes, bitness, API, DLL names, launch settings).
+
+### Bitness Override Auto-Uninstall
+
+Changing the bitness override when components are installed triggers automatic uninstall of all components (ReShade, DC, RenoDX, ReLimiter, OptiScaler, DXVK, RE Framework, Luma) to provide a clean slate for the new bitness.
 
 ---
 
@@ -737,365 +651,204 @@ The Overrides section appears below Components in the detail panel. All controls
 
 ### Preset Folder
 
-Place `.ini` preset files in `%LOCALAPPDATA%\RHI\inis\reshade-presets\`. The "Select ReShade Preset" button in the overrides panel lists all files in this folder with checkboxes. Click "Deploy" to copy selected presets to the game folder.
+Place `.ini` presets in `%LocalAppData%\RHI\inis\reshade-presets\`. The "Select ReShade Preset" button in Overrides lists files with checkboxes. Click Deploy to copy selected presets to the game folder.
 
-### Drag-and-Drop Preset Install
+### Drag-and-Drop
 
-Drag a ReShade preset `.ini` onto the RHI window. RHI validates it as a genuine preset, saves it to the presets folder, lets you pick a target game, and copies it to the game directory. After deploying, RHI offers to automatically install the required shader packs by parsing the `Techniques=` line and matching `.fx` files against known packs.
-
-### Auto-Deploy Preset
-
-Place a `ReShadePreset.ini` in the AppData INI folder and it will be copied to every new game install automatically alongside `reshade.ini`.
+Drag a ReShade preset onto the window. RHI validates it, saves it, deploys to a chosen game, and offers to auto-install required shader packs.
 
 ### Mass Preset Install
 
-From the Settings page, select presets, choose target games via a checkbox picker, and optionally install required shader packs — all in one flow.
+From Settings: select presets, choose target games, and optionally install required shader packs.
 
 ---
 
 ## Nexus Mods and PCGamingWiki Links
 
-Each game can show clickable Nexus Mods and PCGamingWiki (PCGW) buttons in the detail panel info card.
-
 ### Nexus Mods
 
-RHI fetches the public Nexus Mods game catalogue on startup, caches it for 24 hours, and matches games by normalized name. Games that can't be matched automatically can be overridden in the remote manifest.
+RHI fetches the public Nexus game catalogue and matches games by name. Clickable button on the detail panel info card.
+
+### Nexus Update Alerts
+
+Automatic update detection via GraphQL API (no API key). When a Nexus-hosted mod is updated, the card shows purple with "Update RenoDX" that opens the Nexus page.
 
 ### PCGamingWiki
 
-PCGW links are resolved via Steam AppID through a priority chain:
-
-1. Manifest `steamAppIdOverrides`
-2. Cached AppID from previous resolution
-3. Steam AppID parsed from ACF filename during detection
-4. `steam_appid.txt` in the game directory
-5. Steam Store search API (rate-limited)
-
-For games without a Steam AppID, an OpenSearch fallback queries the PCGW wiki directly. PCGW lookups have a 5-second timeout and automatically disable for the session after the first failure.
+Resolved via Steam AppID. Falls back to OpenSearch when no AppID is available. Clickable button on the info card.
 
 ---
 
 ## UW Fix and Ultra+ Links
 
-### UW Fix (Ultrawide Fix)
+### UW Fix
 
-If a game has an ultrawide/resolution fix available, a "UW Fix" button appears on the game card next to the Nexus and PCGW buttons. Clicking it opens the fix page directly.
-
-RHI checks three sources for ultrawide fixes, with tiered priority:
-
-1. [Lyall](https://github.com/Lyall) — game-specific fix repositories
-2. [RoseTheFlower](https://github.com/RoseTheFlower) — ultrawide fix collection
-3. [p1xel8ted](https://github.com/p1xel8ted) — ultrawide fix collection
-
-All three sources are fetched once and cached for 24 hours. The remote manifest includes overrides for edge cases where automatic name matching fails.
+Ultrawide/resolution fix links from Lyall, RoseTheFlower, and p1xel8ted. Button appears when a fix is available. Search "UW Fix" to filter.
 
 ### Ultra+
 
-If a game has an Ultra+ mod on [theultraplace.com](https://theultraplace.com), an "Ultra+" button appears on the game card. Clicking it opens the Ultra+ page for that game.
-
-### Searching
-
-Typing "UW Fix" or "Ultra+" in the search bar filters to games that have those links, just like searching for engine names or authors.
-
-### Visual Style
-
-Nexus, PCGW, UW Fix, and Ultra+ link buttons are underlined with a hand cursor on hover.
+Ultra+ mod links from theultraplace.com. Button appears when available. Search "Ultra+" to filter.
 
 ---
 
 ## Vulkan ReShade Support
 
-RHI provides full Vulkan implicit layer support for ReShade, enabling injection for Vulkan-rendered games without per-game DLL placement.
-
 ### How It Works
 
-1. **Global Vulkan layer** — RHI installs ReShade as a Vulkan implicit layer via the Windows registry (`HKLM\SOFTWARE\Khronos\Vulkan\ImplicitLayers`), making ReShade available to all Vulkan games system-wide.
-2. **Layer manifest** — a `ReShade64.json` manifest is deployed alongside the ReShade DLL to `C:\ProgramData\ReShade\`.
-3. **Per-game INI** — a `reshade.vulkan.ini` with Vulkan-tuned depth buffer settings is deployed to each game folder.
-4. **Footprint file** — an `RDXC_VULKAN_FOOTPRINT` marker file is placed in the game folder to enable managed shader deployment.
+ReShade is installed as a global Vulkan implicit layer via `C:\ProgramData\ReShade\`. A per-game `reshade.ini` and `RDXC_VULKAN_FOOTPRINT` marker enable managed shader deployment.
 
 ### Lightweight Install
 
-When the global Vulkan layer is already registered, clicking Install on a Vulkan game performs a fast lightweight deploy (INI + footprint + shaders only) without requiring admin privileges.
+When the layer is already registered, clicking Install on a Vulkan game is instant (INI + footprint + shaders only, no admin needed).
 
 ### Dual-API Games
 
-Games with both DirectX and Vulkan show a rendering path toggle. Switching from DirectX to Vulkan uninstalls DX ReShade, removes `reshade.ini` and managed shaders, and restores `reshade-shaders-original` if present.
-
-### Per-Game Uninstall
-
-Uninstalling removes `reshade.ini`, the footprint file, and managed shaders from the game folder. The global Vulkan layer is not affected.
+Games with DirectX + Vulkan show a rendering path toggle. Switching modes reinstalls ReShade in the correct mode.
 
 ---
 
 ## DXVK
 
-DXVK is a DirectX-to-Vulkan translation layer that can improve performance and enable ReShade compute shaders on older DX8/DX9/DX10 games. RHI manages DXVK as a per-game component with the same lifecycle as other managed components.
+DXVK translates DirectX 8/9/10 to Vulkan. Managed as a per-game component.
 
-### Enabling DXVK
+### Enabling
 
-The DXVK dropdown appears in the Overrides panel for DX8, DX9, and DX10 games. It is hidden for DX11, DX12, OpenGL, and Vulkan games. Games with DX12 detected alongside their primary API (dual-API) also hide the dropdown, as do Unreal Engine DX11 games that likely support DX12.
+The DXVK dropdown appears in Overrides for DX8, DX9, and DX10 games. Options:
 
-Selecting any option other than "Off" triggers the install flow (with a warning dialog). Selecting "Off" uninstalls DXVK and restores the original game DLLs.
+| Option | Behaviour |
+|--------|-----------|
+| Off | DXVK disabled / uninstalled |
+| Development | Nightly builds from doitsujin/dxvk |
+| Stable | Tagged releases |
+| Lilium HDR | EndlesslyFlowering fork with scRGB HDR output |
 
-### What happens on install
+Selecting any variant triggers the install flow. Selecting Off uninstalls.
 
-1. The required DXVK DLLs (e.g. `d3d9.dll`, `d3d11.dll`, `dxgi.dll`) are copied from staging to the game folder based on the game's API and bitness.
-2. Game-original DLLs are backed up with a `.original` extension and restored on uninstall.
-3. A `dxvk.conf` is deployed with settings appropriate for the selected variant (standard settings for Development/Stable, HDR swap chain upgrade for Lilium HDR).
-4. If ReShade is installed as a DX proxy DLL, it is switched to Vulkan layer mode automatically. When DXVK is disabled, ReShade switches back with the correct API-specific filename.
-5. OptiScaler coexistence is handled — filename conflicts are resolved by routing DLLs to the OptiScaler plugins folder.
+### DX8/DX9 Games
 
-### Build variants
+- **Development/Stable** — DXVK deployed as `dxgi_dxvk.dll` in proxy mode. ReShade stays as `d3d9.dll` with a `[PROXY]` chain.
+- **Lilium HDR** — DXVK deployed as `d3d9.dll` directly. ReShade uses the Vulkan layer. Enables SM5 HDR shaders. On uninstall, local ReShade is restored automatically.
 
-Three DXVK variants are available, selectable globally in Settings or per-game in the Overrides panel:
+### DX10/DX11 Games
 
-| Variant | Source | Description |
-|---------|--------|-------------|
-| Development | nightly.link (doitsujin/dxvk master) | Latest nightly builds with newest fixes. Default. |
-| Stable | doitsujin/dxvk tagged releases | Official stable releases. |
-| Lilium HDR | EndlesslyFlowering/dxvk releases | Fork with HDR swap chain upgrades (scRGB output). Enables HDR output on DX8/DX9/DX10 games via format and colour space upgrades. |
+Standard mode. ReShade switches to Vulkan layer. DXVK DLLs go in the game root (or OptiScaler plugins folder for coexistence).
 
-All three variants are downloaded and kept up to date simultaneously. Switching variants (globally or per-game) instantly reinstalls DXVK with the correct DLLs and dxvk.conf — no manual update needed.
+### Anti-Cheat Blacklist
 
-### Lilium HDR
-
-The Lilium HDR variant deploys a `dxvk.conf` with HDR-specific settings:
-
-- `dxvk.enableAsync = true` and `dxvk.gplAsyncCache = true` (async shader compilation)
-- Swap chain upgrade to `rgba16_sfloat` with `scRGB` colour space
-- `d3d9.enforceWindowModeInternally = disabled` (DX9 games only)
-
-This is the safest HDR preset — it upgrades only the swap chain output without modifying render targets or back buffers, ensuring near-100% compatibility.
-
-### Per-game variant override
-
-The "DXVK Variant" dropdown in the Overrides panel lets you override the global variant for individual games. Options: Global, Development, Stable, Lilium HDR. Changing the variant immediately reinstalls DXVK with the correct DLLs and conf.
-
-### Anti-cheat blacklist
-
-Games with known anti-cheat (Fortnite, Apex Legends, Valorant, etc.) are blacklisted via the remote manifest. The DXVK dropdown is disabled for these games.
+Games with known anti-cheat are blacklisted via the manifest. The dropdown is disabled.
 
 ---
 
 ## Foreign DLL Protection
 
-When installing ReShade, RHI checks whether an existing DLL at the target filename belongs to another tool (DXVK, Special K, ENB, etc.) using binary signature scanning.
-
-- If the file is identified as ReShade, the install proceeds normally.
-- If the file is unidentified, a confirmation dialog asks whether to overwrite.
-- During Update All, foreign files are silently skipped to avoid accidentally replacing third-party DLLs.
-
-The detection also recognises OptiScaler DLLs and does not flag them as foreign.
-
----
-
-## UE-Extended and Native HDR
-
-Unreal Engine games with native HDR support are automatically assigned UE-Extended via the remote manifest. These display "Extended UE Native HDR" as their engine badge.
-
-### How to Use
-
-In-game HDR must be turned on for UE-Extended to work. The RenoDX Info button shows a message explaining this for native HDR games.
-
-### UE-Extended Toggle
-
-The toggle appears for every Unreal Engine game that does not have a named mod on the RenoDX wiki. A compatibility warning pops up when enabling it, advising that not all games are compatible.
-
-### Manifest Lists
-
-- `nativeHdrGames` — games flagged for native HDR support.
-- `ueExtendedGames` — games marked for the UE-Extended addon.
-
-Both lists are maintained in the remote manifest and can be updated without an app release.
+Before overwriting an existing DLL, RHI checks if it belongs to DXVK, Special K, ENB, or another tool via binary signature scanning. A confirmation dialog appears. During Update All, foreign DLLs are silently skipped.
 
 ---
 
 ## Drag-and-Drop
 
-RHI supports drag-and-drop for adding games and installing mods. Works even when running as administrator (UIPI bypass).
-
-### Supported File Types
+RHI supports drag-and-drop for adding games and installing mods. Works even when elevated.
 
 | File type | What happens |
 |-----------|-------------|
-| Game `.exe` | Opens an add-game dialog with auto-detected engine, inferred game root, and suggested name. |
-| `.addon64` / `.addon32` | Opens an install dialog with a game picker. Auto-selects based on filename, falls back to the currently selected game. |
-| `.zip`, `.7z` (Luma mod) | Detected by `Luma/d3dcompiler_47*.dll` marker inside the archive. Shows a game picker filtered to Luma-enabled games. Installs with ReShade fallback and shader deployment. |
-| `.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`, `.tgz` | Extracted using bundled 7-Zip. Addon files inside are found and offered for install. |
-| ReShade preset `.ini` | Validated, saved to the presets folder, deployed to a chosen game, with optional auto shader install. |
-| URL (`.url` shortcut) | Parsed and processed as an addon download URL. |
-
-Only recognised extensions are accepted: `.exe`, `.addon64`, `.addon32`, `.ini`, `.zip`, `.7z`, `.rar`, `.tar`, `.gz`, `.bz2`, `.xz`, `.tgz`. Unrecognised files are silently skipped.
+| `.exe` | Opens add-game dialog with auto-detection |
+| `.addon64` / `.addon32` | Install dialog with game picker |
+| `.zip`, `.7z` (Luma archive) | Luma install with game picker |
+| `.zip`, `.7z`, `.rar` etc. | Extract and find addon files |
+| `.ini` (ReShade preset) | Validate, save, deploy, offer shader install |
+| URL (`.url` shortcut) | Download and process as addon |
 
 ---
 
 ## Addon Auto-Detection
 
-RHI watches your Downloads folder for new addon files and archives.
+### File Watcher
 
-### Downloads Folder Watching
-
-The default watch folder is the system Downloads directory (configurable in Settings). RHI monitors for new `renodx-*.addon64` and `renodx-*.addon32` files and prompts you to install them.
-
-### Archive Auto-Install
-
-The watch folder also detects `.zip`, `.7z`, and `.rar` archives containing "renodx" or "luma" in the filename. When a matching archive appears (e.g. from a Nexus Mods download), RHI checks if it's a Luma mod (by looking for `Luma/d3dcompiler_47*.dll` inside) and routes it to the Luma install flow with a game picker. Non-Luma archives are extracted normally and addon files inside are offered for install.
+Monitors your Downloads folder (configurable) for `renodx-*.addon64`, `renodx-*.addon32`, and archives with "renodx" or "luma" in the filename. Prompts to install when detected.
 
 ### Named Pipe Forwarding
 
-Double-clicking an addon file in Explorer opens RHI and triggers the install flow. If RHI is already running, the file path is forwarded to the existing instance via a named pipe.
-
-### AddonPath Support
-
-Addon installs (RenoDX and ReLimiter) respect the `AddonPath` setting in `reshade.ini`. If the `[ADDON]` section contains an `AddonPath=` line, addons are deployed to that folder instead of the game root. Uninstall, update detection, and addon scanning all check the same resolved path.
+Double-clicking an addon in Explorer opens RHI (or forwards to the running instance) and triggers install.
 
 ---
 
 ## Update All
 
-The **Update All** button updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, and RE Framework across all eligible games in one click.
+Updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, and RE Framework across all eligible games. Per-game exclusions are respected. Foreign DLLs are silently skipped.
 
-### Per-Component Toggles
+### Cooldown
 
-Each component respects its own per-game inclusion toggle. A game excluded from ReShade updates can still receive RenoDX updates. Set these in the Update Inclusion dialog in per-game overrides.
-
-### Foreign DLL Skipping
-
-Games with foreign DLLs (non-ReShade files detected via binary scanning) are silently skipped during Update All.
-
-### Update Check Cooldown
-
-Update checks have a 4-hour cooldown. Launching the app multiple times no longer hammers the GitHub API — checks are skipped if the last successful check was recent. Full Refresh bypasses the cooldown.
+4-hour cooldown between update checks. Full Refresh bypasses it.
 
 ### Rate Limit Handling
 
-GitHub API rate limiting (403 responses) is detected and handled gracefully. If a 403 is received, all remaining API calls for the session are skipped instead of each one failing independently.
+GitHub API 403 responses cancel all remaining API calls for the session.
 
 ---
 
 ## Auto-Update
 
-RHI checks for new versions on launch by querying the GitHub Releases API. Disable via Settings → Preferences → Skip update check on launch.
-
-### Stable and Beta Channels
-
-When Beta Opt-In is enabled, RHI checks both stable and beta releases. Stable always wins over beta at the same or higher base version. Beta is only offered when its version exceeds the latest stable, or when you're already on a beta and a newer one is available.
+RHI checks for new versions on launch via GitHub Releases API. Beta Opt-In checks both stable and beta releases.
 
 ---
 
 ## Remote Manifest
 
-RHI fetches a remote manifest from GitHub on every launch, providing game-specific overrides without app updates. The manifest is cached locally for offline use.
+Fetched from GitHub on every launch. Provides game-specific overrides without app updates:
 
-### Key Fields
+- Game blacklist, install path overrides, wiki name mapping
+- Engine/API/bitness overrides, DLL name overrides
+- Game notes (per-component), forced external links
+- DLSS skip lists, launch exe overrides, split game definitions
+- Legacy ReShade versions, install warnings
+- Shader pack and addon pack overrides
+- NVIDIA profile exe exclusions
 
-| Field | What it does |
-|-------|-------------|
-| `blacklist` | Excluded non-game apps (launchers, DLC, tools). |
-| `installPathOverrides` | Correct wrong install paths (e.g. `"Cyberpunk 2077": "bin\\x64"`). |
-| `wikiNameOverrides` | Map detected game name to wiki mod name. |
-| `wikiStatusOverrides` | Force a specific wiki status icon. |
-| `wikiUnlinks` | Ignore false fuzzy wiki matches. |
-| `gameNotes` | Game-specific notes with optional URL and label, shown in Info buttons. |
-| `lumaGameNotes` | Luma-specific notes shown in Luma mode. |
-| `nativeHdrGames` | Auto-assign UE-Extended for Unreal games with native HDR. |
-| `ueExtendedGames` | Mark games for the UE-Extended addon. |
-| `thirtyTwoBitGames` / `sixtyFourBitGames` | Override auto-detected bitness. |
-| `engineOverrides` | Force a specific engine label. |
-| `dllNameOverrides` | Set ReShade/DC install filename per game. |
-| `graphicsApiOverrides` | Comma-separated API tags for games that can't be detected via PE imports. |
-| `snapshotOverrides` | Direct addon download URL when wiki lacks one. |
-| `lumaDefaultGames` | Games that auto-start in Luma mode. |
-| `forceExternalOnly` | Redirect install to an external URL (Discord, Nexus). |
-| `dcModeOverrides` | Override the default DC mode for specific games. |
-| `donationUrls` | Ko-fi links for mod authors. |
-| `authorDisplayNames` | Override wiki maintainer handles with display names. |
-| `authorOverrides` | Set mod authors via manifest for games not on the wiki. |
-| `optiScalerWikiNames` | Map game names to OptiScaler wiki equivalents. |
-| `nexusUrlOverrides` | Manual Nexus Mods URL overrides. |
-| `steamAppIdOverrides` | Manual Steam AppID overrides for PCGW resolution. |
-| `pcgwUrlOverrides` | Manual PCGW URL overrides. |
-| `splitGames` | Split multi-title folders into separate entries (e.g. Mass Effect LE → ME1, ME2, ME3). |
-| `installWarnings` | Per-game, per-component install warnings shown before install proceeds. |
-| `legacyReShadeAvailable` | Array of legacy ReShade versions available in the picker. |
-| `legacyReShadeVersions` | Map game name → forced legacy ReShade version. |
-| `dlssSkipGames` | Games known to not have DLSS — skips expensive recursive scan. |
-| `launchExeOverrides` | Per-game launch exe path (relative to InstallPath). |
+---
+
+## Message of the Day
+
+A message fetched from `motd.md` on GitHub. Shown as a dialog once per unique message (tracked by SHA256 hash). Empty file = no dialog.
 
 ---
 
 ## Performance
 
-RHI includes several optimisations for fast startup and refresh:
-
-- **Instant launch from cache** — on subsequent launches, the game list loads from cache and displays immediately. The full scan runs in the background and merges changes.
-- **Parallel shader pack checks** — shader packs are verified in parallel, not sequentially.
-- **Parallel game folder shader syncs** — shader deployments to game folders run in parallel.
-- **Parallel card building** — game cards are constructed using parallel processing.
-- **PE-level API cache** — graphics API detection results are cached to disk. Subsequent launches skip PE header scanning.
-- **Game-level API cache** — full API detection results cached per install path.
-- **WindowsApps skip** — `\WindowsApps\` paths are skipped for API detection, addon scanning, OptiScaler detection, and ReShade proxy scanning (always access-denied).
-- **Debounced PCGW cache writes** — concurrent writes during startup are collapsed into a single disk write.
-- **Optimised OptiScaler detection** — scans only the 7 known proxy DLL names instead of every DLL.
-- **DLC blacklisting** — DLC content packs and launcher components are excluded from game detection.
-- **Shader pack API optimisation** — shader packs from GitHub Releases skip the API call when cached files are already present.
-- **4-hour update check cooldown** — avoids redundant GitHub API calls on repeated launches.
-- **GitHub rate-limit detection** — a single 403 response cancels all remaining API calls for the session.
-- **PCGW timeout** — 5-second timeout with automatic session-wide disable after the first failure.
-- **Full Refresh** — clears all caches and rescans everything fresh.
+- **Instant launch from cache** — game list loads immediately, full scan runs in background
+- **Parallel shader pack checks and deployments**
+- **PE-level and game-level API caches**
+- **DLSS trusted path cache** — after 3 confirmations, fast `File.Exists` checks replace recursive scans
+- **DLSS skip cache** — games confirmed without DLSS are auto-exempted
+- **4-hour update cooldown** with rate-limit detection
+- **NVIDIA profile lookup cache** — expensive profile matching runs once per game per session
+- **Manifest skip lists** — skip known DLSS-free games immediately
 
 ---
 
 ## Data Storage
 
-Everything is stored under `%LOCALAPPDATA%\RHI\`:
+Everything under `%LocalAppData%\RHI\`:
 
 | Path | Contents |
 |------|----------|
-| `game_library.json` | Detected games, hidden list, manually added games. |
-| `installed.json` | RenoDX mod install records. |
-| `aux_installed.json` | ReShade, ReLimiter, Display Commander, and OptiScaler install records. |
-| `settings.json` | All settings, per-game overrides, and persisted filter mode. |
-| `ul_meta.json` | ReLimiter version metadata (per-bitness). |
-| `dc_meta.json` | Display Commander version metadata. |
-| `api_cache.json` | PE-level graphics API detection cache. |
-| `game_api_cache.json` | Game-level API detection cache. |
-| `downloads\` | Cached downloads organised into subdirectories: `shaders/`, `renodx/`, `framelimiter/`, `luma/`, `misc/`. |
-| `optiscaler\` | Staged OptiScaler release (DLL, companion files, INI, version tag). |
-| `optipatcher\` | Staged OptiPatcher release. |
-| `dlss\` | Legacy DLSS staging (deprecated — replaced by versioned cache below). |
-| `DLSS\{version}\` | Versioned DLSS SR cache (e.g. `DLSS\310.6.0\nvngx_dlss.dll`). |
-| `DLSS-D\{version}\` | Versioned DLSS RR cache. |
-| `DLSS-G\{version}\` | Versioned DLSS FG cache. |
-| `Streamline\{version}\` | Versioned Streamline cache (all `sl.*.dll` files). |
-| `DLSS-Custom\` | Legacy custom DLSS folder (migrated to `Custom\DLSS\` on first launch). |
-| `Streamline-Custom\` | Legacy custom Streamline folder (migrated to `Custom\Streamline\` on first launch). |
-| `Custom\DLSS\` | User-provided custom DLSS DLLs. |
-| `Custom\Streamline\` | User-provided custom Streamline DLLs. |
-| `Custom\ReShade\` | User-provided custom ReShade DLLs (ReShade64.dll / ReShade32.dll). |
-| `dlss_manifest.json` | Cached DLSS/Streamline version manifest. |
-| `dlss_scan_cache.json` | Games confirmed to have no DLSS (auto-skip after 3 scans). |
-| `dlss_trusted_paths.json` | Confirmed DLL paths for fast detection (skip recursive scan). |
-| `addons\` | Downloaded ReShade addon files and `versions.json`. |
-| `addons_cache.ini` | Cached Addons.ini for offline fallback. |
-| `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `relimiter.ini`, `DisplayCommander.ini`, `OptiScaler.ini`, etc.) and `reshade-presets\` subfolder. |
-| `reshade\` | Staged shader packs and custom shaders. |
-| `reshade-nightly\` | Staged nightly ReShade DLLs. |
-| `dxvk-development\` | Staged DXVK Development (nightly) DLLs. |
-| `dxvk-stable\` | Staged DXVK Stable (tagged release) DLLs. |
-| `dxvk-lilium\` | Staged DXVK Lilium HDR DLLs. |
-| `LegacyReshade\{version}\` | Cached legacy ReShade DLLs per version (on-demand). |
-| `logs\` | Session logs (timestamped) and crash reports. Max 10 logs kept on disk. |
-| `reports\` | Saved game reports from Copy Report. |
-| `nexus_games.json` | Cached Nexus Mods game catalogue (24-hour TTL). |
-| `nexus_baselines.json` | Nexus update check baselines (last-seen timestamps per game). |
-| `motd_hash.txt` | SHA256 hash of the last-shown Message of the Day (deduplication). |
-| `steam_appid_cache.json` | Cached Steam AppID lookups (permanent). |
-
-### Session Logging
-
-A new log file is created every time RHI starts, named with a timestamp (e.g. `session_2025-03-14_12-30-00.txt`). The Verbose Logging toggle in Settings enables additional detail. Old logs are pruned to keep a maximum of 10 on disk.
+| `game_library.json` | Detected games, hidden list, manually added games |
+| `installed.json` | RenoDX mod install records |
+| `aux_installed.json` | ReShade, ReLimiter, DC, OptiScaler install records |
+| `settings.json` | All settings and per-game overrides |
+| `downloads\` | Cached downloads (shaders, renodx, luma, misc) |
+| `DLSS\{ver}\`, `DLSS-D\{ver}\`, `DLSS-G\{ver}\`, `Streamline\{ver}\` | Versioned DLL caches |
+| `Custom\DLSS\`, `Custom\Streamline\`, `Custom\ReShade\` | User-provided DLLs |
+| `reshade\` | Staged shader packs and custom shaders |
+| `reshade-nightly\` | Nightly ReShade DLLs |
+| `dxvk-development\`, `dxvk-stable\`, `dxvk-lilium\` | DXVK staging per variant |
+| `LegacyReshade\{ver}\` | Legacy ReShade versions |
+| `optiscaler\` | OptiScaler staging |
+| `addons\` | Downloaded addon files + versions.json |
+| `logs\` | Session logs (max 10 kept) |
+| `nvidia_profiles_backup.json` | Profile Export data |
+| `nexus_baselines.json` | Nexus update tracking |
+| `dlss_trusted_paths.json` | DLSS fast-detection cache |
+| `dlss_scan_cache.json` | DLSS skip cache |
 
 ---
 
@@ -1103,21 +856,15 @@ A new log file is created every time RHI starts, named with a timestamp (e.g. `s
 
 | Problem | Fix |
 |---------|-----|
-| Game not detected | Click **Add Game** on the Settings page or drag the game's `.exe` onto the window. |
-| Xbox games missing | Click **Refresh** — RHI uses the PackageManager API which may need a moment. |
-| ReShade not loading | Check the install path via 📁 — the ReShade DLL must be next to the game executable. |
-| ReShade not detected | If using a non-standard DLL name, RHI should detect it via binary signature scanning. Try **Refresh**. |
-| Black screen (Unreal) | In ReShade → Add-ons → RenoDX, set `R10G10B10A2_UNORM` to `output size`. |
-| UE-Extended not working | Turn on in-game HDR — UE-Extended requires native HDR output. |
-| Downloads failing | Click **Refresh**, or clear cache from Settings → Open Downloads Cache. |
-| Foreign DLL blocking install | Choose **Overwrite** in the confirmation dialog, or cancel to keep the existing file. |
-| Games/mods out of sync | Settings → **Full Refresh** to clear all caches and re-scan. |
-| Drag-and-drop not working | Ensure RHI is running. Drag-and-drop works even as administrator (UIPI bypass). |
-| Vulkan ReShade not showing | Check that `reshade.ini` exists in the game folder. The Vulkan layer must also be installed globally. |
-| Shaders missing after uninstall | Click **Refresh** — RHI will detect the missing shaders and redeploy them. |
-| ReLimiter OSD hotkey not working | Re-apply the hotkey from Settings. |
-| Xbox games losing mods after update | RHI detects Game Pass path changes and migrates installed mods automatically. If mods still appear missing, click **Refresh**. |
-| OptiScaler update badge won't go away | Click **Refresh** — the version number updates after a fresh scan. |
+| Game not detected | Add Game in Settings or drag the exe onto the window |
+| Xbox games missing | Click Refresh |
+| ReShade not loading | Check install path via 📁 — DLL must be next to the game exe |
+| Black screen (Unreal) | ReShade → Add-ons → RenoDX → set R10G10B10A2_UNORM to output size |
+| UE-Extended not working | Enable HDR in the game's display settings first |
+| Downloads failing | Click Refresh, or clear cache from Settings |
+| DLSS presets not applying | Enable Admin Mode in Settings |
+| Driver settings greyed out | Enable Admin Mode — requires elevation |
+| Everything out of sync | Settings → Full Refresh |
 
 ---
 
@@ -1128,10 +875,10 @@ A new log file is created every time RHI starts, named with a timestamp (e.g. `s
 | [ReShade](https://reshade.me) | Crosire | [BSD 3-Clause](https://github.com/crosire/reshade/blob/main/LICENSE.md) |
 | [RenoDX](https://github.com/clshortfuse/renodx) | clshortfuse & contributors | [MIT](https://github.com/clshortfuse/renodx/blob/main/LICENSE) |
 | [ReLimiter](https://github.com/RankFTW/ReLimiter) | RankFTW | Source-available |
-| [Display Commander](https://github.com/pmnoxx/display-commander?tab=readme-ov-file#display-commander) | pmnoxx | [GPL-3](https://github.com/pmnoxx/display-commander/blob/main/LICENSE) |
+| [Display Commander](https://github.com/pmnoxx/display-commander) | pmnoxx | [GPL-3](https://github.com/pmnoxx/display-commander/blob/main/LICENSE) |
 | [RE Framework](https://github.com/praydog/REFramework-nightly) | praydog | [MIT](https://github.com/praydog/REFramework/blob/master/LICENSE) |
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | OptiScaler contributors | Source-available |
-| [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |
 | [DXVK](https://github.com/doitsujin/dxvk) | doitsujin & contributors | [Zlib](https://github.com/doitsujin/dxvk/blob/master/LICENSE) |
 | [DXVK HDR-mod](https://github.com/EndlesslyFlowering/dxvk) | EndlesslyFlowering (Lilium) | [Zlib](https://github.com/EndlesslyFlowering/dxvk/blob/HDR-mod/LICENSE) |
+| [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |

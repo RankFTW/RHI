@@ -1,97 +1,126 @@
 # RHI — ReShade HDR Installer
 
-One app to manage HDR mods across your entire PC game library. RHI auto-detects games from eight storefronts, installs ReShade, RenoDX, frame limiters, OptiScaler, and more — all with one click per game.
+One app to manage HDR mods across your entire PC game library. RHI auto-detects games from eight storefronts, installs and updates ReShade, RenoDX, frame limiters, DLSS/Streamline, OptiScaler, and more — all with per-game control and zero manual configuration.
 
 ![RHI](screenshots/game_view.png)
 
 > **⚠ Single-player only.** RHI installs ReShade with addon support, which may trigger anti-cheat in online games. Uninstall before playing multiplayer.
 
+---
+
 ## Why RHI?
 
-- **Instant startup** — your game library loads from cache immediately. Background scanning merges new games silently.
-- **8-store detection** — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, and Rockstar. No manual setup needed.
-- **One-click everything** — install, update, or remove ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, and Luma Framework per game.
-- **Keeps things in sync** — Update All checks every component across every game. One button, done.
-- **42 shader packs** — global or per-game shader selection with automatic dependency resolution.
-- **Drag-and-drop** — drop an .exe to add a game, drop a mod to install it, drop a preset to deploy it with auto shader install. Luma mod archives (zip/7z) are detected automatically and install with a game picker.
-- **UE-Extended auto-configuration** — when installing UE-Extended, reshade.ini and Engine.ini are configured automatically for native HDR games. No manual INI editing needed.
-- **Ryubing emulator support** — drag Ryujinx.exe to add Ryubing. Install RenoDX downloads all 9 Souperman9 Switch game addons in one click. Addons self-detect which game is running.
-- **DLSS Render Scale Override** — force a custom DLSS render resolution per-game (33-100%) for both SR and Ray Reconstruction.
-- **Luma + RenoDX coexistence** — manifest-driven support for games that can run both Luma and RenoDX simultaneously.
-- **OptiScaler built in** — upscaler redirection (DLSS/FSR/XeSS) with automatic DLSS DLL downloads, ReShade coexistence, and INI management.
-- **DLSS & Streamline Manager** — swap DLSS SR, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. Set DLSS presets per-game (J, K, L, M for SR; D, E for RR; A, B for FG) without NVIDIA Profile Inspector. Batch Deploy lets you update versions and presets across multiple games at once.
-- **UW Fix & Ultra+ links** — quick links to ultrawide fixes and Ultra+ mods appear right on game cards when available.
-- **Game Launch** — launch games directly from RHI. Steam games launch through Steam (with overlay and playtime tracking), Epic games use the Epic protocol, everything else launches directly. Set a custom exe and launch arguments per game in Overrides.
-- **Nexus Mods Update Alerts** — automatic update detection for Nexus-hosted mods. No API key needed.
-- **Three view modes** — Detail View, Grid View, and Compact View. Pick what fits your workflow.
-- **Smart about updates** — rate-limit aware, cooldown-based update checks, and cached shader packs that skip unnecessary API calls.
-- **ReShade build channels** — choose between Stable (reshade.me), Nightly (GitHub Actions), or Custom (your own DLLs) builds in Settings. Per-game overrides let you mix channels across your library.
-- **Legacy ReShade** — pin any game to a specific older ReShade version (6.0.0+) from the RS Channel dropdown. Available versions managed server-side.
-- **DXVK variants** — choose between Development (nightly), Stable (tagged releases), and Lilium HDR (scRGB HDR output) in Settings. Per-game overrides available.
+- **8-store detection** — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, Rockstar. No manual setup.
+- **8 managed components** — ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma Framework, DXVK. One-click install, update, and removal for each.
+- **46 shader packs** — Essential, Recommended, and Extra categories. Global or per-game selection.
+- **DLSS & Streamline management** — swap SR, Ray Reconstruction, and Frame Generation independently. Update or downgrade Streamline as a set. Per-game DLSS presets without NVIDIA Profile Inspector.
+- **Nvidia Profile Overrides** — VSync, Low Latency, Smooth Motion, Power Mode, ReBAR, Multi Frame Generation, DLSS render scale (33–100%). All per-game, written directly to NVIDIA driver profiles.
+- **Batch deploy** — update DLSS/Streamline versions and presets across multiple games at once.
+- **DLSS & Streamline Defaults** — configure preferred versions, presets, and render scales. One-click Quick Apply per game.
+- **Profile Export/Import** — back up all per-game NVIDIA profile settings to JSON. Restore after driver updates.
+- **Drag-and-drop** — drop an exe, addon, preset, Luma archive, or URL. RHI figures out what to do.
+- **Three view modes** — Detail View, Grid View, Simple View. Fresh installs default to Simple View.
+- **Game Launch** — Steam uses `-applaunch` (with overlay and playtime tracking), Epic uses its protocol, everything else launches directly. Custom exe and arguments per game.
+- **Luma + RenoDX coexistence** — for compatible games, both frameworks run side by side.
+- **Ryubing emulator support** — 9 Switch game addons from Souperman9, downloaded and deployed in one click. Addons self-select which game is running.
+- **UE-Extended auto-configuration** — reshade.ini `[renodx]` section and Engine.ini HDR settings are written automatically.
+- **Nexus Mods update alerts** — GraphQL API, no API key required.
+- **Remote manifest** — game-specific fixes pushed over the air without app updates.
+- **Foreign DLL protection** — binary signature scanning prevents accidental overwrites of DXVK, Special K, ENB, etc.
+- **Addon file watcher** — auto-detects new addons in your Downloads folder and prompts to install.
+- **Message of the Day** — important notices delivered on launch when something changes.
 
-## Features
+---
 
-### Game Detection & API Scanning
-
-RHI scans Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, and Rockstar on every launch. Games installed on multiple platforms show up separately so you can manage each install independently. DLC and expansions that share a base game folder are collapsed automatically.
-
-Each game's executable is scanned via PE header analysis to detect DirectX 8–12, Vulkan, and OpenGL. The detected API drives automatic ReShade DLL naming — no manual configuration needed. Results are cached to disk so subsequent launches skip the scan entirely.
-
-### Managed Components
+## Managed Components
 
 | Component | What it does |
 |-----------|-------------|
-| [ReShade](https://reshade.me) | Post-processing injection framework. Installed as a DLL next to the game exe. Supports addon and non-addon variants per game. |
-| [RenoDX](https://github.com/clshortfuse/renodx) | HDR mod framework running as a ReShade addon. Game-specific mods matched from the RenoDX wiki, with generic Unreal/Unity/UE-Extended fallbacks. |
-| [ReLimiter](https://github.com/RankFTW/ReLimiter) | Frame pacing addon. Configurable OSD hotkey and shared presets. |
-| [Display Commander](https://github.com/pmnoxx/display-commander?tab=readme-ov-file#display-commander) | Alternative frame rate limiter. Mutually exclusive with ReLimiter — installing one disables the other. |
-| [OptiScaler](https://github.com/optiscaler/OptiScaler) | Upscaler redirection (DLSS → FSR/XeSS and vice versa). Auto-downloads DLSS SR, Ray Reconstruction, and Frame Gen DLLs. Handles ReShade coexistence, DLL naming, INI config, and OptiPatcher for AMD/Intel GPUs. 64-bit only. |
-| [RE Framework](https://github.com/praydog/REFramework-nightly) | Required for ReShade on RE Engine games (Monster Hunter Wilds, Resident Evil series, Devil May Cry 5, Street Fighter 6, Dragon's Dogma 2, etc.). |
-| [Luma Framework](https://github.com/Filoppi/Luma-Framework) | DX11 HDR modding framework. Toggle Luma mode per game — RenoDX and standard ReShade are swapped out automatically. |
-| [DXVK](https://github.com/doitsujin/dxvk) | DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Enables ReShade compute shaders and can reduce CPU-bound stuttering on older titles. Three variants: Development, Stable, and Lilium HDR (scRGB HDR output). Per-game dropdown in the Overrides panel (Off/Global/Development/Stable/Lilium HDR). |
+| [ReShade](https://reshade.me) | Post-processing injection framework. Channels: Stable, Nightly, Custom (user DLLs), Legacy (pin to 6.0.0+), No Addons. |
+| [RenoDX](https://github.com/clshortfuse/renodx) | HDR mod framework. Game-specific mods matched from the RenoDX wiki with generic Unreal/Unity/UE-Extended fallbacks. |
+| [ReLimiter](https://github.com/RankFTW/ReLimiter) | Frame pacing addon with configurable OSD hotkey and shared presets. |
+| [Display Commander](https://github.com/pmnoxx/display-commander) | Alternative frame rate limiter. Mutually exclusive with ReLimiter. |
+| [OptiScaler](https://github.com/optiscaler/OptiScaler) | Upscaler redirection (DLSS ↔ FSR ↔ XeSS). Auto-downloads DLSS DLLs, handles ReShade coexistence, includes OptiPatcher for AMD/Intel. |
+| [RE Framework](https://github.com/praydog/REFramework-nightly) | Required for ReShade on RE Engine games (Monster Hunter Wilds, Resident Evil, DMC5, SF6, etc.). |
+| [Luma Framework](https://github.com/Filoppi/Luma-Framework) | DX11 HDR modding framework. Toggle per game — ReShade and RenoDX are swapped automatically. |
+| [DXVK](https://github.com/doitsujin/dxvk) | DirectX-to-Vulkan translation for DX8–DX10 games. Variants: Development, Stable, Lilium HDR (scRGB output). Per-game selection. |
 
-Every component has one-click install, update detection, and uninstall. Per-addon **Info** buttons show game-specific notes, wiki compatibility data, or general descriptions — ReLimiter and Display Commander Info buttons also show changelogs from GitHub. Buttons with content are highlighted in blue.
+---
 
-### Shader Packs & Presets
+## Key Features
 
-43 shader packs (Essential, Recommended, Extra) sorted alphabetically within each category, with global or per-game selection. Drag a ReShade preset `.ini` onto the window and RHI deploys it to a game, then offers to auto-install the required shader packs by parsing the preset's `Techniques` line.
+### DLSS & Streamline
 
-### ReShade Addon Manager
+- Swap DLSS SR, Ray Reconstruction, and Frame Generation to any version independently
+- Update or downgrade Streamline as a complete set
+- DLSS presets per game — SR: Default/J/K/L/M · RR: Default/D/E · FG: Default/A/B
+- DLSS render scale override: 33–100% per game for both SR and RR
+- Multi Frame Generation (RTX 50 Series): Mode (Default/Fixed/Dynamic), Frame Count (2x–6x), Target FPS
+- Quick Apply deploys your configured defaults to any game in one click
+- Batch Deploy updates versions + presets across multiple games simultaneously
+- Backup/restore per game (`.original` files)
 
-Browse and toggle curated addons from the official ReShade addon list. Enabled addons are auto-deployed when ReShade is installed and synced on every Refresh. Per-game addon overrides let you customise which addons are active per game.
+### Nvidia Profile Overrides
+
+All per-game via NVIDIA driver profiles. Requires admin (Task Scheduler-based persistent elevation available).
+
+- **VSync** — Mode + Tear Control
+- **Low Latency** — Off / On / Ultra
+- **Smooth Motion** — Enable + APIs + Flip Pacing
+- **Power Mode** — Adaptive / Prefer Max Performance / Optimal
+- **ReBAR** — Enable / Mode / Size Limit
+- **Profile Export/Import** — back up all settings to JSON, restore after driver updates
+
+### Global Nvidia Settings (Settings page)
+
+- Shader Cache Size
+- Shader Pre-Compile
+- G-Sync Mode
+- Preferred Refresh Rate
+- Global ReBAR (On/Off + Size)
+- DLSS On-Screen Indicator
+
+### Admin Mode
+
+Task Scheduler-based persistent elevation. Toggle Off/On in Settings. When enabled, RHI silently relaunches elevated on startup — no per-operation UAC prompts. Required for ReBAR, Low Latency (ULL), Smooth Motion, and CPU Scheduling writes.
 
 ### Per-Game Overrides
 
-DLL naming, shader mode (Global/Custom/Select/Off), addon mode (Global/Select/Off), bitness and graphics API overrides, ReShade channel override (Stable/Nightly/No Addons/Legacy), DXVK mode (Off/Global/Development/Stable/Lilium HDR), update inclusion toggles, wiki name mapping, launch executable override, and more. All settings save immediately.
+DLL naming · Shader mode (Global/Custom/Select/Off) · Addon mode (Global/Select/Off) · Bitness · Graphics API · ReShade channel (Stable/Nightly/Custom/Legacy/No Addons) · DXVK variant · Launch exe + arguments · Update inclusion toggles · Wiki name mapping
 
-### Nexus Mods, PCGW, UW Fix & Ultra+ Links
+### OptiScaler
 
-Each game card shows clickable links to its Nexus Mods page, PCGamingWiki page, ultrawide fix (sourced from Lyall, RoseTheFlower, and p1xel8ted), and Ultra+ mod page when available. Search "UW Fix" or "Ultra+" to filter to games with those links.
+Upscaler redirection with automatic DLSS DLL downloads, ReShade coexistence, INI configuration, and OptiPatcher for AMD/Intel GPUs.
 
-### Vulkan Support
+### HDR Gaming Database
 
-Vulkan games get ReShade via a global implicit layer — no per-game DLL needed. Dual-API games (DirectX + Vulkan) show a rendering path toggle. OptiScaler auto-selects `winmm.dll` for Vulkan titles.
+The RenoDX Info button links directly to HDR Gaming Database entries for supported games.
 
-### Foreign DLL Protection
+### UW Fix & Ultra+ Links
 
-Before overwriting an existing DLL, RHI checks whether it belongs to DXVK, Special K, ENB, or another tool via binary signature scanning. You get a confirmation dialog before anything is replaced. During Update All, foreign DLLs are silently skipped.
+Quick links to ultrawide fixes (Lyall, RoseTheFlower, p1xel8ted) and Ultra+ mods appear on game cards when available.
 
-### Remote Manifest
-
-Game-specific overrides (install paths, engine labels, DLL names, API tags, game notes, blacklists) are updated server-side without requiring an app release.
+---
 
 ## Quick Start
 
-1. **Download and run RHI** — games appear automatically.
+1. **Download and run RHI** — your game library appears automatically.
 2. **Pick a game** from the sidebar. Search or use filter chips to narrow the list.
 3. **Click Install** on the components you want — ReShade, RenoDX, a frame limiter.
 4. **Launch the game**, press **Home** to open ReShade, go to **Add-ons**, and configure RenoDX.
+
+---
 
 ## Download
 
 Grab the latest release from the [GitHub Releases page](https://github.com/RankFTW/RHI/releases).
 
-**Requires:** Windows 10/11 (x64) · [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+**Requirements:**
+- Windows 10/11 (x64)
+- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+- NVIDIA GPU recommended for DLSS/Streamline and Profile Override features (AMD/Intel supported for everything else)
+
+---
 
 ## Troubleshooting
 
@@ -103,9 +132,12 @@ Grab the latest release from the [GitHub Releases page](https://github.com/RankF
 | Black screen (Unreal) | ReShade → Add-ons → RenoDX → set `R10G10B10A2_UNORM` to `output size` |
 | UE-Extended not working | Enable HDR in the game's display settings first |
 | Downloads failing | Click **Refresh**, or clear cache from Settings → Open Downloads Cache |
+| DLSS presets not applying | Enable Admin Mode in Settings, or run RHI as administrator |
 | Everything out of sync | Settings → **Full Refresh** clears all caches and re-scans |
 
 For the full reference covering every feature, see the [Detailed Guide](docs/DETAILED_GUIDE.md).
+
+---
 
 ## Third-Party Components
 
@@ -114,19 +146,23 @@ For the full reference covering every feature, see the [Detailed Guide](docs/DET
 | [ReShade](https://reshade.me) | Crosire | [BSD 3-Clause](https://github.com/crosire/reshade/blob/main/LICENSE.md) |
 | [RenoDX](https://github.com/clshortfuse/renodx) | clshortfuse & contributors | [MIT](https://github.com/clshortfuse/renodx/blob/main/LICENSE) |
 | [ReLimiter](https://github.com/RankFTW/ReLimiter) | RankFTW | Source-available |
-| [Display Commander](https://github.com/pmnoxx/display-commander?tab=readme-ov-file#display-commander) | pmnoxx | [GPL-3](https://github.com/pmnoxx/display-commander/blob/main/LICENSE) |
+| [Display Commander](https://github.com/pmnoxx/display-commander) | pmnoxx | [GPL-3](https://github.com/pmnoxx/display-commander/blob/main/LICENSE) |
 | [RE Framework](https://github.com/praydog/REFramework-nightly) | praydog | [MIT](https://github.com/praydog/REFramework/blob/master/LICENSE) |
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | Pumbo (Filoppi) | Source-available |
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | OptiScaler contributors | Source-available |
-| [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |
 | [DXVK](https://github.com/doitsujin/dxvk) | doitsujin & contributors | [Zlib](https://github.com/doitsujin/dxvk/blob/master/LICENSE) |
 | [DXVK HDR-mod](https://github.com/EndlesslyFlowering/dxvk) | EndlesslyFlowering (Lilium) | [Zlib](https://github.com/EndlesslyFlowering/dxvk/blob/HDR-mod/LICENSE) |
+| [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |
 
 > RHI is an unofficial third-party tool, not affiliated with or endorsed by the RenoDX project, Crosire, or the Luma Framework. All mod files are downloaded from their official sources at runtime and are not redistributed.
 
+---
+
 ## Acknowledgements
 
-RHI would not be possible without the hard work of the entire RenoDX team and [Crosire](https://reshade.me), the creator of ReShade. Their dedication to open-source HDR modding is what makes tools like this one viable. Thank you to every mod author, contributor, and tester who keeps pushing PC HDR forward.
+RHI would not be possible without the hard work of the entire RenoDX team and [Crosire](https://reshade.me), the creator of ReShade. Thank you to every mod author, contributor, and tester who keeps pushing PC HDR forward.
+
+---
 
 ## Links
 
