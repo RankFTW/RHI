@@ -106,7 +106,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private AppPage currentPage = AppPage.GameView;
     [ObservableProperty] private GameCardViewModel? selectedGame;
     [ObservableProperty] private bool hasUpdatesAvailable;
-    [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Detail;
+    [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Compact;
     [ObservableProperty] private int _compactPageIndex = 0;
 
     public Visibility HasUpdatesAvailableVisibility =>

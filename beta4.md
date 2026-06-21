@@ -5,6 +5,7 @@
 - **Global ReBAR settings** — New ReBAR On/Off and Size Limit controls in the Global Nvidia Settings section. Writes to the base driver profile (applies to all games). Export/Import buttons now side by side.
 - **Per-game ReBAR "Global" option** — When global ReBAR is enabled, per-game dropdowns show "Global (On/Off)", "Global (Standard)", and "Global (1GB)" as the first option. Selecting it inherits from global; selecting On/Off/Optimized/size overrides per-game.
 - Removed 8GB and 16GB from ReBAR Size Limit options, added 1.5GB.
+- Fresh installs now default to Simple view (previously Detail).
 - **Lilium HDR DXVK — Vulkan layer mode** — When installing Lilium HDR DXVK on DX9 games, DXVK is now deployed as `d3d9.dll` directly (not proxy mode). ReShade uses the Vulkan layer instead of a local D3D9 hook, giving access to SM5 HDR shaders. On uninstall, ReShade is automatically restored as the local `d3d9.dll`. Development/Stable variants remain unchanged (proxy mode).
 
 ## Fixes

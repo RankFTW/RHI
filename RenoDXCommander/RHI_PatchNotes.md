@@ -34,6 +34,7 @@
 - DXVK installed version is now a clickable link to the variant's GitHub releases page.
 - "Compact" view renamed to "Simple" across all user-facing text.
 - Lilium HDR DXVK on DX9 games now deploys DXVK as `d3d9.dll` directly with Vulkan layer ReShade, enabling SM5 HDR shaders. Automatically restores local ReShade on uninstall.
+- Fresh installs now default to Simple view instead of Detail view.
 
 ### Bug Fixes
 
