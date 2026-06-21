@@ -970,6 +970,38 @@ public sealed partial class MainWindow
         }
     }
 
+    private void GlobalReBarEnableCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var presetService = App.Services.GetRequiredService<DlssPresetService>();
+        bool enabled = combo.SelectedIndex == 1; // 0=Off, 1=On
+        presetService.SetGlobalReBarEnabled(enabled);
+        // Update size combo enabled state and reset to default when off
+        GlobalReBarSizeCombo.IsEnabled = enabled;
+        GlobalReBarSizeCombo.Opacity = enabled ? 1.0 : 0.4;
+        if (!enabled)
+            GlobalReBarSizeCombo.SelectedIndex = 1; // Reset to 1GB (Default)
+        // Force detail panel rebuild if a game is selected
+        if (ViewModel.SelectedGame != null)
+            DispatcherQueue?.TryEnqueue(() => _detailPanelBuilder?.BuildOverridesPanel(ViewModel.SelectedGame));
+    }
+
+    private void GlobalReBarSizeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.ReBarSizeLimits;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalReBarSizeLimit(options[combo.SelectedIndex].Value);
+        }
+        // Force detail panel rebuild if a game is selected
+        if (ViewModel.SelectedGame != null)
+            DispatcherQueue?.TryEnqueue(() => _detailPanelBuilder?.BuildOverridesPanel(ViewModel.SelectedGame));
+    }
+
     private async void ExportNvidiaProfiles_Click(object sender, RoutedEventArgs e)
     {
         try

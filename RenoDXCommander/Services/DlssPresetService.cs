@@ -642,10 +642,9 @@ public class DlssPresetService
     [
         ("512MB", 0x0000000020000000),
         ("1GB (Default)", 0x0000000040000000),
+        ("1.5GB", 0x0000000060000000),
         ("2GB", 0x0000000080000000),
         ("4GB", 0x0000000100000000),
-        ("8GB", 0x0000000200000000),
-        ("16GB", 0x0000000400000000),
     ];
 
     /// <summary>Returns true if ReBAR Feature is enabled for this game's NVIDIA profile.</summary>
@@ -1510,6 +1509,178 @@ $destroyDel.Invoke($hSession) | Out-Null
         }
     }
 
+    // ── Global ReBAR ──────────────────────────────────────────────────────────
+
+    /// <summary>Gets the global ReBAR enable state from the base profile. Returns null if not set.</summary>
+    public bool? GetGlobalReBarEnabled()
+    {
+        if (!_isSupported || _session == null) return null;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(baseProfile.Handle);
+            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+            {
+                var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, REBAR_FEATURE_ID);
+                if (rawVal.HasValue)
+                    return rawVal.Value != 0;
+            }
+            return null;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Sets global ReBAR enable on the base profile.</summary>
+    public bool SetGlobalReBarEnabled(bool enabled)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+
+            // ReBAR Feature requires elevation — use elevated helper
+            var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_global_rebar_enable.ps1");
+            var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
+
+            string scriptBody;
+            if (enabled)
+            {
+                scriptBody = $@"
+Add-Type -Path '{nvApiPath.Replace("'", "''")}'
+[NvAPIWrapper.NVIDIA]::Initialize()
+$session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
+$baseProfile = $session.BaseProfile
+$baseProfile.SetSetting([uint32]0x000F00BA, [uint32]1)
+$baseProfile.SetSetting([uint32]0x00C09D09, [uint32]0)
+$session.Save()
+";
+            }
+            else
+            {
+                // When disabling, delete the settings to truly clear them
+                scriptBody = $@"
+Add-Type -Path '{nvApiPath.Replace("'", "''")}'
+[NvAPIWrapper.NVIDIA]::Initialize()
+$session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
+$baseProfile = $session.BaseProfile
+try {{ $baseProfile.DeleteSetting([uint32]0x000F00BA) }} catch {{}}
+try {{ $baseProfile.DeleteSetting([uint32]0x00C09D09) }} catch {{}}
+try {{ $baseProfile.DeleteSetting([uint32]0x000F00FF) }} catch {{}}
+$session.Save()
+";
+            }
+
+            File.WriteAllText(scriptPath, scriptBody);
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            var process = System.Diagnostics.Process.Start(psi);
+            if (process == null) return false;
+            process.WaitForExit(10000);
+            try { File.Delete(scriptPath); } catch { }
+
+            if (enabled)
+            {
+                // Also write default size limit if not already set
+                var currentSize = GetGlobalReBarSizeLimit();
+                if (currentSize == 0)
+                    SetGlobalReBarSizeLimit(0x0000000040000000); // 1GB default
+            }
+
+            // Reload session
+            try
+            {
+                _session = DriverSettingsSession.CreateAndLoad();
+                _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
+                foreach (var p in _session.Profiles)
+                    _cachedProfiles.TryAdd(p.Name, p);
+            }
+            catch { }
+
+            CrashReporter.Log($"[DlssPresetService.SetGlobalReBarEnabled] Set to {enabled}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.SetGlobalReBarEnabled] Error — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Gets the global ReBAR size limit from the base profile. Returns 0 if not set.</summary>
+    public ulong GetGlobalReBarSizeLimit()
+    {
+        if (!_isSupported || _session == null) return 0;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var setting = baseProfile.GetSetting(REBAR_SIZE_LIMIT_ID);
+            if (setting.CurrentValue is byte[] bytes && bytes.Length >= 8)
+                return BitConverter.ToUInt64(bytes, 0);
+            return 0;
+        }
+        catch { return 0; }
+    }
+
+    /// <summary>Sets the global ReBAR size limit on the base profile.</summary>
+    public bool SetGlobalReBarSizeLimit(ulong sizeBytes)
+    {
+        if (!_isSupported || _session == null) return false;
+        // Use the PowerShell helper approach — same as per-game (binary settings broken in-process)
+        try
+        {
+            var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_global_rebar_size.ps1");
+            var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
+            var hexBytes = BitConverter.ToString(BitConverter.GetBytes(sizeBytes)).Replace("-", ",0x");
+
+            var script = $@"
+Add-Type -Path '{nvApiPath.Replace("'", "''")}'
+[NvAPIWrapper.NVIDIA]::Initialize()
+$session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
+$baseProfile = $session.BaseProfile
+[byte[]]$bytes = @(0x{hexBytes})
+$baseProfile.SetSetting([uint32]0x000F00FF, $bytes)
+$session.Save()
+";
+            File.WriteAllText(scriptPath, script);
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            var process = System.Diagnostics.Process.Start(psi);
+            if (process == null) return false;
+            process.WaitForExit(10000);
+            try { File.Delete(scriptPath); } catch { }
+
+            // Reload session so in-process reads see the new value
+            try
+            {
+                _session = DriverSettingsSession.CreateAndLoad();
+                _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
+                foreach (var p in _session.Profiles)
+                    _cachedProfiles.TryAdd(p.Name, p);
+            }
+            catch { }
+
+            CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Set to 0x{sizeBytes:X16}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Error — {ex.Message}");
+            return false;
+        }
+    }
+
     // ── Profile Export/Import ──────────────────────────────────────────────────
 
     /// <summary>All RHI-managed setting IDs for export/import.</summary>
@@ -1600,6 +1771,49 @@ $destroyDel.Invoke($hSession) | Out-Null
             }
         }
 
+        // Export global/base profile settings (Shader Cache, G-Sync, ReBAR, etc.)
+        try
+        {
+            var globalSettings = new Dictionary<string, object>();
+            var globalDword = new Dictionary<string, uint>();
+
+            // Read global DWORD settings
+            uint[] globalSettingIds = { SHADER_CACHE_SIZE_ID, SHADER_PRECOMPILE_ID, GSYNC_APP_MODE_ID, GSYNC_GLOBAL_MODE_ID, PREFERRED_REFRESH_RATE_ID, REBAR_FEATURE_ID, REBAR_EXPR_MODES_ID };
+            var baseProfile = _session.BaseProfile;
+            var baseHandle = GetHandlePtr(baseProfile.Handle);
+            if (sessionHandle != IntPtr.Zero && baseHandle != IntPtr.Zero)
+            {
+                foreach (var id in globalSettingIds)
+                {
+                    try
+                    {
+                        var rawVal = GetSettingRawNvApi(sessionHandle, baseHandle, id);
+                        if (rawVal.HasValue)
+                            globalDword[$"0x{id:X8}"] = rawVal.Value;
+                    }
+                    catch { }
+                }
+            }
+
+            // Read global ReBAR Size Limit (binary)
+            var rebarSize = GetGlobalReBarSizeLimit();
+            if (rebarSize != 0)
+                globalSettings["rebarSizeLimit"] = rebarSize;
+
+            if (globalDword.Count > 0)
+                globalSettings["settings"] = globalDword;
+
+            if (globalSettings.Count > 0)
+            {
+                result["__global__"] = globalSettings;
+                CrashReporter.Log($"[DlssPresetService.ExportProfiles] Exported global profile: {globalDword.Count} DWORD settings");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.ExportProfiles] Global profile export failed: {ex.Message}");
+        }
+
         CrashReporter.Log($"[DlssPresetService.ExportProfiles] Exported {result.Count} profiles with custom settings");
         return result;
     }
@@ -1616,6 +1830,55 @@ $destroyDel.Invoke($hSession) | Out-Null
             {
                 var profileName = kvp.Key;
                 if (kvp.Value is not System.Text.Json.JsonElement elem) continue;
+
+                // Handle global profile separately
+                if (profileName == "__global__")
+                {
+                    try
+                    {
+                        var baseProfile = _session.BaseProfile;
+                        // ReBAR Feature/Mode require elevation — use PS helper for those
+                        bool hasReBarFeature = false;
+                        uint rebarFeatureVal = 0;
+                        uint rebarModeVal = 0;
+
+                        if (elem.TryGetProperty("settings", out var globalSettingsElem) && globalSettingsElem.ValueKind == System.Text.Json.JsonValueKind.Object)
+                        {
+                            foreach (var prop in globalSettingsElem.EnumerateObject())
+                            {
+                                if (uint.TryParse(prop.Name.Replace("0x", ""), System.Globalization.NumberStyles.HexNumber, null, out var settingId))
+                                {
+                                    var value = prop.Value.GetUInt32();
+                                    if (settingId == REBAR_FEATURE_ID) { hasReBarFeature = true; rebarFeatureVal = value; continue; }
+                                    if (settingId == REBAR_EXPR_MODES_ID) { rebarModeVal = value; continue; }
+                                    try { baseProfile.SetSetting(settingId, value); } catch { }
+                                }
+                            }
+                        }
+
+                        // Write ReBAR Feature/Mode via PS helper (requires elevation)
+                        if (hasReBarFeature && rebarFeatureVal != 0)
+                            SetGlobalReBarEnabled(true);
+                        else if (hasReBarFeature)
+                            SetGlobalReBarEnabled(false);
+
+                        if (elem.TryGetProperty("rebarSizeLimit", out var rebarSizeElem))
+                        {
+                            var sizeVal = rebarSizeElem.GetUInt64();
+                            if (sizeVal != 0)
+                                SetGlobalReBarSizeLimit(sizeVal);
+                        }
+
+                        _session.Save();
+                        importedCount++;
+                        CrashReporter.Log("[DlssPresetService.ImportProfiles] Restored global profile settings");
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[DlssPresetService.ImportProfiles] Global profile import failed — {ex.Message}");
+                    }
+                    continue;
+                }
 
                 // Find or create profile
                 DriverSettingsProfile? profile = null;

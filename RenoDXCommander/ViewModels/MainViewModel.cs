@@ -134,7 +134,7 @@ public partial class MainViewModel : ObservableObject
     {
         ViewLayout.Detail => "Detail View",
         ViewLayout.Grid => "Grid View",
-        ViewLayout.Compact => "Compact View",
+        ViewLayout.Compact => "Simple View",
         _ => "Detail View",
     };
 

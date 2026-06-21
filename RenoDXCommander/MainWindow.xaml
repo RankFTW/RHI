@@ -114,7 +114,7 @@
                             ToolTipService.ToolTip="Switch between view layouts">
                         <Button.Flyout>
                             <MenuFlyout Placement="Bottom">
-                                <MenuFlyoutItem Text="Compact" Click="ViewCompact_Click"/>
+                                <MenuFlyoutItem Text="Simple" Click="ViewCompact_Click"/>
                                 <MenuFlyoutItem Text="Detail" Click="ViewDetail_Click"/>
                                 <MenuFlyoutItem Text="Grid" Click="ViewGrid_Click"/>
                             </MenuFlyout>
@@ -1471,23 +1471,55 @@
                                         </StackPanel>
                                     </Grid>
 
-                                    <Button Content="Export Profiles"
-                                            Click="ExportNvidiaProfiles_Click"
-                                            ToolTipService.ToolTip="Save all per-game NVIDIA profile settings (presets, VSync, latency, etc.) to a backup file. Use after configuring games to preserve settings across driver updates."
-                                            Background="{StaticResource SurfaceOverlayBrush}"
-                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="ReBAR" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                                <TextBlock x:Name="ReBarAdminWarning" x:FieldModifier="internal"
+                                                           Text="— Admin required" FontSize="11"
+                                                           Foreground="{StaticResource AccentAmberBrush}"
+                                                           Visibility="Collapsed"/>
+                                            </StackPanel>
+                                            <ComboBox x:Name="GlobalReBarEnableCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Global Resizable BAR — enables large GPU memory transfers for all games. Requires admin and compatible hardware (RTX 30 Series+)."
+                                                      SelectionChanged="GlobalReBarEnableCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="ReBAR Size Limit" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="GlobalReBarSizeCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Maximum BAR transfer size. 1GB is optimal for most games. Decrease to 512MB if experiencing ReBAR-related stutters."
+                                                      SelectionChanged="GlobalReBarSizeCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                    </Grid>
 
-                                    <Button Content="Import Profiles"
-                                            Click="ImportNvidiaProfiles_Click"
-                                            ToolTipService.ToolTip="Restore per-game NVIDIA profile settings from a previous export. Recreates profiles and exe associations if they were wiped by a driver update."
-                                            Background="{StaticResource SurfaceOverlayBrush}"
-                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="Export Profiles"
+                                                Click="ExportNvidiaProfiles_Click"
+                                                ToolTipService.ToolTip="Save all per-game NVIDIA profile settings to a backup file."
+                                                Background="{StaticResource AccentBlueBgBrush}"
+                                                Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
+                                        <Button Grid.Column="1" Content="Import Profiles"
+                                                Click="ImportNvidiaProfiles_Click"
+                                                ToolTipService.ToolTip="Restore per-game NVIDIA profile settings from a previous export."
+                                                Background="{StaticResource AccentBlueBgBrush}"
+                                                Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
+                                    </Grid>
                                 </StackPanel>
                             </Grid>
                         </Border>

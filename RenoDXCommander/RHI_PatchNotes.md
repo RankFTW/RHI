@@ -17,6 +17,7 @@
 - **Driver Version Display** — The Nvidia Profile Overrides section header now shows the installed driver version.
 - **Restore Profile Defaults** — New button in the driver settings row resets the game's NVIDIA driver profile to factory defaults with a single click. Equivalent to NVIDIA App's "Restore" and NVPI's "Defaults" button.
 - **Manifest-driven Addon Packs** — Addon entries can now be added, modified, or disabled from the remote manifest. Descriptions, URLs, and deploy filenames are all overridable server-side.
+- **Global ReBAR** — New ReBAR On/Off and Size Limit controls in Global Nvidia Settings. Applies to all games via the base driver profile. Per-game dropdowns show "Global (On/Off)" when the global setting is active, with per-game override support.
 
 ### Improvements
 

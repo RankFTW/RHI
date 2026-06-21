@@ -157,6 +157,26 @@ public class SettingsHandler
             var refreshRate = presetSvc.GetPreferredRefreshRate();
             var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
             _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 1; // Default: Highest available
+
+            // Global ReBAR
+            var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
+            _window.GlobalReBarEnableCombo.ItemsSource = new[] { "Off", "On" };
+            var globalReBar = presetSvc.GetGlobalReBarEnabled();
+            _window.GlobalReBarEnableCombo.SelectedIndex = globalReBar == true ? 1 : 0;
+            _window.GlobalReBarEnableCombo.IsEnabled = isAdminForReBar;
+            _window.GlobalReBarEnableCombo.Opacity = isAdminForReBar ? 1.0 : 0.4;
+
+            _window.GlobalReBarSizeCombo.ItemsSource = DlssPresetService.ReBarSizeLimits.Select(o => o.Name).ToArray();
+            var globalReBarSize = presetSvc.GetGlobalReBarSizeLimit();
+            var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
+            _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1; // Default: 1GB
+            _window.GlobalReBarSizeCombo.IsEnabled = isAdminForReBar && globalReBar == true;
+            _window.GlobalReBarSizeCombo.Opacity = (isAdminForReBar && globalReBar == true) ? 1.0 : 0.4;
+
+            // Show admin warning if not elevated
+            _window.ReBarAdminWarning.Visibility = isAdminForReBar
+                ? Microsoft.UI.Xaml.Visibility.Collapsed
+                : Microsoft.UI.Xaml.Visibility.Visible;
         }
         _window._shaderCacheComboInit = false;
 

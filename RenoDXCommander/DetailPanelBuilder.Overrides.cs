@@ -2639,28 +2639,59 @@ public partial class DetailPanelBuilder
             rebarCol.Children.Add(rebarLabel);
 
             bool rebarEnabled = nvidiaPresetService.GetReBarEnabled(card.GameName, installPathSafe);
-            uint rebarMode = nvidiaPresetService.GetReBarMode(card.GameName, installPathSafe);
             ulong rebarSizeLimit = nvidiaPresetService.GetReBarSizeLimit(card.GameName, installPathSafe);
+            var globalReBarState = nvidiaPresetService.GetGlobalReBarEnabled();
 
-            // Enable
+            // Enable — with Global (On/Off) option when global is set
             {
                 rebarCol.Children.Add(new TextBlock { Text = "Enable", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var enableItems = new List<string>();
+                if (globalReBarState.HasValue)
+                    enableItems.Add($"Global ({(globalReBarState.Value ? "On" : "Off")})");
+                enableItems.Add("Off");
+                enableItems.Add("On");
+
+                // Determine selected index
+                int enableIdx;
+                if (globalReBarState.HasValue)
+                {
+                    // If per-game matches global, show "Global" selected; otherwise show the per-game value
+                    bool perGameMatchesGlobal = rebarEnabled == globalReBarState.Value;
+                    enableIdx = perGameMatchesGlobal ? 0 : (rebarEnabled ? 2 : 1); // Global=0, Off=1, On=2
+                }
+                else
+                {
+                    enableIdx = rebarEnabled ? 1 : 0; // Off=0, On=1
+                }
+
                 var rebarEnableCombo = new ComboBox
                 {
-                    ItemsSource = new[] { "Off", "On" },
-                    SelectedIndex = rebarEnabled ? 1 : 0,
+                    ItemsSource = enableItems,
+                    SelectedIndex = enableIdx,
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                 };
-                ToolTipService.SetToolTip(rebarEnableCombo, "Off = ReBAR disabled (driver default). On = Force-enable ReBAR for this game.");
+                ToolTipService.SetToolTip(rebarEnableCombo, globalReBarState.HasValue
+                    ? "Global = inherit from global setting. On/Off = per-game override."
+                    : "Off = ReBAR disabled. On = Force-enable ReBAR for this game.");
                 var rebarComboInit = true;
                 rebarEnableCombo.SelectionChanged += (s, ev) =>
                 {
                     if (rebarComboInit) return;
                     var selected = rebarEnableCombo.SelectedItem as string;
-                    bool enabling = selected == "On";
-                    nvidiaPresetService.SetReBarEnabled(card.GameName, installPathSafe, enabling, rebarMode);
+                    if (selected != null && selected.StartsWith("Global"))
+                    {
+                        // Remove per-game override — inherit from global
+                        // Delete the per-game setting by setting it to match global
+                        bool globalVal = globalReBarState ?? false;
+                        nvidiaPresetService.SetReBarEnabled(card.GameName, installPathSafe, globalVal, 2);
+                    }
+                    else
+                    {
+                        bool enabling = selected == "On";
+                        nvidiaPresetService.SetReBarEnabled(card.GameName, installPathSafe, enabling, 2);
+                    }
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
                 };
                 rebarCol.Children.Add(rebarEnableCombo);
@@ -2670,9 +2701,25 @@ public partial class DetailPanelBuilder
             // Mode
             {
                 rebarCol.Children.Add(new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
-                var modeItems = DlssPresetService.ReBarModes.Select(m => m.Name).ToArray();
-                int modeIdx = Array.FindIndex(DlssPresetService.ReBarModes, m => m.Value == rebarMode);
-                if (modeIdx < 0) modeIdx = 0;
+                uint rebarMode = nvidiaPresetService.GetReBarMode(card.GameName, installPathSafe);
+                var modeItems = new List<string>();
+                if (globalReBarState.HasValue)
+                    modeItems.Add("Global (Standard)");
+                modeItems.AddRange(DlssPresetService.ReBarModes.Select(m => m.Name));
+
+                int modeIdx;
+                if (globalReBarState.HasValue)
+                {
+                    // Mode 0 = Standard = matches global default
+                    modeIdx = rebarMode == 0 ? 0 : (Array.FindIndex(DlssPresetService.ReBarModes, m => m.Value == rebarMode) + 1);
+                    if (modeIdx < 0) modeIdx = 0;
+                }
+                else
+                {
+                    modeIdx = Array.FindIndex(DlssPresetService.ReBarModes, m => m.Value == rebarMode);
+                    if (modeIdx < 0) modeIdx = 0;
+                }
+
                 var rebarModeCombo = new ComboBox
                 {
                     ItemsSource = modeItems,
@@ -2680,8 +2727,8 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
-                    IsEnabled = rebarEnabled,
-                    Opacity = rebarEnabled ? 1.0 : 0.4,
+                    IsEnabled = rebarEnabled || (globalReBarState == true),
+                    Opacity = (rebarEnabled || globalReBarState == true) ? 1.0 : 0.4,
                 };
                 ToolTipService.SetToolTip(rebarModeCombo, "Standard = conservative. Optimized = aggressive driver scheduling (used by NVIDIA-whitelisted titles).");
                 var modeComboInit = true;
@@ -2690,19 +2737,52 @@ public partial class DetailPanelBuilder
                     if (modeComboInit) return;
                     int idx = rebarModeCombo.SelectedIndex;
                     if (idx < 0) return;
-                    uint newMode = DlssPresetService.ReBarModes[idx].Value;
-                    nvidiaPresetService.SetReBarMode(card.GameName, installPathSafe, newMode);
+                    if (globalReBarState.HasValue)
+                    {
+                        if (idx == 0) return; // "Global (Standard)" — no override
+                        uint newMode = DlssPresetService.ReBarModes[idx - 1].Value;
+                        nvidiaPresetService.SetReBarMode(card.GameName, installPathSafe, newMode);
+                    }
+                    else
+                    {
+                        uint newMode = DlssPresetService.ReBarModes[idx].Value;
+                        nvidiaPresetService.SetReBarMode(card.GameName, installPathSafe, newMode);
+                    }
                 };
                 rebarCol.Children.Add(rebarModeCombo);
                 modeComboInit = false;
             }
 
-            // Size Limit
+            // Size Limit — with Global option when global is set
             {
                 rebarCol.Children.Add(new TextBlock { Text = "Size Limit", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
-                var sizeItems = DlssPresetService.ReBarSizeLimits.Select(sl => sl.Name).ToArray();
-                int sizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, sl => sl.Value == rebarSizeLimit);
-                if (sizeIdx < 0) sizeIdx = 1; // Default to 1GB
+
+                var sizeItems = new List<string>();
+                var sizeValues = new List<ulong>();
+                ulong globalSize = nvidiaPresetService.GetGlobalReBarSizeLimit();
+                if (globalSize != 0)
+                {
+                    // Find the name for the global size
+                    var globalSizeName = DlssPresetService.ReBarSizeLimits
+                        .FirstOrDefault(sl => sl.Value == globalSize).Name ?? $"{globalSize / (1024*1024*1024)}GB";
+                    sizeItems.Add($"Global ({globalSizeName})");
+                    sizeValues.Add(0); // sentinel for "use global"
+                }
+                foreach (var sl in DlssPresetService.ReBarSizeLimits)
+                {
+                    sizeItems.Add(sl.Name);
+                    sizeValues.Add(sl.Value);
+                }
+
+                int sizeIdx;
+                if (globalSize != 0 && (rebarSizeLimit == 0 || rebarSizeLimit == globalSize))
+                    sizeIdx = 0; // Global
+                else
+                {
+                    var matchIdx = sizeValues.IndexOf(rebarSizeLimit);
+                    sizeIdx = matchIdx >= 0 ? matchIdx : (globalSize != 0 ? 0 : 1); // Default: Global or 1GB
+                }
+
                 var rebarSizeCombo = new ComboBox
                 {
                     ItemsSource = sizeItems,
@@ -2710,17 +2790,18 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
-                    IsEnabled = rebarEnabled,
-                    Opacity = rebarEnabled ? 1.0 : 0.4,
+                    IsEnabled = rebarEnabled || (globalReBarState == true),
+                    Opacity = (rebarEnabled || globalReBarState == true) ? 1.0 : 0.4,
                 };
-                ToolTipService.SetToolTip(rebarSizeCombo, "1GB is optimal for most games. Decrease to 512MB if a game stutters with ReBAR enabled. Increasing beyond 1GB rarely helps.");
+                ToolTipService.SetToolTip(rebarSizeCombo, "1GB is optimal for most games. Decrease to 512MB if experiencing ReBAR-related stutters.");
                 var sizeComboInit = true;
                 rebarSizeCombo.SelectionChanged += (s, ev) =>
                 {
                     if (sizeComboInit) return;
                     int idx = rebarSizeCombo.SelectedIndex;
                     if (idx < 0) return;
-                    ulong newSize = DlssPresetService.ReBarSizeLimits[idx].Value;
+                    ulong newSize = sizeValues[idx];
+                    if (newSize == 0) return; // "Global" selected — no per-game override needed
                     nvidiaPresetService.SetReBarSizeLimit(card.GameName, installPathSafe, newSize);
                 };
                 rebarCol.Children.Add(rebarSizeCombo);
