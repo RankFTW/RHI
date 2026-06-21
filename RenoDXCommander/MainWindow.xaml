@@ -1808,7 +1808,7 @@
                                     </ComboBox>
                                 </StackPanel>
 
-                                <StackPanel Spacing="4">
+                                <StackPanel Spacing="4" Visibility="Collapsed">
                                     <TextBlock Text="DXVK Variant" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"/>
                                     <ComboBox x:Name="DxvkVariantCombo" x:FieldModifier="internal"

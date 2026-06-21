@@ -70,6 +70,12 @@ The biggest single improvement with the highest payoff. Several files are 100KB+
    - `comboInitializing`, `_suppressSelectionChanged`, debounce timers → single `PanelState` enum (Building, Interactive, Rebuilding)
    - SelectionChanged handlers check `PanelState == Interactive` instead of individual booleans
 
+4. **Separate shader pack timestamps from settings.json**:
+   - `ShaderPackService` reads/writes pack version timestamps to `settings.json` concurrently with other services during startup
+   - File contention causes `LoadStoredVersion` to fail → `versionMatch=False` → spurious re-downloads (~5-6 packs per launch, wastes ~500ms)
+   - Fix: Move shader pack version tracking to a dedicated `shader_pack_versions.json` file (same pattern as `addon_deployments.json`, `dlss_scan_cache.json`)
+   - Alternative: Add a file-level lock around all `settings.json` reads/writes (heavier, affects more code paths)
+
 ---
 
 ## Priority 4: Reduce ViewModel Surface Area

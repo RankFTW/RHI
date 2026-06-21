@@ -255,6 +255,14 @@ public partial class MainViewModel
             var dxvkTask     = Task.Run(async () => {
                 try
                 {
+                    // Sync the saved DXVK variant to the service before staging
+                    _dxvkService.SelectedVariant = _settingsViewModel.DxvkVariant switch
+                    {
+                        "Stable" => DxvkVariant.Stable,
+                        "LiliumHdr" => DxvkVariant.LiliumHdr,
+                        _ => DxvkVariant.Development,
+                    };
+
                     // Migrate legacy shared staging folder to variant-specific folders
                     MigrateDxvkStagingFolder();
 

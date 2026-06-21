@@ -1567,7 +1567,7 @@ public class OverridesFlyoutBuilder
         mainGrid.Children.Add(sep4);
 
         // ══════════════════════════════════════════════════════════════════════
-        // ROW 6 — Left: DXVK ComboBox (Off/Global/Development/Stable/Lilium HDR)
+        // ROW 6 — Left: DXVK ComboBox (Off/Development/Stable/Lilium HDR)
         // ══════════════════════════════════════════════════════════════════════
 
         // Forward-declare DXVK toggle for reset handler
@@ -1575,7 +1575,7 @@ public class OverridesFlyoutBuilder
 
         if (card.IsDxvkToggleVisible)
         {
-            var dxvkModeItems = new[] { "Off", "Global", "Development", "Stable", "Lilium HDR" };
+            var dxvkModeItems = new[] { "Off", "Development", "Stable", "Lilium HDR" };
             string defaultDxvkSelection;
             if (!card.DxvkEnabled)
             {
@@ -1584,13 +1584,26 @@ public class OverridesFlyoutBuilder
             else
             {
                 var currentDxvkOverride = ViewModel.GetDxvkVariantOverride(capturedName);
-                defaultDxvkSelection = currentDxvkOverride switch
+                if (currentDxvkOverride != null)
                 {
-                    "Development" => "Development",
-                    "Stable" => "Stable",
-                    "LiliumHdr" => "Lilium HDR",
-                    _ => "Global",
-                };
+                    defaultDxvkSelection = currentDxvkOverride switch
+                    {
+                        "Development" => "Development",
+                        "Stable" => "Stable",
+                        "LiliumHdr" => "Lilium HDR",
+                        _ => "Development",
+                    };
+                }
+                else
+                {
+                    // No per-game override — show the effective global variant
+                    defaultDxvkSelection = ViewModel.DxvkServiceInstance.SelectedVariant switch
+                    {
+                        DxvkVariant.Stable => "Stable",
+                        DxvkVariant.LiliumHdr => "Lilium HDR",
+                        _ => "Development",
+                    };
+                }
             }
 
             var dxvkModeCombo = new ComboBox
@@ -1605,7 +1618,7 @@ public class OverridesFlyoutBuilder
                 ToolTipService.SetToolTip(dxvkModeCombo, card.DxvkToggleTooltip);
             else
                 ToolTipService.SetToolTip(dxvkModeCombo,
-                    "Off = DXVK disabled. Global = use global variant setting.\nDevelopment/Stable/Lilium HDR = per-game variant override.\nDXVK translates DirectX to Vulkan — enables compute shaders.");
+                    "Off = DXVK disabled.\nDevelopment/Stable/Lilium HDR = DXVK variant selection.\nDXVK translates DirectX to Vulkan — enables compute shaders.");
 
             dxvkToggle = new ToggleSwitch { IsOn = card.DxvkEnabled, Visibility = Visibility.Collapsed };
 

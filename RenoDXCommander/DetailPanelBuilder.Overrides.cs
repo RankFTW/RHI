@@ -2853,8 +2853,8 @@ public partial class DetailPanelBuilder
             dxvkRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             dxvkRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            // Left column — DXVK ComboBox (Off / Global / Development / Stable / Lilium HDR)
-            var dxvkModeItems = new[] { "Off", "Global", "Development", "Stable", "Lilium HDR" };
+            // Left column — DXVK ComboBox (Off / Development / Stable / Lilium HDR)
+            var dxvkModeItems = new[] { "Off", "Development", "Stable", "Lilium HDR" };
             string defaultDxvkSelection;
             if (!card.DxvkEnabled)
             {
@@ -2863,13 +2863,26 @@ public partial class DetailPanelBuilder
             else
             {
                 var currentDxvkOverride = _window.ViewModel.GetDxvkVariantOverride(gameName);
-                defaultDxvkSelection = currentDxvkOverride switch
+                if (currentDxvkOverride != null)
                 {
-                    "Development" => "Development",
-                    "Stable" => "Stable",
-                    "LiliumHdr" => "Lilium HDR",
-                    _ => "Global",
-                };
+                    defaultDxvkSelection = currentDxvkOverride switch
+                    {
+                        "Development" => "Development",
+                        "Stable" => "Stable",
+                        "LiliumHdr" => "Lilium HDR",
+                        _ => "Development",
+                    };
+                }
+                else
+                {
+                    // No per-game override — show the effective global variant
+                    defaultDxvkSelection = _window.ViewModel.DxvkServiceInstance.SelectedVariant switch
+                    {
+                        DxvkVariant.Stable => "Stable",
+                        DxvkVariant.LiliumHdr => "Lilium HDR",
+                        _ => "Development",
+                    };
+                }
             }
 
             var dxvkModeCombo = new ComboBox
@@ -2884,7 +2897,7 @@ public partial class DetailPanelBuilder
                 ToolTipService.SetToolTip(dxvkModeCombo, card.DxvkToggleTooltip);
             else
                 ToolTipService.SetToolTip(dxvkModeCombo,
-                    "Off = DXVK disabled. Global = use global variant setting.\nDevelopment/Stable/Lilium HDR = per-game variant override.\nDXVK translates DirectX to Vulkan — enables compute shaders.");
+                    "Off = DXVK disabled.\nDevelopment/Stable/Lilium HDR = DXVK variant selection.\nDXVK translates DirectX to Vulkan — enables compute shaders.");
 
             dxvkToggle = new ToggleSwitch { IsOn = card.DxvkEnabled, Visibility = Visibility.Collapsed };
 

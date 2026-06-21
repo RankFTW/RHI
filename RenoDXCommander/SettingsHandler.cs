@@ -98,6 +98,7 @@ public class SettingsHandler
         _window.CacheAllShadersToggle.IsOn = ViewModel.Settings.CacheAllShaders;
 
         // Initialize DXVK variant combo
+        ViewModel.Settings.IsLoadingSettings = true;
         var dxvkCombo = _window.DxvkVariantCombo;
         var dxvkVariant = ViewModel.Settings.DxvkVariant;
         if (string.Equals(dxvkVariant, "Stable", StringComparison.OrdinalIgnoreCase))
@@ -106,6 +107,7 @@ public class SettingsHandler
             dxvkCombo.SelectedIndex = 2;
         else
             dxvkCombo.SelectedIndex = 0;
+        ViewModel.Settings.IsLoadingSettings = false;
 
         // Initialize ReShade channel combo
         var rsChannelCombo = _window.ReShadeChannelCombo;
