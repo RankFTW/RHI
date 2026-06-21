@@ -139,6 +139,11 @@ public sealed partial class MainWindow : Window
             await ShaderPopupHelper.ShowAsync(Content.XamlRoot, ViewModel.ShaderPackServiceInstance, current, ShaderPopupHelper.PopupContext.Global);
         ViewModel.ShowPerGameShaderSelectionPicker = async (gameName, current) =>
             await ShaderPopupHelper.ShowAsync(Content.XamlRoot, ViewModel.ShaderPackServiceInstance, current, ShaderPopupHelper.PopupContext.PerGame);
+        ViewModel.ScrollToSelectedGame = () =>
+        {
+            if (ViewModel.SelectedGame != null && GameList.Items.Contains(ViewModel.SelectedGame))
+                GameList.ScrollIntoView(ViewModel.SelectedGame);
+        };
         ViewModel.PropertyChanged += OnViewModelChanged;
         GameList.ItemsSource = ViewModel.DisplayedGames;
         // Apply initial visibility

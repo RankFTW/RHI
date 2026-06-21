@@ -1471,7 +1471,7 @@ $destroyDel.Invoke($hSession) | Out-Null
     /// <summary>Gets the preferred refresh rate setting.</summary>
     public uint GetPreferredRefreshRate()
     {
-        if (!_isSupported || _session == null) return 0x00000001; // Default: Highest available
+        if (!_isSupported || _session == null) return 0x00000000; // Default: App Setting
         try
         {
             var baseProfile = _session.BaseProfile;
@@ -1485,9 +1485,10 @@ $destroyDel.Invoke($hSession) | Out-Null
                 var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, PREFERRED_REFRESH_RATE_ID);
                 if (rawVal.HasValue) return rawVal.Value;
             }
-            return 0x00000001;
+            // Not set — NVIDIA default is "App Setting" (0x00)
+            return 0x00000000;
         }
-        catch { return 0x00000001; }
+        catch { return 0x00000000; }
     }
 
     /// <summary>Sets the preferred refresh rate.</summary>

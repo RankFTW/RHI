@@ -30,6 +30,9 @@
 - Admin notice at the bottom of the Nvidia Profile section indicates elevation status.
 - Config button opens the exact Engine.ini folder. Also detects config stored inside the game directory.
 - Rebranded from "ReShade HDR Installer" to "RHI". All user-facing text updated.
+- DLSS/Streamline section hidden entirely for games without DLSS or Streamline files. Driver settings row remains visible for all games.
+- DXVK installed version is now a clickable link to the variant's GitHub releases page.
+- "Compact" view renamed to "Simple" across all user-facing text.
 
 ### Bug Fixes
 

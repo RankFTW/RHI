@@ -227,6 +227,9 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public Func<string, List<string>?, Task<List<string>?>>? ShowPerGameShaderSelectionPicker { get; set; }
 
+    /// <summary>Invoked after background merge to scroll the game list to the selected game.</summary>
+    public Action? ScrollToSelectedGame { get; set; }
+
     /// <summary>Guard flag — true while LoadNameMappings is running so that
     /// property-change handlers don't call SaveNameMappings before all fields
     /// have been loaded.</summary>

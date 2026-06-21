@@ -2014,6 +2014,7 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         });
 
+        if (card.HasAnyDlssStreamline)
         {
             var dlssService = _window.ViewModel.DlssStreamlineServiceInstance;
             var presetService = _window.ViewModel.DlssPresetServiceInstance;
@@ -2083,8 +2084,8 @@ public partial class DetailPanelBuilder
 
             dlssRowGrid.Children.Add(MakeDlssDivider(3));
 
-            // FG column
-            bool fgEnabled = hasDlssg && !(card.DlssgInstalledVersion?.StartsWith("1.") == true);
+            // FG column — no v1.x guard (FG can be updated from v1.0.0 to newer versions)
+            bool fgEnabled = hasDlssg;
             bool fgDriverOverride = presetService.IsSupported && presetService.IsFgDriverOverrideActive(card.GameName, card.InstallPath ?? "");
             var fgCol = BuildDlssColumn("Frame Generation", fgEnabled, dlssService.DlssgVersions,
                 card.DlssgInstalledVersion, DlssPresetService.FgPresets,
@@ -2177,7 +2178,7 @@ public partial class DetailPanelBuilder
             bool restoreEnabled = card.HasAnyDlssBackup || hasNonDefaultPreset;
             var dlssRestoreBtn = new Button
             {
-                Content = "Restore All",
+                Content = "Restore DLSS/SL",
                 FontSize = 11,
                 Height = 32,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -2260,7 +2261,7 @@ public partial class DetailPanelBuilder
                     && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true) && !rrOverride)
                     await svc.SwapDlssdAsync(targetCard.DlssDetection.DlssdPath, settings.DefaultDlssdVersion);
                 if (!string.IsNullOrEmpty(settings.DefaultDlssgVersion) && targetCard.HasDlssg && targetCard.DlssDetection.DlssgPath != null
-                    && !(targetCard.DlssgInstalledVersion?.StartsWith("1.") == true) && !fgOverride)
+                    && !fgOverride)
                     await svc.SwapDlssgAsync(targetCard.DlssDetection.DlssgPath, settings.DefaultDlssgVersion);
                 if (!string.IsNullOrEmpty(settings.DefaultStreamlineVersion) && targetCard.HasStreamline && targetCard.DlssDetection.StreamlineFolder != null
                     && !(targetCard.StreamlineInstalledVersion?.StartsWith("1.") == true))
@@ -2470,6 +2471,9 @@ public partial class DetailPanelBuilder
                     int i = combo.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
                     nvidiaPresetService.SetSmoothMotionEnable(card.GameName, installPathSafe, options[i].Value);
+                    // Cascade: set APIs to All when enabling, None when disabling
+                    bool enabling = options[i].Value != 0;
+                    nvidiaPresetService.SetSmoothMotionApis(card.GameName, installPathSafe, enabling ? 0x00000007u : 0x00000000u);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
                 };
                 smoothCol.Children.Add(combo);
@@ -2624,7 +2628,16 @@ public partial class DetailPanelBuilder
                     var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                         c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
                     if (refreshCard != null)
+                    {
+                        // Also restore DLSS/Streamline DLLs to originals
+                        if (refreshCard.DlssDetection != null)
+                        {
+                            var dlssSvc = _window.ViewModel.DlssStreamlineServiceInstance;
+                            dlssSvc.RestoreAll(refreshCard.DlssDetection);
+                            refreshCard.RefreshDlssVersions(dlssSvc);
+                        }
                         _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(refreshCard));
+                    }
                 }
             };
             powerCol.Children.Add(restoreProfileBtn);

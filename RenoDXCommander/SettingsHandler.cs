@@ -156,7 +156,7 @@ public class SettingsHandler
             _window.PreferredRefreshRateCombo.ItemsSource = DlssPresetService.PreferredRefreshRateOptions.Select(o => o.Name).ToArray();
             var refreshRate = presetSvc.GetPreferredRefreshRate();
             var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
-            _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 1; // Default: Highest available
+            _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0; // Default: App Setting
 
             // Global ReBAR
             var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();

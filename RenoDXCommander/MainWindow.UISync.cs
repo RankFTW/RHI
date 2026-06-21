@@ -149,11 +149,8 @@ public sealed partial class MainWindow
             {
                 GameList.SelectedItem = lastMatch;
                 GameList.ScrollIntoView(lastMatch);
-                ViewModel.LastSelectedGameName = null; // consumed
                 return;
             }
-            // Game no longer available — clear and fall through to first-game default
-            ViewModel.LastSelectedGameName = null;
         }
 
         // Auto-select first game if nothing is selected

@@ -2613,6 +2613,9 @@ public partial class MainViewModel
                     ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
                     : $"{detectedGames.Count} games detected · {InstalledCount} mods installed";
                 SubStatusText = "";
+
+                // Re-scroll to selected game after merge (cards may have shifted)
+                ScrollToSelectedGame?.Invoke();
             });
 
             // ── Deferred background work: ReShade staging + OptiScaler staging + shader sync ──

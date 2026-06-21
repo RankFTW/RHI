@@ -1724,6 +1724,21 @@ public sealed partial class MainWindow
                 new Uri("https://github.com/Filoppi/Luma-Framework/releases"));
     }
 
+    private async void DetailDxvkStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        var card = ViewModel.SelectedGame;
+        if (card == null || !card.IsDxvkInstalled) return;
+
+        var variant = ViewModel.ResolveDxvkVariant(card.GameName);
+        var url = variant switch
+        {
+            Models.DxvkVariant.LiliumHdr => "https://github.com/EndlesslyFlowering/dxvk/releases",
+            Models.DxvkVariant.Stable => "https://github.com/doitsujin/dxvk/releases",
+            _ => "https://github.com/doitsujin/dxvk/releases", // Development doesn't have a stable release page
+        };
+        await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+    }
+
     private async void DetailRsStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         if (ViewModel.SelectedGame?.RsStatus == Models.GameStatus.Installed)

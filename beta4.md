@@ -16,3 +16,7 @@
 - Changing global ReBAR settings now auto-refreshes the per-game detail panel.
 - When enabling global ReBAR, 1GB default size is written automatically (not left blank).
 - Profile Export/Import now includes global settings (Shader Cache, G-Sync, Refresh Rate, ReBAR). Import uses PS helper for ReBAR to ensure elevation works correctly.
+- DLSS/Streamline section now hidden entirely for games without DLSS or Streamline files (same pattern as DXVK row). Driver settings row always remains visible.
+- DXVK version text is now a clickable link — opens the GitHub releases page for the installed variant (Lilium HDR, Stable, or Development).
+- "Compact" view renamed to "Simple" in all user-facing text.
+- Export/Import Profiles buttons now use blue accent colour scheme.
