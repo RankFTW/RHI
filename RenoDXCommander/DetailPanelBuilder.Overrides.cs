@@ -97,7 +97,7 @@ public partial class DetailPanelBuilder
         {
             Header = "DLL naming overrides",
             IsOn = isDllOverride,
-            IsEnabled = !isLumaMode,
+            IsEnabled = true,
             OnContent = "Custom filenames enabled",
             OffContent = "Override DLL filenames",
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -2279,7 +2279,7 @@ public partial class DetailPanelBuilder
                     if (curRrPreset != 0x00FFFFFF && curRrPreset != 0x00FFFFFE)
                         pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
                 }
-                if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg && !(targetCard.DlssgInstalledVersion?.StartsWith("1.") == true))
+                if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg)
                 {
                     var curFgPreset = pSvc.GetFgPreset(targetCard.GameName, targetCard.InstallPath);
                     if (curFgPreset != 0x00FFFFFF && curFgPreset != 0x00FFFFFE)
@@ -2715,23 +2715,11 @@ public partial class DetailPanelBuilder
             {
                 rebarCol.Children.Add(new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 uint rebarMode = nvidiaPresetService.GetReBarMode(card.GameName, installPathSafe);
-                var modeItems = new List<string>();
-                if (globalReBarState.HasValue)
-                    modeItems.Add("Global (Standard)");
-                modeItems.AddRange(DlssPresetService.ReBarModes.Select(m => m.Name));
+                var modeItems = DlssPresetService.ReBarModes.Select(m => m.Name).ToList();
 
-                int modeIdx;
-                if (globalReBarState.HasValue)
-                {
-                    // Mode 0 = Standard = matches global default
-                    modeIdx = rebarMode == 0 ? 0 : (Array.FindIndex(DlssPresetService.ReBarModes, m => m.Value == rebarMode) + 1);
-                    if (modeIdx < 0) modeIdx = 0;
-                }
-                else
-                {
-                    modeIdx = Array.FindIndex(DlssPresetService.ReBarModes, m => m.Value == rebarMode);
-                    if (modeIdx < 0) modeIdx = 0;
-                }
+                // Select current effective mode: per-game value, or default to Standard (index 0)
+                int modeIdx = Array.FindIndex(DlssPresetService.ReBarModes, m => m.Value == rebarMode);
+                if (modeIdx < 0) modeIdx = 0;
 
                 var rebarModeCombo = new ComboBox
                 {
@@ -2740,8 +2728,8 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
-                    IsEnabled = rebarEnabled || (globalReBarState == true),
-                    Opacity = (rebarEnabled || globalReBarState == true) ? 1.0 : 0.4,
+                    IsEnabled = rebarEnabled,
+                    Opacity = rebarEnabled ? 1.0 : 0.4,
                 };
                 ToolTipService.SetToolTip(rebarModeCombo, "Standard = conservative. Optimized = aggressive driver scheduling (used by NVIDIA-whitelisted titles).");
                 var modeComboInit = true;
@@ -2750,51 +2738,31 @@ public partial class DetailPanelBuilder
                     if (modeComboInit) return;
                     int idx = rebarModeCombo.SelectedIndex;
                     if (idx < 0) return;
-                    if (globalReBarState.HasValue)
-                    {
-                        if (idx == 0) return; // "Global (Standard)" — no override
-                        uint newMode = DlssPresetService.ReBarModes[idx - 1].Value;
-                        nvidiaPresetService.SetReBarMode(card.GameName, installPathSafe, newMode);
-                    }
-                    else
-                    {
-                        uint newMode = DlssPresetService.ReBarModes[idx].Value;
-                        nvidiaPresetService.SetReBarMode(card.GameName, installPathSafe, newMode);
-                    }
+                    uint newMode = DlssPresetService.ReBarModes[idx].Value;
+                    nvidiaPresetService.SetReBarMode(card.GameName, installPathSafe, newMode);
                 };
                 rebarCol.Children.Add(rebarModeCombo);
                 modeComboInit = false;
             }
 
-            // Size Limit — with Global option when global is set
+            // Size Limit — always shows actual size values (no Global option)
             {
                 rebarCol.Children.Add(new TextBlock { Text = "Size Limit", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
 
                 var sizeItems = new List<string>();
                 var sizeValues = new List<ulong>();
-                ulong globalSize = nvidiaPresetService.GetGlobalReBarSizeLimit();
-                if (globalSize != 0)
-                {
-                    // Find the name for the global size
-                    var globalSizeName = DlssPresetService.ReBarSizeLimits
-                        .FirstOrDefault(sl => sl.Value == globalSize).Name ?? $"{globalSize / (1024*1024*1024)}GB";
-                    sizeItems.Add($"Global ({globalSizeName})");
-                    sizeValues.Add(0); // sentinel for "use global"
-                }
                 foreach (var sl in DlssPresetService.ReBarSizeLimits)
                 {
                     sizeItems.Add(sl.Name);
                     sizeValues.Add(sl.Value);
                 }
 
+                // Select the current effective size: per-game override, or global, or 1GB default
+                ulong globalSize = nvidiaPresetService.GetGlobalReBarSizeLimit();
+                ulong effectiveSize = rebarSizeLimit != 0 ? rebarSizeLimit : (globalSize != 0 ? globalSize : 0x0000000040000000);
                 int sizeIdx;
-                if (globalSize != 0 && (rebarSizeLimit == 0 || rebarSizeLimit == globalSize))
-                    sizeIdx = 0; // Global
-                else
-                {
-                    var matchIdx = sizeValues.IndexOf(rebarSizeLimit);
-                    sizeIdx = matchIdx >= 0 ? matchIdx : (globalSize != 0 ? 0 : 1); // Default: Global or 1GB
-                }
+                var matchIdx = sizeValues.IndexOf(effectiveSize);
+                sizeIdx = matchIdx >= 0 ? matchIdx : 1; // Default: 1GB (index 1)
 
                 var rebarSizeCombo = new ComboBox
                 {
@@ -2803,8 +2771,8 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
-                    IsEnabled = rebarEnabled || (globalReBarState == true),
-                    Opacity = (rebarEnabled || globalReBarState == true) ? 1.0 : 0.4,
+                    IsEnabled = rebarEnabled,
+                    Opacity = rebarEnabled ? 1.0 : 0.4,
                 };
                 ToolTipService.SetToolTip(rebarSizeCombo, "1GB is optimal for most games. Decrease to 512MB if experiencing ReBAR-related stutters.");
                 var sizeComboInit = true;
@@ -2814,7 +2782,6 @@ public partial class DetailPanelBuilder
                     int idx = rebarSizeCombo.SelectedIndex;
                     if (idx < 0) return;
                     ulong newSize = sizeValues[idx];
-                    if (newSize == 0) return; // "Global" selected — no per-game override needed
                     nvidiaPresetService.SetReBarSizeLimit(card.GameName, installPathSafe, newSize);
                 };
                 rebarCol.Children.Add(rebarSizeCombo);
@@ -2975,6 +2942,64 @@ public partial class DetailPanelBuilder
             };
             Grid.SetColumn(dxvkDivider, 1);
             dxvkRowGrid.Children.Add(dxvkDivider);
+
+            // Right column — Lilium HDR Preset (only visible when Lilium HDR is active)
+            var isLiliumActive = card.DxvkEnabled && card.DxvkRecord?.IsLiliumHdrMode == true;
+            if (isLiliumActive || (card.DxvkEnabled && _window.ViewModel.GetDxvkVariantOverride(gameName) == "LiliumHdr"))
+            {
+                var liliumPresetCol = new StackPanel { Spacing = 6 };
+                liliumPresetCol.Children.Add(new TextBlock
+                {
+                    Text = "Lilium HDR Preset",
+                    FontSize = 12,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                    Margin = new Thickness(0, 0, 0, 4),
+                });
+
+                var isDx9Api = card.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
+                var presetArray = isDx9Api ? DxvkService.LiliumD3d9Presets : DxvkService.LiliumD3d11Presets;
+                var presetNames = presetArray.Select(p => p.Name).ToList();
+                int currentPreset = _window.ViewModel.GetLiliumPreset(gameName);
+                var liliumPresetCombo = new ComboBox
+                {
+                    ItemsSource = presetNames,
+                    SelectedIndex = currentPreset >= 0 && currentPreset < presetNames.Count ? currentPreset : 0,
+                    FontSize = 12,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                };
+                ToolTipService.SetToolTip(liliumPresetCombo,
+                    "Controls how aggressively DXVK upgrades render targets for HDR.\n\n" +
+                    "Safest = swap chain only (near 100% compatible).\n" +
+                    "Higher tiers upgrade back buffers and render targets — better HDR but may cause visual issues.");
+
+                var liliumComboInit = true;
+                liliumPresetCombo.SelectionChanged += async (s, ev) =>
+                {
+                    if (liliumComboInit) return;
+                    int idx = liliumPresetCombo.SelectedIndex;
+                    if (idx < 0) return;
+                    _window.ViewModel.SetLiliumPreset(capturedName, idx);
+
+                    // Re-deploy dxvk.conf with the new preset
+                    var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                        c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                    if (targetCard != null && !string.IsNullOrEmpty(targetCard.InstallPath))
+                    {
+                        var confPath = Path.Combine(targetCard.InstallPath, "dxvk.conf");
+                        var isDx9 = targetCard.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
+                        var confContent = isDx9
+                            ? DxvkService.GetLiliumD3d9ConfContent(idx)
+                            : DxvkService.GetLiliumD3d11ConfContent(idx);
+                        try { File.WriteAllText(confPath, confContent); }
+                        catch (Exception ex) { CrashReporter.Log($"[DetailPanel.LiliumPreset] Failed to write dxvk.conf — {ex.Message}"); }
+                    }
+                };
+                liliumPresetCol.Children.Add(liliumPresetCombo);
+                liliumComboInit = false;
+
+                Grid.SetColumn(liliumPresetCol, 2);
+                dxvkRowGrid.Children.Add(liliumPresetCol);
+            }
 
             _window.OverridesPanel.Children.Add(dxvkRowGrid);
         }

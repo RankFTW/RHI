@@ -135,6 +135,20 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    /// <summary>Returns the per-game Lilium HDR DXVK conf preset index (0=Safest, 5=Experimental). Returns 0 if not set.</summary>
+    public int GetLiliumPreset(string gameName)
+        => _gameNameService.LiliumPresetOverrides.TryGetValue(gameName, out var idx) ? idx : 0;
+
+    /// <summary>Sets the per-game Lilium HDR DXVK conf preset. 0 removes the override (default = Safest).</summary>
+    public void SetLiliumPreset(string gameName, int presetIndex)
+    {
+        if (presetIndex <= 0)
+            _gameNameService.LiliumPresetOverrides.Remove(gameName);
+        else
+            _gameNameService.LiliumPresetOverrides[gameName] = presetIndex;
+        SaveNameMappings();
+    }
+
     /// <summary>
     /// Resolves the effective DXVK variant for a game.
     /// Returns the per-game override if set, otherwise the global setting.

@@ -231,7 +231,7 @@ public class OverridesFlyoutBuilder
         {
             Header = "DLL naming overrides",
             IsOn = isDllOverride,
-            IsEnabled = !isLumaMode,
+            IsEnabled = true,
             OnContent = "Custom filenames enabled",
             OffContent = "Override DLL filenames",
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),

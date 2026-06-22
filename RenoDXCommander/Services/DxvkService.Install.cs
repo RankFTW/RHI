@@ -7,7 +7,7 @@ namespace RenoDXCommander.Services;
 public partial class DxvkService
 {
     // ── Default dxvk.conf template content ────────────────────────────
-    private const string DefaultDxvkConfContent =
+    public const string DefaultDxvkConfContent =
         """
         dxgi.enableHDR = True
         dxvk.allowFse = False
@@ -136,7 +136,7 @@ public partial class DxvkService
                 bool liliumDeployedConf = false;
                 try
                 {
-                    File.WriteAllText(liliumConfPath, DefaultDxvkConfContent + LiliumHdrConfContent_D3d9);
+                    File.WriteAllText(liliumConfPath, GetLiliumD3d9ConfContent(_liliumPresetIndex));
                     liliumDeployedConf = true;
                     CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: deployed dxvk.conf with HDR settings");
                 }
@@ -235,11 +235,11 @@ public partial class DxvkService
                     {
                         var confContent = DefaultDxvkConfContent;
 
-                        // Append Lilium HDR conf when that variant is active
+                        // Lilium HDR uses its own complete conf (no base lines)
                         if (_selectedVariant == DxvkVariant.LiliumHdr)
                         {
-                            confContent += LiliumHdrConfContent_D3d9;
-                            CrashReporter.Log("[DxvkService.InstallAsync] Proxy mode: appended Lilium HDR d3d9 conf");
+                            confContent = GetLiliumD3d9ConfContent(_liliumPresetIndex);
+                            CrashReporter.Log("[DxvkService.InstallAsync] Proxy mode: using Lilium HDR d3d9 conf");
                         }
 
                         File.WriteAllText(proxyConfPath, confContent);
@@ -339,14 +339,14 @@ public partial class DxvkService
 
                 CrashReporter.Log($"[DxvkService.InstallAsync] Writing dxvk.conf — _selectedVariant={_selectedVariant}, api={card.GraphicsApi}");
 
-                // Append Lilium HDR conf when that variant is active
+                // Lilium HDR uses its own complete conf (no base lines)
                 if (_selectedVariant == DxvkVariant.LiliumHdr)
                 {
                     if (card.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9)
-                        confContent += LiliumHdrConfContent_D3d9;
+                        confContent = GetLiliumD3d9ConfContent(_liliumPresetIndex);
                     else
-                        confContent += LiliumHdrConfContent_D3d11;
-                    CrashReporter.Log($"[DxvkService.InstallAsync] Appended Lilium HDR conf lines");
+                        confContent = GetLiliumD3d11ConfContent(_liliumPresetIndex);
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Using Lilium HDR conf");
                 }
 
                 File.WriteAllText(confPath, confContent);

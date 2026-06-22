@@ -227,7 +227,7 @@ public class MassDlssDeployDialog
 
         int dlssCount = 0, dlssdCount = 0, dlssgCount = 0, slCount = 0;
         int srPresetCount = 0, rrPresetCount = 0, fgPresetCount = 0, presetMissedCount = 0;
-        int skippedNoComponent = 0, skippedV1 = 0, skippedAlreadyAtVersion = 0;
+        int skippedNoComponent = 0, skippedAlreadyAtVersion = 0;
 
         // Set auto-create flag on preset service
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
@@ -287,7 +287,6 @@ public class MassDlssDeployDialog
             var card = eligibleCards[i];
             var cb = checkBoxes[i];
             if (cb.IsChecked != true) continue;
-            if (IsV1Game(card)) { skippedV1++; continue; }
 
             var detection = card.DlssDetection;
             if (detection == null) { skippedNoComponent++; continue; }
@@ -296,8 +295,9 @@ public class MassDlssDeployDialog
             progressText.Text = $"[{processed}/{totalSelected}] {card.GameName}";
             await Task.Delay(1); // Yield to UI thread so text updates visually
 
-            // DLSS SR
-            if (dlssVersion != NoneOption && detection.DlssPath != null)
+            // DLSS SR — skip v1.x
+            if (dlssVersion != NoneOption && detection.DlssPath != null
+                && !(card.DlssInstalledVersion?.StartsWith("1.") == true))
             {
                 if (dlssVersion == DefaultOption)
                 {
@@ -359,8 +359,9 @@ public class MassDlssDeployDialog
             }
             else if (dlssgVersion != NoneOption && detection.DlssgPath == null) { skippedNoComponent++; }
 
-            // Streamline
-            if (slVersion != NoneOption && detection.StreamlineFolder != null)
+            // Streamline — skip v1.x
+            if (slVersion != NoneOption && detection.StreamlineFolder != null
+                && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true))
             {
                 if (slVersion == DefaultOption)
                 {
@@ -432,7 +433,6 @@ public class MassDlssDeployDialog
             report.AppendLine($"NVIDIA profiles created: {presetService.ProfilesCreatedCount}");
         if (skippedAlreadyAtVersion > 0) report.AppendLine($"\nSkipped: {skippedAlreadyAtVersion} (already at selected version)");
         if (skippedNoComponent > 0) report.AppendLine($"Skipped: {skippedNoComponent} (component not present)");
-        if (skippedV1 > 0) report.AppendLine($"Skipped: {skippedV1} (v1.x incompatible)");
         if (presetMissedCount > 0) report.AppendLine($"Presets missed: {presetMissedCount} game(s) (no NVIDIA profile found)");
 
         if (report.Length == 0) report.Append("No changes made.");
@@ -545,8 +545,9 @@ public class MassDlssDeployDialog
 
     private static bool IsV1Game(GameCardViewModel card)
     {
-        return (card.DlssInstalledVersion?.StartsWith("1.") == true)
-            || (card.StreamlineInstalledVersion?.StartsWith("1.") == true);
+        // No longer used for greying out — games with v1.x are selectable.
+        // Per-component v1.x skipping is handled during deployment.
+        return false;
     }
 
     private ComboBox BuildVersionCombo(IReadOnlyList<string> versions)

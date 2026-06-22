@@ -77,6 +77,7 @@ public partial class DxvkService : IDxvkService
     private bool _hasUpdate;
     private bool _firstTimeWarningAcknowledged;
     private DxvkVariant _selectedVariant = DxvkVariant.Development;
+    private int _liliumPresetIndex = 0;
 
     public DxvkService(
         HttpClient http,
@@ -131,6 +132,13 @@ public partial class DxvkService : IDxvkService
     {
         get => _selectedVariant;
         set => _selectedVariant = value;
+    }
+
+    /// <summary>Lilium HDR DX9 conf preset index (0=Safest, 5=Experimental). Set before InstallAsync.</summary>
+    public int LiliumPresetIndex
+    {
+        get => _liliumPresetIndex;
+        set => _liliumPresetIndex = value;
     }
 
     // ── Pure helpers ─────────────────────────────────────────────────
@@ -196,20 +204,122 @@ public partial class DxvkService : IDxvkService
     }
 
     /// <summary>
-    /// Lilium HDR dxvk.conf content — safest preset (swap chain upgrade only).
-    /// Appended to the standard dxvk.conf when Lilium HDR variant is active.
+    /// Lilium HDR DX9 dxvk.conf presets — 6 tiers from safest to experimental.
+    /// Each tier adds progressively more aggressive HDR upgrades.
+    /// Async is always enabled (RHI is Windows-only).
+    /// These are deployed as the COMPLETE dxvk.conf (no base lines prepended).
     /// </summary>
-    private const string LiliumHdrConfContent_D3d9 =
-        """
-
-        # Lilium HDR
+    public static readonly (string Name, string Content)[] LiliumD3d9Presets =
+    [
+        ("Safest", """
         dxvk.enableAsync                          = true
         dxvk.gplAsyncCache                        = true
         d3d9.enableSwapChainUpgrade               = true
         d3d9.upgradeSwapChainFormatTo             = rgba16_sfloat
         d3d9.upgradeSwapChainColorSpaceTo         = scRGB
         d3d9.enforceWindowModeInternally          = disabled
-        """;
+        """),
+        ("2nd Safest", """
+        dxvk.enableAsync                          = true
+        dxvk.gplAsyncCache                        = true
+        d3d9.enableBackBufferUpgrade              = true
+        d3d9.upgradeBackBufferTo                  = rgba16_unorm
+        d3d9.enableSwapChainUpgrade               = true
+        d3d9.upgradeSwapChainFormatTo             = rgba16_sfloat
+        d3d9.upgradeSwapChainColorSpaceTo         = scRGB
+        d3d9.enforceWindowModeInternally          = disabled
+        """),
+        ("Slightly Unsafe", """
+        dxvk.enableAsync                          = true
+        dxvk.gplAsyncCache                        = true
+        d3d9.enableSwapChainUpgrade               = true
+        d3d9.upgradeSwapChainFormatTo             = rgba16_sfloat
+        d3d9.upgradeSwapChainColorSpaceTo         = scRGB
+        d3d9.enableBackBufferUpgrade              = true
+        d3d9.upgradeBackBufferTo                  = rgba16_sfloat
+        d3d9.enforceWindowModeInternally          = disabled
+        """),
+        ("Unsafer", """
+        dxvk.enableAsync                          = true
+        dxvk.gplAsyncCache                        = true
+        d3d9.enableRenderTargetUpgrades           = true
+        d3d9.upgrade_B5G6R5_UNORM_renderTargetTo  = rgba16_unorm
+        d3d9.upgrade_BGR5A1_UNORM_renderTargetTo  = rgba16_unorm
+        d3d9.upgrade_BGR5X1_UNORM_renderTargetTo  = rgba16_unorm
+        d3d9.upgrade_BGRA4_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_BGRX4_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_RGBA8_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_RGBX8_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_BGRA8_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_BGRX8_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_RGB10A2_UNORM_renderTargetTo = rgba16_unorm
+        d3d9.upgrade_BGR10A2_UNORM_renderTargetTo = rgba16_unorm
+        d3d9.upgrade_RGBA16_UNORM_renderTargetTo  = rgba16_unorm
+        d3d9.enableBackBufferUpgrade              = true
+        d3d9.upgradeBackBufferTo                  = rgba16_unorm
+        d3d9.enableSwapChainUpgrade               = true
+        d3d9.upgradeSwapChainFormatTo             = rgba16_sfloat
+        d3d9.upgradeSwapChainColorSpaceTo         = scRGB
+        d3d9.enforceWindowModeInternally          = disabled
+        """),
+        ("Even Unsafer", """
+        dxvk.enableAsync                          = true
+        dxvk.gplAsyncCache                        = true
+        d3d9.enableRenderTargetUpgrades           = true
+        d3d9.upgrade_B5G6R5_UNORM_renderTargetTo  = rgba16_unorm
+        d3d9.upgrade_BGR5A1_UNORM_renderTargetTo  = rgba16_unorm
+        d3d9.upgrade_BGR5X1_UNORM_renderTargetTo  = rgba16_unorm
+        d3d9.upgrade_BGRA4_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_BGRX4_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_RGBA8_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_RGBX8_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_BGRA8_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_BGRX8_UNORM_renderTargetTo   = rgba16_unorm
+        d3d9.upgrade_RGB10A2_UNORM_renderTargetTo = rgba16_unorm
+        d3d9.upgrade_BGR10A2_UNORM_renderTargetTo = rgba16_unorm
+        d3d9.upgrade_RGBA16_UNORM_renderTargetTo  = rgba16_unorm
+        d3d9.enableBackBufferUpgrade              = true
+        d3d9.upgradeBackBufferTo                  = rgba16_sfloat
+        d3d9.enableSwapChainUpgrade               = true
+        d3d9.upgradeSwapChainFormatTo             = rgba16_sfloat
+        d3d9.upgradeSwapChainColorSpaceTo         = scRGB
+        d3d9.enforceWindowModeInternally          = disabled
+        """),
+        ("Experimental", """
+        dxvk.enableAsync                          = true
+        dxvk.gplAsyncCache                        = true
+        d3d9.enableRenderTargetUpgrades           = true
+        d3d9.upgrade_B5G6R5_UNORM_renderTargetTo  = rgba16_sfloat
+        d3d9.upgrade_BGR5A1_UNORM_renderTargetTo  = rgba16_sfloat
+        d3d9.upgrade_BGR5X1_UNORM_renderTargetTo  = rgba16_sfloat
+        d3d9.upgrade_BGRA4_UNORM_renderTargetTo   = rgba16_sfloat
+        d3d9.upgrade_BGRX4_UNORM_renderTargetTo   = rgba16_sfloat
+        d3d9.upgrade_RGBA8_UNORM_renderTargetTo   = rgba16_sfloat
+        d3d9.upgrade_RGBX8_UNORM_renderTargetTo   = rgba16_sfloat
+        d3d9.upgrade_BGRA8_UNORM_renderTargetTo   = rgba16_sfloat
+        d3d9.upgrade_BGRX8_UNORM_renderTargetTo   = rgba16_sfloat
+        d3d9.upgrade_RGB10A2_UNORM_renderTargetTo = rgba16_sfloat
+        d3d9.upgrade_BGR10A2_UNORM_renderTargetTo = rgba16_sfloat
+        d3d9.upgrade_RGBA16_UNORM_renderTargetTo  = rgba16_sfloat
+        d3d9.enableBackBufferUpgrade              = true
+        d3d9.upgradeBackBufferTo                  = rgba16_sfloat
+        d3d9.enableSwapChainUpgrade               = true
+        d3d9.upgradeSwapChainFormatTo             = rgba16_sfloat
+        d3d9.upgradeSwapChainColorSpaceTo         = scRGB
+        d3d9.enforceWindowModeInternally          = disabled
+        """),
+    ];
+
+    /// <summary>
+    /// Gets the Lilium HDR D3D9 conf content for the given preset index (0-5).
+    /// Falls back to safest (0) for invalid indices.
+    /// </summary>
+    public static string GetLiliumD3d9ConfContent(int presetIndex)
+    {
+        if (presetIndex < 0 || presetIndex >= LiliumD3d9Presets.Length)
+            presetIndex = 0;
+        return LiliumD3d9Presets[presetIndex].Content;
+    }
 
     private const string LiliumHdrConfContent_D3d11 =
         """
@@ -221,6 +331,137 @@ public partial class DxvkService : IDxvkService
         d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
         d3d11.upgradeSwapChainColorSpaceTo            = scRGB
         """;
+
+    /// <summary>
+    /// Lilium HDR DX10/DX11 dxvk.conf presets — 7 tiers from safest to fully experimental.
+    /// Uses d3d11.* prefix (DXVK translates DX10 through the DX11 layer).
+    /// Deployed as the COMPLETE dxvk.conf (no base lines prepended).
+    /// </summary>
+    public static readonly (string Name, string Content)[] LiliumD3d11Presets =
+    [
+        ("Safest", """
+        dxvk.enableAsync                              = true
+        dxvk.gplAsyncCache                            = true
+        d3d11.enableSwapChainUpgrade                  = true
+        d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
+        d3d11.upgradeSwapChainColorSpaceTo            = scRGB
+        """),
+        ("2nd Safest", """
+        dxvk.enableAsync                              = true
+        dxvk.gplAsyncCache                            = true
+        d3d11.enableBackBufferUpgrade                 = true
+        d3d11.upgradeBackBufferTo                     = rgba16_unorm
+        d3d11.enableSwapChainUpgrade                  = true
+        d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
+        d3d11.upgradeSwapChainColorSpaceTo            = scRGB
+        """),
+        ("Slightly Unsafe", """
+        dxvk.enableAsync                              = true
+        dxvk.gplAsyncCache                            = true
+        d3d11.enableBackBufferUpgrade                 = true
+        d3d11.upgradeBackBufferTo                     = rgba16_sfloat
+        d3d11.enableSwapChainUpgrade                  = true
+        d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
+        d3d11.upgradeSwapChainColorSpaceTo            = scRGB
+        """),
+        ("Unsafer", """
+        dxvk.enableAsync                              = true
+        dxvk.gplAsyncCache                            = true
+        d3d11.enableRenderTargetUpgrades              = true
+        d3d11.upgrade_RGBA8_UNORM_renderTargetTo      = rgba16_unorm
+        d3d11.upgrade_BGRA8_UNORM_renderTargetTo      = rgba16_unorm
+        d3d11.upgrade_BGRX8_UNORM_renderTargetTo      = rgba16_unorm
+        d3d11.upgrade_RGBA8_UNORM_SRGB_renderTargetTo = rgba16_unorm
+        d3d11.upgrade_BGRA8_UNORM_SRGB_renderTargetTo = rgba16_unorm
+        d3d11.upgrade_BGRX8_UNORM_SRGB_renderTargetTo = rgba16_unorm
+        d3d11.upgrade_RGBA8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_BGRA8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_BGRX8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_RGB10A2_UNORM_renderTargetTo    = rgba16_unorm
+        d3d11.upgrade_RGB10A2_TYPELESS_renderTargetTo = rgba16_typeless
+        d3d11.enableBackBufferUpgrade                 = true
+        d3d11.upgradeBackBufferTo                     = rgba16_unorm
+        d3d11.enableSwapChainUpgrade                  = true
+        d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
+        d3d11.upgradeSwapChainColorSpaceTo            = scRGB
+        """),
+        ("Even Unsafer", """
+        dxvk.enableAsync                              = true
+        dxvk.gplAsyncCache                            = true
+        d3d11.enableRenderTargetUpgrades              = true
+        d3d11.upgrade_RGBA8_UNORM_renderTargetTo      = rgba16_unorm
+        d3d11.upgrade_BGRA8_UNORM_renderTargetTo      = rgba16_unorm
+        d3d11.upgrade_BGRX8_UNORM_renderTargetTo      = rgba16_unorm
+        d3d11.upgrade_RGBA8_UNORM_SRGB_renderTargetTo = rgba16_unorm
+        d3d11.upgrade_BGRA8_UNORM_SRGB_renderTargetTo = rgba16_unorm
+        d3d11.upgrade_BGRX8_UNORM_SRGB_renderTargetTo = rgba16_unorm
+        d3d11.upgrade_RGBA8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_BGRA8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_BGRX8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_RGB10A2_UNORM_renderTargetTo    = rgba16_unorm
+        d3d11.upgrade_RGB10A2_TYPELESS_renderTargetTo = rgba16_typeless
+        d3d11.enableBackBufferUpgrade                 = true
+        d3d11.upgradeBackBufferTo                     = rgba16_sfloat
+        d3d11.enableSwapChainUpgrade                  = true
+        d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
+        d3d11.upgradeSwapChainColorSpaceTo            = scRGB
+        """),
+        ("Slightly Experimental", """
+        dxvk.enableAsync                              = true
+        dxvk.gplAsyncCache                            = true
+        d3d11.enableRenderTargetUpgrades              = true
+        d3d11.upgrade_RGBA8_UNORM_renderTargetTo      = rgba16_sfloat
+        d3d11.upgrade_BGRA8_UNORM_renderTargetTo      = rgba16_sfloat
+        d3d11.upgrade_BGRX8_UNORM_renderTargetTo      = rgba16_sfloat
+        d3d11.upgrade_RGBA8_UNORM_SRGB_renderTargetTo = rgba16_sfloat
+        d3d11.upgrade_BGRA8_UNORM_SRGB_renderTargetTo = rgba16_sfloat
+        d3d11.upgrade_BGRX8_UNORM_SRGB_renderTargetTo = rgba16_sfloat
+        d3d11.upgrade_RGBA8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_BGRA8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_BGRX8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_RGB10A2_UNORM_renderTargetTo    = rgba16_sfloat
+        d3d11.upgrade_RGB10A2_TYPELESS_renderTargetTo = rgba16_typeless
+        d3d11.enableBackBufferUpgrade                 = true
+        d3d11.upgradeBackBufferTo                     = rgba16_sfloat
+        d3d11.enableSwapChainUpgrade                  = true
+        d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
+        d3d11.upgradeSwapChainColorSpaceTo            = scRGB
+        """),
+        ("Fully Experimental", """
+        dxvk.enableAsync                              = true
+        dxvk.gplAsyncCache                            = true
+        d3d11.enableRenderTargetUpgrades              = true
+        d3d11.upgrade_RGBA8_UNORM_renderTargetTo      = rgba16_sfloat
+        d3d11.upgrade_BGRA8_UNORM_renderTargetTo      = rgba16_sfloat
+        d3d11.upgrade_BGRX8_UNORM_renderTargetTo      = rgba16_sfloat
+        d3d11.upgrade_RGBA8_UNORM_SRGB_renderTargetTo = rgba16_sfloat
+        d3d11.upgrade_BGRA8_UNORM_SRGB_renderTargetTo = rgba16_sfloat
+        d3d11.upgrade_BGRX8_UNORM_SRGB_renderTargetTo = rgba16_sfloat
+        d3d11.upgrade_RGBA8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_BGRA8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_BGRX8_TYPELESS_renderTargetTo   = rgba16_typeless
+        d3d11.upgrade_RGB10A2_UNORM_renderTargetTo    = rgba16_sfloat
+        d3d11.upgrade_RGB10A2_TYPELESS_renderTargetTo = rgba16_typeless
+        d3d11.upgrade_RG11B10_UFLOAT_renderTargetTo   = rgba16_sfloat
+        d3d11.upgrade_RGBA16_UNORM_renderTargetTo     = rgba16_sfloat
+        d3d11.enableBackBufferUpgrade                 = true
+        d3d11.upgradeBackBufferTo                     = rgba16_sfloat
+        d3d11.enableSwapChainUpgrade                  = true
+        d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
+        d3d11.upgradeSwapChainColorSpaceTo            = scRGB
+        """),
+    ];
+
+    /// <summary>
+    /// Gets the Lilium HDR DX10/DX11 conf content for the given preset index (0-6).
+    /// Falls back to safest (0) for invalid indices.
+    /// </summary>
+    public static string GetLiliumD3d11ConfContent(int presetIndex)
+    {
+        if (presetIndex < 0 || presetIndex >= LiliumD3d11Presets.Length)
+            presetIndex = 0;
+        return LiliumD3d11Presets[presetIndex].Content;
+    }
 
     /// <summary>
     /// Formats the staged version tag for display. For Lilium HDR, extracts just the

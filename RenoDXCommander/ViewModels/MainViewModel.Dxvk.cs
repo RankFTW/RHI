@@ -77,6 +77,7 @@ public partial class MainViewModel
         var resolvedVariant = ResolveDxvkVariant(card.GameName);
         var savedVariant = _dxvkService.SelectedVariant;
         _dxvkService.SelectedVariant = resolvedVariant;
+        _dxvkService.LiliumPresetIndex = GetLiliumPreset(card.GameName);
 
         card.DxvkIsInstalling = true;
         card.DxvkActionMessage = "Installing DXVK...";
@@ -98,6 +99,10 @@ public partial class MainViewModel
             card.NotifyAll();
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);
             SaveLibrary();
+
+            // Persist Vulkan rendering path if Lilium HDR mode switched the game to Vulkan
+            if (card.DxvkRecord?.IsLiliumHdrMode == true && card.VulkanRenderingPath == "Vulkan")
+                SetVulkanRenderingPath(card.GameName, "Vulkan");
         }
         catch (Exception ex)
         {
@@ -234,6 +239,10 @@ public partial class MainViewModel
                 card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
                 card.GraphicsApi = DetectGraphicsApi(card.InstallPath, EngineType.Unknown, card.GameName);
             }
+
+            // Clear persisted Vulkan rendering path (Lilium HDR uninstall resets to DirectX)
+            if (card.VulkanRenderingPath == "DirectX")
+                SetVulkanRenderingPath(card.GameName, "DirectX");
 
             // Deploy shaders after ReShade is restored as DX proxy.
             // The DxvkService reinstalls ReShade but can't resolve shader packs,

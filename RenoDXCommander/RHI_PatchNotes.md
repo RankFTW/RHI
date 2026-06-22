@@ -1,67 +1,62 @@
-## v2.0.0-beta3
+## v2.0.0
 
 ### New Features
 
-- **Nvidia Profile Overrides** — New dedicated panel for per-game NVIDIA driver profile settings. Two rows:
-  - **DLSS / Streamline row** — Version, Preset, and Render Scale management for SR, RR, FG, and Streamline. Quick Apply button stamps your configured defaults onto any game in one click (downloads on-demand). Restore All reverts DLLs and presets.
-  - **Driver Settings row** — VSync (Mode, Tear Control, Low Latency), ReBAR (Enable, Mode, Size Limit), Smooth Motion (Enable, APIs, Flip Pacing), Power/CPU (Power Mode, CPU Scheduling). All per-game, all with tooltips and sub-labels.
-- **DLSS & Streamline Defaults** — Configure preferred default versions, presets, and render scales in Settings. One-click apply via "Quick Apply" in the Nvidia Profile section. Dialog uses matching 4-column layout.
-- **Global Nvidia Settings** — New settings section with Shader Cache Size, Shader Pre-Compile, G-Sync Mode, and Preferred Refresh Rate controls. All read/write the global driver profile directly.
-- **Profile Export/Import** — Save all per-game NVIDIA profile settings to a backup file. Restore after driver updates — recreates profiles, exe associations, and all custom settings in one click.
-- **UE Version Detection** — Engine badge now shows exact Unreal Engine version (e.g. "Unreal Engine 5.4.3") when detectable.
-- **DLSS Driver Override Detection** — When NVIDIA App has "Latest DLL" enabled for a game, RHI detects this and greys out the version dropdown with a "Driver override active" warning. Prevents confusion when the driver is injecting its own DLL regardless of what's in the game folder.
-- **Manifest-driven Shader Packs** — Shader packs can now be added, disabled, or modified from the remote manifest without an app update. New packs, URL changes, and removals all happen server-side.
-- **Manifest-driven DLSS Presets** — DLSS SR/RR/FG preset options can be added or removed from the manifest when NVIDIA introduces new ones.
-- **Manifest-driven Component URLs** — Base download URLs (e.g. UE-Extended) can be overridden from the manifest if a repo moves.
-- **Multi Frame Generation Controls** — New "Multi Frame Gen" button in the Frame Generation column. Opens a per-game dialog to configure MFG Mode (Fixed/Dynamic), frame count multiplier (2x-6x), and dynamic target frame rate. Writes directly to the NVIDIA driver profile. Requires 50 Series GPU (driver 572.16+ for MFG, 595.97+ for DMFG).
-- **Driver Version Display** — The Nvidia Profile Overrides section header now shows the installed driver version.
-- **Restore Profile Defaults** — New button in the driver settings row resets the game's NVIDIA driver profile to factory defaults with a single click. Equivalent to NVIDIA App's "Restore" and NVPI's "Defaults" button.
-- **Manifest-driven Addon Packs** — Addon entries can now be added, modified, or disabled from the remote manifest. Descriptions, URLs, and deploy filenames are all overridable server-side.
-- **Global ReBAR** — New ReBAR On/Off and Size Limit controls in Global Nvidia Settings. Applies to all games via the base driver profile. Per-game dropdowns show "Global (On/Off)" when the global setting is active, with per-game override support.
+- **Nvidia Profile Overrides** — New dedicated panel for per-game NVIDIA driver profile settings:
+  - **DLSS / Streamline row** — Version, Preset, and Render Scale management for SR, RR, FG, and Streamline. Quick Apply button stamps your configured defaults onto any game in one click (downloads on-demand). Restore DLSS/SL reverts DLLs and resets presets.
+  - **Driver Settings row** — VSync (Mode, Tear Control, Low Latency), Smooth Motion (Enable, APIs, Flip Pacing), Power Mode, ReBAR (Enable, Mode, Size Limit). All per-game via NVIDIA driver profiles. Requires admin.
+- **Admin Mode** — Task Scheduler-based persistent elevation (Off/On in Settings). When enabled, RHI silently relaunches elevated on startup — no per-operation UAC prompts. Required for ReBAR, Low Latency Ultra, and Smooth Motion writes. Driver settings row greyed out when not elevated.
+- **Multi Frame Generation** — "Multi Frame Gen" button in the FG column opens a per-game dialog to configure MFG Mode (Fixed/Dynamic), frame count multiplier (2x-6x), and dynamic target frame rate. RTX 50 Series only (driver 572.16+ for MFG, 595.97+ for DMFG).
+- **DLSS & Streamline Defaults** — Configure preferred default versions, presets, and render scales in Settings. One-click Quick Apply per game. 4-column configuration dialog.
+- **Global Nvidia Settings** — Shader Cache Size, Shader Pre-Compile, G-Sync Mode, Preferred Refresh Rate, Global ReBAR (On/Off + Size), DLSS On-Screen Indicator. All write to the global driver profile.
+- **Profile Export/Import** — Back up all per-game NVIDIA profile settings to JSON. Restore after driver updates — recreates profiles, exe associations, and all custom settings in one click. Includes global settings.
+- **Global ReBAR** — On/Off and Size controls in Global Nvidia Settings. Per-game Enable dropdown shows "Global (On/Off)" when set globally.
+- **DLSS Driver Override Detection** — Detects when NVIDIA App has "Latest DLL" or "Use recommended preset" active. Greys out affected dropdowns with a warning. Quick Apply respects these.
+- **Restore Profile Defaults** — Button in the driver settings row resets the game's NVIDIA driver profile to factory defaults.
+- **Driver Version Display** — Nvidia Profile Overrides header shows installed driver version.
+- **UE Version Detection** — Engine badge shows exact Unreal Engine version (e.g. "Unreal Engine 5.4.3") when detectable.
+- **Manifest-driven Shader Packs** — Add, disable, or modify shader packs from the remote manifest without app updates.
+- **Manifest-driven DLSS Presets** — Preset options updated server-side when NVIDIA introduces new ones.
+- **Manifest-driven Addon Packs** — Addon entries can be added, modified, or disabled from the manifest.
+- **Manifest-driven Component URLs** — Base download URLs overridable from the manifest.
+- **Lilium HDR DXVK — Vulkan layer mode** — DX9 games with Lilium HDR DXVK now deploy DXVK as `d3d9.dll` directly with Vulkan layer ReShade, enabling SM5 HDR shaders. Restores local ReShade on uninstall.
 
 ### Improvements
 
-- **Admin Mode toggle** — New Off/On combo box in Settings (Data & Custom Files section). Creates a Task Scheduler task to launch RHI with admin privileges automatically, bypassing UAC. Required for ReBAR, Low Latency Ultra, Smooth Motion, and CPU Scheduling settings.
-- Driver settings row is greyed out when not running as admin, preventing silent write failures.
-- Detail panel reorganized into 4 sections: Components, Game Overrides, Nvidia Profile Overrides, and Management.
-- Compact view now has 3 pages: Components, Game Overrides, and Nvidia Profile + Management. Reduced window height for a tighter fit.
-- All NVIDIA profile dropdowns have sub-labels and tooltips explaining what each setting does.
-- DLSS preset tooltips explain the model generations (J/K = 1st-gen transformer, L/M = 2nd-gen with better stability).
-- Admin notice at the bottom of the Nvidia Profile section indicates elevation status.
-- Config button opens the exact Engine.ini folder. Also detects config stored inside the game directory.
-- Rebranded from "ReShade HDR Installer" to "RHI". All user-facing text updated.
-- DLSS/Streamline section hidden entirely for games without DLSS or Streamline files. Driver settings row remains visible for all games.
-- DXVK installed version is now a clickable link to the variant's GitHub releases page.
-- "Compact" view renamed to "Simple" across all user-facing text.
-- Lilium HDR DXVK on DX9 games now deploys DXVK as `d3d9.dll` directly with Vulkan layer ReShade, enabling SM5 HDR shaders. Automatically restores local ReShade on uninstall.
-- Fresh installs now default to Simple view instead of Detail view.
-- Global DXVK Variant selector removed from Settings — per-game combo now shows Off/Development/Stable/Lilium HDR directly.
+- Detail panel reorganized into 4 sections: Components, Game Overrides, Nvidia Profile Overrides, Management.
+- Simple View (formerly "Compact") now has 3 pages: Components, Game Overrides, Nvidia Profile + Management.
+- Fresh installs default to Simple View.
+- Rebranded from "ReShade HDR Installer" to "RHI".
+- DXVK per-game combo shows Off/Development/Stable/Lilium HDR directly (no global indirection).
+- DXVK version text is now a clickable link to the variant's GitHub releases page.
+- DLSS/Streamline section hidden for games without DLSS or Streamline files. Driver settings row always visible.
+- ReBAR Mode and Size show effective values directly (no "Global" option — display inherits from global when no override set).
+- DLL naming override available in Luma mode.
+- Batch Deploy allows all games to be selected — v1.x SR and Streamline are skipped per-component during deployment. FG v1.x can be upgraded freely.
+- NVIDIA profile lookup cached per-game for the session (~1s freeze on unmatched games eliminated).
+- Vulkan ReShade layer install shows actionable dialog when admin privileges are missing.
+- Bitness override change auto-uninstalls all components for clean reinstall.
+- All NVIDIA profile dropdowns have sub-labels and tooltips.
+- Config button opens the exact Engine.ini folder.
 
 ### Bug Fixes
 
 - Fixed Streamline "Custom" selection reverting to a version number after panel rebuild.
-- Fixed Luma and RE Framework update status not persisting over restart. Update All button now correctly goes purple for Luma updates.
-- Fixed DXVK extraction using a random temp folder each time, causing Windows Defender to repeatedly flag the DLLs as unknown. Now uses a fixed path so exclusions persist.
-- Fixed version dropdown showing ambiguous "Default" — now always shows the game's original DLL version with `(Default)` suffix. Original versions are cached for instant display.
-- Fixed overlay and screenshot hotkeys having Ctrl and Shift swapped when deployed to games via "Apply to All Games".
-- Fixed NVIDIA profile matching using generic exe names (Launcher.exe, etc.) causing wrong game profiles to be modified.
-- Fixed wiki exclusion ("Excluded" override) incorrectly showing "Download from Discord" — now shows "No RenoDX mod available" with a disabled button.
-- Vulkan ReShade layer install now shows an actionable dialog when admin privileges are missing, offering "Enable Admin Mode" (persistent) or "Restart as Admin" (one-time).
-- Changing the bitness override now automatically uninstalls all installed components, giving a clean slate for reinstall with the correct bitness.
-- DLSS/RR/FG preset and version dropdowns now show "Driver Override Active" when NVIDIA App is controlling that setting (presets via "Use recommended", DLLs via "Latest DLL"). Quick Apply respects these overrides.
-- Fixed Power Mode showing "Adaptive" after profile restore instead of "Optimal Performance" (the actual NVIDIA default).
-- Fixed DXVK combo "Off" not refreshing the detail panel after Lilium HDR DXVK uninstall — API badge and DXVK combo disappeared until manual Refresh.
-- NVIDIA profile lookup is now cached per-game — eliminates ~1s UI freeze when selecting games without an existing NVIDIA profile (10+ redundant recursive exe scans reduced to 1).
+- Fixed Luma and RE Framework update status not persisting over restart.
+- Fixed DXVK extraction using a random temp folder each time (Windows Defender flagging).
+- Fixed overlay and screenshot hotkeys having Ctrl and Shift swapped.
+- Fixed wiki exclusion showing "Download from Discord" instead of "No RenoDX mod available".
+- Fixed Power Mode showing "Adaptive" after profile restore instead of "Optimal Performance".
 
 ### Manifest Updates
 
-- Borderlands 4, Gothic 1 Remake, High on Life 2, Crisol, ROMEO IS A DEAD MAN, S.T.A.L.K.E.R. 2: Heart of Chornobyl, SILENT HILL f, Split Fiction, Star Trek: Voyager - Across the Unknown, WUCHANG: Fallen Feathers — added to native HDR list.
-- Added `dlssSkipGames` for 11 games without DLSS — reduces background scan time by 70%.
+- Borderlands 4, Gothic 1 Remake, High on Life 2, Crisol, ROMEO IS A DEAD MAN, S.T.A.L.K.E.R. 2, SILENT HILL f, Split Fiction, Star Trek: Voyager, WUCHANG: Fallen Feathers — native HDR.
+- Added `dlssSkipGames` for games without DLSS — reduces background scan time.
 - Stellar Blade — install path override.
 - Outward — split into Outward (original) + Outward Definitive Edition.
 - Gothic 1 Remake — game note added.
 - KINGDOM HEARTS III — Unreal Engine override.
-- Updated all native HDR game notes to reflect auto Engine.ini deployment.
+- Updated native HDR game notes to reflect auto Engine.ini deployment.
 
 ---
 

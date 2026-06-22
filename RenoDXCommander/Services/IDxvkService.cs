@@ -113,4 +113,7 @@ public interface IDxvkService
     /// Changing the variant clears the staging cache.
     /// </summary>
     DxvkVariant SelectedVariant { get; set; }
+
+    /// <summary>Lilium HDR DX9 conf preset index (0=Safest, 5=Experimental). Set before InstallAsync.</summary>
+    int LiliumPresetIndex { get; set; }
 }

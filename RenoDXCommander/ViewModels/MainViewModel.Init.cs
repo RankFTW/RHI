@@ -1544,6 +1544,13 @@ public partial class MainViewModel
                     newCard.DxvkRecord = dxvkRec;
                     newCard.DxvkStatus = GameStatus.Installed;
                     newCard.DxvkInstalledVersion = dxvkRec.DxvkVersion;
+
+                    // Lilium HDR mode: game is operating in Vulkan mode via DXVK
+                    if (dxvkRec.IsLiliumHdrMode)
+                    {
+                        newCard.VulkanRenderingPath = "Vulkan";
+                        newCard.GraphicsApi = GraphicsApiType.Vulkan;
+                    }
                 }
                 else
                 {
@@ -2243,6 +2250,13 @@ public partial class MainViewModel
                 newCard.DxvkRecord = dxvkRec;
                 newCard.DxvkStatus = GameStatus.Installed;
                 newCard.DxvkInstalledVersion = dxvkRec.DxvkVersion;
+
+                // Lilium HDR mode: game is operating in Vulkan mode via DXVK
+                if (dxvkRec.IsLiliumHdrMode)
+                {
+                    newCard.VulkanRenderingPath = "Vulkan";
+                    newCard.GraphicsApi = GraphicsApiType.Vulkan;
+                }
             }
             if (savedLib.DxvkEnabledGames.Contains(game.Name))
                 newCard.DxvkEnabled = true;
