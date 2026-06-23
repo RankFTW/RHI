@@ -639,8 +639,11 @@ public partial class DxvkService
 
             progress?.Report(("Updating DXVK DLLs...", 30));
 
-            // ── 2. Determine required DLLs ───────────────────────────────
-            var (archFolder, dllNames) = DetermineRequiredDlls(card.GraphicsApi, card.Is32Bit);
+            // ── 2. Determine arch folder for staging ─────────────────────
+            // For Lilium HDR mode, card.GraphicsApi is Vulkan (runtime override) — use the
+            // original API from the record to determine the correct source folder.
+            var updateApi = existingRecord.IsLiliumHdrMode ? GraphicsApiType.DirectX9 : card.GraphicsApi;
+            var (archFolder, dllNames) = DetermineRequiredDlls(updateApi, card.Is32Bit);
 
             // ── 3. Re-deploy DLLs to game root (overwrite existing DXVK DLLs) ──
             foreach (var dll in existingRecord.InstalledDlls)
