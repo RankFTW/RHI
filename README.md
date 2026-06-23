@@ -1,4 +1,4 @@
-# RHI — ReShade HDR Installer
+# RHI — Simplified PC Gaming
 
 One app to manage HDR mods across your entire PC game library. RHI auto-detects games from eight storefronts, installs and updates ReShade, RenoDX, frame limiters, DLSS/Streamline, OptiScaler, and more — all with per-game control and zero manual configuration.
 

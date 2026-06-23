@@ -1,10 +1,10 @@
 ---
 layout: default
-title: ReShade HDR Installer
+title: RHI
 permalink: /tools/rhi/
 ---
 
-# ReShade HDR Installer (RHI)
+# RHI — Simplified PC Gaming
 
 RHI is a desktop app that manages HDR mods, ReShade, frame limiters, DLSS/Streamline, and more across your entire PC game library. Auto-detects games from 8 storefronts with one-click install for everything. Built by RankFTW.
 
