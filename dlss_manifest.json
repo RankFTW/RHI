@@ -1,5 +1,6 @@
 {
   "dlss": [
+    { "version": "310.7.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlss-310.7.0/nvngx_dlss_310.7.0.zip" },
     { "version": "310.6.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlss-310.6.0/nvngx_dlss_310.6.0.zip" },
     { "version": "310.5.3", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlss-310.5.3/nvngx_dlss_310.5.3.zip" },
     { "version": "310.5.2", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlss-310.5.2/nvngx_dlss_310.5.2.zip" },
@@ -12,6 +13,7 @@
     { "version": "3.8.10", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlss-3.8.10/nvngx_dlss_3.8.10.zip" }
   ],
   "dlssd": [
+    { "version": "310.7.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssd-310.7.0/nvngx_dlssd_310.7.0.zip" },
     { "version": "310.6.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssd-310.6.0/nvngx_dlssd_310.6.0.zip" },
     { "version": "310.5.3", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssd-310.5.3/nvngx_dlssd_310.5.3.zip" },
     { "version": "310.5.2", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssd-310.5.2/nvngx_dlssd_310.5.2.zip" },
@@ -24,6 +26,7 @@
     { "version": "310.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssd-310.0/nvngx_dlssd_310.0.zip" }
   ],
   "dlssg": [
+    { "version": "310.7.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssg-310.7.0/nvngx_dlssg_310.7.0.zip" },
     { "version": "310.6.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssg-310.6.0/nvngx_dlssg_310.6.0.zip" },
     { "version": "310.5.3", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssg-310.5.3/nvngx_dlssg_310.5.3.zip" },
     { "version": "310.5.2", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssg-310.5.2/nvngx_dlssg_310.5.2.zip" },
@@ -37,6 +40,7 @@
     { "version": "3.8.1", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssg-3.8.1/nvngx_dlssg_3.8.1.zip" }
   ],
   "streamline": [
+    { "version": "2.12.0.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/streamline-2.12.0.0/streamline_2.12.0.0.zip" },
     { "version": "2.11.3.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/streamline-2.11.3.0/streamline_2.11.3.0.zip" },
     { "version": "2.11.1", "url": "https://github.com/RankFTW/rhi-repo/releases/download/streamline-2.11.1/streamline_2.11.1.zip" },
     { "version": "2.10.3.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/streamline-2.10.3.0/streamline_2.10.3.0.zip" },
