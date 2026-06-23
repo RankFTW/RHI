@@ -1288,7 +1288,10 @@ public sealed partial class MainWindow
         => _settingsHandler.SettingsBack_Click(sender, e);
 
     private void AboutButton_Click(object sender, RoutedEventArgs e)
-        => ViewModel.NavigateToAboutCommand.Execute(null);
+    {
+        AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+        ViewModel.NavigateToAboutCommand.Execute(null);
+    }
 
     private void AboutBack_Click(object sender, RoutedEventArgs e)
         => ViewModel.NavigateToGameViewCommand.Execute(null);
