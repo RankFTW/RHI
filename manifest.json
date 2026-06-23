@@ -260,6 +260,8 @@
     "Hades II": "Hades 2",
     "Jedi Survivor": "STAR WARS Jedi: Survivor™",
     "LEGO® City Undercover": "Lego City: Undercover",
+    "LEGO Harry Potter Years 1-4": "Lego Harry Potter Collection",
+    "LEGO Harry Potter Years 5-7": "Lego Harry Potter Collection",
     "Mafia III: Definitive Edition": "Mafia III",
     "Metro 2033 Redux": "Metro Redux (2033 and Last Light)",
     "Metro: Last Light Redux": "Metro Redux (2033 and Last Light)",
@@ -968,6 +970,10 @@
     "Outward": [
       { "name": "Outward", "subPath": "" },
       { "name": "Outward Definitive Edition", "subPath": "Outward_Defed" }
+    ],
+    "LEGO® Harry Potter™ Collection": [
+      { "name": "LEGO Harry Potter Years 1-4", "subPath": "Years 1-4" },
+      { "name": "LEGO Harry Potter Years 5-7", "subPath": "Years 5-7" }
     ]
   },
   "installWarnings": {
