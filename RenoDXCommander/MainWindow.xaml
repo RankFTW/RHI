@@ -38,7 +38,7 @@
                         <TextBlock FontSize="15" FontWeight="Bold">
                             <Run Text="RHI" Foreground="{StaticResource AccentTealBrush}"/>
                         </TextBlock>
-                        <TextBlock Text="Enhance every game" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
+                        <TextBlock Text="Simplified PC Gaming" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -1522,6 +1522,14 @@
                                                 CornerRadius="8" Padding="12,7" FontSize="12"
                                                 HorizontalAlignment="Stretch"/>
                                     </Grid>
+                                    <Button Content="Reset All Game Profiles to Default"
+                                            Click="ResetAllNvidiaProfiles_Click"
+                                            ToolTipService.ToolTip="Removes ALL per-game NVIDIA profile overrides (DLSS versions, presets, render scales, driver settings). The global profile will be like new."
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="#CC4444" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -2159,6 +2167,38 @@
                                                    Text="Upscaler redirection layer enabling DLSS, FSR, and XeSS across different GPU vendors. Downloaded from GitHub releases."/>
                                         <HyperlinkButton NavigateUri="https://github.com/optiscaler/OptiScaler" Padding="0,2,0,0" FontSize="11">
                                             <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/optiscaler/OptiScaler"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- DXVK -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="DXVK" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by doitsujin &amp; contributors" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  Zlib Licence" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text="DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Includes Lilium HDR fork by EndlesslyFlowering for scRGB HDR output."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/doitsujin/dxvk" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/doitsujin/dxvk  ·  github.com/EndlesslyFlowering/dxvk"/>
+                                        </HyperlinkButton>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- NvAPIWrapper -->
+                                <Border Background="{StaticResource SurfaceToolbarBrush}" CornerRadius="8" Padding="12,10" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontSize="12">
+                                            <Run Text="NvAPIWrapper.Net" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Run Text=" by falahati" Foreground="{StaticResource TextTertiaryBrush}"/>
+                                            <Run Text="  ·  MIT Licence" Foreground="{StaticResource InlineDescriptionBrush}" FontSize="11"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" TextWrapping="Wrap"
+                                                   Text=".NET wrapper for NVIDIA's NvAPI used for all driver profile management — DLSS presets, render scale, ReBAR, VSync, Smooth Motion, and more."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/falahati/NvAPIWrapper" Padding="0,2,0,0" FontSize="11">
+                                            <TextBlock Foreground="{StaticResource AccentTealDimBrush}" Text="github.com/falahati/NvAPIWrapper"/>
                                         </HyperlinkButton>
                                     </StackPanel>
                                 </Border>

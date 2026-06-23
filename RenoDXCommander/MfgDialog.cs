@@ -224,6 +224,36 @@ public static class MfgDialog
             suppressEvents = false;
         }
 
+        // VRR cap values with corresponding monitor refresh rates (shown first in the list)
+        var vrrCapOptions = new (uint Fps, string Label)[]
+        {
+            (59,  "59 — 60 Hz VRR Cap"),
+            (73,  "73 — 75 Hz VRR Cap"),
+            (97,  "97 — 100 Hz VRR Cap"),
+            (116, "116 — 120 Hz VRR Cap"),
+            (138, "138 — 144 Hz VRR Cap"),
+            (157, "157 — 165 Hz VRR Cap"),
+            (171, "171 — 180 Hz VRR Cap"),
+            (189, "189 — 200 Hz VRR Cap"),
+            (224, "224 — 240 Hz VRR Cap"),
+            (258, "258 — 280 Hz VRR Cap"),
+            (275, "275 — 300 Hz VRR Cap"),
+            (324, "324 — 360 Hz VRR Cap"),
+            (416, "416 — 480 Hz VRR Cap"),
+            (431, "431 — 500 Hz VRR Cap"),
+        };
+        var vrrFpsSet = new HashSet<uint>(vrrCapOptions.Select(o => o.Fps));
+
+        // Build the full FPS items list: VRR caps first, then remaining values
+        var fpsItemsList = new List<(uint Fps, string Label)>();
+        foreach (var opt in vrrCapOptions)
+            fpsItemsList.Add(opt);
+        for (uint fps = 60; fps <= 500; fps++)
+        {
+            if (!vrrFpsSet.Contains(fps))
+                fpsItemsList.Add((fps, $"{fps} FPS"));
+        }
+
         void PopulateFpsCombo(int selectedModeIndex)
         {
             suppressEvents = true;
@@ -233,8 +263,8 @@ public static class MfgDialog
             {
                 fpsCombo.Items.Add("Off");
                 fpsCombo.Items.Add("Max Refresh Rate");
-                for (int fps = 60; fps <= 500; fps++)
-                    fpsCombo.Items.Add($"{fps} FPS");
+                foreach (var item in fpsItemsList)
+                    fpsCombo.Items.Add(item.Label);
 
                 fpsCombo.IsEnabled = true;
 
@@ -245,12 +275,8 @@ public static class MfgDialog
                     fpsCombo.SelectedIndex = 1;
                 else
                 {
-                    // FPS value: index = fps - 60 + 2 (first two items are Off and Max Refresh Rate)
-                    int fpsVal = (int)currentTargetFps;
-                    if (fpsVal >= 60 && fpsVal <= 500)
-                        fpsCombo.SelectedIndex = fpsVal - 60 + 2;
-                    else
-                        fpsCombo.SelectedIndex = 0;
+                    int matchIdx = fpsItemsList.FindIndex(o => o.Fps == currentTargetFps);
+                    fpsCombo.SelectedIndex = matchIdx >= 0 ? matchIdx + 2 : 0;
                 }
             }
             else // Default or Fixed
@@ -341,7 +367,7 @@ public static class MfgDialog
             uint value;
             if (idx == 0) value = TARGET_FPS_OFF;
             else if (idx == 1) value = TARGET_FPS_MAX_REFRESH;
-            else value = (uint)(idx - 2 + 60); // 60 FPS starts at index 2
+            else value = fpsItemsList[idx - 2].Fps;
 
             presetService.SetMfgDynamicTargetFps(gameName, installPath, value);
             currentTargetFps = value;

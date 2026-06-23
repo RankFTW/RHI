@@ -1084,6 +1084,9 @@ public sealed partial class MainWindow
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
         var count = presetService.ImportProfiles(data);
 
+        // Refresh settings page to reflect imported global values
+        _settingsHandler.RefreshGlobalNvidiaSettings();
+
         await DialogService.ShowSafeAsync(new ContentDialog
         {
             Title = "Import Complete",
@@ -1092,6 +1095,113 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         });
+    }
+
+    private async void ResetAllNvidiaProfiles_Click(object sender, RoutedEventArgs e)
+    {
+        var confirmDialog = new ContentDialog
+        {
+            Title = "Reset all game profiles?",
+            Content = new TextBlock
+            {
+                Text = "This will remove ALL per-game NVIDIA driver profile overrides (DLSS/Streamline versions, presets, render scales, ReBAR, VSync, Smooth Motion, Low Latency, Power Mode — everything) AND reset global settings (Shader Cache, G-Sync, Refresh Rate, ReBAR) to defaults.\n\nAll profiles will return to NVIDIA factory defaults. This cannot be undone.",
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                FontSize = 13,
+            },
+            PrimaryButtonText = "Reset All",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        var result = await DialogService.ShowSafeAsync(confirmDialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        try
+        {
+            var presetSvc = ViewModel.DlssPresetServiceInstance;
+            var gamesList = ViewModel.AllCards
+                .Where(c => !string.IsNullOrEmpty(c.InstallPath))
+                .Select(c => (c.GameName, c.InstallPath!))
+                .ToList();
+
+            // Show progress dialog
+            var progressPanel = new StackPanel { Spacing = 8 };
+            var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
+            var progressText = new TextBlock { Text = "Preparing...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+            var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
+            progressRow.Children.Add(progressRing);
+            progressRow.Children.Add(progressText);
+            progressPanel.Children.Add(progressRow);
+
+            var progressDialog = new ContentDialog
+            {
+                Title = "Resetting...",
+                Content = progressPanel,
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            _ = DialogService.ShowSafeAsync(progressDialog);
+
+            int resetCount = 0;
+            await Task.Run(() =>
+            {
+                for (int i = 0; i < gamesList.Count; i++)
+                {
+                    var (gameName, installPath) = gamesList[i];
+                    DispatcherQueue?.TryEnqueue(() =>
+                        progressText.Text = $"[{i + 1}/{gamesList.Count}] {gameName}");
+                    try
+                    {
+                        if (presetSvc.RestoreProfileDefaults(gameName, installPath))
+                            resetCount++;
+                    }
+                    catch { }
+                }
+
+                // Reset global profile
+                DispatcherQueue?.TryEnqueue(() =>
+                    progressText.Text = "Resetting global settings...");
+                presetSvc.ResetGlobalProfile();
+            });
+
+            progressDialog.Hide();
+
+            // Refresh all cards so the detail panel reflects cleared presets
+            foreach (var card in ViewModel.AllCards)
+                card.NotifyAll();
+
+            // Rebuild the detail panel for the selected game to refresh NVIDIA section
+            if (ViewModel.SelectedGame != null)
+            {
+                PopulateDetailPanel(ViewModel.SelectedGame);
+                _detailPanelBuilder.BuildOverridesPanel(ViewModel.SelectedGame);
+            }
+
+            // Re-initialize the Global Nvidia Settings combos to reflect cleared values
+            _settingsHandler.RefreshGlobalNvidiaSettings();
+
+            await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Profiles Reset",
+                Content = $"Reset {resetCount} game profile(s) and global settings to factory defaults.",
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ResetAllNvidiaProfiles_Click] Error: {ex.GetType().Name}: {ex.Message}");
+            await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Reset Failed",
+                Content = $"Error: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
+        }
     }
 
     private async void DlssIndicatorCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

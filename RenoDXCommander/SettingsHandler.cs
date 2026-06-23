@@ -41,7 +41,7 @@ public class SettingsHandler
         _window.LoadingPanel.Visibility = Visibility.Collapsed;
         // Sync toggle state with ViewModel
         _window.CustomShadersToggle.IsOn = ViewModel.Settings.UseCustomShaders;
-        _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  HDR mod manager by RankFTW";
+        _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
         // Populate screenshot path and per-game toggle
@@ -153,7 +153,7 @@ public class SettingsHandler
             _window.GSyncModeCombo.ItemsSource = DlssPresetService.GSyncModeOptions.Select(o => o.Name).ToArray();
             var gsync = presetSvc.GetGSyncMode();
             var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
-            _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 2; // Default: Fullscreen and Windowed
+            _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
 
             _window.PreferredRefreshRateCombo.ItemsSource = DlssPresetService.PreferredRefreshRateOptions.Select(o => o.Name).ToArray();
             var refreshRate = presetSvc.GetPreferredRefreshRate();
@@ -184,6 +184,45 @@ public class SettingsHandler
 
         // Initialize admin mode combo
         InitAdminModeCombo(_window.AdminModeCombo);
+    }
+
+    /// <summary>
+    /// Re-reads global NVIDIA settings from the driver and refreshes the Settings page combos.
+    /// Called after Reset All to reflect the cleared values.
+    /// </summary>
+    public void RefreshGlobalNvidiaSettings()
+    {
+        var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
+        if (!presetSvc.IsSupported) return;
+
+        _window._shaderCacheComboInit = true;
+
+        var cacheSize = presetSvc.GetShaderCacheSize();
+        var cacheIdx = Array.FindIndex(DlssPresetService.ShaderCacheSizeOptions, o => o.Value == cacheSize);
+        _window.ShaderCacheSizeCombo.SelectedIndex = cacheIdx >= 0 ? cacheIdx : 0;
+
+        var precompile = presetSvc.GetShaderPrecompile();
+        var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == precompile);
+        _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
+
+        var gsync = presetSvc.GetGSyncMode();
+        var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
+        _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
+
+        var refreshRate = presetSvc.GetPreferredRefreshRate();
+        var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
+        _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0;
+
+        var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
+        var globalReBar = presetSvc.GetGlobalReBarEnabled();
+        _window.GlobalReBarEnableCombo.SelectedIndex = globalReBar == true ? 1 : 0;
+        _window.GlobalReBarSizeCombo.IsEnabled = isAdminForReBar && globalReBar == true;
+        _window.GlobalReBarSizeCombo.Opacity = (isAdminForReBar && globalReBar == true) ? 1.0 : 0.4;
+        var globalReBarSize = presetSvc.GetGlobalReBarSizeLimit();
+        var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
+        _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1;
+
+        _window._shaderCacheComboInit = false;
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)

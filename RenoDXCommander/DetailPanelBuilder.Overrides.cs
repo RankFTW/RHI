@@ -2609,7 +2609,7 @@ public partial class DetailPanelBuilder
                     Title = "Restore driver settings?",
                     Content = new TextBlock
                     {
-                        Text = $"This will restore driver settings for {capturedName} back to the factory default. This action is irreversible.",
+                        Text = $"This will restore driver settings for {capturedName} back to the factory default and restore DLSS/Streamline DLLs to their original versions. This action is irreversible.",
                         TextWrapping = TextWrapping.Wrap,
                         FontSize = 13,
                     },

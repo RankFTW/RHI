@@ -601,6 +601,94 @@ public class DlssPresetService
         }
     }
 
+    /// <summary>
+    /// Resets ALL per-game NVIDIA profiles to factory defaults AND clears global base profile overrides.
+    /// Iterates all games in RHI and calls RestoreProfileDefaults on each, then resets the base profile.
+    /// Returns the count of profiles successfully reset.
+    /// </summary>
+    public int ResetAllProfiles(IEnumerable<(string GameName, string InstallPath)> games)
+    {
+        if (!_isSupported || _session == null) return 0;
+        int count = 0;
+        foreach (var (gameName, installPath) in games)
+        {
+            try
+            {
+                if (RestoreProfileDefaults(gameName, installPath))
+                    count++;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DlssPresetService.ResetAllProfiles] Failed for '{gameName}' — {ex.Message}");
+            }
+        }
+
+        ResetGlobalProfile();
+        return count;
+    }
+
+    /// <summary>
+    /// Resets the global/base NVIDIA profile settings to factory defaults.
+    /// Clears Shader Cache, G-Sync, Refresh Rate, ReBAR, DLSS overrides from the base profile.
+    /// </summary>
+    public void ResetGlobalProfile()
+    {
+        if (!_isSupported || _session == null) return;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            // Delete all known managed global settings from the base profile
+            var globalSettingIds = new uint[]
+            {
+                // DLSS Latest DLL + presets (global overrides from NVIDIA App)
+                DLSS_SR_LATEST_DLL_ID,     // 0x10E41E01
+                DLSS_RR_LATEST_DLL_ID,     // 0x10E41E02
+                DLSS_FG_LATEST_DLL_ID,     // 0x10E41E03
+                NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID, // 0x10E41DF3
+                NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID, // 0x10E41DF7
+                NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID, // 0x10E41DF1
+                NGX_DLSS_SR_RENDER_SCALE_ID,    // 0x10AFB768
+                NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID, // 0x10E41DF5
+                NGX_DLSS_RR_RENDER_SCALE_ID,    // 0x10BD9423
+                NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID, // 0x10C7D4A2
+                MFG_MODE_OVERRIDE_ID,           // 0x10308298
+                MFG_GENERATION_FACTOR_ID,       // 0x104D6667
+                MFG_DYNAMIC_MAX_COUNT_ID,       // 0x10562D0F
+                MFG_DYNAMIC_TARGET_FPS_ID,      // 0x10CF4125
+                // Global settings (Shader Cache, G-Sync, Refresh Rate, ReBAR)
+                SHADER_CACHE_SIZE_ID,           // 0x00AC8497
+                GSYNC_APP_MODE_ID,              // 0x1194F158
+                GSYNC_GLOBAL_MODE_ID,           // 0x1094F1F7
+                PREFERRED_REFRESH_RATE_ID,      // 0x0064B541
+                REBAR_FEATURE_ID,               // 0x000F00BA
+                REBAR_EXPR_MODES_ID,            // 0x00C09D09
+                REBAR_SIZE_LIMIT_ID,            // 0x000F00FF
+            };
+            int globalDeleted = 0;
+            foreach (var id in globalSettingIds)
+            {
+                try { baseProfile.DeleteSetting(id); globalDeleted++; } catch { }
+            }
+
+            // Shader Pre-Compile needs raw API (DeleteSetting can't reach it on the base profile)
+            // Write the default value (0x01 = Low) explicitly
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var baseHandle = GetHandlePtr(baseProfile.Handle);
+            if (sessionHandle != IntPtr.Zero && baseHandle != IntPtr.Zero)
+            {
+                SetSettingRawNvApi(sessionHandle, baseHandle, SHADER_PRECOMPILE_ID, 0x00000001); // Low (default)
+            }
+
+            _session.Save();
+            ReloadSession();
+            CrashReporter.Log($"[DlssPresetService.ResetGlobalProfile] Cleared {globalDeleted} global base profile settings + reset Shader Pre-Compile");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.ResetGlobalProfile] Global profile reset failed — {ex.Message}");
+        }
+    }
+
     private void ReloadSession()
     {
         try
@@ -1081,7 +1169,7 @@ if ($null -ne $profile) {{
     [
         ("Off", 0x00000000),
         ("Fullscreen only", 0x00000001),
-        ("Fullscreen / Windowed", 0x00000002),
+        ("Fullscreen/Windowed", 0x00000002),
     ];
 
     public static readonly (string Name, uint Value)[] PreferredRefreshRateOptions =
@@ -1469,7 +1557,7 @@ $destroyDel.Invoke($hSession) | Out-Null
     /// <summary>Gets the G-Sync mode (reads App mode — both should be in sync).</summary>
     public uint GetGSyncMode()
     {
-        if (!_isSupported || _session == null) return 0x00000002; // Default: Fullscreen and Windowed
+        if (!_isSupported || _session == null) return 0x00000001; // Default: Fullscreen only
         try
         {
             var baseProfile = _session.BaseProfile;
@@ -1483,9 +1571,9 @@ $destroyDel.Invoke($hSession) | Out-Null
                 var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, GSYNC_APP_MODE_ID);
                 if (rawVal.HasValue) return rawVal.Value;
             }
-            return 0x00000002;
+            return 0x00000001; // Default: Fullscreen only
         }
-        catch { return 0x00000002; }
+        catch { return 0x00000001; }
     }
 
     /// <summary>Sets both G-Sync App Mode and Global Mode together.</summary>
@@ -1880,6 +1968,8 @@ $session.Save()
                     try
                     {
                         var baseProfile = _session.BaseProfile;
+                        var sessionHandle = GetHandlePtr(_session.Handle);
+                        var baseHandle = GetHandlePtr(baseProfile.Handle);
                         // ReBAR Feature/Mode require elevation — use PS helper for those
                         bool hasReBarFeature = false;
                         uint rebarFeatureVal = 0;
@@ -1894,7 +1984,14 @@ $session.Save()
                                     var value = prop.Value.GetUInt32();
                                     if (settingId == REBAR_FEATURE_ID) { hasReBarFeature = true; rebarFeatureVal = value; continue; }
                                     if (settingId == REBAR_EXPR_MODES_ID) { rebarModeVal = value; continue; }
-                                    try { baseProfile.SetSetting(settingId, value); } catch { }
+                                    // Always use raw API for base profile — NvAPIWrapper's SetSetting silently fails for many settings
+                                    bool written = false;
+                                    if (sessionHandle != IntPtr.Zero && baseHandle != IntPtr.Zero)
+                                        written = SetSettingRawNvApi(sessionHandle, baseHandle, settingId, value);
+                                    if (!written)
+                                    {
+                                        try { baseProfile.SetSetting(settingId, value); } catch { }
+                                    }
                                 }
                             }
                         }

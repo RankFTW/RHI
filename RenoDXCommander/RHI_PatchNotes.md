@@ -6,7 +6,7 @@
   - **DLSS / Streamline row** — Version, Preset, and Render Scale management for SR, RR, FG, and Streamline. Quick Apply button stamps your configured defaults onto any game in one click (downloads on-demand). Restore DLSS/SL reverts DLLs and resets presets.
   - **Driver Settings row** — VSync (Mode, Tear Control, Low Latency), Smooth Motion (Enable, APIs, Flip Pacing), Power Mode, ReBAR (Enable, Mode, Size Limit). All per-game via NVIDIA driver profiles. Requires admin.
 - **Admin Mode** — Task Scheduler-based persistent elevation (Off/On in Settings). When enabled, RHI silently relaunches elevated on startup — no per-operation UAC prompts. Required for ReBAR, Low Latency Ultra, and Smooth Motion writes. Driver settings row greyed out when not elevated.
-- **Multi Frame Generation** — "Multi Frame Gen" button in the FG column opens a per-game dialog to configure MFG Mode (Fixed/Dynamic), frame count multiplier (2x-6x), and dynamic target frame rate. RTX 50 Series only (driver 572.16+ for MFG, 595.97+ for DMFG).
+- **Multi Frame Generation** — "Multi Frame Gen" button in the FG column opens a per-game dialog to configure MFG Mode (Fixed/Dynamic), frame count multiplier (2x-6x), and dynamic target frame rate (with VRR cap presets for common monitor refresh rates). RTX 50 Series only (driver 572.16+ for MFG, 595.97+ for DMFG).
 - **DLSS & Streamline Defaults** — Configure preferred default versions, presets, and render scales in Settings. One-click Quick Apply per game. 4-column configuration dialog.
 - **Global Nvidia Settings** — Shader Cache Size, Shader Pre-Compile, G-Sync Mode, Preferred Refresh Rate, Global ReBAR (On/Off + Size), DLSS On-Screen Indicator. All write to the global driver profile.
 - **Profile Export/Import** — Back up all per-game NVIDIA profile settings to JSON. Restore after driver updates — recreates profiles, exe associations, and all custom settings in one click. Includes global settings.
@@ -19,7 +19,8 @@
 - **Manifest-driven DLSS Presets** — Preset options updated server-side when NVIDIA introduces new ones.
 - **Manifest-driven Addon Packs** — Addon entries can be added, modified, or disabled from the manifest.
 - **Manifest-driven Component URLs** — Base download URLs overridable from the manifest.
-- **Lilium HDR DXVK — Vulkan layer mode** — DX9 games with Lilium HDR DXVK now deploy DXVK as `d3d9.dll` directly with Vulkan layer ReShade, enabling SM5 HDR shaders. Restores local ReShade on uninstall.
+- **Lilium HDR DXVK — Vulkan layer mode** — DX9 games with Lilium HDR DXVK now deploy DXVK as `d3d9.dll` directly with Vulkan layer ReShade, enabling SM5 HDR shaders. Restores local ReShade on uninstall. Per-game HDR preset selector (Safest → Experimental) controls how aggressively render targets are upgraded — 6 presets for DX9, 7 for DX10/DX11.
+- **Reset All Game Profiles** — Button in Global Nvidia Settings resets ALL per-game NVIDIA profile overrides AND global base profile settings to factory defaults with progress feedback.
 
 ### Improvements
 
@@ -57,6 +58,7 @@
 - Gothic 1 Remake — game note added.
 - KINGDOM HEARTS III — Unreal Engine override.
 - Updated native HDR game notes to reflect auto Engine.ini deployment.
+- LEGO Harry Potter Collection — split into Years 1-4 and Years 5-7.
 
 ---
 
