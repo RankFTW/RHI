@@ -188,6 +188,7 @@ public class DlssPresetService
         ("K", 0x0000000B),
         ("L", 0x0000000C),
         ("M", 0x0000000D),
+        ("Latest Recommended", 0x00FFFFFF),
     ];
 
     public static (string Name, uint Value)[] RrPresets =
@@ -195,6 +196,7 @@ public class DlssPresetService
         ("Default", 0x00000000),
         ("D", 0x00000004),
         ("E", 0x00000005),
+        ("Latest Recommended", 0x00FFFFFF),
     ];
 
     public static (string Name, uint Value)[] FgPresets =
@@ -202,6 +204,7 @@ public class DlssPresetService
         ("Default", 0x00000000),
         ("A", 0x00000001),
         ("B", 0x00000002),
+        ("Latest Recommended", 0x00FFFFFE),
     ];
 
     /// <summary>Named render scale options for SR and RR. "Custom" is handled separately via a TextBox.</summary>
@@ -251,6 +254,7 @@ public class DlssPresetService
         "vcredist_x64.exe", "vcredist_x86.exe",
         "UE4PrereqSetup_x64.exe",
         "crashpad_handler.exe",
+        "UbisoftConnectInstaller.exe",
     };
 
     private HashSet<string> _excludedProfileExeNames = _defaultExcludedExeNames;
@@ -874,6 +878,10 @@ public class DlssPresetService
     {
         try
         {
+            // Resolve the actual NVIDIA profile name (may differ from RHI game name)
+            var matchedProfile = FindProfile(gameName, installPath);
+            var profileName = matchedProfile?.Name ?? gameName;
+
             // Build command: use PowerShell to load NVAPI and set the settings with admin
             var featureVal = enabled ? 1u : 0u;
             var modeVal = enabled ? mode : 0u;
@@ -889,7 +897,7 @@ Add-Type -Path '{nvApiPath.Replace("'", "''")}'
 $session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
 $profile = $null
 foreach ($p in $session.Profiles) {{
-    if ($p.Name -eq '{gameName.Replace("'", "''")}') {{ $profile = $p; break }}
+    if ($p.Name -eq '{profileName.Replace("'", "''")}') {{ $profile = $p; break }}
 }}
 if ($null -eq $profile) {{
     foreach ($p in $session.Profiles) {{
@@ -977,6 +985,10 @@ if ($null -ne $profile) {{
     {
         try
         {
+            // Resolve the actual NVIDIA profile name (may differ from RHI game name)
+            var profile = FindProfile(gameName, installPath);
+            var profileName = profile?.Name ?? gameName;
+
             var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_rebar_size.ps1");
             var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
             var hexBytes = BitConverter.ToString(BitConverter.GetBytes(sizeBytes)).Replace("-", ",0x");
@@ -987,7 +999,7 @@ Add-Type -Path '{nvApiPath.Replace("'", "''")}'
 $session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
 $profile = $null
 foreach ($p in $session.Profiles) {{
-    if ($p.Name -eq '{gameName.Replace("'", "''")}') {{ $profile = $p; break }}
+    if ($p.Name -eq '{profileName.Replace("'", "''")}') {{ $profile = $p; break }}
 }}
 if ($null -ne $profile) {{
     [byte[]]$bytes = @(0x{hexBytes})
@@ -2353,17 +2365,20 @@ $session.Save()
 
             if (string.IsNullOrEmpty(gameExe)) return null;
 
+            // Sanitize profile name — NVIDIA doesn't accept commas in profile names
+            var profileName = gameName.Replace(",", "");
+
             // Create the profile
-            var profile = DriverSettingsProfile.CreateProfile(_session, gameName, null);
+            var profile = DriverSettingsProfile.CreateProfile(_session, profileName, null);
 
             // Add the exe as an application
-            ProfileApplication.CreateApplication(profile, gameExe, gameName, "", Array.Empty<string>(), false, "");
+            ProfileApplication.CreateApplication(profile, gameExe, profileName, "", Array.Empty<string>(), false, "");
 
             _session.Save();
 
-            // Cache the new profile
-            _cachedProfiles.TryAdd(gameName, profile);
-            _profileLookupCache[gameName] = profile; // Update lookup cache too
+            // Cache the new profile under both the sanitized name and original game name
+            _cachedProfiles.TryAdd(profileName, profile);
+            _profileLookupCache[gameName] = profile; // Map original game name to the profile
 
             CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Created profile '{gameName}' with app '{gameExe}'");
             ProfilesCreatedCount++;

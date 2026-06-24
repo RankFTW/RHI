@@ -2036,7 +2036,7 @@ public partial class DetailPanelBuilder
             // Disable for DLSS 1.x (not compatible with 2.x+ versions in manifest)
             bool srEnabled = hasDlss && !(card.DlssInstalledVersion?.StartsWith("1.") == true);
             bool srDriverOverride = presetService.IsSupported && presetService.IsSrDriverOverrideActive(card.GameName, card.InstallPath ?? "");
-            var srCol = BuildDlssColumn("DLSS", srEnabled, dlssService.DlssVersions,
+            var srCol = BuildDlssColumn("DLSS Super Resolution", srEnabled, dlssService.DlssVersions,
                 card.DlssInstalledVersion, DlssPresetService.SrPresets,
                 presetService.IsSupported && srEnabled ? presetService.GetSrPreset(card.GameName, card.InstallPath) : 0u,
                 async (version) =>
@@ -2268,23 +2268,11 @@ public partial class DetailPanelBuilder
                     await svc.SwapStreamlineAsync(targetCard.DlssDetection.StreamlineFolder, settings.DefaultStreamlineVersion);
 
                 if (settings.DefaultSrPreset != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
-                {
-                    var curSrPreset = pSvc.GetSrPreset(targetCard.GameName, targetCard.InstallPath);
-                    if (curSrPreset != 0x00FFFFFF && curSrPreset != 0x00FFFFFE)
-                        pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);
-                }
+                    pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);
                 if (settings.DefaultRrPreset != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
-                {
-                    var curRrPreset = pSvc.GetRrPreset(targetCard.GameName, targetCard.InstallPath);
-                    if (curRrPreset != 0x00FFFFFF && curRrPreset != 0x00FFFFFE)
-                        pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
-                }
+                    pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
                 if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg)
-                {
-                    var curFgPreset = pSvc.GetFgPreset(targetCard.GameName, targetCard.InstallPath);
-                    if (curFgPreset != 0x00FFFFFF && curFgPreset != 0x00FFFFFE)
-                        pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
-                }
+                    pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
 
                 if (settings.DefaultSrRenderScale != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrRenderScale);
@@ -3230,26 +3218,11 @@ public partial class DetailPanelBuilder
         {
             col.Children.Add(new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
 
-            // Detect "Use recommended preset" driver override (NVIDIA App sets this)
-            bool presetDriverOverride = currentPreset == 0x00FFFFFF || currentPreset == 0x00FFFFFE;
-
-            if (presetDriverOverride)
-            {
-                // Set tooltip on the Preset label since disabled combos can't show tooltips
-                var presetLabel = (TextBlock)col.Children[col.Children.Count - 1];
-                ToolTipService.SetToolTip(presetLabel, "Driver override is active — NVIDIA App has 'Use recommended preset' enabled. Disable it in NVIDIA App → Game Settings or Profile Inspector.");
-            }
-
-            var presetItems = presetDriverOverride
-                ? new List<string> { "Driver Override Active" }
-                : presets.Select(p => p.Name).ToList();
+            var presetItems = presets.Select(p => p.Name).ToList();
             int presetIdx = 0;
-            if (!presetDriverOverride)
+            for (int i = 0; i < presets.Length; i++)
             {
-                for (int i = 0; i < presets.Length; i++)
-                {
-                    if (presets[i].Value == currentPreset) { presetIdx = i; break; }
-                }
+                if (presets[i].Value == currentPreset) { presetIdx = i; break; }
             }
 
             var presetCombo = new ComboBox
@@ -3258,27 +3231,19 @@ public partial class DetailPanelBuilder
                 SelectedIndex = presetIdx,
                 FontSize = 11,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                IsEnabled = isPresent && !presetDriverOverride,
-                Opacity = presetDriverOverride ? 0.4 : 1.0,
+                IsEnabled = isPresent,
             };
 
-            if (presetDriverOverride)
-            {
-                ToolTipService.SetToolTip(presetCombo, "The NVIDIA driver is overriding presets with 'Use recommended preset'. Disable this in NVIDIA App → Game Settings or NVIDIA Profile Inspector to use manual presets.");
-            }
-            else
-            {
             // Add tooltip explaining presets
             string presetTooltip = label switch
             {
-                "DLSS" => "Override the DLSS upscaling model. J/K use the 1st-gen transformer (DLSS 4.0). L/M use the 2nd-gen transformer (DLSS 4.5) with better temporal stability and less shimmer. M is tuned for Performance mode. Default lets the driver choose automatically.",
-                "Ray Reconstruction" => "Override the Ray Reconstruction denoising model. Higher presets are newer model iterations. Results are game-dependent. Default lets the driver choose automatically.",
-                "Frame Generation" => "Override the Frame Generation interpolation model. Higher presets are newer model iterations. Default lets the driver choose automatically.",
+                "DLSS Super Resolution" => "Override the DLSS upscaling model. J/K use the 1st-gen transformer (DLSS 4.0). L/M use the 2nd-gen transformer (DLSS 4.5) with better temporal stability. Latest Recommended uses NVIDIA's per-resolution preset selection.",
+                "Ray Reconstruction" => "Override the Ray Reconstruction denoising model. Higher presets are newer model iterations. Latest Recommended uses NVIDIA's per-resolution preset selection.",
+                "Frame Generation" => "Override the Frame Generation interpolation model. Higher presets are newer model iterations. Latest Recommended uses NVIDIA's per-resolution preset selection.",
                 _ => ""
             };
             if (!string.IsNullOrEmpty(presetTooltip))
                 ToolTipService.SetToolTip(presetCombo, presetTooltip);
-            }
 
             bool presetInit = true;
             presetCombo.SelectionChanged += (s, ev) =>

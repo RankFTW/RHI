@@ -35,7 +35,7 @@ public class MassDlssDeployDialog
     {
         // ── Build eligible game list (games with DLSS or Streamline detected) ──
         var eligibleCards = _viewModel.AllCards
-            .Where(c => c.HasAnyDlssStreamline)
+            .Where(c => c.HasAnyDlssStreamline && !c.IsHidden)
             .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
             .ToList();
 

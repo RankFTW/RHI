@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "RHI"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.0.1"
 #define MyAppPublisher "RankFTW"
 #define MyAppURL "www.github.com/rankftw"
 #define MyAppExeName "RHI.exe"

@@ -1,3 +1,22 @@
+## v2.0.1
+
+### New
+
+- **"Latest Recommended" preset option** — selectable from the DLSS preset dropdowns (SR, RR, FG). Overrides the game's developer-defined presets with NVIDIA's recommended per-resolution model selection. Works per-game, via Quick Apply, and in Batch Deploy.
+- Hidden games are now excluded from the Batch Deploy list.
+
+### Bug Fixes
+
+- Fixed ReBAR settings not applying for some games where the NVIDIA profile name didn't exactly match the game name in RHI (e.g. Anno 117, Battlefield 6).
+- Fixed NVIDIA profile creation failing for games with commas in their name (e.g. Warhammer 40,000: Rogue Trader).
+
+### Manifest Updates
+
+- Anno 117: Pax Romana — install path override (Bin\Win64).
+- FINAL FANTASY VII REMAKE INTERGRADE — added to lumaRenodxCompat + snapshotOverride for Shortfuse's build.
+
+---
+
 ## v2.0.0
 
 ### New Features
