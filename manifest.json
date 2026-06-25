@@ -319,6 +319,7 @@
   "installPathOverrides": {
     "Anno 117 - Pax Romana": "Bin\\Win64",
     "Anno 117: Pax Romana": "Bin\\Win64",
+    "Tom Clancy's Splinter Cell Blacklist": "src\\SYSTEM",
     "SOULCALIBUR VI": "SoulcaliburVI\\Binaries\\Win64",
     "Gothic II: Gold Classic": "system",
     "ARMORED CORE™ VI FIRES OF RUBICON™": "Game",
