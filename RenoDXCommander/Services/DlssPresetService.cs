@@ -166,6 +166,10 @@ public class DlssPresetService
     private const uint NGX_DLSS_RR_RENDER_SCALE_ID = 0x10BD9423; // RR Render Scale mode
     private const uint NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID = 0x10C7D4A2; // RR Render Scale custom value
 
+    // DLSS Preset Override mode (tells driver how to interpret preset selection)
+    // N/A=0x00 (no override), Latest Recommended=0x01, Custom=0x02
+    private const uint DLSS_SR_PRESET_OVERRIDE_ID = 0x00634291;
+
     // DLSS Latest DLL driver override (tells driver to inject its own bundled DLL)
     private const uint DLSS_SR_LATEST_DLL_ID = 0x10E41E01;
     private const uint DLSS_RR_LATEST_DLL_ID = 0x10E41E02;
@@ -420,7 +424,18 @@ public class DlssPresetService
     // ── Set presets ───────────────────────────────────────────────────────────
 
     public bool SetSrPreset(string gameName, string installPath, uint preset)
-        => SetPreset(gameName, installPath, NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
+    {
+        var result = SetPreset(gameName, installPath, NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
+        if (result)
+        {
+            // Set the companion "Preset Override" setting so the driver knows to apply it
+            uint overrideMode = preset == 0x00000000u ? 0x00000000u  // N/A (default — no override)
+                              : preset == 0x00FFFFFFu ? 0x00000001u  // Latest Recommended
+                              : 0x00000002u;                         // Custom (any specific preset)
+            SetPreset(gameName, installPath, DLSS_SR_PRESET_OVERRIDE_ID, overrideMode);
+        }
+        return result;
+    }
 
     public bool SetRrPreset(string gameName, string installPath, uint preset)
         => SetPreset(gameName, installPath, NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
@@ -1835,6 +1850,7 @@ $session.Save()
         SMOOTH_MOTION_ENABLE_ID, SMOOTH_MOTION_APIS_ID, SMOOTH_MOTION_FLIP_PACING_FS_ID, SMOOTH_MOTION_FLIP_PACING_WIN_ID,
         REBAR_FEATURE_ID, REBAR_EXPR_MODES_ID,
         NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID, NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID,
+        DLSS_SR_PRESET_OVERRIDE_ID,
         NGX_DLSS_SR_RENDER_SCALE_ID, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID, NGX_DLSS_RR_RENDER_SCALE_ID, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID,
         MFG_MODE_OVERRIDE_ID, MFG_GENERATION_FACTOR_ID, MFG_DYNAMIC_MAX_COUNT_ID, MFG_DYNAMIC_TARGET_FPS_ID,
     ];

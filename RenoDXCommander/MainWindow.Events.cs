@@ -22,9 +22,31 @@ public sealed partial class MainWindow
         _ = RefreshWithScrollRestore();
     }
 
-    private void FullRefreshButton_Click(object sender, RoutedEventArgs e)
+    private async void FullRefreshButton_Click(object sender, RoutedEventArgs e)
     {
         _crashReporter.Log("[MainWindow.FullRefreshButton_Click] User clicked Full Refresh");
+
+        var dialog = new ContentDialog
+        {
+            Title = "Full Refresh",
+            Content = "This will clear all caches and re-scan everything from scratch:\n\n" +
+                      "• Re-detects all games from every storefront\n" +
+                      "• Re-scans DLSS/Streamline DLL paths\n" +
+                      "• Re-detects graphics APIs and engine types\n" +
+                      "• Rebuilds shader and addon deployment state\n\n" +
+                      "Try a normal Refresh first — it handles most issues without the full rescan. " +
+                      "Use Full Refresh as a last resort if games are missing, paths have changed, or DLSS has been added to a game.\n\n" +
+                      "The next couple of restarts may take a few seconds longer while caches are rebuilt.\n\n" +
+                      "Do not close RHI while the refresh is in progress — closing early will result in a missing library and the scan will need to be repeated.",
+            PrimaryButtonText = "Continue",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = Content.XamlRoot,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result != ContentDialogResult.Primary) return;
+
         _ = FullRefreshWithScrollRestore();
     }
 
@@ -770,6 +792,9 @@ public sealed partial class MainWindow
 
     private void OpenLogsFolder_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.OpenLogsFolder_Click(sender, e);
+
+    private void CopyLogsArchive_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.CopyLogsArchive_Click(sender, e);
 
     private void AdminModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.AdminModeCombo_SelectionChanged(sender, e);

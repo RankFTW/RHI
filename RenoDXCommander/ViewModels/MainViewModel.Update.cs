@@ -1002,8 +1002,15 @@ public partial class MainViewModel
             {
                 DispatcherQueue?.TryEnqueue(() =>
                 {
+                    // Only flag cards whose resolved variant matches the globally checked variant.
+                    // Games with per-game overrides to a different variant should not be flagged.
+                    var checkedVariant = _dxvkService.SelectedVariant;
                     foreach (var card in cards.Where(c => c.DxvkStatus == GameStatus.Installed))
-                        card.DxvkStatus = GameStatus.UpdateAvailable;
+                    {
+                        var resolvedVariant = ResolveDxvkVariant(card.GameName);
+                        if (resolvedVariant == checkedVariant)
+                            card.DxvkStatus = GameStatus.UpdateAvailable;
+                    }
 
                     HasUpdatesAvailable = AnyUpdateAvailable;
                     OnPropertyChanged(nameof(AnyUpdateAvailable));

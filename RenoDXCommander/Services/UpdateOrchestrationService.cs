@@ -470,6 +470,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         var auxInstalled = cards
             .Where(c => c.RsStatus == GameStatus.Installed)
             .Where(c => !c.IsLumaMode) // Luma games bundle their own ReShade — skip update check
+            .Where(c => !c.RequiresVulkanInstall) // Vulkan games use a global layer — handled separately in UpdateAllReShade
             .ToList();
 
         _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {auxInstalled.Count} aux (RS) cards to check");

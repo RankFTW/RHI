@@ -1090,13 +1090,11 @@
                     <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
                                 HorizontalAlignment="Center">
 
-                        <!-- ── Add Game | Check For Updates | Full Refresh ──── -->
+                        <!-- ── Add Game | Check For Updates ──── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="25"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="25"/>
                                     <ColumnDefinition Width="*"/>
@@ -1123,13 +1121,13 @@
                                             ToolTipService.ToolTip="Manually add a game folder"/>
                                 </Grid>
 
-                                <!-- Divider 1 -->
+                                <!-- Divider -->
                                 <Border Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch"
                                         Margin="12,0,12,0"/>
 
-                                <!-- Centre: Check For Updates -->
+                                <!-- Right: Check For Updates -->
                                 <Grid Grid.Column="2" RowSpacing="8">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
@@ -1148,33 +1146,6 @@
                                             CornerRadius="8" Padding="12,7" FontSize="12"
                                             HorizontalAlignment="Stretch"
                                             ToolTipService.ToolTip="Check all components and the app for available updates"/>
-                                </Grid>
-
-                                <!-- Divider 2 -->
-                                <Border Grid.Column="3" Width="1"
-                                        Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch"
-                                        Margin="12,0,12,0"/>
-
-                                <!-- Right: Full Refresh -->
-                                <Grid Grid.Column="4" RowSpacing="8">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Spacing="8">
-                                        <TextBlock Text="Full Refresh" FontSize="13" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Clears all caches and re-scans everything from disk. Use this if games are missing or install paths have changed."/>
-                                    </StackPanel>
-                                    <Button Grid.Row="1" x:Name="FullRefreshBtn" Content="Full Refresh"
-                                            Click="FullRefreshButton_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"
-                                            ToolTipService.ToolTip="Full refresh — clears all caches and re-scans from disk"/>
                                 </Grid>
                             </Grid>
                         </Border>
@@ -1933,43 +1904,106 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- ── Full Refresh | Admin Mode ────────────────────────── -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <Grid ColumnSpacing="0" RowSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: Full Refresh -->
+                                <Grid Grid.Column="0" RowSpacing="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Full Refresh" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Clears all caches and re-scans everything from disk. Use as a last resort if games are missing, paths have changed, or DLSS has been added to a game."/>
+                                    </StackPanel>
+                                    <Button Grid.Row="1" x:Name="FullRefreshBtn" Content="Full Refresh"
+                                            Click="FullRefreshButton_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"
+                                            ToolTipService.ToolTip="Full refresh — clears all caches and re-scans from disk"/>
+                                </Grid>
+
+                                <!-- Divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch"
+                                        Margin="12,0,12,0"/>
+
+                                <!-- Right: Admin Mode -->
+                                <Grid Grid.Column="2" RowSpacing="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Admin Mode" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Creates a scheduled task to launch RHI with elevated privileges. Required for ReBAR, Low Latency Ultra, and Smooth Motion driver settings."/>
+                                    </StackPanel>
+                                    <ComboBox Grid.Row="1" x:Name="AdminModeCombo" x:FieldModifier="internal"
+                                              SelectionChanged="AdminModeCombo_SelectionChanged"
+                                              FontSize="12" MinWidth="70" Padding="8,4"
+                                              CornerRadius="8" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="Off"/>
+                                        <ComboBoxItem Content="On"/>
+                                    </ComboBox>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
                         <!-- ── Folders ─────────────────────────────────────────────── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Data &amp; Custom Files" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="20">
-                                    All RHI data is stored in AppData. Drop custom ReShade, DLSS, or Streamline DLLs into the Custom folder to use them as per-game overrides. The Logs folder contains session usage logs useful for troubleshooting. Admin Mode creates a scheduled task to launch RHI with elevated privileges — required for ReBAR, Low Latency Ultra, and Smooth Motion driver settings.
+                                    All RHI data is stored in AppData. Drop custom ReShade, DLSS, or Streamline DLLs into the Custom folder to use them as per-game overrides. The Logs folder contains session usage logs useful for troubleshooting.
                                 </TextBlock>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Button x:Name="OpenAppDataBtn"
-                                            Content="Open AppData Folder"
+                                            Content="AppData Folder"
                                             Click="OpenAppDataFolder_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                    <Button x:Name="OpenDownloadsBtn"
+                                            Content="Downloads Folder"
+                                            Click="OpenDownloadsFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
                                     <Button x:Name="OpenCustomBtn"
-                                            Content="Open Custom Folder"
+                                            Content="Custom Folder"
                                             Click="OpenCustomFolder_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
                                     <Button x:Name="OpenLogsBtn"
-                                            Content="Open Logs Folder"
+                                            Content="Logs Folder"
                                             Click="OpenLogsFolder_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                        <TextBlock Text="Admin Mode:" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}" VerticalAlignment="Center"/>
-                                        <ComboBox x:Name="AdminModeCombo" x:FieldModifier="internal"
-                                                  SelectionChanged="AdminModeCombo_SelectionChanged"
-                                                  FontSize="12" MinWidth="70" Padding="8,4"
-                                                  CornerRadius="8">
-                                            <ComboBoxItem Content="Off"/>
-                                            <ComboBoxItem Content="On"/>
-                                        </ComboBox>
-                                    </StackPanel>
+                                    <Button x:Name="CopyLogsArchiveBtn"
+                                            Content="Copy Logs"
+                                            Click="CopyLogsArchive_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"
+                                            ToolTipService.ToolTip="Creates a zip archive of all logs and copies it to clipboard — paste directly into Discord"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

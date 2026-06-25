@@ -473,6 +473,59 @@ public class SettingsHandler
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(DownloadPaths.Root) { UseShellExecute = true });
     }
 
+    public async void CopyLogsArchive_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var logsDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RHI", "logs");
+            if (!Directory.Exists(logsDir))
+            {
+                CrashReporter.Log("[SettingsHandler.CopyLogsArchive_Click] Logs directory does not exist");
+                return;
+            }
+
+            var logFiles = Directory.GetFiles(logsDir, "*.txt");
+            if (logFiles.Length == 0)
+            {
+                CrashReporter.Log("[SettingsHandler.CopyLogsArchive_Click] No log files found");
+                return;
+            }
+
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            var archivePath = Path.Combine(Path.GetTempPath(), $"RHI_Logs_{timestamp}.zip");
+
+            // Delete if exists from a previous attempt
+            if (File.Exists(archivePath)) File.Delete(archivePath);
+
+            System.IO.Compression.ZipFile.CreateFromDirectory(logsDir, archivePath);
+
+            var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(archivePath);
+            var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dp.SetStorageItems(new[] { storageFile });
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+
+            CrashReporter.Log($"[SettingsHandler.CopyLogsArchive_Click] Logs archive copied to clipboard: {archivePath}");
+
+            // Show confirmation
+            if (sender is FrameworkElement fe && fe.XamlRoot != null)
+            {
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "Logs Copied",
+                    Content = "All session logs have been archived and copied to your clipboard. Paste directly into Discord to share.",
+                    CloseButtonText = "OK",
+                    XamlRoot = fe.XamlRoot,
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.CopyLogsArchive_Click] Failed: {ex.Message}");
+        }
+    }
+
     // ── Hotkey UI event handlers (placeholder — implemented in Tasks 6.2 / 6.3) ──
 
     /// <summary>

@@ -2,14 +2,20 @@
 
 ### New
 
-- **Check For Updates button** — new button in Settings between Add Game and Full Refresh. Fetches the latest manifest, checks all components for updates (bypassing the 4-hour cooldown), and checks for app updates. Progress dialog shown while working.
-- **Full Refresh progress dialog** — now shows a status dialog with phase updates (Clearing caches → Detecting games → Building cards) instead of appearing to do nothing.
+- **Check For Updates button** — new button in Settings. Fetches the latest manifest, checks all components for updates (bypassing the 4-hour cooldown), and checks for app updates. Progress dialog shown while working.
+- **Full Refresh dialogs** — confirmation warning before starting (explains what it does, advises normal Refresh first) and progress dialog showing phases while working.
+- **Copy Logs button** — archives all session logs into a zip and copies to clipboard for easy pasting into Discord.
 
 ### Improvements
 
 - DMFG Target FPS labels reformatted: `324 FPS (360Hz VRR Cap)` style for better readability.
-- Settings top section reorganized into 3 columns: Add Game | Check For Updates | Full Refresh.
+- Settings page reorganized: Add Game + Check For Updates top row; Full Refresh + Admin Mode in their own section near the bottom; Downloads folder button added to Data section.
 - Full Refresh no longer includes update checking (moved exclusively to Check For Updates).
+
+### Bug Fixes
+
+- Fixed DLSS preset overrides not applying in some games (e.g. Avatar: Frontiers of Pandora).
+- Fixed false DXVK and ReShade update indicators on Vulkan/Lilium HDR games.
 
 ---
 
