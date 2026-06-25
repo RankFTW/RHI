@@ -1,3 +1,18 @@
+## v2.0.2
+
+### New
+
+- **Check For Updates button** — new button in Settings between Add Game and Full Refresh. Fetches the latest manifest, checks all components for updates (bypassing the 4-hour cooldown), and checks for app updates. Progress dialog shown while working.
+- **Full Refresh progress dialog** — now shows a status dialog with phase updates (Clearing caches → Detecting games → Building cards) instead of appearing to do nothing.
+
+### Improvements
+
+- DMFG Target FPS labels reformatted: `324 FPS (360Hz VRR Cap)` style for better readability.
+- Settings top section reorganized into 3 columns: Add Game | Check For Updates | Full Refresh.
+- Full Refresh no longer includes update checking (moved exclusively to Check For Updates).
+
+---
+
 ## v2.0.1
 
 ### New

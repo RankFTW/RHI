@@ -227,20 +227,20 @@ public static class MfgDialog
         // VRR cap values with corresponding monitor refresh rates (shown first in the list)
         var vrrCapOptions = new (uint Fps, string Label)[]
         {
-            (59,  "59 — 60 Hz VRR Cap"),
-            (73,  "73 — 75 Hz VRR Cap"),
-            (97,  "97 — 100 Hz VRR Cap"),
-            (116, "116 — 120 Hz VRR Cap"),
-            (138, "138 — 144 Hz VRR Cap"),
-            (157, "157 — 165 Hz VRR Cap"),
-            (171, "171 — 180 Hz VRR Cap"),
-            (189, "189 — 200 Hz VRR Cap"),
-            (224, "224 — 240 Hz VRR Cap"),
-            (258, "258 — 280 Hz VRR Cap"),
-            (275, "275 — 300 Hz VRR Cap"),
-            (324, "324 — 360 Hz VRR Cap"),
-            (416, "416 — 480 Hz VRR Cap"),
-            (431, "431 — 500 Hz VRR Cap"),
+            (59,  "59 FPS (60Hz VRR Cap)"),
+            (73,  "73 FPS (75Hz VRR Cap)"),
+            (97,  "97 FPS (100Hz VRR Cap)"),
+            (116, "116 FPS (120Hz VRR Cap)"),
+            (138, "138 FPS (144Hz VRR Cap)"),
+            (157, "157 FPS (165Hz VRR Cap)"),
+            (171, "171 FPS (180Hz VRR Cap)"),
+            (189, "189 FPS (200Hz VRR Cap)"),
+            (224, "224 FPS (240Hz VRR Cap)"),
+            (258, "258 FPS (280Hz VRR Cap)"),
+            (275, "275 FPS (300Hz VRR Cap)"),
+            (324, "324 FPS (360Hz VRR Cap)"),
+            (416, "416 FPS (480Hz VRR Cap)"),
+            (431, "431 FPS (500Hz VRR Cap)"),
         };
         var vrrFpsSet = new HashSet<uint>(vrrCapOptions.Select(o => o.Fps));
 

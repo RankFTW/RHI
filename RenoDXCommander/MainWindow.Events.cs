@@ -28,6 +28,50 @@ public sealed partial class MainWindow
         _ = FullRefreshWithScrollRestore();
     }
 
+    private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
+    {
+        _crashReporter.Log("[MainWindow.CheckForUpdatesButton_Click] User clicked Check For Updates");
+
+        // Show progress dialog
+        var progressPanel = new StackPanel { Spacing = 8 };
+        var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
+        var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
+        var progressText = new TextBlock { Text = "Fetching manifest...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        progressRow.Children.Add(progressRing);
+        progressRow.Children.Add(progressText);
+        progressPanel.Children.Add(progressRow);
+
+        var progressDialog = new ContentDialog
+        {
+            Title = "Checking for updates...",
+            Content = progressPanel,
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        _ = DialogService.ShowSafeAsync(progressDialog);
+
+        try
+        {
+            // Force bypass cooldown for the update check
+            ViewModel.ForceNextUpdateCheck();
+
+            // Trigger a Refresh (which fetches manifests + wiki + runs update checks)
+            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components...");
+            await ViewModel.RefreshAsync();
+
+            // Check app update
+            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking app version...");
+            await _dialogService.CheckForAppUpdateAsync();
+
+            progressDialog.Hide();
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[CheckForUpdatesButton_Click] Error: {ex.Message}");
+            progressDialog.Hide();
+        }
+    }
+
     private async void BrowseAddonWatchFolder_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -2155,8 +2199,28 @@ public sealed partial class MainWindow
     {
         var selectedName = (GameList.SelectedItem as GameCardViewModel)?.GameName;
 
-        await ViewModel.FullRefreshAsync();
+        // Show progress dialog
+        var progressPanel = new StackPanel { Spacing = 8 };
+        var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
+        var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
+        var progressText = new TextBlock { Text = "Clearing caches...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        progressRow.Children.Add(progressRing);
+        progressRow.Children.Add(progressText);
+        progressPanel.Children.Add(progressRow);
 
+        var progressDialog = new ContentDialog
+        {
+            Title = "Full Refresh",
+            Content = progressPanel,
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        _ = DialogService.ShowSafeAsync(progressDialog);
+
+        var uiProgress = new Progress<string>(msg => DispatcherQueue?.TryEnqueue(() => progressText.Text = msg));
+        await ViewModel.FullRefreshAsync(uiProgress);
+
+        progressDialog.Hide();
         RestoreScrollAndSelection(selectedName);
     }
 

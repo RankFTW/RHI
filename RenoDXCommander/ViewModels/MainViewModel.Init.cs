@@ -93,21 +93,24 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    public async Task FullRefreshAsync()
+    public async Task FullRefreshAsync(IProgress<string>? progress = null)
     {
         // Clear all caches so every game is re-scanned from disk.
+        progress?.Report("Clearing caches...");
         _engineTypeCache.Clear();
         _resolvedPathCache.Clear();
         _addonFileCache.Clear();
         _bitnessCache.Clear();
         _dlssStreamlineService.ClearScanCaches();
-        _forceUpdateCheck = true;
-        await InitializeAsync(forceRescan: true);
+        await InitializeAsync(forceRescan: true, progress: progress);
     }
+
+    /// <summary>Forces the next update check to bypass the 4-hour cooldown.</summary>
+    public void ForceNextUpdateCheck() => _forceUpdateCheck = true;
 
     // ── Init ──
 
-    public async Task InitializeAsync(bool forceRescan = false)
+    public async Task InitializeAsync(bool forceRescan = false, IProgress<string>? progress = null)
     {
         IsLoading = true;
         if (!_hasInitialized) DisplayedGames.Clear();
@@ -274,6 +277,7 @@ public partial class MainViewModel
             });
 
             // 3. Await detection first — this never needs network
+            progress?.Report("Detecting games...");
             var freshGames = await detectTask;
 
             // 4. Await network tasks individually so failures don't block game display
@@ -391,6 +395,7 @@ public partial class MainViewModel
             await ultraPlusInitTask;
 
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
+            progress?.Report($"Building cards for {allGames.Count} games...");
             _allCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));
             _crashReporter.Log($"[MainViewModel.InitializeAsync] BuildCards complete: {_allCards.Count} cards");
             GraphicsApiDetector.SaveCache();

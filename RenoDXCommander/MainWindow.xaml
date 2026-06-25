@@ -1090,11 +1090,13 @@
                     <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
                                 HorizontalAlignment="Center">
 
-                        <!-- ── Add Game & Full Refresh ─────────────────────────── -->
+                        <!-- ── Add Game | Check For Updates | Full Refresh ──── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="25"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="25"/>
                                     <ColumnDefinition Width="*"/>
@@ -1121,22 +1123,50 @@
                                             ToolTipService.ToolTip="Manually add a game folder"/>
                                 </Grid>
 
-                                <!-- Vertical divider -->
+                                <!-- Divider 1 -->
                                 <Border Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch"
                                         Margin="12,0,12,0"/>
 
-                                <!-- Right: Full Refresh -->
+                                <!-- Centre: Check For Updates -->
                                 <Grid Grid.Column="2" RowSpacing="8">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
-                                        <TextBlock Text="Full Refresh" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="Clears all caches, re-scans everything from disk, and forces a fresh update check for all components."/>
+                                        <TextBlock Text="Check For Updates" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Fetches the latest manifest data and checks all components for available updates. Bypasses the 4-hour cooldown."/>
+                                    </StackPanel>
+                                    <Button Grid.Row="1" x:Name="CheckForUpdatesBtn" Content="Check For Updates"
+                                            Click="CheckForUpdatesButton_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"
+                                            ToolTipService.ToolTip="Check all components and the app for available updates"/>
+                                </Grid>
+
+                                <!-- Divider 2 -->
+                                <Border Grid.Column="3" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch"
+                                        Margin="12,0,12,0"/>
+
+                                <!-- Right: Full Refresh -->
+                                <Grid Grid.Column="4" RowSpacing="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
+                                        <TextBlock Text="Full Refresh" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Clears all caches and re-scans everything from disk. Use this if games are missing or install paths have changed."/>
                                     </StackPanel>
                                     <Button Grid.Row="1" x:Name="FullRefreshBtn" Content="Full Refresh"
                                             Click="FullRefreshButton_Click"
@@ -1144,7 +1174,7 @@
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,7" FontSize="12"
                                             HorizontalAlignment="Stretch"
-                                            ToolTipService.ToolTip="Full refresh — clears all caches, re-scans from disk, and forces update checks"/>
+                                            ToolTipService.ToolTip="Full refresh — clears all caches and re-scans from disk"/>
                                 </Grid>
                             </Grid>
                         </Border>
