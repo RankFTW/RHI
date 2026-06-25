@@ -1219,6 +1219,55 @@ if ($null -ne $profile) {{
     public bool SetVSyncTearControl(string gameName, string installPath, uint value)
         => SetPreset(gameName, installPath, VSYNC_TEAR_CONTROL_ID, value);
 
+    // ── Global VSync (base profile) ──────────────────────────────────────────
+
+    /// <summary>Gets the global VSync mode from the base profile. Returns null if not explicitly set.</summary>
+    public uint? GetGlobalVSyncMode()
+    {
+        if (!_isSupported || _session == null) return null;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(baseProfile.Handle);
+            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+                return GetSettingRawNvApi(sessionHandle, profileHandle, VSYNC_MODE_ID);
+            return null;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Sets the global VSync mode on the base profile.</summary>
+    public bool SetGlobalVSyncMode(uint value)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            baseProfile.SetSetting(VSYNC_MODE_ID, value);
+            _session.Save();
+            CrashReporter.Log($"[DlssPresetService.SetGlobalVSyncMode] Set to 0x{value:X8}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Try raw API fallback
+            try
+            {
+                var sessionHandle = GetHandlePtr(_session.Handle);
+                var profileHandle = GetHandlePtr(_session.BaseProfile.Handle);
+                if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+                {
+                    if (SetSettingRawNvApi(sessionHandle, profileHandle, VSYNC_MODE_ID, value))
+                        return true;
+                }
+            }
+            catch { }
+            CrashReporter.Log($"[DlssPresetService.SetGlobalVSyncMode] Error — {ex.Message}");
+            return false;
+        }
+    }
+
     // ── Power / CPU get/set ───────────────────────────────────────────────────
 
     public uint GetPowerManagementMode(string gameName, string installPath)

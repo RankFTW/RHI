@@ -1501,6 +1501,21 @@
                                         </StackPanel>
                                     </Grid>
 
+                                    <!-- VSync row -->
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="VSync" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="GlobalVSyncCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Global VSync mode — applies to all games without a per-game override."
+                                                      SelectionChanged="GlobalVSyncCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                    </Grid>
+
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>

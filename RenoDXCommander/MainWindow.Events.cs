@@ -1071,6 +1071,21 @@ public sealed partial class MainWindow
             DispatcherQueue?.TryEnqueue(() => _detailPanelBuilder?.BuildOverridesPanel(ViewModel.SelectedGame));
     }
 
+    private void GlobalVSyncCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.VSyncModeOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalVSyncMode(options[combo.SelectedIndex].Value);
+        }
+        // Force detail panel rebuild if a game is selected
+        if (ViewModel.SelectedGame != null)
+            DispatcherQueue?.TryEnqueue(() => _detailPanelBuilder?.BuildOverridesPanel(ViewModel.SelectedGame));
+    }
+
     private async void ExportNvidiaProfiles_Click(object sender, RoutedEventArgs e)
     {
         try

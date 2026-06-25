@@ -2341,9 +2341,31 @@ public partial class DetailPanelBuilder
                 vsyncCol.Children.Add(new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var options = DlssPresetService.VSyncModeOptions;
                 uint current = nvidiaPresetService.GetVSyncMode(card.GameName, installPathSafe);
-                var items = options.Select(o => o.Name).ToArray();
-                int idx = Array.FindIndex(options, o => o.Value == current);
-                if (idx < 0) idx = 0;
+                var globalVSync = nvidiaPresetService.GetGlobalVSyncMode();
+
+                var itemsList = new List<string>();
+                if (globalVSync.HasValue)
+                {
+                    var globalName = options.FirstOrDefault(o => o.Value == globalVSync.Value).Name ?? "App Controlled";
+                    itemsList.Add($"Global ({globalName})");
+                }
+                itemsList.AddRange(options.Select(o => o.Name));
+                var items = itemsList.ToArray();
+
+                // Determine selected index
+                int idx;
+                if (globalVSync.HasValue)
+                {
+                    bool perGameMatchesGlobal = current == globalVSync.Value;
+                    var perGameIdx = Array.FindIndex(options, o => o.Value == current);
+                    idx = perGameMatchesGlobal ? 0 : (perGameIdx >= 0 ? perGameIdx + 1 : 0);
+                }
+                else
+                {
+                    idx = Array.FindIndex(options, o => o.Value == current);
+                    if (idx < 0) idx = 0;
+                }
+
                 var combo = new ComboBox
                 {
                     ItemsSource = items,
@@ -2352,14 +2374,27 @@ public partial class DetailPanelBuilder
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                 };
-                ToolTipService.SetToolTip(combo, "VSync Mode — App Controlled: let the game decide. Force Off: disables VSync entirely. Force On: locks to refresh rate. Fast Sync: renders freely, displays latest complete frame.");
+                ToolTipService.SetToolTip(combo, globalVSync.HasValue
+                    ? "Global = inherit from global setting. App Controlled: let the game decide. Force Off: disables VSync. Force On: locks to refresh rate. Fast Sync: renders freely, displays latest complete frame."
+                    : "VSync Mode — App Controlled: let the game decide. Force Off: disables VSync entirely. Force On: locks to refresh rate. Fast Sync: renders freely, displays latest complete frame.");
                 var init = true;
                 combo.SelectionChanged += (s, ev) =>
                 {
                     if (init) return;
                     int i = combo.SelectedIndex;
-                    if (i < 0 || i >= options.Length) return;
-                    nvidiaPresetService.SetVSyncMode(card.GameName, installPathSafe, options[i].Value);
+                    if (i < 0 || i >= items.Length) return;
+                    var selected = items[i];
+                    if (selected.StartsWith("Global"))
+                    {
+                        // Inherit from global — write the global value
+                        nvidiaPresetService.SetVSyncMode(card.GameName, installPathSafe, globalVSync ?? options[0].Value);
+                    }
+                    else
+                    {
+                        int optIdx = globalVSync.HasValue ? i - 1 : i;
+                        if (optIdx >= 0 && optIdx < options.Length)
+                            nvidiaPresetService.SetVSyncMode(card.GameName, installPathSafe, options[optIdx].Value);
+                    }
                 };
                 vsyncCol.Children.Add(combo);
                 init = false;

@@ -179,6 +179,14 @@ public class SettingsHandler
             _window.ReBarAdminWarning.Visibility = isAdminForReBar
                 ? Microsoft.UI.Xaml.Visibility.Collapsed
                 : Microsoft.UI.Xaml.Visibility.Visible;
+
+            // Global VSync
+            _window.GlobalVSyncCombo.ItemsSource = DlssPresetService.VSyncModeOptions.Select(o => o.Name).ToArray();
+            var globalVSync = presetSvc.GetGlobalVSyncMode();
+            var vsyncIdx = globalVSync.HasValue
+                ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == globalVSync.Value)
+                : 0; // Default: App Controlled
+            _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
         }
         _window._shaderCacheComboInit = false;
 
@@ -221,6 +229,12 @@ public class SettingsHandler
         var globalReBarSize = presetSvc.GetGlobalReBarSizeLimit();
         var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
         _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1;
+
+        var globalVSync = presetSvc.GetGlobalVSyncMode();
+        var vsyncIdx = globalVSync.HasValue
+            ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == globalVSync.Value)
+            : 0;
+        _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
 
         _window._shaderCacheComboInit = false;
     }

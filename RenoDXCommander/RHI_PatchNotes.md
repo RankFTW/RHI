@@ -1,3 +1,11 @@
+## v2.0.3
+
+### New
+
+- **Global VSync setting** — set VSync mode globally from the Nvidia Settings section on the Settings page. Per-game VSync dropdown now shows a "Global (X)" option to inherit from the global setting.
+
+---
+
 ## v2.0.2
 
 ### New
