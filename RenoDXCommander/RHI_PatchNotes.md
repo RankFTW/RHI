@@ -1,3 +1,13 @@
+## v2.0.4
+
+### Improvements
+
+- DLSS preset dropdowns now show model technology (TF1, TF2, CNN) next to each preset name.
+- Shader Pre-Compile now has an "Off" option.
+- Manifest-added presets now sort alphabetically instead of appending at the end.
+
+---
+
 ## v2.0.3
 
 ### New

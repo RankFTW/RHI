@@ -188,18 +188,18 @@ public class DlssPresetService
     public static (string Name, uint Value)[] SrPresets =
     [
         ("Default", 0x00000000),
-        ("J", 0x0000000A),
-        ("K", 0x0000000B),
-        ("L", 0x0000000C),
-        ("M", 0x0000000D),
+        ("J - TF1", 0x0000000A),
+        ("K - TF1", 0x0000000B),
+        ("L - TF2", 0x0000000C),
+        ("M - TF2", 0x0000000D),
         ("Latest Recommended", 0x00FFFFFF),
     ];
 
     public static (string Name, uint Value)[] RrPresets =
     [
         ("Default", 0x00000000),
-        ("D", 0x00000004),
-        ("E", 0x00000005),
+        ("D - TF1", 0x00000004),
+        ("E - TF1", 0x00000005),
         ("Latest Recommended", 0x00FFFFFF),
     ];
 
@@ -389,9 +389,25 @@ public class DlssPresetService
                 continue;
             }
 
-            // Add if not already present
+            // Add if not already present — insert alphabetically between Default (first) and Latest Recommended (last)
             if (merged.Any(p => p.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase))) continue;
-            merged.Add((entry.Name, (uint)entry.Value));
+
+            // Find insertion point: after Default, before Latest Recommended, alphabetical among the rest
+            int insertIdx = merged.Count; // default: end
+            for (int i = 1; i < merged.Count; i++) // skip index 0 (Default)
+            {
+                if (merged[i].Name.Equals("Latest Recommended", StringComparison.OrdinalIgnoreCase))
+                {
+                    insertIdx = i; // insert before Latest Recommended
+                    break;
+                }
+                if (string.Compare(entry.Name, merged[i].Name, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    insertIdx = i;
+                    break;
+                }
+            }
+            merged.Insert(insertIdx, (entry.Name, (uint)entry.Value));
         }
         return merged.ToArray();
     }
@@ -1185,6 +1201,7 @@ if ($null -ne $profile) {{
 
     public static readonly (string Name, uint Value)[] ShaderPrecompileOptions =
     [
+        ("Off", 0x00000000),
         ("Low (Default)", 0x00000001),
         ("Medium", 0x00000002),
         ("High", 0x00000003),
