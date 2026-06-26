@@ -1017,7 +1017,7 @@
 
   "dlssPresets": {
     "sr": [
-      { "name": "F", "value": 6 }
+      { "name": "F - CNN", "value": 6 }
     ]
   },
 
