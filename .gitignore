@@ -6,6 +6,8 @@ RenoDXCommander/bin
 RenoDXCommander/obj
 RenoDXCommander.Tests/bin
 RenoDXCommander.Tests/obj
+RHI.DropHelper/bin
+RHI.DropHelper/obj
 publish.bat
 OPTI/
 downloads_tidyup.md

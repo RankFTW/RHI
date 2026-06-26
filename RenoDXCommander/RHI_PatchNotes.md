@@ -1,3 +1,11 @@
+## v2.0.6
+
+### New
+
+- **Drag-and-drop in Admin Mode** — a non-elevated drop helper runs alongside RHI when in Admin Mode, allowing drag-and-drop from Discord and Explorer to work despite Windows elevation restrictions. Drop target is over the RHI logo (top-left).
+
+---
+
 ## v2.0.5
 
 ### Bug Fixes

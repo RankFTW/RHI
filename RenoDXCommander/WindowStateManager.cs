@@ -109,15 +109,24 @@ public class WindowStateManager
         NativeInterop.ChangeWindowMessageFilterEx(_hwnd, NativeInterop.WM_DROPFILES, NativeInterop.MSGFLT_ALLOW, IntPtr.Zero);
         NativeInterop.ChangeWindowMessageFilterEx(_hwnd, NativeInterop.WM_COPYGLOBALDATA, NativeInterop.MSGFLT_ALLOW, IntPtr.Zero);
 
-        // Try OLE IDropTarget first — this handles BOTH file drops (CF_HDROP) and
-        // URL text drops (CF_UNICODETEXT) from browsers/Discord. We must NOT call
-        // DragAcceptFiles before RegisterDragDrop because DragAcceptFiles internally
-        // registers its own drop target, causing RegisterDragDrop to fail with
-        // DRAGDROP_E_ALREADYREGISTERED (0x80040101).
+        // When running elevated, OLE drag-drop from non-elevated Explorer/Discord is blocked
+        // by UIPI at the COM level (WinUI 3 known issue #7690). Only WM_DROPFILES works
+        // with the UIPI message filter bypass. Skip OLE registration entirely.
+        if (VulkanLayerService.IsRunningAsAdmin())
+        {
+            NativeInterop.DragAcceptFiles(_hwnd, true);
+            _crashReporter.Log("[WindowStateManager.EnableDragAccept] Running elevated — using WM_DROPFILES only (OLE blocked by UIPI)");
+
+            // Launch non-elevated drop helper overlay for Discord/URL drops
+            LaunchDropHelper();
+            return;
+        }
+
+        // Non-elevated: use OLE IDropTarget for BOTH file drops (CF_HDROP) and
+        // URL text drops (CF_UNICODETEXT) from browsers/Discord.
         try
         {
             int oleHr = NativeInterop.OleInitialize(IntPtr.Zero);
-            // S_OK (0) or S_FALSE (1, already initialized) are both acceptable
             if (oleHr < 0)
             {
                 _crashReporter.Log($"[WindowStateManager.EnableDragAccept] OleInitialize failed with HRESULT 0x{oleHr:X8} — falling back to WM_DROPFILES only");
@@ -139,6 +148,63 @@ public class WindowStateManager
             _crashReporter.Log($"[WindowStateManager.EnableDragAccept] OLE registration failed — {ex.Message}. Falling back to WM_DROPFILES only");
             _oleDropTarget = null;
             NativeInterop.DragAcceptFiles(_hwnd, true);
+        }
+    }
+
+    /// <summary>
+    /// Launches the non-elevated drop helper overlay process via explorer.exe.
+    /// Explorer always runs at medium integrity, so the helper inherits medium IL
+    /// and can receive OLE drag-drop from non-elevated sources (Discord, browsers).
+    /// </summary>
+    private void LaunchDropHelper()
+    {
+        try
+        {
+            var helperPath = Path.Combine(
+                Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory,
+                "RHI.DropHelper.exe");
+            if (!File.Exists(helperPath))
+            {
+                _crashReporter.Log("[WindowStateManager.LaunchDropHelper] Helper exe not found — skipping");
+                return;
+            }
+
+            // Write HWND and watch folder path to temp file so the helper can find them
+            var hwndFile = Path.Combine(Path.GetTempPath(), "rhi_drop_hwnd.txt");
+            var watchFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            // Try to get the configured watch folder from settings
+            try
+            {
+                var settingsPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "RHI", "settings.json");
+                if (File.Exists(settingsPath))
+                {
+                    var json = File.ReadAllText(settingsPath);
+                    var doc = System.Text.Json.JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("AddonWatchFolder", out var awf))
+                    {
+                        var custom = awf.GetString();
+                        if (!string.IsNullOrWhiteSpace(custom)) watchFolder = custom;
+                    }
+                }
+            }
+            catch { }
+            File.WriteAllText(hwndFile, $"{_hwnd.ToInt64()}\n{watchFolder}");
+
+            // Launch via explorer.exe to de-elevate (Explorer runs at medium integrity)
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"\"{helperPath}\"",
+                UseShellExecute = false,
+            };
+            System.Diagnostics.Process.Start(psi);
+            _crashReporter.Log("[WindowStateManager.LaunchDropHelper] Launched non-elevated drop helper via explorer.exe");
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[WindowStateManager.LaunchDropHelper] Failed — {ex.Message}");
         }
     }
 
