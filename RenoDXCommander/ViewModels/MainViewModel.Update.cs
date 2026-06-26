@@ -992,32 +992,52 @@ public partial class MainViewModel
         }
         }
 
-        // Check DXVK for updates (single global check, applies to all cards with DXVK installed)
+        // Check DXVK for updates — check each variant that's actually in use
         try
         {
-            await _dxvkService.CheckForUpdateAsync().ConfigureAwait(false);
-            var dxvkUpdateAvailable = _dxvkService.HasUpdate;
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK update result: {dxvkUpdateAvailable}, cards with DXVK installed: {cards.Count(c => c.DxvkStatus == GameStatus.Installed)}");
-            if (dxvkUpdateAvailable)
-            {
-                DispatcherQueue?.TryEnqueue(() =>
-                {
-                    // Only flag cards whose resolved variant matches the globally checked variant.
-                    // Games with per-game overrides to a different variant should not be flagged.
-                    var checkedVariant = _dxvkService.SelectedVariant;
-                    foreach (var card in cards.Where(c => c.DxvkStatus == GameStatus.Installed))
-                    {
-                        var resolvedVariant = ResolveDxvkVariant(card.GameName);
-                        if (resolvedVariant == checkedVariant)
-                            card.DxvkStatus = GameStatus.UpdateAvailable;
-                    }
+            var dxvkCards = cards.Where(c => c.DxvkStatus == GameStatus.Installed).ToList();
+            var variantsInUse = dxvkCards
+                .Select(c => ResolveDxvkVariant(c.GameName))
+                .Distinct()
+                .ToList();
 
-                    HasUpdatesAvailable = AnyUpdateAvailable;
-                    OnPropertyChanged(nameof(AnyUpdateAvailable));
-                    OnPropertyChanged(nameof(UpdateAllBtnBackground));
-                    OnPropertyChanged(nameof(UpdateAllBtnForeground));
-                    OnPropertyChanged(nameof(UpdateAllBtnBorder));
-                });
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK variants in use: [{string.Join(", ", variantsInUse)}], cards with DXVK installed: {dxvkCards.Count}");
+
+            foreach (var variant in variantsInUse)
+            {
+                // Temporarily switch the service variant to check this one
+                var savedVariant = _dxvkService.SelectedVariant;
+                _dxvkService.SelectedVariant = variant;
+                await _dxvkService.CheckForUpdateAsync().ConfigureAwait(false);
+                var hasUpdate = _dxvkService.HasUpdate;
+                _dxvkService.SelectedVariant = savedVariant;
+
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK {variant} update result: {hasUpdate}");
+
+                if (hasUpdate)
+                {
+                    var capturedVariant = variant;
+                    DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        int flagged = 0;
+                        foreach (var card in dxvkCards)
+                        {
+                            var resolvedVariant = ResolveDxvkVariant(card.GameName);
+                            if (resolvedVariant == capturedVariant)
+                            {
+                                card.DxvkStatus = GameStatus.UpdateAvailable;
+                                flagged++;
+                            }
+                        }
+                        _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DXVK {capturedVariant}: flagged {flagged} card(s) as UpdateAvailable");
+
+                        HasUpdatesAvailable = AnyUpdateAvailable;
+                        OnPropertyChanged(nameof(AnyUpdateAvailable));
+                        OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                        OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                        OnPropertyChanged(nameof(UpdateAllBtnBorder));
+                    });
+                }
             }
         }
         catch (Exception ex)

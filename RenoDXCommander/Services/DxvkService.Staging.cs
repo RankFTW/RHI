@@ -854,8 +854,8 @@ public partial class DxvkService
     /// </summary>
     private async Task CheckForUpdateGitHubAsync()
     {
-        // ── 1. GitHub API URL for the stable variant ─────────────────────
-        var apiUrl = StandardGitHubApi;
+        // ── 1. GitHub API URL based on the selected variant ──────────────
+        var apiUrl = _selectedVariant == DxvkVariant.LiliumHdr ? LiliumGitHubApi : StandardGitHubApi;
 
         // ── 2. Fetch latest release tag from GitHub API ──────────────────
         string? json;

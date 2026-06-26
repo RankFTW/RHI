@@ -2979,7 +2979,9 @@ public partial class DetailPanelBuilder
                     Margin = new Thickness(0, 0, 0, 4),
                 });
 
-                var isDx9Api = card.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
+                var dxvkRec = card.DxvkRecord;
+                var isDx9Api = dxvkRec?.InstalledDlls?.Any(d => d.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)) == true
+                               || card.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
                 var presetArray = isDx9Api ? DxvkService.LiliumD3d9Presets : DxvkService.LiliumD3d11Presets;
                 var presetNames = presetArray.Select(p => p.Name).ToList();
                 int currentPreset = _window.ViewModel.GetLiliumPreset(gameName);
@@ -3009,7 +3011,10 @@ public partial class DetailPanelBuilder
                     if (targetCard != null && !string.IsNullOrEmpty(targetCard.InstallPath))
                     {
                         var confPath = Path.Combine(targetCard.InstallPath, "dxvk.conf");
-                        var isDx9 = targetCard.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
+                        // Determine original API from the DXVK record — d3d9.dll means DX9, otherwise DX10/DX11
+                        var dxvkRec = targetCard.DxvkRecord;
+                        var isDx9 = dxvkRec?.InstalledDlls?.Any(d => d.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)) == true
+                                    || targetCard.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
                         var confContent = isDx9
                             ? DxvkService.GetLiliumD3d9ConfContent(idx)
                             : DxvkService.GetLiliumD3d11ConfContent(idx);

@@ -342,11 +342,15 @@ public partial class DxvkService
                 // Lilium HDR uses its own complete conf (no base lines)
                 if (_selectedVariant == DxvkVariant.LiliumHdr)
                 {
-                    if (card.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9)
+                    // Determine original API: check if this is a proxy-mode-eligible game (DX8/DX9)
+                    // card.GraphicsApi may be Vulkan from Lilium HDR persistence — use IsProxyModeApi on the original API
+                    var confApi = (card.GraphicsApi == GraphicsApiType.Vulkan || IsProxyModeApi(card.GraphicsApi))
+                        ? GraphicsApiType.DirectX9 : card.GraphicsApi;
+                    if (confApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9)
                         confContent = GetLiliumD3d9ConfContent(_liliumPresetIndex);
                     else
                         confContent = GetLiliumD3d11ConfContent(_liliumPresetIndex);
-                    CrashReporter.Log($"[DxvkService.InstallAsync] Using Lilium HDR conf");
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Using Lilium HDR conf (confApi={confApi})");
                 }
 
                 File.WriteAllText(confPath, confContent);
@@ -568,9 +572,10 @@ public partial class DxvkService
             }
             else
             {
-                // Standard mode: switch Vulkan layer → DX proxy
-                // Fire-and-forget since Uninstall is synchronous; the actual switching
-                // is lightweight (file operations only, no network).
+                // Standard mode (DX10/DX11): delete Vulkan footprint unconditionally,
+                // then switch ReShade from Vulkan layer back to DX proxy if RS is installed.
+                VulkanFootprintService.Delete(gameDir);
+                CrashReporter.Log($"[DxvkService.Uninstall] Deleted Vulkan footprint");
                 try
                 {
                     SwitchReShadeForDxvkAsync(card, dxvkEnabled: false).GetAwaiter().GetResult();
@@ -677,7 +682,20 @@ public partial class DxvkService
 
             progress?.Report(("Saving updated record...", 80));
 
-            // ── 5. Update tracking record version ────────────────────────
+            // ── 5. Rewrite dxvk.conf if Lilium HDR ───────────────────────
+            if (existingRecord.IsLiliumHdrMode)
+            {
+                var confPath = Path.Combine(card.InstallPath, "dxvk.conf");
+                // Determine DX9 vs DX11 from the installed DLLs
+                var isDx9 = existingRecord.InstalledDlls.Any(d => d.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase));
+                var confContent = isDx9
+                    ? GetLiliumD3d9ConfContent(_liliumPresetIndex)
+                    : GetLiliumD3d11ConfContent(_liliumPresetIndex);
+                File.WriteAllText(confPath, confContent);
+                CrashReporter.Log($"[DxvkService.UpdateAsync] Rewrote dxvk.conf with {(isDx9 ? "DX9" : "DX11")} Lilium preset {_liliumPresetIndex}");
+            }
+
+            // ── 6. Update tracking record version ────────────────────────
             existingRecord.DxvkVersion = FormatVersionForDisplay(StagedVersion);
             existingRecord.InstalledAt = DateTime.UtcNow;
             SaveRecord(existingRecord);

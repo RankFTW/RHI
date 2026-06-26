@@ -1,3 +1,14 @@
+## v2.0.5
+
+### Bug Fixes
+
+- Fixed Lilium HDR deploying wrong conf files (DX11 instead of DX9) and showing too many preset options for DX9 games.
+- Fixed DXVK updates not detecting or correctly applying Lilium HDR variant (was using Development instead).
+- Fixed DXVK update not rewriting dxvk.conf alongside DLLs.
+- Fixed Vulkan footprint file left behind after uninstalling DXVK on DX10/DX11 games.
+
+---
+
 ## v2.0.4
 
 ### Improvements

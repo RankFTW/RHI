@@ -162,6 +162,17 @@ public partial class MainViewModel
         card.DxvkProgress = 0;
         try
         {
+            // Resolve per-game variant and switch before update
+            var resolvedVariant = ResolveDxvkVariant(card.GameName);
+            var savedVariant = _dxvkService.SelectedVariant;
+            _dxvkService.SelectedVariant = resolvedVariant;
+
+            await _dxvkService.EnsureStagingAsync(new Progress<(string message, double percent)>(p =>
+            {
+                card.DxvkActionMessage = p.message;
+                card.DxvkProgress = p.percent;
+            }));
+
             await _dxvkService.UpdateAsync(card,
                 new Progress<(string message, double percent)>(p =>
                 {
@@ -169,7 +180,10 @@ public partial class MainViewModel
                     card.DxvkProgress = p.percent;
                 }));
 
+            _dxvkService.SelectedVariant = savedVariant;
+
             card.DxvkActionMessage = "✅ DXVK updated!";
+            card.DxvkStatus = GameStatus.Installed;
             card.NotifyAll();
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);
             SaveLibrary();
