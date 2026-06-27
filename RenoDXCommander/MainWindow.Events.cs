@@ -194,8 +194,12 @@ public sealed partial class MainWindow
     private async void RsCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        var content = new StackPanel { Spacing = 12 };
-        var deployBtn = new Button
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+
+        var content = new StackPanel { Spacing = 8 };
+
+        // Deploy reshade.ini
+        var deployIniBtn = new Button
         {
             Content = "Deploy reshade.ini",
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -205,8 +209,95 @@ public sealed partial class MainWindow
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
         };
-        deployBtn.Click += (s, ev) => RsIniButton_Click(sender, e);
-        content.Children.Add(deployBtn);
+        deployIniBtn.Click += (s, ev) =>
+        {
+            try
+            {
+                var screenshotPath = BuildScreenshotSavePath(card.GameName);
+                var overlayHotkey = ViewModel.Settings.OverlayHotkey;
+                var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
+                if (card.RequiresVulkanInstall)
+                {
+                    AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
+                    VulkanFootprintService.Create(card.InstallPath);
+                    ViewModel.DeployShadersForCard(card.GameName);
+                }
+                else
+                    AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
+
+                if (card.UseUeExtended && card.Status == GameStatus.Installed)
+                    AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+
+                card.RsActionMessage = "✅ reshade.ini deployed.";
+            }
+            catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
+        };
+        content.Children.Add(deployIniBtn);
+
+        // Deploy ReShadePreset.ini
+        var deployPresetBtn = new Button
+        {
+            Content = "Deploy ReShadePreset.ini",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            IsEnabled = File.Exists(AuxInstallService.RsPresetIniPath),
+        };
+        deployPresetBtn.Click += (s, ev) =>
+        {
+            try
+            {
+                AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
+                card.RsActionMessage = "✅ ReShadePreset.ini deployed.";
+            }
+            catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
+        };
+        if (!File.Exists(AuxInstallService.RsPresetIniPath))
+            ToolTipService.SetToolTip(deployPresetBtn, "No ReShadePreset.ini found in RHI config folder");
+        content.Children.Add(deployPresetBtn);
+
+        // Open reshade.ini
+        var openIniBtn = new Button
+        {
+            Content = "Open reshade.ini",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            IsEnabled = File.Exists(Path.Combine(card.InstallPath, "reshade.ini")),
+        };
+        openIniBtn.Click += async (s, ev) =>
+        {
+            var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
+            if (File.Exists(iniPath))
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(iniPath));
+        };
+        content.Children.Add(openIniBtn);
+
+        // Open reshade.log
+        var openLogBtn = new Button
+        {
+            Content = "Open reshade.log",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            IsEnabled = File.Exists(Path.Combine(card.InstallPath, "ReShade.log")),
+        };
+        openLogBtn.Click += async (s, ev) =>
+        {
+            var logPath = Path.Combine(card.InstallPath, "ReShade.log");
+            if (File.Exists(logPath))
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(logPath));
+        };
+        content.Children.Add(openLogBtn);
 
         var dialog = new ContentDialog
         {
