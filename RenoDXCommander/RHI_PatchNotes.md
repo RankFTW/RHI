@@ -2,26 +2,13 @@
 
 ### New
 
-- **DOF Fix Component** — new optional component row for Unreal Engine 5.0–5.6 games. Installs the Universal UE DOF Fix addon (fixes depth-of-field stepping/tiling artifacts). One-click install/update/uninstall, participates in Update All, auto-detects eligible games. Manifest-driven skip and force lists for fine-tuning eligibility.
+- **DOF Fix** — automatic install for Unreal Engine 5 games that suffer from depth-of-field stepping/tiling artifacts (common on NVIDIA GPUs). Look for the new DOF Fix row in the Optional section. One-click install, updates with Update All.
 
-### Cog Button Enhancements
+### Improvements
 
-- **ReShade Cog** — now has 5 buttons:
-  - Deploy ReShade.ini (merge template to game folder)
-  - Deploy ReShadePreset.ini (copy preset file)
-  - Open ReShade.ini (in default editor)
-  - Open ReShade.log (in default editor)
-  - Copy ReShade.log to clipboard (pastes as `ReShade.log` file in Discord)
-
-- **RenoDX Cog** — fully reworked:
-  - UE-Extended toggle with reactive Engine.ini HDR toggle (appears/disappears instantly)
-  - Compatibility Settings: shows all Upgrade_* format override keys from `[renodx]` section in reshade.ini with combo boxes (Off / Output size / Output ratio / Any size). Changes save immediately.
-  - RenoDX Presets: Export and Import buttons. Export saves all `[renodx-preset*]` sections to `RHI-RenoDX-Preset.txt` in game folder and copies to clipboard. Import reads the file and replaces preset sections in reshade.ini.
-  - Settings displayed in 2×2 grid layout for compact vertical spacing.
-
-- **ReLimiter Cog** — added:
-  - Open relimiter log (finds `relimiter_*.log` dynamically by game exe name)
-  - Copy relimiter log to clipboard (as file with correct name for Discord)
+- **ReShade ⚙️** — deploy ReShade.ini, deploy ReShadePreset.ini, open ReShade.ini, open ReShade.log, and copy ReShade.log to clipboard for easy sharing on Discord.
+- **RenoDX ⚙️** — edit compatibility settings (format upgrade overrides) directly without manually editing reshade.ini. Toggle Engine.ini HDR on/off for UE-Extended games. Export and import RenoDX presets (backup/share your colour grading).
+- **ReLimiter ⚙️** — open or copy the ReLimiter log for troubleshooting. Per-game DLSS Hooks toggle (override the global setting for individual games that crash).
 
 ---
 
