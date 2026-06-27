@@ -566,6 +566,12 @@ public sealed partial class MainWindow
                     return;
                 }
 
+                // Add header comment
+                presetLines.Insert(0, $"; RenoDX Preset exported from: {card.GameName}");
+                presetLines.Insert(1, "; To import: place this file in the game folder and click 'Import Presets' in RHI,");
+                presetLines.Insert(2, "; or paste the [renodx-preset*] sections into reshade.ini manually.");
+                presetLines.Insert(3, "");
+
                 File.WriteAllLines(presetPath, presetLines);
                 var presetText = string.Join(Environment.NewLine, presetLines);
                 var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
@@ -593,7 +599,10 @@ public sealed partial class MainWindow
         {
             try
             {
-                var presetLines = File.ReadAllLines(presetPath);
+                // Read preset file, skip comment lines (header)
+                var presetLines = File.ReadAllLines(presetPath)
+                    .Where(l => !l.TrimStart().StartsWith(';'))
+                    .ToArray();
                 var iniLines = File.ReadAllLines(iniPath).ToList();
 
                 // Collect preset section names from the backup file
