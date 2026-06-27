@@ -445,12 +445,19 @@ public sealed partial class MainWindow
 
                     var settingsGrid = new Grid { ColumnSpacing = 12, RowSpacing = 6 };
                     settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130, GridUnitType.Pixel) });
+                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+
+                    int totalRows = (upgradeKeys.Count + 1) / 2;
+                    for (int r = 0; r < totalRows; r++)
+                        settingsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
                     for (int i = 0; i < upgradeKeys.Count; i++)
                     {
                         var kv = upgradeKeys[i];
-                        settingsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                        int row = i / 2;
+                        int col = (i % 2) * 2; // 0 or 2
 
                         var label = new TextBlock
                         {
@@ -459,11 +466,11 @@ public sealed partial class MainWindow
                             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                             VerticalAlignment = VerticalAlignment.Center,
                         };
-                        Grid.SetRow(label, i);
-                        Grid.SetColumn(label, 0);
+                        Grid.SetRow(label, row);
+                        Grid.SetColumn(label, col);
                         settingsGrid.Children.Add(label);
 
-                        var combo = new ComboBox { FontSize = 11, MinWidth = 120, HorizontalAlignment = HorizontalAlignment.Stretch };
+                        var combo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
                         bool isSetPath = kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase);
 
                         if (isSetPath) { combo.Items.Add("Off"); combo.Items.Add("On"); }
@@ -483,8 +490,8 @@ public sealed partial class MainWindow
                             catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
                         };
 
-                        Grid.SetRow(combo, i);
-                        Grid.SetColumn(combo, 1);
+                        Grid.SetRow(combo, row);
+                        Grid.SetColumn(combo, col + 1);
                         settingsGrid.Children.Add(combo);
                     }
 
@@ -636,7 +643,7 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        dialog.Resources["ContentDialogMaxWidth"] = 600.0;
+        dialog.Resources["ContentDialogMaxWidth"] = 800.0;
         await DialogService.ShowSafeAsync(dialog);
         _detailPanelBuilder?.UpdateDetailComponentRows(card);
     }
