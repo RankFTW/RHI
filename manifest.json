@@ -920,6 +920,11 @@
       "notesUrl": null,
       "notesUrlLabel": null
     },
+    "Monster Hunter Stories 2: Wings of Ruin": {
+      "notes": "⚠️ This game shows a black screen with ReShade unless you install the MHS2Loader fix.\n\nDownload dinput8.dll and loader.dll from the link below and place them next to the game's exe.",
+      "notesUrl": "https://github.com/MHST2Modding/MHS2Loader/releases",
+      "notesUrlLabel": "MHS2Loader (GitHub)"
+    },
     "Ryubing": {
       "notes": "⚠️ Ryubing requires RenoVK (a custom Vulkan ReShade build).\n\nPlace the RenoVK DLL in the Custom ReShade folder, then set RS Channel to Custom in Overrides.",
       "notesUrl": null,
