@@ -117,7 +117,7 @@ public sealed class AddonFileWatcher : IDisposable
             if (!fileName.StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
                 return;
             // Exclude DOF Fix addon from file watcher detection
-            if (fileName.StartsWith("renodx-universal_ue_dof_fix", StringComparison.OrdinalIgnoreCase))
+            if (fileName.StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase))
                 return;
 
             _crashReporter.Log($"[AddonFileWatcher] Detected addon file: {Path.GetFileName(path)}");

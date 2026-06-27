@@ -12,7 +12,7 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public class DofFixService : IDofFixService
 {
-    private const string AddonFileName = "renodx-universal_ue_dof_fix.addon64";
+    private const string AddonFileName = "renodx-universal_ue-dof-fix.addon64";
     private const string TagPrefix = "ue-dof-fix-";
     private const string GitHubApiUrl = "https://api.github.com/repos/RankFTW/rhi-repo/releases";
     private const string DefaultDownloadBaseUrl = "https://github.com/RankFTW/rhi-repo/releases/download";
@@ -102,7 +102,7 @@ public class DofFixService : IDofFixService
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[DofFixService.EnsureStagingAsync] Download failed — {ex.Message}");
+            _crashReporter.Log($"[DofFixService.EnsureStagingAsync] Download failed ({downloadUrl}) — {ex.Message}");
         }
 
         progress?.Report(("DOF Fix ready", 100));
