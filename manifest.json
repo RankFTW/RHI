@@ -1029,6 +1029,13 @@
   "componentUrls": {
   },
 
+  "dofFixForceGames": [
+    "Avowed"
+  ],
+
+  "dofFixSkipGames": [
+  ],
+
   "profileExeExclusions": [
   ],
 
