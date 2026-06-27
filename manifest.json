@@ -216,7 +216,7 @@
     "FINAL FANTASY XIII",
     "FINAL FANTASY XIII-2",
     "FINAL FANTASY XVI",
-    "Greedfall: The Dying World",
+    "GreedFall: The Dying World",
     "Haste",
     "L.A. Noire",
     "LEGO® Builder's Journey",
@@ -803,10 +803,6 @@
     },
     "ELDEN RING NIGHTREIGN": {
       "url": "https://www.nexusmods.com/eldenringnightreign/mods/48",
-      "label": "Get on Nexus"
-    },
-    "GreedFall: The Dying World": {
-      "url": "https://www.nexusmods.com/greedfallthedyingworld/mods/8",
       "label": "Get on Nexus"
     },
     "Max Payne 3": {
