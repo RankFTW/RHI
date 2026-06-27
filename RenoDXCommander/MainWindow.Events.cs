@@ -769,6 +769,69 @@ public sealed partial class MainWindow
         };
         content.Children.Add(copyLogBtn);
 
+        // ── Compatibility Settings ────────────────────────────────────────────
+        content.Children.Add(new TextBlock
+        {
+            Text = "Compatibility Settings",
+            FontSize = 13,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            Margin = new Thickness(0, 8, 0, 0),
+        });
+
+        // DLSS Hooks per-game toggle
+        var dlssHooksPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+        dlssHooksPanel.Children.Add(new TextBlock
+        {
+            Text = "DLSS Hooks",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        var dlssHooksCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
+        dlssHooksCombo.Items.Add("Off");
+        dlssHooksCombo.Items.Add("On");
+        ToolTipService.SetToolTip(dlssHooksCombo, "Shows DLSS version/preset info on the ReLimiter OSD. Disable if causing crashes.");
+
+        // Read current per-game value from the game's relimiter.ini
+        bool currentDlssHooks = ViewModel.Settings.UlDlssHooks; // default to global
+        if (!string.IsNullOrEmpty(card.InstallPath))
+        {
+            var ulIniFile = Path.Combine(card.InstallPath, "relimiter.ini");
+            if (File.Exists(ulIniFile))
+            {
+                try
+                {
+                    var ulIni = AuxInstallService.ParseIni(File.ReadAllLines(ulIniFile));
+                    if (ulIni.TryGetValue("FrameLimiter", out var flSection)
+                        && flSection.TryGetValue("dlss_info_hooks", out var hooksVal))
+                    {
+                        currentDlssHooks = hooksVal.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+                catch { /* use global default */ }
+            }
+        }
+        dlssHooksCombo.SelectedIndex = currentDlssHooks ? 1 : 0;
+        dlssHooksCombo.SelectionChanged += (s, ev) =>
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            var ulIniFile = Path.Combine(card.InstallPath, "relimiter.ini");
+            if (File.Exists(ulIniFile))
+            {
+                try
+                {
+                    AuxInstallService.ApplyUlDlssHooks(ulIniFile, dlssHooksCombo.SelectedIndex == 1);
+                    card.UlActionMessage = dlssHooksCombo.SelectedIndex == 1
+                        ? "✅ DLSS Hooks enabled for this game."
+                        : "✅ DLSS Hooks disabled for this game.";
+                    card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
+                }
+                catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
+            }
+        };
+        dlssHooksPanel.Children.Add(dlssHooksCombo);
+        content.Children.Add(dlssHooksPanel);
+
         var dialog = new ContentDialog
         {
             Title = "ReLimiter Settings",
