@@ -2003,6 +2003,7 @@ public sealed partial class MainWindow
             await ViewModel.UpdateAllRefAsync();
         await ViewModel.UpdateAllDxvkAsync();
         await ViewModel.UpdateAllLumaAsync();
+        await ViewModel.UpdateAllDofFixAsync();
     }
 
     private async void UpdateAllRenoDx_Click(object sender, RoutedEventArgs e)
@@ -2196,6 +2197,128 @@ public sealed partial class MainWindow
             _ => "https://github.com/doitsujin/dxvk/releases", // Development doesn't have a stable release page
         };
         await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+    }
+
+    // ── DOF Fix event handlers ───────────────────────────────────────────────
+
+    private async void InstallDofFixButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        if (card.DofFixIsInstalling || string.IsNullOrEmpty(card.InstallPath)) return;
+
+        card.DofFixIsInstalling = true;
+        card.DofFixActionMessage = "Installing DOF Fix...";
+        card.DofFixProgress = 0;
+        try
+        {
+            var progress = new Progress<(string msg, double pct)>(p =>
+            {
+                card.DofFixActionMessage = p.msg;
+                card.DofFixProgress = p.pct;
+            });
+            var success = await ViewModel.DofFixServiceInstance.InstallAsync(card.InstallPath, progress);
+            if (success)
+            {
+                card.DofFixInstalledVersion = ViewModel.DofFixServiceInstance.StagedVersion;
+                card.DofFixStatus = Models.GameStatus.Installed;
+                card.DofFixActionMessage = "✅ DOF Fix installed!";
+                card.NotifyAll();
+                card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
+            }
+            else
+            {
+                card.DofFixActionMessage = "❌ Install failed";
+            }
+        }
+        catch (Exception ex)
+        {
+            card.DofFixActionMessage = $"❌ {ex.Message}";
+        }
+        finally
+        {
+            card.DofFixIsInstalling = false;
+        }
+    }
+
+    private void UninstallDofFixButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+
+        var success = ViewModel.DofFixServiceInstance.Uninstall(card.InstallPath);
+        if (success)
+        {
+            card.DofFixStatus = Models.GameStatus.NotInstalled;
+            card.DofFixInstalledVersion = null;
+            card.DofFixActionMessage = "✖ DOF Fix removed.";
+            card.NotifyAll();
+            card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
+        }
+        else
+        {
+            card.DofFixActionMessage = "❌ Uninstall failed";
+        }
+    }
+
+    private async void DofFixInfoButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+
+        var notes = ViewModel.DofFixServiceInstance.ReleaseNotes;
+        if (string.IsNullOrEmpty(notes))
+        {
+            await ViewModel.DofFixServiceInstance.CheckForUpdateAsync();
+            notes = ViewModel.DofFixServiceInstance.ReleaseNotes;
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "UE DOF Fix — Release Notes",
+            Content = new ScrollViewer
+            {
+                Content = new TextBlock
+                {
+                    Text = notes ?? "No release notes available.",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    IsTextSelectionEnabled = true,
+                },
+                MaxHeight = 400,
+            },
+            CloseButtonText = "OK",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
+    private async void DofFixCogButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "DOF Fix Settings",
+            Content = new TextBlock
+            {
+                Text = "No configurable settings available for this component.",
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            },
+            CloseButtonText = "OK",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
+    private async void DetailDofFixStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        var card = ViewModel.SelectedGame;
+        if (card == null || !card.IsDofFixInstalled) return;
+
+        var version = card.DofFixInstalledVersion;
+        if (!string.IsNullOrEmpty(version))
+        {
+            var url = ViewModel.DofFixServiceInstance.GetReleaseUrl(version);
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+        }
     }
 
     private async void DetailRsStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)

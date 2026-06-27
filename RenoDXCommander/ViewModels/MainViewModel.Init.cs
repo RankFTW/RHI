@@ -275,6 +275,10 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DXVK staging task failed — {ex.Message}"); }
             });
+            var dofFixTask = Task.Run(async () => {
+                try { await _dofFixService.EnsureStagingAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DOF Fix staging task failed — {ex.Message}"); }
+            });
 
             // 3. Await detection first — this never needs network
             progress?.Report("Detecting games...");
@@ -295,6 +299,10 @@ public partial class MainViewModel
             (_addonPackService as AddonPackService)?.ApplyManifestOverrides(_manifest);
             DlssPresetService.ApplyManifestPresets(_manifest);
             _dlssPresetService.ApplyManifestProfileConfig(_manifest);
+            _dofFixService.SetSkipGames(_manifest?.DofFixSkipGames);
+            _dofFixService.SetForceGames(_manifest?.DofFixForceGames);
+            if (_manifest?.ComponentUrls?.TryGetValue("ueDofFix", out var dofFixUrl) == true)
+                _dofFixService.ManifestUrlOverride = dofFixUrl;
 
             // 5. Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
@@ -1581,6 +1589,17 @@ public partial class MainViewModel
                     newCard.ExcludeFromUpdateAllDxvk = true;
             }
 
+            // ── DOF Fix detection ────────────────────────────────────────────────
+            newCard.IsDofFixEligible = _dofFixService.IsGameEligible(newCard.EngineHint, newCard.Is32Bit, game.Name);
+            if (newCard.IsDofFixEligible && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            {
+                if (_dofFixService.IsInstalledIn(installPath))
+                {
+                    newCard.DofFixStatus = GameStatus.Installed;
+                    newCard.DofFixInstalledVersion = _dofFixService.StagedVersion;
+                }
+            }
+
             // ── DLSS / Streamline detection ──────────────────────────────────────
             bool dlssSkipped = _manifest?.DlssSkipGames?.Contains(game.Name, StringComparer.OrdinalIgnoreCase) == true
                 || _dlssStreamlineService.ShouldSkipScan(game.Name);
@@ -2270,6 +2289,17 @@ public partial class MainViewModel
             if (savedLib.ExcludeFromUpdateAllDxvk.Contains(game.Name))
                 newCard.ExcludeFromUpdateAllDxvk = true;
 
+            // DOF Fix detection (lightweight — single File.Exists check)
+            newCard.IsDofFixEligible = _dofFixService.IsGameEligible(newCard.EngineHint, newCard.Is32Bit, game.Name);
+            if (newCard.IsDofFixEligible && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            {
+                if (_dofFixService.IsInstalledIn(installPath))
+                {
+                    newCard.DofFixStatus = GameStatus.Installed;
+                    newCard.DofFixInstalledVersion = _dofFixService.StagedVersion;
+                }
+            }
+
             // DLSS / Streamline: restore from cached paths (fast — just reads file versions, no directory scan)
             if (savedLib.DlssPathsCache != null && savedLib.DlssPathsCache.TryGetValue(game.Name, out var dlssCache))
             {
@@ -2509,6 +2539,10 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DXVK staging task failed — {ex.Message}"); }
             });
+            var dofFixTask2 = Task.Run(async () => {
+                try { await _dofFixService.EnsureStagingAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DOF Fix staging task failed — {ex.Message}"); }
+            });
 
             // Await detection first — this never needs network
             var freshGames = await detectTask;
@@ -2526,6 +2560,10 @@ public partial class MainViewModel
             (_addonPackService as AddonPackService)?.ApplyManifestOverrides(_manifest);
             DlssPresetService.ApplyManifestPresets(_manifest);
             _dlssPresetService.ApplyManifestProfileConfig(_manifest);
+            _dofFixService.SetSkipGames(_manifest?.DofFixSkipGames);
+            _dofFixService.SetForceGames(_manifest?.DofFixForceGames);
+            if (_manifest?.ComponentUrls?.TryGetValue("ueDofFix", out var dofFixUrl2) == true)
+                _dofFixService.ManifestUrlOverride = dofFixUrl2;
 
             // Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;

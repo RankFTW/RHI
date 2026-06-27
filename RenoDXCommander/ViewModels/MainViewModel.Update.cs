@@ -817,6 +817,20 @@ public partial class MainViewModel
         });
     }
 
+    public async Task UpdateAllDofFixAsync()
+    {
+        await _updateOrchestrationService.UpdateAllDofFixAsync(
+            _allCards, _dofFixService, DispatcherQueue,
+            () =>
+            {
+                HasUpdatesAvailable = AnyUpdateAvailable;
+                OnPropertyChanged(nameof(AnyUpdateAvailable));
+                OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                OnPropertyChanged(nameof(UpdateAllBtnBorder));
+            });
+    }
+
     // ── Update checking ───────────────────────────────────────────────────────────
 
     private async Task CheckForUpdatesAsync(List<GameCardViewModel> cards, List<InstalledModRecord> records, List<AuxInstalledRecord> auxRecords)
@@ -1139,6 +1153,30 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Emulator update check failed — {ex.Message}");
+        }
+
+        // ── DOF Fix update check ──────────────────────────────────────────────
+        try
+        {
+            await _dofFixService.CheckForUpdateAsync().ConfigureAwait(false);
+            if (_dofFixService.HasUpdate)
+            {
+                DispatcherQueue?.TryEnqueue(() =>
+                {
+                    foreach (var card in cards.Where(c => c.IsDofFixEligible && c.DofFixStatus == GameStatus.Installed))
+                        card.DofFixStatus = GameStatus.UpdateAvailable;
+
+                    HasUpdatesAvailable = AnyUpdateAvailable;
+                    OnPropertyChanged(nameof(AnyUpdateAvailable));
+                    OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                    OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                    OnPropertyChanged(nameof(UpdateAllBtnBorder));
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DOF Fix update check failed — {ex.Message}");
         }
 
         // Record successful check time

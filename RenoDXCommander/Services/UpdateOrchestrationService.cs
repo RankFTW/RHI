@@ -420,6 +420,56 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         dispatcherQueue?.TryEnqueue(() => notifyUpdateState());
     }
 
+    public async Task UpdateAllDofFixAsync(
+        IReadOnlyList<GameCardViewModel> allCards,
+        DofFixService dofFixService,
+        Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
+        Action notifyUpdateState)
+    {
+        var targets = UpdateAllEligible(allCards)
+            .Where(c => !c.ExcludeFromUpdateAllDofFix)
+            .Where(c => c.IsDofFixEligible && c.DofFixStatus == GameStatus.UpdateAvailable)
+            .ToList();
+
+        foreach (var card in targets)
+        {
+            card.DofFixIsInstalling = true;
+            card.DofFixActionMessage = "Updating...";
+            try
+            {
+                var progress = new Progress<(string msg, double pct)>(p =>
+                {
+                    card.DofFixActionMessage = p.msg;
+                    card.DofFixProgress = p.pct;
+                });
+                var success = await dofFixService.InstallAsync(card.InstallPath, progress).ConfigureAwait(false);
+                dispatcherQueue?.TryEnqueue(() =>
+                {
+                    if (success)
+                    {
+                        card.DofFixInstalledVersion = dofFixService.StagedVersion;
+                        card.DofFixStatus = GameStatus.Installed;
+                        card.DofFixActionMessage = "✅ Updated!";
+                        card.NotifyAll();
+                        card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
+                    }
+                    else
+                    {
+                        card.DofFixActionMessage = "❌ Update failed";
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                card.DofFixActionMessage = $"❌ Failed: {ex.Message}";
+                _crashReporter.WriteCrashReport("UpdateAllDofFix", ex, note: $"Game: {card.GameName}");
+            }
+            finally { card.DofFixIsInstalling = false; }
+        }
+
+        dispatcherQueue?.TryEnqueue(() => notifyUpdateState());
+    }
+
     public async Task CheckForUpdatesAsync(
         List<GameCardViewModel> cards,
         List<InstalledModRecord> records,

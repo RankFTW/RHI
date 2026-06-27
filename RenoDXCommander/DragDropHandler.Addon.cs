@@ -280,7 +280,8 @@ public partial class DragDropHandler
                 .Concat(Directory.GetFiles(installPath, "*.addon32"))
                 .Where(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase)
-                         && !Path.GetFileName(f).StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase))
+                         && !Path.GetFileName(f).StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase)
+                         && !Path.GetFileName(f).StartsWith("renodx-universal_ue_dof_fix", StringComparison.OrdinalIgnoreCase))
                 .ToList();
             if (existing.Count > 0)
                 existingAddon = string.Join(", ", existing.Select(Path.GetFileName));
@@ -327,7 +328,8 @@ public partial class DragDropHandler
                     .Concat(Directory.GetFiles(searchDir, "*.addon32"))
                     .Where(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase)
                              && !Path.GetFileName(f).StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase)
-                         && !Path.GetFileName(f).StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase))
+                         && !Path.GetFileName(f).StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase)
+                         && !Path.GetFileName(f).StartsWith("renodx-universal_ue_dof_fix", StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 foreach (var f in toRemove)
                 {

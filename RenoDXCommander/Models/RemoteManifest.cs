@@ -285,6 +285,14 @@ public class RemoteManifest
     [JsonPropertyName("dlssSkipGames")]
     public List<string>? DlssSkipGames { get; set; }
 
+    /// <summary>Games to exclude from DOF Fix eligibility (e.g. games that don't have the DOF issue).</summary>
+    [JsonPropertyName("dofFixSkipGames")]
+    public List<string>? DofFixSkipGames { get; set; }
+
+    /// <summary>Games to force-enable DOF Fix regardless of engine detection (still requires 64-bit).</summary>
+    [JsonPropertyName("dofFixForceGames")]
+    public List<string>? DofFixForceGames { get; set; }
+
     /// <summary>
     /// Per-game, per-component install warnings shown as a dialog before install proceeds.
     /// Key = game name, Value = dictionary of component → warning message.
