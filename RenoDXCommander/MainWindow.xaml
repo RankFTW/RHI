@@ -885,10 +885,6 @@
                                         <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
                                     </Button>
                                 </Grid>
-                                <ProgressBar x:Name="DetailDofFixProgress" x:FieldModifier="internal" Visibility="Collapsed"
-                                             Minimum="0" Maximum="100" Height="3" CornerRadius="2" Margin="0,-2,0,0"/>
-                                <TextBlock x:Name="DetailDofFixMessage" x:FieldModifier="internal" Visibility="Collapsed"
-                                           FontSize="11" Margin="0,2,0,0"/>
 
                                 <!-- OptiScaler row -->
                                 <Grid x:Name="DetailOsRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
@@ -1016,6 +1012,11 @@
                                                  Maximum="100" Height="3" CornerRadius="2"
                                                  Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
                                     <TextBlock x:Name="DetailOsMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentBlueBrush}"
+                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                                    <ProgressBar x:Name="DetailDofFixProgress" x:FieldModifier="internal" Visibility="Collapsed"
+                                                 Maximum="100" Height="3" CornerRadius="2"
+                                                 Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
+                                    <TextBlock x:Name="DetailDofFixMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentBlueBrush}"
                                                Visibility="Collapsed" TextWrapping="Wrap"/>
                                     <ProgressBar x:Name="DetailDxvkProgress" x:FieldModifier="internal" Visibility="Collapsed"
                                                  Maximum="100" Height="3" CornerRadius="2"

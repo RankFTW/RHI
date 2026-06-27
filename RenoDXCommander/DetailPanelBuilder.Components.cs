@@ -356,14 +356,6 @@ public partial class DetailPanelBuilder
             _window.DetailDofFixDeleteBtn.IsHitTestVisible = dofShow;
         }
 
-        // DOF Fix progress/message
-        _window.DetailDofFixProgress.Visibility = card.DofFixRowVisibility == Visibility.Visible
-            ? card.DofFixProgressVisibility : Visibility.Collapsed;
-        _window.DetailDofFixProgress.Value = card.DofFixProgress;
-        _window.DetailDofFixMessage.Visibility = card.DofFixRowVisibility == Visibility.Visible
-            ? card.DofFixMessageVisibility : Visibility.Collapsed;
-        _window.DetailDofFixMessage.Text = card.DofFixActionMessage;
-        _window.DetailDofFixMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DofFixActionMessage));
         bool osGreyed = card.Is32Bit;
         _window.DetailOsRow.Opacity = 1.0;
         _window.DetailOsRow.IsHitTestVisible = true;
@@ -577,6 +569,11 @@ public partial class DetailPanelBuilder
         _window.DetailOsMessage.Visibility = card.OsRowVisibility == Visibility.Visible ? card.OsMessageVisibility : Visibility.Collapsed;
         _window.DetailOsMessage.Text = card.OsActionMessage;
         _window.DetailOsMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.OsActionMessage));
+        _window.DetailDofFixProgress.Visibility = card.DofFixRowVisibility == Visibility.Visible ? card.DofFixProgressVisibility : Visibility.Collapsed;
+        _window.DetailDofFixProgress.Value = card.DofFixProgress;
+        _window.DetailDofFixMessage.Visibility = card.DofFixRowVisibility == Visibility.Visible ? card.DofFixMessageVisibility : Visibility.Collapsed;
+        _window.DetailDofFixMessage.Text = card.DofFixActionMessage;
+        _window.DetailDofFixMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DofFixActionMessage));
         _window.DetailDxvkProgress.Visibility = card.DxvkRowVisibility == Visibility.Visible ? card.DxvkProgressVisibility : Visibility.Collapsed;
         _window.DetailDxvkProgress.Value = card.DxvkProgress;
         _window.DetailDxvkMessage.Visibility = card.DxvkRowVisibility == Visibility.Visible
