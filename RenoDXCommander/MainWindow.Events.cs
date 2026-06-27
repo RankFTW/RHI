@@ -462,6 +462,17 @@ public sealed partial class MainWindow
                     content.Children.Add(settingsGrid);
                 }
             }
+            else
+            {
+                content.Children.Add(new TextBlock
+                {
+                    Text = "Run the game once with RenoDX installed to generate settings.",
+                    FontSize = 11,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    FontStyle = Windows.UI.Text.FontStyle.Italic,
+                    Margin = new Thickness(0, 4, 0, 0),
+                });
+            }
         }
         else
         {
