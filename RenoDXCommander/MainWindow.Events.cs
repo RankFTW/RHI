@@ -358,6 +358,15 @@ public sealed partial class MainWindow
         var content = new StackPanel { Spacing = 8 };
 
         // ── Top row: UE-Extended + Engine.ini HDR side by side ─────────────────
+        if (card.UeExtendedToggleVisibility == Visibility.Visible)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = "UE-Extended Settings",
+                FontSize = 13,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            });
+        }
         var topRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 16 };
 
         // Engine.ini panel (created upfront, visibility toggled dynamically)
@@ -518,7 +527,14 @@ public sealed partial class MainWindow
         }
 
         // ── Preset Export/Import buttons (side by side) ───────────────────────
-        var presetRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 12, 0, 0) };
+        content.Children.Add(new TextBlock
+        {
+            Text = "RenoDX Presets",
+            FontSize = 13,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            Margin = new Thickness(0, 8, 0, 0),
+        });
+        var presetRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
 
         var exportBtn = new Button
         {
