@@ -375,6 +375,47 @@ public sealed partial class MainWindow
             content.Children.Add(uePanel);
         }
 
+        // Engine.ini HDR toggle (only when UE-Extended is active)
+        if (card.UseUeExtended && !string.IsNullOrEmpty(card.InstallPath))
+        {
+            var enginePanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+            enginePanel.Children.Add(new TextBlock { Text = "Engine.ini HDR", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), VerticalAlignment = VerticalAlignment.Center });
+            var engineCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
+            engineCombo.Items.Add("Off");
+            engineCombo.Items.Add("On");
+            // Detect current state: check if Engine.ini HDR lines are deployed
+            var engineIniDir = AuxInstallService.ResolveEngineIniDir(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+            bool engineIniActive = false;
+            if (engineIniDir != null)
+            {
+                var engineIniFile = Path.Combine(engineIniDir, "Engine.ini");
+                if (File.Exists(engineIniFile))
+                {
+                    var engineContent = File.ReadAllText(engineIniFile);
+                    engineIniActive = engineContent.Contains("r.AllowHDR=1", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            engineCombo.SelectedIndex = engineIniActive ? 1 : 0;
+            engineCombo.SelectionChanged += (s, ev) =>
+            {
+                if (engineCombo.SelectedIndex == 1)
+                {
+                    // Deploy Engine.ini HDR settings
+                    AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                    card.ActionMessage = "✅ Engine.ini HDR settings deployed.";
+                }
+                else
+                {
+                    // Remove Engine.ini HDR settings
+                    AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                    card.ActionMessage = "✅ Engine.ini HDR settings removed.";
+                }
+                card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+            };
+            enginePanel.Children.Add(engineCombo);
+            content.Children.Add(enginePanel);
+        }
+
         // ── Upgrade settings from [renodx] section ────────────────────────────
         if (File.Exists(iniPath))
         {
