@@ -672,7 +672,7 @@ public sealed partial class MainWindow
     private async void UlCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        var content = new StackPanel { Spacing = 12 };
+        var content = new StackPanel { Spacing = 8 };
         var deployBtn = new Button
         {
             Content = "Deploy relimiter.ini",
@@ -694,6 +694,74 @@ public sealed partial class MainWindow
             catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
         };
         content.Children.Add(deployBtn);
+
+        // Find the relimiter log file (relimiter_*.log)
+        string? logFile = null;
+        if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
+        {
+            try
+            {
+                logFile = Directory.GetFiles(card.InstallPath, "relimiter_*.log").FirstOrDefault();
+            }
+            catch { /* ignore access errors */ }
+        }
+
+        var logName = logFile != null ? Path.GetFileName(logFile) : "relimiter_*.log";
+
+        // Open relimiter log
+        var openLogBtn = new Button
+        {
+            Content = $"Open {logName}",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            IsEnabled = logFile != null,
+        };
+        openLogBtn.Click += async (s, ev) =>
+        {
+            if (logFile != null && File.Exists(logFile))
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(logFile));
+        };
+        content.Children.Add(openLogBtn);
+
+        // Copy relimiter log to clipboard (as file with correct name)
+        var copyLogBtn = new Button
+        {
+            Content = $"Copy {logName} to clipboard",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            IsEnabled = logFile != null,
+        };
+        copyLogBtn.Click += async (s, ev) =>
+        {
+            if (logFile != null && File.Exists(logFile))
+            {
+                try
+                {
+                    var tempDir = Path.Combine(Path.GetTempPath(), "RHI_clipboard");
+                    Directory.CreateDirectory(tempDir);
+                    var tempFile = Path.Combine(tempDir, Path.GetFileName(logFile));
+                    File.Copy(logFile, tempFile, overwrite: true);
+
+                    var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
+                    var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                    dataPackage.SetStorageItems(new[] { storageFile });
+                    Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+                    Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
+                    card.UlActionMessage = $"✅ {Path.GetFileName(logFile)} copied to clipboard.";
+                    card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
+                }
+                catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
+            }
+        };
+        content.Children.Add(copyLogBtn);
 
         var dialog = new ContentDialog
         {
