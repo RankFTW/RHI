@@ -198,10 +198,10 @@ public sealed partial class MainWindow
 
         var content = new StackPanel { Spacing = 8 };
 
-        // Deploy reshade.ini
+        // Deploy ReShade.ini
         var deployIniBtn = new Button
         {
-            Content = "Deploy reshade.ini",
+            Content = "Deploy ReShade.ini",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
@@ -228,7 +228,7 @@ public sealed partial class MainWindow
                 if (card.UseUeExtended && card.Status == GameStatus.Installed)
                     AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
-                card.RsActionMessage = "✅ reshade.ini deployed.";
+                card.RsActionMessage = "✅ ReShade.ini deployed.";
             }
             catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
         };
@@ -259,10 +259,10 @@ public sealed partial class MainWindow
             ToolTipService.SetToolTip(deployPresetBtn, "No ReShadePreset.ini found in RHI config folder");
         content.Children.Add(deployPresetBtn);
 
-        // Open reshade.ini
+        // Open ReShade.ini
         var openIniBtn = new Button
         {
-            Content = "Open reshade.ini",
+            Content = "Open ReShade.ini",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -279,10 +279,10 @@ public sealed partial class MainWindow
         };
         content.Children.Add(openIniBtn);
 
-        // Open reshade.log
+        // Open ReShade.log
         var openLogBtn = new Button
         {
-            Content = "Open reshade.log",
+            Content = "Open ReShade.log",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -299,10 +299,10 @@ public sealed partial class MainWindow
         };
         content.Children.Add(openLogBtn);
 
-        // Copy reshade.log to clipboard
+        // Copy ReShade.log to clipboard (as file, so Discord shows "ReShade.log")
         var copyLogBtn = new Button
         {
-            Content = "Copy reshade.log to clipboard",
+            Content = "Copy ReShade.log to clipboard",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -311,18 +311,25 @@ public sealed partial class MainWindow
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
             IsEnabled = File.Exists(Path.Combine(card.InstallPath, "ReShade.log")),
         };
-        copyLogBtn.Click += (s, ev) =>
+        copyLogBtn.Click += async (s, ev) =>
         {
             var logPath = Path.Combine(card.InstallPath, "ReShade.log");
             if (File.Exists(logPath))
             {
                 try
                 {
-                    var logContent = File.ReadAllText(logPath);
+                    // Copy to temp as "ReShade.log" so clipboard file has the correct name
+                    var tempDir = Path.Combine(Path.GetTempPath(), "RHI_clipboard");
+                    Directory.CreateDirectory(tempDir);
+                    var tempFile = Path.Combine(tempDir, "ReShade.log");
+                    File.Copy(logPath, tempFile, overwrite: true);
+
+                    var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
                     var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-                    dataPackage.SetText(logContent);
+                    dataPackage.SetStorageItems(new[] { storageFile });
                     Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-                    card.RsActionMessage = "✅ reshade.log copied to clipboard.";
+                    Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
+                    card.RsActionMessage = "✅ ReShade.log copied to clipboard.";
                     card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
                 }
                 catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
