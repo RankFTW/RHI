@@ -381,9 +381,11 @@ public sealed partial class MainWindow
             var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
             if (ini.TryGetValue("renodx", out var renodxSection))
             {
-                // Collect Upgrade_* and Set_Path keys
+                // Collect Upgrade_* and Set_Path keys (exclude UseSCRGB and CopyDestinations)
                 var upgradeKeys = renodxSection
-                    .Where(kv => kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase)
+                    .Where(kv => (kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase)
+                                  && !kv.Key.Equals("Upgrade_UseSCRGB", StringComparison.OrdinalIgnoreCase)
+                                  && !kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase))
                               || kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase))
                     .OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
                     .ToList();
