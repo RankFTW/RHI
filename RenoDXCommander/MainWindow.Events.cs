@@ -189,6 +189,204 @@ public sealed partial class MainWindow
             new Uri("https://discordapp.com/channels/1296187754979528747/1475173660686815374"));
     }
 
+    // ── Component Cog Button Handlers ────────────────────────────────────────────
+
+    private async void RsCogButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        var content = new StackPanel { Spacing = 12 };
+        var deployBtn = new Button
+        {
+            Content = "Deploy reshade.ini",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+        };
+        deployBtn.Click += (s, ev) => RsIniButton_Click(sender, e);
+        content.Children.Add(deployBtn);
+
+        var dialog = new ContentDialog
+        {
+            Title = "ReShade Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
+    private async void RdxCogButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        var content = new StackPanel { Spacing = 12 };
+
+        // UE-Extended toggle
+        if (card.UeExtendedToggleVisibility == Visibility.Visible)
+        {
+            var uePanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+            uePanel.Children.Add(new TextBlock { Text = "UE-Extended", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), VerticalAlignment = VerticalAlignment.Center });
+            var ueCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
+            ueCombo.Items.Add("Off");
+            ueCombo.Items.Add("On");
+            ueCombo.SelectedIndex = card.UseUeExtended ? 1 : 0;
+            ueCombo.SelectionChanged += (s, ev) =>
+            {
+                bool enable = ueCombo.SelectedIndex == 1;
+                if (enable != card.UseUeExtended)
+                    ViewModel.ToggleUeExtended(card);
+            };
+            uePanel.Children.Add(ueCombo);
+            content.Children.Add(uePanel);
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "RenoDX Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+        // Refresh panel after dialog closes (UE toggle may have changed state)
+        _detailPanelBuilder?.UpdateDetailComponentRows(card);
+    }
+
+    private async void UlCogButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        var content = new StackPanel { Spacing = 12 };
+        var deployBtn = new Button
+        {
+            Content = "Deploy relimiter.ini",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+        };
+        deployBtn.Click += (s, ev) =>
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            try
+            {
+                AuxInstallService.CopyUlIni(card.InstallPath);
+                card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
+            }
+            catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
+        };
+        content.Children.Add(deployBtn);
+
+        var dialog = new ContentDialog
+        {
+            Title = "ReLimiter Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
+    private async void DcCogButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        var content = new StackPanel { Spacing = 12 };
+        var deployBtn = new Button
+        {
+            Content = "Deploy DisplayCommander.ini",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+        };
+        deployBtn.Click += (s, ev) =>
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            try
+            {
+                AuxInstallService.CopyDcIni(card.InstallPath);
+                card.DcActionMessage = "✅ DisplayCommander.ini copied to game folder.";
+                card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
+            }
+            catch (Exception ex) { card.DcActionMessage = $"❌ {ex.Message}"; }
+        };
+        content.Children.Add(deployBtn);
+
+        var dialog = new ContentDialog
+        {
+            Title = "Display Commander Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
+    private async void OsCogButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        var content = new StackPanel { Spacing = 12 };
+        var deployBtn = new Button
+        {
+            Content = "Deploy OptiScaler.ini",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+        };
+        deployBtn.Click += (s, ev) => _installEventHandler.CopyOsIniButton_Click(sender, e);
+        content.Children.Add(deployBtn);
+
+        var dialog = new ContentDialog
+        {
+            Title = "OptiScaler Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
+    private async void DxvkCogButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        var content = new StackPanel { Spacing = 12 };
+        var deployBtn = new Button
+        {
+            Content = "Deploy dxvk.conf",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+        };
+        deployBtn.Click += (s, ev) => ViewModel.CopyDxvkConf(card);
+        content.Children.Add(deployBtn);
+
+        var dialog = new ContentDialog
+        {
+            Title = "DXVK Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
     private void SupportGuide_Click(object sender, RoutedEventArgs e)
     {
         _ = Windows.System.Launcher.LaunchUriAsync(

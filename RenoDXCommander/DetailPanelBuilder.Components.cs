@@ -507,33 +507,10 @@ public partial class DetailPanelBuilder
         }
         else _window.DetailLumaRow.Visibility = Visibility.Collapsed;
 
-        // UE-Extended flyout (inline in RenoDX row, column 3)
-        if (card.UeExtendedToggleVisibility == Visibility.Visible && (!isLumaMode || card.LumaRenodxCompatible))
-        {
-            _window.DetailUeExtendedBtn.Opacity = 1;
-            _window.DetailUeExtendedBtn.IsHitTestVisible = true;
-            _window.DetailUeExtendedBtn.Tag = card;
-            ToolTipService.SetToolTip(_window.DetailUeExtendedBtn,
-                card.UseUeExtended ? "Disable UE Extended" : "Enable UE Extended");
-            // Visual indicator: green when enabled, default when off
-            if (card.UseUeExtended)
-            {
-                _window.DetailUeExtendedBtn.Background = UIFactory.Brush(ResourceKeys.AccentGreenBgBrush);
-                _window.DetailUeExtendedBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);
-                _window.DetailUeExtendedBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentGreenBorderBrush);
-            }
-            else
-            {
-                _window.DetailUeExtendedBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
-                _window.DetailUeExtendedBtn.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
-                _window.DetailUeExtendedBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush);
-            }
-        }
-        else
-        {
-            _window.DetailUeExtendedBtn.Opacity = 0;
-            _window.DetailUeExtendedBtn.IsHitTestVisible = false;
-        }
+        // RenoDX cog button — always visible, just needs the card Tag
+        _window.DetailUeExtendedBtn.Tag = card;
+        _window.DetailUeExtendedBtn.Opacity = 1;
+        _window.DetailUeExtendedBtn.IsHitTestVisible = true;
 
         // No mod message
         _window.DetailNoModMsg.Visibility = card.NoModVisibility;

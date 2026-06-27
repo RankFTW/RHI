@@ -196,7 +196,22 @@ public partial class MainViewModel
                     _ueExtendedOriginalUrls.Remove(card.GameName);
                 }
                 else
-                    card.Mod.SnapshotUrl = null; // No saved URL — assume Nexus-only
+                {
+                    // No saved URL — try to recover from wiki data
+                    var wikiMod = _gameDetectionService.MatchGame(
+                        new DetectedGame { Name = card.GameName, InstallPath = card.InstallPath ?? "" },
+                        _allMods, _nameMappings);
+                    if (wikiMod?.SnapshotUrl != null)
+                    {
+                        card.Mod.SnapshotUrl = wikiMod.SnapshotUrl;
+                    }
+                    else if (card.EngineHint?.Contains("Unreal") == true)
+                    {
+                        // Generic UE fallback — same URL the card would get during normal build
+                        card.Mod.SnapshotUrl = WikiService.GenericUnrealUrl;
+                        card.Mod.IsGenericUnreal = true;
+                    }
+                }
             }
         }
 
