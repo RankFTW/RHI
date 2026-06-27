@@ -2,7 +2,7 @@
 
 ### New
 
-- **DOF Fix Component** — new component row for Unreal Engine 5.0–5.6 games in the Optional section. Fixes the common depth-of-field stepping/tiling artifacts (especially visible on NVIDIA GPUs). Click Install to deploy. Participates in Update All.
+- **DOF Fix Component** — new component row for Unreal Engine 5.0–5.6 games in the Optional section. Fixes the common depth-of-field stepping/tiling artifacts. Click Install to deploy. Participates in Update All.
 
 ### Improvements
 
