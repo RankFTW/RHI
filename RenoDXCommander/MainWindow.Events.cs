@@ -354,9 +354,13 @@ public sealed partial class MainWindow
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 
         var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
+        var presetPath = Path.Combine(card.InstallPath, "RHI-RenoDX-Preset");
         var content = new StackPanel { Spacing = 8 };
 
-        // UE-Extended toggle (keep existing functionality)
+        // ── Top row: UE-Extended + Engine.ini HDR side by side ─────────────────
+        var topRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 16 };
+        bool hasTopRow = false;
+
         if (card.UeExtendedToggleVisibility == Visibility.Visible)
         {
             var uePanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
@@ -372,57 +376,54 @@ public sealed partial class MainWindow
                     ViewModel.ToggleUeExtended(card);
             };
             uePanel.Children.Add(ueCombo);
-            content.Children.Add(uePanel);
+            topRow.Children.Add(uePanel);
+            hasTopRow = true;
         }
 
-        // Engine.ini HDR toggle (only when UE-Extended is active)
-        if (card.UseUeExtended && !string.IsNullOrEmpty(card.InstallPath))
+        if (card.UseUeExtended)
         {
             var enginePanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
             enginePanel.Children.Add(new TextBlock { Text = "Engine.ini HDR", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), VerticalAlignment = VerticalAlignment.Center });
             var engineCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
             engineCombo.Items.Add("Off");
             engineCombo.Items.Add("On");
-            // Detect current state: check if Engine.ini HDR lines are deployed
             var engineIniDir = AuxInstallService.ResolveEngineIniDir(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
             bool engineIniActive = false;
             if (engineIniDir != null)
             {
                 var engineIniFile = Path.Combine(engineIniDir, "Engine.ini");
                 if (File.Exists(engineIniFile))
-                {
-                    var engineContent = File.ReadAllText(engineIniFile);
-                    engineIniActive = engineContent.Contains("r.AllowHDR=1", StringComparison.OrdinalIgnoreCase);
-                }
+                    engineIniActive = File.ReadAllText(engineIniFile).Contains("r.AllowHDR=1", StringComparison.OrdinalIgnoreCase);
             }
             engineCombo.SelectedIndex = engineIniActive ? 1 : 0;
             engineCombo.SelectionChanged += (s, ev) =>
             {
                 if (engineCombo.SelectedIndex == 1)
                 {
-                    // Deploy Engine.ini HDR settings
                     AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
                     card.ActionMessage = "✅ Engine.ini HDR settings deployed.";
                 }
                 else
                 {
-                    // Remove Engine.ini HDR settings
                     AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
                     card.ActionMessage = "✅ Engine.ini HDR settings removed.";
                 }
                 card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
             };
             enginePanel.Children.Add(engineCombo);
-            content.Children.Add(enginePanel);
+            topRow.Children.Add(enginePanel);
+            hasTopRow = true;
         }
 
-        // ── Upgrade settings from [renodx] section ────────────────────────────
+        if (hasTopRow)
+            content.Children.Add(topRow);
+
+        // ── Compatibility Settings from [renodx] section ──────────────────────
         if (File.Exists(iniPath))
         {
             var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
             if (ini.TryGetValue("renodx", out var renodxSection))
             {
-                // Collect Upgrade_* and Set_Path keys (exclude UseSCRGB, CopyDestinations, SwapChainCompatibility)
                 var upgradeKeys = renodxSection
                     .Where(kv => (kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase)
                                   && !kv.Key.Equals("Upgrade_UseSCRGB", StringComparison.OrdinalIgnoreCase)
@@ -451,7 +452,6 @@ public sealed partial class MainWindow
                         var kv = upgradeKeys[i];
                         settingsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                        // Label
                         var label = new TextBlock
                         {
                             Text = kv.Key,
@@ -463,29 +463,17 @@ public sealed partial class MainWindow
                         Grid.SetColumn(label, 0);
                         settingsGrid.Children.Add(label);
 
-                        // ComboBox
                         var combo = new ComboBox { FontSize = 11, MinWidth = 120, HorizontalAlignment = HorizontalAlignment.Stretch };
                         bool isSetPath = kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase);
 
-                        if (isSetPath)
-                        {
-                            combo.Items.Add("Off");
-                            combo.Items.Add("On");
-                        }
-                        else
-                        {
-                            combo.Items.Add("Off");
-                            combo.Items.Add("Output size");
-                            combo.Items.Add("Output ratio");
-                            combo.Items.Add("Any size");
-                        }
+                        if (isSetPath) { combo.Items.Add("Off"); combo.Items.Add("On"); }
+                        else { combo.Items.Add("Off"); combo.Items.Add("Output size"); combo.Items.Add("Output ratio"); combo.Items.Add("Any size"); }
 
                         int.TryParse(kv.Value, out var currentVal);
                         combo.SelectedIndex = isSetPath
                             ? (currentVal >= 0 && currentVal <= 1 ? currentVal : 0)
                             : (currentVal >= 0 && currentVal <= 3 ? currentVal : 0);
 
-                        // Capture key for closure
                         var capturedKey = kv.Key;
                         combo.SelectionChanged += (s, ev) =>
                         {
@@ -526,6 +514,116 @@ public sealed partial class MainWindow
             });
         }
 
+        // ── Preset Export/Import buttons (side by side) ───────────────────────
+        var presetRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 12, 0, 0) };
+
+        var exportBtn = new Button
+        {
+            Content = "Export Presets",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            IsEnabled = File.Exists(iniPath),
+        };
+        exportBtn.Click += (s, ev) =>
+        {
+            try
+            {
+                var lines = File.ReadAllLines(iniPath);
+                var presetLines = new List<string>();
+                bool inPreset = false;
+                foreach (var line in lines)
+                {
+                    if (line.TrimStart().StartsWith("[renodx-preset", StringComparison.OrdinalIgnoreCase))
+                    {
+                        inPreset = true;
+                        if (presetLines.Count > 0) presetLines.Add("");
+                        presetLines.Add(line);
+                    }
+                    else if (line.TrimStart().StartsWith('[') && inPreset)
+                    {
+                        inPreset = false;
+                    }
+                    else if (inPreset)
+                    {
+                        presetLines.Add(line);
+                    }
+                }
+
+                if (presetLines.Count == 0)
+                {
+                    card.ActionMessage = "❌ No [renodx-preset*] sections found.";
+                    return;
+                }
+
+                File.WriteAllLines(presetPath, presetLines);
+                card.ActionMessage = $"✅ Exported {presetLines.Count(l => l.StartsWith("["))} preset(s).";
+                card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+            }
+            catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
+        };
+        presetRow.Children.Add(exportBtn);
+
+        var importBtn = new Button
+        {
+            Content = "Import Presets",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            IsEnabled = File.Exists(presetPath) && File.Exists(iniPath),
+        };
+        importBtn.Click += (s, ev) =>
+        {
+            try
+            {
+                var presetLines = File.ReadAllLines(presetPath);
+                var iniLines = File.ReadAllLines(iniPath).ToList();
+
+                // Collect preset section names from the backup file
+                var presetSections = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var line in presetLines)
+                {
+                    if (line.TrimStart().StartsWith("[renodx-preset", StringComparison.OrdinalIgnoreCase))
+                        presetSections.Add(line.Trim());
+                }
+
+                // Remove existing preset sections from reshade.ini
+                var filtered = new List<string>();
+                bool skipping = false;
+                foreach (var line in iniLines)
+                {
+                    if (line.TrimStart().StartsWith("[renodx-preset", StringComparison.OrdinalIgnoreCase))
+                    {
+                        skipping = true;
+                        continue;
+                    }
+                    if (line.TrimStart().StartsWith('[') && skipping)
+                        skipping = false;
+                    if (!skipping)
+                        filtered.Add(line);
+                }
+
+                // Append imported presets at the end
+                filtered.Add("");
+                filtered.AddRange(presetLines);
+
+                File.WriteAllLines(iniPath, filtered);
+                card.ActionMessage = $"✅ Imported {presetSections.Count} preset(s).";
+                card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+            }
+            catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
+        };
+        if (!File.Exists(presetPath))
+            ToolTipService.SetToolTip(importBtn, "No RHI-RenoDX-Preset file found. Export first.");
+        presetRow.Children.Add(importBtn);
+        content.Children.Add(presetRow);
+
         var dialog = new ContentDialog
         {
             Title = "RenoDX Settings",
@@ -536,7 +634,6 @@ public sealed partial class MainWindow
         };
         dialog.Resources["ContentDialogMaxWidth"] = 600.0;
         await DialogService.ShowSafeAsync(dialog);
-        // Refresh panel after dialog closes (UE toggle may have changed state)
         _detailPanelBuilder?.UpdateDetailComponentRows(card);
     }
 

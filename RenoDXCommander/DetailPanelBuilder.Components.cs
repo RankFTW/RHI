@@ -542,32 +542,10 @@ public partial class DetailPanelBuilder
         }
         else _window.DetailLumaRow.Visibility = Visibility.Collapsed;
 
-        // RenoDX cog button — visible only when there are settings to show
+        // RenoDX cog button — always visible
         _window.DetailUeExtendedBtn.Tag = card;
-        bool rdxCogVisible = card.UeExtendedToggleVisibility == Visibility.Visible || card.UseUeExtended;
-        if (!rdxCogVisible && !string.IsNullOrEmpty(card.InstallPath))
-        {
-            var rdxIniPath = Path.Combine(card.InstallPath, "reshade.ini");
-            if (File.Exists(rdxIniPath))
-            {
-                try
-                {
-                    var rdxIni = AuxInstallService.ParseIni(File.ReadAllLines(rdxIniPath));
-                    if (rdxIni.TryGetValue("renodx", out var rdxSection))
-                    {
-                        rdxCogVisible = rdxSection.Keys.Any(k =>
-                            (k.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase)
-                             && !k.Equals("Upgrade_UseSCRGB", StringComparison.OrdinalIgnoreCase)
-                             && !k.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
-                             && !k.Equals("Upgrade_SwapChainCompatibility", StringComparison.OrdinalIgnoreCase))
-                            || k.Equals("Set_Path", StringComparison.OrdinalIgnoreCase));
-                    }
-                }
-                catch { /* ignore read errors */ }
-            }
-        }
-        _window.DetailUeExtendedBtn.Opacity = rdxCogVisible ? 1 : 0;
-        _window.DetailUeExtendedBtn.IsHitTestVisible = rdxCogVisible;
+        _window.DetailUeExtendedBtn.Opacity = 1;
+        _window.DetailUeExtendedBtn.IsHitTestVisible = true;
 
         // No mod message
         _window.DetailNoModMsg.Visibility = card.NoModVisibility;
