@@ -1289,42 +1289,53 @@
                                               VerticalAlignment="Center"/>
 
                                 <StackPanel Grid.Row="3" Grid.Column="2" Spacing="4">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="ReLimiter OSD toggle key"
-                                                   VerticalAlignment="Bottom"/>
-                                        <TextBlock Grid.Column="1" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="Shared OSD Presets"
-                                                   Margin="12,0,0,0"
-                                                   VerticalAlignment="Bottom"/>
-                                    </Grid>
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBox Grid.Column="0" x:Name="UlHotkeyBox" x:FieldModifier="internal"
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <!-- Labels row -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}"
+                                                   Text="ReLimiter OSD"
+                                                   VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}"
+                                                   Text="Shared Presets"
+                                                   VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}"
+                                                   Text="DLSS Hooks"
+                                                   VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                        <!-- Controls row -->
+                                        <TextBox Grid.Row="1" Grid.Column="0" x:Name="UlHotkeyBox" x:FieldModifier="internal"
                                                  PlaceholderText="Press a key..."
                                                  IsReadOnly="True"
-                                                 FontSize="12"
+                                                 FontSize="12" MinWidth="80"
                                                  Background="{StaticResource SurfaceInputBrush}"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                 ToolTipService.ToolTip="The key that toggles the ReLimiter OSD overlay in-game."
                                                  PreviewKeyDown="UlHotkeyBox_PreviewKeyDown"/>
-                                        <ToggleSwitch Grid.Column="1" x:Name="UlSharedPresetsToggle" x:FieldModifier="internal"
-                                                      OnContent="On" OffContent="Off"
-                                                      Foreground="{StaticResource TextSecondaryBrush}"
-                                                      FontSize="12"
-                                                      MinHeight="0"
-                                                      Margin="12,0,0,0"
-                                                      VerticalAlignment="Center"
-                                                      Toggled="UlSharedPresetsToggle_Toggled"/>
+                                        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="UlSharedPresetsCombo" x:FieldModifier="internal"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="When On, all games share the same OSD presets file. When Off, each game has its own presets."
+                                                  SelectionChanged="UlSharedPresetsCombo_SelectionChanged">
+                                            <ComboBoxItem Content="Off"/>
+                                            <ComboBoxItem Content="On"/>
+                                        </ComboBox>
+                                        <ComboBox Grid.Row="1" Grid.Column="2" x:Name="UlDlssHooksCombo" x:FieldModifier="internal"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="Shows DLSS quality mode, render resolution, and active features on the ReLimiter OSD. Disable if experiencing crashes. Does not affect FPS cap or frame generation."
+                                                  SelectionChanged="UlDlssHooksCombo_SelectionChanged">
+                                            <ComboBoxItem Content="Off"/>
+                                            <ComboBoxItem Content="On"/>
+                                        </ComboBox>
                                     </Grid>
                                 </StackPanel>
 
@@ -1538,14 +1549,28 @@
                                                 CornerRadius="8" Padding="12,7" FontSize="12"
                                                 HorizontalAlignment="Stretch"/>
                                     </Grid>
-                                    <Button Content="Reset All Game Profiles to Default"
-                                            Click="ResetAllNvidiaProfiles_Click"
-                                            ToolTipService.ToolTip="Removes ALL per-game NVIDIA profile overrides (DLSS versions, presets, render scales, driver settings). The global profile will be like new."
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="#CC4444" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="Reset Nvidia Profiles"
+                                                Click="ResetAllNvidiaProfiles_Click"
+                                                ToolTipService.ToolTip="Removes ALL per-game NVIDIA profile overrides (DLSS versions, presets, render scales, driver settings). The global profile will be like new."
+                                                Background="{StaticResource AccentBlueBgBrush}"
+                                                Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="#CC4444" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
+                                        <Button Grid.Column="1" Content="Clear Shader Cache"
+                                                Click="ClearNvidiaShaderCache_Click"
+                                                ToolTipService.ToolTip="Deletes the NVIDIA DXCache and GLCache folders. Forces shaders to recompile on next launch — can fix shader-related stuttering or corruption."
+                                                Background="{StaticResource AccentBlueBgBrush}"
+                                                Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="#CC4444" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
+                                    </Grid>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -1814,7 +1839,7 @@
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Choose the build source for ReShade and DXVK. Stable uses official tagged releases. Nightly/Development uses the latest builds from GitHub Actions (may be unstable but includes the newest fixes)."/>
+                                               Text="Choose the build source for ReShade. Stable uses official tagged releases. Nightly uses the latest builds from GitHub Actions (may be unstable but includes the newest fixes)."/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="4">

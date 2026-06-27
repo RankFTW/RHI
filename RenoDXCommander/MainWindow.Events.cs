@@ -838,8 +838,11 @@ public sealed partial class MainWindow
     private void ApplyUlOsdHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyUlOsdHotkey_Click(sender, e);
 
-    private void UlSharedPresetsToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.UlSharedPresetsToggle_Toggled(sender, e);
+    private void UlSharedPresetsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.UlSharedPresetsCombo_SelectionChanged(sender, e);
+
+    private void UlDlssHooksCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.UlDlssHooksCombo_SelectionChanged(sender, e);
 
     private void OsHotkeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.OsHotkeyCombo_SelectionChanged(sender, e);
@@ -926,14 +929,14 @@ public sealed partial class MainWindow
         }
 
         // Build a 4-column grid matching the dialog layout
-        var grid = new Grid { ColumnSpacing = 12 };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var grid = new Grid { ColumnSpacing = 16 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var srCol = new StackPanel { Spacing = 2 };
         srCol.Children.Add(new TextBlock { Text = "DLSS", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
@@ -1286,6 +1289,67 @@ public sealed partial class MainWindow
                 RequestedTheme = ElementTheme.Dark,
             });
         }
+    }
+
+    private async void ClearNvidiaShaderCache_Click(object sender, RoutedEventArgs e)
+    {
+        var confirmDialog = new ContentDialog
+        {
+            Title = "Clear NVIDIA Shader Cache",
+            Content = "This will permanently delete the NVIDIA DXCache and GLCache folders. This cannot be undone.\n\nAll games will need to rebuild their shader caches on next launch, which may cause brief stuttering or longer load times the first time. This can fix shader corruption, persistent stuttering, or graphical issues after driver updates.",
+            PrimaryButtonText = "Clear",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(confirmDialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        int filesDeleted = 0;
+        int filesFailed = 0;
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var cachePaths = new[]
+        {
+            Path.Combine(localAppData, "NVIDIA", "DXCache"),
+            Path.Combine(localAppData, "NVIDIA", "GLCache"),
+        };
+
+        foreach (var path in cachePaths)
+        {
+            if (!Directory.Exists(path)) continue;
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+                {
+                    try { File.Delete(file); filesDeleted++; }
+                    catch { filesFailed++; }
+                }
+                // Try to remove empty subdirectories
+                foreach (var dir in Directory.EnumerateDirectories(path, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
+                {
+                    try { Directory.Delete(dir); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[ClearNvidiaShaderCache] Error enumerating '{path}': {ex.Message}");
+            }
+        }
+
+        var message = filesFailed > 0
+            ? $"Shader cache folders cleared. {filesDeleted} files deleted, {filesFailed} files skipped (in use by running games). Shaders will recompile on next game launch."
+            : $"Shader cache folders cleared. {filesDeleted} files deleted. Shaders will recompile on next game launch.";
+
+        await DialogService.ShowSafeAsync(new ContentDialog
+        {
+            Title = "Shader Cache Cleared",
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        });
     }
 
     private async void DlssIndicatorCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

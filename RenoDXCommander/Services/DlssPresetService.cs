@@ -441,12 +441,19 @@ public class DlssPresetService
 
     public bool SetSrPreset(string gameName, string installPath, uint preset)
     {
+        if (preset == 0x00000000u)
+        {
+            // Delete the setting so it inherits from global/base profile
+            DeletePreset(gameName, installPath, NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID);
+            DeletePreset(gameName, installPath, DLSS_SR_PRESET_OVERRIDE_ID);
+            return true;
+        }
+
         var result = SetPreset(gameName, installPath, NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
         if (result)
         {
             // Set the companion "Preset Override" setting so the driver knows to apply it
-            uint overrideMode = preset == 0x00000000u ? 0x00000000u  // N/A (default — no override)
-                              : preset == 0x00FFFFFFu ? 0x00000001u  // Latest Recommended
+            uint overrideMode = preset == 0x00FFFFFFu ? 0x00000001u  // Latest Recommended
                               : 0x00000002u;                         // Custom (any specific preset)
             SetPreset(gameName, installPath, DLSS_SR_PRESET_OVERRIDE_ID, overrideMode);
         }
@@ -454,10 +461,24 @@ public class DlssPresetService
     }
 
     public bool SetRrPreset(string gameName, string installPath, uint preset)
-        => SetPreset(gameName, installPath, NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
+    {
+        if (preset == 0x00000000u)
+        {
+            DeletePreset(gameName, installPath, NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID);
+            return true;
+        }
+        return SetPreset(gameName, installPath, NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
+    }
 
     public bool SetFgPreset(string gameName, string installPath, uint preset)
-        => SetPreset(gameName, installPath, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
+    {
+        if (preset == 0x00000000u)
+        {
+            DeletePreset(gameName, installPath, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID);
+            return true;
+        }
+        return SetPreset(gameName, installPath, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
+    }
 
     // ── Multi Frame Generation (MFG) ─────────────────────────────────────────
 
@@ -760,25 +781,27 @@ public class DlssPresetService
 
     // ── Set render scale ──────────────────────────────────────────────────────
 
-    /// <summary>Sets the SR render scale. 0 = reset to Default. 33-100 = set custom percentage.</summary>
+    /// <summary>Sets the SR render scale. 0 = reset to Default (delete from profile). 33-100 = set custom percentage.</summary>
     public bool SetSrRenderScale(string gameName, string installPath, uint percentage)
     {
         if (percentage == 0)
         {
-            SetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_ID, RENDER_SCALE_DEFAULT);
-            return SetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID, 0);
+            DeletePreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_ID);
+            DeletePreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID);
+            return true;
         }
         SetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_ID, RENDER_SCALE_CUSTOM);
         return SetPreset(gameName, installPath, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID, percentage);
     }
 
-    /// <summary>Sets the RR render scale. 0 = reset to Default. 33-100 = set custom percentage.</summary>
+    /// <summary>Sets the RR render scale. 0 = reset to Default (delete from profile). 33-100 = set custom percentage.</summary>
     public bool SetRrRenderScale(string gameName, string installPath, uint percentage)
     {
         if (percentage == 0)
         {
-            SetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_ID, RENDER_SCALE_DEFAULT);
-            return SetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID, 0);
+            DeletePreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_ID);
+            DeletePreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID);
+            return true;
         }
         SetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_ID, RENDER_SCALE_CUSTOM);
         return SetPreset(gameName, installPath, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID, percentage);
@@ -1228,13 +1251,19 @@ if ($null -ne $profile) {{
         => GetPreset(gameName, installPath, VSYNC_MODE_ID);
 
     public bool SetVSyncMode(string gameName, string installPath, uint value)
-        => SetPreset(gameName, installPath, VSYNC_MODE_ID, value);
+    {
+        if (value == VSyncModeOptions[0].Value) return DeletePreset(gameName, installPath, VSYNC_MODE_ID);
+        return SetPreset(gameName, installPath, VSYNC_MODE_ID, value);
+    }
 
     public uint GetVSyncTearControl(string gameName, string installPath)
         => GetPreset(gameName, installPath, VSYNC_TEAR_CONTROL_ID);
 
     public bool SetVSyncTearControl(string gameName, string installPath, uint value)
-        => SetPreset(gameName, installPath, VSYNC_TEAR_CONTROL_ID, value);
+    {
+        if (value == VSyncTearControlOptions[0].Value) return DeletePreset(gameName, installPath, VSYNC_TEAR_CONTROL_ID);
+        return SetPreset(gameName, installPath, VSYNC_TEAR_CONTROL_ID, value);
+    }
 
     // ── Global VSync (base profile) ──────────────────────────────────────────
 
@@ -1326,7 +1355,10 @@ if ($null -ne $profile) {{
     }
 
     public bool SetPowerManagementMode(string gameName, string installPath, uint value)
-        => SetPreset(gameName, installPath, POWER_MANAGEMENT_MODE_ID, value);
+    {
+        if (value == PowerManagementOptions[0].Value) return DeletePreset(gameName, installPath, POWER_MANAGEMENT_MODE_ID);
+        return SetPreset(gameName, installPath, POWER_MANAGEMENT_MODE_ID, value);
+    }
 
     public uint GetCpuExprMode(string gameName, string installPath)
         => GetPreset(gameName, installPath, CPU_EXPR_MODES_ID);
@@ -2278,6 +2310,37 @@ $session.Save()
                 }
             }
             CrashReporter.Log($"[DlssPresetService.SetPreset] Error for '{gameName}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Deletes a setting from a game's profile so it inherits from the global/base profile.
+    /// </summary>
+    private bool DeletePreset(string gameName, string installPath, uint settingId)
+    {
+        if (!_isSupported || _session == null || _cachedProfiles == null)
+            return false;
+
+        try
+        {
+            var profile = FindProfile(gameName, installPath);
+            if (profile == null) return false;
+
+            try { profile.DeleteSetting(settingId); }
+            catch (Exception delEx)
+            {
+                CrashReporter.Log($"[DlssPresetService.DeletePreset] DeleteSetting 0x{settingId:X8} failed for '{gameName}' — {delEx.Message}");
+                // Fallback: write 0 to clear it
+                SetPreset(gameName, installPath, settingId, 0);
+            }
+            _session.Save();
+            CrashReporter.Log($"[DlssPresetService.DeletePreset] Deleted 0x{settingId:X8} for '{gameName}'");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.DeletePreset] Error for '{gameName}' — {ex.Message}");
             return false;
         }
     }

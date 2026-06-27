@@ -1,3 +1,17 @@
+## v2.0.7
+
+### Improvements
+
+- Added ReLimiter DLSS Hooks toggle — shows DLSS info on the OSD. Can be disabled if causing crashes in some games.
+- Added Clear Shader Cache button in Nvidia Settings — deletes NVIDIA DXCache and GLCache to fix shader corruption or stuttering.
+
+### Bug Fixes
+
+- Fixed DLSS preset and render scale "Default"/"Off" selections blocking global profile inheritance. All driver profile settings now properly clear from the per-game profile when set to their default, allowing global settings to apply.
+- Fixed DLSS Preset Override setting not clearing when preset is set to Default.
+
+---
+
 ## v2.0.6
 
 ### New

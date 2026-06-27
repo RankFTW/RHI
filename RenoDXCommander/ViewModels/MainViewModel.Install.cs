@@ -1162,7 +1162,11 @@ public partial class MainViewModel
                 var deployPath2 = ModInstallService.GetAddonDeployPath(card.InstallPath);
                 var iniFile = Path.Combine(deployPath2, "relimiter.ini");
                 if (File.Exists(iniFile))
+                {
                     AuxInstallService.ApplyUlSharedPresets(iniFile, true);
+                    if (_settingsViewModel.UlDlssHooks)
+                        AuxInstallService.ApplyUlDlssHooks(iniFile, true);
+                }
             }
 
             DispatcherQueue?.TryEnqueue(() =>

@@ -57,7 +57,8 @@ public class SettingsHandler
         _currentUlHotkeyString = ViewModel.Settings.UlOsdHotkey;
         _window.UlHotkeyBox.Text = ViewModel.Settings.UlOsdHotkey;
         // Initialize ReLimiter shared presets toggle
-        _window.UlSharedPresetsToggle.IsOn = ViewModel.Settings.UlSharedPresets;
+        _window.UlSharedPresetsCombo.SelectedIndex = ViewModel.Settings.UlSharedPresets ? 1 : 0;
+        _window.UlDlssHooksCombo.SelectedIndex = ViewModel.Settings.UlDlssHooks ? 1 : 0;
         // Initialize OptiScaler hotkey display
         _currentOsHotkeyString = ViewModel.Settings.OsHotkey;
         var osCombo = _window.OsHotkeyCombo;
@@ -853,6 +854,7 @@ public class SettingsHandler
         ViewModel.SaveSettingsPublic();
 
         bool sharedPresets = ViewModel.Settings.UlSharedPresets;
+        bool dlssHooks = ViewModel.Settings.UlDlssHooks;
         int updatedCount = 0;
         foreach (var card in ViewModel.AllCards)
         {
@@ -866,6 +868,7 @@ public class SettingsHandler
             {
                 AuxInstallService.ApplyUlOsdHotkey(iniFile, _currentUlHotkeyString);
                 AuxInstallService.ApplyUlSharedPresets(iniFile, sharedPresets);
+                AuxInstallService.ApplyUlDlssHooks(iniFile, dlssHooks);
 
                 // RE Framework games also store relimiter.ini in _storage_
                 if (card.IsRefInstalled)
@@ -875,6 +878,7 @@ public class SettingsHandler
                     {
                         AuxInstallService.ApplyUlOsdHotkey(storagePath, _currentUlHotkeyString);
                         AuxInstallService.ApplyUlSharedPresets(storagePath, sharedPresets);
+                        AuxInstallService.ApplyUlDlssHooks(storagePath, dlssHooks);
                     }
                 }
 
@@ -893,6 +897,7 @@ public class SettingsHandler
             {
                 AuxInstallService.ApplyUlOsdHotkey(AuxInstallService.UlIniPath, _currentUlHotkeyString);
                 AuxInstallService.ApplyUlSharedPresets(AuxInstallService.UlIniPath, sharedPresets);
+                AuxInstallService.ApplyUlDlssHooks(AuxInstallService.UlIniPath, dlssHooks);
             }
             catch (Exception ex)
             {
@@ -913,11 +918,20 @@ public class SettingsHandler
 
     // ── ReLimiter Shared Presets ──────────────────────────────────────────────
 
-    public void UlSharedPresetsToggle_Toggled(object sender, RoutedEventArgs e)
+    public void UlSharedPresetsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ToggleSwitch toggle)
+        if (sender is ComboBox combo)
         {
-            ViewModel.Settings.UlSharedPresets = toggle.IsOn;
+            ViewModel.Settings.UlSharedPresets = combo.SelectedIndex == 1;
+            ViewModel.SaveSettingsPublic();
+        }
+    }
+
+    public void UlDlssHooksCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox combo)
+        {
+            ViewModel.Settings.UlDlssHooks = combo.SelectedIndex == 1;
             ViewModel.SaveSettingsPublic();
         }
     }

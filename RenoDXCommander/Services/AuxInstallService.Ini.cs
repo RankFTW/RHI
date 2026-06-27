@@ -845,6 +845,26 @@ public partial class AuxInstallService
         WriteIni(iniFilePath, ini);
     }
 
+    /// <summary>
+    /// Writes the dlss_info_hooks value to the [FrameLimiter] section of a relimiter.ini file.
+    /// When true, ReLimiter hooks DLSS to display version/preset info on the OSD.
+    /// </summary>
+    public static void ApplyUlDlssHooks(string iniFilePath, bool enabled)
+    {
+        var ini = File.Exists(iniFilePath)
+            ? ParseIni(File.ReadAllLines(iniFilePath))
+            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+        const string section = "FrameLimiter";
+
+        if (!ini.ContainsKey(section))
+            ini[section] = new OrderedDict();
+
+        ini[section]["dlss_info_hooks"] = enabled ? "true" : "false";
+
+        WriteIni(iniFilePath, ini);
+    }
+
     // ── INI parsing / writing helpers ─────────────────────────────────────────────
 
     /// <summary>Simple alias for an ordered key-value dictionary (preserves insertion order).</summary>
