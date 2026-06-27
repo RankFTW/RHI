@@ -341,7 +341,7 @@ public partial class DetailPanelBuilder
                 ? Windows.UI.Text.TextDecorations.Underline
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailDofFixInstallBtn.Tag = card;
-            _window.DetailDofFixInstallBtn.Content = card.DofFixActionLabel;
+            _window.DetailDofFixInstallBtn.Content = WithInfoArrow(card.DofFixActionLabel, true, card.DofFixStatus == GameStatus.UpdateAvailable, _window.DetailDofFixInstallBtn);
             _window.DetailDofFixInstallBtn.IsEnabled = card.DofFixInstallEnabled && !dofGreyed;
             _window.DetailDofFixInstallBtn.Background = UIFactory.GetBrush(card.DofFixBtnBackground);
             _window.DetailDofFixInstallBtn.Foreground = UIFactory.GetBrush(card.DofFixBtnForeground);
@@ -350,6 +350,13 @@ public partial class DetailPanelBuilder
             _window.DetailDofFixInstallBtn.Opacity = dofGreyed ? 0.35 : 1.0;
             _window.DetailDofFixCogBtn.Tag = card;
             _window.DetailDofFixInfoBtn.Tag = card;
+            // DOF Fix always has release notes — show blue highlighted style
+            _window.DetailDofFixInfoBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
+            _window.DetailDofFixInfoBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
+            _window.DetailDofFixInfoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+            _window.DetailDofFixInfoBtn.BorderThickness = new Thickness(1);
+            _window.DetailDofFixInfoBtn.Opacity = 1.0;
+            _window.DetailDofFixInfoBtn.IsHitTestVisible = true;
             _window.DetailDofFixDeleteBtn.Tag = card;
             var dofShow = card.DofFixDeleteVisibility == Visibility.Visible;
             _window.DetailDofFixDeleteBtn.Opacity = dofShow ? 1 : 0;
