@@ -320,6 +320,8 @@
   "installPathOverrides": {
     "Anno 117 - Pax Romana": "Bin\\Win64",
     "Anno 117: Pax Romana": "Bin\\Win64",
+    "Borderlands® 4": "OakGame\\Binaries\\Win64",
+    "Borderlands 4": "OakGame\\Binaries\\Win64",
     "Tom Clancy's Splinter Cell Blacklist": "src\\SYSTEM",
     "SOULCALIBUR VI": "SoulcaliburVI\\Binaries\\Win64",
     "Gothic II: Gold Classic": "system",
