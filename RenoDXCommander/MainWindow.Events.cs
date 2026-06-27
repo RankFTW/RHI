@@ -354,7 +354,7 @@ public sealed partial class MainWindow
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 
         var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-        var presetPath = Path.Combine(card.InstallPath, "RHI-RenoDX-Preset");
+        var presetPath = Path.Combine(card.InstallPath, "RHI-RenoDX-Preset.txt");
         var content = new StackPanel { Spacing = 8 };
 
         // ── Top row: UE-Extended + Engine.ini HDR side by side ─────────────────
@@ -560,7 +560,11 @@ public sealed partial class MainWindow
                 }
 
                 File.WriteAllLines(presetPath, presetLines);
-                card.ActionMessage = $"✅ Exported {presetLines.Count(l => l.StartsWith("["))} preset(s).";
+                var presetText = string.Join(Environment.NewLine, presetLines);
+                var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                dp.SetText(presetText);
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+                card.ActionMessage = $"✅ Exported {presetLines.Count(l => l.StartsWith("["))} preset(s) & copied to clipboard.";
                 card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
             }
             catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
@@ -620,7 +624,7 @@ public sealed partial class MainWindow
             catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
         };
         if (!File.Exists(presetPath))
-            ToolTipService.SetToolTip(importBtn, "No RHI-RenoDX-Preset file found. Export first.");
+            ToolTipService.SetToolTip(importBtn, "No RHI-RenoDX-Preset.txt file found. Export first.");
         presetRow.Children.Add(importBtn);
         content.Children.Add(presetRow);
 
