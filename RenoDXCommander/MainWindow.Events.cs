@@ -299,6 +299,37 @@ public sealed partial class MainWindow
         };
         content.Children.Add(openLogBtn);
 
+        // Copy reshade.log to clipboard
+        var copyLogBtn = new Button
+        {
+            Content = "Copy reshade.log to clipboard",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            IsEnabled = File.Exists(Path.Combine(card.InstallPath, "ReShade.log")),
+        };
+        copyLogBtn.Click += (s, ev) =>
+        {
+            var logPath = Path.Combine(card.InstallPath, "ReShade.log");
+            if (File.Exists(logPath))
+            {
+                try
+                {
+                    var logContent = File.ReadAllText(logPath);
+                    var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                    dataPackage.SetText(logContent);
+                    Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+                    card.RsActionMessage = "✅ reshade.log copied to clipboard.";
+                    card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+                }
+                catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
+            }
+        };
+        content.Children.Add(copyLogBtn);
+
         var dialog = new ContentDialog
         {
             Title = "ReShade Settings",
