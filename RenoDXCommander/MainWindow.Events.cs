@@ -313,9 +313,12 @@ public sealed partial class MainWindow
     private async void RdxCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        var content = new StackPanel { Spacing = 12 };
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
 
-        // UE-Extended toggle
+        var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
+        var content = new StackPanel { Spacing = 8 };
+
+        // UE-Extended toggle (keep existing functionality)
         if (card.UeExtendedToggleVisibility == Visibility.Visible)
         {
             var uePanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
@@ -334,14 +337,111 @@ public sealed partial class MainWindow
             content.Children.Add(uePanel);
         }
 
+        // ── Upgrade settings from [renodx] section ────────────────────────────
+        if (File.Exists(iniPath))
+        {
+            var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+            if (ini.TryGetValue("renodx", out var renodxSection))
+            {
+                // Collect Upgrade_* and Set_Path keys
+                var upgradeKeys = renodxSection
+                    .Where(kv => kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase)
+                              || kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (upgradeKeys.Count > 0)
+                {
+                    content.Children.Add(new TextBlock
+                    {
+                        Text = "Compatibility Settings",
+                        FontSize = 13,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                        Margin = new Thickness(0, 8, 0, 0),
+                    });
+
+                    var settingsGrid = new Grid { ColumnSpacing = 12, RowSpacing = 6 };
+                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130, GridUnitType.Pixel) });
+
+                    for (int i = 0; i < upgradeKeys.Count; i++)
+                    {
+                        var kv = upgradeKeys[i];
+                        settingsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                        // Label
+                        var label = new TextBlock
+                        {
+                            Text = kv.Key,
+                            FontSize = 11,
+                            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                            VerticalAlignment = VerticalAlignment.Center,
+                        };
+                        Grid.SetRow(label, i);
+                        Grid.SetColumn(label, 0);
+                        settingsGrid.Children.Add(label);
+
+                        // ComboBox
+                        var combo = new ComboBox { FontSize = 11, MinWidth = 120, HorizontalAlignment = HorizontalAlignment.Stretch };
+                        bool isSetPath = kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase);
+
+                        if (isSetPath)
+                        {
+                            combo.Items.Add("Off");
+                            combo.Items.Add("On");
+                        }
+                        else
+                        {
+                            combo.Items.Add("Off");
+                            combo.Items.Add("Output size");
+                            combo.Items.Add("Output ratio");
+                            combo.Items.Add("Any size");
+                        }
+
+                        int.TryParse(kv.Value, out var currentVal);
+                        combo.SelectedIndex = isSetPath
+                            ? (currentVal >= 0 && currentVal <= 1 ? currentVal : 0)
+                            : (currentVal >= 0 && currentVal <= 3 ? currentVal : 0);
+
+                        // Capture key for closure
+                        var capturedKey = kv.Key;
+                        combo.SelectionChanged += (s, ev) =>
+                        {
+                            if (combo.SelectedIndex < 0) return;
+                            renodxSection[capturedKey] = combo.SelectedIndex.ToString();
+                            try { AuxInstallService.WriteIni(iniPath, ini); }
+                            catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
+                        };
+
+                        Grid.SetRow(combo, i);
+                        Grid.SetColumn(combo, 1);
+                        settingsGrid.Children.Add(combo);
+                    }
+
+                    content.Children.Add(settingsGrid);
+                }
+            }
+        }
+        else
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = "No reshade.ini found in game folder.",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                FontStyle = Windows.UI.Text.FontStyle.Italic,
+            });
+        }
+
         var dialog = new ContentDialog
         {
             Title = "RenoDX Settings",
-            Content = content,
+            Content = new ScrollViewer { Content = content, MaxHeight = 500 },
             CloseButtonText = "Close",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
+        dialog.Resources["ContentDialogMaxWidth"] = 600.0;
         await DialogService.ShowSafeAsync(dialog);
         // Refresh panel after dialog closes (UE toggle may have changed state)
         _detailPanelBuilder?.UpdateDetailComponentRows(card);
