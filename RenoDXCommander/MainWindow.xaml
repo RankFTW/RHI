@@ -869,6 +869,7 @@
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"/>
                                     <Button x:Name="DetailDofFixCogBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Visibility="Collapsed"
                                             Click="DofFixCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
