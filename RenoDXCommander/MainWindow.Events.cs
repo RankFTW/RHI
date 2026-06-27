@@ -436,7 +436,7 @@ public sealed partial class MainWindow
         var dialog = new ContentDialog
         {
             Title = "RenoDX Settings",
-            Content = new ScrollViewer { Content = content, MaxHeight = 500 },
+            Content = new ScrollViewer { Content = content, MaxHeight = 500, Padding = new Thickness(0, 0, 16, 0) },
             CloseButtonText = "Close",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
