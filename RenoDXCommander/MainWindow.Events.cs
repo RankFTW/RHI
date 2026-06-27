@@ -547,7 +547,7 @@ public sealed partial class MainWindow
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
             IsEnabled = File.Exists(iniPath),
         };
-        exportBtn.Click += (s, ev) =>
+        exportBtn.Click += async (s, ev) =>
         {
             try
             {
@@ -585,10 +585,16 @@ public sealed partial class MainWindow
                 presetLines.Insert(3, "");
 
                 File.WriteAllLines(presetPath, presetLines);
-                var presetText = string.Join(Environment.NewLine, presetLines);
-                var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
-                dp.SetText(presetText);
-                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+                // Copy as file to clipboard (shows as RHI-RenoDX-Preset.txt in Discord)
+                try
+                {
+                    var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(presetPath);
+                    var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                    dp.SetStorageItems(new[] { storageFile });
+                    Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+                    Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
+                }
+                catch { /* clipboard copy is best-effort */ }
                 card.ActionMessage = $"✅ Exported {presetLines.Count(l => l.StartsWith("["))} preset(s) & copied to clipboard.";
                 card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
             }
