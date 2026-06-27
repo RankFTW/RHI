@@ -2,13 +2,27 @@
 
 ### New
 
-- **DOF Fix** — automatic install for Unreal Engine 5 games that suffer from depth-of-field stepping/tiling artifacts (common on NVIDIA GPUs). Look for the new DOF Fix row in the Optional section. One-click install, updates with Update All.
+- **DOF Fix Component** — new component row for Unreal Engine 5.0–5.6 games in the Optional section. Fixes the common depth-of-field stepping/tiling artifacts (especially visible on NVIDIA GPUs). Click Install to deploy. Participates in Update All.
 
 ### Improvements
 
-- **ReShade ⚙️** — deploy ReShade.ini, deploy ReShadePreset.ini, open ReShade.ini, open ReShade.log, and copy ReShade.log to clipboard for easy sharing on Discord.
-- **RenoDX ⚙️** — edit compatibility settings (format upgrade overrides) directly without manually editing reshade.ini. Toggle Engine.ini HDR on/off for UE-Extended games. Export and import RenoDX presets (backup/share your colour grading).
-- **ReLimiter ⚙️** — open or copy the ReLimiter log for troubleshooting. Per-game DLSS Hooks toggle (override the global setting for individual games that crash).
+- **ReShade ⚙️ Settings Dialog**
+  - Deploy ReShade.ini — merges the RHI template into the game folder
+  - Deploy ReShadePreset.ini — copies your preset file to the game folder
+  - Open ReShade.ini — opens the game's ini in your default editor
+  - Open ReShade.log — opens the game's log in your default editor
+  - Copy ReShade.log to clipboard — pastes as a file named `ReShade.log` on Discord (not `message.txt`)
+
+- **RenoDX ⚙️ Settings Dialog**
+  - UE-Extended toggle with Engine.ini HDR on/off (appears instantly when toggling UE-Extended on)
+  - Compatibility Settings — edit format upgrade overrides (`Upgrade_*` keys) directly with combo boxes. No more manually editing reshade.ini. Options: Off / Output size / Output ratio / Any size.
+  - RenoDX Presets — Export saves all your presets to a file and copies to clipboard for sharing. Import restores presets from the file back into reshade.ini.
+
+- **ReLimiter ⚙️ Settings Dialog**
+  - Deploy relimiter.ini
+  - Open ReLimiter log — finds the correct `relimiter_*.log` file for the game
+  - Copy ReLimiter log to clipboard — pastes as a file with the correct name on Discord
+  - Per-game DLSS Hooks toggle — override the global DLSS Hooks setting for individual games (disable if causing crashes in a specific title)
 
 ---
 
