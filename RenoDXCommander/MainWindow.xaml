@@ -613,12 +613,12 @@
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"/>
                                     <Button x:Name="DetailRsIniBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="RsIniButton_Click"
+                                            Click="RsCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Copy ReShade.ini &amp; ReShadePreset.ini">
-                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                            ToolTipService.ToolTip="ReShade Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailRsDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallRsButton_Click"
@@ -658,13 +658,12 @@
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"/>
                                     <Button x:Name="DetailUeExtendedBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="UeExtendedFlyoutItem_Click"
+                                            Click="RdxCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            Opacity="0" IsHitTestVisible="False"
-                                            ToolTipService.ToolTip="Toggle UE Extended">
-                                        <TextBlock Text="UE" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                            ToolTipService.ToolTip="RenoDX Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailRdxDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallButton_Click"
@@ -765,12 +764,12 @@
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"/>
                                     <Button x:Name="DetailUlIniBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="UlIniButton_Click"
+                                            Click="UlCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Copy relimiter.ini to game folder">
-                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                            ToolTipService.ToolTip="ReLimiter Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailUlDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallUlButton_Click"
@@ -810,12 +809,12 @@
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"/>
                                     <Button x:Name="DetailDcIniBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="DcIniButton_Click"
+                                            Click="DcCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Copy DisplayCommander.ini to game folder">
-                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                            ToolTipService.ToolTip="Display Commander Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailDcDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallDcButton_Click"
@@ -840,6 +839,52 @@
                                     <TextBlock Grid.Column="3" Text="──  Optional  ──" FontSize="11"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <!-- DOF Fix row -->
+                                <Grid x:Name="DetailDofFixRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="DetailDofFixLabel" x:FieldModifier="internal" Grid.Column="0" Text="DOF Fix" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DetailDofFixStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
+                                               VerticalAlignment="Center" HorizontalTextAlignment="Center"
+                                               PointerPressed="DetailDofFixStatus_PointerPressed"
+                                               PointerEntered="LinkText_PointerEntered" PointerExited="LinkText_PointerExited"/>
+                                    <Button x:Name="DetailDofFixInfoBtn" x:FieldModifier="internal" Grid.Column="2"
+                                            Content="Info" FontSize="11" Padding="6,2,6,2"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32"
+                                            Click="DofFixInfoButton_Click"/>
+                                    <Button x:Name="DetailDofFixInstallBtn" x:FieldModifier="internal" Grid.Column="3"
+                                            Click="InstallDofFixButton_Click"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                            CornerRadius="8" FontSize="12" Height="32"/>
+                                    <Button x:Name="DetailDofFixCogBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Visibility="Collapsed"
+                                            Click="DofFixCogButton_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="DOF Fix Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button x:Name="DetailDofFixDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
+                                            Click="UninstallDofFixButton_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Remove DOF Fix" Opacity="0" IsHitTestVisible="False">
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
+                                    </Button>
                                 </Grid>
 
                                 <!-- OptiScaler row -->
@@ -870,12 +915,12 @@
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"/>
                                     <Button x:Name="DetailOsIniBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="CopyOsIniButton_Click"
+                                            Click="OsCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Copy OptiScaler.ini to game folder">
-                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                            ToolTipService.ToolTip="OptiScaler Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailOsDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallOsButton_Click"
@@ -915,12 +960,12 @@
                                             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                             CornerRadius="8" FontSize="12" Height="32"/>
                                     <Button x:Name="DetailDxvkConfBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="CopyDxvkConfButton_Click"
+                                            Click="DxvkCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Copy dxvk.conf to game folder">
-                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                            ToolTipService.ToolTip="DXVK Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailDxvkDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallDxvkButton_Click"
@@ -968,6 +1013,11 @@
                                                  Maximum="100" Height="3" CornerRadius="2"
                                                  Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
                                     <TextBlock x:Name="DetailOsMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentBlueBrush}"
+                                               Visibility="Collapsed" TextWrapping="Wrap"/>
+                                    <ProgressBar x:Name="DetailDofFixProgress" x:FieldModifier="internal" Visibility="Collapsed"
+                                                 Maximum="100" Height="3" CornerRadius="2"
+                                                 Foreground="{StaticResource AccentBlueBrush}" Background="{StaticResource SurfaceToolbarBrush}"/>
+                                    <TextBlock x:Name="DetailDofFixMessage" x:FieldModifier="internal" FontSize="10" Foreground="{StaticResource AccentBlueBrush}"
                                                Visibility="Collapsed" TextWrapping="Wrap"/>
                                     <ProgressBar x:Name="DetailDxvkProgress" x:FieldModifier="internal" Visibility="Collapsed"
                                                  Maximum="100" Height="3" CornerRadius="2"

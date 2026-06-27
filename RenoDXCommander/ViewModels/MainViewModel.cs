@@ -1,6 +1,7 @@
 // MainViewModel.cs -- Core scaffolding: constructor, fields, observable properties, forwarding properties, UI callbacks, and shared helpers.
 
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Collections;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
@@ -42,6 +43,7 @@ public partial class MainViewModel : ObservableObject
     private readonly INexusUpdateService _nexusUpdateService;
     private readonly IDlssStreamlineService _dlssStreamlineService;
     private readonly DlssPresetService _dlssPresetService;
+    private readonly DofFixService _dofFixService;
     private readonly GitHubETagCache _etagCache;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
@@ -71,6 +73,7 @@ public partial class MainViewModel : ObservableObject
     public IREFrameworkService REFrameworkServiceInstance => _refService;
     public IDlssStreamlineService DlssStreamlineServiceInstance => _dlssStreamlineService;
     public DlssPresetService DlssPresetServiceInstance => _dlssPresetService;
+    public DofFixService DofFixServiceInstance => _dofFixService;
     public RemoteManifest? Manifest => _manifest;
 
     public bool SkipUpdateCheck
@@ -524,6 +527,7 @@ public partial class MainViewModel : ObservableObject
         _nexusUpdateService = nexusUpdateService;
         _dlssStreamlineService = dlssStreamlineService;
         _dlssPresetService = dlssPresetService;
+        _dofFixService = App.Services.GetRequiredService<DofFixService>();
         _etagCache = etagCache;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();

@@ -327,7 +327,42 @@ public partial class DetailPanelBuilder
 
         // OptiScaler row — always visible, greyed out for 32-bit games
         _window.DetailOsRow.Visibility = card.OsRowVisibility;
-        _window.DetailOptionalSeparator.Visibility = card.OsRowVisibility;
+        _window.DetailOptionalSeparator.Visibility = card.OsRowVisibility == Visibility.Visible || card.DofFixRowVisibility == Visibility.Visible
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        // DOF Fix row
+        _window.DetailDofFixRow.Visibility = card.DofFixRowVisibility;
+        if (card.DofFixRowVisibility == Visibility.Visible)
+        {
+            bool dofGreyed = !card.IsRsInstalled;
+            _window.DetailDofFixStatus.Text = card.DofFixStatusText;
+            _window.DetailDofFixStatus.Foreground = UIFactory.GetBrush(card.DofFixStatusColor);
+            _window.DetailDofFixStatus.TextDecorations = card.IsDofFixInstalled
+                ? Windows.UI.Text.TextDecorations.Underline
+                : Windows.UI.Text.TextDecorations.None;
+            _window.DetailDofFixInstallBtn.Tag = card;
+            _window.DetailDofFixInstallBtn.Content = WithInfoArrow(card.DofFixActionLabel, true, card.DofFixStatus == GameStatus.UpdateAvailable, _window.DetailDofFixInstallBtn);
+            _window.DetailDofFixInstallBtn.IsEnabled = card.DofFixInstallEnabled && !dofGreyed;
+            _window.DetailDofFixInstallBtn.Background = UIFactory.GetBrush(card.DofFixBtnBackground);
+            _window.DetailDofFixInstallBtn.Foreground = UIFactory.GetBrush(card.DofFixBtnForeground);
+            _window.DetailDofFixInstallBtn.BorderBrush = UIFactory.GetBrush(card.DofFixBtnBorderBrush);
+            _window.DetailDofFixInstallBtn.BorderThickness = new Thickness(1);
+            _window.DetailDofFixInstallBtn.Opacity = dofGreyed ? 0.35 : 1.0;
+            _window.DetailDofFixCogBtn.Tag = card;
+            _window.DetailDofFixInfoBtn.Tag = card;
+            // DOF Fix always has release notes — show blue highlighted style
+            _window.DetailDofFixInfoBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
+            _window.DetailDofFixInfoBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
+            _window.DetailDofFixInfoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+            _window.DetailDofFixInfoBtn.BorderThickness = new Thickness(1);
+            _window.DetailDofFixInfoBtn.Opacity = 1.0;
+            _window.DetailDofFixInfoBtn.IsHitTestVisible = true;
+            _window.DetailDofFixDeleteBtn.Tag = card;
+            var dofShow = card.DofFixDeleteVisibility == Visibility.Visible;
+            _window.DetailDofFixDeleteBtn.Opacity = dofShow ? 1 : 0;
+            _window.DetailDofFixDeleteBtn.IsHitTestVisible = dofShow;
+        }
+
         bool osGreyed = card.Is32Bit;
         _window.DetailOsRow.Opacity = 1.0;
         _window.DetailOsRow.IsHitTestVisible = true;
@@ -507,33 +542,10 @@ public partial class DetailPanelBuilder
         }
         else _window.DetailLumaRow.Visibility = Visibility.Collapsed;
 
-        // UE-Extended flyout (inline in RenoDX row, column 3)
-        if (card.UeExtendedToggleVisibility == Visibility.Visible && (!isLumaMode || card.LumaRenodxCompatible))
-        {
-            _window.DetailUeExtendedBtn.Opacity = 1;
-            _window.DetailUeExtendedBtn.IsHitTestVisible = true;
-            _window.DetailUeExtendedBtn.Tag = card;
-            ToolTipService.SetToolTip(_window.DetailUeExtendedBtn,
-                card.UseUeExtended ? "Disable UE Extended" : "Enable UE Extended");
-            // Visual indicator: green when enabled, default when off
-            if (card.UseUeExtended)
-            {
-                _window.DetailUeExtendedBtn.Background = UIFactory.Brush(ResourceKeys.AccentGreenBgBrush);
-                _window.DetailUeExtendedBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);
-                _window.DetailUeExtendedBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentGreenBorderBrush);
-            }
-            else
-            {
-                _window.DetailUeExtendedBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
-                _window.DetailUeExtendedBtn.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
-                _window.DetailUeExtendedBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush);
-            }
-        }
-        else
-        {
-            _window.DetailUeExtendedBtn.Opacity = 0;
-            _window.DetailUeExtendedBtn.IsHitTestVisible = false;
-        }
+        // RenoDX cog button — always visible
+        _window.DetailUeExtendedBtn.Tag = card;
+        _window.DetailUeExtendedBtn.Opacity = 1;
+        _window.DetailUeExtendedBtn.IsHitTestVisible = true;
 
         // No mod message
         _window.DetailNoModMsg.Visibility = card.NoModVisibility;
@@ -564,6 +576,11 @@ public partial class DetailPanelBuilder
         _window.DetailOsMessage.Visibility = card.OsRowVisibility == Visibility.Visible ? card.OsMessageVisibility : Visibility.Collapsed;
         _window.DetailOsMessage.Text = card.OsActionMessage;
         _window.DetailOsMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.OsActionMessage));
+        _window.DetailDofFixProgress.Visibility = card.DofFixRowVisibility == Visibility.Visible ? card.DofFixProgressVisibility : Visibility.Collapsed;
+        _window.DetailDofFixProgress.Value = card.DofFixProgress;
+        _window.DetailDofFixMessage.Visibility = card.DofFixRowVisibility == Visibility.Visible ? card.DofFixMessageVisibility : Visibility.Collapsed;
+        _window.DetailDofFixMessage.Text = card.DofFixActionMessage;
+        _window.DetailDofFixMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DofFixActionMessage));
         _window.DetailDxvkProgress.Visibility = card.DxvkRowVisibility == Visibility.Visible ? card.DxvkProgressVisibility : Visibility.Collapsed;
         _window.DetailDxvkProgress.Value = card.DxvkProgress;
         _window.DetailDxvkMessage.Visibility = card.DxvkRowVisibility == Visibility.Visible

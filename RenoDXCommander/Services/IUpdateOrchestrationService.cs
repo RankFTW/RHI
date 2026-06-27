@@ -47,6 +47,15 @@ public interface IUpdateOrchestrationService
         Action notifyUpdateState);
 
     /// <summary>
+    /// Batch-updates all eligible DOF Fix installations.
+    /// </summary>
+    Task UpdateAllDofFixAsync(
+        IReadOnlyList<GameCardViewModel> allCards,
+        DofFixService dofFixService,
+        Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
+        Action notifyUpdateState);
+
+    /// <summary>
     /// Checks all installed mods and aux components for available updates.
     /// </summary>
     Task CheckForUpdatesAsync(
