@@ -482,7 +482,10 @@
                                     </Border>
                                     <Border x:Name="DetailEngineBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
                                             Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                            VerticalAlignment="Center" Visibility="Collapsed">
+                                            VerticalAlignment="Center" Visibility="Collapsed"
+                                            PointerPressed="EngineBadge_PointerPressed"
+                                            PointerEntered="EngineBadge_PointerEntered"
+                                            PointerExited="EngineBadge_PointerExited">
                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                             <Image x:Name="DetailEngineIcon" x:FieldModifier="internal" Width="14" Height="14" Stretch="Uniform"/>
                                             <TextBlock x:Name="DetailEngineText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>

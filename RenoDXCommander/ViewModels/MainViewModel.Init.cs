@@ -1589,6 +1589,10 @@ public partial class MainViewModel
                     newCard.ExcludeFromUpdateAllDxvk = true;
             }
 
+            // ── Engine version user override (for games where detection failed) ──
+            if (newCard.EngineHint == "Unreal Engine" && _gameNameService.EngineVersionOverrides.TryGetValue(game.Name, out var evOverride))
+                newCard.EngineHint = evOverride;
+
             // ── DOF Fix detection ────────────────────────────────────────────────
             newCard.IsDofFixEligible = _dofFixService.IsGameEligible(newCard.EngineHint, newCard.Is32Bit, game.Name);
             if (newCard.IsDofFixEligible && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
@@ -2288,6 +2292,10 @@ public partial class MainViewModel
                 newCard.DxvkInstalledVersion = savedDxvkVer;
             if (savedLib.ExcludeFromUpdateAllDxvk.Contains(game.Name))
                 newCard.ExcludeFromUpdateAllDxvk = true;
+
+            // Engine version user override (for games where detection failed)
+            if (newCard.EngineHint == "Unreal Engine" && _gameNameService.EngineVersionOverrides.TryGetValue(game.Name, out var evOverride2))
+                newCard.EngineHint = evOverride2;
 
             // DOF Fix detection (lightweight — single File.Exists check)
             newCard.IsDofFixEligible = _dofFixService.IsGameEligible(newCard.EngineHint, newCard.Is32Bit, game.Name);

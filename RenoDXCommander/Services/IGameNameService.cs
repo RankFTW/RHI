@@ -95,6 +95,9 @@ public interface IGameNameService
     /// <summary>Per-game launch arguments. Key = game name, Value = arguments string.</summary>
     Dictionary<string, string> LaunchArgsOverrides { get; }
 
+    /// <summary>Per-game engine version overrides. Key = game name, Value = engine hint string. Only applied when auto-detection fails to determine version.</summary>
+    Dictionary<string, string> EngineVersionOverrides { get; }
+
     /// <summary>Maps current (renamed) game name to original store-detected name.</summary>
     Dictionary<string, string> OriginalDetectedNames { get; }
 

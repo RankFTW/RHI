@@ -51,6 +51,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game launch arguments. Key = game name, Value = arguments string.</summary>
     private Dictionary<string, string> _launchArgsOverrides = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game engine version overrides. Key = game name, Value = hint string (e.g. "Unreal Engine 4", "Unreal Engine 5", "Unreal Engine 5.7"). Only applied when auto-detection produces a versionless result.</summary>
+    private Dictionary<string, string> _engineVersionOverrides = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -91,6 +94,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> LaunchExeOverrides => _launchExeOverrides;
     /// <summary>Per-game launch arguments. Key = game name, Value = arguments string.</summary>
     public Dictionary<string, string> LaunchArgsOverrides => _launchArgsOverrides;
+    /// <summary>Per-game engine version overrides. Only applied when auto-detection fails to determine version.</summary>
+    public Dictionary<string, string> EngineVersionOverrides => _engineVersionOverrides;
     public Dictionary<string, string> OriginalDetectedNames => _originalDetectedNames;
 
     public GameNameService(
@@ -290,6 +295,9 @@ public class GameNameService : IGameNameService
         _launchArgsOverrides = new(Load<Dictionary<string, string>>("LaunchArgsOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
+        _engineVersionOverrides = new(Load<Dictionary<string, string>>("EngineVersionOverrides",
+            new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
+
         _hiddenGames = new HashSet<string>(
             Load<List<string>>("HiddenGames", _hiddenGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
 
@@ -368,6 +376,7 @@ public class GameNameService : IGameNameService
                 s["LiliumPresetOverrides"] = JsonSerializer.Serialize(_liliumPresetOverrides);
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
                 s["LaunchArgsOverrides"] = JsonSerializer.Serialize(_launchArgsOverrides);
+                s["EngineVersionOverrides"] = JsonSerializer.Serialize(_engineVersionOverrides);
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
@@ -506,6 +515,7 @@ public class GameNameService : IGameNameService
         MigrateDict(_liliumPresetOverrides, oldName, newName);
         MigrateDict(_launchExeOverrides, oldName, newName);
         MigrateDict(_launchArgsOverrides, oldName, newName);
+        MigrateDict(_engineVersionOverrides, oldName, newName);
 
         // Migrate DLL override config
         dllOverrideService.MigrateOverride(oldName, newName);

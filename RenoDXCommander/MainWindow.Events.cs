@@ -2935,6 +2935,56 @@ public sealed partial class MainWindow
         }
     }
 
+    // ── Engine badge click (cycle UE version) ─────────────────────────────────
+
+    private static readonly string[] _engineVersionCycle = ["Unreal Engine", "Unreal Engine 4", "Unreal Engine 5", "Unreal Engine 5.7"];
+
+    private void EngineBadge_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+
+        // Cycle to next version
+        var current = card.EngineHint ?? "Unreal Engine";
+        var idx = Array.FindIndex(_engineVersionCycle, v => v.Equals(current, StringComparison.OrdinalIgnoreCase));
+        var next = _engineVersionCycle[(idx + 1) % _engineVersionCycle.Length];
+
+        // Store or remove override
+        if (next == "Unreal Engine")
+            ViewModel.GameNameServiceInstance.EngineVersionOverrides.Remove(card.GameName);
+        else
+            ViewModel.GameNameServiceInstance.EngineVersionOverrides[card.GameName] = next;
+
+        // Update card
+        card.EngineHint = next;
+        card.IsDofFixEligible = ViewModel.DofFixServiceInstance.IsGameEligible(next, card.Is32Bit, card.GameName);
+        card.NotifyAll();
+
+        // Persist and rebuild panel
+        ViewModel.SaveSettingsPublic();
+        _detailPanelBuilder?.PopulateDetailPanel(card);
+        _detailPanelBuilder?.UpdateDetailComponentRows(card);
+    }
+
+    private void EngineBadge_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is GameCardViewModel)
+        {
+            var prop = typeof(UIElement).GetProperty("ProtectedCursor",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            prop?.SetValue(fe, _handCursor);
+        }
+    }
+
+    private void EngineBadge_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+        {
+            var prop = typeof(UIElement).GetProperty("ProtectedCursor",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            prop?.SetValue(fe, _arrowCursor);
+        }
+    }
+
     private void SwitchToLumaButton_Click(object sender, RoutedEventArgs e)
         => _installEventHandler.SwitchToLumaButton_Click(sender, e);
 

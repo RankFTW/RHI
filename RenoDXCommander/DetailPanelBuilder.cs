@@ -79,6 +79,19 @@ public partial class DetailPanelBuilder
             else
                 _window.DetailEngineIcon.Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/icons/engine.ico"));
             _window.DetailEngineBadge.Visibility = Visibility.Visible;
+
+            // Clickable when version is vague (no specific number detected) and it's Unreal
+            bool isClickable = card.EngineHint.IndexOf("Unreal", StringComparison.OrdinalIgnoreCase) >= 0
+                && !card.EngineHint.Contains("5.", StringComparison.Ordinal)
+                && !card.EngineHint.Contains("4.", StringComparison.Ordinal)
+                && !card.EngineHint.Contains("Legacy", StringComparison.OrdinalIgnoreCase)
+                || _window.ViewModel.GameNameServiceInstance.EngineVersionOverrides.ContainsKey(card.GameName);
+            _window.DetailEngineText.TextDecorations = isClickable ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None;
+            _window.DetailEngineBadge.Tag = isClickable ? card : null;
+            if (isClickable)
+                ToolTipService.SetToolTip(_window.DetailEngineBadge, "Click to cycle engine version (affects DOF Fix eligibility)");
+            else
+                ToolTipService.SetToolTip(_window.DetailEngineBadge, null);
         }
         else _window.DetailEngineBadge.Visibility = Visibility.Collapsed;
 
