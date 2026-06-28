@@ -2935,18 +2935,54 @@ public sealed partial class MainWindow
         }
     }
 
-    // ── Engine badge click (cycle UE version) ─────────────────────────────────
+    // ── Engine badge click (toggle UE5 DOF Fix eligibility) ─────────────────
 
-    private static readonly string[] _engineVersionCycle = ["Unreal Engine", "Unreal Engine 4", "Unreal Engine 5", "Unreal Engine 5.7"];
-
-    private void EngineBadge_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    private async void EngineBadge_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
-        // Cycle to next version
+        // Show first-time warning dialog
+        if (!ViewModel.Settings.EngineBadgeWarningDismissed)
+        {
+            var dontShowCheck = new CheckBox
+            {
+                Content = "Don't show this again",
+                FontSize = 12,
+                Margin = new Thickness(0, 8, 0, 0),
+            };
+            var panel = new StackPanel { Spacing = 8 };
+            panel.Children.Add(new TextBlock
+            {
+                Text = "This toggles the engine version to Unreal Engine 5.0–5.6, making this game eligible for the DOF Fix addon.\n\nUse this when RHI cannot detect the UE version automatically (e.g. Game Pass games).",
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                FontSize = 12,
+            });
+            panel.Children.Add(dontShowCheck);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Engine Version Override",
+                Content = panel,
+                PrimaryButtonText = "Continue",
+                CloseButtonText = "Cancel",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            var result = await DialogService.ShowSafeAsync(dialog);
+
+            if (dontShowCheck.IsChecked == true)
+            {
+                ViewModel.Settings.EngineBadgeWarningDismissed = true;
+                ViewModel.SaveSettingsPublic();
+            }
+
+            if (result != ContentDialogResult.Primary) return;
+        }
+
+        // Toggle between "Unreal Engine" (no DOF Fix) and "Unreal Engine 5" (DOF Fix eligible)
         var current = card.EngineHint ?? "Unreal Engine";
-        var idx = Array.FindIndex(_engineVersionCycle, v => v.Equals(current, StringComparison.OrdinalIgnoreCase));
-        var next = _engineVersionCycle[(idx + 1) % _engineVersionCycle.Length];
+        bool isCurrentlyUe5 = current.Contains("Unreal Engine 5", StringComparison.OrdinalIgnoreCase);
+        var next = isCurrentlyUe5 ? "Unreal Engine" : "Unreal Engine 5";
 
         // Store or remove override
         if (next == "Unreal Engine")
