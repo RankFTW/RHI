@@ -4,6 +4,12 @@
 
 - Fixed drag-and-drop of ReShade presets (.ini files) not working in Admin Mode — was incorrectly treated as an archive.
 - Fixed Shader Pre-Compile "Off" setting not reflecting in RHI when set externally (NVIDIA App or NVPI). Was incorrectly showing as "Low (Default)".
+- Fixed "UE-Extended Settings" heading not showing in the RenoDX cog for games that use UE-Extended by default.
+
+### Improvements
+
+- Added tooltips to UE-Extended, Engine.ini HDR, and Preset Export/Import controls in the RenoDX cog.
+- Added horizontal separators between sections in the RenoDX cog dialog for clearer visual separation.
 
 ---
 
