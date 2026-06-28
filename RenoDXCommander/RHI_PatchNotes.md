@@ -1,3 +1,11 @@
+## v2.0.9
+
+### Bug Fixes
+
+- Fixed drag-and-drop of ReShade presets (.ini files) not working in Admin Mode — was incorrectly treated as an archive.
+
+---
+
 ## v2.0.8
 
 ### New
