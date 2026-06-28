@@ -1,3 +1,21 @@
+## v2.1.0
+
+### New
+
+- **Purge Cache** — new button in the Data & Custom Files section. Clears cached DLSS, Streamline, and download files to free disk space. Shaders are preserved. Shows a summary of files deleted and space freed.
+
+### Improvements
+
+- Added per-game NVIDIA profile name overrides via manifest — fixes games where automatic profile matching picks the wrong profile (e.g. Dead Space original vs remake).
+- Added Lazorr as creator of the Universal UE DOF Fix in the About page.
+
+### Manifest Updates
+
+- Added wiki name overrides for the Trails series (Cold Steel III/IV, Daybreak 1/2, Sky 1st Chapter, Beyond the Horizon, From Zero/To Azure).
+- Added `profileNameOverrides` entry for Dead Space (routes to the Remake profile instead of the original).
+
+---
+
 ## v2.0.9
 
 ### Major Fix
