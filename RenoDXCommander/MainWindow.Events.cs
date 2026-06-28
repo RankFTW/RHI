@@ -777,16 +777,17 @@ public sealed partial class MainWindow
         content.Children.Add(copyLogBtn);
 
         // ── Compatibility Settings ────────────────────────────────────────────
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
         content.Children.Add(new TextBlock
         {
             Text = "Compatibility Settings",
             FontSize = 13,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            Margin = new Thickness(0, 8, 0, 0),
+            Margin = new Thickness(0, 4, 0, 0),
         });
 
         // DLSS Hooks per-game toggle
-        var dlssHooksPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+        var dlssHooksPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
         dlssHooksPanel.Children.Add(new TextBlock
         {
             Text = "DLSS Hooks",
