@@ -787,18 +787,24 @@ public sealed partial class MainWindow
         });
 
         // DLSS Hooks per-game toggle
-        var dlssHooksPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
-        dlssHooksPanel.Children.Add(new TextBlock
+        var dlssHooksPanel = new Grid { ColumnSpacing = 12 };
+        dlssHooksPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        dlssHooksPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var dlssHooksLabel = new TextBlock
         {
             Text = "DLSS Hooks",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
-        });
-        var dlssHooksCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
+        };
+        Grid.SetColumn(dlssHooksLabel, 0);
+        dlssHooksPanel.Children.Add(dlssHooksLabel);
+        var dlssHooksCombo = new ComboBox { FontSize = 12, MinWidth = 80, HorizontalAlignment = HorizontalAlignment.Right };
         dlssHooksCombo.Items.Add("Off");
         dlssHooksCombo.Items.Add("On");
         ToolTipService.SetToolTip(dlssHooksCombo, "Shows DLSS version/preset info on the ReLimiter OSD. Disable if causing crashes.");
+        Grid.SetColumn(dlssHooksCombo, 1);
+        dlssHooksPanel.Children.Add(dlssHooksCombo);
 
         // Read current per-game value from the game's relimiter.ini
         bool currentDlssHooks = ViewModel.Settings.UlDlssHooks; // default to global
@@ -837,7 +843,6 @@ public sealed partial class MainWindow
                 catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
             }
         };
-        dlssHooksPanel.Children.Add(dlssHooksCombo);
         content.Children.Add(dlssHooksPanel);
 
         var dialog = new ContentDialog
