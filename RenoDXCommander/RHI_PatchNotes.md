@@ -1,5 +1,9 @@
 ## v2.0.9
 
+### Major Fix
+
+- **Patch Notes scrollbar no longer overlaps text** — the long-standing visual issue where the scrollbar would cover the right edge of patch notes content has finally been resolved. Every word is now fully visible. This changes everything.
+
 ### Bug Fixes
 
 - Fixed drag-and-drop of ReShade presets (.ini files) not working in Admin Mode — was incorrectly treated as an archive.
