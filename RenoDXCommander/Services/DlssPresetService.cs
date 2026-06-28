@@ -263,6 +263,7 @@ public class DlssPresetService
 
     private HashSet<string> _excludedProfileExeNames = _defaultExcludedExeNames;
     private Dictionary<string, string>? _launchExeOverrides;
+    private Dictionary<string, string>? _profileNameOverrides;
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr LoadLibrary(string dllToLoad);
@@ -369,6 +370,7 @@ public class DlssPresetService
 
         // Store launch exe overrides for direct profile matching
         _launchExeOverrides = manifest.LaunchExeOverrides;
+        _profileNameOverrides = manifest.ProfileNameOverrides;
     }
 
     private static (string Name, uint Value)[] MergePresets(
@@ -2367,6 +2369,14 @@ $session.Save()
     private DriverSettingsProfile? FindProfileUncached(string gameName, string installPath)
     {
         if (_cachedProfiles == null) return null;
+
+        // Check manifest profile name override first (handles cases like "Dead Space" → "Dead Space (Remake)")
+        if (_profileNameOverrides != null
+            && _profileNameOverrides.TryGetValue(gameName, out var overrideName)
+            && _cachedProfiles.TryGetValue(overrideName, out var overrideProfile))
+        {
+            return overrideProfile;
+        }
 
         // Try exact title match first
         if (_cachedProfiles.TryGetValue(gameName, out var exactProfile))

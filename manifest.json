@@ -1039,6 +1039,10 @@
   "profileExeExclusions": [
   ],
 
+  "profileNameOverrides": {
+    "Dead Space": "Dead Space (Remake)"
+  },
+
   "addonPacks": {
     "renodx-devkit": {
       "description": "RenoDX development and debugging tools for shader authors"

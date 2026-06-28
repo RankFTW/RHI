@@ -363,6 +363,13 @@ public class RemoteManifest
     public List<string>? ProfileExeExclusions { get; set; }
 
     /// <summary>
+    /// Maps RHI game name → exact NVIDIA driver profile name.
+    /// Used when automatic profile matching picks the wrong profile (e.g. original vs remake).
+    /// </summary>
+    [JsonPropertyName("profileNameOverrides")]
+    public Dictionary<string, string>? ProfileNameOverrides { get; set; }
+
+    /// <summary>
     /// DLSS preset overrides — allows adding new presets (e.g. Preset N, Preset F)
     /// without an app update when NVIDIA introduces them.
     /// </summary>
