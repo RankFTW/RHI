@@ -1635,13 +1635,13 @@ $destroyDel.Invoke($hSession) | Out-Null
             if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
             {
                 var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, SHADER_PRECOMPILE_ID);
-                if (rawVal.HasValue && rawVal.Value != 0) return rawVal.Value;
+                if (rawVal.HasValue) return rawVal.Value; // 0 = Off (explicitly set), null = not set
             }
 
             // Fallback to NvAPIWrapper
             var setting = baseProfile.Settings.FirstOrDefault(s => s.SettingId == SHADER_PRECOMPILE_ID);
-            if (setting?.CurrentValue is uint val && val != 0) return val;
-            return 0x00000001; // Low default
+            if (setting?.CurrentValue is uint val) return val;
+            return 0x00000001; // Low default (when setting doesn't exist at all)
         }
         catch { return 0x00000001; }
     }
