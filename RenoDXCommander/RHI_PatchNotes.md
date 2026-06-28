@@ -3,6 +3,7 @@
 ### Bug Fixes
 
 - Fixed drag-and-drop of ReShade presets (.ini files) not working in Admin Mode — was incorrectly treated as an archive.
+- Fixed Shader Pre-Compile "Off" setting not reflecting in RHI when set externally (NVIDIA App or NVPI). Was incorrectly showing as "Low (Default)".
 
 ---
 
