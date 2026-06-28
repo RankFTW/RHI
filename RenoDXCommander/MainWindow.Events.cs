@@ -358,7 +358,7 @@ public sealed partial class MainWindow
         var content = new StackPanel { Spacing = 8 };
 
         // ── Top row: UE-Extended + Engine.ini HDR side by side ─────────────────
-        if (card.UeExtendedToggleVisibility == Visibility.Visible)
+        if (card.UeExtendedToggleVisibility == Visibility.Visible || card.UseUeExtended)
         {
             content.Children.Add(new TextBlock
             {
