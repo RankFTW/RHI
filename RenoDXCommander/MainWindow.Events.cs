@@ -1552,6 +1552,9 @@ public sealed partial class MainWindow
     private void CopyLogsArchive_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.CopyLogsArchive_Click(sender, e);
 
+    private void PurgeCachedFiles_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.PurgeCachedFiles_Click(sender, e);
+
     private void AdminModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.AdminModeCombo_SelectionChanged(sender, e);
 

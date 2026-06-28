@@ -2094,6 +2094,13 @@
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"
                                             ToolTipService.ToolTip="Creates a zip archive of all logs and copies it to clipboard — paste directly into Discord"/>
+                                    <Button x:Name="PurgeCacheBtn"
+                                            Content="Purge Cache"
+                                            Click="PurgeCachedFiles_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"
+                                            ToolTipService.ToolTip="Deletes cached DLSS, Streamline, and download files to free disk space. Shaders are preserved."/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

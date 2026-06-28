@@ -541,6 +541,140 @@ public class SettingsHandler
         }
     }
 
+    public async void PurgeCachedFiles_Click(object sender, RoutedEventArgs e)
+    {
+        // Show warning dialog
+        var warningDialog = new ContentDialog
+        {
+            Title = "⚠ Purge Cached Files",
+            Content = "This will delete cached DLSS, Streamline, and download files (excluding shaders) to free disk space.\n\nThese files will be re-downloaded automatically when needed.\n\nContinue?",
+            PrimaryButtonText = "Purge",
+            CloseButtonText = "Cancel",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(warningDialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        int filesDeleted = 0;
+        long bytesFreed = 0;
+        var rhiRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI");
+
+        // Folders to purge completely (delete all contents, keep folder)
+        var foldersToClean = new[]
+        {
+            Path.Combine(rhiRoot, "DLSS"),
+            Path.Combine(rhiRoot, "DLSS-D"),
+            Path.Combine(rhiRoot, "DLSS-G"),
+            Path.Combine(rhiRoot, "Streamline"),
+        };
+
+        // Downloads subfolders to clean (all except shaders)
+        var downloadsRoot = DownloadPaths.Root;
+
+        try
+        {
+            // Clean DLSS/Streamline folders
+            foreach (var folder in foldersToClean)
+            {
+                if (!Directory.Exists(folder)) continue;
+                foreach (var dir in Directory.GetDirectories(folder))
+                {
+                    try
+                    {
+                        var dirInfo = new DirectoryInfo(dir);
+                        var dirSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
+                        var dirCount = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Count();
+                        Directory.Delete(dir, recursive: true);
+                        filesDeleted += dirCount;
+                        bytesFreed += dirSize;
+                    }
+                    catch { /* skip locked files */ }
+                }
+                // Also delete any files directly in the folder
+                foreach (var file in Directory.GetFiles(folder))
+                {
+                    try
+                    {
+                        var fi = new FileInfo(file);
+                        bytesFreed += fi.Length;
+                        fi.Delete();
+                        filesDeleted++;
+                    }
+                    catch { }
+                }
+            }
+
+            // Clean downloads subfolders (except shaders)
+            if (Directory.Exists(downloadsRoot))
+            {
+                foreach (var dir in Directory.GetDirectories(downloadsRoot))
+                {
+                    var dirName = Path.GetFileName(dir);
+                    if (dirName.Equals("shaders", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    try
+                    {
+                        var dirInfo = new DirectoryInfo(dir);
+                        var dirSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
+                        var dirCount = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Count();
+                        Directory.Delete(dir, recursive: true);
+                        filesDeleted += dirCount;
+                        bytesFreed += dirSize;
+                    }
+                    catch { }
+                }
+                // Delete loose files in downloads root (e.g. .reorganised marker)
+                foreach (var file in Directory.GetFiles(downloadsRoot))
+                {
+                    try
+                    {
+                        var fi = new FileInfo(file);
+                        bytesFreed += fi.Length;
+                        fi.Delete();
+                        filesDeleted++;
+                    }
+                    catch { }
+                }
+            }
+
+            // Format size
+            string sizeStr = bytesFreed switch
+            {
+                >= 1_073_741_824 => $"{bytesFreed / 1_073_741_824.0:F1} GB",
+                >= 1_048_576 => $"{bytesFreed / 1_048_576.0:F1} MB",
+                >= 1024 => $"{bytesFreed / 1024.0:F1} KB",
+                _ => $"{bytesFreed} bytes"
+            };
+
+            CrashReporter.Log($"[SettingsHandler.PurgeCachedFiles_Click] Purged {filesDeleted} files, freed {sizeStr}");
+
+            var resultDialog = new ContentDialog
+            {
+                Title = "✅ Cache Purged",
+                Content = $"Deleted {filesDeleted} files, freed {sizeStr} of disk space.",
+                CloseButtonText = "OK",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(resultDialog);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.PurgeCachedFiles_Click] Failed: {ex.Message}");
+            var errDialog = new ContentDialog
+            {
+                Title = "❌ Purge Failed",
+                Content = $"An error occurred: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(errDialog);
+        }
+    }
+
     // ── Hotkey UI event handlers (placeholder — implemented in Tasks 6.2 / 6.3) ──
 
     /// <summary>
