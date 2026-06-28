@@ -261,6 +261,19 @@ public partial class DetailPanelBuilder
         var projectName = card.EngineIniProjectOverride
             ?? AuxInstallService.ResolveUeProjectName(card.InstallPath ?? "");
 
+        // If the override is a full path (or pipe-separated paths), resolve directly
+        if (!string.IsNullOrEmpty(card.EngineIniProjectOverride)
+            && (card.EngineIniProjectOverride.Contains('\\') || card.EngineIniProjectOverride.Contains('/')))
+        {
+            var candidates = card.EngineIniProjectOverride.Split('|');
+            foreach (var candidate in candidates)
+            {
+                var expanded = Environment.ExpandEnvironmentVariables(candidate.Trim());
+                if (Directory.Exists(expanded)) return expanded;
+            }
+            return null;
+        }
+
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
         // Check %LocalAppData%\{projectName}\
