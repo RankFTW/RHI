@@ -1,3 +1,15 @@
+## v2.1.1
+
+### Improvements
+
+- Engine.ini path overrides now support full directory paths (with environment variables like `%USERPROFILE%`). Fixes games that store config in non-standard locations like `Saved Games`.
+
+### Manifest Updates
+
+- Added Ghostwire: Tokyo Engine.ini path override (`%USERPROFILE%\Saved Games\TangoGameworks\...`).
+
+---
+
 ## v2.1.0
 
 ### New
