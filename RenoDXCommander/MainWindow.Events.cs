@@ -442,12 +442,13 @@ public sealed partial class MainWindow
 
                 if (upgradeKeys.Count > 0)
                 {
+                    content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
                     content.Children.Add(new TextBlock
                     {
                         Text = "Compatibility Settings",
                         FontSize = 13,
                         Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                        Margin = new Thickness(0, 8, 0, 0),
+                        Margin = new Thickness(0, 4, 0, 0),
                     });
 
                     var settingsGrid = new Grid { ColumnSpacing = 12, RowSpacing = 6 };
@@ -529,6 +530,7 @@ public sealed partial class MainWindow
         }
 
         // ── Preset Export/Import buttons (side by side) ───────────────────────
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
         content.Children.Add(new TextBlock
         {
             Text = "RenoDX Presets",
