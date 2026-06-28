@@ -308,6 +308,13 @@ public class WindowStateManager
                         continue;
                     }
 
+                    if (ext == ".ini")
+                    {
+                        try { await _dragDropHandler.ProcessDroppedPreset(path); }
+                        catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] Preset error — {ex.Message}"); }
+                        continue;
+                    }
+
                     if (DragDropHandler.AllowedExtensions.Contains(ext) && ext != ".exe"
                         && ext is not ".addon64" and not ".addon32")
                     {
