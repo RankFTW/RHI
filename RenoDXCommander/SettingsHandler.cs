@@ -606,7 +606,7 @@ public class SettingsHandler
                 }
             }
 
-            // Clean downloads subfolders (except shaders)
+            // Clean downloads subfolders (except shaders), preserving JSON metadata files
             if (Directory.Exists(downloadsRoot))
             {
                 foreach (var dir in Directory.GetDirectories(downloadsRoot))
@@ -616,12 +616,19 @@ public class SettingsHandler
 
                     try
                     {
-                        var dirInfo = new DirectoryInfo(dir);
-                        var dirSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
-                        var dirCount = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Count();
-                        Directory.Delete(dir, recursive: true);
-                        filesDeleted += dirCount;
-                        bytesFreed += dirSize;
+                        // Delete non-metadata files (preserve *_meta.json, versions.json etc.)
+                        foreach (var file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
+                        {
+                            if (Path.GetExtension(file).Equals(".json", StringComparison.OrdinalIgnoreCase)) continue;
+                            try
+                            {
+                                var fi = new FileInfo(file);
+                                bytesFreed += fi.Length;
+                                fi.Delete();
+                                filesDeleted++;
+                            }
+                            catch { }
+                        }
                     }
                     catch { }
                 }
