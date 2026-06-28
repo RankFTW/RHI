@@ -502,6 +502,21 @@ public partial class AuxInstallService
     /// </summary>
     internal static string? ResolveEngineIniDir(string installPath, string? projectNameOverride = null, string? gameName = null)
     {
+        // If the override contains a path separator, treat it as a direct config directory path
+        if (!string.IsNullOrEmpty(projectNameOverride) && (projectNameOverride.Contains('\\') || projectNameOverride.Contains('/')))
+        {
+            var expandedPath = Environment.ExpandEnvironmentVariables(projectNameOverride);
+            if (Directory.Exists(expandedPath)) return expandedPath;
+            // Try creating it if parent exists
+            var parent = Path.GetDirectoryName(expandedPath);
+            if (parent != null && Directory.Exists(parent))
+            {
+                Directory.CreateDirectory(expandedPath);
+                return expandedPath;
+            }
+            return null;
+        }
+
         var projectName = projectNameOverride ?? ResolveUeProjectName(installPath);
         if (string.IsNullOrEmpty(projectName)) return null;
 
