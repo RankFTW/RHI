@@ -547,7 +547,7 @@ public class SettingsHandler
         var warningDialog = new ContentDialog
         {
             Title = "⚠ Purge Cached Files",
-            Content = "This will delete cached DLSS, Streamline, and download files (excluding shaders) to free disk space.\n\nThese files will be re-downloaded automatically when needed.\n\nContinue?",
+            Content = "This will delete cached DLSS, Streamline, and download files to free disk space.\n\nShaders, installed RenoDX addons, and version metadata are preserved.\n\nThese files will be re-downloaded automatically when needed.\n\nContinue?",
             PrimaryButtonText = "Purge",
             CloseButtonText = "Cancel",
             XamlRoot = _window.Content.XamlRoot,
