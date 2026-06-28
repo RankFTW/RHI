@@ -2,8 +2,12 @@
 
 ### New
 
-- **Purge Cache** — new button in the Data & Custom Files section. Clears cached DLSS, Streamline, and download files to free disk space. Shaders are preserved. Shows a summary of files deleted and space freed.
+- **Purge Cache** — new button in the Data & Custom Files section. Clears cached DLSS, Streamline, and download files to free disk space. Shaders are preserved, installed RenoDX addons are kept, and version metadata is retained so update checks still work correctly. Shows a summary of files deleted and space freed.
 - **Engine Version Badge** — click the Unreal Engine badge to cycle through UE4 / UE5 / UE5.7+ when version detection fails (common on Game Pass games). DOF Fix row appears/disappears instantly. Persists across restarts.
+
+### Bug Fixes
+
+- Fixed DOF Fix not appearing for "Unreal Engine 5" games without a detected minor version (badge override + Game Pass games).
 
 ### Improvements
 
@@ -14,6 +18,7 @@
 
 - Added wiki name overrides for the Trails series (Cold Steel III/IV, Daybreak 1/2, Sky 1st Chapter, Beyond the Horizon, From Zero/To Azure).
 - Added `profileNameOverrides` entry for Dead Space (routes to the Remake profile instead of the original).
+- Added Clair Obscur: Expedition 33 to DOF Fix force list (Game Pass UE version undetectable).
 
 ---
 
