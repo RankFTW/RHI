@@ -3,6 +3,7 @@
 ### New
 
 - **Purge Cache** — new button in the Data & Custom Files section. Clears cached DLSS, Streamline, and download files to free disk space. Shaders are preserved. Shows a summary of files deleted and space freed.
+- **Engine Version Badge** — click the Unreal Engine badge to cycle through UE4 / UE5 / UE5.7+ when version detection fails (common on Game Pass games). DOF Fix row appears/disappears instantly. Persists across restarts.
 
 ### Improvements
 
