@@ -375,6 +375,7 @@ public sealed partial class MainWindow
         var engineCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
         engineCombo.Items.Add("Off");
         engineCombo.Items.Add("On");
+        ToolTipService.SetToolTip(engineCombo, "Deploy HDR settings to Engine.ini. Turn off to use the SDR upgrade path instead.");
         var engineIniDir = AuxInstallService.ResolveEngineIniDir(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
         bool engineIniActive = false;
         if (engineIniDir != null)
@@ -408,6 +409,7 @@ public sealed partial class MainWindow
             var ueCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
             ueCombo.Items.Add("Off");
             ueCombo.Items.Add("On");
+            ToolTipService.SetToolTip(ueCombo, "Switch between the game-specific RenoDX mod and the generic UE-Extended addon.");
             ueCombo.SelectedIndex = card.UseUeExtended ? 1 : 0;
             ueCombo.SelectionChanged += (s, ev) =>
             {
@@ -600,6 +602,7 @@ public sealed partial class MainWindow
             }
             catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
         };
+        ToolTipService.SetToolTip(exportBtn, "Save all RenoDX presets to a file and copy to clipboard for sharing.");
         presetRow.Children.Add(exportBtn);
 
         var importBtn = new Button
@@ -659,6 +662,8 @@ public sealed partial class MainWindow
         };
         if (!File.Exists(presetPath))
             ToolTipService.SetToolTip(importBtn, "No RHI-RenoDX-Preset.txt file found. Export first.");
+        else
+            ToolTipService.SetToolTip(importBtn, "Restore presets from the exported backup file into reshade.ini.");
         presetRow.Children.Add(importBtn);
         content.Children.Add(presetRow);
 
