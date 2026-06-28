@@ -218,10 +218,10 @@ public class DofFixService : IDofFixService
             && _skipGames.Contains(gameName, StringComparer.OrdinalIgnoreCase))
             return false;
 
-        // Engine hint format: "Unreal Engine 5.x.y" or "Unreal Engine 5.x"
+        // Engine hint format: "Unreal Engine 5.x.y" or "Unreal Engine 5.x" or just "Unreal Engine 5"
         // Extract the minor version after "5."
         var idx = engineHint.IndexOf("5.", StringComparison.Ordinal);
-        if (idx < 0) return false;
+        if (idx < 0) return true; // Just "Unreal Engine 5" with no minor version — assume eligible
         var afterFive = engineHint.Substring(idx + 2);
         // Get the minor version number
         var dotIdx = afterFive.IndexOf('.');
@@ -241,7 +241,7 @@ public class DofFixService : IDofFixService
         if (string.IsNullOrEmpty(engineHint)) return false;
         if (!engineHint.Contains("Unreal Engine 5")) return false;
         var idx = engineHint.IndexOf("5.", StringComparison.Ordinal);
-        if (idx < 0) return false;
+        if (idx < 0) return true; // Just "Unreal Engine 5" with no minor version — assume eligible
         var afterFive = engineHint.Substring(idx + 2);
         var dotIdx = afterFive.IndexOf('.');
         var minorStr = dotIdx >= 0 ? afterFive.Substring(0, dotIdx) : afterFive.TrimEnd(' ', ')');
