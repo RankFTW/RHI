@@ -375,7 +375,7 @@ public sealed partial class MainWindow
         var engineCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
         engineCombo.Items.Add("Off");
         engineCombo.Items.Add("On");
-        ToolTipService.SetToolTip(engineCombo, "Deploy HDR settings to Engine.ini. Turn off to use the SDR upgrade path instead.");
+        ToolTipService.SetToolTip(engineCombo, "Deploys Engine.ini with HDR flags for games that don't have an ingame HDR option. Also disable for SDR.");
         var engineIniDir = AuxInstallService.ResolveEngineIniDir(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
         bool engineIniActive = false;
         if (engineIniDir != null)
@@ -409,7 +409,7 @@ public sealed partial class MainWindow
             var ueCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
             ueCombo.Items.Add("Off");
             ueCombo.Items.Add("On");
-            ToolTipService.SetToolTip(ueCombo, "Switch between the game-specific RenoDX mod and the generic UE-Extended addon.");
+            ToolTipService.SetToolTip(ueCombo, "Switch between using UE-Extended or the game specific mod/generic Unreal RenoDX mod.");
             ueCombo.SelectedIndex = card.UseUeExtended ? 1 : 0;
             ueCombo.SelectionChanged += (s, ev) =>
             {
