@@ -606,20 +606,29 @@ public class SettingsHandler
                 }
             }
 
-            // Clean downloads subfolders (except shaders), preserving JSON metadata files
+            // Collect installed addon filenames to preserve in renodx staging
+            var installedAddons = new HashSet<string>(
+                ViewModel.AllCards
+                    .Where(c => c.InstalledRecord != null && !string.IsNullOrEmpty(c.InstalledAddonFileName))
+                    .Select(c => c.InstalledAddonFileName!),
+                StringComparer.OrdinalIgnoreCase);
+
+            // Clean downloads subfolders (except shaders), preserving JSON metadata and in-use RenoDX addons
             if (Directory.Exists(downloadsRoot))
             {
                 foreach (var dir in Directory.GetDirectories(downloadsRoot))
                 {
                     var dirName = Path.GetFileName(dir);
                     if (dirName.Equals("shaders", StringComparison.OrdinalIgnoreCase)) continue;
+                    bool isRenodxDir = dirName.Equals("renodx", StringComparison.OrdinalIgnoreCase);
 
                     try
                     {
-                        // Delete non-metadata files (preserve *_meta.json, versions.json etc.)
                         foreach (var file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
                         {
                             if (Path.GetExtension(file).Equals(".json", StringComparison.OrdinalIgnoreCase)) continue;
+                            // Keep renodx addons that are currently installed on at least one game
+                            if (isRenodxDir && installedAddons.Contains(Path.GetFileName(file))) continue;
                             try
                             {
                                 var fi = new FileInfo(file);
