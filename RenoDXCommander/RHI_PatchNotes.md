@@ -3,11 +3,7 @@
 ### New
 
 - **Purge Cache** — new button in the Data & Custom Files section. Clears cached DLSS, Streamline, and download files to free disk space. Shaders are preserved, installed RenoDX addons are kept, and version metadata is retained so update checks still work correctly. Shows a summary of files deleted and space freed.
-- **Engine Version Badge** — click the Unreal Engine badge to cycle through UE4 / UE5 / UE5.7+ when version detection fails (common on Game Pass games). DOF Fix row appears/disappears instantly. Persists across restarts.
-
-### Bug Fixes
-
-- Fixed DOF Fix not appearing for "Unreal Engine 5" games without a detected minor version (badge override + Game Pass games).
+- **Engine Version Override** — click the Unreal Engine badge to toggle UE 5.0–5.6 when version detection fails (common on Game Pass games). Enables DOF Fix eligibility. Persists across restarts.
 
 ### Improvements
 
