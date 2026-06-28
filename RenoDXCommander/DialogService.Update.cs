@@ -247,6 +247,7 @@ public partial class DialogService
             MaxHeight = 500,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = markdownContainer,
+            Padding = new Thickness(0, 0, 16, 0),
         };
 
         var dlg = new ContentDialog
