@@ -2375,7 +2375,12 @@ $session.Save()
             && _profileNameOverrides.TryGetValue(gameName, out var overrideName)
             && _cachedProfiles.TryGetValue(overrideName, out var overrideProfile))
         {
+            CrashReporter.Log($"[DlssPresetService.FindProfile] Override matched: '{gameName}' → profile '{overrideName}'");
             return overrideProfile;
+        }
+        else if (_profileNameOverrides != null && _profileNameOverrides.TryGetValue(gameName, out var missedName))
+        {
+            CrashReporter.Log($"[DlssPresetService.FindProfile] Override '{gameName}' → '{missedName}' NOT FOUND in cached profiles");
         }
 
         // Try exact title match first
