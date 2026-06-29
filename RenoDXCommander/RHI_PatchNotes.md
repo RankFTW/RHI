@@ -1,3 +1,11 @@
+## v2.1.2
+
+### Bug Fixes
+
+- Fixed NVIDIA profile name overrides not taking effect on first launch (profile lookup was cached before manifest loaded, causing presets to be applied to the wrong profile — e.g. Dead Space original instead of Remake).
+
+---
+
 ## v2.1.1
 
 ### Improvements
