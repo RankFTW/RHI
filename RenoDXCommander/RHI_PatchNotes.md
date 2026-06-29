@@ -8,6 +8,10 @@
 
 - Update All now shows a progress dialog indicating which component is being updated (ReShade, RenoDX, ReLimiter, etc.) so it no longer appears to hang during the process.
 
+### Manifest Updates
+
+- Added System Shock Engine.ini path override (`%USERPROFILE%\Saved Games\Nightdive Studios\...`).
+
 ---
 
 ## v2.1.1
