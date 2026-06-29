@@ -2555,21 +2555,82 @@ public sealed partial class MainWindow
 
     private async void UpdateAllButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!ViewModel.Settings.GlobalSkipRsUpdates)
-            await ViewModel.UpdateAllReShadeAsync();
-        if (!ViewModel.Settings.GlobalSkipRdxUpdates)
-            await ViewModel.UpdateAllRenoDxAsync();
-        if (!ViewModel.Settings.GlobalSkipUlUpdates)
-            await ViewModel.UpdateAllUlAsync();
-        if (!ViewModel.Settings.GlobalSkipDcUpdates)
-            await ViewModel.UpdateAllDcAsync();
-        if (!ViewModel.Settings.GlobalSkipOsUpdates)
-            await ViewModel.UpdateAllOsAsync();
-        if (!ViewModel.Settings.GlobalSkipRefUpdates)
-            await ViewModel.UpdateAllRefAsync();
-        await ViewModel.UpdateAllDxvkAsync();
-        await ViewModel.UpdateAllLumaAsync();
-        await ViewModel.UpdateAllDofFixAsync();
+        // Build the progress dialog
+        var statusText = new TextBlock
+        {
+            Text = "Preparing...",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+        };
+        var progressBar = new ProgressBar
+        {
+            IsIndeterminate = true,
+            Height = 3,
+            CornerRadius = new CornerRadius(2),
+            Margin = new Thickness(0, 8, 0, 0),
+        };
+        var panel = new StackPanel { Spacing = 4 };
+        panel.Children.Add(statusText);
+        panel.Children.Add(progressBar);
+
+        var dialog = new ContentDialog
+        {
+            Title = "Updating All Components",
+            Content = panel,
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        // Show dialog non-blocking (it stays open while updates run)
+        var dialogTask = DialogService.ShowSafeAsync(dialog);
+
+        try
+        {
+            if (!ViewModel.Settings.GlobalSkipRsUpdates)
+            {
+                statusText.Text = "Updating ReShade...";
+                await ViewModel.UpdateAllReShadeAsync();
+            }
+            if (!ViewModel.Settings.GlobalSkipRdxUpdates)
+            {
+                statusText.Text = "Updating RenoDX...";
+                await ViewModel.UpdateAllRenoDxAsync();
+            }
+            if (!ViewModel.Settings.GlobalSkipUlUpdates)
+            {
+                statusText.Text = "Updating ReLimiter...";
+                await ViewModel.UpdateAllUlAsync();
+            }
+            if (!ViewModel.Settings.GlobalSkipDcUpdates)
+            {
+                statusText.Text = "Updating Display Commander...";
+                await ViewModel.UpdateAllDcAsync();
+            }
+            if (!ViewModel.Settings.GlobalSkipOsUpdates)
+            {
+                statusText.Text = "Updating OptiScaler...";
+                await ViewModel.UpdateAllOsAsync();
+            }
+            if (!ViewModel.Settings.GlobalSkipRefUpdates)
+            {
+                statusText.Text = "Updating RE Framework...";
+                await ViewModel.UpdateAllRefAsync();
+            }
+            statusText.Text = "Updating DXVK...";
+            await ViewModel.UpdateAllDxvkAsync();
+            statusText.Text = "Updating Luma...";
+            await ViewModel.UpdateAllLumaAsync();
+            statusText.Text = "Updating DOF Fix...";
+            await ViewModel.UpdateAllDofFixAsync();
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.UpdateAllButton_Click] Error during Update All — {ex.Message}");
+        }
+
+        // Close the dialog
+        dialog.Hide();
     }
 
     private async void UpdateAllRenoDx_Click(object sender, RoutedEventArgs e)
