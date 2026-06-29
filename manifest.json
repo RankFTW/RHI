@@ -126,7 +126,8 @@
     "Directive 8020": "Directive8020",
     "Ghostwire: Tokyo": "%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (STEAM)\\Saved\\Config\\WindowsNoEditor|%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (EGS)\\Saved\\Config\\WindowsNoEditor|%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (Xbox)\\Saved\\Config\\WinGDK",
     "LEGO® Batman™: Legacy of the Dark Knight": "Dinner",
-    "Shin Megami Tensei V: Vengeance": "SMT5V"
+    "Shin Megami Tensei V: Vengeance": "SMT5V",
+    "System Shock": "%USERPROFILE%\\Saved Games\\Nightdive Studios\\SystemShock\\Saved\\Config\\WindowsNoEditor"
   },
 
   "emulatorGames": {
