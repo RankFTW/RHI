@@ -4,6 +4,10 @@
 
 - Fixed NVIDIA profile name overrides not taking effect on first launch (profile lookup was cached before manifest loaded, causing presets to be applied to the wrong profile — e.g. Dead Space original instead of Remake).
 
+### Improvements
+
+- Update All now shows a progress dialog indicating which component is being updated (ReShade, RenoDX, ReLimiter, etc.) so it no longer appears to hang during the process.
+
 ---
 
 ## v2.1.1
