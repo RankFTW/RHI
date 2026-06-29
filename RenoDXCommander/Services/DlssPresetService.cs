@@ -371,6 +371,9 @@ public class DlssPresetService
         // Store launch exe overrides for direct profile matching
         _launchExeOverrides = manifest.LaunchExeOverrides;
         _profileNameOverrides = manifest.ProfileNameOverrides;
+
+        // Invalidate the lookup cache since overrides may now route games to different profiles
+        InvalidateProfileLookupCache();
     }
 
     private static (string Name, uint Value)[] MergePresets(
