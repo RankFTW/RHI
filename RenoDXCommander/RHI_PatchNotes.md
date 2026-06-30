@@ -1,3 +1,12 @@
+## v2.1.4
+
+### Bug Fixes
+
+- Fixed ToneMapPeakNits key written with wrong casing (was `toneMapPeakNits`, should be `ToneMapPeakNits`).
+- Fixed Max Nits display showing decimal values when reading from INI — now truncates to whole number.
+
+---
+
 ## v2.1.3
 
 ### New
