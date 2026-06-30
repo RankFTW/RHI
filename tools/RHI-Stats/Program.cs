@@ -4,6 +4,7 @@ var repos = new[]
 {
     ("RHI", "https://api.github.com/repos/RankFTW/RHI/releases"),
     ("ReLimiter", "https://api.github.com/repos/RankFTW/ReLimiter/releases"),
+    ("DOF Fix", "https://api.github.com/repos/RankFTW/rhi-repo/releases"),
 };
 
 using var http = new HttpClient();
