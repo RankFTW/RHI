@@ -13,6 +13,10 @@ OPTI/
 downloads_tidyup.md
 
 tools/*.md
+tools/RHI-Stats/bin
+tools/RHI-Stats/obj
+tools/RHI-Stats/out
+tools/RHI-Stats/out-small
 pcgw.md
 nexusmods.md
 
