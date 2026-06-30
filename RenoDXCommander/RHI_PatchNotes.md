@@ -2,7 +2,7 @@
 
 ### New
 
-- **Set Max Nits** — button in the RenoDX cog reads your monitor's peak brightness and writes `toneMapPeakNits` to all RenoDX presets. Picks the brightest monitor automatically for multi-display setups.
+- **Set Maximum Nits** — new section in the RenoDX cog. "Auto" button reads your monitor's peak brightness (picks the brightest for multi-display setups). Or type a custom value and press Enter. Writes `toneMapPeakNits` to all RenoDX presets — creates the section if it doesn't exist yet.
 
 ### Bug Fixes
 
