@@ -432,9 +432,9 @@ public sealed partial class MainWindow
             var peakIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
             var presetWithNits = peakIni.FirstOrDefault(kv =>
                 kv.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase)
-                && kv.Value.ContainsKey("toneMapPeakNits"));
+                && kv.Value.ContainsKey("ToneMapPeakNits"));
             string currentNits = "";
-            if (presetWithNits.Value != null && presetWithNits.Value.TryGetValue("toneMapPeakNits", out var nv))
+            if (presetWithNits.Value != null && presetWithNits.Value.TryGetValue("ToneMapPeakNits", out var nv))
                 currentNits = double.TryParse(nv, out var dv) ? ((int)dv).ToString() : nv;
 
             var nitsPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 10 };
@@ -471,13 +471,13 @@ public sealed partial class MainWindow
                     {
                         if (section.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase))
                         {
-                            section.Value["toneMapPeakNits"] = val.ToString();
+                            section.Value["ToneMapPeakNits"] = val.ToString();
                             updated++;
                         }
                     }
                     if (updated == 0)
                     {
-                        freshIni["renodx-preset1"] = new AuxInstallService.OrderedDict { ["toneMapPeakNits"] = val.ToString() };
+                        freshIni["renodx-preset1"] = new AuxInstallService.OrderedDict { ["ToneMapPeakNits"] = val.ToString() };
                         updated = 1;
                     }
                     AuxInstallService.WriteIni(iniPath, freshIni);
