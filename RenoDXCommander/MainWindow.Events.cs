@@ -430,35 +430,88 @@ public sealed partial class MainWindow
         if (File.Exists(iniPath))
         {
             var peakIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-            // Find any preset section with toneMapPeakNits
             var presetWithNits = peakIni.FirstOrDefault(kv =>
                 kv.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase)
                 && kv.Value.ContainsKey("toneMapPeakNits"));
-            string currentNits = presetWithNits.Value != null && presetWithNits.Value.TryGetValue("toneMapPeakNits", out var nv) ? nv : "—";
+            string currentNits = presetWithNits.Value != null && presetWithNits.Value.TryGetValue("toneMapPeakNits", out var nv) ? nv : "";
 
-            var nitsPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
-            var setNitsBtn = new Button
+            var nitsPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 10 };
+            nitsPanel.Children.Add(new TextBlock
             {
-                Content = "Set Max Nits",
+                Text = "Set Maximum Nits",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+
+            var nitsBox = new TextBox
+            {
+                Text = currentNits,
+                Width = 70,
+                FontSize = 12,
+                PlaceholderText = "nits",
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+
+            // Helper: write nits value to all preset sections
+            void ApplyNitsValue(string nitsValue)
+            {
+                if (!int.TryParse(nitsValue, out var val) || val <= 0)
+                {
+                    card.ActionMessage = "❌ Enter a valid number.";
+                    return;
+                }
+                try
+                {
+                    var freshIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                    int updated = 0;
+                    foreach (var section in freshIni)
+                    {
+                        if (section.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase))
+                        {
+                            section.Value["toneMapPeakNits"] = val.ToString();
+                            updated++;
+                        }
+                    }
+                    if (updated == 0)
+                    {
+                        freshIni["renodx-preset1"] = new AuxInstallService.OrderedDict { ["toneMapPeakNits"] = val.ToString() };
+                        updated = 1;
+                    }
+                    AuxInstallService.WriteIni(iniPath, freshIni);
+                    nitsBox.Text = val.ToString();
+                    card.ActionMessage = $"✅ Set toneMapPeakNits={val} in {updated} preset(s).";
+                    card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+                }
+                catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
+            }
+
+            // Enter key in TextBox applies the value and deselects
+            nitsBox.KeyDown += (s, ev) =>
+            {
+                if (ev.Key == Windows.System.VirtualKey.Enter)
+                {
+                    ApplyNitsValue(nitsBox.Text);
+                    // Move focus away to stop cursor flashing
+                    nitsPanel.Focus(FocusState.Programmatic);
+                    ev.Handled = true;
+                }
+            };
+
+            var autoBtn = new Button
+            {
+                Content = "Auto",
                 Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
                 Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
                 BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+                CornerRadius = new CornerRadius(8), Padding = new Thickness(10, 5, 10, 5), FontSize = 12,
             };
-            var nitsDisplay = new TextBlock
-            {
-                Text = $"{currentNits} nits",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            ToolTipService.SetToolTip(setNitsBtn, "Reads your monitor's peak brightness and writes toneMapPeakNits to all RenoDX presets.");
-            setNitsBtn.Click += async (s, ev) =>
+            ToolTipService.SetToolTip(autoBtn, "Reads your monitor's peak brightness automatically.");
+            autoBtn.Click += async (s, ev) =>
             {
                 try
                 {
-                    // Read monitor peak luminance via WinRT DisplayMonitor API — pick the brightest display
                     var devices = await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
                         Windows.Devices.Display.DisplayMonitor.GetDeviceSelector());
                     if (devices.Count == 0) { card.ActionMessage = "❌ No display found."; return; }
@@ -475,37 +528,15 @@ public sealed partial class MainWindow
                         catch { }
                     }
                     var peakNits = (int)maxNitsFound;
-
                     if (peakNits <= 0) { card.ActionMessage = "❌ Could not read peak brightness."; return; }
 
-                    // Write to all [renodx-preset*] sections
-                    var freshIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-                    int updated = 0;
-                    foreach (var section in freshIni)
-                    {
-                        if (section.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase))
-                        {
-                            section.Value["toneMapPeakNits"] = peakNits.ToString();
-                            updated++;
-                        }
-                    }
-
-                    if (updated == 0)
-                    {
-                        // No preset sections exist yet — create [renodx-preset1] with the nits value
-                        freshIni["renodx-preset1"] = new AuxInstallService.OrderedDict { ["toneMapPeakNits"] = peakNits.ToString() };
-                        updated = 1;
-                    }
-
-                    AuxInstallService.WriteIni(iniPath, freshIni);
-                    nitsDisplay.Text = $"{peakNits} nits";
-                    card.ActionMessage = $"✅ Set toneMapPeakNits={peakNits} in {updated} preset(s).";
-                    card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+                    ApplyNitsValue(peakNits.ToString());
                 }
                 catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
             };
-            nitsPanel.Children.Add(setNitsBtn);
-            nitsPanel.Children.Add(nitsDisplay);
+
+            nitsPanel.Children.Add(autoBtn);
+            nitsPanel.Children.Add(nitsBox);
             content.Children.Add(nitsPanel);
         }
 
