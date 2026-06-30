@@ -1,3 +1,11 @@
+## v2.1.5
+
+### Bug Fixes
+
+- Fixed Luma games falsely showing "Update Available" on launch when they were already up to date — stale status from a previous session was not being cleared.
+
+---
+
 ## v2.1.4
 
 ### Bug Fixes
