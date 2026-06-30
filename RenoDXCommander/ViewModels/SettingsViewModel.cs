@@ -49,6 +49,13 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _lastUpdateCheckUtc = "";
     [ObservableProperty] private string _dxvkVariant = "Development";
     [ObservableProperty] private string _reShadeChannel = "Stable";
+    [ObservableProperty] private int _peakNits;
+
+    // ── DLSS/Streamline Auto-Update ───────────────────────────────────────────
+    [ObservableProperty] private bool _autoUpdateDlss;
+    [ObservableProperty] private bool _autoUpdateStreamline;
+    [ObservableProperty] private string _lastKnownNewestDlss = "";
+    [ObservableProperty] private string _lastKnownNewestStreamline = "";
 
     // ── DLSS/Streamline Defaults ──────────────────────────────────────────────
     [ObservableProperty] private string _defaultDlssVersion = "";
@@ -218,6 +225,11 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("LastUpdateCheckUtc", out var luc)) LastUpdateCheckUtc = luc;
         if (s.TryGetValue("DxvkVariant", out var dvVal)) DxvkVariant = dvVal ?? "Development";
         if (s.TryGetValue("ReShadeChannel", out var rscVal)) ReShadeChannel = rscVal ?? "Stable";
+        if (s.TryGetValue("PeakNits", out var pnVal) && int.TryParse(pnVal, out var pnInt)) PeakNits = pnInt;
+        if (s.TryGetValue("AutoUpdateDlss", out var audVal)) AutoUpdateDlss = audVal == "true";
+        if (s.TryGetValue("AutoUpdateStreamline", out var ausVal)) AutoUpdateStreamline = ausVal == "true";
+        if (s.TryGetValue("LastKnownNewestDlss", out var lkndVal)) LastKnownNewestDlss = lkndVal ?? "";
+        if (s.TryGetValue("LastKnownNewestStreamline", out var lknsVal)) LastKnownNewestStreamline = lknsVal ?? "";
 
         // DLSS/Streamline defaults
         if (s.TryGetValue("DefaultDlssVersion", out var ddv)) DefaultDlssVersion = ddv ?? "";
@@ -272,6 +284,11 @@ public partial class SettingsViewModel : ObservableObject
         s["LastUpdateCheckUtc"] = LastUpdateCheckUtc;
         s["DxvkVariant"] = DxvkVariant;
         s["ReShadeChannel"] = ReShadeChannel;
+        if (PeakNits > 0) s["PeakNits"] = PeakNits.ToString();
+        if (AutoUpdateDlss) s["AutoUpdateDlss"] = "true";
+        if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true";
+        if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;
+        if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
 
         // DLSS/Streamline defaults
         if (!string.IsNullOrEmpty(DefaultDlssVersion)) s["DefaultDlssVersion"] = DefaultDlssVersion;

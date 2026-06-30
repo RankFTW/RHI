@@ -110,13 +110,13 @@ public partial class MainViewModel
 
     /// <summary>
     /// Resolves the effective ReShade channel for a game.
-    /// Returns the per-game override if set, otherwise the global setting.
+    /// Returns the per-game override if set, otherwise defaults to Stable.
     /// </summary>
     public string ResolveReShadeChannel(string gameName)
     {
         if (_reShadeChannelOverrides.TryGetValue(gameName, out var perGame))
             return perGame;
-        return _settingsViewModel.ReShadeChannel;
+        return "Stable";
     }
 
     // ── DXVK Variant Override ─────────────────────────────────────────────────
@@ -915,5 +915,123 @@ public partial class MainViewModel
     {
         _settingsViewModel.LoadThemeAndDensity();
     }
-}
 
+    // ── DLSS / Streamline Auto-Update ─────────────────────────────────────────
+
+    /// <summary>
+    /// Checks if the DLSS/Streamline manifest has a newer version than what was
+    /// previously the latest. If so, auto-swaps games that are on the previous
+    /// latest to the new latest. Games on older manual versions are left alone.
+    /// </summary>
+    public async Task RunDlssAutoUpdateAsync()
+    {
+        var dlssVersions = _dlssStreamlineService.DlssVersions;
+        var slVersions = _dlssStreamlineService.StreamlineVersions;
+
+        if (dlssVersions.Count == 0 && slVersions.Count == 0) return;
+
+        var newestDlss = dlssVersions.Count > 0 ? dlssVersions[0] : "";
+        var newestSl = slVersions.Count > 0 ? slVersions[0] : "";
+
+        var previousDlss = _settingsViewModel.LastKnownNewestDlss;
+        var previousSl = _settingsViewModel.LastKnownNewestStreamline;
+
+        // First run: seed the baseline without updating anything
+        if (string.IsNullOrEmpty(previousDlss) && !string.IsNullOrEmpty(newestDlss))
+        {
+            _settingsViewModel.LastKnownNewestDlss = newestDlss;
+            SaveSettingsPublic();
+        }
+        if (string.IsNullOrEmpty(previousSl) && !string.IsNullOrEmpty(newestSl))
+        {
+            _settingsViewModel.LastKnownNewestStreamline = newestSl;
+            SaveSettingsPublic();
+            return; // First run — no updates to apply
+        }
+
+        bool dlssHasNewVersion = !string.IsNullOrEmpty(previousDlss)
+            && !string.Equals(newestDlss, previousDlss, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrEmpty(newestDlss);
+
+        bool slHasNewVersion = !string.IsNullOrEmpty(previousSl)
+            && !string.Equals(newestSl, previousSl, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrEmpty(newestSl);
+
+        if (!dlssHasNewVersion && !slHasNewVersion) return;
+
+        int dlssUpdated = 0, slUpdated = 0;
+
+        foreach (var card in _allCards)
+        {
+            if (card.DlssDetection == null || !card.HasAnyDlssStreamline) continue;
+
+            // ── DLSS Auto-Update (SR, RR, FG all use the same version set) ──
+            if (_settingsViewModel.AutoUpdateDlss && dlssHasNewVersion)
+            {
+                try
+                {
+                    // SR
+                    if (card.DlssDetection.DlssPath != null
+                        && string.Equals(card.DlssInstalledVersion, previousDlss, StringComparison.OrdinalIgnoreCase)
+                        && !(card.DlssInstalledVersion?.StartsWith("1.") == true))
+                    {
+                        await _dlssStreamlineService.SwapDlssAsync(card.DlssDetection.DlssPath, newestDlss);
+                        card.DlssInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssPath);
+                        dlssUpdated++;
+                    }
+                    // RR
+                    if (card.DlssDetection.DlssdPath != null
+                        && string.Equals(card.DlssdInstalledVersion, previousDlss, StringComparison.OrdinalIgnoreCase)
+                        && !(card.DlssdInstalledVersion?.StartsWith("1.") == true))
+                    {
+                        await _dlssStreamlineService.SwapDlssdAsync(card.DlssDetection.DlssdPath, newestDlss);
+                        card.DlssdInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssdPath);
+                    }
+                    // FG
+                    if (card.DlssDetection.DlssgPath != null
+                        && string.Equals(card.DlssgInstalledVersion, previousDlss, StringComparison.OrdinalIgnoreCase)
+                        && !(card.DlssgInstalledVersion?.StartsWith("1.") == true))
+                    {
+                        await _dlssStreamlineService.SwapDlssgAsync(card.DlssDetection.DlssgPath, newestDlss);
+                        card.DlssgInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssgPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[RunDlssAutoUpdateAsync] DLSS auto-update failed for '{card.GameName}' — {ex.Message}");
+                }
+            }
+
+            // ── Streamline Auto-Update ──
+            if (_settingsViewModel.AutoUpdateStreamline && slHasNewVersion)
+            {
+                try
+                {
+                    if (card.DlssDetection.StreamlineFolder != null
+                        && string.Equals(card.StreamlineInstalledVersion, previousSl, StringComparison.OrdinalIgnoreCase)
+                        && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true))
+                    {
+                        await _dlssStreamlineService.SwapStreamlineAsync(card.DlssDetection.StreamlineFolder, newestSl);
+                        card.StreamlineInstalledVersion = _dlssStreamlineService.GetFileVersion(
+                            card.DlssDetection.StreamlineInterposerPath ?? "");
+                        slUpdated++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[RunDlssAutoUpdateAsync] Streamline auto-update failed for '{card.GameName}' — {ex.Message}");
+                }
+            }
+        }
+
+        // Update the baseline
+        if (dlssHasNewVersion)
+            _settingsViewModel.LastKnownNewestDlss = newestDlss;
+        if (slHasNewVersion)
+            _settingsViewModel.LastKnownNewestStreamline = newestSl;
+        SaveSettingsPublic();
+
+        if (dlssUpdated > 0 || slUpdated > 0)
+            _crashReporter.Log($"[RunDlssAutoUpdateAsync] Auto-updated {dlssUpdated} game(s) DLSS → {newestDlss}, {slUpdated} game(s) Streamline → {newestSl}");
+    }
+}

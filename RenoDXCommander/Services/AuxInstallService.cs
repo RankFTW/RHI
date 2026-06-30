@@ -389,8 +389,8 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     bool IAuxFileService.IsReShadeFileStrict(string filePath) => IsReShadeFileStrict(filePath);
     bool IAuxFileService.IsReShadeFile(string filePath) => IsReShadeFile(filePath);
     void IAuxFileService.EnsureInisDir() => EnsureInisDir();
-    void IAuxFileService.MergeRsIni(string gameDir, string? screenshotSavePath, string? overlayHotkey, string? screenshotHotkey, string? gameName) => MergeRsIni(gameDir, screenshotSavePath, overlayHotkey, screenshotHotkey, gameName);
-    void IAuxFileService.MergeRsVulkanIni(string gameDir, string? gameName, string? screenshotSavePath, string? overlayHotkey, string? screenshotHotkey) => MergeRsVulkanIni(gameDir, gameName, screenshotSavePath, overlayHotkey, screenshotHotkey);
+    void IAuxFileService.MergeRsIni(string gameDir, string? screenshotSavePath, string? overlayHotkey, string? screenshotHotkey, string? gameName, int peakNits) => MergeRsIni(gameDir, screenshotSavePath, overlayHotkey, screenshotHotkey, gameName, peakNits);
+    void IAuxFileService.MergeRsVulkanIni(string gameDir, string? gameName, string? screenshotSavePath, string? overlayHotkey, string? screenshotHotkey, int peakNits) => MergeRsVulkanIni(gameDir, gameName, screenshotSavePath, overlayHotkey, screenshotHotkey, peakNits);
     void IAuxFileService.CopyRsIni(string gameDir) => CopyRsIni(gameDir);
     void IAuxFileService.CopyRsPresetIniIfPresent(string gameDir) => CopyRsPresetIniIfPresent(gameDir);
     string? IAuxFileService.ReadInstalledVersion(string installPath, string fileName) => ReadInstalledVersion(installPath, fileName);

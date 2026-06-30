@@ -103,8 +103,8 @@ internal static class TestHelpers
         public bool IsReShadeFileStrict(string filePath) => false;
         public bool IsReShadeFile(string filePath) => false;
         public void EnsureInisDir() { }
-        public void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null) { }
-        public void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null) { }
+        public void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null, int peakNits = 0) { }
+        public void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, int peakNits = 0) { }
         public void CopyRsIni(string gameDir) { }
         public void CopyRsPresetIniIfPresent(string gameDir) { }
         public string? ReadInstalledVersion(string installPath, string fileName) => null;

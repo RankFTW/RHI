@@ -47,6 +47,8 @@ public class SettingsHandler
         // Populate screenshot path and per-game toggle
         _window.ScreenshotPathBox.Text = ViewModel.Settings.ScreenshotPath;
         _window.PerGameScreenshotToggle.IsOn = ViewModel.Settings.PerGameScreenshotFolders;
+        // Initialize peak nits display
+        _window.PeakNitsBox.Text = ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits.ToString() : "";
         // Initialize hotkey display from persisted value (Req 2.4, 3.2)
         _currentHotkeyString = ViewModel.Settings.OverlayHotkey;
         _window.HotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.OverlayHotkey);
@@ -132,6 +134,10 @@ public class SettingsHandler
             _window.DlssIndicatorCombo.SelectedIndex = 1; // Default to Disabled if registry unreadable
         }
         _window._dlssIndicatorInitializing = false;
+
+        // Initialize DLSS/Streamline auto-update combos
+        _window.AutoUpdateDlssCombo.SelectedIndex = ViewModel.Settings.AutoUpdateDlss ? 1 : 0;
+        _window.AutoUpdateStreamlineCombo.SelectedIndex = ViewModel.Settings.AutoUpdateStreamline ? 1 : 0;
 
         // Populate DLSS defaults summary
         _window.RefreshDlssDefaultsSummary();

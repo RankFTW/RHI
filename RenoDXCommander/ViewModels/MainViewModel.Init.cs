@@ -461,6 +461,24 @@ public partial class MainViewModel
                 SelectedGame = null;
 
             _ = Task.Run(() => { try { SaveLibrary(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Fire-and-forget SaveLibrary failed — {ex.Message}"); } }); // fire-and-forget — don't block UI
+
+            // ── One-time migration: global Nightly → per-game overrides ──────────────
+            if (_reShadeChannelOverrides.Remove("__nightly_migration_pending"))
+            {
+                int migrated = 0;
+                foreach (var card in _allCards)
+                {
+                    if (!_reShadeChannelOverrides.ContainsKey(card.GameName))
+                    {
+                        _reShadeChannelOverrides[card.GameName] = "Nightly";
+                        migrated++;
+                    }
+                }
+                _reShadeChannelOverrides["__nightly_migration_done"] = "true";
+                SaveNameMappings();
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] Nightly migration complete — {migrated} games set to Nightly");
+            }
+
             _filterViewModel.SetAllCards(_allCards);
             _filterViewModel.UpdateCounts();
             _filterViewModel.ApplyFilter();
@@ -2676,6 +2694,10 @@ public partial class MainViewModel
             {
                 try { await CheckForUpdatesAsync(_allCards, records, auxRecords); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Background update check failed — {ex}"); }
+
+                // DLSS/Streamline auto-update (runs after manifest is fetched and cards have detection)
+                try { await RunDlssAutoUpdateAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS auto-update failed — {ex.Message}"); }
             });
 
             // Update status text with final counts

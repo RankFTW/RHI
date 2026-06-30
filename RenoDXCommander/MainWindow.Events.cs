@@ -2273,6 +2273,20 @@ public sealed partial class MainWindow
         }
     }
 
+    private void AutoUpdateDlssCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.AutoUpdateDlss = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void AutoUpdateStreamlineCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.AutoUpdateStreamline = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -2310,6 +2324,51 @@ public sealed partial class MainWindow
         catch (Exception ex)
         {
             _crashReporter.Log($"[MainWindow.OpenScreenshotFolder_Click] Failed to open folder — {ex.Message}");
+        }
+    }
+
+    private async void PeakNitsAuto_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var devices = await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
+                Windows.Devices.Display.DisplayMonitor.GetDeviceSelector());
+            if (devices.Count == 0) return;
+
+            float maxNitsFound = 0;
+            foreach (var device in devices)
+            {
+                try
+                {
+                    var mon = await Windows.Devices.Display.DisplayMonitor.FromInterfaceIdAsync(device.Id);
+                    if (mon.MaxLuminanceInNits > maxNitsFound)
+                        maxNitsFound = mon.MaxLuminanceInNits;
+                }
+                catch { }
+            }
+            var peakNits = (int)maxNitsFound;
+            if (peakNits <= 0) return;
+
+            PeakNitsBox.Text = peakNits.ToString();
+            ViewModel.Settings.PeakNits = peakNits;
+            ViewModel.SaveSettingsPublic();
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.PeakNitsAuto_Click] Failed — {ex.Message}");
+        }
+    }
+
+    private void PeakNitsBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            if (sender is Microsoft.UI.Xaml.Controls.TextBox box && int.TryParse(box.Text, out var val) && val > 0)
+            {
+                ViewModel.Settings.PeakNits = val;
+                ViewModel.SaveSettingsPublic();
+            }
+            e.Handled = true;
         }
     }
 

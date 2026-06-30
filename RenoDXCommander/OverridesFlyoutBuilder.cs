@@ -839,7 +839,7 @@ public class OverridesFlyoutBuilder
         Grid.SetColumn(apiPanel, 1);
 
         // ── ReShade Channel Override ──
-        var channelItems = new[] { "Global", "Stable", "Nightly", "Custom", "Legacy..." };
+        var channelItems = new[] { "Stable", "Nightly", "Custom", "Legacy..." };
         // For Vulkan games, show the effective Vulkan-wide override (any Vulkan game's override applies to all)
         var currentChannelOverride = ViewModel.GetReShadeChannelOverride(capturedName);
         if (currentChannelOverride == null && card.RequiresVulkanInstall)
@@ -867,9 +867,8 @@ public class OverridesFlyoutBuilder
         {
             defaultChannelSelection = currentChannelOverride switch
             {
-                "Stable" => "Stable",
                 "Nightly" => "Nightly",
-                _ => "Global",
+                _ => "Stable",
             };
         }
 
@@ -1072,9 +1071,8 @@ public class OverridesFlyoutBuilder
 
             string? channelValue = selected switch
             {
-                "Stable" => "Stable",
                 "Nightly" => "Nightly",
-                _ => null,
+                _ => null, // "Stable" = default, clears the per-game override
             };
 
             var targetCard = ViewModel.AllCards.FirstOrDefault(c =>
@@ -1774,7 +1772,7 @@ public class OverridesFlyoutBuilder
             ViewModel.SetBitnessOverride(capturedName, null);
             apiCombo.SelectedItem = "Auto";
             ViewModel.SetApiOverride(capturedName, null);
-            channelCombo.SelectedItem = "Global";
+            channelCombo.SelectedItem = "Stable";
             ViewModel.SetReShadeChannelOverride(capturedName, null);
             if (card.IsDxvkToggleVisible)
             {

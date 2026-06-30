@@ -283,6 +283,21 @@ public class GameNameService : IGameNameService
         _reShadeChannelOverrides = new(Load<Dictionary<string, string>>("ReShadeChannelOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
+        // ── Migration: global Nightly → per-game Nightly ──────────────────────────
+        // The global ReShade channel setting has been removed. Users who had Nightly
+        // globally now get per-game "Nightly" overrides for all games without an
+        // existing per-game channel override.
+        if (string.Equals(settingsViewModel.ReShadeChannel, "Nightly", StringComparison.OrdinalIgnoreCase)
+            && !_reShadeChannelOverrides.ContainsKey("__nightly_migration_done"))
+        {
+            // We can't enumerate all game names here (not loaded yet), so we set a
+            // sentinel that MainViewModel will check after cards are built.
+            // For now just flag it — the actual migration runs in InitializeAsync.
+            _reShadeChannelOverrides["__nightly_migration_pending"] = "true";
+            settingsViewModel.ReShadeChannel = "Stable";
+            CrashReporter.Log("[GameNameService.LoadNameMappings] Nightly migration flagged — global channel reset to Stable");
+        }
+
         _dxvkVariantOverrides = new(Load<Dictionary<string, string>>("DxvkVariantOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
