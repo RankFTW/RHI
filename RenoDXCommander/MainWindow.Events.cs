@@ -492,8 +492,9 @@ public sealed partial class MainWindow
 
                     if (updated == 0)
                     {
-                        card.ActionMessage = "❌ No [renodx-preset*] sections found. Run the game first.";
-                        return;
+                        // No preset sections exist yet — create [renodx-preset1] with the nits value
+                        freshIni["renodx-preset1"] = new AuxInstallService.OrderedDict { ["toneMapPeakNits"] = peakNits.ToString() };
+                        updated = 1;
                     }
 
                     AuxInstallService.WriteIni(iniPath, freshIni);
