@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 var repos = new[]
 {
@@ -10,120 +11,117 @@ var repos = new[]
 using var http = new HttpClient();
 http.DefaultRequestHeaders.Add("User-Agent", "RHI-Stats");
 
-Console.ForegroundColor = ConsoleColor.Cyan;
-Console.WriteLine("╔══════════════════════════════════════════╗");
-Console.WriteLine("║        RankFTW Download Statistics       ║");
-Console.WriteLine("╚══════════════════════════════════════════╝");
-Console.ResetColor();
-Console.WriteLine();
-
-foreach (var (repoName, repoUrl) in repos)
+while (true)
 {
-    try
+    Console.Clear();
+    Console.ForegroundColor = ConsoleColor.Cyan;
+    Console.WriteLine("╔══════════════════════════════════════════╗");
+    Console.WriteLine("║        RankFTW Download Statistics       ║");
+    Console.WriteLine("╚══════════════════════════════════════════╝");
+    Console.ResetColor();
+    Console.WriteLine();
+
+    int grandTotal = 0;
+    var summaries = new List<(string Name, int Total)>();
+
+    foreach (var (repoName, repoUrl) in repos)
     {
-        // Fetch all releases (paginated — GitHub returns max 100 per page)
-        var allReleases = new List<JsonElement>();
-        var pageUrl = repoUrl + "?per_page=100";
-        while (!string.IsNullOrEmpty(pageUrl))
+        try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, pageUrl);
-            request.Headers.Add("User-Agent", "RHI-Stats");
-            using var response = await http.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            foreach (var el in doc.RootElement.EnumerateArray())
-                allReleases.Add(el.Clone());
-
-            // Check for next page via Link header
-            pageUrl = null;
-            if (response.Headers.TryGetValues("Link", out var linkValues))
+            var allReleases = new List<JsonElement>();
+            var pageUrl = repoUrl + "?per_page=100";
+            while (!string.IsNullOrEmpty(pageUrl))
             {
-                var linkHeader = string.Join(",", linkValues);
-                var nextMatch = System.Text.RegularExpressions.Regex.Match(linkHeader, @"<([^>]+)>;\s*rel=""next""");
-                if (nextMatch.Success)
-                    pageUrl = nextMatch.Groups[1].Value;
-            }
-        }
+                using var request = new HttpRequestMessage(HttpMethod.Get, pageUrl);
+                request.Headers.Add("User-Agent", "RHI-Stats");
+                using var response = await http.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                foreach (var el in doc.RootElement.EnumerateArray())
+                    allReleases.Add(el.Clone());
 
-        int totalDownloads = 0;
-        var versionStats = new List<(string Tag, int Downloads, string Date)>();
-
-        foreach (var release in allReleases)
-        {
-            var tag = release.GetProperty("tag_name").GetString() ?? "unknown";
-            var published = release.GetProperty("published_at").GetString() ?? "";
-            var date = DateTime.TryParse(published, out var dt) ? dt.ToString("yyyy-MM-dd") : "—";
-
-            int releaseDownloads = 0;
-            if (release.TryGetProperty("assets", out var assets))
-            {
-                foreach (var asset in assets.EnumerateArray())
+                pageUrl = null;
+                if (response.Headers.TryGetValues("Link", out var linkValues))
                 {
-                    if (asset.TryGetProperty("download_count", out var countEl))
-                        releaseDownloads += countEl.GetInt32();
+                    var linkHeader = string.Join(",", linkValues);
+                    var nextMatch = Regex.Match(linkHeader, @"<([^>]+)>;\s*rel=""next""");
+                    if (nextMatch.Success)
+                        pageUrl = nextMatch.Groups[1].Value;
                 }
             }
 
-            totalDownloads += releaseDownloads;
-            versionStats.Add((tag, releaseDownloads, date));
+            int repoTotal = 0;
+            foreach (var release in allReleases)
+            {
+                if (release.TryGetProperty("assets", out var assets))
+                    foreach (var asset in assets.EnumerateArray())
+                        if (asset.TryGetProperty("download_count", out var countEl))
+                            repoTotal += countEl.GetInt32();
+            }
+
+            grandTotal += repoTotal;
+            summaries.Add((repoName, repoTotal));
         }
-
-        // Repo header
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($"  ── {repoName} ──");
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"  Total Downloads: {totalDownloads:N0}");
-        Console.ResetColor();
-        Console.WriteLine();
-
-        // Table header
-        Console.ForegroundColor = ConsoleColor.DarkGray;
-        Console.WriteLine($"  {"Version",-20} {"Downloads",10} {"Date",12}");
-        Console.WriteLine($"  {"───────────────────",-20} {"──────────",10} {"────────────",12}");
-        Console.ResetColor();
-
-        // Per-release stats
-        foreach (var (tag, downloads, date) in versionStats)
+        catch (Exception ex)
         {
-            var color = downloads > 100 ? ConsoleColor.White
-                      : downloads > 10 ? ConsoleColor.Gray
-                      : ConsoleColor.DarkGray;
-            Console.ForegroundColor = color;
-            Console.WriteLine($"  {tag,-20} {downloads,10:N0} {date,12}");
+            summaries.Add((repoName + " (error)", 0));
         }
-
-        Console.ResetColor();
-        Console.WriteLine();
-    }
-    catch (HttpRequestException ex)
-    {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine($"  {repoName}: Error — {ex.Message}");
-        Console.ResetColor();
-        Console.WriteLine();
     }
 
-    // Pause between repos
-    if (repoName != repos[^1].Item1)
+    // Summary line
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.Write("  ");
+    for (int i = 0; i < summaries.Count; i++)
     {
-        Console.ForegroundColor = ConsoleColor.DarkGray;
-        Console.Write("  Press any key for next...");
-        Console.ResetColor();
-        Console.ReadKey(true);
-        Console.Clear();
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine("╔══════════════════════════════════════════╗");
-        Console.WriteLine("║        RankFTW Download Statistics       ║");
-        Console.WriteLine("╚══════════════════════════════════════════╝");
-        Console.ResetColor();
-        Console.WriteLine();
+        if (i > 0) Console.Write("  |  ");
+        Console.Write($"{summaries[i].Name}: {summaries[i].Total:N0}");
+    }
+    Console.WriteLine($"  |  TOTAL: {grandTotal:N0}");
+    Console.ResetColor();
+    Console.WriteLine();
+
+    // Show latest 10 for each repo
+    foreach (var (repoName, repoUrl) in repos)
+    {
+        try
+        {
+            var json = await http.GetStringAsync(repoUrl + "?per_page=10");
+            using var doc = JsonDocument.Parse(json);
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"  ── {repoName} (latest 10) ──");
+            Console.ResetColor();
+
+            foreach (var release in doc.RootElement.EnumerateArray())
+            {
+                var tag = release.GetProperty("tag_name").GetString() ?? "?";
+                var published = release.GetProperty("published_at").GetString() ?? "";
+                var date = DateTime.TryParse(published, out var dt) ? dt.ToString("yyyy-MM-dd") : "—";
+                int dl = 0;
+                if (release.TryGetProperty("assets", out var assets))
+                    foreach (var asset in assets.EnumerateArray())
+                        if (asset.TryGetProperty("download_count", out var c))
+                            dl += c.GetInt32();
+
+                var color = dl > 100 ? ConsoleColor.White : dl > 10 ? ConsoleColor.Gray : ConsoleColor.DarkGray;
+                Console.ForegroundColor = color;
+                Console.WriteLine($"    {tag,-20} {dl,8:N0}   {date}");
+            }
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+        catch { }
+    }
+
+    Console.ForegroundColor = ConsoleColor.DarkGray;
+    Console.WriteLine("  [R] Refresh   [Q] Quit");
+    Console.ResetColor();
+
+    while (true)
+    {
+        var key = Console.ReadKey(true).Key;
+        if (key == ConsoleKey.R) break;
+        if (key == ConsoleKey.Q) return;
     }
 }
-
-Console.ForegroundColor = ConsoleColor.DarkGray;
-Console.WriteLine($"  Source: GitHub API");
-Console.ResetColor();
-Console.WriteLine();
-Console.Write("Press any key to exit...");
-Console.ReadKey(true);
