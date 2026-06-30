@@ -425,6 +425,78 @@ public sealed partial class MainWindow
 
         topRow.Children.Add(enginePanel);
         content.Children.Add(topRow);
+
+        // ── Peak Nits (toneMapPeakNits in [renodx-preset*] sections) ──────────
+        if (File.Exists(iniPath))
+        {
+            var peakIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+            // Find any preset section with toneMapPeakNits
+            var presetWithNits = peakIni.FirstOrDefault(kv =>
+                kv.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase)
+                && kv.Value.ContainsKey("toneMapPeakNits"));
+            string currentNits = presetWithNits.Value != null && presetWithNits.Value.TryGetValue("toneMapPeakNits", out var nv) ? nv : "—";
+
+            var nitsPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
+            var setNitsBtn = new Button
+            {
+                Content = "Set Max Nits",
+                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
+            };
+            var nitsDisplay = new TextBlock
+            {
+                Text = $"{currentNits} nits",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            ToolTipService.SetToolTip(setNitsBtn, "Reads your monitor's peak brightness and writes toneMapPeakNits to all RenoDX presets.");
+            setNitsBtn.Click += async (s, ev) =>
+            {
+                try
+                {
+                    // Read monitor peak luminance via WinRT DisplayMonitor API
+                    var devices = await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
+                        Windows.Devices.Display.DisplayMonitor.GetDeviceSelector());
+                    if (devices.Count == 0) { card.ActionMessage = "❌ No display found."; return; }
+                    var monitor = await Windows.Devices.Display.DisplayMonitor.FromInterfaceIdAsync(devices[0].Id);
+                    var peakNits = (int)monitor.MaxLuminanceInNits;
+
+                    if (peakNits <= 0) { card.ActionMessage = "❌ Could not read peak brightness."; return; }
+
+                    // Write to all [renodx-preset*] sections
+                    var freshIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                    int updated = 0;
+                    foreach (var section in freshIni)
+                    {
+                        if (section.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase))
+                        {
+                            section.Value["toneMapPeakNits"] = peakNits.ToString();
+                            updated++;
+                        }
+                    }
+
+                    if (updated == 0)
+                    {
+                        card.ActionMessage = "❌ No [renodx-preset*] sections found. Run the game first.";
+                        return;
+                    }
+
+                    AuxInstallService.WriteIni(iniPath, freshIni);
+                    nitsDisplay.Text = $"{peakNits} nits";
+                    card.ActionMessage = $"✅ Set toneMapPeakNits={peakNits} in {updated} preset(s).";
+                    card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+                }
+                catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
+            };
+            nitsPanel.Children.Add(setNitsBtn);
+            nitsPanel.Children.Add(nitsDisplay);
+            content.Children.Add(nitsPanel);
+        }
+
         // ── Compatibility Settings from [renodx] section ──────────────────────
         if (File.Exists(iniPath))
         {
