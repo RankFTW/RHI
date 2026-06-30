@@ -600,6 +600,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                         {
                             dispatcherQueue?.TryEnqueue(() => { card.LumaStatus = GameStatus.UpdateAvailable; });
                         }
+                        else if (card.LumaStatus == GameStatus.UpdateAvailable)
+                        {
+                            // Clear stale update status from previous snapshot
+                            dispatcherQueue?.TryEnqueue(() => { card.LumaStatus = GameStatus.Installed; });
+                        }
                     }
                 }
 
