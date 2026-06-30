@@ -1,3 +1,15 @@
+## v2.1.3
+
+### New
+
+- **Set Max Nits** — button in the RenoDX cog reads your monitor's peak brightness and writes `toneMapPeakNits` to all RenoDX presets. Picks the brightest monitor automatically for multi-display setups.
+
+### Bug Fixes
+
+- Fixed DXVK (Lilium HDR) not updating to new versions even when an update was detected — staging skip guard prevented re-download when existing files were cached.
+
+---
+
 ## v2.1.2
 
 ### Bug Fixes
