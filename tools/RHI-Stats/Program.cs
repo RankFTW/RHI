@@ -21,14 +21,35 @@ foreach (var (repoName, repoUrl) in repos)
 {
     try
     {
-        var json = await http.GetStringAsync(repoUrl);
-        using var doc = JsonDocument.Parse(json);
-        var releases = doc.RootElement;
+        // Fetch all releases (paginated — GitHub returns max 100 per page)
+        var allReleases = new List<JsonElement>();
+        var pageUrl = repoUrl + "?per_page=100";
+        while (!string.IsNullOrEmpty(pageUrl))
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, pageUrl);
+            request.Headers.Add("User-Agent", "RHI-Stats");
+            using var response = await http.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            foreach (var el in doc.RootElement.EnumerateArray())
+                allReleases.Add(el.Clone());
+
+            // Check for next page via Link header
+            pageUrl = null;
+            if (response.Headers.TryGetValues("Link", out var linkValues))
+            {
+                var linkHeader = string.Join(",", linkValues);
+                var nextMatch = System.Text.RegularExpressions.Regex.Match(linkHeader, @"<([^>]+)>;\s*rel=""next""");
+                if (nextMatch.Success)
+                    pageUrl = nextMatch.Groups[1].Value;
+            }
+        }
 
         int totalDownloads = 0;
         var versionStats = new List<(string Tag, int Downloads, string Date)>();
 
-        foreach (var release in releases.EnumerateArray())
+        foreach (var release in allReleases)
         {
             var tag = release.GetProperty("tag_name").GetString() ?? "unknown";
             var published = release.GetProperty("published_at").GetString() ?? "";
