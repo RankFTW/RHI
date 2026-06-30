@@ -433,7 +433,9 @@ public sealed partial class MainWindow
             var presetWithNits = peakIni.FirstOrDefault(kv =>
                 kv.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase)
                 && kv.Value.ContainsKey("toneMapPeakNits"));
-            string currentNits = presetWithNits.Value != null && presetWithNits.Value.TryGetValue("toneMapPeakNits", out var nv) ? nv : "";
+            string currentNits = "";
+            if (presetWithNits.Value != null && presetWithNits.Value.TryGetValue("toneMapPeakNits", out var nv))
+                currentNits = double.TryParse(nv, out var dv) ? ((int)dv).ToString() : nv;
 
             var nitsPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 10 };
             nitsPanel.Children.Add(new TextBlock
