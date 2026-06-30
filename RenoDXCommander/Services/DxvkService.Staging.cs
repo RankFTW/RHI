@@ -75,8 +75,8 @@ public partial class DxvkService
     {
         try
         {
-            // ── 1. Skip if staging is already valid ──────────────────────────
-            if (IsStagingReady)
+            // ── 1. Skip if staging is already valid and no update pending ─────
+            if (IsStagingReady && !HasUpdate)
             {
                 CrashReporter.Log("[DxvkService.EnsureStagingAsync] Staging already valid — skipping download");
                 progress?.Report(("DXVK staging ready", 100));
