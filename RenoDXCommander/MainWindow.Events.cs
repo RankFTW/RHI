@@ -458,12 +458,23 @@ public sealed partial class MainWindow
             {
                 try
                 {
-                    // Read monitor peak luminance via WinRT DisplayMonitor API
+                    // Read monitor peak luminance via WinRT DisplayMonitor API — pick the brightest display
                     var devices = await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
                         Windows.Devices.Display.DisplayMonitor.GetDeviceSelector());
                     if (devices.Count == 0) { card.ActionMessage = "❌ No display found."; return; }
-                    var monitor = await Windows.Devices.Display.DisplayMonitor.FromInterfaceIdAsync(devices[0].Id);
-                    var peakNits = (int)monitor.MaxLuminanceInNits;
+
+                    float maxNitsFound = 0;
+                    foreach (var device in devices)
+                    {
+                        try
+                        {
+                            var mon = await Windows.Devices.Display.DisplayMonitor.FromInterfaceIdAsync(device.Id);
+                            if (mon.MaxLuminanceInNits > maxNitsFound)
+                                maxNitsFound = mon.MaxLuminanceInNits;
+                        }
+                        catch { }
+                    }
+                    var peakNits = (int)maxNitsFound;
 
                     if (peakNits <= 0) { card.ActionMessage = "❌ Could not read peak brightness."; return; }
 
