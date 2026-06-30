@@ -4,7 +4,7 @@ var repos = new[]
 {
     ("RHI", "https://api.github.com/repos/RankFTW/RHI/releases"),
     ("ReLimiter", "https://api.github.com/repos/RankFTW/ReLimiter/releases"),
-    ("DOF Fix", "https://api.github.com/repos/RankFTW/rhi-repo/releases"),
+    ("RHI Repo", "https://api.github.com/repos/RankFTW/rhi-repo/releases"),
 };
 
 using var http = new HttpClient();
@@ -100,6 +100,22 @@ foreach (var (repoName, repoUrl) in repos)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"  {repoName}: Error — {ex.Message}");
+        Console.ResetColor();
+        Console.WriteLine();
+    }
+
+    // Pause between repos
+    if (repoName != repos[^1].Item1)
+    {
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        Console.Write("  Press any key for next...");
+        Console.ResetColor();
+        Console.ReadKey(true);
+        Console.Clear();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("╔══════════════════════════════════════════╗");
+        Console.WriteLine("║        RankFTW Download Statistics       ║");
+        Console.WriteLine("╚══════════════════════════════════════════╝");
         Console.ResetColor();
         Console.WriteLine();
     }
