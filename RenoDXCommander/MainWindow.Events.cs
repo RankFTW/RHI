@@ -447,7 +447,7 @@ public sealed partial class MainWindow
             var nitsBox = new TextBox
             {
                 Text = currentNits,
-                Width = 70,
+                Width = 100,
                 FontSize = 12,
                 PlaceholderText = "nits",
                 VerticalAlignment = VerticalAlignment.Center,
@@ -492,8 +492,8 @@ public sealed partial class MainWindow
                 if (ev.Key == Windows.System.VirtualKey.Enter)
                 {
                     ApplyNitsValue(nitsBox.Text);
-                    // Move focus away to stop cursor flashing
-                    nitsPanel.Focus(FocusState.Programmatic);
+                    nitsBox.IsEnabled = false;
+                    nitsBox.IsEnabled = true;
                     ev.Handled = true;
                 }
             };
