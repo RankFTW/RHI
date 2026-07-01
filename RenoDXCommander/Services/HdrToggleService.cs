@@ -126,9 +126,12 @@ public static class HdrToggleService
             info.header.id = targetId;
 
             int result = DisplayConfigGetDeviceInfo(ref info);
+            CrashReporter.Log($"[HdrToggleService.IsHdrEnabled] result={result}, value=0x{info.value:X8}, adapterId=({adapterId.LowPart},{adapterId.HighPart}), targetId={targetId}");
             if (result != 0) return false;
 
-            return (info.value & 0x2) != 0; // bit 1 = advancedColorEnabled
+            // bit 0 = advancedColorSupported, bit 1 = advancedColorEnabled
+            bool enabled = (info.value & 0x2) != 0;
+            return enabled;
         }
         catch (Exception ex)
         {
