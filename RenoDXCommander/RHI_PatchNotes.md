@@ -6,8 +6,14 @@
 - **Running game indicator** — sidebar highlights green when a game launched through RHI is currently running. Returns to normal when the game exits.
 - **DLSS / Streamline Auto-Update** — new toggles in the DLSS / Streamline Settings card. When enabled, games that are on the previous latest version are automatically swapped to the new latest when a manifest update arrives. Games on manually chosen older versions are left alone. Set and forget.
 - **Peak Brightness (nits) global setting** — set your monitor's peak nits once and it's automatically written to all reshade.ini files on every deploy. Auto-detect button reads your display hardware. Persists across ReShade installs and mass deploys.
-- **Settings page reorganized** — reduced from 11 cards to 9, clearly labelled with bold section headers. All DLSS/Streamline tools unified in one card (batch deploy, defaults, on-screen indicator, auto-update). Global NVIDIA driver settings get their own dedicated card with breathing room. ReLimiter and OptiScaler side by side in Component Settings. Shaders and addon watch folder grouped together. Update checks and mass INI deployment merged. Build Channels card removed entirely. Per-game screenshot subfolders converted to a compact combo box. ListView selection chrome removed for cleaner sidebar visuals.
-- **Global ReShade channel removed** — the Build Channels card is gone. ReShade always defaults to Stable. Per-game overrides (Nightly, Custom, Legacy) remain available in the RS Channel dropdown. Users who had Nightly globally will have it migrated to per-game overrides automatically.
+
+### Changes
+
+- **Settings page reorganized** — reduced from 11 cards to 9, clearly labelled with bold section headers. All DLSS/Streamline tools unified in one card. Global NVIDIA driver settings get their own dedicated card. ReLimiter and OptiScaler side by side. Shaders and addon watch folder grouped. Update checks and mass INI deployment merged.
+- **Global ReShade channel removed** — ReShade always defaults to Stable. Per-game overrides (Nightly, Custom, Legacy) remain available. Users who had Nightly globally will have it migrated to per-game overrides automatically.
+- Removed redundant generic mod badges (UE Extended, Generic UE, Generic Unity) from detail panel — engine badge and UE-Extended toggle already communicate the same info.
+- ListView selection chrome removed for cleaner sidebar visuals.
+- Per-game screenshot subfolders converted from toggle switch to compact combo box.
 
 ### Bug Fixes
 

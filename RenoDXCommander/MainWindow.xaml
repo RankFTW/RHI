@@ -418,50 +418,62 @@
                                             <TextBlock Text="Ultra+" TextDecorations="Underline"/>
                                         </Button>
                                     </StackPanel>
-                                    <!-- Right: game actions -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-                                        <Button x:Name="DetailHideBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11"
-                                                Click="HideButton_Click"
-                                                ToolTipService.ToolTip="Hide this game from the sidebar (find it again in the Hidden filter)">
-                                            <TextBlock x:Name="DetailHideIcon" x:FieldModifier="internal" FontSize="11"/>
-                                        </Button>
-                                        <Button x:Name="DetailFavBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11"
-                                                Click="FavouriteButton_Click"
-                                                ToolTipService.ToolTip="Toggle favourite">
-                                            <TextBlock x:Name="DetailFavIcon" x:FieldModifier="internal" FontSize="11" Text="Favourite"/>
-                                        </Button>
-                                        <Button x:Name="DetailAppDataBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11"
-                                                Click="OpenAppData_Click"
-                                                Visibility="Collapsed"
-                                                ToolTipService.ToolTip="Open game config folder in Explorer">
-                                            <TextBlock Text="Config" TextDecorations="Underline"/>
-                                        </Button>
-                                        <Button x:Name="DetailFolderBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11"
-                                                Click="OpenFolder_Click"
-                                                ToolTipService.ToolTip="Open game folder in Explorer">
-                                            <TextBlock Text="Browse" TextDecorations="Underline"/>
-                                        </Button>
-                                    </StackPanel>
+                                    <!-- Right: game actions bubble -->
+                                    <Border Grid.Column="2" Background="{StaticResource SurfaceOverlayBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="6">
+                                        <Grid ColumnSpacing="4" RowSpacing="4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Button Grid.Row="0" Grid.Column="0" x:Name="DetailHideBtn" x:FieldModifier="internal"
+                                                    Background="Transparent"
+                                                    Foreground="{StaticResource ChipTextBrush}"
+                                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                    FontSize="11" HorizontalAlignment="Stretch"
+                                                    Click="HideButton_Click"
+                                                    ToolTipService.ToolTip="Hide this game from the sidebar (find it again in the Hidden filter)">
+                                                <TextBlock x:Name="DetailHideIcon" x:FieldModifier="internal" FontSize="11" HorizontalAlignment="Center"/>
+                                            </Button>
+                                            <Button Grid.Row="0" Grid.Column="1" x:Name="DetailFavBtn" x:FieldModifier="internal"
+                                                    Background="Transparent"
+                                                    Foreground="{StaticResource ChipTextBrush}"
+                                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                    FontSize="11" HorizontalAlignment="Stretch"
+                                                    Click="FavouriteButton_Click"
+                                                    ToolTipService.ToolTip="Toggle favourite">
+                                                <TextBlock x:Name="DetailFavIcon" x:FieldModifier="internal" FontSize="11" Text="Favourite" HorizontalAlignment="Center"/>
+                                            </Button>
+                                            <Button Grid.Row="1" Grid.Column="0" x:Name="DetailAppDataBtn" x:FieldModifier="internal"
+                                                    Background="Transparent"
+                                                    Foreground="{StaticResource ChipTextBrush}"
+                                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                    FontSize="11" HorizontalAlignment="Stretch"
+                                                    Click="OpenAppData_Click"
+                                                    Visibility="Collapsed"
+                                                    ToolTipService.ToolTip="Open game config folder in Explorer">
+                                                <TextBlock Text="Config" TextDecorations="Underline" HorizontalAlignment="Center"/>
+                                            </Button>
+                                            <Button Grid.Row="1" Grid.Column="1" x:Name="DetailFolderBtn" x:FieldModifier="internal"
+                                                    Background="Transparent"
+                                                    Foreground="{StaticResource ChipTextBrush}"
+                                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                    FontSize="11" HorizontalAlignment="Stretch"
+                                                    Click="OpenFolder_Click"
+                                                    ToolTipService.ToolTip="Open game folder in Explorer">
+                                                <TextBlock Text="Browse" TextDecorations="Underline" HorizontalAlignment="Center"/>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
                                 </Grid>
 
                                 <!-- Addon file + info badges with Browse button -->
