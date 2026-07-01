@@ -279,13 +279,18 @@ public class SettingsHandler
         var screenshotPath = _window.ScreenshotPathBox.Text?.Trim() ?? "";
         var perGame = _window.PerGameScreenshotToggle.IsOn;
 
-        // Persist settings
+        // Persist screenshot settings
         ViewModel.Settings.ScreenshotPath = screenshotPath;
         ViewModel.Settings.PerGameScreenshotFolders = perGame;
+
+        // Persist peak nits from textbox (user may not have pressed Enter)
+        if (int.TryParse(_window.PeakNitsBox.Text?.Trim(), out var nitsVal) && nitsVal > 0)
+            ViewModel.Settings.PeakNits = nitsVal;
+
         ViewModel.SaveSettingsPublic();
 
-        // If path is empty, clear persisted settings and return — no INI modifications
-        if (string.IsNullOrEmpty(screenshotPath))
+        // If both path and nits are empty, nothing to apply
+        if (string.IsNullOrEmpty(screenshotPath) && ViewModel.Settings.PeakNits <= 0)
         {
             return;
         }
@@ -312,11 +317,18 @@ public class SettingsHandler
 
                 foreach (var iniFile in iniFiles)
                 {
-                    AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
-                    // Also apply screenshot hotkey if non-default
-                    var ssHotkey = ViewModel.Settings.ScreenshotHotkey;
-                    if (ssHotkey != "44,0,0,0")
-                        AuxInstallService.ApplyScreenshotHotkey(iniFile, ssHotkey);
+                    if (!string.IsNullOrEmpty(screenshotPath))
+                    {
+                        AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
+                        // Also apply screenshot hotkey if non-default
+                        var ssHotkey = ViewModel.Settings.ScreenshotHotkey;
+                        if (ssHotkey != "44,0,0,0")
+                            AuxInstallService.ApplyScreenshotHotkey(iniFile, ssHotkey);
+                    }
+                    // Also apply peak nits if configured
+                    var peakNits = ViewModel.Settings.PeakNits;
+                    if (peakNits > 0)
+                        AuxInstallService.ApplyPeakNits(iniFile, peakNits);
                 }
                 updatedCount++;
             }
