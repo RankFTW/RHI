@@ -521,6 +521,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             .Where(c => c.RsStatus == GameStatus.Installed)
             .Where(c => !c.IsLumaMode) // Luma games bundle their own ReShade — skip update check
             .Where(c => !c.RequiresVulkanInstall) // Vulkan games use a global layer — handled separately in UpdateAllReShade
+            .Where(c => c.OsStatus != GameStatus.Installed) // OptiScaler deploys as dxgi.dll — size check gives false positive
             .ToList();
 
         _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {auxInstalled.Count} aux (RS) cards to check");

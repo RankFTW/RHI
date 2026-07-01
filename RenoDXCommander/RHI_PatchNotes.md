@@ -10,6 +10,7 @@
 ### Bug Fixes
 
 - Fixed Luma games falsely showing "Update Available" on launch when they were already up to date — stale status from a previous session was not being cleared.
+- Fixed ReShade falsely showing "Update Available" on games with OptiScaler installed — the update check was comparing OptiScaler's dxgi.dll size against ReShade staging, causing a permanent size mismatch.
 
 ---
 
