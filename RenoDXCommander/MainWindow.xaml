@@ -493,7 +493,7 @@
                             <!-- Right box: Hide, Favourite, Config, Browse -->
                             <Border Grid.Column="1" Background="{StaticResource SurfaceComponentTableBrush}"
                                     BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
-                                    CornerRadius="12" Padding="12,10" VerticalAlignment="Center">
+                                    CornerRadius="12" Padding="12,10" VerticalAlignment="Stretch">
                                 <Grid ColumnSpacing="4" RowSpacing="4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
