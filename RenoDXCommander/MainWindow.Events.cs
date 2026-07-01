@@ -3433,6 +3433,7 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath);
                 return;
             }
 
@@ -3442,6 +3443,7 @@ public sealed partial class MainWindow
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath);
                 return;
             }
 
@@ -3479,26 +3481,80 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// Monitors a launched process and disables HDR when it exits (if we enabled it).
-    /// For protocol launches (Steam/Epic URL) where proc is null, does nothing — HDR stays on
-    /// until the user manually disables it or relaunches another game.
+    /// For protocol launches (Steam/Epic URL) where proc is null, polls for the game exe by name.
     /// </summary>
-    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName)
+    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? installPath = null)
     {
-        if (!shouldToggle || wasAlreadyOn || proc == null) return;
+        if (!shouldToggle) return;
 
-        _ = Task.Run(async () =>
+        if (proc != null)
         {
-            try
+            // Direct exe launch — monitor the process directly
+            _ = Task.Run(async () =>
             {
-                await proc.WaitForExitAsync();
-                HdrToggleService.DisableHdr();
-                _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' exited — HDR disabled");
-            }
-            catch (Exception ex)
+                try
+                {
+                    await proc.WaitForExitAsync();
+                    HdrToggleService.DisableHdr();
+                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' exited — HDR disabled");
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' monitoring failed — {ex.Message}");
+                }
+            });
+        }
+        else if (!string.IsNullOrEmpty(installPath))
+        {
+            // Protocol launch (Steam/Epic) — poll for any new process running from the install path
+            _ = Task.Run(async () =>
             {
-                _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' monitoring failed — {ex.Message}");
-            }
-        });
+                try
+                {
+                    var normalizedPath = Path.GetFullPath(installPath).TrimEnd('\\').ToLowerInvariant();
+                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] Polling for game process in '{normalizedPath}'...");
+
+                    // Wait up to 60 seconds for the game process to appear
+                    System.Diagnostics.Process? gameProc = null;
+                    for (int i = 0; i < 60; i++)
+                    {
+                        await Task.Delay(1000);
+                        try
+                        {
+                            gameProc = System.Diagnostics.Process.GetProcesses()
+                                .FirstOrDefault(p =>
+                                {
+                                    try
+                                    {
+                                        var mainMod = p.MainModule?.FileName;
+                                        return mainMod != null
+                                            && Path.GetFullPath(mainMod).ToLowerInvariant().StartsWith(normalizedPath);
+                                    }
+                                    catch { return false; }
+                                });
+                        }
+                        catch { }
+
+                        if (gameProc != null) break;
+                    }
+
+                    if (gameProc == null)
+                    {
+                        _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' — game process not found after 60s, HDR will remain on");
+                        return;
+                    }
+
+                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' — found process '{gameProc.ProcessName}' (PID {gameProc.Id}), waiting for exit...");
+                    await gameProc.WaitForExitAsync();
+                    HdrToggleService.DisableHdr();
+                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' exited — HDR disabled");
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' poll monitoring failed — {ex.Message}");
+                }
+            });
+        }
     }
 
     private static string? GetSteamExePath()
