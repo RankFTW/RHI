@@ -3362,8 +3362,13 @@ public sealed partial class MainWindow
             if (shouldToggleHdr)
             {
                 hdrWasAlreadyOn = HdrToggleService.IsHdrEnabled();
+                _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: shouldToggle={shouldToggleHdr}, wasAlreadyOn={hdrWasAlreadyOn}, override='{hdrOverride}'");
                 if (!hdrWasAlreadyOn)
                     HdrToggleService.EnableHdr();
+            }
+            else
+            {
+                _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: disabled for '{gameName}' (override='{hdrOverride}', global={ViewModel.Settings.HdrAutoToggle})");
             }
 
             // 1. User override (absolute path)
