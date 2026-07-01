@@ -2,7 +2,7 @@
 
 ### New
 
-- **HDR Auto-Toggle** — automatically enables Windows HDR when launching a game through RHI and disables it when the game exits. Global setting (Off/On) in the Display section. Per-game override button ("HDR On/Off") next to the Launch button — cycles between Global → On → Off. Purple when active. Monitors the game process and disables HDR on exit for both direct exe and Steam/Epic protocol launches.
+- **HDR Auto-Toggle** — automatically enables Windows HDR when launching a game through RHI and disables it when the game exits. Global setting (Off/On) in the Display section. Per-game "HDR" button next to Launch — purple when active, grey when inactive. Click to flip. Monitors the game process and disables HDR on exit for both direct exe and Steam/Epic protocol launches.
 - **DLSS / Streamline Auto-Update** — new toggles in the DLSS / Streamline Settings card. When enabled, games that are on the previous latest version are automatically swapped to the new latest when a manifest update arrives. Games on manually chosen older versions are left alone. Set and forget.
 - **Peak Brightness (nits) global setting** — set your monitor's peak nits once and it's automatically written to all reshade.ini files on every deploy. Auto-detect button reads your display hardware. Persists across ReShade installs and mass deploys.
 - **Settings page reorganized** — 9 clearly labelled sections with card headers. Related items grouped together. ReShade stuff on the left, HDR/display on the right. Per-game screenshot subfolders converted to a compact combo box.

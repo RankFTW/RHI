@@ -19,6 +19,7 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private string? _rdxInstalledVersion;
     [ObservableProperty] private bool _isHidden = false;
     [ObservableProperty] private bool _isFavourite = false;
+    [ObservableProperty] private bool _isRunning = false;
 
     [ObservableProperty] private bool _isExternalOnly;
     [ObservableProperty] private bool _isGenericMod;

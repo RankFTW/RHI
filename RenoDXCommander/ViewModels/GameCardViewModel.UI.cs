@@ -9,8 +9,8 @@ namespace RenoDXCommander.ViewModels;
 public partial class GameCardViewModel
 {
     // ── Sidebar item styling (computed from IsSelected + managed state) ────────────
-    public string SidebarItemBackground => IsSelected ? "#1A2840" : "Transparent";
-    public string SidebarItemBorderBrush => IsSelected ? "#2A4060" : "Transparent";
+    public string SidebarItemBackground => IsRunning ? "#1A3A20" : IsSelected ? "#1A2840" : "Transparent";
+    public string SidebarItemBorderBrush => IsRunning ? "#2A5A30" : IsSelected ? "#2A4060" : "Transparent";
     public string SidebarItemForeground => IsSelected ? "#E2E8FF"
         : IsManaged ? "#C8D4E8"   // brighter — something is installed
         : "#5A6880";              // dimmer — untouched game
@@ -80,6 +80,7 @@ public partial class GameCardViewModel
     }
 
     partial void OnIsSelectedChanged(bool value) => NotifySidebarProps();
+    partial void OnIsRunningChanged(bool value) => NotifySidebarProps();
     partial void OnCardHighlightedChanged(bool value)
     {
         OnPropertyChanged(nameof(CardBackground));

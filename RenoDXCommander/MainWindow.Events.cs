@@ -3484,22 +3484,27 @@ public sealed partial class MainWindow
     /// </summary>
     private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? installPath = null)
     {
-        if (!shouldToggle) return;
+        // Find the card to set IsRunning
+        var card = ViewModel.AllCards.FirstOrDefault(c =>
+            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
 
         if (proc != null)
         {
             // Direct exe launch — monitor the process directly
+            DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = true; });
             _ = Task.Run(async () =>
             {
                 try
                 {
                     await proc.WaitForExitAsync();
-                    HdrToggleService.DisableHdr();
-                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' exited — HDR disabled");
+                    if (shouldToggle) HdrToggleService.DisableHdr();
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
                 }
                 catch (Exception ex)
                 {
-                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' monitoring failed — {ex.Message}");
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' monitoring failed — {ex.Message}");
                 }
             });
         }
@@ -3511,7 +3516,7 @@ public sealed partial class MainWindow
                 try
                 {
                     var normalizedPath = Path.GetFullPath(installPath).TrimEnd('\\').ToLowerInvariant();
-                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] Polling for game process in '{normalizedPath}'...");
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] Polling for game process in '{normalizedPath}'...");
 
                     // Wait up to 60 seconds for the game process to appear
                     System.Diagnostics.Process? gameProc = null;
@@ -3539,18 +3544,21 @@ public sealed partial class MainWindow
 
                     if (gameProc == null)
                     {
-                        _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' — game process not found after 60s, HDR will remain on");
+                        _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' — game process not found after 60s");
                         return;
                     }
 
-                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' — found process '{gameProc.ProcessName}' (PID {gameProc.Id}), waiting for exit...");
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = true; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' — found process '{gameProc.ProcessName}' (PID {gameProc.Id}), waiting for exit...");
                     await gameProc.WaitForExitAsync();
-                    HdrToggleService.DisableHdr();
-                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' exited — HDR disabled");
+                    if (shouldToggle) HdrToggleService.DisableHdr();
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
                 }
                 catch (Exception ex)
                 {
-                    _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' poll monitoring failed — {ex.Message}");
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' poll monitoring failed — {ex.Message}");
                 }
             });
         }
