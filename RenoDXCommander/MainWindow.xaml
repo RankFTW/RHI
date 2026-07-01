@@ -491,9 +491,9 @@
                             </StackPanel>
                             </Border>
                             <!-- Right box: Hide, Favourite, Config, Browse -->
-                            <Border Grid.Column="2" Background="{StaticResource SurfaceOverlayBrush}"
-                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                    CornerRadius="8" Padding="6">
+                            <Border Grid.Column="1" Background="{StaticResource SurfaceComponentTableBrush}"
+                                    BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    CornerRadius="12" Padding="12,10" VerticalAlignment="Center">
                                 <Grid ColumnSpacing="4" RowSpacing="4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
