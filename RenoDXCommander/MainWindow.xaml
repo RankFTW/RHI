@@ -260,6 +260,12 @@
                                   DoubleTapped="GameList_DoubleTapped"
                                   Background="Transparent"
                                   SelectionMode="Single" Padding="4">
+                            <ListView.Resources>
+                                <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="#0AFFFFFF"/>
+                            </ListView.Resources>
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="vm:GameCardViewModel">
                                     <Border Background="{x:Bind SidebarItemBackground, Mode=OneWay}"
