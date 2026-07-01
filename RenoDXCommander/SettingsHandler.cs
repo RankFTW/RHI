@@ -44,9 +44,9 @@ public class SettingsHandler
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
-        // Populate screenshot path and per-game toggle
+        // Populate screenshot path and per-game combo
         _window.ScreenshotPathBox.Text = ViewModel.Settings.ScreenshotPath;
-        _window.PerGameScreenshotToggle.IsOn = ViewModel.Settings.PerGameScreenshotFolders;
+        _window.PerGameScreenshotCombo.SelectedIndex = ViewModel.Settings.PerGameScreenshotFolders ? 1 : 0;
         // Initialize peak nits display
         _window.PeakNitsBox.Text = ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits.ToString() : "";
         // Initialize hotkey display from persisted value (Req 2.4, 3.2)
@@ -280,7 +280,7 @@ public class SettingsHandler
     public async void ApplyScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         var screenshotPath = _window.ScreenshotPathBox.Text?.Trim() ?? "";
-        var perGame = _window.PerGameScreenshotToggle.IsOn;
+        var perGame = _window.PerGameScreenshotCombo.SelectedIndex == 1;
 
         // Persist screenshot settings
         ViewModel.Settings.ScreenshotPath = screenshotPath;

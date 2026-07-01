@@ -6,7 +6,7 @@
 - **Peak Brightness (nits) global setting** — set your monitor's peak nits once in ReShade Settings, and it's automatically written to all reshade.ini files on every deploy. Auto-detect button reads your display hardware. Persists across ReShade installs and mass deploys.
 - **Global ReShade channel removed** — the Build Channels card is gone. ReShade always defaults to Stable. Per-game overrides (Nightly, Custom, Legacy) remain available in the RS Channel dropdown. Users who had Nightly globally will have it migrated to per-game overrides automatically.
 - **DLSS / Streamline Auto-Update** — new toggles in the DLSS / Streamline Settings card. When enabled, games that are on the previous latest version are automatically swapped to the new latest when a manifest update arrives. Games on manually chosen older versions are left alone. Set and forget.
-- **HDR Auto-Toggle** — automatically enables Windows HDR when launching a game through RHI and disables it when the game exits. Global setting (Off/On) in ReShade Settings card. Per-game override button ("HDR On/Off") in the game's detail panel header — cycles between Global → On → Off. Purple when active. Process exit monitoring for direct exe launches; protocol launches (Steam/Epic URL) leave HDR on until manually disabled.
+- **HDR Auto-Toggle** — automatically enables Windows HDR when launching a game through RHI and disables it when the game exits. Global setting (Off/On) in ReShade Settings card. Per-game override button ("HDR On/Off") next to the Launch button — cycles between Global → On → Off. Purple when active. Monitors the game process and disables HDR on exit for both direct exe and Steam/Epic protocol launches.
 
 ### Bug Fixes
 

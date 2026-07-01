@@ -1219,12 +1219,12 @@
                         </Border>
 
                         <!-- ══════════════════════════════════════════════════════════
-                             CARD 2: RESHADE GLOBAL SETTINGS
+                             CARD 2: RESHADE & DISPLAY
                              ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="12">
-                            <TextBlock Text="ReShade Settings" FontSize="15" FontWeight="Bold"
+                            <TextBlock Text="ReShade &amp; Display" FontSize="15" FontWeight="Bold"
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
@@ -1237,46 +1237,33 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Left Column: Screenshots + Peak Nits -->
+                                <!-- ── Left: Screenshots & Hotkeys ── -->
                                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
-                                    <TextBlock Text="Screenshots &amp; Peak Brightness" FontSize="14" FontWeight="SemiBold"
+                                    <TextBlock Text="Screenshots &amp; Hotkeys" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Screenshot save path and peak brightness (nits) written to all managed reshade.ini files."/>
+                                               Text="Screenshot save path and ReShade key bindings applied to all managed reshade.ini files."/>
                                 </StackPanel>
 
-                                <!-- Divider spanning all rows -->
-                                <Border Grid.Row="0" Grid.RowSpan="5" Grid.Column="1" Width="1"
+                                <!-- Divider -->
+                                <Border Grid.Row="0" Grid.RowSpan="4" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
-                                <!-- Right Column: Hotkeys -->
+                                <!-- ── Right: HDR & Peak Brightness ── -->
                                 <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
-                                    <TextBlock Text="Hotkeys" FontSize="14" FontWeight="SemiBold"
+                                    <TextBlock Text="HDR &amp; Peak Brightness" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="ReShade key bindings applied to all games."/>
-                                    <Grid ColumnSpacing="8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="Overlay toggle key"/>
-                                        <TextBlock Grid.Column="1" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="Screenshot key" Margin="0,0,26,0"/>
-                                    </Grid>
+                                               Text="Peak brightness (nits) written to reshade.ini presets. HDR auto-toggle enables Windows HDR on game launch and disables on exit."/>
                                 </StackPanel>
 
-                                <!-- Row 1 Left: Screenshot path -->
-                                <Grid Grid.Row="1" Grid.Column="0" ColumnSpacing="8" VerticalAlignment="Top">
+                                <!-- Row 1 Left: Screenshot path + Open -->
+                                <Grid Grid.Row="1" Grid.Column="0" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
@@ -1305,66 +1292,14 @@
                                             ToolTipService.ToolTip="Open the screenshot folder in Explorer"/>
                                 </Grid>
 
-                                <!-- Row 1 Right: Overlay + Screenshot hotkey boxes -->
+                                <!-- Row 1 Right: Peak Nits -->
                                 <Grid Grid.Row="1" Grid.Column="2" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" x:Name="HotkeyBox" x:FieldModifier="internal"
-                                             PlaceholderText="Press a key..." IsReadOnly="True" FontSize="12"
-                                             Background="{StaticResource SurfaceInputBrush}"
-                                             Foreground="{StaticResource TextSecondaryBrush}"
-                                             BorderBrush="{StaticResource BorderSubtleBrush}"
-                                             PreviewKeyDown="HotkeyBox_PreviewKeyDown"/>
-                                    <Grid Grid.Column="1" ColumnSpacing="4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox Grid.Column="0" x:Name="ScreenshotHotkeyBox" x:FieldModifier="internal"
-                                                 PlaceholderText="Press a key..." IsReadOnly="True" FontSize="12"
-                                                 Background="{StaticResource SurfaceInputBrush}"
-                                                 Foreground="{StaticResource TextSecondaryBrush}"
-                                                 BorderBrush="{StaticResource BorderSubtleBrush}"
-                                                 PreviewKeyDown="ScreenshotHotkeyBox_PreviewKeyDown"/>
-                                        <Button Grid.Column="1" Content="↺" Click="ResetScreenshotHotkey_Click"
-                                                ToolTipService.ToolTip="Reset to Print Screen"
-                                                Background="Transparent" BorderThickness="0"
-                                                Padding="6,4" MinWidth="0" MinHeight="0" FontSize="14"
-                                                Foreground="{StaticResource TextTertiaryBrush}"
-                                                VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Grid>
-
-                                <!-- Row 2 Left: Per-Game Subfolder -->
-                                <StackPanel Grid.Row="2" Grid.Column="0" Spacing="4">
-                                    <TextBlock Text="Per-Game Subfolder" FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <ToggleSwitch x:Name="PerGameScreenshotToggle" x:FieldModifier="internal"
-                                                  OnContent="Enabled — each game gets its own subfolder"
-                                                  OffContent="Disabled — all screenshots in one folder"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                                </StackPanel>
-
-                                <!-- Row 2 Right: Apply Hotkeys -->
-                                <Button Grid.Row="2" Grid.Column="2" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
-                                        Content="Apply to All Games"
-                                        Click="ApplyReShadeHotkeys_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}"
-                                        Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-
-                                <!-- Row 3 Left: Peak Nits -->
-                                <Grid Grid.Row="3" Grid.Column="0" ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Peak Brightness" FontSize="12"
+                                    <TextBlock Grid.Column="0" Text="Peak Nits" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                VerticalAlignment="Center"/>
                                     <Button Grid.Column="1" x:Name="PeakNitsAutoBtn"
@@ -1382,8 +1317,61 @@
                                              KeyDown="PeakNitsBox_KeyDown"/>
                                 </Grid>
 
-                                <!-- Row 3 Right: HDR Auto-Toggle -->
-                                <Grid Grid.Row="3" Grid.Column="2" ColumnSpacing="8">
+                                <!-- Row 2 Left: Overlay key | Screenshot key | Per-Game Folders combo -->
+                                <Grid Grid.Row="2" Grid.Column="0" ColumnSpacing="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="Overlay key" Margin="0,0,0,3"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="Screenshot key" Margin="0,0,0,3"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="Subfolders" Margin="0,0,0,3"/>
+                                    <TextBox Grid.Row="1" Grid.Column="0" x:Name="HotkeyBox" x:FieldModifier="internal"
+                                             PlaceholderText="Press a key..." IsReadOnly="True" FontSize="12"
+                                             Background="{StaticResource SurfaceInputBrush}"
+                                             Foreground="{StaticResource TextSecondaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"
+                                             PreviewKeyDown="HotkeyBox_PreviewKeyDown"/>
+                                    <Grid Grid.Row="1" Grid.Column="1" ColumnSpacing="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" x:Name="ScreenshotHotkeyBox" x:FieldModifier="internal"
+                                                 PlaceholderText="Press a key..." IsReadOnly="True" FontSize="12"
+                                                 Background="{StaticResource SurfaceInputBrush}"
+                                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                                 BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                 PreviewKeyDown="ScreenshotHotkeyBox_PreviewKeyDown"/>
+                                        <Button Grid.Column="1" Content="↺" Click="ResetScreenshotHotkey_Click"
+                                                ToolTipService.ToolTip="Reset to Print Screen"
+                                                Background="Transparent" BorderThickness="0"
+                                                Padding="6,4" MinWidth="0" MinHeight="0" FontSize="14"
+                                                Foreground="{StaticResource TextTertiaryBrush}"
+                                                VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <ComboBox Grid.Row="1" Grid.Column="2" x:Name="PerGameScreenshotCombo" x:FieldModifier="internal"
+                                              FontSize="12" MinWidth="60"
+                                              ToolTipService.ToolTip="When On, each game gets its own screenshot subfolder."
+                                              SelectionChanged="PerGameScreenshotCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Off"/>
+                                        <ComboBoxItem Content="On"/>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Row 2 Right: HDR Auto-Toggle -->
+                                <Grid Grid.Row="2" Grid.Column="2" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
@@ -1393,15 +1381,24 @@
                                                VerticalAlignment="Center"/>
                                     <ComboBox Grid.Column="1" x:Name="HdrAutoToggleCombo" x:FieldModifier="internal"
                                               FontSize="12" HorizontalAlignment="Stretch"
-                                              ToolTipService.ToolTip="When On, Windows HDR is automatically enabled when launching a game through RHI and disabled when the game exits. Per-game overrides are available on each game's page."
+                                              ToolTipService.ToolTip="When On, Windows HDR is automatically enabled when launching a game through RHI and disabled when the game exits."
                                               SelectionChanged="HdrAutoToggleCombo_SelectionChanged">
                                         <ComboBoxItem Content="Off"/>
                                         <ComboBoxItem Content="On"/>
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Row 4: Apply buttons -->
-                                <Button Grid.Row="4" Grid.Column="0" x:Name="ApplyScreenshotPathBtn"
+                                <!-- Row 3: Apply buttons -->
+                                <Button Grid.Row="3" Grid.Column="0" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
+                                        Content="Apply to All Games"
+                                        Click="ApplyReShadeHotkeys_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
+
+                                <Button Grid.Row="3" Grid.Column="2" x:Name="ApplyScreenshotPathBtn"
                                         Content="Apply to All Games"
                                         Click="ApplyScreenshotPath_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"
@@ -1409,8 +1406,6 @@
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                         CornerRadius="8" Padding="12,7" FontSize="12"
                                         HorizontalAlignment="Stretch"/>
-
-                                <!-- Row 4 Right: empty (hotkeys already have their Apply above) -->
                             </Grid>
                             </StackPanel>
                         </Border>
