@@ -2287,6 +2287,52 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
     }
 
+    private void HdrAutoToggleCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.HdrAutoToggle = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void HdrToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
+
+        var overrides = ViewModel.GameNameServiceInstance.HdrToggleOverrides;
+        var current = overrides.TryGetValue(card.GameName, out var v) ? v : null;
+
+        // Cycle: null (Global) → "On" → "Off" → null (Global)
+        string? newValue;
+        if (current == null)
+            newValue = "On";
+        else if (string.Equals(current, "On", StringComparison.OrdinalIgnoreCase))
+            newValue = "Off";
+        else
+            newValue = null; // back to Global
+
+        if (newValue == null)
+            overrides.Remove(card.GameName);
+        else
+            overrides[card.GameName] = newValue;
+
+        ViewModel.SaveSettingsPublic();
+
+        // Update button visual
+        bool hdrActive = newValue != null
+            ? string.Equals(newValue, "On", StringComparison.OrdinalIgnoreCase)
+            : ViewModel.Settings.HdrAutoToggle;
+        DetailHdrToggleText.Text = hdrActive ? "HDR On" : "HDR Off";
+        DetailHdrToggleBtn.Background = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
+            : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+        DetailHdrToggleBtn.BorderBrush = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush)
+            : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+        DetailHdrToggleText.Foreground = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
+            : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+    }
+
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -3305,16 +3351,32 @@ public sealed partial class MainWindow
             var launchArgs = ViewModel.GameNameServiceInstance.LaunchArgsOverrides
                 .TryGetValue(gameName, out var args) ? args : null;
 
+            // ── HDR Auto-Toggle: resolve whether to enable ──
+            var hdrOverride = ViewModel.GameNameServiceInstance.HdrToggleOverrides
+                .TryGetValue(gameName, out var hov) ? hov : null;
+            bool shouldToggleHdr = hdrOverride != null
+                ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
+                : ViewModel.Settings.HdrAutoToggle;
+
+            bool hdrWasAlreadyOn = false;
+            if (shouldToggleHdr)
+            {
+                hdrWasAlreadyOn = HdrToggleService.IsHdrEnabled();
+                if (!hdrWasAlreadyOn)
+                    HdrToggleService.EnableHdr();
+            }
+
             // 1. User override (absolute path)
             if (ViewModel.GameNameServiceInstance.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
                 && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
             {
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via user override: {userExe} {launchArgs}");
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe)
+                var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe)
                 {
                     Arguments = launchArgs ?? "",
                     UseShellExecute = true,
                 });
+                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName);
                 return;
             }
 
@@ -3392,11 +3454,12 @@ public sealed partial class MainWindow
                 if (gameExe != null)
                 {
                     _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via auto-detected exe: {gameExe} {launchArgs}");
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe)
+                    var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe)
                     {
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                     });
+                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName);
                     return;
                 }
             }
@@ -3407,6 +3470,30 @@ public sealed partial class MainWindow
         {
             _crashReporter.Log($"[MainWindow.LaunchGame] Failed to launch '{card.GameName}' — {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Monitors a launched process and disables HDR when it exits (if we enabled it).
+    /// For protocol launches (Steam/Epic URL) where proc is null, does nothing — HDR stays on
+    /// until the user manually disables it or relaunches another game.
+    /// </summary>
+    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName)
+    {
+        if (!shouldToggle || wasAlreadyOn || proc == null) return;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await proc.WaitForExitAsync();
+                HdrToggleService.DisableHdr();
+                _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' exited — HDR disabled");
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainWindow.MonitorProcessForHdr] '{gameName}' monitoring failed — {ex.Message}");
+            }
+        });
     }
 
     private static string? GetSteamExePath()

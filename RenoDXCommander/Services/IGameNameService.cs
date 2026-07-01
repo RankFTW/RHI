@@ -89,6 +89,9 @@ public interface IGameNameService
     /// <summary>Per-game Lilium HDR DXVK preset index. 0=Safest (default), 5=Experimental. Absent = 0.</summary>
     Dictionary<string, int> LiliumPresetOverrides { get; }
 
+    /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
+    Dictionary<string, string> HdrToggleOverrides { get; }
+
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     Dictionary<string, string> LaunchExeOverrides { get; }
 

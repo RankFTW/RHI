@@ -209,6 +209,24 @@ public partial class DetailPanelBuilder
         _window.DetailPcgwBtn.Tag = card;
         _window.DetailPcgwBtn.Visibility = card.HasPcgwUrl ? Visibility.Visible : Visibility.Collapsed;
 
+        // HDR toggle button — show per-game state
+        _window.DetailHdrToggleBtn.Tag = card;
+        var hdrOverride = _window.ViewModel.GameNameServiceInstance.HdrToggleOverrides
+            .TryGetValue(card.GameName, out var hov) ? hov : null;
+        bool hdrActive = hdrOverride != null
+            ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
+            : _window.ViewModel.Settings.HdrAutoToggle;
+        _window.DetailHdrToggleText.Text = hdrActive ? "HDR On" : "HDR Off";
+        _window.DetailHdrToggleBtn.Background = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
+            : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+        _window.DetailHdrToggleBtn.BorderBrush = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush)
+            : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+        _window.DetailHdrToggleText.Foreground = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
+            : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+
         // Nexus Mods link button
         _window.DetailNexusModsBtn.Tag = card;
         _window.DetailNexusModsBtn.Visibility = card.HasNexusModsUrl ? Visibility.Visible : Visibility.Collapsed;

@@ -445,6 +445,16 @@
                                                 ToolTipService.ToolTip="Open game folder in Explorer">
                                             <TextBlock Text="Browse" TextDecorations="Underline"/>
                                         </Button>
+                                        <Button x:Name="DetailHdrToggleBtn" x:FieldModifier="internal"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                Click="HdrToggle_Click"
+                                                ToolTipService.ToolTip="Toggle per-game HDR auto-switch override. Purple = HDR will be enabled when this game launches.">
+                                            <TextBlock x:Name="DetailHdrToggleText" x:FieldModifier="internal" FontSize="11" Text="HDR Off"/>
+                                        </Button>
                                     </StackPanel>
                                 </Grid>
 
@@ -1372,7 +1382,23 @@
                                              KeyDown="PeakNitsBox_KeyDown"/>
                                 </Grid>
 
-                                <!-- Row 3 Right: empty (visual balance) -->
+                                <!-- Row 3 Right: HDR Auto-Toggle -->
+                                <Grid Grid.Row="3" Grid.Column="2" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="HDR Auto-Toggle" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" x:Name="HdrAutoToggleCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              ToolTipService.ToolTip="When On, Windows HDR is automatically enabled when launching a game through RHI and disabled when the game exits. Per-game overrides are available on each game's page."
+                                              SelectionChanged="HdrAutoToggleCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Off"/>
+                                        <ComboBoxItem Content="On"/>
+                                    </ComboBox>
+                                </Grid>
 
                                 <!-- Row 4: Apply buttons -->
                                 <Button Grid.Row="4" Grid.Column="0" x:Name="ApplyScreenshotPathBtn"

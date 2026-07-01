@@ -45,6 +45,9 @@ public class GameNameService : IGameNameService
     private Dictionary<string, string> _dxvkVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, int> _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game HDR auto-toggle overrides. Key = game name, Value = "On" or "Off". Absent = use global default.</summary>
+    private Dictionary<string, string> _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     private Dictionary<string, string> _launchExeOverrides = new(StringComparer.OrdinalIgnoreCase);
 
@@ -90,6 +93,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> DxvkVariantOverrides => _dxvkVariantOverrides;
     /// <summary>Per-game Lilium HDR DXVK preset index. 0=Safest (default), 5=Experimental. Absent = 0.</summary>
     public Dictionary<string, int> LiliumPresetOverrides => _liliumPresetOverrides;
+    /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
+    public Dictionary<string, string> HdrToggleOverrides => _hdrToggleOverrides;
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     public Dictionary<string, string> LaunchExeOverrides => _launchExeOverrides;
     /// <summary>Per-game launch arguments. Key = game name, Value = arguments string.</summary>
@@ -304,6 +309,9 @@ public class GameNameService : IGameNameService
         _liliumPresetOverrides = new(Load<Dictionary<string, int>>("LiliumPresetOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
+        _hdrToggleOverrides = new(Load<Dictionary<string, string>>("HdrToggleOverrides",
+            new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
+
         _launchExeOverrides = new(Load<Dictionary<string, string>>("LaunchExeOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
@@ -389,6 +397,7 @@ public class GameNameService : IGameNameService
                 s["ReShadeChannelOverrides"] = JsonSerializer.Serialize(_reShadeChannelOverrides);
                 s["DxvkVariantOverrides"] = JsonSerializer.Serialize(_dxvkVariantOverrides);
                 s["LiliumPresetOverrides"] = JsonSerializer.Serialize(_liliumPresetOverrides);
+                s["HdrToggleOverrides"] = JsonSerializer.Serialize(_hdrToggleOverrides);
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
                 s["LaunchArgsOverrides"] = JsonSerializer.Serialize(_launchArgsOverrides);
                 s["EngineVersionOverrides"] = JsonSerializer.Serialize(_engineVersionOverrides);
@@ -528,6 +537,7 @@ public class GameNameService : IGameNameService
         MigrateDict(_reShadeChannelOverrides, oldName, newName);
         MigrateDict(_dxvkVariantOverrides, oldName, newName);
         MigrateDict(_liliumPresetOverrides, oldName, newName);
+        MigrateDict(_hdrToggleOverrides, oldName, newName);
         MigrateDict(_launchExeOverrides, oldName, newName);
         MigrateDict(_launchArgsOverrides, oldName, newName);
         MigrateDict(_engineVersionOverrides, oldName, newName);

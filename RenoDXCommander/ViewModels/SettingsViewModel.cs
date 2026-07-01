@@ -56,6 +56,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _autoUpdateStreamline;
     [ObservableProperty] private string _lastKnownNewestDlss = "";
     [ObservableProperty] private string _lastKnownNewestStreamline = "";
+    [ObservableProperty] private bool _hdrAutoToggle;
 
     // ── DLSS/Streamline Defaults ──────────────────────────────────────────────
     [ObservableProperty] private string _defaultDlssVersion = "";
@@ -230,6 +231,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("AutoUpdateStreamline", out var ausVal)) AutoUpdateStreamline = ausVal == "true";
         if (s.TryGetValue("LastKnownNewestDlss", out var lkndVal)) LastKnownNewestDlss = lkndVal ?? "";
         if (s.TryGetValue("LastKnownNewestStreamline", out var lknsVal)) LastKnownNewestStreamline = lknsVal ?? "";
+        if (s.TryGetValue("HdrAutoToggle", out var hatVal)) HdrAutoToggle = hatVal == "true";
 
         // DLSS/Streamline defaults
         if (s.TryGetValue("DefaultDlssVersion", out var ddv)) DefaultDlssVersion = ddv ?? "";
@@ -289,6 +291,7 @@ public partial class SettingsViewModel : ObservableObject
         if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true";
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;
         if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
+        if (HdrAutoToggle) s["HdrAutoToggle"] = "true";
 
         // DLSS/Streamline defaults
         if (!string.IsNullOrEmpty(DefaultDlssVersion)) s["DefaultDlssVersion"] = DefaultDlssVersion;
