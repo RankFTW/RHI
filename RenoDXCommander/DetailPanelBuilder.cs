@@ -216,7 +216,7 @@ public partial class DetailPanelBuilder
         bool hdrActive = hdrOverride != null
             ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
             : _window.ViewModel.Settings.HdrAutoToggle;
-        _window.DetailHdrToggleText.Text = hdrActive ? "HDR On" : "HDR Off";
+        _window.DetailHdrToggleText.Text = "HDR";
         _window.DetailHdrToggleBtn.Background = hdrActive
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
             : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);

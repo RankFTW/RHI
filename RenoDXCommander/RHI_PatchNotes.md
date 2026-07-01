@@ -2,16 +2,16 @@
 
 ### New
 
-- **Settings page reorganized** — 9 clearly labelled sections with card headers: Game Library, ReShade Settings, DLSS / Streamline Settings, Global NVIDIA Driver Settings, Component Settings, Shaders & Addons, Update & Deployment, System & Maintenance, Data & Custom Files. Related items are now grouped together.
-- **Peak Brightness (nits) global setting** — set your monitor's peak nits once in ReShade Settings, and it's automatically written to all reshade.ini files on every deploy. Auto-detect button reads your display hardware. Persists across ReShade installs and mass deploys.
-- **Global ReShade channel removed** — the Build Channels card is gone. ReShade always defaults to Stable. Per-game overrides (Nightly, Custom, Legacy) remain available in the RS Channel dropdown. Users who had Nightly globally will have it migrated to per-game overrides automatically.
+- **HDR Auto-Toggle** — automatically enables Windows HDR when launching a game through RHI and disables it when the game exits. Global setting (Off/On) in the Display section. Per-game override button ("HDR On/Off") next to the Launch button — cycles between Global → On → Off. Purple when active. Monitors the game process and disables HDR on exit for both direct exe and Steam/Epic protocol launches.
 - **DLSS / Streamline Auto-Update** — new toggles in the DLSS / Streamline Settings card. When enabled, games that are on the previous latest version are automatically swapped to the new latest when a manifest update arrives. Games on manually chosen older versions are left alone. Set and forget.
-- **HDR Auto-Toggle** — automatically enables Windows HDR when launching a game through RHI and disables it when the game exits. Global setting (Off/On) in ReShade Settings card. Per-game override button ("HDR On/Off") next to the Launch button — cycles between Global → On → Off. Purple when active. Monitors the game process and disables HDR on exit for both direct exe and Steam/Epic protocol launches.
+- **Peak Brightness (nits) global setting** — set your monitor's peak nits once and it's automatically written to all reshade.ini files on every deploy. Auto-detect button reads your display hardware. Persists across ReShade installs and mass deploys.
+- **Settings page reorganized** — 9 clearly labelled sections with card headers. Related items grouped together. ReShade stuff on the left, HDR/display on the right. Per-game screenshot subfolders converted to a compact combo box.
+- **Global ReShade channel removed** — the Build Channels card is gone. ReShade always defaults to Stable. Per-game overrides (Nightly, Custom, Legacy) remain available in the RS Channel dropdown. Users who had Nightly globally will have it migrated to per-game overrides automatically.
 
 ### Bug Fixes
 
-- Fixed Luma games falsely showing "Update Available" on launch when they were already up to date — stale status from a previous session was not being cleared.
 - Fixed ReShade falsely showing "Update Available" on games with OptiScaler installed — the update check was comparing OptiScaler's dxgi.dll size against ReShade staging, causing a permanent size mismatch.
+- Fixed Luma games falsely showing "Update Available" on launch when they were already up to date — stale status from a previous session was not being cleared.
 
 ---
 

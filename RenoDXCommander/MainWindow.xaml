@@ -364,7 +364,7 @@
                                                 FontSize="11"
                                                 Click="HdrToggle_Click"
                                                 ToolTipService.ToolTip="Toggle per-game HDR auto-switch. Purple = HDR enabled on launch, disabled on exit.">
-                                            <TextBlock x:Name="DetailHdrToggleText" x:FieldModifier="internal" FontSize="11" Text="HDR Off"/>
+                                            <TextBlock x:Name="DetailHdrToggleText" x:FieldModifier="internal" FontSize="11" Text="HDR"/>
                                         </Button>
                                         <Border Width="1" Background="{StaticResource BorderSubtleBrush}" Margin="4,2"/>
                                         <Button x:Name="DetailNexusModsBtn" x:FieldModifier="internal"

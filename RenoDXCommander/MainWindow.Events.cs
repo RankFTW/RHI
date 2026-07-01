@@ -2308,27 +2308,19 @@ public sealed partial class MainWindow
         var overrides = ViewModel.GameNameServiceInstance.HdrToggleOverrides;
         var current = overrides.TryGetValue(card.GameName, out var v) ? v : null;
 
-        // Cycle: null (Global) → "On" → "Off" → null (Global)
-        string? newValue;
-        if (current == null)
-            newValue = "On";
-        else if (string.Equals(current, "On", StringComparison.OrdinalIgnoreCase))
-            newValue = "Off";
-        else
-            newValue = null; // back to Global
+        // Resolve current effective state and flip it
+        bool currentlyActive = current != null
+            ? string.Equals(current, "On", StringComparison.OrdinalIgnoreCase)
+            : ViewModel.Settings.HdrAutoToggle;
 
-        if (newValue == null)
-            overrides.Remove(card.GameName);
-        else
-            overrides[card.GameName] = newValue;
+        string newValue = currentlyActive ? "Off" : "On";
+        overrides[card.GameName] = newValue;
 
         ViewModel.SaveSettingsPublic();
 
         // Update button visual
-        bool hdrActive = newValue != null
-            ? string.Equals(newValue, "On", StringComparison.OrdinalIgnoreCase)
-            : ViewModel.Settings.HdrAutoToggle;
-        DetailHdrToggleText.Text = hdrActive ? "HDR On" : "HDR Off";
+        bool hdrActive = string.Equals(newValue, "On", StringComparison.OrdinalIgnoreCase);
+        DetailHdrToggleText.Text = "HDR";
         DetailHdrToggleBtn.Background = hdrActive
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
             : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
