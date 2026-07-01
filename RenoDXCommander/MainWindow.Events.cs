@@ -3363,8 +3363,8 @@ public sealed partial class MainWindow
             {
                 hdrWasAlreadyOn = HdrToggleService.IsHdrEnabled();
                 _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: shouldToggle={shouldToggleHdr}, wasAlreadyOn={hdrWasAlreadyOn}, override='{hdrOverride}'");
-                if (!hdrWasAlreadyOn)
-                    HdrToggleService.EnableHdr();
+                // Always attempt to enable — IsHdrEnabled can report false positives on some configs
+                HdrToggleService.EnableHdr();
             }
             else
             {
