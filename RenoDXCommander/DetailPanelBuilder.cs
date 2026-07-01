@@ -103,13 +103,8 @@ public partial class DetailPanelBuilder
         }
         else _window.DetailGraphicsApiBadge.Visibility = Visibility.Collapsed;
 
-        // Generic badge
-        if (card.IsGenericMod)
-        {
-            _window.DetailGenericText.Text = card.GenericModLabel;
-            _window.DetailGenericBadge.Visibility = Visibility.Visible;
-        }
-        else _window.DetailGenericBadge.Visibility = Visibility.Collapsed;
+        // Generic badge — hidden (redundant with engine badge + UE-Extended toggle)
+        _window.DetailGenericBadge.Visibility = Visibility.Collapsed;
 
         // 32-bit / 64-bit badge
         _window.Detail32BitBadge.Visibility = card.Is32Bit ? Visibility.Visible : Visibility.Collapsed;
