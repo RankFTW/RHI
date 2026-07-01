@@ -356,6 +356,16 @@
                                                 ToolTipService.ToolTip="Launch this game">
                                             <TextBlock Text="▶ Launch" FontSize="11"/>
                                         </Button>
+                                        <Button x:Name="DetailHdrToggleBtn" x:FieldModifier="internal"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                Click="HdrToggle_Click"
+                                                ToolTipService.ToolTip="Toggle per-game HDR auto-switch. Purple = HDR enabled on launch, disabled on exit.">
+                                            <TextBlock x:Name="DetailHdrToggleText" x:FieldModifier="internal" FontSize="11" Text="HDR Off"/>
+                                        </Button>
                                         <Border Width="1" Background="{StaticResource BorderSubtleBrush}" Margin="4,2"/>
                                         <Button x:Name="DetailNexusModsBtn" x:FieldModifier="internal"
                                                 Background="{StaticResource SurfaceOverlayBrush}"
@@ -447,19 +457,6 @@
                                         </Button>
                                     </StackPanel>
                                 </Grid>
-
-                                <!-- HDR toggle button — own row, right-aligned -->
-                                <Button x:Name="DetailHdrToggleBtn" x:FieldModifier="internal"
-                                        Background="{StaticResource SurfaceOverlayBrush}"
-                                        Foreground="{StaticResource ChipTextBrush}"
-                                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                        CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                        FontSize="11"
-                                        HorizontalAlignment="Right"
-                                        Click="HdrToggle_Click"
-                                        ToolTipService.ToolTip="Toggle per-game HDR auto-switch override. Purple = HDR will be enabled when this game launches.">
-                                    <TextBlock x:Name="DetailHdrToggleText" x:FieldModifier="internal" FontSize="11" Text="HDR Off"/>
-                                </Button>
 
                                 <!-- Addon file + info badges with Browse button -->
                                 <Grid>
