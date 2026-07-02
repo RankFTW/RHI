@@ -818,7 +818,7 @@ public partial class AuxInstallService
     /// Writes per-game [renodx] INI keys from manifest overrides to the game's reshade.ini.
     /// Only adds/updates keys — never removes existing user-set values.
     /// </summary>
-    public static void ApplyRenodxIniOverrides(string gameDir, Dictionary<string, string> overrides)
+    public static void ApplyRenodxIniOverrides(string gameDir, Dictionary<string, string> overrides, bool forceOverwrite = false)
     {
         if (overrides == null || overrides.Count == 0) return;
 
@@ -833,10 +833,9 @@ public partial class AuxInstallService
             ini["renodx"] = renodxSection;
         }
 
-        // Only add missing keys — never overwrite existing user values
         foreach (var (key, value) in overrides)
         {
-            if (!renodxSection.ContainsKey(key))
+            if (forceOverwrite || !renodxSection.ContainsKey(key))
                 renodxSection[key] = value;
         }
 

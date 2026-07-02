@@ -144,6 +144,11 @@ public sealed partial class MainWindow
             if (card.UseUeExtended && card.Status == GameStatus.Installed)
                 AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
+            // Force-apply manifest [renodx] INI overrides on redeploy
+            if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOvr))
+                AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOvr, forceOverwrite: true);
+
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
             bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
             card.RsActionMessage = presetDeployed
