@@ -52,6 +52,7 @@
     "ShaderGlass",
     "SkinBatmanInc",
     "SkinBatmanNoel",
+    "Skyrim Creation Kit",
     "Soundpad",
     "Special Job Pack",
     "Special Outfit: Hello Work Employee (Kasuga)",
@@ -980,7 +981,9 @@
   },
 
   "launchExeOverrides": {
-    "Returnal™": "Returnal-Win64-Shipping.exe"
+    "Returnal™": "Returnal-Win64-Shipping.exe",
+    "The Elder Scrolls V: Skyrim Special Edition": "SkyrimSE.exe",
+    "Skyrim Creation Kit": "CreationKit.exe"
   },
 
   "splitGames": {
@@ -1001,6 +1004,10 @@
     "LEGO® Harry Potter™ Collection": [
       { "name": "LEGO Harry Potter Years 1-4", "subPath": "Years 1-4" },
       { "name": "LEGO Harry Potter Years 5-7", "subPath": "Years 5-7" }
+    ],
+    "Skyrim Special Edition: Creation Kit": [
+      { "name": "The Elder Scrolls V: Skyrim Special Edition", "subPath": "" },
+      { "name": "Skyrim Creation Kit", "subPath": "" }
     ]
   },
 
