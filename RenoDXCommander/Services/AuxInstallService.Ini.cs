@@ -833,9 +833,11 @@ public partial class AuxInstallService
             ini["renodx"] = renodxSection;
         }
 
+        // Only add missing keys — never overwrite existing user values
         foreach (var (key, value) in overrides)
         {
-            renodxSection[key] = value;
+            if (!renodxSection.ContainsKey(key))
+                renodxSection[key] = value;
         }
 
         WriteIni(iniPath, ini);
