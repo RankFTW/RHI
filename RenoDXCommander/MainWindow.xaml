@@ -495,7 +495,7 @@
                                     BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                     CornerRadius="12" Padding="12,10" VerticalAlignment="Stretch"
                                     MinWidth="160">
-                                <Grid ColumnSpacing="4" RowSpacing="4" VerticalAlignment="Top">
+                                <Grid ColumnSpacing="4" RowSpacing="4" VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
