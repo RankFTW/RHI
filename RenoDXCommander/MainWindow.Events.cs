@@ -3237,6 +3237,10 @@ public sealed partial class MainWindow
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
+        // Games force-enabled via manifest cannot be toggled off
+        if (ViewModel.DofFixServiceInstance.IsForceEligible(card.GameName))
+            return;
+
         // Show first-time warning dialog
         if (!ViewModel.Settings.EngineBadgeWarningDismissed)
         {
