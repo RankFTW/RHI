@@ -295,6 +295,7 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
         if (HdrAutoToggle) s["HdrAutoToggle"] = "true";
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
+        else s["DropHelperEnabled"] = "true";
 
         // DLSS/Streamline defaults
         if (!string.IsNullOrEmpty(DefaultDlssVersion)) s["DefaultDlssVersion"] = DefaultDlssVersion;

@@ -2304,6 +2304,7 @@ public sealed partial class MainWindow
     private void DropHelperCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        if (_dlssIndicatorInitializing) return; // Don't fire during init
         ViewModel.Settings.DropHelperEnabled = combo.SelectedIndex == 1;
         ViewModel.SaveSettingsPublic();
     }
