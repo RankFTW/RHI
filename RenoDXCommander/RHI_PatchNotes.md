@@ -24,8 +24,6 @@
 
 - Fixed ReShade falsely showing "Update Available" on games with OptiScaler installed — the update check was comparing OptiScaler's dxgi.dll size against ReShade staging.
 - Fixed RenoDX update dot showing on games that never had RenoDX installed — snapshot URL content-length changes were flagging updates for uninstalled mods.
-- Fixed Peak Nits not being applied on first ReShade deploy — the setting wasn't being passed to MergeRsIni calls.
-- Fixed "Apply to All Games" not writing peak nits if the textbox value wasn't confirmed with Enter first.
 - Fixed Luma games falsely showing "Update Available" on launch — stale status from a previous session was not being cleared.
 
 ---

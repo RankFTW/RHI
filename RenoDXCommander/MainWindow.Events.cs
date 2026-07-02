@@ -233,6 +233,11 @@ public sealed partial class MainWindow
                 if (card.UseUeExtended && card.Status == GameStatus.Installed)
                     AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
+                // Force-apply manifest [renodx] INI overrides on redeploy
+                if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                    && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var cogIniOvr))
+                    AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, cogIniOvr, forceOverwrite: true);
+
                 card.RsActionMessage = "✅ ReShade.ini deployed.";
             }
             catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
