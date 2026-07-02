@@ -2301,6 +2301,13 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
     }
 
+    private void DropHelperCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.DropHelperEnabled = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
     private void HdrToggle_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;

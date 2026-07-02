@@ -103,7 +103,7 @@ public class WindowStateManager
     /// through UIPI when running as admin. Also registers an OLE IDropTarget
     /// to receive URL text drops from browsers and Discord.
     /// </summary>
-    public void EnableDragAccept()
+    public void EnableDragAccept(bool launchDropHelper = true)
     {
         // Allow drag messages through UIPI when running as admin
         NativeInterop.ChangeWindowMessageFilterEx(_hwnd, NativeInterop.WM_DROPFILES, NativeInterop.MSGFLT_ALLOW, IntPtr.Zero);
@@ -118,7 +118,8 @@ public class WindowStateManager
             _crashReporter.Log("[WindowStateManager.EnableDragAccept] Running elevated — using WM_DROPFILES only (OLE blocked by UIPI)");
 
             // Launch non-elevated drop helper overlay for Discord/URL drops
-            LaunchDropHelper();
+            if (launchDropHelper)
+                LaunchDropHelper();
             return;
         }
 

@@ -2092,6 +2092,7 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
                                         <TextBlock Text="Admin Mode" FontSize="13" FontWeight="SemiBold"
@@ -2106,6 +2107,18 @@
                                         <ComboBoxItem Content="Off"/>
                                         <ComboBoxItem Content="On"/>
                                     </ComboBox>
+                                    <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,0">
+                                        <TextBlock Text="Drop Helper" FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <ComboBox x:Name="DropHelperCombo" x:FieldModifier="internal"
+                                                  SelectionChanged="DropHelperCombo_SelectionChanged"
+                                                  FontSize="12" Padding="8,4"
+                                                  CornerRadius="8" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="The drop helper window enables Discord drag-and-drop in admin mode. Disable if you don't need it.">
+                                            <ComboBoxItem Content="Off"/>
+                                            <ComboBoxItem Content="On"/>
+                                        </ComboBox>
+                                    </StackPanel>
                                 </Grid>
                             </Grid>
                             </StackPanel>

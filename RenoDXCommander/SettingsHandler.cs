@@ -202,6 +202,9 @@ public class SettingsHandler
 
         // Initialize admin mode combo
         InitAdminModeCombo(_window.AdminModeCombo);
+
+        // Initialize drop helper combo
+        _window.DropHelperCombo.SelectedIndex = ViewModel.Settings.DropHelperEnabled ? 1 : 0;
     }
 
     /// <summary>
