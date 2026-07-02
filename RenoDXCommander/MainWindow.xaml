@@ -505,7 +505,7 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <Button Grid.Row="0" Grid.Column="0" x:Name="DetailHideBtn" x:FieldModifier="internal"
-                                            Background="Transparent"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
                                             Foreground="{StaticResource ChipTextBrush}"
                                             BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                             CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
@@ -515,7 +515,7 @@
                                         <TextBlock x:Name="DetailHideIcon" x:FieldModifier="internal" FontSize="11" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button Grid.Row="0" Grid.Column="1" x:Name="DetailFavBtn" x:FieldModifier="internal"
-                                            Background="Transparent"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
                                             Foreground="{StaticResource ChipTextBrush}"
                                             BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                             CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
@@ -525,7 +525,7 @@
                                         <TextBlock x:Name="DetailFavIcon" x:FieldModifier="internal" FontSize="11" Text="Favourite" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button Grid.Row="1" Grid.Column="0" x:Name="DetailAppDataBtn" x:FieldModifier="internal"
-                                            Background="Transparent"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
                                             Foreground="{StaticResource ChipTextBrush}"
                                             BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                             CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
@@ -536,7 +536,7 @@
                                         <TextBlock Text="Config" TextDecorations="Underline" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button Grid.Row="1" Grid.Column="1" x:Name="DetailFolderBtn" x:FieldModifier="internal"
-                                            Background="Transparent"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
                                             Foreground="{StaticResource ChipTextBrush}"
                                             BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                             CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
