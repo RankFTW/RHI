@@ -814,6 +814,33 @@ public partial class AuxInstallService
         WriteIni(iniFilePath, ini);
     }
 
+    /// <summary>
+    /// Writes per-game [renodx] INI keys from manifest overrides to the game's reshade.ini.
+    /// Only adds/updates keys — never removes existing user-set values.
+    /// </summary>
+    public static void ApplyRenodxIniOverrides(string gameDir, Dictionary<string, string> overrides)
+    {
+        if (overrides == null || overrides.Count == 0) return;
+
+        var iniPath = Path.Combine(gameDir, "reshade.ini");
+        if (!File.Exists(iniPath)) return;
+
+        var ini = ParseIni(File.ReadAllLines(iniPath));
+
+        if (!ini.TryGetValue("renodx", out var renodxSection))
+        {
+            renodxSection = new OrderedDict();
+            ini["renodx"] = renodxSection;
+        }
+
+        foreach (var (key, value) in overrides)
+        {
+            renodxSection[key] = value;
+        }
+
+        WriteIni(iniPath, ini);
+    }
+
     // ── Overlay hotkey application ───────────────────────────────────────────────
 
     /// <summary>

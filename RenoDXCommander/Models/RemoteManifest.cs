@@ -303,6 +303,14 @@ public class RemoteManifest
     public Dictionary<string, Dictionary<string, string>>? InstallWarnings { get; set; }
 
     /// <summary>
+    /// Per-game [renodx] INI keys written to reshade.ini when RenoDX is installed/updated.
+    /// Key = game name, Value = dict of INI keys to set in the [renodx] section.
+    /// Only adds/updates keys — never removes existing user-set values.
+    /// </summary>
+    [JsonPropertyName("renodxIniOverrides")]
+    public Dictionary<string, Dictionary<string, string>>? RenodxIniOverrides { get; set; }
+
+    /// <summary>
     /// List of legacy ReShade versions available in the per-game version picker.
     /// Managed server-side — when a new stable releases, the old version is added here.
     /// </summary>

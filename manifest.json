@@ -1003,6 +1003,10 @@
       { "name": "LEGO Harry Potter Years 5-7", "subPath": "Years 5-7" }
     ]
   },
+
+  "renodxIniOverrides": {
+  },
+
   "installWarnings": {
     "FINAL FANTASY VII REMAKE INTERGRADE": {
       "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"

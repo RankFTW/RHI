@@ -80,6 +80,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 if (card.UseUeExtended)
                     AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
+                // Apply per-game [renodx] INI overrides from manifest
+                if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                    && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOverrides))
+                    AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
+
                 // Deploy Engine.ini HDR settings for all UE-Extended games
                 if (card.UseUeExtended)
                     AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);

@@ -15,6 +15,9 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// <summary>Current peak nits setting. Used as fallback in MergeRsIni when no explicit value is passed.</summary>
     public static int GlobalPeakNits { get; set; }
 
+    /// <summary>Current manifest reference for per-game INI overrides. Set during InitializeAsync.</summary>
+    public static Models.RemoteManifest? GlobalManifest { get; set; }
+
     // ── URLs & filenames ──────────────────────────────────────────────────────────
 
     // ReShade is bundled alongside the app exe

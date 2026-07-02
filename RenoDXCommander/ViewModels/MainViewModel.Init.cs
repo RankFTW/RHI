@@ -290,7 +290,7 @@ public partial class MainViewModel
             // 4. Await network tasks individually so failures don't block game display
             try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
             try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
-            try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
+            try { _manifest = await manifestTask; AuxInstallService.GlobalManifest = _manifest; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database task failed — {ex.Message}"); }
             // rsTask deferred until after cards display
@@ -2579,7 +2579,7 @@ public partial class MainViewModel
             // Await network tasks individually so failures don't block
             try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
             try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
-            try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
+            try { _manifest = await manifestTask; AuxInstallService.GlobalManifest = _manifest; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database task failed — {ex.Message}"); }
             try { await addonPackTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Addon pack await failed — {ex.Message}"); }
