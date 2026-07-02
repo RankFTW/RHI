@@ -2114,7 +2114,7 @@
                                                   SelectionChanged="DropHelperCombo_SelectionChanged"
                                                   FontSize="12" Padding="8,4"
                                                   CornerRadius="8" HorizontalAlignment="Stretch"
-                                                  ToolTipService.ToolTip="The drop helper window enables Discord drag-and-drop in admin mode. Disable if you don't need it.">
+                                                  ToolTipService.ToolTip="The drop helper window enables Discord drag-and-drop in admin mode. Disable if you don't need it. Restart required.">
                                             <ComboBoxItem Content="Off"/>
                                             <ComboBoxItem Content="On"/>
                                         </ComboBox>
