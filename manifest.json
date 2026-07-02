@@ -540,6 +540,11 @@
       "notesUrl": null,
       "notesUrlLabel": null
     },
+    "Days Gone": {
+      "notes": "Must be using native res output and 100% res scale! HDR On in-game.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    },
     "Directive 8020": {
       "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
       "notesUrl": null,
@@ -784,6 +789,7 @@
     "Assassin's Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
     "Cities: Skylines": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
     "CODE VEIN II": "https://marat569.github.io/renodx/renodx-codevein2.addon64",
+    "Days Gone": "https://github.com/OopyDoopy/renodx/releases/download/snapshot/renodx-daysgone.addon64",
     "Death's Door": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
     "Descenders": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
     "Far Cry 2": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
