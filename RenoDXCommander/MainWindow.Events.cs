@@ -2403,6 +2403,7 @@ public sealed partial class MainWindow
 
             PeakNitsBox.Text = peakNits.ToString();
             ViewModel.Settings.PeakNits = peakNits;
+            AuxInstallService.GlobalPeakNits = peakNits;
             ViewModel.SaveSettingsPublic();
         }
         catch (Exception ex)
@@ -2418,6 +2419,7 @@ public sealed partial class MainWindow
             if (sender is Microsoft.UI.Xaml.Controls.TextBox box && int.TryParse(box.Text, out var val) && val > 0)
             {
                 ViewModel.Settings.PeakNits = val;
+                AuxInstallService.GlobalPeakNits = val;
                 ViewModel.SaveSettingsPublic();
             }
             e.Handled = true;

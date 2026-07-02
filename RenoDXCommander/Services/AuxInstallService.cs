@@ -11,6 +11,10 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public partial class AuxInstallService : IAuxInstallService, IAuxFileService
 {
+    // ── Global settings cache (set from SettingsViewModel at startup) ──────────────
+    /// <summary>Current peak nits setting. Used as fallback in MergeRsIni when no explicit value is passed.</summary>
+    public static int GlobalPeakNits { get; set; }
+
     // ── URLs & filenames ──────────────────────────────────────────────────────────
 
     // ReShade is bundled alongside the app exe

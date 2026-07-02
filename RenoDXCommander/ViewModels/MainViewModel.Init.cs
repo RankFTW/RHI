@@ -125,6 +125,9 @@ public partial class MainViewModel
 
         _crashReporter.Log($"[MainViewModel.InitializeAsync] Started (forceRescan={forceRescan})");
 
+        // Sync global peak nits setting for INI deploys
+        AuxInstallService.GlobalPeakNits = _settingsViewModel.PeakNits;
+
         // Clear API caches on full refresh so all detection runs fresh
         if (forceRescan)
         {

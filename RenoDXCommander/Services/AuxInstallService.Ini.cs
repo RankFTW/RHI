@@ -11,6 +11,8 @@ public partial class AuxInstallService
     /// </summary>
     public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null, int peakNits = 0)
     {
+        // Use global setting if no explicit value passed
+        if (peakNits <= 0) peakNits = GlobalPeakNits;
         // Determine which template to use — RDR2/Max Payne 3 use a dedicated template
         var templatePath = (gameName != null && IsRdr2(gameName) && File.Exists(RsRdr2IniPath))
             ? RsRdr2IniPath
@@ -101,6 +103,8 @@ public partial class AuxInstallService
     /// </summary>
     public static void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, int peakNits = 0)
     {
+        // Use global setting if no explicit value passed
+        if (peakNits <= 0) peakNits = GlobalPeakNits;
         // Red Dead Redemption 2 uses a dedicated ini template
         string templatePath;
         if (gameName != null && IsRdr2(gameName) && File.Exists(RsRdr2IniPath))
