@@ -3286,7 +3286,17 @@ public sealed partial class MainWindow
 
         // Store or remove override
         if (next == "Unreal Engine")
+        {
             ViewModel.GameNameServiceInstance.EngineVersionOverrides.Remove(card.GameName);
+
+            // Uninstall DOF Fix addon if it was installed
+            if (card.DofFixStatus == GameStatus.Installed && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                ViewModel.DofFixServiceInstance.Uninstall(card.InstallPath);
+                card.DofFixStatus = GameStatus.NotInstalled;
+                card.DofFixInstalledVersion = null;
+            }
+        }
         else
             ViewModel.GameNameServiceInstance.EngineVersionOverrides[card.GameName] = next;
 
