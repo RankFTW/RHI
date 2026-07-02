@@ -7,6 +7,7 @@
 - **DLSS / Streamline Auto-Update** — new toggles in the DLSS / Streamline Settings card. When enabled, games that are on the previous latest version are automatically swapped to the new latest when a manifest update arrives. Games on manually chosen older versions are left alone. Set and forget.
 - **Peak Brightness (nits) global setting** — set your monitor's peak nits once and it's automatically written to all reshade.ini files on every deploy. Auto-detect button reads your display hardware. Persists across ReShade installs and mass deploys.
 - **Drop Helper toggle** — new Off/On combo in the Admin Mode section. Disables the drop helper overlay window for users who don't need Discord drag-and-drop in admin mode.
+- **Per-game RenoDX INI overrides** — manifest can now specify `[renodx]` INI keys (like Upgrade settings) per game. Applied automatically on RenoDX install. Existing user values are preserved — only missing keys are written. Force-applied on reshade.ini redeploy.
 
 ### Changes
 
