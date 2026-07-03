@@ -2,7 +2,7 @@
 
 ### New
 
-- **HDR monitor selection** — ⚙ button next to HDR Auto-Toggle opens a dialog showing all detected displays. Tick which monitors should have HDR enabled on game launch. Leave all unchecked for all monitors (previous behaviour). Non-HDR displays shown greyed out.
+- **HDR monitor selection** — ⚙ button next to HDR Auto-Toggle opens a dialog showing all detected displays. Tick which monitors should have HDR enabled on game launch. Leave all unchecked for primary display only (previous behaviour). Non-HDR displays shown greyed out.
 
 ### Bug Fixes
 
