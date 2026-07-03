@@ -1,3 +1,11 @@
+## v2.1.6
+
+### Bug Fixes
+
+- Fixed OptiScaler not updating to newer versions when a cached version already existed — the staging guard was preventing re-download even when an update was detected.
+
+---
+
 ## v2.1.5
 
 ### New
