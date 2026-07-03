@@ -1,5 +1,9 @@
 ## v2.1.6
 
+### New
+
+- **HDR monitor selection** — ⚙ button next to HDR Auto-Toggle opens a dialog showing all detected displays. Tick which monitors should have HDR enabled on game launch. Leave all unchecked for all monitors (previous behaviour). Non-HDR displays shown greyed out.
+
 ### Bug Fixes
 
 - Fixed OptiScaler not updating to newer versions when a cached version already existed — the staging guard was preventing re-download even when an update was detected.
