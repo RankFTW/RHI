@@ -29,6 +29,10 @@ This document covers every feature in RHI. For a quick overview, see the [README
 - [Shader Packs](#shader-packs)
 - [ReShade Addon Management](#reshade-addon-management)
 - [Game Launch](#game-launch)
+- [HDR Auto-Toggle](#hdr-auto-toggle)
+- [Running Game Indicator](#running-game-indicator)
+- [Peak Brightness (Nits)](#peak-brightness-nits)
+- [DOF Fix](#dof-fix)
 - [Per-Game Overrides](#per-game-overrides)
 - [ReShade Presets](#reshade-presets)
 - [Nexus Mods and PCGamingWiki Links](#nexus-mods-and-pcgamingwiki-links)
@@ -116,26 +120,19 @@ The bottom bar shows the game count and current operation on the left, a single-
 
 ## Settings Page
 
-Click **Settings** in the toolbar. Click **Back to Games** to return.
+Click **Settings** in the toolbar. Click **Back to Games** to return. The page is organized into 9 labelled cards.
 
-| Section | What's in it |
-|---------|-------------|
-| Add Game | Manually add a game that wasn't auto-detected. Select the game's exe and name it. |
-| Full Refresh | Clears all caches and re-scans everything from disk. Bypasses the 4-hour update check cooldown. |
-| Screenshot Path | Set a global screenshot save path written to all managed reshade.ini files. Optional per-game subfolder toggle. Browse and Open buttons. |
-| Hotkeys | ReShade UI Hotkey (default: Home), Screenshot Key (default: Print Screen), ReLimiter OSD Hotkey, OptiScaler Overlay Hotkey (default: Insert). Apply to All Games button. |
-| Data & Custom Files | Open AppData folder, Custom folder (DLSS/Streamline/ReShade custom DLLs), Logs folder. Admin Mode toggle (Off/On). |
-| Update Inclusion | Per-component toggles for global update checks. Summary line shows current state. |
-| Addon Watch Folder | Configure the watched folder (default: Downloads). |
-| ReShade Build Channel | Stable or Nightly. Affects the global default. Per-game overrides available in the Overrides panel. |
-| OptiScaler Settings | GPU type (NVIDIA/AMD/Intel), DLSS input selector (AMD/Intel only), overlay hotkey, Apply to All Games. |
-| Shared OSD Presets | Toggle for ReLimiter shared presets. Apply to All Games button. |
-| Mass Deployment | Deploy reshade.ini, relimiter.ini, DisplayCommander.ini, or OptiScaler.ini to all games with those components installed. Mass Preset Install for deploying presets to multiple games. |
-| DLSS & Streamline Defaults | Configure preferred default versions, presets, and render scales. See [DLSS & Streamline Defaults](#dlss--streamline-defaults). |
-| Batch DLSS & Streamline Deploy | Update DLSS/Streamline versions and presets across multiple games. See [Batch Deploy](#batch-dlss--streamline-deploy). |
-| DLSS On-Screen Indicator | Enable/disable the NVIDIA DLSS text overlay (global system setting, requires admin). |
-| Global Nvidia Settings | Shader Cache Size, Shader Pre-Compile, G-Sync Mode, Preferred Refresh Rate, Global ReBAR (On/Off + Size). See [Global Nvidia Settings](#global-nvidia-settings). |
-| Profile Export/Import | Back up and restore all per-game NVIDIA profile settings. See [Profile Export and Import](#profile-export-and-import). |
+| Card | What's in it |
+|------|-------------|
+| Game Library | Add Game (manual detection), Check For Updates (bypass 4-hour cooldown). |
+| ReShade & Display | Left: Screenshot path + subfolder combo + hotkeys + Apply to All. Right: Peak Brightness (Auto + nits) + HDR Auto-Toggle (Off/On) + Apply to All. |
+| DLSS / Streamline Settings | Batch Deploy, Configure Defaults (versions/presets/render scales), On-Screen Indicator (Enabled/Disabled), Auto-Update DLSS (Off/On), Auto-Update Streamline (Off/On). |
+| Global NVIDIA Driver Settings | Shader Cache Size, Shader Pre-Compile, G-Sync Mode, Preferred Refresh Rate, VSync, ReBAR + Size Limit, Export/Import/Reset Profiles, Clear Shader Cache. |
+| Component Settings | Left: ReLimiter OSD hotkey + Shared Presets + DLSS Hooks + Apply. Right: OptiScaler GPU type + DLSS inputs + hotkey + Apply. |
+| Shaders & Addons | Custom Shaders toggle, Cache All Shaders toggle, Addon Watch Folder + Browse + Reset. |
+| Update & Deployment | Global Update Inclusion (per-component toggles), Mass INI Deployment (reshade.ini, relimiter.ini, DC.ini, OptiScaler.ini, Mass Preset Install). |
+| System & Maintenance | Full Refresh, Purge Cache, Admin Mode (Off/On), Drop Helper (Off/On — disables the Discord drag-drop overlay, restart required). |
+| Data & Folders | AppData Folder, Downloads Folder, Custom Folder, Logs Folder, Copy Logs. |
 
 ---
 
@@ -614,6 +611,34 @@ Launch games from the green "▶ Launch" button or by double-clicking in the sid
 
 Set per-game command-line arguments in the Overrides panel. Steam games pass args via `-applaunch`. Epic protocol is skipped when args are set.
 
+### HDR Auto-Toggle
+
+Automatically enables Windows HDR when a game is launched through RHI and disables it when the game exits. Useful for users who keep their desktop in SDR.
+
+- **Global setting**: Off/On in the ReShade & Display card on the Settings page.
+- **Per-game override**: "HDR" button next to Launch — purple when active, grey when inactive. Click to flip.
+- **Process monitoring**: For direct exe launches, monitors the process handle directly. For Steam/Epic protocol launches, polls for a process running from the game's install path (1-second intervals, up to 60 seconds to find it).
+- **Always enables**: The toggle always calls EnableHdr regardless of current state (detection is unreliable on some HDR-capable displays).
+- **Disables on exit**: Only when the game process exits. If the app can't find the game process (protocol launch timeout), HDR stays on.
+
+### Running Game Indicator
+
+The sidebar item turns green when a game launched through RHI is currently running. Returns to normal when the game exits. Only tracks games launched via the Launch button (not externally launched games).
+
+### Peak Brightness (Nits)
+
+Set your monitor's peak brightness once in the Settings page (ReShade & Display → HDR & Peak Brightness). The "Auto" button reads your monitor hardware. The value is written as `ToneMapPeakNits` to all `[renodx-preset*]` sections in reshade.ini on every deploy — installs, updates, mass deploy, and INI redeploy.
+
+### DOF Fix
+
+One-click install for Unreal Engine 5.0–5.6 games that have depth-of-field stepping/tiling artifacts (common on NVIDIA GPUs). Appears as a component row in the Optional section.
+
+- Eligibility: UE 5.0–5.6 detected (or forced via manifest `dofFixForceGames`), 64-bit only.
+- Participates in Update All.
+- Engine badge toggle: click the "Unreal Engine" badge to force UE5 eligibility on Game Pass games where version detection fails.
+- Manifest-forced games (e.g. Clair Obscur, Avowed) have the badge locked — can't be toggled off.
+- Toggling the badge OFF uninstalls the DOF Fix addon if it was installed.
+
 ---
 
 ## Per-Game Overrides
@@ -635,6 +660,7 @@ All controls save immediately when changed.
 | DXVK | Off / Development / Stable / Lilium HDR |
 | Launch executable | Custom exe path |
 | Launch arguments | Command-line args for the game |
+| HDR auto-toggle | Per-game "HDR" button next to Launch — overrides the global HDR setting |
 | Config button | Opens the Engine.ini config folder |
 
 ### Reset Overrides
