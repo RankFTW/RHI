@@ -1389,7 +1389,7 @@
                                 </Grid>
 
                                 <!-- Row 2 Right: HDR Auto-Toggle + Select Monitors -->
-                                <Grid Grid.Row="2" Grid.Column="2" ColumnSpacing="6">
+                                <Grid Grid.Row="2" Grid.Column="2" ColumnSpacing="6" VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
@@ -1399,7 +1399,7 @@
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                VerticalAlignment="Center"/>
                                     <ComboBox Grid.Column="1" x:Name="HdrAutoToggleCombo" x:FieldModifier="internal"
-                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              FontSize="12" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                                               ToolTipService.ToolTip="When On, Windows HDR is automatically enabled when launching a game through RHI and disabled when the game exits."
                                               SelectionChanged="HdrAutoToggleCombo_SelectionChanged">
                                         <ComboBoxItem Content="Off"/>
