@@ -1395,7 +1395,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="HDR" FontSize="12"
+                                    <TextBlock Grid.Column="0" Text="HDR Auto-Toggle" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                VerticalAlignment="Center"/>
                                     <ComboBox Grid.Column="1" x:Name="HdrAutoToggleCombo" x:FieldModifier="internal"
