@@ -21,6 +21,10 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **Drag-and-drop** — drop an exe, addon, preset, Luma archive, or URL. RHI figures out what to do.
 - **Three view modes** — Detail View, Grid View, Simple View. Fresh installs default to Simple View.
 - **Game Launch** — Steam uses `-applaunch` (with overlay and playtime tracking), Epic uses its protocol, everything else launches directly. Custom exe and arguments per game.
+- **HDR Auto-Toggle** — automatically enables Windows HDR on game launch and disables on exit. Global or per-game. No more manual toggling in Windows Settings.
+- **Running game indicator** — sidebar highlights green when a game launched through RHI is running.
+- **DLSS / Streamline Auto-Update** — games on the latest version are automatically swapped when a new release appears. Manually chosen older versions are left alone.
+- **Peak Brightness** — set your monitor's peak nits once, automatically written to all reshade.ini files on every deploy.
 - **Luma + RenoDX coexistence** — for compatible games, both frameworks run side by side.
 - **Ryubing emulator support** — 9 Switch game addons from Souperman9, downloaded and deployed in one click. Addons self-select which game is running.
 - **UE-Extended auto-configuration** — reshade.ini `[renodx]` section and Engine.ini HDR settings are written automatically.
@@ -86,7 +90,11 @@ Task Scheduler-based persistent elevation. Toggle Off/On in Settings. When enabl
 
 ### Per-Game Overrides
 
-DLL naming · Shader mode (Global/Custom/Select/Off) · Addon mode (Global/Select/Off) · Bitness · Graphics API · ReShade channel (Stable/Nightly/Custom/Legacy/No Addons) · DXVK variant · Launch exe + arguments · Update inclusion toggles · Wiki name mapping
+DLL naming · Shader mode (Global/Custom/Select/Off) · Addon mode (Global/Select/Off) · Bitness · Graphics API · ReShade channel (Stable/Nightly/Custom/Legacy/No Addons) · DXVK variant · Launch exe + arguments · Update inclusion toggles · Wiki name mapping · HDR auto-toggle
+
+### DOF Fix
+
+One-click install for Unreal Engine 5.0–5.6 games that have depth-of-field stepping/tiling artifacts. Participates in Update All. Eligibility detected automatically from engine version or forced via manifest.
 
 ### OptiScaler
 
