@@ -221,4 +221,150 @@ public static class HdrToggleService
 
         return (default, 0);
     }
+
+    /// <summary>Returns all active display targets (adapterId + targetId + friendly name + HDR supported).</summary>
+    public static List<DisplayTarget> GetAllDisplays()
+    {
+        var result = new List<DisplayTarget>();
+
+        int err = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out uint pathCount, out uint modeCount);
+        if (err != 0) return result;
+
+        var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
+        var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
+
+        err = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+        if (err != 0) return result;
+
+        var seen = new HashSet<uint>();
+        for (int i = 0; i < pathCount; i++)
+        {
+            var targetId = paths[i].targetInfo.id;
+            if (!seen.Add(targetId)) continue; // dedupe
+
+            var adapterId = paths[i].targetInfo.adapterId;
+
+            // Get friendly name
+            var nameInfo = new DISPLAYCONFIG_TARGET_DEVICE_NAME();
+            nameInfo.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+            nameInfo.header.size = (uint)Marshal.SizeOf<DISPLAYCONFIG_TARGET_DEVICE_NAME>();
+            nameInfo.header.adapterId = adapterId;
+            nameInfo.header.id = targetId;
+            string name = $"Display {i + 1}";
+            if (DisplayConfigGetTargetName(ref nameInfo) == 0 && nameInfo.monitorFriendlyDeviceName != null)
+            {
+                var trimmed = nameInfo.monitorFriendlyDeviceName.TrimEnd('\0').Trim();
+                if (!string.IsNullOrEmpty(trimmed)) name = trimmed;
+            }
+
+            // Check HDR support
+            var colorInfo = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
+            colorInfo.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
+            colorInfo.header.size = (uint)Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
+            colorInfo.header.adapterId = adapterId;
+            colorInfo.header.id = targetId;
+            bool hdrSupported = false;
+            if (DisplayConfigGetDeviceInfo(ref colorInfo) == 0)
+                hdrSupported = (colorInfo.value & 0x1) != 0; // bit 0 = advancedColorSupported
+
+            result.Add(new DisplayTarget(targetId, name, hdrSupported));
+        }
+
+        return result;
+    }
+
+    /// <summary>Enables HDR on specific displays (by targetId). If empty/null, enables on all.</summary>
+    public static bool EnableHdr(List<uint>? targetIds)
+    {
+        if (targetIds == null || targetIds.Count == 0)
+            return EnableHdr();
+
+        int err = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out uint pathCount, out uint modeCount);
+        if (err != 0) return false;
+
+        var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
+        var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
+        err = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+        if (err != 0) return false;
+
+        bool anySuccess = false;
+        foreach (var path in paths)
+        {
+            if (!targetIds.Contains(path.targetInfo.id)) continue;
+
+            var setState = new DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE();
+            setState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+            setState.header.size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE>();
+            setState.header.adapterId = path.targetInfo.adapterId;
+            setState.header.id = path.targetInfo.id;
+            setState.value = 1;
+
+            if (DisplayConfigSetDeviceInfo(ref setState) == 0)
+                anySuccess = true;
+        }
+
+        if (anySuccess)
+            CrashReporter.Log($"[HdrToggleService.EnableHdr] HDR enabled on {targetIds.Count} selected display(s)");
+        return anySuccess;
+    }
+
+    /// <summary>Disables HDR on specific displays (by targetId). If empty/null, disables on all.</summary>
+    public static bool DisableHdr(List<uint>? targetIds)
+    {
+        if (targetIds == null || targetIds.Count == 0)
+            return DisableHdr();
+
+        int err = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out uint pathCount, out uint modeCount);
+        if (err != 0) return false;
+
+        var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
+        var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
+        err = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+        if (err != 0) return false;
+
+        bool anySuccess = false;
+        foreach (var path in paths)
+        {
+            if (!targetIds.Contains(path.targetInfo.id)) continue;
+
+            var setState = new DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE();
+            setState.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+            setState.header.size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE>();
+            setState.header.adapterId = path.targetInfo.adapterId;
+            setState.header.id = path.targetInfo.id;
+            setState.value = 0;
+
+            if (DisplayConfigSetDeviceInfo(ref setState) == 0)
+                anySuccess = true;
+        }
+
+        if (anySuccess)
+            CrashReporter.Log($"[HdrToggleService.DisableHdr] HDR disabled on {targetIds.Count} selected display(s)");
+        return anySuccess;
+    }
+
+    // ── P/Invoke for target name ──────────────────────────────────────────────
+
+    private const int DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME = 2;
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct DISPLAYCONFIG_TARGET_DEVICE_NAME
+    {
+        public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+        public uint flags;
+        public uint outputTechnology;
+        public ushort edidManufactureId;
+        public ushort edidProductCodeId;
+        public uint connectorInstance;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+        public string monitorFriendlyDeviceName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string monitorDevicePath;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern int DisplayConfigGetTargetName(ref DISPLAYCONFIG_TARGET_DEVICE_NAME requestPacket);
+
+    /// <summary>Represents a detected display target for the HDR selection UI.</summary>
+    public record DisplayTarget(uint TargetId, string Name, bool HdrSupported);
 }

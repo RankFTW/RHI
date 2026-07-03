@@ -57,6 +57,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _lastKnownNewestDlss = "";
     [ObservableProperty] private string _lastKnownNewestStreamline = "";
     [ObservableProperty] private bool _hdrAutoToggle;
+    [ObservableProperty] private List<uint> _hdrTargetDisplays = new();
     [ObservableProperty] private bool _dropHelperEnabled = true;
 
     // ── DLSS/Streamline Defaults ──────────────────────────────────────────────
@@ -233,6 +234,11 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("LastKnownNewestDlss", out var lkndVal)) LastKnownNewestDlss = lkndVal ?? "";
         if (s.TryGetValue("LastKnownNewestStreamline", out var lknsVal)) LastKnownNewestStreamline = lknsVal ?? "";
         if (s.TryGetValue("HdrAutoToggle", out var hatVal)) HdrAutoToggle = hatVal == "true";
+        if (s.TryGetValue("HdrTargetDisplays", out var htdVal))
+        {
+            try { HdrTargetDisplays = System.Text.Json.JsonSerializer.Deserialize<List<uint>>(htdVal) ?? new(); }
+            catch { HdrTargetDisplays = new(); }
+        }
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
 
         // DLSS/Streamline defaults
@@ -294,6 +300,7 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;
         if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
         if (HdrAutoToggle) s["HdrAutoToggle"] = "true";
+        if (HdrTargetDisplays.Count > 0) s["HdrTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(HdrTargetDisplays);
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
         else s["DropHelperEnabled"] = "true";
 

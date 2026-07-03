@@ -2304,6 +2304,58 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
     }
 
+    private async void HdrSelectMonitors_Click(object sender, RoutedEventArgs e)
+    {
+        var displays = HdrToggleService.GetAllDisplays();
+        if (displays.Count == 0) return;
+
+        var currentSelection = ViewModel.Settings.HdrTargetDisplays;
+        var panel = new StackPanel { Spacing = 8 };
+        var checkBoxes = new List<(CheckBox cb, uint targetId)>();
+
+        foreach (var display in displays)
+        {
+            var cb = new CheckBox
+            {
+                Content = $"{display.Name}{(display.HdrSupported ? "" : " (no HDR)")}",
+                IsChecked = currentSelection.Contains(display.TargetId),
+                IsEnabled = display.HdrSupported,
+                FontSize = 13,
+            };
+            checkBoxes.Add((cb, display.TargetId));
+            panel.Children.Add(cb);
+        }
+
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Leave all unchecked to enable HDR on all monitors.",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+
+        var dialog = new ContentDialog
+        {
+            Title = "Select HDR Monitors",
+            Content = panel,
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        var selected = checkBoxes
+            .Where(x => x.cb.IsChecked == true)
+            .Select(x => x.targetId)
+            .ToList();
+
+        ViewModel.Settings.HdrTargetDisplays = selected;
+        ViewModel.SaveSettingsPublic();
+    }
+
     private void PerGameScreenshotCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
@@ -3392,12 +3444,14 @@ public sealed partial class MainWindow
                 : ViewModel.Settings.HdrAutoToggle;
 
             bool hdrWasAlreadyOn = false;
+            List<uint>? hdrTargets = null;
             if (shouldToggleHdr)
             {
                 hdrWasAlreadyOn = HdrToggleService.IsHdrEnabled();
                 _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: shouldToggle={shouldToggleHdr}, wasAlreadyOn={hdrWasAlreadyOn}, override='{hdrOverride}'");
                 // Always attempt to enable — IsHdrEnabled can report false positives on some configs
-                HdrToggleService.EnableHdr();
+                hdrTargets = ViewModel.Settings.HdrTargetDisplays;
+                HdrToggleService.EnableHdr(hdrTargets.Count > 0 ? hdrTargets : null);
             }
             else
             {
@@ -3414,7 +3468,7 @@ public sealed partial class MainWindow
                     Arguments = launchArgs ?? "",
                     UseShellExecute = true,
                 });
-                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName);
+                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, hdrTargets: hdrTargets);
                 return;
             }
 
@@ -3466,7 +3520,7 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
                 return;
             }
 
@@ -3476,7 +3530,7 @@ public sealed partial class MainWindow
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
                 return;
             }
 
@@ -3499,7 +3553,7 @@ public sealed partial class MainWindow
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                     });
-                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName);
+                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, hdrTargets: hdrTargets);
                     return;
                 }
             }
@@ -3516,7 +3570,7 @@ public sealed partial class MainWindow
     /// Monitors a launched process and disables HDR when it exits (if we enabled it).
     /// For protocol launches (Steam/Epic URL) where proc is null, polls for the game exe by name.
     /// </summary>
-    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? installPath = null)
+    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? installPath = null, List<uint>? hdrTargets = null)
     {
         // Find the card to set IsRunning
         var card = ViewModel.AllCards.FirstOrDefault(c =>
@@ -3531,7 +3585,7 @@ public sealed partial class MainWindow
                 try
                 {
                     await proc.WaitForExitAsync();
-                    if (shouldToggle) HdrToggleService.DisableHdr();
+                    if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
                 }
@@ -3585,7 +3639,7 @@ public sealed partial class MainWindow
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = true; });
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' — found process '{gameProc.ProcessName}' (PID {gameProc.Id}), waiting for exit...");
                     await gameProc.WaitForExitAsync();
-                    if (shouldToggle) HdrToggleService.DisableHdr();
+                    if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
                 }
