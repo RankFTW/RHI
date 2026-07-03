@@ -251,7 +251,7 @@ public static class HdrToggleService
             nameInfo.header.adapterId = adapterId;
             nameInfo.header.id = targetId;
             string name = $"Display {i + 1}";
-            if (DisplayConfigGetTargetName(ref nameInfo) == 0 && nameInfo.monitorFriendlyDeviceName != null)
+            if (DisplayConfigGetTargetDeviceName(ref nameInfo) == 0 && nameInfo.monitorFriendlyDeviceName != null)
             {
                 var trimmed = nameInfo.monitorFriendlyDeviceName.TrimEnd('\0').Trim();
                 if (!string.IsNullOrEmpty(trimmed)) name = trimmed;
@@ -362,8 +362,8 @@ public static class HdrToggleService
         public string monitorDevicePath;
     }
 
-    [DllImport("user32.dll")]
-    private static extern int DisplayConfigGetTargetName(ref DISPLAYCONFIG_TARGET_DEVICE_NAME requestPacket);
+    [DllImport("user32.dll", EntryPoint = "DisplayConfigGetDeviceInfo")]
+    private static extern int DisplayConfigGetTargetDeviceName(ref DISPLAYCONFIG_TARGET_DEVICE_NAME requestPacket);
 
     /// <summary>Represents a detected display target for the HDR selection UI.</summary>
     public record DisplayTarget(uint TargetId, string Name, bool HdrSupported);
