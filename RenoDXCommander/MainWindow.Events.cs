@@ -2328,7 +2328,7 @@ public sealed partial class MainWindow
 
         panel.Children.Add(new TextBlock
         {
-            Text = "Leave all unchecked to enable HDR on all monitors.",
+            Text = "Leave all unchecked to enable HDR on the primary display only.",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
             Margin = new Thickness(0, 4, 0, 0),
