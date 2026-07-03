@@ -161,6 +161,7 @@ For the full reference covering every feature, see the [Detailed Guide](docs/DET
 | [OptiScaler](https://github.com/optiscaler/OptiScaler) | OptiScaler contributors | Source-available |
 | [DXVK](https://github.com/doitsujin/dxvk) | doitsujin & contributors | [Zlib](https://github.com/doitsujin/dxvk/blob/master/LICENSE) |
 | [DXVK HDR-mod](https://github.com/EndlesslyFlowering/dxvk) | EndlesslyFlowering (Lilium) | [Zlib](https://github.com/EndlesslyFlowering/dxvk/blob/HDR-mod/LICENSE) |
+| [DOF Fix](https://github.com/RankFTW/rhi-repo/releases) | Lazorr | Source-available |
 | [7-Zip](https://www.7-zip.org/) | Igor Pavlov | [LGPL-2.1 / BSD-3-Clause](https://www.7-zip.org/license.txt) |
 
 > RHI is an unofficial third-party tool, not affiliated with or endorsed by the RenoDX project, Crosire, or the Luma Framework. All mod files are downloaded from their official sources at runtime and are not redistributed.
