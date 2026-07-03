@@ -1389,13 +1389,13 @@
                                 </Grid>
 
                                 <!-- Row 2 Right: HDR Auto-Toggle + Select Monitors -->
-                                <Grid Grid.Row="2" Grid.Column="2" ColumnSpacing="8">
+                                <Grid Grid.Row="2" Grid.Column="2" ColumnSpacing="6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="HDR Auto-Toggle" FontSize="12"
+                                    <TextBlock Grid.Column="0" Text="HDR" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                VerticalAlignment="Center"/>
                                     <ComboBox Grid.Column="1" x:Name="HdrAutoToggleCombo" x:FieldModifier="internal"
@@ -1410,8 +1410,8 @@
                                             Foreground="{StaticResource ChipTextBrush}"
                                             BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                             CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                            FontSize="12"
-                                            ToolTipService.ToolTip="Select which monitors to enable HDR on. Empty = all monitors."/>
+                                            FontSize="12" VerticalAlignment="Center"
+                                            ToolTipService.ToolTip="Select which monitors to enable HDR on. Empty = primary display only."/>
                                 </Grid>
 
                                 <!-- Row 3: Apply buttons -->
