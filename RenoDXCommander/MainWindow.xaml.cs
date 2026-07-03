@@ -97,7 +97,7 @@ public sealed partial class MainWindow : Window
         _dragDropHandler = new DragDropHandler(this, _crashReporter);
         _windowStateManager = new WindowStateManager(this, hwnd, _dragDropHandler, _crashReporter);
         _windowStateManager.InstallWndProcSubclass();
-        _windowStateManager.EnableDragAccept();
+        _windowStateManager.EnableDragAccept(ViewModel.Settings.DropHelperEnabled);
 
         // Apply compact size and lock immediately in the constructor.
         // There may be a tiny WinUI layout adjustment on first render, but the lock

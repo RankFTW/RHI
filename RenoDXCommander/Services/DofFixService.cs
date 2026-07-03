@@ -67,6 +67,11 @@ public class DofFixService : IDofFixService
     /// <summary>Sets the force-eligible list from manifest data.</summary>
     public void SetForceGames(List<string>? forceGames) => _forceGames = forceGames;
 
+    /// <summary>Returns true if the game is in the manifest dofFixForceGames list.</summary>
+    public bool IsForceEligible(string? gameName)
+        => !string.IsNullOrEmpty(gameName) && _forceGames != null
+           && _forceGames.Contains(gameName, StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Ensures the addon is staged (downloaded). Downloads if not present or if an update is available.
     /// </summary>

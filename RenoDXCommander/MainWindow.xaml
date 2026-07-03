@@ -260,6 +260,12 @@
                                   DoubleTapped="GameList_DoubleTapped"
                                   Background="Transparent"
                                   SelectionMode="Single" Padding="4">
+                            <ListView.Resources>
+                                <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="#0AFFFFFF"/>
+                            </ListView.Resources>
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="vm:GameCardViewModel">
                                     <Border Background="{x:Bind SidebarItemBackground, Mode=OneWay}"
@@ -334,18 +340,17 @@
                         </Grid>
 
                         <!-- ── Game info card (action buttons + badges) ── -->
-                        <Border Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
-                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" Padding="16,14">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Left box: Launch, links, badges -->
+                            <Border Grid.Column="0" Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
+                                    BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" Padding="16,14">
                             <StackPanel Spacing="10">
                                 <!-- Action buttons row -->
-                                <Grid x:Name="DetailActionRow" x:FieldModifier="internal">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <!-- Left: external links -->
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
                                         <Button x:Name="DetailLaunchBtn" x:FieldModifier="internal"
                                                 Background="#1A3A20"
                                                 Foreground="#6AE87A"
@@ -355,6 +360,16 @@
                                                 Click="LaunchGame_Click"
                                                 ToolTipService.ToolTip="Launch this game">
                                             <TextBlock Text="▶ Launch" FontSize="11"/>
+                                        </Button>
+                                        <Button x:Name="DetailHdrToggleBtn" x:FieldModifier="internal"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                Click="HdrToggle_Click"
+                                                ToolTipService.ToolTip="Toggle per-game HDR auto-switch. Purple = HDR enabled on launch, disabled on exit.">
+                                            <TextBlock x:Name="DetailHdrToggleText" x:FieldModifier="internal" FontSize="11" Text="HDR"/>
                                         </Button>
                                         <Border Width="1" Background="{StaticResource BorderSubtleBrush}" Margin="4,2"/>
                                         <Button x:Name="DetailNexusModsBtn" x:FieldModifier="internal"
@@ -402,51 +417,6 @@
                                             <TextBlock Text="Ultra+" TextDecorations="Underline"/>
                                         </Button>
                                     </StackPanel>
-                                    <!-- Right: game actions -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-                                        <Button x:Name="DetailHideBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11"
-                                                Click="HideButton_Click"
-                                                ToolTipService.ToolTip="Hide this game from the sidebar (find it again in the Hidden filter)">
-                                            <TextBlock x:Name="DetailHideIcon" x:FieldModifier="internal" FontSize="11"/>
-                                        </Button>
-                                        <Button x:Name="DetailFavBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11"
-                                                Click="FavouriteButton_Click"
-                                                ToolTipService.ToolTip="Toggle favourite">
-                                            <TextBlock x:Name="DetailFavIcon" x:FieldModifier="internal" FontSize="11" Text="Favourite"/>
-                                        </Button>
-                                        <Button x:Name="DetailAppDataBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11"
-                                                Click="OpenAppData_Click"
-                                                Visibility="Collapsed"
-                                                ToolTipService.ToolTip="Open game config folder in Explorer">
-                                            <TextBlock Text="Config" TextDecorations="Underline"/>
-                                        </Button>
-                                        <Button x:Name="DetailFolderBtn" x:FieldModifier="internal"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="11"
-                                                Click="OpenFolder_Click"
-                                                ToolTipService.ToolTip="Open game folder in Explorer">
-                                            <TextBlock Text="Browse" TextDecorations="Underline"/>
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
 
                                 <!-- Addon file + info badges with Browse button -->
                                 <Grid>
@@ -519,7 +489,65 @@
                                 </controls:WrapPanel>
                                 </Grid>
                             </StackPanel>
-                        </Border>
+                            </Border>
+                            <!-- Right box: Hide, Favourite, Config, Browse -->
+                            <Border Grid.Column="1" Background="{StaticResource SurfaceComponentTableBrush}"
+                                    BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                    CornerRadius="12" Padding="12,10" VerticalAlignment="Stretch"
+                                    MinWidth="160">
+                                <Grid ColumnSpacing="4" RowSpacing="4" VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Button Grid.Row="0" Grid.Column="0" x:Name="DetailHideBtn" x:FieldModifier="internal"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource ChipTextBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                            FontSize="11" HorizontalAlignment="Stretch"
+                                            Click="HideButton_Click"
+                                            ToolTipService.ToolTip="Hide this game from the sidebar (find it again in the Hidden filter)">
+                                        <TextBlock x:Name="DetailHideIcon" x:FieldModifier="internal" FontSize="11" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button Grid.Row="0" Grid.Column="1" x:Name="DetailFavBtn" x:FieldModifier="internal"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource ChipTextBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                            FontSize="11" HorizontalAlignment="Stretch"
+                                            Click="FavouriteButton_Click"
+                                            ToolTipService.ToolTip="Toggle favourite">
+                                        <TextBlock x:Name="DetailFavIcon" x:FieldModifier="internal" FontSize="11" Text="Favourite" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button Grid.Row="1" Grid.Column="0" x:Name="DetailAppDataBtn" x:FieldModifier="internal"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource ChipTextBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                            FontSize="11" HorizontalAlignment="Stretch"
+                                            Click="OpenAppData_Click"
+                                            Visibility="Collapsed"
+                                            ToolTipService.ToolTip="Open game config folder in Explorer">
+                                        <TextBlock Text="Config" TextDecorations="Underline" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button Grid.Row="1" Grid.Column="1" x:Name="DetailFolderBtn" x:FieldModifier="internal"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource ChipTextBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                            FontSize="11" HorizontalAlignment="Stretch"
+                                            Click="OpenFolder_Click"
+                                            ToolTipService.ToolTip="Open game folder in Explorer">
+                                        <TextBlock Text="Browse" TextDecorations="Underline" HorizontalAlignment="Center"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </Grid>
 
 
 
@@ -1143,9 +1171,14 @@
                     <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
                                 HorizontalAlignment="Center">
 
-                        <!-- ── Add Game | Check For Updates ──── -->
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 1: GAME LIBRARY
+                             ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                            <TextBlock Text="Game Library" FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1177,8 +1210,7 @@
                                 <!-- Divider -->
                                 <Border Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch"
-                                        Margin="12,0,12,0"/>
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
                                 <!-- Right: Check For Updates -->
                                 <Grid Grid.Column="2" RowSpacing="8">
@@ -1201,11 +1233,17 @@
                                             ToolTipService.ToolTip="Check all components and the app for available updates"/>
                                 </Grid>
                             </Grid>
+                            </StackPanel>
                         </Border>
 
-                        <!-- ── Screenshots & Hotkeys ─────────────────────────────── -->
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 2: RESHADE & DISPLAY
+                             ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                            <TextBlock Text="ReShade &amp; Display" FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1213,49 +1251,37 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>  <!-- Row 0: Titles + descriptions -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 1: Path box + Open | ReShade keys -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 2: Per-Game label | Apply ReShade Keys -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 3: Per-Game toggle | ReLimiter label + key -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 4: Apply screenshot | ReLimiter Apply -->
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- ── Row 0: Titles + descriptions ── -->
+                                <!-- ── Left: Screenshots & Hotkeys ── -->
                                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
-                                    <TextBlock Text="Screenshots" FontSize="14" FontWeight="SemiBold"
+                                    <TextBlock Text="Screenshots &amp; Hotkeys" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Set a screenshot save path that will be written to all managed reshade.ini files."/>
+                                               Text="Screenshot save path and ReShade key bindings applied to all managed reshade.ini files."/>
                                 </StackPanel>
 
-                                <Border Grid.Row="0" Grid.RowSpan="5" Grid.Column="1" Width="1"
+                                <!-- Divider -->
+                                <Border Grid.Row="0" Grid.RowSpan="4" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch"
-                                        Margin="12,0,12,0"/>
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
+                                <!-- ── Right: HDR & Peak Brightness ── -->
                                 <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
-                                    <TextBlock Text="Hotkeys" FontSize="14" FontWeight="SemiBold"
+                                    <TextBlock Text="HDR &amp; Peak Brightness" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="ReShade key bindings."/>
-                                    <Grid ColumnSpacing="8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="Overlay toggle key"/>
-                                        <TextBlock Grid.Column="1" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="Screenshot key" Margin="0,0,26,0"/>
-                                    </Grid>
+                                               Text="Peak brightness (nits) written to reshade.ini presets. HDR auto-toggle enables Windows HDR on game launch and disables on exit."/>
                                 </StackPanel>
 
-                                <!-- ── Row 1: Path box + Open | ReShade overlay + screenshot keys side by side ── -->
-                                <Grid Grid.Row="1" Grid.Column="0" ColumnSpacing="8" VerticalAlignment="Top">
+                                <!-- Row 1 Left: Screenshot path + Open -->
+                                <Grid Grid.Row="1" Grid.Column="0" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
@@ -1263,8 +1289,7 @@
                                     <Grid Grid.Column="0">
                                         <TextBox x:Name="ScreenshotPathBox" x:FieldModifier="internal"
                                                  PlaceholderText="D:\Screenshots"
-                                                 FontSize="12"
-                                                 Padding="12,8,36,8"
+                                                 FontSize="12" Padding="12,8,36,8"
                                                  Background="{StaticResource SurfaceInputBrush}"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                  BorderBrush="{StaticResource BorderSubtleBrush}"/>
@@ -1285,26 +1310,64 @@
                                             ToolTipService.ToolTip="Open the screenshot folder in Explorer"/>
                                 </Grid>
 
+                                <!-- Row 1 Right: Peak Nits -->
                                 <Grid Grid.Row="1" Grid.Column="2" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Peak Nits" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" x:Name="PeakNitsAutoBtn"
+                                            Content="Auto" Click="PeakNitsAuto_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="10,5" FontSize="12"
+                                            ToolTipService.ToolTip="Reads your monitor's peak brightness automatically."/>
+                                    <TextBox Grid.Column="2" x:Name="PeakNitsBox" x:FieldModifier="internal"
+                                             PlaceholderText="nits" FontSize="12"
+                                             Background="{StaticResource SurfaceInputBrush}"
+                                             Foreground="{StaticResource TextSecondaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"
+                                             KeyDown="PeakNitsBox_KeyDown"/>
+                                </Grid>
+
+                                <!-- Row 2 Left: Overlay key | Screenshot key | Per-Game Folders combo -->
+                                <Grid Grid.Row="2" Grid.Column="0" ColumnSpacing="6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" x:Name="HotkeyBox" x:FieldModifier="internal"
-                                             PlaceholderText="Press a key..."
-                                             IsReadOnly="True" FontSize="12"
-                                                 Background="{StaticResource SurfaceInputBrush}"
-                                                 Foreground="{StaticResource TextSecondaryBrush}"
-                                                 BorderBrush="{StaticResource BorderSubtleBrush}"
-                                                 PreviewKeyDown="HotkeyBox_PreviewKeyDown"/>
-                                    <Grid Grid.Column="1" ColumnSpacing="4">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="Overlay key" Margin="0,0,0,3"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="Screenshot key" Margin="0,0,0,3"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="Subfolders" Margin="0,0,0,3"/>
+                                    <TextBox Grid.Row="1" Grid.Column="0" x:Name="HotkeyBox" x:FieldModifier="internal"
+                                             PlaceholderText="Press a key..." IsReadOnly="True" FontSize="12"
+                                             Background="{StaticResource SurfaceInputBrush}"
+                                             Foreground="{StaticResource TextSecondaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"
+                                             PreviewKeyDown="HotkeyBox_PreviewKeyDown"/>
+                                    <Grid Grid.Row="1" Grid.Column="1" ColumnSpacing="4">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBox Grid.Column="0" x:Name="ScreenshotHotkeyBox" x:FieldModifier="internal"
-                                                 PlaceholderText="Press a key..."
-                                                 IsReadOnly="True" FontSize="12"
+                                                 PlaceholderText="Press a key..." IsReadOnly="True" FontSize="12"
                                                  Background="{StaticResource SurfaceInputBrush}"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                  BorderBrush="{StaticResource BorderSubtleBrush}"
@@ -1316,84 +1379,44 @@
                                                 Foreground="{StaticResource TextTertiaryBrush}"
                                                 VerticalAlignment="Center"/>
                                     </Grid>
+                                    <ComboBox Grid.Row="1" Grid.Column="2" x:Name="PerGameScreenshotCombo" x:FieldModifier="internal"
+                                              FontSize="12" MinWidth="60"
+                                              ToolTipService.ToolTip="When On, each game gets its own screenshot subfolder."
+                                              SelectionChanged="PerGameScreenshotCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Off"/>
+                                        <ComboBoxItem Content="On"/>
+                                    </ComboBox>
                                 </Grid>
 
-                                <!-- ── Row 2: Per-Game label | Combined Apply ReShade Keys ── -->
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Per-Game Subfolder"
-                                           FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
-                                           VerticalAlignment="Bottom"/>
+                                <!-- Row 2 Right: HDR Auto-Toggle -->
+                                <Grid Grid.Row="2" Grid.Column="2" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="HDR Auto-Toggle" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" x:Name="HdrAutoToggleCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              ToolTipService.ToolTip="When On, Windows HDR is automatically enabled when launching a game through RHI and disabled when the game exits."
+                                              SelectionChanged="HdrAutoToggleCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Off"/>
+                                        <ComboBoxItem Content="On"/>
+                                    </ComboBox>
+                                </Grid>
 
-                                <Button Grid.Row="2" Grid.Column="2" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
+                                <!-- Row 3: Apply buttons -->
+                                <Button Grid.Row="3" Grid.Column="0" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
                                         Content="Apply to All Games"
                                         Click="ApplyReShadeHotkeys_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"
                                         Foreground="{StaticResource AccentBlueBrush}"
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                         CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Center"/>
+                                        HorizontalAlignment="Stretch"/>
 
-                                <!-- ── Row 3: Per-Game toggle | ReLimiter label + key ── -->
-                                <ToggleSwitch Grid.Row="3" Grid.Column="0" x:Name="PerGameScreenshotToggle" x:FieldModifier="internal"
-                                              OnContent="Enabled — each game gets its own subfolder"
-                                              OffContent="Disabled — all screenshots in one folder"
-                                              Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                              VerticalAlignment="Center"/>
-
-                                <StackPanel Grid.Row="3" Grid.Column="2" Spacing="4">
-                                    <Grid ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <!-- Labels row -->
-                                        <TextBlock Grid.Row="0" Grid.Column="0" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="ReLimiter OSD"
-                                                   VerticalAlignment="Bottom" Margin="0,0,0,4"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="Shared Presets"
-                                                   VerticalAlignment="Bottom" Margin="0,0,0,4"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="2" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}"
-                                                   Text="DLSS Hooks"
-                                                   VerticalAlignment="Bottom" Margin="0,0,0,4"/>
-                                        <!-- Controls row -->
-                                        <TextBox Grid.Row="1" Grid.Column="0" x:Name="UlHotkeyBox" x:FieldModifier="internal"
-                                                 PlaceholderText="Press a key..."
-                                                 IsReadOnly="True"
-                                                 FontSize="12" MinWidth="80"
-                                                 Background="{StaticResource SurfaceInputBrush}"
-                                                 Foreground="{StaticResource TextSecondaryBrush}"
-                                                 BorderBrush="{StaticResource BorderSubtleBrush}"
-                                                 ToolTipService.ToolTip="The key that toggles the ReLimiter OSD overlay in-game."
-                                                 PreviewKeyDown="UlHotkeyBox_PreviewKeyDown"/>
-                                        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="UlSharedPresetsCombo" x:FieldModifier="internal"
-                                                  FontSize="12" HorizontalAlignment="Stretch"
-                                                  ToolTipService.ToolTip="When On, all games share the same OSD presets file. When Off, each game has its own presets."
-                                                  SelectionChanged="UlSharedPresetsCombo_SelectionChanged">
-                                            <ComboBoxItem Content="Off"/>
-                                            <ComboBoxItem Content="On"/>
-                                        </ComboBox>
-                                        <ComboBox Grid.Row="1" Grid.Column="2" x:Name="UlDlssHooksCombo" x:FieldModifier="internal"
-                                                  FontSize="12" HorizontalAlignment="Stretch"
-                                                  ToolTipService.ToolTip="Shows DLSS quality mode, render resolution, and active features on the ReLimiter OSD. Disable if experiencing crashes. Does not affect FPS cap or frame generation."
-                                                  SelectionChanged="UlDlssHooksCombo_SelectionChanged">
-                                            <ComboBoxItem Content="Off"/>
-                                            <ComboBoxItem Content="On"/>
-                                        </ComboBox>
-                                    </Grid>
-                                </StackPanel>
-
-                                <!-- ── Row 4: Apply screenshot path | ReLimiter Apply ── -->
-                                <Button Grid.Row="4" Grid.Column="0" x:Name="ApplyScreenshotPathBtn"
+                                <Button Grid.Row="3" Grid.Column="2" x:Name="ApplyScreenshotPathBtn"
                                         Content="Apply to All Games"
                                         Click="ApplyScreenshotPath_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"
@@ -1401,100 +1424,129 @@
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                         CornerRadius="8" Padding="12,7" FontSize="12"
                                         HorizontalAlignment="Stretch"/>
-
-                                <Button Grid.Row="4" Grid.Column="2" x:Name="ApplyUlHotkeyBtn" x:FieldModifier="internal"
-                                        Content="Apply to All Games"
-                                        Click="ApplyUlOsdHotkey_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}"
-                                        Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"/>
-
                             </Grid>
+                            </StackPanel>
                         </Border>
 
-                        <!-- ── Mass DLSS & Streamline Deployment + DLSS Indicator ── -->
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 3: DLSS & STREAMLINE
+                             ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <Grid ColumnSpacing="0">
+                            <StackPanel Spacing="12">
+                            <TextBlock Text="DLSS / Streamline Settings" FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <Grid ColumnSpacing="0" RowSpacing="12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Batch Deploy -->
-                                <StackPanel Grid.Column="0" Spacing="12" VerticalAlignment="Top">
-                                    <TextBlock Text="Mass DLSS &amp; Streamline Deployment" FontSize="14" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11"
-                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Deploy DLSS and Streamline DLL versions and DLSS presets to multiple games at once. Backs up originals automatically. Games without DLSS/Streamline or with v1.x versions are skipped."/>
-                                    <Button Content="Batch Deploy"
-                                            Click="MassDlssDeploy_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch" VerticalAlignment="Bottom"/>
+                                <!-- Left: Batch Deploy + Defaults (single column, no row split) -->
+                                <StackPanel Grid.Column="0" Spacing="16">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Batch Deploy" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Deploy DLSS and Streamline DLL versions and DLSS presets to multiple games at once. Backs up originals automatically."/>
+                                        <Button Content="Batch Deploy" Click="MassDlssDeploy_Click"
+                                                Background="{StaticResource AccentBlueBgBrush}"
+                                                Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Defaults" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Configure preferred DLSS/Streamline versions, presets, and render scales. Use 'Apply Defaults' in the Nvidia Profile section to stamp these onto any game."/>
+                                        <Button Content="Configure Defaults" Click="DlssDefaults_Click"
+                                                Background="{StaticResource AccentBlueBgBrush}"
+                                                Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
+                                        <StackPanel x:Name="DlssDefaultsSummaryPanel" x:FieldModifier="internal" Spacing="4" Margin="0,4,0,0"/>
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <!-- Divider -->
-                                <Border Grid.Column="1" Width="1" Background="{StaticResource BorderSubtleBrush}" Margin="16,0"/>
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderSubtleBrush}" Margin="16,0"/>
 
-                                <!-- Right: DLSS Indicator Toggle -->
-                                <StackPanel Grid.Column="2" Spacing="12" VerticalAlignment="Top">
-                                    <TextBlock Text="DLSS On-Screen Indicator" FontSize="14" FontWeight="SemiBold"
+                                <!-- Right: On-Screen Indicator + Auto-Update -->
+                                <StackPanel Grid.Column="2" Spacing="8">
+                                    <TextBlock Text="On-Screen Indicator" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Controls the DLSS text overlay that NVIDIA shows in the corner of games when DLSS is active. This is a global system setting — it affects all games. Requires admin privileges to change."/>
+                                               Text="Controls the DLSS text overlay NVIDIA shows in the corner of games. Global system setting — affects all games. Requires admin."/>
                                     <ComboBox x:Name="DlssIndicatorCombo" x:FieldModifier="internal"
-                                              FontSize="12" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                              FontSize="12" HorizontalAlignment="Stretch"
                                               SelectionChanged="DlssIndicatorCombo_SelectionChanged">
                                         <ComboBoxItem Content="Enabled"/>
                                         <ComboBoxItem Content="Disabled"/>
                                     </ComboBox>
+
+                                    <TextBlock Text="Auto-Update" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,8,0,0"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Automatically swap to the newest version when a new release appears. Only affects games currently on the previous latest — manually chosen older versions are left alone."/>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="DLSS" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="AutoUpdateDlssCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      SelectionChanged="AutoUpdateDlssCombo_SelectionChanged">
+                                                <ComboBoxItem Content="Off"/>
+                                                <ComboBoxItem Content="On"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Streamline" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="AutoUpdateStreamlineCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      SelectionChanged="AutoUpdateStreamlineCombo_SelectionChanged">
+                                                <ComboBoxItem Content="Off"/>
+                                                <ComboBoxItem Content="On"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
                             </Grid>
+                            </StackPanel>
                         </Border>
 
-                        <!-- ── DLSS/Streamline Defaults ────────────────────────────── -->
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 4: GLOBAL NVIDIA DRIVER SETTINGS
+                             ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                            <TextBlock Text="Global NVIDIA Driver Settings" FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="25"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: DLSS Defaults + summary below button -->
+                                <!-- Left column -->
                                 <StackPanel Grid.Column="0" Spacing="12" VerticalAlignment="Top">
-                                    <TextBlock Text="DLSS &amp; Streamline Defaults" FontSize="14" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Configure your preferred default DLSS/Streamline versions, presets, and render scales. Use the 'Apply Defaults' button in the Nvidia Profile section to stamp these onto any game in one click."/>
-                                    <Button Content="Configure Defaults"
-                                            Click="DlssDefaults_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
-                                    <!-- Current defaults displayed in column layout -->
-                                    <StackPanel x:Name="DlssDefaultsSummaryPanel" x:FieldModifier="internal" Spacing="4" Margin="0,4,0,0"/>
-                                </StackPanel>
-
-                                <!-- Divider -->
-                                <Border Grid.Column="1" Width="1" Background="{StaticResource BorderSubtleBrush}" Margin="16,0"/>
-
-                                <!-- Right: Shader Cache + Profile Export/Import -->
-                                <StackPanel Grid.Column="2" Spacing="12" VerticalAlignment="Top">
-                                    <TextBlock Text="Global Nvidia Settings" FontSize="14" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                               Text="Driver-level settings applied globally via the base NVIDIA profile. Per-game settings are in the Nvidia Profile section of each game's overrides panel."/>
 
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
@@ -1544,6 +1596,28 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="VSync" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="GlobalVSyncCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Global VSync mode — applies to all games without a per-game override."
+                                                      SelectionChanged="GlobalVSyncCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- Divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
+
+                                <!-- Right column -->
+                                <StackPanel Grid.Column="2" Spacing="12" VerticalAlignment="Top">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <TextBlock Text="ReBAR" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                                 <TextBlock x:Name="ReBarAdminWarning" x:FieldModifier="internal"
@@ -1562,21 +1636,6 @@
                                                       FontSize="12" HorizontalAlignment="Stretch"
                                                       ToolTipService.ToolTip="Maximum BAR transfer size. 1GB is optimal for most games. Decrease to 512MB if experiencing ReBAR-related stutters."
                                                       SelectionChanged="GlobalReBarSizeCombo_SelectionChanged"/>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <!-- VSync row -->
-                                    <Grid ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" Spacing="4">
-                                            <TextBlock Text="VSync" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
-                                            <ComboBox x:Name="GlobalVSyncCombo" x:FieldModifier="internal"
-                                                      FontSize="12" HorizontalAlignment="Stretch"
-                                                      ToolTipService.ToolTip="Global VSync mode — applies to all games without a per-game override."
-                                                      SelectionChanged="GlobalVSyncCombo_SelectionChanged"/>
                                         </StackPanel>
                                     </Grid>
 
@@ -1602,6 +1661,7 @@
                                                 CornerRadius="8" Padding="12,7" FontSize="12"
                                                 HorizontalAlignment="Stretch"/>
                                     </Grid>
+
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -1609,7 +1669,7 @@
                                         </Grid.ColumnDefinitions>
                                         <Button Grid.Column="0" Content="Reset Nvidia Profiles"
                                                 Click="ResetAllNvidiaProfiles_Click"
-                                                ToolTipService.ToolTip="Removes ALL per-game NVIDIA profile overrides (DLSS versions, presets, render scales, driver settings). The global profile will be like new."
+                                                ToolTipService.ToolTip="Removes ALL per-game NVIDIA profile overrides. The global profile will be like new."
                                                 Background="{StaticResource AccentBlueBgBrush}"
                                                 Foreground="{StaticResource AccentBlueBrush}"
                                                 BorderBrush="#CC4444" BorderThickness="1"
@@ -1617,7 +1677,7 @@
                                                 HorizontalAlignment="Stretch"/>
                                         <Button Grid.Column="1" Content="Clear Shader Cache"
                                                 Click="ClearNvidiaShaderCache_Click"
-                                                ToolTipService.ToolTip="Deletes the NVIDIA DXCache and GLCache folders. Forces shaders to recompile on next launch — can fix shader-related stuttering or corruption."
+                                                ToolTipService.ToolTip="Deletes the NVIDIA DXCache and GLCache folders. Forces shaders to recompile on next launch."
                                                 Background="{StaticResource AccentBlueBgBrush}"
                                                 Foreground="{StaticResource AccentBlueBrush}"
                                                 BorderBrush="#CC4444" BorderThickness="1"
@@ -1626,11 +1686,17 @@
                                     </Grid>
                                 </StackPanel>
                             </Grid>
+                            </StackPanel>
                         </Border>
 
-                        <!-- ── OptiScaler Settings ─────────────────────────────────── -->
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 5: COMPONENT SETTINGS (ReLimiter + OptiScaler)
+                             ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                            <TextBlock Text="Component Settings" FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1638,44 +1704,92 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>  <!-- Row 0: Titles + descriptions -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 1: GPU combo + DLSS inputs | Hotkey + Apply -->
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- ── Row 0: Titles + descriptions ── -->
+                                <!-- Left: ReLimiter -->
                                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
-                                    <TextBlock Text="OptiScaler Settings" FontSize="14" FontWeight="SemiBold"
+                                    <TextBlock Text="ReLimiter" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Configure GPU type and DLSS input settings for OptiScaler installations. DLSS input toggle is for AMD/Intel GPUs only — NVIDIA users do not need it."/>
+                                               Text="ReLimiter OSD hotkey and global feature settings applied to all games."/>
                                 </StackPanel>
 
-                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Width="1"
+                                <!-- Divider -->
+                                <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch"
-                                        Margin="12,0,12,0"/>
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
+                                <!-- Right: OptiScaler -->
                                 <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
-                                    <TextBlock Text="Hotkey" FontSize="14" FontWeight="SemiBold"
+                                    <TextBlock Text="OptiScaler" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="OptiScaler overlay toggle key"/>
+                                               Text="GPU type, DLSS input settings, and overlay hotkey for OptiScaler installations."/>
                                 </StackPanel>
 
-                                <!-- ── Row 1: GPU combo + DLSS inputs combo (side by side) | OS hotkey combo ── -->
+                                <!-- Row 1 Left: ReLimiter controls -->
                                 <Grid Grid.Row="1" Grid.Column="0" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="OSD Key" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="Shared Presets" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="DLSS Hooks" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                    <TextBox Grid.Row="1" Grid.Column="0" x:Name="UlHotkeyBox" x:FieldModifier="internal"
+                                             PlaceholderText="Press a key..." IsReadOnly="True"
+                                             FontSize="12" MinWidth="80"
+                                             Background="{StaticResource SurfaceInputBrush}"
+                                             Foreground="{StaticResource TextSecondaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"
+                                             ToolTipService.ToolTip="The key that toggles the ReLimiter OSD overlay in-game."
+                                             PreviewKeyDown="UlHotkeyBox_PreviewKeyDown"/>
+                                    <ComboBox Grid.Row="1" Grid.Column="1" x:Name="UlSharedPresetsCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              ToolTipService.ToolTip="When On, all games share the same OSD presets file. When Off, each game has its own presets."
+                                              SelectionChanged="UlSharedPresetsCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Off"/>
+                                        <ComboBoxItem Content="On"/>
+                                    </ComboBox>
+                                    <ComboBox Grid.Row="1" Grid.Column="2" x:Name="UlDlssHooksCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              ToolTipService.ToolTip="Shows DLSS quality mode, render resolution, and active features on the ReLimiter OSD. Disable if experiencing crashes."
+                                              SelectionChanged="UlDlssHooksCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Off"/>
+                                        <ComboBoxItem Content="On"/>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Row 1 Right: OptiScaler controls -->
+                                <Grid Grid.Row="1" Grid.Column="2" ColumnSpacing="12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Spacing="4">
-                                        <TextBlock Text="GPU Type" FontSize="12"
-                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Spacing="4">
+                                        <TextBlock Text="GPU Type" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                         <ComboBox x:Name="OsGpuCombo" x:FieldModifier="internal"
-                                                  FontSize="12"
-                                                  HorizontalAlignment="Stretch"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
                                                   Background="{StaticResource SurfaceInputBrush}"
                                                   Foreground="{StaticResource TextSecondaryBrush}"
                                                   BorderBrush="{StaticResource BorderSubtleBrush}"
@@ -1685,12 +1799,11 @@
                                             <x:String>Intel</x:String>
                                         </ComboBox>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1" Spacing="4" x:Name="OsDlssInputsPanel" x:FieldModifier="internal" Visibility="Collapsed">
-                                        <TextBlock Text="Use DLSS Inputs" FontSize="12"
-                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Spacing="4"
+                                                x:Name="OsDlssInputsPanel" x:FieldModifier="internal" Visibility="Collapsed">
+                                        <TextBlock Text="DLSS Inputs" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                         <ComboBox x:Name="OsDlssInputsCombo" x:FieldModifier="internal"
-                                                  FontSize="12"
-                                                  HorizontalAlignment="Stretch"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
                                                   Background="{StaticResource SurfaceInputBrush}"
                                                   Foreground="{StaticResource TextSecondaryBrush}"
                                                   BorderBrush="{StaticResource BorderSubtleBrush}"
@@ -1701,15 +1814,24 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <Grid Grid.Row="1" Grid.Column="2" ColumnSpacing="12">
+                                <!-- Row 2 Left: ReLimiter Apply -->
+                                <Button Grid.Row="2" Grid.Column="0" x:Name="ApplyUlHotkeyBtn" x:FieldModifier="internal"
+                                        Content="Apply to All Games"
+                                        Click="ApplyUlOsdHotkey_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
+
+                                <!-- Row 2 Right: OptiScaler Hotkey + Apply -->
+                                <Grid Grid.Row="2" Grid.Column="2" ColumnSpacing="12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <ComboBox Grid.Column="0" x:Name="OsHotkeyCombo" x:FieldModifier="internal"
-                                              FontSize="12"
-                                              HorizontalAlignment="Stretch"
-                                              VerticalAlignment="Bottom"
+                                              FontSize="12" HorizontalAlignment="Stretch"
                                               Background="{StaticResource SurfaceInputBrush}"
                                               Foreground="{StaticResource TextSecondaryBrush}"
                                               BorderBrush="{StaticResource BorderSubtleBrush}"
@@ -1740,47 +1862,129 @@
                                             Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch" VerticalAlignment="Bottom"/>
+                                            HorizontalAlignment="Stretch"/>
                                 </Grid>
-
                             </Grid>
+                            </StackPanel>
                         </Border>
 
-                        <!-- ── Global Update Checks & Addon Watch Folder ─────────── -->
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 6: SHADERS & ADDONS
+                             ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                            <TextBlock Text="Shaders &amp; Addons" FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <Grid ColumnSpacing="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="25"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: Custom Shaders + Cache -->
+                                <StackPanel Grid.Column="0" Spacing="12">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs."/>
+                                    </StackPanel>
+                                    <ToggleSwitch x:Name="CustomShadersToggle" x:FieldModifier="internal"
+                                                  Header="Use Custom Shaders"
+                                                  Toggled="CustomShadersToggle_Toggled"
+                                                  OnContent="Enabled — deploying from custom directories"
+                                                  OffContent="Disabled — using shader packs"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
+                                    <ToggleSwitch x:Name="CacheAllShadersToggle" x:FieldModifier="internal"
+                                                  Header="Cache All Shaders"
+                                                  Toggled="CacheAllShadersToggle_Toggled"
+                                                  OnContent="On — all packs cached on startup" OffContent="Off — downloaded on demand"
+                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
+                                </StackPanel>
+
+                                <!-- Divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
+
+                                <!-- Right: Addon Watch Folder -->
+                                <StackPanel Grid.Column="2" Spacing="12">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Addon Watch Folder" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="RHI watches this folder for RenoDX addon files (.addon64/.addon32) and archives. Defaults to your Downloads folder."/>
+                                    </StackPanel>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="AddonWatchFolderBox" x:FieldModifier="internal"
+                                                 Grid.Column="0"
+                                                 PlaceholderText="Downloads folder (default)"
+                                                 FontSize="12"
+                                                 Background="{StaticResource SurfaceInputBrush}"
+                                                 Foreground="{StaticResource TextSecondaryBrush}"
+                                                 BorderBrush="{StaticResource BorderSubtleBrush}"/>
+                                        <Button Grid.Column="1" Content="Browse" Click="BrowseAddonWatchFolder_Click"
+                                                Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                        <Button Grid.Column="2" Content="Reset" Click="ResetAddonWatchFolder_Click"
+                                                Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 7: UPDATE & DEPLOYMENT
+                             ══════════════════════════════════════════════════════════ -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                            <TextBlock Text="Update &amp; Deployment" FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="25"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>  <!-- Row 0: Titles + descriptions -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 1: Controls -->
-                                    <RowDefinition Height="Auto"/>  <!-- Row 2: Summary text -->
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Row 0 Left: Title + description -->
+                                <!-- Left: Global Update Checks -->
                                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
                                     <TextBlock Text="Global Update Checks" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Disable update checks for individual components. When disabled, the component will not be checked for updates during startup or when using Update All."/>
+                                               Text="Disable update checks for individual components. When disabled, the component will not be checked during startup or Update All."/>
                                 </StackPanel>
 
-                                <!-- Vertical divider -->
+                                <!-- Divider -->
                                 <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch"
-                                        Margin="12,0,12,0"/>
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
-                                <!-- Row 0 Right: Title + description -->
+                                <!-- Right: Mass INI Deployment -->
                                 <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
-                                    <TextBlock Text="Addon Watch Folder" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"
-                                               Text="RHI watches this folder for RenoDX addon files (.addon64/.addon32) and archives containing them. Defaults to your Downloads folder."/>
+                                    <TextBlock Text="Mass INI Deployment" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Deploy INI files or ReShade presets to multiple games at once. Custom hotkey and screenshot path settings are preserved."/>
                                 </StackPanel>
 
                                 <!-- Row 1 Left: Update Inclusion button -->
@@ -1793,213 +1997,55 @@
                                         CornerRadius="8" Padding="12,7" FontSize="12"
                                         HorizontalAlignment="Stretch"/>
 
-                                <!-- Row 1 Right: Watch folder path + Browse + Reset -->
-                                <Grid Grid.Row="1" Grid.Column="2" ColumnSpacing="8">
+                                <!-- Row 1 Right: INI deploy buttons (2x2 grid) -->
+                                <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="2" ColumnSpacing="8" RowSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="AddonWatchFolderBox" x:FieldModifier="internal"
-                                             Grid.Column="0"
-                                             PlaceholderText="Downloads folder (default)"
-                                             FontSize="12"
-                                             Background="{StaticResource SurfaceInputBrush}"
-                                             Foreground="{StaticResource TextSecondaryBrush}"
-                                             BorderBrush="{StaticResource BorderSubtleBrush}"/>
-                                    <Button Grid.Column="1" Content="Browse" Click="BrowseAddonWatchFolder_Click"
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Button Grid.Row="0" Grid.Column="0" Content="reshade.ini" Click="MassDeployRsIni_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    <Button Grid.Column="2" Content="Reset" Click="ResetAddonWatchFolder_Click"
-                                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextTertiaryBrush}"
-                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,6" FontSize="12"/>
+                                            CornerRadius="8" Padding="12,7" FontSize="12" HorizontalAlignment="Stretch"/>
+                                    <Button Grid.Row="0" Grid.Column="1" Content="relimiter.ini" Click="MassDeployUlIni_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12" HorizontalAlignment="Stretch"/>
+                                    <Button Grid.Row="1" Grid.Column="0" Content="DC.ini" Click="MassDeployDcIni_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12" HorizontalAlignment="Stretch"/>
+                                    <Button Grid.Row="1" Grid.Column="1" Content="OptiScaler.ini" Click="MassDeployOsIni_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12" HorizontalAlignment="Stretch"/>
+                                    <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Content="Mass Preset Install"
+                                            Click="MassPresetInstall_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12" HorizontalAlignment="Stretch"/>
                                 </Grid>
 
                                 <!-- Row 2 Left: Summary text -->
                                 <TextBlock Grid.Row="2" Grid.Column="0" x:Name="GlobalUpdateSummaryText" x:FieldModifier="internal"
                                            FontSize="11" TextWrapping="Wrap"/>
                             </Grid>
-                        </Border>
-
-                        <!-- ── Custom Shaders & Shader Cache ───────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <Grid ColumnSpacing="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="25"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Left: Custom Shaders -->
-                                <Grid Grid.Column="0">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Spacing="8">
-                                        <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs. Files are sourced from %LocalAppData%\RHI\reshade\Custom\."/>
-                                    </StackPanel>
-                                    <ToggleSwitch Grid.Row="1" x:Name="CustomShadersToggle" x:FieldModifier="internal"
-                                                  Header="Use Custom Shaders"
-                                                  Toggled="CustomShadersToggle_Toggled"
-                                                  OnContent="Enabled — deploying from custom directories"
-                                                  OffContent="Disabled — using shader packs"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Margin="0,8,0,0"/>
-                                </Grid>
-
-                                <!-- Vertical divider -->
-                                <Border Grid.Column="1" Width="1"
-                                        Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch"
-                                        Margin="12,0,12,0"/>
-
-                                <!-- Right: Shader Cache -->
-                                <Grid Grid.Column="2">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Spacing="8">
-                                        <TextBlock Text="Shader Cache" FontSize="13" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="When enabled, all shader packs are downloaded and cached on startup. When disabled, shader packs are only downloaded when needed (e.g. when you select them or install ReShade). Existing cached shaders are kept either way."/>
-                                    </StackPanel>
-                                    <ToggleSwitch Grid.Row="1"
-                                                  x:Name="CacheAllShadersToggle" x:FieldModifier="internal"
-                                                  Header="Cache All Shaders"
-                                                  Toggled="CacheAllShadersToggle_Toggled"
-                                                  OnContent="On" OffContent="Off"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"
-                                                  Margin="0,8,0,0"/>
-                                </Grid>
-                            </Grid>
-                        </Border>
-
-                        <!-- ── Build Channels ───────────────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="12">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Build Channels" FontSize="14" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11"
-                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Choose the build source for ReShade. Stable uses official tagged releases. Nightly uses the latest builds from GitHub Actions (may be unstable but includes the newest fixes)."/>
-                                </StackPanel>
-
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="ReShade Build Channel" FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <ComboBox x:Name="ReShadeChannelCombo" x:FieldModifier="internal"
-                                              FontSize="12"
-                                              HorizontalAlignment="Stretch"
-                                              Background="{StaticResource SurfaceInputBrush}"
-                                              Foreground="{StaticResource TextSecondaryBrush}"
-                                              BorderBrush="{StaticResource BorderSubtleBrush}"
-                                              SelectionChanged="ReShadeChannelCombo_SelectionChanged">
-                                        <x:String>Stable (reshade.me releases)</x:String>
-                                        <x:String>Nightly (GitHub Actions builds)</x:String>
-                                    </ComboBox>
-                                </StackPanel>
-
-                                <StackPanel Spacing="4" Visibility="Collapsed">
-                                    <TextBlock Text="DXVK Variant" FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <ComboBox x:Name="DxvkVariantCombo" x:FieldModifier="internal"
-                                              FontSize="12"
-                                              HorizontalAlignment="Stretch"
-                                              Background="{StaticResource SurfaceInputBrush}"
-                                              Foreground="{StaticResource TextSecondaryBrush}"
-                                              BorderBrush="{StaticResource BorderSubtleBrush}"
-                                              SelectionChanged="DxvkVariantCombo_SelectionChanged">
-                                        <x:String>Development (nightly builds)</x:String>
-                                        <x:String>Stable (tagged releases)</x:String>
-                                        <x:String>Lilium HDR</x:String>
-                                    </ComboBox>
-                                </StackPanel>
                             </StackPanel>
                         </Border>
 
-                        <!-- ── Mass Deployment ─────────────────────────────────── -->
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 8: SYSTEM & MAINTENANCE
+                             ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="12">
-                                <TextBlock Text="Mass Deployment" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11"
-                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Deploy INI files or ReShade presets to multiple games at once. INI deployment overwrites existing files in game folders — custom hotkey and screenshot path settings are preserved."/>
-
-                                <Grid ColumnSpacing="12" RowSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <Button Grid.Row="0" Grid.Column="0"
-                                            Content="Deploy reshade.ini to All Games"
-                                            Click="MassDeployRsIni_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
-
-                                    <Button Grid.Row="0" Grid.Column="1"
-                                            Content="Deploy relimiter.ini to All Games"
-                                            Click="MassDeployUlIni_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
-
-                                    <Button Grid.Row="1" Grid.Column="0"
-                                            Content="Deploy DisplayCommander.ini to All Games"
-                                            Click="MassDeployDcIni_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
-
-                                    <Button Grid.Row="1" Grid.Column="1"
-                                            Content="Deploy OptiScaler.ini to All Games"
-                                            Click="MassDeployOsIni_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
-
-                                    <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
-                                            Content="Mass Preset Install"
-                                            Click="MassPresetInstall_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ── Full Refresh | Admin Mode ────────────────────────── -->
-                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
-                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <TextBlock Text="System &amp; Maintenance" FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -2007,10 +2053,11 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Full Refresh -->
+                                <!-- Left: Full Refresh + Purge Cache -->
                                 <Grid Grid.Column="0" RowSpacing="8">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
@@ -2024,20 +2071,27 @@
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+                                    <Button Grid.Row="2" x:Name="PurgeCacheBtn"
+                                            Content="Purge Cache"
+                                            Click="PurgeCachedFiles_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
                                             HorizontalAlignment="Stretch"
-                                            ToolTipService.ToolTip="Full refresh — clears all caches and re-scans from disk"/>
+                                            ToolTipService.ToolTip="Deletes cached DLSS, Streamline, and download files to free disk space. Shaders are preserved."/>
                                 </Grid>
 
                                 <!-- Divider -->
                                 <Border Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch"
-                                        Margin="12,0,12,0"/>
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
                                 <!-- Right: Admin Mode -->
                                 <Grid Grid.Column="2" RowSpacing="8">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
@@ -2053,60 +2107,73 @@
                                         <ComboBoxItem Content="Off"/>
                                         <ComboBoxItem Content="On"/>
                                     </ComboBox>
+                                    <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,0">
+                                        <TextBlock Text="Drop Helper" FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <ComboBox x:Name="DropHelperCombo" x:FieldModifier="internal"
+                                                  SelectionChanged="DropHelperCombo_SelectionChanged"
+                                                  FontSize="12" Padding="8,4"
+                                                  CornerRadius="8" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="The drop helper window enables Discord drag-and-drop in admin mode. Disable if you don't need it. Restart required.">
+                                            <ComboBoxItem Content="Off"/>
+                                            <ComboBoxItem Content="On"/>
+                                        </ComboBox>
+                                    </StackPanel>
                                 </Grid>
                             </Grid>
+                            </StackPanel>
                         </Border>
 
-                        <!-- ── Folders ─────────────────────────────────────────────── -->
+                        <!-- ══════════════════════════════════════════════════════════
+                             CARD 9: DATA & FOLDERS
+                             ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Data &amp; Custom Files" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Data &amp; Custom Files" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="20">
                                     All RHI data is stored in AppData. Drop custom ReShade, DLSS, or Streamline DLLs into the Custom folder to use them as per-game overrides. The Logs folder contains session usage logs useful for troubleshooting.
                                 </TextBlock>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button x:Name="OpenAppDataBtn"
-                                            Content="AppData Folder"
-                                            Click="OpenAppDataFolder_Click"
+                                    <Button x:Name="OpenAppDataBtn" Content="AppData Folder" Click="OpenAppDataFolder_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    <Button x:Name="OpenDownloadsBtn"
-                                            Content="Downloads Folder"
-                                            Click="OpenDownloadsFolder_Click"
+                                    <Button x:Name="OpenDownloadsBtn" Content="Downloads Folder" Click="OpenDownloadsFolder_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    <Button x:Name="OpenCustomBtn"
-                                            Content="Custom Folder"
-                                            Click="OpenCustomFolder_Click"
+                                    <Button x:Name="OpenCustomBtn" Content="Custom Folder" Click="OpenCustomFolder_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    <Button x:Name="OpenLogsBtn"
-                                            Content="Logs Folder"
-                                            Click="OpenLogsFolder_Click"
+                                    <Button x:Name="OpenLogsBtn" Content="Logs Folder" Click="OpenLogsFolder_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"/>
-                                    <Button x:Name="CopyLogsArchiveBtn"
-                                            Content="Copy Logs"
-                                            Click="CopyLogsArchive_Click"
+                                    <Button x:Name="CopyLogsArchiveBtn" Content="Copy Logs" Click="CopyLogsArchive_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"
                                             ToolTipService.ToolTip="Creates a zip archive of all logs and copies it to clipboard — paste directly into Discord"/>
-                                    <Button x:Name="PurgeCacheBtn"
-                                            Content="Purge Cache"
-                                            Click="PurgeCachedFiles_Click"
-                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
-                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,6" FontSize="12"
-                                            ToolTipService.ToolTip="Deletes cached DLSS, Streamline, and download files to free disk space. Shaders are preserved."/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+
+                        <!-- Hidden combos retained for code-behind compatibility -->
+                        <StackPanel Visibility="Collapsed">
+                            <ComboBox x:Name="ReShadeChannelCombo" x:FieldModifier="internal"
+                                      SelectionChanged="ReShadeChannelCombo_SelectionChanged">
+                                <x:String>Stable (reshade.me releases)</x:String>
+                                <x:String>Nightly (GitHub Actions builds)</x:String>
+                            </ComboBox>
+                            <ComboBox x:Name="DxvkVariantCombo" x:FieldModifier="internal"
+                                      SelectionChanged="DxvkVariantCombo_SelectionChanged">
+                                <x:String>Development (nightly builds)</x:String>
+                                <x:String>Stable (tagged releases)</x:String>
+                                <x:String>Lilium HDR</x:String>
+                            </ComboBox>
+                        </StackPanel>
 
                     </StackPanel>
                 </ScrollViewer>

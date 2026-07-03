@@ -103,13 +103,8 @@ public partial class DetailPanelBuilder
         }
         else _window.DetailGraphicsApiBadge.Visibility = Visibility.Collapsed;
 
-        // Generic badge
-        if (card.IsGenericMod)
-        {
-            _window.DetailGenericText.Text = card.GenericModLabel;
-            _window.DetailGenericBadge.Visibility = Visibility.Visible;
-        }
-        else _window.DetailGenericBadge.Visibility = Visibility.Collapsed;
+        // Generic badge — hidden (redundant with engine badge + UE-Extended toggle)
+        _window.DetailGenericBadge.Visibility = Visibility.Collapsed;
 
         // 32-bit / 64-bit badge
         _window.Detail32BitBadge.Visibility = card.Is32Bit ? Visibility.Visible : Visibility.Collapsed;
@@ -208,6 +203,24 @@ public partial class DetailPanelBuilder
         // PCGW link button
         _window.DetailPcgwBtn.Tag = card;
         _window.DetailPcgwBtn.Visibility = card.HasPcgwUrl ? Visibility.Visible : Visibility.Collapsed;
+
+        // HDR toggle button — show per-game state
+        _window.DetailHdrToggleBtn.Tag = card;
+        var hdrOverride = _window.ViewModel.GameNameServiceInstance.HdrToggleOverrides
+            .TryGetValue(card.GameName, out var hov) ? hov : null;
+        bool hdrActive = hdrOverride != null
+            ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
+            : _window.ViewModel.Settings.HdrAutoToggle;
+        _window.DetailHdrToggleText.Text = "HDR";
+        _window.DetailHdrToggleBtn.Background = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
+            : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+        _window.DetailHdrToggleBtn.BorderBrush = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush)
+            : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+        _window.DetailHdrToggleText.Foreground = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
+            : UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
         // Nexus Mods link button
         _window.DetailNexusModsBtn.Tag = card;

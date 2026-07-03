@@ -125,6 +125,9 @@ public partial class MainViewModel
 
         _crashReporter.Log($"[MainViewModel.InitializeAsync] Started (forceRescan={forceRescan})");
 
+        // Sync global peak nits setting for INI deploys
+        AuxInstallService.GlobalPeakNits = _settingsViewModel.PeakNits;
+
         // Clear API caches on full refresh so all detection runs fresh
         if (forceRescan)
         {
@@ -287,7 +290,7 @@ public partial class MainViewModel
             // 4. Await network tasks individually so failures don't block game display
             try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
             try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
-            try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
+            try { _manifest = await manifestTask; AuxInstallService.GlobalManifest = _manifest; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database task failed — {ex.Message}"); }
             // rsTask deferred until after cards display
@@ -461,6 +464,24 @@ public partial class MainViewModel
                 SelectedGame = null;
 
             _ = Task.Run(() => { try { SaveLibrary(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Fire-and-forget SaveLibrary failed — {ex.Message}"); } }); // fire-and-forget — don't block UI
+
+            // ── One-time migration: global Nightly → per-game overrides ──────────────
+            if (_reShadeChannelOverrides.Remove("__nightly_migration_pending"))
+            {
+                int migrated = 0;
+                foreach (var card in _allCards)
+                {
+                    if (!_reShadeChannelOverrides.ContainsKey(card.GameName))
+                    {
+                        _reShadeChannelOverrides[card.GameName] = "Nightly";
+                        migrated++;
+                    }
+                }
+                _reShadeChannelOverrides["__nightly_migration_done"] = "true";
+                SaveNameMappings();
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] Nightly migration complete — {migrated} games set to Nightly");
+            }
+
             _filterViewModel.SetAllCards(_allCards);
             _filterViewModel.UpdateCounts();
             _filterViewModel.ApplyFilter();
@@ -2558,7 +2579,7 @@ public partial class MainViewModel
             // Await network tasks individually so failures don't block
             try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
             try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
-            try { _manifest = await manifestTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
+            try { _manifest = await manifestTask; AuxInstallService.GlobalManifest = _manifest; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database task failed — {ex.Message}"); }
             try { await addonPackTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Addon pack await failed — {ex.Message}"); }
@@ -2676,6 +2697,10 @@ public partial class MainViewModel
             {
                 try { await CheckForUpdatesAsync(_allCards, records, auxRecords); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Background update check failed — {ex}"); }
+
+                // DLSS/Streamline auto-update (runs after manifest is fetched and cards have detection)
+                try { await RunDlssAutoUpdateAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS auto-update failed — {ex.Message}"); }
             });
 
             // Update status text with final counts

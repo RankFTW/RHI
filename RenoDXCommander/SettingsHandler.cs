@@ -44,9 +44,11 @@ public class SettingsHandler
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
-        // Populate screenshot path and per-game toggle
+        // Populate screenshot path and per-game combo
         _window.ScreenshotPathBox.Text = ViewModel.Settings.ScreenshotPath;
-        _window.PerGameScreenshotToggle.IsOn = ViewModel.Settings.PerGameScreenshotFolders;
+        _window.PerGameScreenshotCombo.SelectedIndex = ViewModel.Settings.PerGameScreenshotFolders ? 1 : 0;
+        // Initialize peak nits display
+        _window.PeakNitsBox.Text = ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits.ToString() : "";
         // Initialize hotkey display from persisted value (Req 2.4, 3.2)
         _currentHotkeyString = ViewModel.Settings.OverlayHotkey;
         _window.HotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(ViewModel.Settings.OverlayHotkey);
@@ -133,6 +135,13 @@ public class SettingsHandler
         }
         _window._dlssIndicatorInitializing = false;
 
+        // Initialize DLSS/Streamline auto-update combos
+        _window.AutoUpdateDlssCombo.SelectedIndex = ViewModel.Settings.AutoUpdateDlss ? 1 : 0;
+        _window.AutoUpdateStreamlineCombo.SelectedIndex = ViewModel.Settings.AutoUpdateStreamline ? 1 : 0;
+
+        // Initialize HDR auto-toggle combo
+        _window.HdrAutoToggleCombo.SelectedIndex = ViewModel.Settings.HdrAutoToggle ? 1 : 0;
+
         // Populate DLSS defaults summary
         _window.RefreshDlssDefaultsSummary();
 
@@ -193,6 +202,9 @@ public class SettingsHandler
 
         // Initialize admin mode combo
         InitAdminModeCombo(_window.AdminModeCombo);
+
+        // Initialize drop helper combo
+        _window.DropHelperCombo.SelectedIndex = ViewModel.Settings.DropHelperEnabled ? 1 : 0;
     }
 
     /// <summary>
@@ -271,15 +283,20 @@ public class SettingsHandler
     public async void ApplyScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         var screenshotPath = _window.ScreenshotPathBox.Text?.Trim() ?? "";
-        var perGame = _window.PerGameScreenshotToggle.IsOn;
+        var perGame = _window.PerGameScreenshotCombo.SelectedIndex == 1;
 
-        // Persist settings
+        // Persist screenshot settings
         ViewModel.Settings.ScreenshotPath = screenshotPath;
         ViewModel.Settings.PerGameScreenshotFolders = perGame;
+
+        // Persist peak nits from textbox (user may not have pressed Enter)
+        if (int.TryParse(_window.PeakNitsBox.Text?.Trim(), out var nitsVal) && nitsVal > 0)
+            ViewModel.Settings.PeakNits = nitsVal;
+
         ViewModel.SaveSettingsPublic();
 
-        // If path is empty, clear persisted settings and return — no INI modifications
-        if (string.IsNullOrEmpty(screenshotPath))
+        // If both path and nits are empty, nothing to apply
+        if (string.IsNullOrEmpty(screenshotPath) && ViewModel.Settings.PeakNits <= 0)
         {
             return;
         }
@@ -306,11 +323,18 @@ public class SettingsHandler
 
                 foreach (var iniFile in iniFiles)
                 {
-                    AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
-                    // Also apply screenshot hotkey if non-default
-                    var ssHotkey = ViewModel.Settings.ScreenshotHotkey;
-                    if (ssHotkey != "44,0,0,0")
-                        AuxInstallService.ApplyScreenshotHotkey(iniFile, ssHotkey);
+                    if (!string.IsNullOrEmpty(screenshotPath))
+                    {
+                        AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
+                        // Also apply screenshot hotkey if non-default
+                        var ssHotkey = ViewModel.Settings.ScreenshotHotkey;
+                        if (ssHotkey != "44,0,0,0")
+                            AuxInstallService.ApplyScreenshotHotkey(iniFile, ssHotkey);
+                    }
+                    // Also apply peak nits if configured
+                    var peakNits = ViewModel.Settings.PeakNits;
+                    if (peakNits > 0)
+                        AuxInstallService.ApplyPeakNits(iniFile, peakNits);
                 }
                 updatedCount++;
             }

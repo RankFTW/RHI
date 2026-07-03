@@ -45,6 +45,9 @@ public class GameNameService : IGameNameService
     private Dictionary<string, string> _dxvkVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, int> _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game HDR auto-toggle overrides. Key = game name, Value = "On" or "Off". Absent = use global default.</summary>
+    private Dictionary<string, string> _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     private Dictionary<string, string> _launchExeOverrides = new(StringComparer.OrdinalIgnoreCase);
 
@@ -90,6 +93,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> DxvkVariantOverrides => _dxvkVariantOverrides;
     /// <summary>Per-game Lilium HDR DXVK preset index. 0=Safest (default), 5=Experimental. Absent = 0.</summary>
     public Dictionary<string, int> LiliumPresetOverrides => _liliumPresetOverrides;
+    /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
+    public Dictionary<string, string> HdrToggleOverrides => _hdrToggleOverrides;
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     public Dictionary<string, string> LaunchExeOverrides => _launchExeOverrides;
     /// <summary>Per-game launch arguments. Key = game name, Value = arguments string.</summary>
@@ -283,10 +288,28 @@ public class GameNameService : IGameNameService
         _reShadeChannelOverrides = new(Load<Dictionary<string, string>>("ReShadeChannelOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
+        // ── Migration: global Nightly → per-game Nightly ──────────────────────────
+        // The global ReShade channel setting has been removed. Users who had Nightly
+        // globally now get per-game "Nightly" overrides for all games without an
+        // existing per-game channel override.
+        if (string.Equals(settingsViewModel.ReShadeChannel, "Nightly", StringComparison.OrdinalIgnoreCase)
+            && !_reShadeChannelOverrides.ContainsKey("__nightly_migration_done"))
+        {
+            // We can't enumerate all game names here (not loaded yet), so we set a
+            // sentinel that MainViewModel will check after cards are built.
+            // For now just flag it — the actual migration runs in InitializeAsync.
+            _reShadeChannelOverrides["__nightly_migration_pending"] = "true";
+            settingsViewModel.ReShadeChannel = "Stable";
+            CrashReporter.Log("[GameNameService.LoadNameMappings] Nightly migration flagged — global channel reset to Stable");
+        }
+
         _dxvkVariantOverrides = new(Load<Dictionary<string, string>>("DxvkVariantOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
         _liliumPresetOverrides = new(Load<Dictionary<string, int>>("LiliumPresetOverrides",
+            new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
+
+        _hdrToggleOverrides = new(Load<Dictionary<string, string>>("HdrToggleOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
         _launchExeOverrides = new(Load<Dictionary<string, string>>("LaunchExeOverrides",
@@ -374,6 +397,7 @@ public class GameNameService : IGameNameService
                 s["ReShadeChannelOverrides"] = JsonSerializer.Serialize(_reShadeChannelOverrides);
                 s["DxvkVariantOverrides"] = JsonSerializer.Serialize(_dxvkVariantOverrides);
                 s["LiliumPresetOverrides"] = JsonSerializer.Serialize(_liliumPresetOverrides);
+                s["HdrToggleOverrides"] = JsonSerializer.Serialize(_hdrToggleOverrides);
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
                 s["LaunchArgsOverrides"] = JsonSerializer.Serialize(_launchArgsOverrides);
                 s["EngineVersionOverrides"] = JsonSerializer.Serialize(_engineVersionOverrides);
@@ -513,6 +537,7 @@ public class GameNameService : IGameNameService
         MigrateDict(_reShadeChannelOverrides, oldName, newName);
         MigrateDict(_dxvkVariantOverrides, oldName, newName);
         MigrateDict(_liliumPresetOverrides, oldName, newName);
+        MigrateDict(_hdrToggleOverrides, oldName, newName);
         MigrateDict(_launchExeOverrides, oldName, newName);
         MigrateDict(_launchArgsOverrides, oldName, newName);
         MigrateDict(_engineVersionOverrides, oldName, newName);

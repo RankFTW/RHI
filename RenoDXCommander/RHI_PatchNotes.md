@@ -1,8 +1,30 @@
 ## v2.1.5
 
+### New
+
+- **HDR Auto-Toggle** — automatically enables Windows HDR when launching a game through RHI and disables it when the game exits. Useful if you run your desktop in SDR and are tired of manually enabling HDR every time you game. Global setting (Off/On) in the Display section. Per-game "HDR" button next to Launch — purple when active, grey when inactive. Click to flip. Monitors the game process and disables HDR on exit for both direct exe and Steam/Epic protocol launches.
+- **Running game indicator** — sidebar highlights green when a game launched through RHI is currently running. Returns to normal when the game exits.
+- **DLSS / Streamline Auto-Update** — new toggles in the DLSS / Streamline Settings card. When enabled, games that are on the previous latest version are automatically swapped to the new latest when a manifest update arrives. Games on manually chosen older versions are left alone. Set and forget.
+- **Peak Brightness (nits) global setting** — set your monitor's peak nits once and it's automatically written to all reshade.ini files on every deploy. Auto-detect button reads your display hardware. Persists across ReShade installs and mass deploys.
+- **Drop Helper toggle** — new Off/On combo in the Admin Mode section. Disables the drop helper overlay window for users who don't need Discord drag-and-drop in admin mode.
+- **Per-game RenoDX INI overrides** — manifest can now specify `[renodx]` INI keys (like Upgrade settings) per game. Applied automatically on RenoDX install. Existing user values are preserved — only missing keys are written. Force-applied on reshade.ini redeploy.
+
+### Changes
+
+- **Settings page reorganized** — reduced from 11 cards to 9, clearly labelled with bold section headers. All DLSS/Streamline tools unified in one card. Global NVIDIA driver settings get their own dedicated card. ReLimiter and OptiScaler side by side. Shaders and addon watch folder grouped. Update checks and mass INI deployment merged.
+- **Global ReShade channel removed** — ReShade always defaults to Stable. Per-game overrides (Nightly, Custom, Legacy) remain available. Users who had Nightly globally will have it migrated to per-game overrides automatically.
+- **Detail panel header split** — game actions (Hide, Favourite, Config, Browse) now in their own bordered box, visually distinct from the Launch/links area.
+- Engine badge locked for manifest-forced DOF Fix games (e.g. Clair Obscur, Avowed) — can't be toggled off.
+- Toggling engine badge OFF now uninstalls DOF Fix addon if it was installed.
+- Removed redundant generic mod badges (UE Extended, Generic UE, Generic Unity) from detail panel.
+- ListView selection chrome removed for cleaner sidebar visuals.
+- Per-game screenshot subfolders converted from toggle switch to compact combo box.
+
 ### Bug Fixes
 
-- Fixed Luma games falsely showing "Update Available" on launch when they were already up to date — stale status from a previous session was not being cleared.
+- Fixed ReShade falsely showing "Update Available" on games with OptiScaler installed — the update check was comparing OptiScaler's dxgi.dll size against ReShade staging.
+- Fixed RenoDX update dot showing on games that never had RenoDX installed — snapshot URL content-length changes were flagging updates for uninstalled mods.
+- Fixed Luma games falsely showing "Update Available" on launch — stale status from a previous session was not being cleared.
 
 ---
 

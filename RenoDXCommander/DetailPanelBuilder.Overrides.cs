@@ -992,7 +992,7 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(channelLabel,
             "Override the global ReShade build channel for this game.\nVulkan games: changing this affects ALL Vulkan games.");
 
-        var channelItems = new[] { "Global", "Stable", "Nightly", "Custom", "No Addons", "Legacy..." };
+        var channelItems = new[] { "Stable", "Nightly", "Custom", "No Addons", "Legacy..." };
         // For Vulkan games, show the effective Vulkan-wide override (any Vulkan game's override applies to all)
         var currentChannelOverride = _window.ViewModel.GetReShadeChannelOverride(gameName);
         if (currentChannelOverride == null && card.RequiresVulkanInstall)
@@ -1023,9 +1023,8 @@ public partial class DetailPanelBuilder
         {
             defaultChannelSelection = currentChannelOverride switch
             {
-                "Stable" => "Stable",
                 "Nightly" => "Nightly",
-                _ => "Global",
+                _ => "Stable",
             };
         }
 
@@ -1037,7 +1036,7 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(channelCombo,
-            "Override the global ReShade build channel for this game.\nGlobal = use Settings default. Vulkan games: changing this affects ALL Vulkan games.");
+            "Override the ReShade build channel for this game.\nVulkan games: changing this affects ALL Vulkan games.");
 
         bool channelComboInitializing = true;
 
@@ -1292,11 +1291,10 @@ public partial class DetailPanelBuilder
 
             string? channelValue = selected switch
             {
-                "Stable" => "Stable",
                 "Nightly" => "Nightly",
-                _ => null,
+                _ => null, // "Stable" = default, clears the per-game override
             };
-            CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' → channelValue={channelValue ?? "Global (null)"}");
+            CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{capturedName}' → channelValue={channelValue ?? "Stable (null)"}");
 
             var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                 c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
@@ -1944,7 +1942,7 @@ public partial class DetailPanelBuilder
             _window.ViewModel.SetApiOverride(capturedName, null);
 
             // Reset ReShade channel override
-            channelCombo.SelectedItem = "Global";
+            channelCombo.SelectedItem = "Stable";
             _window.ViewModel.SetReShadeChannelOverride(capturedName, null);
 
             // Reset launch exe override

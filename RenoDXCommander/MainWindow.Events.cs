@@ -144,6 +144,11 @@ public sealed partial class MainWindow
             if (card.UseUeExtended && card.Status == GameStatus.Installed)
                 AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
+            // Force-apply manifest [renodx] INI overrides on redeploy
+            if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOvr))
+                AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOvr, forceOverwrite: true);
+
             AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
             bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
             card.RsActionMessage = presetDeployed
@@ -227,6 +232,11 @@ public sealed partial class MainWindow
 
                 if (card.UseUeExtended && card.Status == GameStatus.Installed)
                     AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+
+                // Force-apply manifest [renodx] INI overrides on redeploy
+                if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                    && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var cogIniOvr))
+                    AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, cogIniOvr, forceOverwrite: true);
 
                 card.RsActionMessage = "✅ ReShade.ini deployed.";
             }
@@ -2273,6 +2283,73 @@ public sealed partial class MainWindow
         }
     }
 
+    private void AutoUpdateDlssCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.AutoUpdateDlss = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void AutoUpdateStreamlineCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.AutoUpdateStreamline = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void HdrAutoToggleCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.HdrAutoToggle = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void PerGameScreenshotCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.PerGameScreenshotFolders = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void DropHelperCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        if (_dlssIndicatorInitializing) return; // Don't fire during init
+        ViewModel.Settings.DropHelperEnabled = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void HdrToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
+
+        var overrides = ViewModel.GameNameServiceInstance.HdrToggleOverrides;
+        var current = overrides.TryGetValue(card.GameName, out var v) ? v : null;
+
+        // Resolve current effective state and flip it
+        bool currentlyActive = current != null
+            ? string.Equals(current, "On", StringComparison.OrdinalIgnoreCase)
+            : ViewModel.Settings.HdrAutoToggle;
+
+        string newValue = currentlyActive ? "Off" : "On";
+        overrides[card.GameName] = newValue;
+
+        ViewModel.SaveSettingsPublic();
+
+        // Update button visual
+        bool hdrActive = string.Equals(newValue, "On", StringComparison.OrdinalIgnoreCase);
+        DetailHdrToggleText.Text = "HDR";
+        DetailHdrToggleBtn.Background = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
+            : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+        DetailHdrToggleBtn.BorderBrush = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush)
+            : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+        DetailHdrToggleText.Foreground = hdrActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
+            : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+    }
+
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -2310,6 +2387,53 @@ public sealed partial class MainWindow
         catch (Exception ex)
         {
             _crashReporter.Log($"[MainWindow.OpenScreenshotFolder_Click] Failed to open folder — {ex.Message}");
+        }
+    }
+
+    private async void PeakNitsAuto_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var devices = await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
+                Windows.Devices.Display.DisplayMonitor.GetDeviceSelector());
+            if (devices.Count == 0) return;
+
+            float maxNitsFound = 0;
+            foreach (var device in devices)
+            {
+                try
+                {
+                    var mon = await Windows.Devices.Display.DisplayMonitor.FromInterfaceIdAsync(device.Id);
+                    if (mon.MaxLuminanceInNits > maxNitsFound)
+                        maxNitsFound = mon.MaxLuminanceInNits;
+                }
+                catch { }
+            }
+            var peakNits = (int)maxNitsFound;
+            if (peakNits <= 0) return;
+
+            PeakNitsBox.Text = peakNits.ToString();
+            ViewModel.Settings.PeakNits = peakNits;
+            AuxInstallService.GlobalPeakNits = peakNits;
+            ViewModel.SaveSettingsPublic();
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.PeakNitsAuto_Click] Failed — {ex.Message}");
+        }
+    }
+
+    private void PeakNitsBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            if (sender is Microsoft.UI.Xaml.Controls.TextBox box && int.TryParse(box.Text, out var val) && val > 0)
+            {
+                ViewModel.Settings.PeakNits = val;
+                AuxInstallService.GlobalPeakNits = val;
+                ViewModel.SaveSettingsPublic();
+            }
+            e.Handled = true;
         }
     }
 
@@ -3124,6 +3248,10 @@ public sealed partial class MainWindow
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
+        // Games force-enabled via manifest cannot be toggled off
+        if (ViewModel.DofFixServiceInstance.IsForceEligible(card.GameName))
+            return;
+
         // Show first-time warning dialog
         if (!ViewModel.Settings.EngineBadgeWarningDismissed)
         {
@@ -3169,7 +3297,17 @@ public sealed partial class MainWindow
 
         // Store or remove override
         if (next == "Unreal Engine")
+        {
             ViewModel.GameNameServiceInstance.EngineVersionOverrides.Remove(card.GameName);
+
+            // Uninstall DOF Fix addon if it was installed
+            if (card.DofFixStatus == GameStatus.Installed && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                ViewModel.DofFixServiceInstance.Uninstall(card.InstallPath);
+                card.DofFixStatus = GameStatus.NotInstalled;
+                card.DofFixInstalledVersion = null;
+            }
+        }
         else
             ViewModel.GameNameServiceInstance.EngineVersionOverrides[card.GameName] = next;
 
@@ -3246,16 +3384,37 @@ public sealed partial class MainWindow
             var launchArgs = ViewModel.GameNameServiceInstance.LaunchArgsOverrides
                 .TryGetValue(gameName, out var args) ? args : null;
 
+            // ── HDR Auto-Toggle: resolve whether to enable ──
+            var hdrOverride = ViewModel.GameNameServiceInstance.HdrToggleOverrides
+                .TryGetValue(gameName, out var hov) ? hov : null;
+            bool shouldToggleHdr = hdrOverride != null
+                ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
+                : ViewModel.Settings.HdrAutoToggle;
+
+            bool hdrWasAlreadyOn = false;
+            if (shouldToggleHdr)
+            {
+                hdrWasAlreadyOn = HdrToggleService.IsHdrEnabled();
+                _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: shouldToggle={shouldToggleHdr}, wasAlreadyOn={hdrWasAlreadyOn}, override='{hdrOverride}'");
+                // Always attempt to enable — IsHdrEnabled can report false positives on some configs
+                HdrToggleService.EnableHdr();
+            }
+            else
+            {
+                _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: disabled for '{gameName}' (override='{hdrOverride}', global={ViewModel.Settings.HdrAutoToggle})");
+            }
+
             // 1. User override (absolute path)
             if (ViewModel.GameNameServiceInstance.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
                 && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
             {
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via user override: {userExe} {launchArgs}");
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe)
+                var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe)
                 {
                     Arguments = launchArgs ?? "",
                     UseShellExecute = true,
                 });
+                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName);
                 return;
             }
 
@@ -3307,6 +3466,7 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath);
                 return;
             }
 
@@ -3316,6 +3476,7 @@ public sealed partial class MainWindow
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath);
                 return;
             }
 
@@ -3333,11 +3494,12 @@ public sealed partial class MainWindow
                 if (gameExe != null)
                 {
                     _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via auto-detected exe: {gameExe} {launchArgs}");
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe)
+                    var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe)
                     {
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                     });
+                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName);
                     return;
                 }
             }
@@ -3347,6 +3509,92 @@ public sealed partial class MainWindow
         catch (Exception ex)
         {
             _crashReporter.Log($"[MainWindow.LaunchGame] Failed to launch '{card.GameName}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Monitors a launched process and disables HDR when it exits (if we enabled it).
+    /// For protocol launches (Steam/Epic URL) where proc is null, polls for the game exe by name.
+    /// </summary>
+    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? installPath = null)
+    {
+        // Find the card to set IsRunning
+        var card = ViewModel.AllCards.FirstOrDefault(c =>
+            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+
+        if (proc != null)
+        {
+            // Direct exe launch — monitor the process directly
+            DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = true; });
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await proc.WaitForExitAsync();
+                    if (shouldToggle) HdrToggleService.DisableHdr();
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
+                }
+                catch (Exception ex)
+                {
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' monitoring failed — {ex.Message}");
+                }
+            });
+        }
+        else if (!string.IsNullOrEmpty(installPath))
+        {
+            // Protocol launch (Steam/Epic) — poll for any new process running from the install path
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var normalizedPath = Path.GetFullPath(installPath).TrimEnd('\\').ToLowerInvariant();
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] Polling for game process in '{normalizedPath}'...");
+
+                    // Wait up to 60 seconds for the game process to appear
+                    System.Diagnostics.Process? gameProc = null;
+                    for (int i = 0; i < 60; i++)
+                    {
+                        await Task.Delay(1000);
+                        try
+                        {
+                            gameProc = System.Diagnostics.Process.GetProcesses()
+                                .FirstOrDefault(p =>
+                                {
+                                    try
+                                    {
+                                        var mainMod = p.MainModule?.FileName;
+                                        return mainMod != null
+                                            && Path.GetFullPath(mainMod).ToLowerInvariant().StartsWith(normalizedPath);
+                                    }
+                                    catch { return false; }
+                                });
+                        }
+                        catch { }
+
+                        if (gameProc != null) break;
+                    }
+
+                    if (gameProc == null)
+                    {
+                        _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' — game process not found after 60s");
+                        return;
+                    }
+
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = true; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' — found process '{gameProc.ProcessName}' (PID {gameProc.Id}), waiting for exit...");
+                    await gameProc.WaitForExitAsync();
+                    if (shouldToggle) HdrToggleService.DisableHdr();
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
+                }
+                catch (Exception ex)
+                {
+                    DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' poll monitoring failed — {ex.Message}");
+                }
+            });
         }
     }
 

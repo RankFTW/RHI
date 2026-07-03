@@ -9,8 +9,10 @@ public partial class AuxInstallService
     /// already in the game's INI that are not in the template are preserved untouched.
     /// If no reshade.ini exists in the game folder, the template is copied as-is.
     /// </summary>
-    public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null)
+    public static void MergeRsIni(string gameDir, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null, int peakNits = 0)
     {
+        // Use global setting if no explicit value passed
+        if (peakNits <= 0) peakNits = GlobalPeakNits;
         // Determine which template to use — RDR2/Max Payne 3 use a dedicated template
         var templatePath = (gameName != null && IsRdr2(gameName) && File.Exists(RsRdr2IniPath))
             ? RsRdr2IniPath
@@ -41,6 +43,10 @@ public partial class AuxInstallService
             // Apply screenshot hotkey if non-default
             if (screenshotHotkey != null && screenshotHotkey != "44,0,0,0")
                 ApplyScreenshotHotkey(gamePath, screenshotHotkey);
+
+            // Apply peak nits if configured
+            if (peakNits > 0)
+                ApplyPeakNits(gamePath, peakNits);
             return;
         }
 
@@ -82,6 +88,10 @@ public partial class AuxInstallService
         // Apply screenshot hotkey if non-default
         if (screenshotHotkey != null && screenshotHotkey != "44,0,0,0")
             ApplyScreenshotHotkey(gamePath, screenshotHotkey);
+
+        // Apply peak nits if configured
+        if (peakNits > 0)
+            ApplyPeakNits(gamePath, peakNits);
     }
 
     /// <summary>
@@ -91,8 +101,10 @@ public partial class AuxInstallService
     /// reshade.ini if the Vulkan template doesn't exist.
     /// For Red Dead Redemption 2, uses the dedicated reshade.rdr2.ini template instead.
     /// </summary>
-    public static void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null)
+    public static void MergeRsVulkanIni(string gameDir, string? gameName = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, int peakNits = 0)
     {
+        // Use global setting if no explicit value passed
+        if (peakNits <= 0) peakNits = GlobalPeakNits;
         // Red Dead Redemption 2 uses a dedicated ini template
         string templatePath;
         if (gameName != null && IsRdr2(gameName) && File.Exists(RsRdr2IniPath))
@@ -120,6 +132,10 @@ public partial class AuxInstallService
             // Apply screenshot hotkey if non-default
             if (screenshotHotkey != null && screenshotHotkey != "44,0,0,0")
                 ApplyScreenshotHotkey(gamePath, screenshotHotkey);
+
+            // Apply peak nits if configured
+            if (peakNits > 0)
+                ApplyPeakNits(gamePath, peakNits);
             return;
         }
 
@@ -152,6 +168,10 @@ public partial class AuxInstallService
         // Apply screenshot hotkey if non-default
         if (screenshotHotkey != null && screenshotHotkey != "44,0,0,0")
             ApplyScreenshotHotkey(gamePath, screenshotHotkey);
+
+        // Apply peak nits if configured
+        if (peakNits > 0)
+            ApplyPeakNits(gamePath, peakNits);
     }
 
     /// <summary>Returns true if the game name matches Red Dead Redemption 2 or Max Payne 3 (case-insensitive).
@@ -764,6 +784,62 @@ public partial class AuxInstallService
         ini[section]["SavePath"] = savePath;
 
         WriteIni(iniFilePath, ini);
+    }
+
+    /// <summary>
+    /// Writes the ToneMapPeakNits value to all [renodx-preset*] sections in the given
+    /// reshade.ini file. If no preset section exists, creates [renodx-preset1].
+    /// </summary>
+    public static void ApplyPeakNits(string iniFilePath, int peakNits)
+    {
+        if (peakNits <= 0 || !File.Exists(iniFilePath)) return;
+
+        var ini = ParseIni(File.ReadAllLines(iniFilePath));
+        int updated = 0;
+
+        foreach (var section in ini)
+        {
+            if (section.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase))
+            {
+                section.Value["ToneMapPeakNits"] = peakNits.ToString();
+                updated++;
+            }
+        }
+
+        if (updated == 0)
+        {
+            ini["renodx-preset1"] = new OrderedDict { ["ToneMapPeakNits"] = peakNits.ToString() };
+        }
+
+        WriteIni(iniFilePath, ini);
+    }
+
+    /// <summary>
+    /// Writes per-game [renodx] INI keys from manifest overrides to the game's reshade.ini.
+    /// Only adds/updates keys — never removes existing user-set values.
+    /// </summary>
+    public static void ApplyRenodxIniOverrides(string gameDir, Dictionary<string, string> overrides, bool forceOverwrite = false)
+    {
+        if (overrides == null || overrides.Count == 0) return;
+
+        var iniPath = Path.Combine(gameDir, "reshade.ini");
+        if (!File.Exists(iniPath)) return;
+
+        var ini = ParseIni(File.ReadAllLines(iniPath));
+
+        if (!ini.TryGetValue("renodx", out var renodxSection))
+        {
+            renodxSection = new OrderedDict();
+            ini["renodx"] = renodxSection;
+        }
+
+        foreach (var (key, value) in overrides)
+        {
+            if (forceOverwrite || !renodxSection.ContainsKey(key))
+                renodxSection[key] = value;
+        }
+
+        WriteIni(iniPath, ini);
     }
 
     // ── Overlay hotkey application ───────────────────────────────────────────────

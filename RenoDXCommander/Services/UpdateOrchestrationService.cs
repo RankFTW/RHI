@@ -80,6 +80,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 if (card.UseUeExtended)
                     AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
+                // Apply per-game [renodx] INI overrides from manifest
+                if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                    && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOverrides))
+                    AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
+
                 // Deploy Engine.ini HDR settings for all UE-Extended games
                 if (card.UseUeExtended)
                     AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
@@ -521,6 +526,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             .Where(c => c.RsStatus == GameStatus.Installed)
             .Where(c => !c.IsLumaMode) // Luma games bundle their own ReShade — skip update check
             .Where(c => !c.RequiresVulkanInstall) // Vulkan games use a global layer — handled separately in UpdateAllReShade
+            .Where(c => c.OsStatus != GameStatus.Installed) // OptiScaler deploys as dxgi.dll — size check gives false positive
             .ToList();
 
         _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {auxInstalled.Count} aux (RS) cards to check");
