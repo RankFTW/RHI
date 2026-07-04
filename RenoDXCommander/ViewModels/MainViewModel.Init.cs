@@ -127,6 +127,8 @@ public partial class MainViewModel
 
         // Sync global peak nits setting for INI deploys
         AuxInstallService.GlobalPeakNits = _settingsViewModel.PeakNits;
+        AuxInstallService.GlobalPeakNitsEnabled = _settingsViewModel.PeakNitsEnabled;
+        AuxInstallService.GlobalPeakNitsPresets = _settingsViewModel.PeakNitsPresets;
 
         // Clear API caches on full refresh so all detection runs fresh
         if (forceRescan)

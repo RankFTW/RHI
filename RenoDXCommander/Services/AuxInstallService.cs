@@ -15,6 +15,12 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// <summary>Current peak nits setting. Used as fallback in MergeRsIni when no explicit value is passed.</summary>
     public static int GlobalPeakNits { get; set; }
 
+    /// <summary>Whether peak nits auto-deploy is enabled. When false, ApplyPeakNits is a no-op.</summary>
+    public static bool GlobalPeakNitsEnabled { get; set; } = true;
+
+    /// <summary>Which preset numbers (1, 2, 3) should receive the global peak nits value. Empty = none.</summary>
+    public static HashSet<int> GlobalPeakNitsPresets { get; set; } = new() { 1, 2, 3 };
+
     /// <summary>Current manifest reference for per-game INI overrides. Set during InitializeAsync.</summary>
     public static Models.RemoteManifest? GlobalManifest { get; set; }
 

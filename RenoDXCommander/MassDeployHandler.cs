@@ -33,7 +33,6 @@ public class MassDeployHandler
                     AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
                 else
                     AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
-                AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
                 count++;
             }
             catch (Exception ex)

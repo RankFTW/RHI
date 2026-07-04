@@ -40,7 +40,7 @@ public class SettingsHandler
         _window.SettingsPanel.Visibility = Visibility.Visible;
         _window.LoadingPanel.Visibility = Visibility.Collapsed;
         // Sync toggle state with ViewModel
-        _window.CustomShadersToggle.IsOn = ViewModel.Settings.UseCustomShaders;
+        _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.UseCustomShaders ? 1 : 0;
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
@@ -98,7 +98,7 @@ public class SettingsHandler
 
         // Initialize Global Update Checks summary
         RefreshGlobalUpdateSummary();
-        _window.CacheAllShadersToggle.IsOn = ViewModel.Settings.CacheAllShaders;
+        _window.CacheAllShadersCombo.SelectedIndex = ViewModel.Settings.CacheAllShaders ? 1 : 0;
 
         // Initialize DXVK variant combo
         ViewModel.Settings.IsLoadingSettings = true;
@@ -271,11 +271,11 @@ public class SettingsHandler
         }
     }
 
-    public void CustomShadersToggle_Toggled(object sender, RoutedEventArgs e)
+    public void CustomShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ToggleSwitch toggle)
+        if (sender is ComboBox combo)
         {
-            ViewModel.Settings.UseCustomShaders = toggle.IsOn;
+            ViewModel.Settings.UseCustomShaders = combo.SelectedIndex == 1;
             ViewModel.SaveSettingsPublic();
         }
     }
@@ -295,8 +295,9 @@ public class SettingsHandler
 
         ViewModel.SaveSettingsPublic();
 
-        // If both path and nits are empty, nothing to apply
-        if (string.IsNullOrEmpty(screenshotPath) && ViewModel.Settings.PeakNits <= 0)
+        // If both path and nits are empty/disabled, nothing to apply
+        var nitsActive = ViewModel.Settings.PeakNits > 0 && ViewModel.Settings.PeakNitsEnabled;
+        if (string.IsNullOrEmpty(screenshotPath) && !nitsActive)
         {
             return;
         }
@@ -1218,12 +1219,12 @@ public class SettingsHandler
         }
     }
 
-    public void CacheAllShadersToggle_Toggled(object sender, RoutedEventArgs e)
+    public void CacheAllShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ViewModel.Settings.IsLoadingSettings) return;
-        if (sender is ToggleSwitch toggle)
+        if (sender is ComboBox combo)
         {
-            ViewModel.Settings.CacheAllShaders = toggle.IsOn;
+            ViewModel.Settings.CacheAllShaders = combo.SelectedIndex == 1;
             ViewModel.SaveSettingsPublic();
         }
     }

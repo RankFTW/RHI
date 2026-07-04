@@ -2019,7 +2019,6 @@ public partial class MainViewModel
             try
             {
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
-                AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
                 VulkanFootprintService.Create(card.InstallPath);
                 _shaderPackService.SyncGameFolder(card.InstallPath,
                     ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
@@ -2084,9 +2083,6 @@ public partial class MainViewModel
 
             // 4. Deploy reshade.vulkan.ini (as reshade.ini) to game directory
             AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
-
-            // 5. Deploy ReShadePreset.ini if present
-            AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
 
             // 5b. Create Vulkan footprint file so RDXC can detect this game later
             VulkanFootprintService.Create(card.InstallPath);
@@ -2165,8 +2161,7 @@ public partial class MainViewModel
                     overlayHotkey: _settingsViewModel.OverlayHotkey);
             });
 
-            // Deploy preset and shaders to the game folder
-            AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
+            // Deploy shaders to the game folder
             _shaderPackService.SyncGameFolder(card.InstallPath,
                 ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
 

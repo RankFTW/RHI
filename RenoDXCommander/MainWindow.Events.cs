@@ -149,11 +149,7 @@ public sealed partial class MainWindow
                 && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOvr))
                 AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOvr, forceOverwrite: true);
 
-            AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
-            bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
-            card.RsActionMessage = presetDeployed
-                ? "✅ reshade.ini merged & ReShadePreset.ini copied."
-                : "✅ reshade.ini merged into game folder.";
+            card.RsActionMessage = "✅ reshade.ini merged into game folder.";
         }
         catch (Exception ex)
         {
@@ -176,11 +172,7 @@ public sealed partial class MainWindow
             if (card.UseUeExtended && card.Status == GameStatus.Installed)
                 AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
-            AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
-            bool presetDeployed = File.Exists(AuxInstallService.RsPresetIniPath);
-            card.LumaActionMessage = presetDeployed
-                ? "✅ reshade.ini merged & ReShadePreset.ini copied."
-                : "✅ reshade.ini merged into game folder.";
+            card.LumaActionMessage = "✅ reshade.ini merged into game folder.";
         }
         catch (Exception ex)
         {
@@ -1699,8 +1691,8 @@ public sealed partial class MainWindow
     private void OpenDownloadsFolder_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.OpenDownloadsFolder_Click(sender, e);
 
-    private void CustomShadersToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.CustomShadersToggle_Toggled(sender, e);
+    private void CustomShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.CustomShadersCombo_SelectionChanged(sender, e);
 
     private void ApplyScreenshotPath_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyScreenshotPath_Click(sender, e);
@@ -1747,8 +1739,8 @@ public sealed partial class MainWindow
     private async void GlobalUpdateInclusion_Click(object sender, RoutedEventArgs e)
         => await _settingsHandler.GlobalUpdateInclusion_ClickAsync(sender, e);
 
-    private void CacheAllShadersToggle_Toggled(object sender, RoutedEventArgs e)
-        => _settingsHandler.CacheAllShadersToggle_Toggled(sender, e);
+    private void CacheAllShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.CacheAllShadersCombo_SelectionChanged(sender, e);
 
     private void ApplyOsHotkey_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyOsHotkey_Click(sender, e);
@@ -2484,9 +2476,85 @@ public sealed partial class MainWindow
                 ViewModel.Settings.PeakNits = val;
                 AuxInstallService.GlobalPeakNits = val;
                 ViewModel.SaveSettingsPublic();
+                box.IsEnabled = false;
+                box.IsEnabled = true;
             }
             e.Handled = true;
         }
+    }
+
+    private async void PeakNitsCog_Click(object sender, RoutedEventArgs e)
+    {
+        var settings = ViewModel.Settings;
+        var content = new StackPanel { Spacing = 12 };
+
+        // Enable/Disable toggle
+        var enablePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        enablePanel.Children.Add(new TextBlock
+        {
+            Text = "Auto-apply peak nits on deploy",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        var enableCombo = new ComboBox { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+        enableCombo.Items.Add("Off");
+        enableCombo.Items.Add("On");
+        enableCombo.SelectedIndex = settings.PeakNitsEnabled ? 1 : 0;
+        enablePanel.Children.Add(enableCombo);
+        content.Children.Add(enablePanel);
+
+        // Preset checkboxes
+        content.Children.Add(new TextBlock
+        {
+            Text = "Apply to presets:",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+
+        var cb1 = new CheckBox { Content = "Preset 1", IsChecked = settings.PeakNitsPresets.Contains(1), FontSize = 12 };
+        var cb2 = new CheckBox { Content = "Preset 2", IsChecked = settings.PeakNitsPresets.Contains(2), FontSize = 12 };
+        var cb3 = new CheckBox { Content = "Preset 3", IsChecked = settings.PeakNitsPresets.Contains(3), FontSize = 12 };
+        content.Children.Add(cb1);
+        content.Children.Add(cb2);
+        content.Children.Add(cb3);
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "Unchecked presets keep their existing per-preset values.",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            TextWrapping = TextWrapping.Wrap,
+        });
+
+        var dialog = new ContentDialog
+        {
+            Title = "Peak Nits Settings",
+            Content = content,
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = (sender as FrameworkElement)?.XamlRoot ?? Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        // Persist settings
+        settings.PeakNitsEnabled = enableCombo.SelectedIndex == 1;
+        var presets = new HashSet<int>();
+        if (cb1.IsChecked == true) presets.Add(1);
+        if (cb2.IsChecked == true) presets.Add(2);
+        if (cb3.IsChecked == true) presets.Add(3);
+        settings.PeakNitsPresets = presets;
+
+        // Sync to static cache
+        AuxInstallService.GlobalPeakNitsEnabled = settings.PeakNitsEnabled;
+        AuxInstallService.GlobalPeakNitsPresets = settings.PeakNitsPresets;
+
+        ViewModel.SaveSettingsPublic();
     }
 
     private void SettingsBack_Click(object sender, RoutedEventArgs e)

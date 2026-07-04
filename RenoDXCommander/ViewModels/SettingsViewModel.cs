@@ -50,6 +50,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _dxvkVariant = "Development";
     [ObservableProperty] private string _reShadeChannel = "Stable";
     [ObservableProperty] private int _peakNits;
+    [ObservableProperty] private bool _peakNitsEnabled = true;
+    [ObservableProperty] private HashSet<int> _peakNitsPresets = new() { 1, 2, 3 };
 
     // ── DLSS/Streamline Auto-Update ───────────────────────────────────────────
     [ObservableProperty] private bool _autoUpdateDlss;
@@ -229,6 +231,12 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("DxvkVariant", out var dvVal)) DxvkVariant = dvVal ?? "Development";
         if (s.TryGetValue("ReShadeChannel", out var rscVal)) ReShadeChannel = rscVal ?? "Stable";
         if (s.TryGetValue("PeakNits", out var pnVal) && int.TryParse(pnVal, out var pnInt)) PeakNits = pnInt;
+        if (s.TryGetValue("PeakNitsEnabled", out var pneVal)) PeakNitsEnabled = pneVal != "false"; // default true
+        if (s.TryGetValue("PeakNitsPresets", out var pnpVal))
+        {
+            try { PeakNitsPresets = System.Text.Json.JsonSerializer.Deserialize<HashSet<int>>(pnpVal) ?? new() { 1, 2, 3 }; }
+            catch { PeakNitsPresets = new() { 1, 2, 3 }; }
+        }
         if (s.TryGetValue("AutoUpdateDlss", out var audVal)) AutoUpdateDlss = audVal == "true";
         if (s.TryGetValue("AutoUpdateStreamline", out var ausVal)) AutoUpdateStreamline = ausVal == "true";
         if (s.TryGetValue("LastKnownNewestDlss", out var lkndVal)) LastKnownNewestDlss = lkndVal ?? "";
@@ -295,6 +303,8 @@ public partial class SettingsViewModel : ObservableObject
         s["DxvkVariant"] = DxvkVariant;
         s["ReShadeChannel"] = ReShadeChannel;
         if (PeakNits > 0) s["PeakNits"] = PeakNits.ToString();
+        s["PeakNitsEnabled"] = PeakNitsEnabled ? "true" : "false";
+        if (PeakNitsPresets.Count < 3) s["PeakNitsPresets"] = System.Text.Json.JsonSerializer.Serialize(PeakNitsPresets);
         if (AutoUpdateDlss) s["AutoUpdateDlss"] = "true";
         if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true";
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;

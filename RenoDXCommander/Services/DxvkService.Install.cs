@@ -949,10 +949,7 @@ public partial class DxvkService
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName);
                 CrashReporter.Log($"[DxvkService.SwitchReShadeForDxvk] {card.GameName}: deployed Vulkan reshade.ini");
 
-                // 3. Deploy ReShadePreset.ini if present
-                AuxInstallService.CopyRsPresetIniIfPresent(card.InstallPath);
-
-                // 4. Create the Vulkan footprint marker
+                // 3. Create the Vulkan footprint marker
                 VulkanFootprintService.Create(card.InstallPath);
                 CrashReporter.Log($"[DxvkService.SwitchReShadeForDxvk] {card.GameName}: created Vulkan footprint");
 

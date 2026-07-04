@@ -793,22 +793,35 @@ public partial class AuxInstallService
     public static void ApplyPeakNits(string iniFilePath, int peakNits)
     {
         if (peakNits <= 0 || !File.Exists(iniFilePath)) return;
+        if (!GlobalPeakNitsEnabled) return;
 
         var ini = ParseIni(File.ReadAllLines(iniFilePath));
-        int updated = 0;
 
+        // Write to existing preset sections that are checked
+        var written = new HashSet<int>();
         foreach (var section in ini)
         {
             if (section.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase))
             {
-                section.Value["ToneMapPeakNits"] = peakNits.ToString();
-                updated++;
+                var numPart = section.Key.Substring("renodx-preset".Length);
+                if (int.TryParse(numPart, out var presetNum))
+                {
+                    if (!GlobalPeakNitsPresets.Contains(presetNum))
+                        continue; // Skip presets the user didn't check
+
+                    section.Value["ToneMapPeakNits"] = peakNits.ToString();
+                    written.Add(presetNum);
+                }
             }
         }
 
-        if (updated == 0)
+        // Auto-create missing preset sections that are checked
+        foreach (var presetNum in GlobalPeakNitsPresets)
         {
-            ini["renodx-preset1"] = new OrderedDict { ["ToneMapPeakNits"] = peakNits.ToString() };
+            if (!written.Contains(presetNum))
+            {
+                ini[$"renodx-preset{presetNum}"] = new OrderedDict { ["ToneMapPeakNits"] = peakNits.ToString() };
+            }
         }
 
         WriteIni(iniFilePath, ini);

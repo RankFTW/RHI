@@ -1316,6 +1316,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="Peak Nits" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"
@@ -1329,10 +1330,18 @@
                                             ToolTipService.ToolTip="Reads your monitor's peak brightness automatically."/>
                                     <TextBox Grid.Column="2" x:Name="PeakNitsBox" x:FieldModifier="internal"
                                              PlaceholderText="nits" FontSize="12"
+                                             VerticalContentAlignment="Center"
                                              Background="{StaticResource SurfaceInputBrush}"
                                              Foreground="{StaticResource TextSecondaryBrush}"
                                              BorderBrush="{StaticResource BorderSubtleBrush}"
                                              KeyDown="PeakNitsBox_KeyDown"/>
+                                    <Button Grid.Column="3" Content="⚙" Click="PeakNitsCog_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource ChipTextBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                            FontSize="12" VerticalAlignment="Center"
+                                            ToolTipService.ToolTip="Configure which presets receive the global peak nits value."/>
                                 </Grid>
 
                                 <!-- Row 2 Left: Overlay key | Screenshot key | Per-Game Folders combo -->
@@ -1357,6 +1366,7 @@
                                                Text="Subfolders" Margin="0,0,0,3"/>
                                     <TextBox Grid.Row="1" Grid.Column="0" x:Name="HotkeyBox" x:FieldModifier="internal"
                                              PlaceholderText="Press a key..." IsReadOnly="True" FontSize="12"
+                                             VerticalContentAlignment="Center"
                                              Background="{StaticResource SurfaceInputBrush}"
                                              Foreground="{StaticResource TextSecondaryBrush}"
                                              BorderBrush="{StaticResource BorderSubtleBrush}"
@@ -1368,6 +1378,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBox Grid.Column="0" x:Name="ScreenshotHotkeyBox" x:FieldModifier="internal"
                                                  PlaceholderText="Press a key..." IsReadOnly="True" FontSize="12"
+                                                 VerticalContentAlignment="Center"
                                                  Background="{StaticResource SurfaceInputBrush}"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                  BorderBrush="{StaticResource BorderSubtleBrush}"
@@ -1899,17 +1910,34 @@
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                                    Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs."/>
                                     </StackPanel>
-                                    <ToggleSwitch x:Name="CustomShadersToggle" x:FieldModifier="internal"
-                                                  Header="Use Custom Shaders"
-                                                  Toggled="CustomShadersToggle_Toggled"
-                                                  OnContent="Enabled — deploying from custom directories"
-                                                  OffContent="Disabled — using shader packs"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
-                                    <ToggleSwitch x:Name="CacheAllShadersToggle" x:FieldModifier="internal"
-                                                  Header="Cache All Shaders"
-                                                  Toggled="CacheAllShadersToggle_Toggled"
-                                                  OnContent="On — all packs cached on startup" OffContent="Off — downloaded on demand"
-                                                  Foreground="{StaticResource TextTertiaryBrush}" FontSize="12"/>
+                                    <Grid ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Custom Shaders" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" Margin="0,0,0,3"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Cache All Shaders" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" Margin="0,0,0,3"/>
+                                        <ComboBox Grid.Row="1" Grid.Column="0" x:Name="CustomShadersCombo" x:FieldModifier="internal"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="When On, deploys shaders and textures from your custom directory instead of the built-in shader packs."
+                                                  SelectionChanged="CustomShadersCombo_SelectionChanged">
+                                            <ComboBoxItem Content="Off"/>
+                                            <ComboBoxItem Content="On"/>
+                                        </ComboBox>
+                                        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CacheAllShadersCombo" x:FieldModifier="internal"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="When On, all shader packs are downloaded and cached at startup. When Off, packs are downloaded on demand when needed."
+                                                  SelectionChanged="CacheAllShadersCombo_SelectionChanged">
+                                            <ComboBoxItem Content="Off"/>
+                                            <ComboBoxItem Content="On"/>
+                                        </ComboBox>
+                                    </Grid>
                                 </StackPanel>
 
                                 <!-- Divider -->

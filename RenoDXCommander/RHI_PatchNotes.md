@@ -3,10 +3,17 @@
 ### New
 
 - **HDR monitor selection** — ⚙ button next to HDR Auto-Toggle opens a dialog showing all detected displays. Tick which monitors should have HDR enabled on game launch. Leave all unchecked for primary display only (previous behaviour). Non-HDR displays shown greyed out.
+- **Peak Nits preset control** — ⚙ button next to the Peak Nits input opens a configuration dialog. Choose Off/On to enable or disable global nits auto-deploy entirely. Tick which presets (1, 2, 3) should receive the global value — unchecked presets keep their existing per-preset values untouched.
+
+### Changes
+
+- **ReShadePreset.ini no longer auto-deployed** — previously copied on every ReShade install, update, and INI merge. Now only deployed when you explicitly click "Deploy ReShadePreset.ini" in the RS cog dialog.
+- Shaders & Addons settings card: ToggleSwitches replaced with side-by-side ComboBoxes for a more compact layout.
 
 ### Bug Fixes
 
 - Fixed OptiScaler not updating to newer versions when a cached version already existed — the staging guard was preventing re-download even when an update was detected.
+- Fixed Peak Nits overwriting custom per-preset ToneMapPeakNits values — users who had different nits per preset were losing their custom values on every INI deploy.
 
 ---
 

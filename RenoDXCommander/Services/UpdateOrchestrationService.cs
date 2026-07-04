@@ -336,7 +336,6 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 try
                 {
                     AuxInstallService.MergeRsVulkanIni(vCard.InstallPath, vCard.GameName);
-                    AuxInstallService.CopyRsPresetIniIfPresent(vCard.InstallPath);
 
                     var vulkanVersion = AuxInstallService.ReadInstalledVersion(
                         VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
