@@ -113,7 +113,6 @@ public class GameInitializationService : IGameInitializationService
         // Permanently exclude specific non-game entries
         var permanentExclusions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Lossless Scaling",
             "Steamworks Common Redistributables",
             "QuickPasta",
             "Apple Music",
