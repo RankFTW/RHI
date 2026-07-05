@@ -23,7 +23,6 @@ public sealed partial class MainWindow : Window
     private const int DefaultHeight = 1000;
 
     private readonly ICrashReporter _crashReporter;
-    private readonly CardBuilder _cardBuilder;
     private readonly DetailPanelBuilder _detailPanelBuilder;
     private readonly OverridesFlyoutBuilder _overridesFlyoutBuilder;
     private readonly DialogService _dialogService;
@@ -46,7 +45,6 @@ public sealed partial class MainWindow : Window
         _crashReporter = crashReporter;
         InitializeComponent();
         InitializeSkeletons();
-        _cardBuilder = new CardBuilder(this);
         _detailPanelBuilder = new DetailPanelBuilder(this);
         _compactViewBuilder = new CompactViewBuilder(this);
         _overridesFlyoutBuilder = new OverridesFlyoutBuilder(this, crashReporter);
@@ -371,10 +369,6 @@ public sealed partial class MainWindow : Window
 
             switch (ViewModel.CurrentViewLayout)
             {
-                case ViewLayout.Grid:
-                    // In grid mode, scroll to and highlight the selected card
-                    ScrollToCard(card);
-                    break;
                 case ViewLayout.Detail:
                 case ViewLayout.Compact:
                     // Debounce panel rebuild for both Detail and Compact modes
@@ -416,14 +410,6 @@ public sealed partial class MainWindow : Window
 
             switch (ViewModel.CurrentViewLayout)
             {
-                case ViewLayout.Grid:
-                    // Clear highlight from all cards
-                    foreach (var child in CardGridPanel.Children)
-                    {
-                        if (child is Border b && b.Tag is GameCardViewModel c)
-                            c.CardHighlighted = false;
-                    }
-                    break;
                 case ViewLayout.Detail:
                     DetailPanel.Visibility = Visibility.Collapsed;
                     OverridesPanel.Children.Clear();

@@ -1781,13 +1781,11 @@ public class OverridesFlyoutBuilder
 
             _crashReporter.Log($"[OverridesFlyoutBuilder.OpenOverridesFlyout] Overrides reset for: {capturedName}");
 
-            // Only reselect/NotifyAll/RebuildCardGrid if game name actually changed
+            // Only reselect/NotifyAll if game name actually changed
             if (nameChanged)
             {
                 _window.RequestReselect(capturedName);
                 card.NotifyAll();
-                if (ViewModel.IsGridLayout)
-                    _window.RebuildCardGrid();
             }
         };
 

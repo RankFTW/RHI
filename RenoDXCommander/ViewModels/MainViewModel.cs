@@ -121,43 +121,32 @@ public partial class MainViewModel : ObservableObject
     public Visibility DetailPanelVisibility =>
         CurrentViewLayout == ViewLayout.Detail ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility CardGridVisibility =>
-        CurrentViewLayout == ViewLayout.Grid ? Visibility.Visible : Visibility.Collapsed;
-
     public Visibility CompactViewVisibility =>
         CurrentViewLayout == ViewLayout.Compact ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>
     /// Returns Visible when in Detail OR Compact mode (both use the DetailScrollViewer).
     /// </summary>
-    public Visibility DetailOrCompactVisibility =>
-        CurrentViewLayout == ViewLayout.Grid ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility DetailOrCompactVisibility => Visibility.Visible;
 
     public string LayoutToggleLabel => CurrentViewLayout switch
     {
         ViewLayout.Detail => "Detail View",
-        ViewLayout.Grid => "Grid View",
         ViewLayout.Compact => "Simple View",
         _ => "Detail View",
     };
 
-    // Backward-compatible property for code that still checks grid mode
-    public bool IsGridLayout => CurrentViewLayout == ViewLayout.Grid;
-
     partial void OnCurrentViewLayoutChanged(ViewLayout value)
     {
         OnPropertyChanged(nameof(DetailPanelVisibility));
-        OnPropertyChanged(nameof(CardGridVisibility));
         OnPropertyChanged(nameof(CompactViewVisibility));
         OnPropertyChanged(nameof(DetailOrCompactVisibility));
         OnPropertyChanged(nameof(LayoutToggleLabel));
-        OnPropertyChanged(nameof(IsGridLayout));
     }
 
     public ViewLayout NextViewLayout() => CurrentViewLayout switch
     {
-        ViewLayout.Detail => ViewLayout.Grid,
-        ViewLayout.Grid => ViewLayout.Compact,
+        ViewLayout.Detail => ViewLayout.Compact,
         ViewLayout.Compact => ViewLayout.Detail,
         _ => ViewLayout.Detail,
     };

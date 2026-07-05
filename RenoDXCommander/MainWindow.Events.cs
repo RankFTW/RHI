@@ -1116,9 +1116,6 @@ public sealed partial class MainWindow
     private void ViewDetail_Click(object sender, RoutedEventArgs e)
         => SwitchToView(ViewLayout.Detail);
 
-    private void ViewGrid_Click(object sender, RoutedEventArgs e)
-        => SwitchToView(ViewLayout.Grid);
-
     private void SwitchToView(ViewLayout target)
     {
         if (ViewModel.CurrentViewLayout == target) return;
@@ -1144,9 +1141,6 @@ public sealed partial class MainWindow
         // Rebuild content for the new layout
         switch (target)
         {
-            case ViewLayout.Grid:
-                RebuildCardGrid();
-                break;
             case ViewLayout.Detail:
                 if (ViewModel.SelectedGame is { } card)
                 {
@@ -1189,9 +1183,6 @@ public sealed partial class MainWindow
         // Rebuild content for the new layout
         switch (ViewModel.CurrentViewLayout)
         {
-            case ViewLayout.Grid:
-                RebuildCardGrid();
-                break;
             case ViewLayout.Detail:
                 // Switching to detail mode — repopulate detail panel for selected game if any
                 if (ViewModel.SelectedGame is { } card)
@@ -1221,39 +1212,6 @@ public sealed partial class MainWindow
     {
         ViewModel.NavigateCompactPage(1);
         _compactViewBuilder?.NavigateToPage(ViewModel.CompactPageIndex);
-    }
-
-    /// <summary>
-    /// Handler for the install flyout opening — builds the flyout content and attaches it.
-    /// Called when the install button's flyout is about to open.
-    /// </summary>
-    internal void CardInstallFlyout_Opening(object? sender, object e)
-    {
-        if (sender is not Flyout flyout) return;
-        if (flyout.Target is not FrameworkElement { Tag: GameCardViewModel card }) return;
-
-        var content = _cardBuilder.BuildInstallFlyoutContent(card);
-
-        var scrollViewer = new ScrollViewer
-        {
-            Content = content,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            MaxHeight = 400,
-        };
-
-        flyout.Content = scrollViewer;
-
-        // Unsubscribe from PropertyChanged when flyout closes
-        flyout.Closed += FlyoutClosed;
-
-        void FlyoutClosed(object? s, object ev)
-        {
-            flyout.Closed -= FlyoutClosed;
-            if (content.Tag is (GameCardViewModel c, System.ComponentModel.PropertyChangedEventHandler h))
-            {
-                c.PropertyChanged -= h;
-            }
-        }
     }
 
     // ── Per-component install flyout click handlers ──
@@ -1566,21 +1524,6 @@ public sealed partial class MainWindow
         }
 
         menu.ShowAt(anchor);
-    }
-
-    internal void Card_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-    {
-        try
-        {
-            if (sender is not Border b || b.Tag is not GameCardViewModel card) return;
-
-            foreach (var c in ViewModel.DisplayedGames)
-                c.CardHighlighted = false;
-
-            card.CardHighlighted = true;
-            ViewModel.SelectedGame = card;
-        }
-        catch (Exception ex) { _crashReporter.Log($"[MainWindow.Card_PointerPressed] Error selecting card — {ex.Message}"); }
     }
 
     internal async void InfoButton_Click(object sender, RoutedEventArgs e)
