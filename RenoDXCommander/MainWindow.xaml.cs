@@ -52,7 +52,7 @@ public sealed partial class MainWindow : Window
         _shaderPackService = App.Services.GetRequiredService<IShaderPackService>();
         _dlssPresetService = App.Services.GetRequiredService<DlssPresetService>();
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
-        _addonPackService = App.Services.GetRequiredService<IAddonPackService>();
+        _addonPackService = viewModel.AddonPackServiceInstance;
         InitializeComponent();
         InitializeSkeletons();
         _detailPanelBuilder = new DetailPanelBuilder(
