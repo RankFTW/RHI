@@ -16,7 +16,7 @@ public partial class DetailPanelBuilder
         // ══════════════════════════════════════════════════════════════════════
         // Nvidia Profile Settings — VSync, Latency, Smooth Motion, Power/CPU, ReBAR
         // ══════════════════════════════════════════════════════════════════════
-        var nvidiaPresetService = _window.ViewModel.DlssPresetServiceInstance;
+        var nvidiaPresetService = _dlssPresetService;
         if (nvidiaPresetService.IsSupported)
         {
             bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
@@ -360,7 +360,7 @@ public partial class DetailPanelBuilder
                         // Also restore DLSS/Streamline DLLs to originals
                         if (refreshCard.DlssDetection != null)
                         {
-                            var dlssSvc = _window.ViewModel.DlssStreamlineServiceInstance;
+                            var dlssSvc = _dlssStreamlineService;
                             dlssSvc.RestoreAll(refreshCard.DlssDetection);
                             refreshCard.RefreshDlssVersions(dlssSvc);
                         }

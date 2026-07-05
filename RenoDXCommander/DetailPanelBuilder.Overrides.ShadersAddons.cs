@@ -76,7 +76,7 @@ public partial class DetailPanelBuilder
 
             if (selected == "Select")
             {
-                List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameAddonSelection.TryGetValue(gameName, out var existingAddons)
+                List<string>? current = _gameNameService.PerGameAddonSelection.TryGetValue(gameName, out var existingAddons)
                     ? existingAddons
                     : null;
 
@@ -115,7 +115,7 @@ public partial class DetailPanelBuilder
                     AddonPopupHelper.PopupContext.PerGame);
                 if (result != null)
                 {
-                    _window.ViewModel.GameNameServiceInstance.PerGameAddonSelection[gameName] = result;
+                    _gameNameService.PerGameAddonSelection[gameName] = result;
                     _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Select");
                     _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
                 }
@@ -249,7 +249,7 @@ public partial class DetailPanelBuilder
         Grid.SetRow(launchExeHeaderPanel, 0);
         shadersAddonsRightColumn.Children.Add(launchExeHeaderPanel);
 
-        var currentLaunchExe = _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides
+        var currentLaunchExe = _gameNameService.LaunchExeOverrides
             .TryGetValue(ctx.CapturedName, out var savedExe) ? savedExe : "";
         var launchExeBox = new TextBox
         {
@@ -264,13 +264,13 @@ public partial class DetailPanelBuilder
         {
             var newPath = launchExeBox.Text.Trim();
             if (string.IsNullOrEmpty(newPath))
-                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(ctx.CapturedName);
+                _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);
             else
-                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[ctx.CapturedName] = newPath;
+                _gameNameService.LaunchExeOverrides[ctx.CapturedName] = newPath;
             _window.ViewModel.SaveSettingsPublic();
         };
 
-        var currentLaunchArgs = _window.ViewModel.GameNameServiceInstance.LaunchArgsOverrides
+        var currentLaunchArgs = _gameNameService.LaunchArgsOverrides
             .TryGetValue(ctx.CapturedName, out var savedArgs) ? savedArgs : "";
         var launchArgsBox = new TextBox
         {
@@ -287,9 +287,9 @@ public partial class DetailPanelBuilder
         {
             var newArgs = launchArgsBox.Text.Trim();
             if (string.IsNullOrEmpty(newArgs))
-                _window.ViewModel.GameNameServiceInstance.LaunchArgsOverrides.Remove(ctx.CapturedName);
+                _gameNameService.LaunchArgsOverrides.Remove(ctx.CapturedName);
             else
-                _window.ViewModel.GameNameServiceInstance.LaunchArgsOverrides[ctx.CapturedName] = newArgs;
+                _gameNameService.LaunchArgsOverrides[ctx.CapturedName] = newArgs;
             _window.ViewModel.SaveSettingsPublic();
         };
 
@@ -338,7 +338,7 @@ public partial class DetailPanelBuilder
             if (!string.IsNullOrEmpty(filePath))
             {
                 launchExeBox.Text = filePath;
-                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[ctx.CapturedName] = filePath;
+                _gameNameService.LaunchExeOverrides[ctx.CapturedName] = filePath;
                 _window.ViewModel.SaveSettingsPublic();
             }
         };
@@ -361,7 +361,7 @@ public partial class DetailPanelBuilder
         resetLaunchBtn.Click += (s, ev) =>
         {
             launchExeBox.Text = "";
-            _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(ctx.CapturedName);
+            _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);
             _window.ViewModel.SaveSettingsPublic();
         };
         Grid.SetColumn(resetLaunchBtn, 1);
@@ -432,7 +432,7 @@ public partial class DetailPanelBuilder
             if (_window.ViewModel.GetPerGameShaderMode(ctx.CapturedName) != "Global")
             {
                 _window.ViewModel.SetPerGameShaderMode(ctx.CapturedName, "Global");
-                _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.Remove(ctx.CapturedName);
+                _gameNameService.PerGameShaderSelection.Remove(ctx.CapturedName);
                 _window.ViewModel.DeployShadersForCard(ctx.CapturedName);
             }
 
@@ -503,8 +503,8 @@ public partial class DetailPanelBuilder
             _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null);
 
             // Reset launch exe override
-            _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(ctx.CapturedName);
-            _window.ViewModel.GameNameServiceInstance.LaunchArgsOverrides.Remove(ctx.CapturedName);
+            _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);
+            _gameNameService.LaunchArgsOverrides.Remove(ctx.CapturedName);
             _window.ViewModel.SaveSettingsPublic();
             launchExeBox.Text = "";
             launchArgsBox.Text = "";
@@ -516,7 +516,7 @@ public partial class DetailPanelBuilder
                 if (targetCard != null)
                 {
                     // Re-resolve bitness from PE header auto-detection
-                    var detectedMachine = _window.ViewModel.PeHeaderServiceInstance.DetectGameArchitecture(targetCard.InstallPath);
+                    var detectedMachine = _peHeaderService.DetectGameArchitecture(targetCard.InstallPath);
                     targetCard.Is32Bit = _window.ViewModel.ResolveIs32Bit(ctx.CapturedName, detectedMachine);
 
                     // Re-detect APIs from scanning (overrides are now cleared)
@@ -533,7 +533,7 @@ public partial class DetailPanelBuilder
 
             // Reset DLSS presets to Default
             {
-                var presetSvc = _window.ViewModel.DlssPresetServiceInstance;
+                var presetSvc = _dlssPresetService;
                 if (presetSvc.IsSupported)
                 {
                     presetSvc.SetSrPreset(ctx.CapturedName, card.InstallPath, 0);

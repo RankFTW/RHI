@@ -22,10 +22,46 @@ public partial class DetailPanelBuilder
     private readonly DispatcherQueue _dispatcherQueue;
     private GameCardViewModel? _currentDetailCard;
 
-    public DetailPanelBuilder(MainWindow window)
+    // Services injected directly — no longer accessed via ViewModel forwarding properties
+    private readonly IGameNameService _gameNameService;
+    private readonly IPeHeaderService _peHeaderService;
+    private readonly DlssPresetService _dlssPresetService;
+    private readonly IDlssStreamlineService _dlssStreamlineService;
+    private readonly IDxvkService _dxvkService;
+    private readonly IDllOverrideService _dllOverrideService;
+    private readonly IAuxInstallService _auxInstallService;
+    private readonly IShaderPackService _shaderPackService;
+    private readonly IOptiScalerWikiService _optiScalerWikiService;
+    private readonly IHdrDatabaseService _hdrDatabaseService;
+    private readonly IOptiScalerService _optiScalerService;
+
+    public DetailPanelBuilder(
+        MainWindow window,
+        IGameNameService gameNameService,
+        IPeHeaderService peHeaderService,
+        DlssPresetService dlssPresetService,
+        IDlssStreamlineService dlssStreamlineService,
+        IDxvkService dxvkService,
+        IDllOverrideService dllOverrideService,
+        IAuxInstallService auxInstallService,
+        IShaderPackService shaderPackService,
+        IOptiScalerWikiService optiScalerWikiService,
+        IHdrDatabaseService hdrDatabaseService,
+        IOptiScalerService optiScalerService)
     {
         _window = window;
         _dispatcherQueue = window.DispatcherQueue;
+        _gameNameService = gameNameService;
+        _peHeaderService = peHeaderService;
+        _dlssPresetService = dlssPresetService;
+        _dlssStreamlineService = dlssStreamlineService;
+        _dxvkService = dxvkService;
+        _dllOverrideService = dllOverrideService;
+        _auxInstallService = auxInstallService;
+        _shaderPackService = shaderPackService;
+        _optiScalerWikiService = optiScalerWikiService;
+        _hdrDatabaseService = hdrDatabaseService;
+        _optiScalerService = optiScalerService;
 
         // Set hand cursor on link buttons so they feel like clickable links
         var handCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
@@ -85,7 +121,7 @@ public partial class DetailPanelBuilder
                 && !card.EngineHint.Contains("5.", StringComparison.Ordinal)
                 && !card.EngineHint.Contains("4.", StringComparison.Ordinal)
                 && !card.EngineHint.Contains("Legacy", StringComparison.OrdinalIgnoreCase)
-                || _window.ViewModel.GameNameServiceInstance.EngineVersionOverrides.ContainsKey(card.GameName);
+                || _gameNameService.EngineVersionOverrides.ContainsKey(card.GameName);
             _window.DetailEngineText.TextDecorations = isClickable ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None;
             _window.DetailEngineBadge.Tag = isClickable ? card : null;
             if (isClickable)
@@ -206,7 +242,7 @@ public partial class DetailPanelBuilder
 
         // HDR toggle button — show per-game state
         _window.DetailHdrToggleBtn.Tag = card;
-        var hdrOverride = _window.ViewModel.GameNameServiceInstance.HdrToggleOverrides
+        var hdrOverride = _gameNameService.HdrToggleOverrides
             .TryGetValue(card.GameName, out var hov) ? hov : null;
         bool hdrActive = hdrOverride != null
             ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
