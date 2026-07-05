@@ -191,65 +191,30 @@ public sealed partial class MainWindow
             shimmerTargets.Add(row);
         }
 
-        // Show the appropriate content skeleton based on the persisted view layout
+        // Detail and Compact views: show detail skeleton
+        SkeletonDetailScrollViewer.Visibility = Visibility.Visible;
+
+        PopulateSkeletonDetailPanel(fillBrush);
+
+        // In Compact mode, hide the overrides and management skeleton sections
+        // since they're on separate pages (only the game card page is visible)
         var layout = ViewModel.CurrentViewLayout;
-
-        if (layout == ViewLayout.Grid)
+        if (layout == ViewLayout.Compact)
         {
-            // Grid view: show card grid skeleton, hide detail skeleton
-            SkeletonDetailScrollViewer.Visibility = Visibility.Collapsed;
-            SkeletonGridScrollViewer.Visibility = Visibility.Visible;
-
-            SolidColorBrush tableBgBrush;
-            try
+            var children = SkeletonDetailPanel.Children;
+            // The last two children are the Overrides border and Management border
+            if (children.Count >= 2)
             {
-                tableBgBrush = Application.Current.Resources[ResourceKeys.SurfaceComponentTableBrush] as SolidColorBrush
-                               ?? fillBrush;
-            }
-            catch { tableBgBrush = fillBrush; }
-
-            SolidColorBrush borderBrush;
-            try
-            {
-                borderBrush = Application.Current.Resources[ResourceKeys.BorderDefaultBrush] as SolidColorBrush
-                              ?? fillBrush;
-            }
-            catch { borderBrush = fillBrush; }
-
-            for (int i = 0; i < SkeletonGridCardCount; i++)
-            {
-                var card = CreateSkeletonCard(fillBrush, tableBgBrush, borderBrush);
-                SkeletonGridPanel.Children.Add(card);
-                shimmerTargets.Add(card);
+                children[children.Count - 1].Visibility = Visibility.Collapsed; // Management
+                children[children.Count - 2].Visibility = Visibility.Collapsed; // Overrides
             }
         }
-        else
+
+        // Collect detail panel borders for shimmer
+        foreach (var child in SkeletonDetailPanel.Children)
         {
-            // Detail and Compact views: show detail skeleton, hide grid skeleton
-            SkeletonDetailScrollViewer.Visibility = Visibility.Visible;
-            SkeletonGridScrollViewer.Visibility = Visibility.Collapsed;
-
-            PopulateSkeletonDetailPanel(fillBrush);
-
-            // In Compact mode, hide the overrides and management skeleton sections
-            // since they're on separate pages (only the game card page is visible)
-            if (layout == ViewLayout.Compact)
-            {
-                var children = SkeletonDetailPanel.Children;
-                // The last two children are the Overrides border and Management border
-                if (children.Count >= 2)
-                {
-                    children[children.Count - 1].Visibility = Visibility.Collapsed; // Management
-                    children[children.Count - 2].Visibility = Visibility.Collapsed; // Overrides
-                }
-            }
-
-            // Collect detail panel borders for shimmer
-            foreach (var child in SkeletonDetailPanel.Children)
-            {
-                if (child is Border b)
-                    shimmerTargets.Add(b);
-            }
+            if (child is Border b)
+                shimmerTargets.Add(b);
         }
 
         // Resolve shimmer colors
@@ -285,10 +250,8 @@ public sealed partial class MainWindow
     internal void RemoveSkeletons()
     {
         RemoveSkeletons(SkeletonRowPanel, SkeletonDetailPanel, ref _shimmerStoryboard);
-        // Also collapse the ScrollViewer wrappers around the content skeletons
+        // Collapse the ScrollViewer wrapper around the content skeleton
         SkeletonDetailScrollViewer.Visibility = Visibility.Collapsed;
-        SkeletonGridPanel.Children.Clear();
-        SkeletonGridScrollViewer.Visibility = Visibility.Collapsed;
     }
 
     /// <summary>

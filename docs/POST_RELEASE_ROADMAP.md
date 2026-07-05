@@ -230,6 +230,7 @@ Each component registers itself in DI. The detail panel iterates registered comp
 
 ## Non-Priority Items (Nice-to-Have)
 
+- **Remove Grid View** — Grid/card view is unused and adds maintenance burden (separate layout code path, card builder complexity). Remove entirely — Detail view and Compact view cover all use cases.
 - **Localization framework** — Currently English-only. WinUI supports `.resw` files. Not urgent for the target audience.
 - **Accessibility audit** — Screen reader support for code-behind UI elements needs manual ARIA/automation properties.
 - **Plugin system** — Allow third-party components (shader packs, custom ReShade builds) to register without app changes. Very long-term.
@@ -239,11 +240,40 @@ Each component registers itself in DI. The detail panel iterates registered comp
 
 ## Execution Strategy
 
-The improvements above are ordered by impact-to-effort ratio. Recommended approach:
+The improvements above are ordered by impact-to-effort ratio. Recommended execution order based on dependencies and risk:
 
-1. **After v2.0.0 ships**: Do Priority 1 (file splits) immediately — it's mechanical, low-risk, and makes everything else easier.
-2. **v2.1 cycle**: Tackle Priorities 2-3 (unified builders, concurrency model) — biggest quality-of-life improvement for development speed.
-3. **v2.2 cycle**: Priorities 4-6 (ViewModel cleanup, error handling, NVAPI abstraction) — reduces cognitive load.
-4. **v3.0 consideration**: Priorities 7-9 (component system, test infra, settings model) — these are foundational changes that benefit from a major version boundary.
+### Phase 1 — Reduce Surface Area (Do First)
 
-Priority 10 (incremental updates) can be done opportunistically — each section you make incremental is an independent improvement.
+These steps delete code and make everything else safer. No behavioral changes.
+
+| Step | Task | Rationale |
+|------|------|-----------|
+| 1 | **Remove Grid View** | Deletes code, reduces blast radius for all subsequent refactors. Less to split, unify, and maintain. |
+| 2 | **Split mega-files** (Priority 1) | Pure mechanical work, zero behavioral change. Makes every following step easier to navigate and review. |
+| 3 | **Unify dual UI builders** (Priority 2) | With files smaller and grid view gone, extract SharedOverridesBuilder. Eliminates the "update both" pitfall before adding more features. |
+
+### Phase 2 — Structural Improvements
+
+Clean boundaries and reduced coupling. Each step benefits from the splits done in Phase 1.
+
+| Step | Task | Rationale |
+|------|------|-----------|
+| 4 | **NVAPI abstraction** (Priority 6) | DlssPresetService is 103KB and the most fragile code. Splitting into Read/Write/ProfileMatching/RawApi establishes clean boundaries for future driver profile work. |
+| 5 | **Reduce ViewModel surface** (Priority 4) | With builders using shared helpers (step 3), pass services directly. Removes 25+ forwarding properties. |
+| 6 | **Formalize concurrency** (Priority 3) | Hardest one — do after splits so concurrent access points are clearly visible. |
+
+### Phase 3 — Foundation (v3.0 Territory)
+
+Major architectural changes. Depend on stable boundaries from Phase 2.
+
+| Step | Task | Rationale |
+|------|------|-----------|
+| 7 | **Settings modernization** (Priority 9) | Structured per-game settings model. Do before component system — it will want clean per-game config. |
+| 8 | **Data-driven components** (Priority 7) | The big win, but depends on settings modernization and clean service boundaries from steps 4-5. |
+| 9 | **Structured error handling** (Priority 5) | Incremental alongside anything, but component system benefits most. |
+| 10 | **Fix test infrastructure** (Priority 8) | After interfaces stabilize from steps 7-8. Otherwise stubs break immediately. |
+| 11 | **Incremental panel updates** (Priority 10) | Last — the unified builder (step 3) makes this much simpler. Only worth doing once panel code is in one place. |
+
+### Key Insight
+
+Remove Grid View → Split files → Unify builders. That sequence eliminates the most maintenance debt with the least risk, and every subsequent step benefits from it.

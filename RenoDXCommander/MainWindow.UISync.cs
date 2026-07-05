@@ -61,7 +61,6 @@ public sealed partial class MainWindow
                     break;
                 case nameof(ViewModel.TotalGames):
                     GameCountText.Text = $"{ViewModel.TotalGames} shown";
-                    if (ViewModel.IsGridLayout) RebuildCardGrid();
                     if (ViewModel.CurrentViewLayout == ViewLayout.Compact
                         && ViewModel.SelectedGame is { } compactCard)
                     {
@@ -160,43 +159,7 @@ public sealed partial class MainWindow
         }
     }
 
-    // ── Card Grid rendering ───────────────────────────────────────────────────────
-
-    internal void RebuildCardGrid()
-    {
-        CardGridPanel.Children.Clear();
-        foreach (var card in ViewModel.DisplayedGames)
-        {
-            try
-            {
-                CardGridPanel.Children.Add(BuildGameCard(card));
-            }
-            catch (Exception ex)
-            {
-                _crashReporter.Log($"[MainWindow.RebuildCardGrid] Skipped card '{card.GameName}' — {ex.Message}");
-            }
-        }
-        // If the selected game is in the displayed list, scroll to it
-        if (ViewModel.SelectedGame is { } sel && ViewModel.DisplayedGames.Contains(sel))
-            ScrollToCard(sel);
-    }
-
-    private Border BuildGameCard(GameCardViewModel card) => _cardBuilder.BuildGameCard(card);
-
-    /// <summary>Scrolls the card grid to bring the given card into view and highlights it.</summary>
-    private void ScrollToCard(GameCardViewModel target)
-    {
-        foreach (var child in CardGridPanel.Children)
-        {
-            if (child is Border b && b.Tag is GameCardViewModel c)
-            {
-                bool isTarget = c == target;
-                c.CardHighlighted = isTarget;
-                if (isTarget)
-                    b.StartBringIntoView();
-            }
-        }
-    }
+    // ── Card Grid removed — Detail and Compact views only ───────────────────────
 
     // ── Detail panel delegation ───────────────────────────────────────────────────
 

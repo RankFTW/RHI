@@ -330,7 +330,7 @@ public class GameNameService : IGameNameService
         if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
             setViewLayout((ViewLayout)vlInt);
         else if (s.TryGetValue("GridLayout", out var glVal))  // backward compat
-            setViewLayout(glVal == "1" ? ViewLayout.Grid : ViewLayout.Detail);
+            setViewLayout(ViewLayout.Detail);
 
         if (s.TryGetValue("FilterMode", out var fmVal) && !string.IsNullOrWhiteSpace(fmVal))
             setFilterMode(fmVal);

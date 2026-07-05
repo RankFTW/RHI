@@ -116,7 +116,6 @@
                             <MenuFlyout Placement="Bottom">
                                 <MenuFlyoutItem Text="Simple" Click="ViewCompact_Click"/>
                                 <MenuFlyoutItem Text="Detail" Click="ViewDetail_Click"/>
-                                <MenuFlyoutItem Text="Grid" Click="ViewGrid_Click"/>
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
@@ -1095,16 +1094,6 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                    <!-- Card Grid — visible when grid layout -->
-                    <ScrollViewer x:Name="CardGridScrollViewer"
-                                  Visibility="{x:Bind ViewModel.CardGridVisibility, Mode=OneWay}"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
-                        <controls:WrapPanel x:Name="CardGridPanel"
-                                            HorizontalSpacing="12" VerticalSpacing="12"
-                                            Margin="16"/>
-                    </ScrollViewer>
-
                     <!-- Compact Nav Arrows — overlaid on content area, visible only in Compact mode -->
                     <Button x:Name="CompactNavLeft"
                             Content="◀" Click="CompactNavLeft_Click"
@@ -1135,13 +1124,6 @@
                                     Padding="24,18,24,24"/>
                     </ScrollViewer>
 
-                    <!-- Skeleton grid panel overlay (removed programmatically after first load) -->
-                    <ScrollViewer x:Name="SkeletonGridScrollViewer" VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
-                        <controls:WrapPanel x:Name="SkeletonGridPanel"
-                                            HorizontalSpacing="12" VerticalSpacing="12"
-                                            Margin="16"/>
-                    </ScrollViewer>
                 </Grid>
             </Grid>
 
