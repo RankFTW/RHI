@@ -540,15 +540,6 @@ public sealed partial class MainWindow
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(card.InstallPath) { UseShellExecute = true });
     }
 
-    internal void CardOverridesButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement anchor && anchor.Tag is GameCardViewModel card)
-        {
-            ViewModel.SelectedGame = card;
-            OpenOverridesFlyout(card, anchor);
-        }
-    }
-
     internal void CardMoreMenu_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement anchor || anchor.Tag is not GameCardViewModel card)

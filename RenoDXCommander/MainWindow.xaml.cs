@@ -24,7 +24,6 @@ public sealed partial class MainWindow : Window
 
     private readonly ICrashReporter _crashReporter;
     private readonly DetailPanelBuilder _detailPanelBuilder;
-    private readonly OverridesFlyoutBuilder _overridesFlyoutBuilder;
     private readonly DialogService _dialogService;
     private readonly SettingsHandler _settingsHandler;
     private readonly MassDeployHandler _massDeployHandler;
@@ -47,7 +46,6 @@ public sealed partial class MainWindow : Window
         InitializeSkeletons();
         _detailPanelBuilder = new DetailPanelBuilder(this);
         _compactViewBuilder = new CompactViewBuilder(this);
-        _overridesFlyoutBuilder = new OverridesFlyoutBuilder(this, crashReporter);
         _dialogService = new DialogService(this);
         _settingsHandler = new SettingsHandler(this);
         _massDeployHandler = new MassDeployHandler(this);

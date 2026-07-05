@@ -171,9 +171,6 @@ public sealed partial class MainWindow
 
     internal void BuildOverridesPanel(GameCardViewModel card) => _detailPanelBuilder.BuildOverridesPanel(card);
 
-    private void OpenOverridesFlyout(GameCardViewModel card, FrameworkElement anchor)
-        => _overridesFlyoutBuilder.OpenOverridesFlyout(card, anchor);
-
     internal void UpdateLumaToggleStyle(bool isLumaMode)
     {
         DetailLumaToggleText.Text = isLumaMode ? "Luma ON" : "Luma OFF";
