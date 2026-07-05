@@ -208,8 +208,8 @@ public partial class MainViewModel
             // show cached cards immediately and run the full scan in the background.
             if (hasCachedLibrary)
             {
-                // Initialize DLSS preset service early (needed for preset dropdowns in detail panel)
-                await Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed (cache path) — {ex.Message}"); } });
+                // Initialize DLSS preset service in background (not needed until detail panel is shown)
+                _ = Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed (cache path) — {ex.Message}"); } });
                 await LoadCacheAndBuildCardsAsync(savedLib!);
                 _ = RunBackgroundScanAndMergeAsync(savedLib!);
                 return;
