@@ -992,6 +992,7 @@ public partial class DetailPanelBuilder
         Grid.SetRow(apiLabel, 0); Grid.SetColumn(apiLabel, 1);
         Grid.SetRow(apiCombo, 1); Grid.SetColumn(apiCombo, 1);
         bitnessPanel.Children.Add(apiLabel);
+        bitnessPanel.Children.Add(apiCombo);
 
         var ctx = new OverridesPanelCtx
         {
