@@ -693,7 +693,7 @@ public partial class DetailPanelBuilder
         {
             if (shaderComboInitializing) return;
             var current = shaderModeCombo.SelectedItem as string;
-            if (current == "Select" && effectiveShaderDisplay == "Select")
+            if (current == "Select" && _window.ViewModel.GetPerGameShaderMode(capturedName) == "Select")
             {
                 shaderComboInitializing = true;
                 shaderModeCombo.SelectedItem = "Global";

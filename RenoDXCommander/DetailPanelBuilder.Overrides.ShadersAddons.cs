@@ -68,12 +68,11 @@ public partial class DetailPanelBuilder
             "Global = use global addon set. Select = pick per-game addons. Off = no addons for this game.");
 
         // Allow re-opening the Select picker when already on Select
-        var addonDefaultSelection = currentAddonMode == "Off" ? "Off" : (currentAddonMode == "Select" ? "Select" : "Global");
         addonModeCombo.DropDownClosed += (s, ev) =>
         {
             if (addonComboInitializing) return;
             var current = addonModeCombo.SelectedItem as string;
-            if (current == "Select" && addonDefaultSelection == "Select")
+            if (current == "Select" && _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName) == "Select")
             {
                 addonComboInitializing = true;
                 addonModeCombo.SelectedItem = "Global";

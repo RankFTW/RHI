@@ -83,14 +83,12 @@ public partial class DetailPanelBuilder
         {
             if (channelComboInitializing) return;
             var current = channelCombo.SelectedItem as string;
-            if (current == "Custom" && string.Equals(defaultChannelSelection, "Custom", StringComparison.OrdinalIgnoreCase))
+            if (current == "Custom" && string.Equals(_window.ViewModel.GetReShadeChannelOverride(ctx.CapturedName), "Custom", StringComparison.OrdinalIgnoreCase))
             {
-                // User re-selected Custom while already on Custom — re-trigger SelectionChanged logic
-                // by temporarily flipping to a dummy value and back
                 channelComboInitializing = true;
                 channelCombo.SelectedItem = "Stable";
                 channelComboInitializing = false;
-                channelCombo.SelectedItem = "Custom"; // This triggers SelectionChanged with "Custom"
+                channelCombo.SelectedItem = "Custom";
             }
         };
 
