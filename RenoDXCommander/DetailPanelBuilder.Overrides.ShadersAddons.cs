@@ -67,6 +67,20 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(addonModeCombo,
             "Global = use global addon set. Select = pick per-game addons. Off = no addons for this game.");
 
+        // Allow re-opening the Select picker when already on Select
+        addonModeCombo.DropDownClosed += (s, ev) =>
+        {
+            if (addonComboInitializing) return;
+            var current = addonModeCombo.SelectedItem as string;
+            if (current == "Select" && _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName) == "Select")
+            {
+                addonComboInitializing = true;
+                addonModeCombo.SelectedItem = "Global";
+                addonComboInitializing = false;
+                addonModeCombo.SelectedItem = "Select";
+            }
+        };
+
         addonModeCombo.SelectionChanged += async (s, ev) =>
         {
             if (addonComboInitializing) return;
@@ -102,8 +116,9 @@ public partial class DetailPanelBuilder
                         RequestedTheme = ElementTheme.Dark,
                     };
                     await DialogService.ShowSafeAsync(infoDlg);
+                    var warnRevertMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName);
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    addonModeCombo.SelectedItem = warnRevertMode == "Select" ? "Select" : (warnRevertMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = false;
                     return;
                 }
@@ -121,8 +136,11 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
+                    // Cancelled — revert to actual current persisted mode
+                    var actualMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName);
+                    var revertTo = actualMode == "Select" ? "Select" : (actualMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    addonModeCombo.SelectedItem = revertTo;
                     addonComboInitializing = false;
                 }
                 return;
@@ -501,6 +519,9 @@ public partial class DetailPanelBuilder
             // Reset ReShade channel override
             ctx.ChannelCombo.SelectedItem = "Stable";
             _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null);
+
+            // Reset custom ReShade DLL selection
+            _gameNameService.CustomReShadeSelection.Remove(ctx.CapturedName);
 
             // Reset launch exe override
             _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);

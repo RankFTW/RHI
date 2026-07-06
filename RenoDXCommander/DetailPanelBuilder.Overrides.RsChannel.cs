@@ -78,6 +78,20 @@ public partial class DetailPanelBuilder
 
         bool channelComboInitializing = true;
 
+        // Allow re-opening the Custom picker by clicking Custom when already on Custom
+        channelCombo.DropDownClosed += async (s, ev) =>
+        {
+            if (channelComboInitializing) return;
+            var current = channelCombo.SelectedItem as string;
+            if (current == "Custom" && string.Equals(_window.ViewModel.GetReShadeChannelOverride(ctx.CapturedName), "Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                channelComboInitializing = true;
+                channelCombo.SelectedItem = "Stable";
+                channelComboInitializing = false;
+                channelCombo.SelectedItem = "Custom";
+            }
+        };
+
         channelCombo.SelectionChanged += async (s, ev) =>
         {
             var selected = channelCombo.SelectedItem as string;
@@ -181,26 +195,37 @@ public partial class DetailPanelBuilder
             {
                 CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{ctx.CapturedName}' → Custom ReShade");
 
-                if (!AuxInstallService.IsCustomReShadeAvailable())
+                var customDir = DlssStreamlineService.RsCustomDir;
+                string[] dllFiles;
+                try
+                {
+                    Directory.CreateDirectory(customDir);
+                    dllFiles = Directory.GetFiles(customDir, "*.dll");
+                }
+                catch
+                {
+                    dllFiles = Array.Empty<string>();
+                }
+
+                if (dllFiles.Length == 0)
                 {
                     // No custom DLLs found — warn user and revert
-                    var customPath = DlssStreamlineService.RsCustomDir;
                     var linkBtn = new HyperlinkButton
                     {
-                        Content = customPath,
+                        Content = customDir,
                         FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
                         FontSize = 12,
                         Padding = new Thickness(0),
                     };
                     linkBtn.Click += (_, _) =>
                     {
-                        System.IO.Directory.CreateDirectory(customPath);
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(customPath) { UseShellExecute = true });
+                        System.IO.Directory.CreateDirectory(customDir);
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(customDir) { UseShellExecute = true });
                     };
                     var warnContent = new StackPanel { Spacing = 8 };
                     warnContent.Children.Add(new TextBlock
                     {
-                        Text = "No custom ReShade DLLs found.\n\nPlace your ReShade64.dll and/or ReShade32.dll in:",
+                        Text = "No custom ReShade DLLs found.\n\nPlace your .dll files in:",
                         TextWrapping = TextWrapping.Wrap,
                     });
                     warnContent.Children.Add(linkBtn);
@@ -217,6 +242,75 @@ public partial class DetailPanelBuilder
                     channelCombo.SelectedItem = defaultChannelSelection;
                     return;
                 }
+
+                // ── Show picker dialog with all DLL files ──
+                // Check if a previous selection exists and is still valid
+                string? previousSelection = null;
+                if (_gameNameService.CustomReShadeSelection.TryGetValue(ctx.CapturedName, out var prevSel))
+                {
+                    if (dllFiles.Any(f => Path.GetFileName(f).Equals(prevSel, StringComparison.OrdinalIgnoreCase)))
+                        previousSelection = prevSel;
+                }
+
+                var pickerPanel = new StackPanel { Spacing = 8 };
+
+                // Folder path link at top
+                var folderLink = new HyperlinkButton
+                {
+                    Content = customDir,
+                    FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
+                    FontSize = 11,
+                    Padding = new Thickness(0),
+                };
+                folderLink.Click += (_, _) =>
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(customDir) { UseShellExecute = true });
+                };
+                pickerPanel.Children.Add(folderLink);
+
+                // Radio buttons for single selection
+                var radioButtons = new RadioButtons { MaxColumns = 1 };
+                foreach (var dllPath in dllFiles.OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+                    radioButtons.Items.Add(Path.GetFileName(dllPath));
+
+                // Pre-select previous selection if still valid
+                if (previousSelection != null)
+                {
+                    var idx = radioButtons.Items.IndexOf(previousSelection);
+                    if (idx >= 0) radioButtons.SelectedIndex = idx;
+                }
+
+                pickerPanel.Children.Add(radioButtons);
+
+                var pickerDialog = new ContentDialog
+                {
+                    Title = "Select Custom ReShade",
+                    PrimaryButtonText = "Deploy",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = _window.Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                    Content = new ScrollViewer { Content = pickerPanel, MaxHeight = 400 },
+                };
+
+                var pickerResult = await DialogService.ShowSafeAsync(pickerDialog);
+                if (pickerResult != ContentDialogResult.Primary)
+                {
+                    channelCombo.SelectedItem = defaultChannelSelection;
+                    return;
+                }
+
+                // Find selected DLL
+                if (radioButtons.SelectedItem is not string selectedFilename || string.IsNullOrEmpty(selectedFilename))
+                {
+                    channelCombo.SelectedItem = defaultChannelSelection;
+                    return;
+                }
+
+                // Save per-game selection
+                _gameNameService.CustomReShadeSelection[ctx.CapturedName] = selectedFilename;
+                _window.ViewModel.SaveSettingsPublic();
+                CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{ctx.CapturedName}' → Custom ReShade selected: '{selectedFilename}'");
 
                 var targetCardCustom = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
@@ -245,6 +339,7 @@ public partial class DetailPanelBuilder
                     foreach (var vCard in _window.ViewModel.AllCards.Where(c => c.RequiresVulkanInstall))
                     {
                         _window.ViewModel.SetReShadeChannelOverride(vCard.GameName, "Custom");
+                        _gameNameService.CustomReShadeSelection[vCard.GameName] = selectedFilename;
                         if (vCard.UseNormalReShade)
                             _window.ViewModel.SetUseNormalReShade(vCard, false);
                         vCard.NotifyAll();
@@ -254,20 +349,18 @@ public partial class DetailPanelBuilder
                     try
                     {
                         var layerDir = VulkanLayerService.LayerDirectory;
-                        var stagedPath64 = AuxInstallService.GetCustomReShadePathStatic(false);
-                        var stagedPath32 = AuxInstallService.GetCustomReShadePathStatic(true);
+                        var customFilePath = AuxInstallService.GetCustomReShadePathForFile(selectedFilename);
                         var layer64 = Path.Combine(layerDir, VulkanLayerService.LayerDllName);
-                        var layer32 = Path.Combine(layerDir, "ReShade32.dll");
 
-                        if (File.Exists(stagedPath64) && File.Exists(layer64))
-                            AuxInstallService.CopyFileWithElevation(stagedPath64, layer64);
-                        if (File.Exists(stagedPath32) && File.Exists(layer32))
-                            AuxInstallService.CopyFileWithElevation(stagedPath32, layer32);
+                        if (File.Exists(customFilePath) && File.Exists(layer64))
+                            AuxInstallService.CopyFileWithElevation(customFilePath, layer64);
                     }
                     catch (Exception ex)
                     {
                         CrashReporter.Log($"[DetailPanelBuilder] Failed to update Vulkan layer with custom ReShade — {ex.Message}");
                     }
+
+                    _window.ViewModel.SaveSettingsPublic();
                 }
                 else
                 {

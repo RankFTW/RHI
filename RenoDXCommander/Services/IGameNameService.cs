@@ -101,6 +101,9 @@ public interface IGameNameService
     /// <summary>Per-game engine version overrides. Key = game name, Value = engine hint string. Only applied when auto-detection fails to determine version.</summary>
     Dictionary<string, string> EngineVersionOverrides { get; }
 
+    /// <summary>Per-game custom ReShade DLL selection. Key = game name, Value = DLL filename (not full path). The DLL resides in Custom\ReShade\ folder.</summary>
+    Dictionary<string, string> CustomReShadeSelection { get; }
+
     /// <summary>Maps current (renamed) game name to original store-detected name.</summary>
     Dictionary<string, string> OriginalDetectedNames { get; }
 

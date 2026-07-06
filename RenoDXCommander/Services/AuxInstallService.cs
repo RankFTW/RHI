@@ -24,6 +24,12 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// <summary>Current manifest reference for per-game INI overrides. Set during InitializeAsync.</summary>
     public static Models.RemoteManifest? GlobalManifest { get; set; }
 
+    /// <summary>
+    /// Delegate to resolve per-game custom ReShade DLL selection. Set during app initialization
+    /// to read from GameNameService.CustomReShadeSelection. Returns the filename (not full path) or null.
+    /// </summary>
+    public static Func<string, string?>? CustomReShadeSelectionResolver { get; set; }
+
     // ── URLs & filenames ──────────────────────────────────────────────────────────
 
     // ReShade is bundled alongside the app exe
@@ -142,11 +148,21 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     }
 
     /// <summary>
-    /// Returns true if custom ReShade DLLs are available (at least one bitness).
+    /// Returns the full path to a specific custom ReShade DLL filename in the Custom\ReShade folder.
+    /// </summary>
+    public static string GetCustomReShadePathForFile(string filename)
+    {
+        return Path.Combine(DlssStreamlineService.RsCustomDir, filename);
+    }
+
+    /// <summary>
+    /// Returns true if custom ReShade DLLs are available (at least one .dll file in Custom\ReShade).
     /// </summary>
     public static bool IsCustomReShadeAvailable()
     {
-        return File.Exists(GetCustomReShadePathStatic(false)) || File.Exists(GetCustomReShadePathStatic(true));
+        var dir = DlssStreamlineService.RsCustomDir;
+        if (!Directory.Exists(dir)) return false;
+        return Directory.GetFiles(dir, "*.dll").Length > 0;
     }
 
     /// <summary>

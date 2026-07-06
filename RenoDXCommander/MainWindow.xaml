@@ -1459,7 +1459,7 @@
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11"
                                                    Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Configure preferred DLSS/Streamline versions, presets, and render scales. Use 'Apply Defaults' in the Nvidia Profile section to stamp these onto any game."/>
+                                                   Text="Configure preferred DLSS/Streamline versions, presets, and render scales. Use 'Quick Apply' in the Nvidia Profile section to stamp these onto any game."/>
                                         <Button Content="Configure Defaults" Click="DlssDefaults_Click"
                                                 Background="{StaticResource AccentBlueBgBrush}"
                                                 Foreground="{StaticResource AccentBlueBrush}"

@@ -1,13 +1,19 @@
 ## v2.1.7
 
+### New
+
+- **Custom ReShade picker** — place multiple custom ReShade DLLs in the Custom folder (name them anything). When you select "Custom" as the RS Channel, a picker dialog lets you choose which one to deploy. Selection is saved per-game.
+
 ### Changes
 
 - **Grid View removed** — RHI now has two views: Detail and Simple. Cleaner, faster.
 - **Startup faster** — UI appears in ~700ms (down from ~1.2s). ReShade and RenoDX version numbers now show instantly instead of waiting for the background scan.
+- **Views button** is now a simple toggle (no dropdown menu).
 
 ### Bug Fixes
 
 - Fixed ReShade deploying as `dxgi.dll` on DX8 games — now correctly deploys as `d3d8.dll`.
+- Fixed HDR auto-toggle disabling HDR immediately when launching games via wrappers like SKSE or MO2 — now monitors the actual game process.
 
 ---
 

@@ -130,6 +130,10 @@ public partial class MainViewModel
         AuxInstallService.GlobalPeakNitsEnabled = _settingsViewModel.PeakNitsEnabled;
         AuxInstallService.GlobalPeakNitsPresets = _settingsViewModel.PeakNitsPresets;
 
+        // Wire up per-game custom ReShade DLL selection resolver
+        AuxInstallService.CustomReShadeSelectionResolver = (gameName) =>
+            _gameNameService.CustomReShadeSelection.TryGetValue(gameName, out var sel) ? sel : null;
+
         // Clear API caches on full refresh so all detection runs fresh
         if (forceRescan)
         {
