@@ -728,9 +728,11 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    // Cancelled — revert to previous
+                    // Cancelled — revert to actual current persisted mode
+                    var currentMode = _window.ViewModel.GetPerGameShaderMode(capturedName);
+                    var revertTo = currentMode == "Select" ? "Select" : (currentMode == "Off" ? "Off" : (currentMode == "Custom" ? "Custom" : "Global"));
                     shaderComboInitializing = true;
-                    shaderModeCombo.SelectedItem = effectiveShaderDisplay;
+                    shaderModeCombo.SelectedItem = revertTo;
                     shaderComboInitializing = false;
                 }
                 return;

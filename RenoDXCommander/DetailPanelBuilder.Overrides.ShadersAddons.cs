@@ -116,8 +116,9 @@ public partial class DetailPanelBuilder
                         RequestedTheme = ElementTheme.Dark,
                     };
                     await DialogService.ShowSafeAsync(infoDlg);
+                    var warnRevertMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName);
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    addonModeCombo.SelectedItem = warnRevertMode == "Select" ? "Select" : (warnRevertMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = false;
                     return;
                 }
@@ -135,8 +136,11 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
+                    // Cancelled — revert to actual current persisted mode
+                    var actualMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName);
+                    var revertTo = actualMode == "Select" ? "Select" : (actualMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = true;
-                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    addonModeCombo.SelectedItem = revertTo;
                     addonComboInitializing = false;
                 }
                 return;
