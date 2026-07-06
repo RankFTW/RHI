@@ -268,29 +268,19 @@ public partial class DetailPanelBuilder
                 };
                 pickerPanel.Children.Add(folderLink);
 
-                // Radio-button-style CheckBoxes (mutual exclusion)
-                var checkBoxes = new List<CheckBox>();
+                // Radio buttons for single selection
+                var radioButtons = new RadioButtons { MaxColumns = 1 };
                 foreach (var dllPath in dllFiles.OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+                    radioButtons.Items.Add(Path.GetFileName(dllPath));
+
+                // Pre-select previous selection if still valid
+                if (previousSelection != null)
                 {
-                    var fileName = Path.GetFileName(dllPath);
-                    var cb = new CheckBox
-                    {
-                        Content = fileName,
-                        FontSize = 13,
-                        IsChecked = fileName.Equals(previousSelection, StringComparison.OrdinalIgnoreCase),
-                    };
-                    cb.Checked += (sender, _) =>
-                    {
-                        // Uncheck all others (radio-button behavior)
-                        foreach (var other in checkBoxes)
-                        {
-                            if (other != sender)
-                                other.IsChecked = false;
-                        }
-                    };
-                    checkBoxes.Add(cb);
-                    pickerPanel.Children.Add(cb);
+                    var idx = radioButtons.Items.IndexOf(previousSelection);
+                    if (idx >= 0) radioButtons.SelectedIndex = idx;
                 }
+
+                pickerPanel.Children.Add(radioButtons);
 
                 var pickerDialog = new ContentDialog
                 {
@@ -311,13 +301,11 @@ public partial class DetailPanelBuilder
                 }
 
                 // Find selected DLL
-                var selectedCb = checkBoxes.FirstOrDefault(cb => cb.IsChecked == true);
-                if (selectedCb == null)
+                if (radioButtons.SelectedItem is not string selectedFilename || string.IsNullOrEmpty(selectedFilename))
                 {
                     channelCombo.SelectedItem = defaultChannelSelection;
                     return;
                 }
-                var selectedFilename = selectedCb.Content as string ?? "";
 
                 // Save per-game selection
                 _gameNameService.CustomReShadeSelection[ctx.CapturedName] = selectedFilename;
