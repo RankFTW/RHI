@@ -20,7 +20,9 @@ public interface IGameLibraryService
         Dictionary<string, string>? dxvkInstalledVersions = null,
         HashSet<string>? excludeFromUpdateAllDxvk = null,
         Dictionary<string, string>? updateAvailableSnapshot = null,
-        Dictionary<string, DlssPathCache>? dlssPathsCache = null);
+        Dictionary<string, DlssPathCache>? dlssPathsCache = null,
+        Dictionary<string, string>? rsInstalledVersions = null,
+        Dictionary<string, string>? rdxInstalledVersions = null);
 
     List<DetectedGame> ToDetectedGames(SavedGameLibrary lib);
 

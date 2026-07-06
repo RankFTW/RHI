@@ -450,7 +450,7 @@ public sealed partial class MainWindow
 
         try
         {
-            var presetSvc = ViewModel.DlssPresetServiceInstance;
+            var presetSvc = _dlssPresetService;
             var gamesList = ViewModel.AllCards
                 .Where(c => !string.IsNullOrEmpty(c.InstallPath))
                 .Select(c => (c.GameName, c.InstallPath!))
@@ -728,7 +728,7 @@ public sealed partial class MainWindow
     {
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
 
-        var overrides = ViewModel.GameNameServiceInstance.HdrToggleOverrides;
+        var overrides = _gameNameService.HdrToggleOverrides;
         var current = overrides.TryGetValue(card.GameName, out var v) ? v : null;
 
         // Resolve current effective state and flip it

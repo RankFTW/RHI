@@ -31,7 +31,9 @@ public class GameLibraryService : IGameLibraryService
         Dictionary<string, string>? dxvkInstalledVersions = null,
         HashSet<string>? excludeFromUpdateAllDxvk = null,
         Dictionary<string, string>? updateAvailableSnapshot = null,
-        Dictionary<string, DlssPathCache>? dlssPathsCache = null)
+        Dictionary<string, DlssPathCache>? dlssPathsCache = null,
+        Dictionary<string, string>? rsInstalledVersions = null,
+        Dictionary<string, string>? rdxInstalledVersions = null)
     {
         var lib = new SavedGameLibrary
         {
@@ -57,6 +59,8 @@ public class GameLibraryService : IGameLibraryService
             ExcludeFromUpdateAllDxvk = excludeFromUpdateAllDxvk ?? new(StringComparer.OrdinalIgnoreCase),
             UpdateAvailableSnapshot = updateAvailableSnapshot ?? new(StringComparer.OrdinalIgnoreCase),
             DlssPathsCache          = dlssPathsCache          ?? new(StringComparer.OrdinalIgnoreCase),
+            RsInstalledVersions     = rsInstalledVersions,
+            RdxInstalledVersions    = rdxInstalledVersions,
         };
         Directory.CreateDirectory(Path.GetDirectoryName(LibraryPath)!);
         var json = JsonSerializer.Serialize(lib, JsonOpts);

@@ -23,6 +23,8 @@ public partial class MainViewModel
             return null; // fall through to default dxgi.dll
         if (detectedApis.Contains(GraphicsApiType.DirectX9))
             return "d3d9.dll";
+        if (detectedApis.Contains(GraphicsApiType.DirectX8))
+            return "d3d8.dll";
         if (detectedApis.Count == 1 && detectedApis.Contains(GraphicsApiType.OpenGL))
             return "opengl32.dll";
         return null; // fall through to default dxgi.dll

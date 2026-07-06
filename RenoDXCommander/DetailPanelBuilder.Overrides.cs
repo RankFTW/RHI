@@ -191,7 +191,7 @@ public partial class DetailPanelBuilder
 
         // ── OptiScaler DLL naming override ─────────────────────────────────────
         var existingOsName = existingCfg?.OsFileName ?? "";
-        var availableOsNames = _window.ViewModel.DllOverrideServiceInstance
+        var availableOsNames = _dllOverrideService
             .GetAvailableOsDllNames(gameName, is32Bit);
 
         var osNameBox = new ComboBox
@@ -231,7 +231,7 @@ public partial class DetailPanelBuilder
             if (string.IsNullOrWhiteSpace(osName)) return;
 
             _previousOsSelection = osName;
-            _window.ViewModel.DllOverrideServiceInstance.SetOsDllOverride(capturedName, osName);
+            _dllOverrideService.SetOsDllOverride(capturedName, osName);
 
             // If OptiScaler is installed, rename the DLL in the game folder
             if (targetCard.IsOsInstalled && !string.IsNullOrEmpty(targetCard.OsInstalledFile)
@@ -249,12 +249,12 @@ public partial class DetailPanelBuilder
                         targetCard.OsInstalledFile = osName;
 
                         // Update the tracking record
-                        var osRecord = _window.ViewModel.AuxInstallServiceInstance
+                        var osRecord = _auxInstallService
                             .FindRecord(capturedName, targetCard.InstallPath, "OptiScaler");
                         if (osRecord != null)
                         {
                             osRecord.InstalledAs = osName;
-                            _window.ViewModel.AuxInstallServiceInstance.SaveAuxRecord(osRecord);
+                            _auxInstallService.SaveAuxRecord(osRecord);
                         }
                     }
                 }
@@ -473,7 +473,7 @@ public partial class DetailPanelBuilder
             }
 
             // Check for foreign DLL conflict before proceeding
-            bool allowed = await _window.ViewModel.DllOverrideServiceInstance
+            bool allowed = await _dllOverrideService
                 .CheckDcForeignDllConflictAsync(targetCard, dcName);
             if (!allowed)
             {
@@ -671,7 +671,7 @@ public partial class DetailPanelBuilder
         string effectiveShaderDisplay = currentShaderMode;
         if (currentShaderMode == "Global"
             && _window.ViewModel.Settings.UseCustomShaders
-            && !_window.ViewModel.GameNameServiceInstance.PerGameShaderMode.ContainsKey(gameName))
+            && !_gameNameService.PerGameShaderMode.ContainsKey(gameName))
             effectiveShaderDisplay = "Custom";
 
         var shaderModeItems = new[] { "Global", "Custom", "Select", "Off" };
@@ -698,17 +698,17 @@ public partial class DetailPanelBuilder
             if (selected == "Select")
             {
                 // Open per-game shader picker
-                List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.TryGetValue(gameName, out var existing)
+                List<string>? current = _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var existing)
                     ? existing
                     : _window.ViewModel.Settings.SelectedShaderPacks;
                 var result = await ShaderPopupHelper.ShowAsync(
                     _window.Content.XamlRoot,
-                    _window.ViewModel.ShaderPackServiceInstance,
+                    _shaderPackService,
                     current,
                     ShaderPopupHelper.PopupContext.PerGame);
                 if (result != null)
                 {
-                    _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection[gameName] = result;
+                    _gameNameService.PerGameShaderSelection[gameName] = result;
                     _window.ViewModel.SetPerGameShaderMode(capturedName, "Select");
                     _window.ViewModel.DeployShadersForCard(capturedName);
                 }
@@ -843,7 +843,7 @@ public partial class DetailPanelBuilder
                 else
                 {
                     // "Auto" — re-resolve from auto-detection
-                    var detectedMachine = _window.ViewModel.PeHeaderServiceInstance.DetectGameArchitecture(targetCard.InstallPath);
+                    var detectedMachine = _peHeaderService.DetectGameArchitecture(targetCard.InstallPath);
                     newIs32Bit = _window.ViewModel.ResolveIs32Bit(capturedName, detectedMachine);
                 }
 
@@ -860,7 +860,7 @@ public partial class DetailPanelBuilder
                     if (targetCard.UlStatus == GameStatus.Installed)
                         _window.ViewModel.UninstallUl(targetCard);
                     if (targetCard.OsStatus == GameStatus.Installed)
-                        _window.ViewModel.OptiScalerServiceInstance.Uninstall(targetCard);
+                        _optiScalerService.Uninstall(targetCard);
                     if (targetCard.DxvkStatus == GameStatus.Installed)
                         _window.ViewModel.UninstallDxvk(targetCard);
                     if (targetCard.RefStatus == GameStatus.Installed)
@@ -992,6 +992,7 @@ public partial class DetailPanelBuilder
         Grid.SetRow(apiLabel, 0); Grid.SetColumn(apiLabel, 1);
         Grid.SetRow(apiCombo, 1); Grid.SetColumn(apiCombo, 1);
         bitnessPanel.Children.Add(apiLabel);
+        bitnessPanel.Children.Add(apiCombo);
 
         var ctx = new OverridesPanelCtx
         {

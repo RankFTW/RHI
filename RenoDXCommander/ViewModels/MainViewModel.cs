@@ -58,12 +58,8 @@ public partial class MainViewModel : ObservableObject
     /// <summary>True when the user has selected the Nightly ReShade build channel.</summary>
     public bool IsReShadeNightly => string.Equals(_settingsViewModel.ReShadeChannel, "Nightly", StringComparison.OrdinalIgnoreCase);
     public FilterViewModel Filter => _filterViewModel;
-    public IDllOverrideService DllOverrideServiceInstance => _dllOverrideService;
     public IGameNameService GameNameServiceInstance => _gameNameService;
-    public IUpdateOrchestrationService UpdateOrchestrationServiceInstance => _updateOrchestrationService;
-    public IGameInitializationService GameInitializationServiceInstance => _gameInitializationService;
     public IPeHeaderService PeHeaderServiceInstance => _peHeaderService;
-    public IAuxInstallService AuxInstallServiceInstance => _auxInstaller;
     public IOptiScalerService OptiScalerServiceInstance => _optiScalerService;
     public IDxvkService DxvkServiceInstance => _dxvkService;
     public ReShadeNightlyService ReShadeNightlyServiceInstance => _rsNightlyService;
@@ -71,7 +67,6 @@ public partial class MainViewModel : ObservableObject
     public IOptiScalerWikiService OptiScalerWikiServiceInstance => _optiScalerWikiService;
     public IHdrDatabaseService HdrDatabaseServiceInstance => _hdrDatabaseService;
     public IREFrameworkService REFrameworkServiceInstance => _refService;
-    public IDlssStreamlineService DlssStreamlineServiceInstance => _dlssStreamlineService;
     public DlssPresetService DlssPresetServiceInstance => _dlssPresetService;
     public DofFixService DofFixServiceInstance => _dofFixService;
     public RemoteManifest? Manifest => _manifest;

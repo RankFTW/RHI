@@ -42,6 +42,12 @@ public class SavedGameLibrary
     /// Avoids expensive recursive directory scans on subsequent launches.
     /// </summary>
     public Dictionary<string, DlssPathCache> DlssPathsCache { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Maps game name → installed ReShade version string. Cached from PE header reads to avoid repeat scanning on startup.</summary>
+    public Dictionary<string, string>? RsInstalledVersions { get; set; }
+
+    /// <summary>Maps game name → installed RenoDX version string. Cached from PE header reads to avoid repeat scanning on startup.</summary>
+    public Dictionary<string, string>? RdxInstalledVersions { get; set; }
 }
 
 /// <summary>

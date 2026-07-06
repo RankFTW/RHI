@@ -2,6 +2,7 @@
 // addon file handling, and game list selection.
 
 using Microsoft.UI;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -23,8 +24,12 @@ public sealed partial class MainWindow : Window
     private const int DefaultHeight = 1000;
 
     private readonly ICrashReporter _crashReporter;
+    private readonly IGameNameService _gameNameService;
+    private readonly IShaderPackService _shaderPackService;
+    private readonly DlssPresetService _dlssPresetService;
+    private readonly DofFixService _dofFixService;
+    private readonly IAddonPackService _addonPackService;
     private readonly DetailPanelBuilder _detailPanelBuilder;
-    private readonly OverridesFlyoutBuilder _overridesFlyoutBuilder;
     private readonly DialogService _dialogService;
     private readonly SettingsHandler _settingsHandler;
     private readonly MassDeployHandler _massDeployHandler;
@@ -43,11 +48,27 @@ public sealed partial class MainWindow : Window
     {
         ViewModel = viewModel;
         _crashReporter = crashReporter;
+        _gameNameService = App.Services.GetRequiredService<IGameNameService>();
+        _shaderPackService = App.Services.GetRequiredService<IShaderPackService>();
+        _dlssPresetService = App.Services.GetRequiredService<DlssPresetService>();
+        _dofFixService = App.Services.GetRequiredService<DofFixService>();
+        _addonPackService = viewModel.AddonPackServiceInstance;
         InitializeComponent();
         InitializeSkeletons();
-        _detailPanelBuilder = new DetailPanelBuilder(this);
+        _detailPanelBuilder = new DetailPanelBuilder(
+            this,
+            App.Services.GetRequiredService<IGameNameService>(),
+            App.Services.GetRequiredService<IPeHeaderService>(),
+            App.Services.GetRequiredService<DlssPresetService>(),
+            App.Services.GetRequiredService<IDlssStreamlineService>(),
+            App.Services.GetRequiredService<IDxvkService>(),
+            App.Services.GetRequiredService<IDllOverrideService>(),
+            App.Services.GetRequiredService<IAuxInstallService>(),
+            App.Services.GetRequiredService<IShaderPackService>(),
+            App.Services.GetRequiredService<IOptiScalerWikiService>(),
+            App.Services.GetRequiredService<IHdrDatabaseService>(),
+            App.Services.GetRequiredService<IOptiScalerService>());
         _compactViewBuilder = new CompactViewBuilder(this);
-        _overridesFlyoutBuilder = new OverridesFlyoutBuilder(this, crashReporter);
         _dialogService = new DialogService(this);
         _settingsHandler = new SettingsHandler(this);
         _massDeployHandler = new MassDeployHandler(this);
@@ -60,7 +81,7 @@ public sealed partial class MainWindow : Window
         Task shaderTask;
         if (ViewModel.Settings.CacheAllShaders)
         {
-            shaderTask = ViewModel.ShaderPackServiceInstance.EnsureLatestAsync();
+            shaderTask = _shaderPackService.EnsureLatestAsync();
             shaderTask.SafeFireAndForget("MainWindow.ShaderPack");
         }
         else
@@ -74,8 +95,8 @@ public sealed partial class MainWindow : Window
         {
             try
             {
-                await ViewModel.AddonPackServiceInstance.EnsureLatestAsync();
-                await ViewModel.AddonPackServiceInstance.CheckAndUpdateAllAsync();
+                await _addonPackService.EnsureLatestAsync();
+                await _addonPackService.CheckAndUpdateAllAsync();
             }
             catch (Exception ex) { crashReporter.Log($"[MainWindow] Addon pack init failed — {ex.Message}"); }
         }).SafeFireAndForget("MainWindow.AddonPack");
@@ -134,9 +155,9 @@ public sealed partial class MainWindow : Window
         ViewModel.ConfirmForeignDxgiOverwrite = _dialogService.ShowForeignDxgiConfirmDialogAsync;
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
         ViewModel.ShowShaderSelectionPicker = async (current) =>
-            await ShaderPopupHelper.ShowAsync(Content.XamlRoot, ViewModel.ShaderPackServiceInstance, current, ShaderPopupHelper.PopupContext.Global);
+            await ShaderPopupHelper.ShowAsync(Content.XamlRoot, _shaderPackService, current, ShaderPopupHelper.PopupContext.Global);
         ViewModel.ShowPerGameShaderSelectionPicker = async (gameName, current) =>
-            await ShaderPopupHelper.ShowAsync(Content.XamlRoot, ViewModel.ShaderPackServiceInstance, current, ShaderPopupHelper.PopupContext.PerGame);
+            await ShaderPopupHelper.ShowAsync(Content.XamlRoot, _shaderPackService, current, ShaderPopupHelper.PopupContext.PerGame);
         ViewModel.ScrollToSelectedGame = () =>
         {
             if (ViewModel.SelectedGame != null && GameList.Items.Contains(ViewModel.SelectedGame))

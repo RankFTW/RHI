@@ -305,9 +305,21 @@ public partial class MainViewModel
             }
         }
 
+        // Collect RS/RDX installed versions from cards for instant display on next startup
+        var rsVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var rdxVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in _allCards)
+        {
+            if (!string.IsNullOrEmpty(c.RsInstalledVersion))
+                rsVersions[c.GameName] = c.RsInstalledVersion;
+            if (!string.IsNullOrEmpty(c.RdxInstalledVersion))
+                rdxVersions[c.GameName] = c.RdxInstalledVersion;
+        }
+
         _gameLibraryService.Save(detectedGames, addonCache, _hiddenGames, _favouriteGames, _manualGames,
             _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache, LastSelectedGameName,
-            dxvkEnabledGames, dxvkInstalledVersions, excludeFromUpdateAllDxvk, updateSnapshot, dlssPathsCache);
+            dxvkEnabledGames, dxvkInstalledVersions, excludeFromUpdateAllDxvk, updateSnapshot, dlssPathsCache,
+            rsVersions, rdxVersions);
     }
 
     /// <summary>
@@ -481,7 +493,7 @@ public partial class MainViewModel
                 InstalledRecord        = record,
                 Status                 = record != null ? GameStatus.Installed : GameStatus.Available,
                 InstalledAddonFileName = record?.AddonFileName,
-                RdxInstalledVersion    = null, // Filled by Phase 2 (avoids PE header read)
+                RdxInstalledVersion    = savedLib.RdxInstalledVersions?.TryGetValue(game.Name, out var rdxVer) == true ? rdxVer : null, // Cached from last session; Phase 2 updates if file changed
                 EngineHint             = engineHint,
                 Is32Bit                = is32Bit,
                 GraphicsApi            = graphicsApi,
@@ -495,7 +507,7 @@ public partial class MainViewModel
                 RsRecord               = rsRec,
                 RsStatus               = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
                 RsInstalledFile        = rsRec?.InstalledAs,
-                RsInstalledVersion     = null, // Filled by Phase 2 (avoids PE header read)
+                RsInstalledVersion     = savedLib.RsInstalledVersions?.TryGetValue(game.Name, out var rsVer) == true ? rsVer : null, // Cached from last session; Phase 2 updates if file changed
 
                 // Per-game settings from GameNameService
                 ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),

@@ -55,7 +55,7 @@ public partial class DetailPanelBuilder
                 else
                 {
                     // No per-game override — show the effective global variant
-                    defaultDxvkSelection = _window.ViewModel.DxvkServiceInstance.SelectedVariant switch
+                    defaultDxvkSelection = _dxvkService.SelectedVariant switch
                     {
                         DxvkVariant.Stable => "Stable",
                         DxvkVariant.LiliumHdr => "Lilium HDR",
@@ -113,10 +113,10 @@ public partial class DetailPanelBuilder
                     if (!targetCard.DxvkEnabled)
                     {
                         var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName);
-                        var savedVariant = _window.ViewModel.DxvkServiceInstance.SelectedVariant;
-                        _window.ViewModel.DxvkServiceInstance.SelectedVariant = resolvedVariant;
+                        var savedVariant = _dxvkService.SelectedVariant;
+                        _dxvkService.SelectedVariant = resolvedVariant;
                         await _window.ViewModel.HandleDxvkToggleAsync(targetCard, true, _window.Content.XamlRoot);
-                        _window.ViewModel.DxvkServiceInstance.SelectedVariant = savedVariant;
+                        _dxvkService.SelectedVariant = savedVariant;
                         if (!targetCard.DxvkEnabled) dxvkModeCombo.SelectedItem = "Off";
                         _window.PopulateDetailPanel(targetCard);
                         BuildOverridesPanel(targetCard);
@@ -124,12 +124,12 @@ public partial class DetailPanelBuilder
                     else
                     {
                         var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName);
-                        var savedVariant = _window.ViewModel.DxvkServiceInstance.SelectedVariant;
-                        _window.ViewModel.DxvkServiceInstance.SelectedVariant = resolvedVariant;
-                        await _window.ViewModel.DxvkServiceInstance.EnsureStagingAsync();
-                        if (_window.ViewModel.DxvkServiceInstance.IsStagingReady)
+                        var savedVariant = _dxvkService.SelectedVariant;
+                        _dxvkService.SelectedVariant = resolvedVariant;
+                        await _dxvkService.EnsureStagingAsync();
+                        if (_dxvkService.IsStagingReady)
                             await _window.ViewModel.InstallDxvkAsync(targetCard, _window.Content.XamlRoot);
-                        _window.ViewModel.DxvkServiceInstance.SelectedVariant = savedVariant;
+                        _dxvkService.SelectedVariant = savedVariant;
                     }
                 }
             };

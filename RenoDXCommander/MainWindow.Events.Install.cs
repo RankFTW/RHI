@@ -306,10 +306,10 @@ public sealed partial class MainWindow
                 card.DofFixActionMessage = p.msg;
                 card.DofFixProgress = p.pct;
             });
-            var success = await ViewModel.DofFixServiceInstance.InstallAsync(card.InstallPath, progress);
+            var success = await _dofFixService.InstallAsync(card.InstallPath, progress);
             if (success)
             {
-                card.DofFixInstalledVersion = ViewModel.DofFixServiceInstance.StagedVersion;
+                card.DofFixInstalledVersion = _dofFixService.StagedVersion;
                 card.DofFixStatus = Models.GameStatus.Installed;
                 card.DofFixActionMessage = "✅ DOF Fix installed!";
                 card.NotifyAll();
@@ -335,7 +335,7 @@ public sealed partial class MainWindow
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 
-        var success = ViewModel.DofFixServiceInstance.Uninstall(card.InstallPath);
+        var success = _dofFixService.Uninstall(card.InstallPath);
         if (success)
         {
             card.DofFixStatus = Models.GameStatus.NotInstalled;
@@ -354,11 +354,11 @@ public sealed partial class MainWindow
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
-        var notes = ViewModel.DofFixServiceInstance.ReleaseNotes;
+        var notes = _dofFixService.ReleaseNotes;
         if (string.IsNullOrEmpty(notes))
         {
-            await ViewModel.DofFixServiceInstance.CheckForUpdateAsync();
-            notes = ViewModel.DofFixServiceInstance.ReleaseNotes;
+            await _dofFixService.CheckForUpdateAsync();
+            notes = _dofFixService.ReleaseNotes;
         }
 
         var dialog = new ContentDialog
@@ -406,7 +406,7 @@ public sealed partial class MainWindow
         var version = card.DofFixInstalledVersion;
         if (!string.IsNullOrEmpty(version))
         {
-            var url = ViewModel.DofFixServiceInstance.GetReleaseUrl(version);
+            var url = _dofFixService.GetReleaseUrl(version);
             await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
         }
     }
@@ -471,7 +471,7 @@ public sealed partial class MainWindow
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
         // Games force-enabled via manifest cannot be toggled off
-        if (ViewModel.DofFixServiceInstance.IsForceEligible(card.GameName))
+        if (_dofFixService.IsForceEligible(card.GameName))
             return;
 
         // Show first-time warning dialog
@@ -520,22 +520,22 @@ public sealed partial class MainWindow
         // Store or remove override
         if (next == "Unreal Engine")
         {
-            ViewModel.GameNameServiceInstance.EngineVersionOverrides.Remove(card.GameName);
+            _gameNameService.EngineVersionOverrides.Remove(card.GameName);
 
             // Uninstall DOF Fix addon if it was installed
             if (card.DofFixStatus == GameStatus.Installed && !string.IsNullOrEmpty(card.InstallPath))
             {
-                ViewModel.DofFixServiceInstance.Uninstall(card.InstallPath);
+                _dofFixService.Uninstall(card.InstallPath);
                 card.DofFixStatus = GameStatus.NotInstalled;
                 card.DofFixInstalledVersion = null;
             }
         }
         else
-            ViewModel.GameNameServiceInstance.EngineVersionOverrides[card.GameName] = next;
+            _gameNameService.EngineVersionOverrides[card.GameName] = next;
 
         // Update card
         card.EngineHint = next;
-        card.IsDofFixEligible = ViewModel.DofFixServiceInstance.IsGameEligible(next, card.Is32Bit, card.GameName);
+        card.IsDofFixEligible = _dofFixService.IsGameEligible(next, card.Is32Bit, card.GameName);
         card.NotifyAll();
 
         // Persist and rebuild panel
@@ -603,11 +603,11 @@ public sealed partial class MainWindow
         try
         {
             var gameName = card.GameName;
-            var launchArgs = ViewModel.GameNameServiceInstance.LaunchArgsOverrides
+            var launchArgs = _gameNameService.LaunchArgsOverrides
                 .TryGetValue(gameName, out var args) ? args : null;
 
             // ── HDR Auto-Toggle: resolve whether to enable ──
-            var hdrOverride = ViewModel.GameNameServiceInstance.HdrToggleOverrides
+            var hdrOverride = _gameNameService.HdrToggleOverrides
                 .TryGetValue(gameName, out var hov) ? hov : null;
             bool shouldToggleHdr = hdrOverride != null
                 ? string.Equals(hdrOverride, "On", StringComparison.OrdinalIgnoreCase)
@@ -629,7 +629,7 @@ public sealed partial class MainWindow
             }
 
             // 1. User override (absolute path)
-            if (ViewModel.GameNameServiceInstance.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
+            if (_gameNameService.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
                 && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
             {
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via user override: {userExe} {launchArgs}");
@@ -638,7 +638,7 @@ public sealed partial class MainWindow
                     Arguments = launchArgs ?? "",
                     UseShellExecute = true,
                 });
-                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, hdrTargets: hdrTargets);
+                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
                 return;
             }
 
@@ -723,7 +723,7 @@ public sealed partial class MainWindow
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                     });
-                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, hdrTargets: hdrTargets);
+                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
                     return;
                 }
             }
@@ -755,6 +755,47 @@ public sealed partial class MainWindow
                 try
                 {
                     await proc.WaitForExitAsync();
+
+                    // The launched process exited — but it might be a wrapper/launcher (SKSE, MO2)
+                    // that spawned the real game process. Check if any game process is still running
+                    // from the same install folder before disabling HDR.
+                    if (!string.IsNullOrEmpty(installPath))
+                    {
+                        var normalizedPath = Path.GetFullPath(installPath).TrimEnd('\\').ToLowerInvariant();
+                        System.Diagnostics.Process? survivingProc = null;
+
+                        // Give the spawned game process a moment to start (wrappers exit almost instantly)
+                        for (int attempt = 0; attempt < 5; attempt++)
+                        {
+                            await Task.Delay(1000);
+                            try
+                            {
+                                survivingProc = System.Diagnostics.Process.GetProcesses()
+                                    .FirstOrDefault(p =>
+                                    {
+                                        try
+                                        {
+                                            var mainMod = p.MainModule?.FileName;
+                                            return mainMod != null
+                                                && Path.GetFullPath(mainMod).ToLowerInvariant().StartsWith(normalizedPath);
+                                        }
+                                        catch { return false; }
+                                    });
+                            }
+                            catch { }
+
+                            if (survivingProc != null) break;
+                        }
+
+                        if (survivingProc != null)
+                        {
+                            // A game process is still running — this was a wrapper launch.
+                            // Monitor the real game process instead.
+                            _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' wrapper exited, found surviving process '{survivingProc.ProcessName}' (PID {survivingProc.Id})");
+                            await survivingProc.WaitForExitAsync();
+                        }
+                    }
+
                     if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");

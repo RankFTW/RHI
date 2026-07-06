@@ -1,3 +1,16 @@
+## v2.1.7
+
+### Changes
+
+- **Grid View removed** — RHI now has two views: Detail and Simple. Cleaner, faster.
+- **Startup faster** — UI appears in ~700ms (down from ~1.2s). ReShade and RenoDX version numbers now show instantly instead of waiting for the background scan.
+
+### Bug Fixes
+
+- Fixed ReShade deploying as `dxgi.dll` on DX8 games — now correctly deploys as `d3d8.dll`.
+
+---
+
 ## v2.1.6
 
 ### New

@@ -23,8 +23,8 @@ public partial class DetailPanelBuilder
             return true;
 
         var manifest = _window.ViewModel.Manifest;
-        var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
-        var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+        var osWikiData = _optiScalerWikiService.CachedData;
+        var hdrDatabase = _hdrDatabaseService.CachedData;
         var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
         return sourceType is InfoSourceType.Manifest or InfoSourceType.Wiki;
     }
@@ -76,8 +76,8 @@ public partial class DetailPanelBuilder
     {
         infoBtn.Tag = card;
         var manifest = _window.ViewModel.Manifest;
-        var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
-        var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+        var osWikiData = _optiScalerWikiService.CachedData;
+        var hdrDatabase = _hdrDatabaseService.CachedData;
         var sourceType = _addonInfoResolver.GetSourceType(card, addonType, manifest, osWikiData, hdrDatabase);
 
         // ReLimiter and Display Commander always have useful content

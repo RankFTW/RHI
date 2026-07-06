@@ -18,7 +18,7 @@ public partial class DetailPanelBuilder
         // ══════════════════════════════════════════════════════════════════════
         _window.NvidiaProfilePanel.Children.Clear();
         var nvidiaHeaderText = "Nvidia Profile Overrides";
-        var driverVer = _window.ViewModel.DlssPresetServiceInstance.DriverVersionString;
+        var driverVer = _dlssPresetService.DriverVersionString;
         if (!string.IsNullOrEmpty(driverVer))
             nvidiaHeaderText += $" — Driver {driverVer}";
         _window.NvidiaProfilePanel.Children.Add(new TextBlock
@@ -31,8 +31,8 @@ public partial class DetailPanelBuilder
 
         if (card.HasAnyDlssStreamline)
         {
-            var dlssService = _window.ViewModel.DlssStreamlineServiceInstance;
-            var presetService = _window.ViewModel.DlssPresetServiceInstance;
+            var dlssService = _dlssStreamlineService;
+            var presetService = _dlssPresetService;
             bool hasDlss = card.HasDlss;
             bool hasDlssd = card.HasDlssd;
             bool hasDlssg = card.HasDlssg;
@@ -261,8 +261,8 @@ public partial class DetailPanelBuilder
                 if (targetCard?.DlssDetection == null) return;
 
                 var settings = _window.ViewModel.Settings;
-                var svc = _window.ViewModel.DlssStreamlineServiceInstance;
-                var pSvc = _window.ViewModel.DlssPresetServiceInstance;
+                var svc = _dlssStreamlineService;
+                var pSvc = _dlssPresetService;
 
                 // Check driver override state — skip DLL swaps for overridden components
                 bool srOverride = pSvc.IsSupported && pSvc.IsSrDriverOverrideActive(targetCard.GameName, targetCard.InstallPath ?? "");

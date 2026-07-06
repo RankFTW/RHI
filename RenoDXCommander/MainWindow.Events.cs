@@ -213,56 +213,7 @@ public sealed partial class MainWindow
     }
 
 
-    // ── Views menu handlers ───────────────────────────────────────────────────
-
-    private void ViewCompact_Click(object sender, RoutedEventArgs e)
-        => SwitchToView(ViewLayout.Compact);
-
-    private void ViewDetail_Click(object sender, RoutedEventArgs e)
-        => SwitchToView(ViewLayout.Detail);
-
-    private void SwitchToView(ViewLayout target)
-    {
-        if (ViewModel.CurrentViewLayout == target) return;
-
-        var previousLayout = ViewModel.CurrentViewLayout;
-        ViewModel.CurrentViewLayout = target;
-        ViewModel.SaveSettingsPublic();
-
-        // Handle window size locking transitions
-        if (target == ViewLayout.Compact)
-        {
-            _windowStateManager.CaptureCurrentBounds();
-            _windowStateManager.ApplyCompactSize();
-            _windowStateManager.SetSizeLocked(true);
-        }
-        else if (previousLayout == ViewLayout.Compact)
-        {
-            _compactViewBuilder?.LeaveCompactMode();
-            _windowStateManager.SetSizeLocked(false);
-            _windowStateManager.RestoreWindowBounds();
-        }
-
-        // Rebuild content for the new layout
-        switch (target)
-        {
-            case ViewLayout.Detail:
-                if (ViewModel.SelectedGame is { } card)
-                {
-                    PopulateDetailPanel(card);
-                    DetailPanel.Visibility = Visibility.Visible;
-                    BuildOverridesPanel(card);
-                    OverridesContainer.Visibility = Visibility.Visible;
-                    NvidiaProfileContainer.Visibility = Visibility.Visible;
-                    ManagementContainer.Visibility = Visibility.Visible;
-                }
-                break;
-            case ViewLayout.Compact:
-                if (ViewModel.SelectedGame is { } compactCard)
-                    _compactViewBuilder?.EnterCompactMode(compactCard, ViewModel.CompactPageIndex);
-                break;
-        }
-    }
+    // ── View toggle ─────────────────────────────────────────────────────────
 
     private void LayoutToggle_Click(object sender, RoutedEventArgs e)
     {
@@ -538,15 +489,6 @@ public sealed partial class MainWindow
         if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
         if (System.IO.Directory.Exists(card.InstallPath))
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(card.InstallPath) { UseShellExecute = true });
-    }
-
-    internal void CardOverridesButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement anchor && anchor.Tag is GameCardViewModel card)
-        {
-            ViewModel.SelectedGame = card;
-            OpenOverridesFlyout(card, anchor);
-        }
     }
 
     internal void CardMoreMenu_Click(object sender, RoutedEventArgs e)
@@ -1030,7 +972,7 @@ public sealed partial class MainWindow
             }
 
             // Use the ViewModel's AddonPackService (initialized on startup)
-            var addonService = ViewModel.AddonPackServiceInstance;
+            var addonService = _addonPackService;
             await addonService.EnsureLatestAsync();
             // Re-apply manifest overrides (EnsureLatestAsync repopulates from Addons.ini)
             (addonService as RenoDXCommander.Services.AddonPackService)?.ApplyManifestOverrides(ViewModel.Manifest);
