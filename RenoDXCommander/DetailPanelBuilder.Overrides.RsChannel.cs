@@ -78,6 +78,22 @@ public partial class DetailPanelBuilder
 
         bool channelComboInitializing = true;
 
+        // Allow re-opening the Custom picker by clicking Custom when already on Custom
+        channelCombo.DropDownClosed += async (s, ev) =>
+        {
+            if (channelComboInitializing) return;
+            var current = channelCombo.SelectedItem as string;
+            if (current == "Custom" && string.Equals(defaultChannelSelection, "Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                // User re-selected Custom while already on Custom — re-trigger SelectionChanged logic
+                // by temporarily flipping to a dummy value and back
+                channelComboInitializing = true;
+                channelCombo.SelectedItem = "Stable";
+                channelComboInitializing = false;
+                channelCombo.SelectedItem = "Custom"; // This triggers SelectionChanged with "Custom"
+            }
+        };
+
         channelCombo.SelectionChanged += async (s, ev) =>
         {
             var selected = channelCombo.SelectedItem as string;

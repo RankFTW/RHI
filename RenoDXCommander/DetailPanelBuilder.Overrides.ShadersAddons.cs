@@ -67,6 +67,21 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(addonModeCombo,
             "Global = use global addon set. Select = pick per-game addons. Off = no addons for this game.");
 
+        // Allow re-opening the Select picker when already on Select
+        var addonDefaultSelection = currentAddonMode == "Off" ? "Off" : (currentAddonMode == "Select" ? "Select" : "Global");
+        addonModeCombo.DropDownClosed += (s, ev) =>
+        {
+            if (addonComboInitializing) return;
+            var current = addonModeCombo.SelectedItem as string;
+            if (current == "Select" && addonDefaultSelection == "Select")
+            {
+                addonComboInitializing = true;
+                addonModeCombo.SelectedItem = "Global";
+                addonComboInitializing = false;
+                addonModeCombo.SelectedItem = "Select";
+            }
+        };
+
         addonModeCombo.SelectionChanged += async (s, ev) =>
         {
             if (addonComboInitializing) return;

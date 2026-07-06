@@ -688,6 +688,20 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(shaderModeCombo,
             "Global = use global shader selection. Custom = use custom shader directories. Select = pick per-game packs. Off = no shaders.");
 
+        // Allow re-opening the Select picker when already on Select
+        shaderModeCombo.DropDownClosed += (s, ev) =>
+        {
+            if (shaderComboInitializing) return;
+            var current = shaderModeCombo.SelectedItem as string;
+            if (current == "Select" && effectiveShaderDisplay == "Select")
+            {
+                shaderComboInitializing = true;
+                shaderModeCombo.SelectedItem = "Global";
+                shaderComboInitializing = false;
+                shaderModeCombo.SelectedItem = "Select";
+            }
+        };
+
         shaderModeCombo.SelectionChanged += async (s, ev) =>
         {
             if (shaderComboInitializing) return;
