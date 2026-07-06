@@ -19,7 +19,7 @@ public static class PresetPopupHelper
     /// Shows the preset selection popup.
     /// Returns the list of selected preset filenames, or null if cancelled.
     /// </summary>
-    public static async Task<List<string>?> ShowAsync(XamlRoot xamlRoot, string? nexusModsUrl = null)
+    public static async Task<List<string>?> ShowAsync(XamlRoot xamlRoot)
     {
         Directory.CreateDirectory(PresetsDir);
 
@@ -110,24 +110,6 @@ public static class PresetPopupHelper
         };
         pathLink.Inlines.Add(linkRun);
         panel.Children.Add(pathLink);
-
-        // "Browse presets on Nexus" link (if game has a Nexus page)
-        if (!string.IsNullOrEmpty(nexusModsUrl))
-        {
-            // NexusModsUrl format: "https://www.nexusmods.com/games/{domain}"
-            // Mods page with search: "https://www.nexusmods.com/games/{domain}/mods?keyword=reshade"
-            var searchUrl = nexusModsUrl.TrimEnd('/') + "/mods?keyword=reshade";
-
-            var nexusLink = new HyperlinkButton
-            {
-                Content = "Browse presets on Nexus",
-                NavigateUri = new Uri(searchUrl),
-                FontSize = 12,
-                Padding = new Thickness(0),
-                Margin = new Thickness(0, 0, 0, 6),
-            };
-            panel.Children.Add(nexusLink);
-        }
 
         foreach (var file in iniFiles)
         {
