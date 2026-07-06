@@ -115,8 +115,8 @@ public static class PresetPopupHelper
         if (!string.IsNullOrEmpty(nexusModsUrl))
         {
             // NexusModsUrl format: "https://www.nexusmods.com/games/{domain}"
-            // Search URL: "https://www.nexusmods.com/games/{domain}/search?keyword=reshade"
-            var searchUrl = nexusModsUrl.TrimEnd('/') + "/search?keyword=reshade";
+            // Mods page with search: "https://www.nexusmods.com/games/{domain}/mods?keyword=reshade"
+            var searchUrl = nexusModsUrl.TrimEnd('/') + "/mods?keyword=reshade";
 
             var nexusLink = new HyperlinkButton
             {
