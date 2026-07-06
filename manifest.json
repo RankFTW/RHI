@@ -945,7 +945,7 @@
       "notesUrlLabel": "MHS2Loader (GitHub)"
     },
     "Ryubing": {
-      "notes": "⚠️ Ryubing requires RenoVK (a custom Vulkan ReShade build).\n\nPlace the RenoVK DLL in the Custom ReShade folder, then set RS Channel to Custom in Overrides.",
+      "notes": "⚠️ Ryubing requires Nightly ReShade loaded as Vulkan.\n\nSet RS Channel to Nightly in Overrides. ReShade will be installed via the Vulkan layer automatically.",
       "notesUrl": null,
       "notesUrlLabel": null
     }

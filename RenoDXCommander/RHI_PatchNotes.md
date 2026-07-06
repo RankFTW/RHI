@@ -2,7 +2,7 @@
 
 ### New
 
-- **Custom ReShade picker** — place multiple custom ReShade DLLs in the Custom folder (name them anything). When you select "Custom" as the RS Channel, a picker dialog lets you choose which one to deploy. Selection is saved per-game.
+- **Custom ReShade picker** — place multiple custom ReShade DLLs in the Custom folder (name them anything). When you select "Custom" as the RS Channel, a picker dialog lets you choose which one to deploy. Selection is saved per-game. Vulkan games still share a single global layer.
 
 ### Changes
 
@@ -14,6 +14,11 @@
 
 - Fixed ReShade deploying as `dxgi.dll` on DX8 games — now correctly deploys as `d3d8.dll`.
 - Fixed HDR auto-toggle disabling HDR immediately when launching games via wrappers like SKSE or MO2 — now monitors the actual game process.
+- Fixed manifest 32/64-bit overrides not applying until background scan — games like Trackmania now show correct bitness immediately.
+
+### Manifest Updates
+
+- Ryubing: updated ReShade guidance — now uses Nightly ReShade via Vulkan layer (no longer requires RenoVK custom build).
 
 ---
 
