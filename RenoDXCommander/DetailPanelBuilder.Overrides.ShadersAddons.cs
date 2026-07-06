@@ -502,6 +502,9 @@ public partial class DetailPanelBuilder
             ctx.ChannelCombo.SelectedItem = "Stable";
             _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null);
 
+            // Reset custom ReShade DLL selection
+            _gameNameService.CustomReShadeSelection.Remove(ctx.CapturedName);
+
             // Reset launch exe override
             _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);
             _gameNameService.LaunchArgsOverrides.Remove(ctx.CapturedName);

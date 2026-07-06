@@ -69,6 +69,19 @@ public partial class AuxInstallService
             ? (use32Bit ? RsNormalStagedPath32 : RsNormalStagedPath64)
             : GetStagedPathForChannel(effectiveChannel, use32Bit);
 
+        // If this is a Custom channel with a per-game file selection, use that specific file
+        if (!useNormalReShade && string.Equals(effectiveChannel, ChannelCustom, StringComparison.OrdinalIgnoreCase))
+        {
+            // Look up per-game custom selection via static accessor (set by the caller/DI)
+            var customSelection = CustomReShadeSelectionResolver?.Invoke(gameName);
+            if (!string.IsNullOrEmpty(customSelection))
+            {
+                var customFilePath = GetCustomReShadePathForFile(customSelection);
+                if (File.Exists(customFilePath))
+                    rsStagedPath = customFilePath;
+            }
+        }
+
         // If this is a legacy version and not cached, download it on-demand
         if (!File.Exists(rsStagedPath) && !useNormalReShade && IsLegacyVersion(effectiveChannel))
         {
