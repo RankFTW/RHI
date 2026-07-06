@@ -618,6 +618,12 @@ public partial class MainViewModel
                 OnPropertyChanged(nameof(UpdateAllBtnBorder));
             });
 
+        // Reset Nexus baselines for games that were just updated (clears false positives)
+        foreach (var card in _allCards.Where(c => c.Status == GameStatus.Installed && !c.IsExternalOnly))
+            _nexusUpdateService.ResetBaseline(card.GameName);
+
+        NotifyUpdateButtonChanged();
+
         // Update emulator cards (bundle re-download)
         var emuCards = _allCards
             .Where(c => c.IsEmulator && c.Status == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRenoDx)

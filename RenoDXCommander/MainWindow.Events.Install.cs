@@ -94,6 +94,7 @@ public sealed partial class MainWindow
 
         // Close the dialog
         dialog.Hide();
+        ViewModel.NotifyUpdateButtonChanged();
     }
 
     private async void UpdateAllRenoDx_Click(object sender, RoutedEventArgs e)
