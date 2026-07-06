@@ -605,6 +605,12 @@ public partial class MainViewModel
 
     public async Task UpdateAllRenoDxAsync()
     {
+        // Capture games with Nexus update flags BEFORE running updates
+        var nexusFlaggedGames = _allCards
+            .Where(c => c.Status == GameStatus.UpdateAvailable && !c.IsExternalOnly)
+            .Select(c => c.GameName)
+            .ToList();
+
         await _updateOrchestrationService.UpdateAllRenoDxAsync(
             _allCards, _dllOverrideService, DispatcherQueue,
             () => SaveLibrary(),
@@ -618,9 +624,9 @@ public partial class MainViewModel
                 OnPropertyChanged(nameof(UpdateAllBtnBorder));
             });
 
-        // Reset Nexus baselines for games that were just updated (clears false positives)
-        foreach (var card in _allCards.Where(c => c.Status == GameStatus.Installed && !c.IsExternalOnly))
-            _nexusUpdateService.ResetBaseline(card.GameName);
+        // Reset Nexus baselines for games that had update flags (clears false positives from Nexus page edits)
+        foreach (var gameName in nexusFlaggedGames)
+            _nexusUpdateService.ResetBaseline(gameName);
 
         NotifyUpdateButtonChanged();
 
