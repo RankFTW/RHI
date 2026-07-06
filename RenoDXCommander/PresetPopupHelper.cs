@@ -114,11 +114,17 @@ public static class PresetPopupHelper
         // "Browse presets on Nexus" link (if game has a Nexus page)
         if (!string.IsNullOrEmpty(nexusModsUrl))
         {
-            var nexusSearchUrl = nexusModsUrl.TrimEnd('/') + "/search?keyword=reshade";
+            // NexusModsUrl may be in format "https://www.nexusmods.com/games/{domain}"
+            // Search URL needs: "https://www.nexusmods.com/{domain}/search?keyword=reshade"
+            var searchUrl = nexusModsUrl.TrimEnd('/');
+            if (searchUrl.Contains("/games/", StringComparison.OrdinalIgnoreCase))
+                searchUrl = searchUrl.Replace("/games/", "/", StringComparison.OrdinalIgnoreCase);
+            searchUrl += "/search?keyword=reshade";
+
             var nexusLink = new HyperlinkButton
             {
                 Content = "Browse presets on Nexus",
-                NavigateUri = new Uri(nexusSearchUrl),
+                NavigateUri = new Uri(searchUrl),
                 FontSize = 12,
                 Padding = new Thickness(0),
                 Margin = new Thickness(0, 0, 0, 6),
