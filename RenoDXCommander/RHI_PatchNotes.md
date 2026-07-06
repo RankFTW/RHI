@@ -3,12 +3,11 @@
 ### Changes
 
 - **Grid View removed** — RHI now has two views: Detail and Simple. Cleaner, faster.
-- **Startup ~500ms faster** — NVIDIA profile loading no longer blocks the UI from appearing.
+- **Startup faster** — UI appears in ~700ms (down from ~1.2s). ReShade and RenoDX version numbers now show instantly instead of waiting for the background scan.
 
 ### Bug Fixes
 
 - Fixed ReShade deploying as `dxgi.dll` on DX8 games — now correctly deploys as `d3d8.dll`.
-- Fixed Lossless Scaling not appearing in game list.
 
 ---
 

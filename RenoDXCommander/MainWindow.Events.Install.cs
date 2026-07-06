@@ -638,7 +638,7 @@ public sealed partial class MainWindow
                     Arguments = launchArgs ?? "",
                     UseShellExecute = true,
                 });
-                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, hdrTargets: hdrTargets);
+                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
                 return;
             }
 
@@ -723,7 +723,7 @@ public sealed partial class MainWindow
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                     });
-                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, hdrTargets: hdrTargets);
+                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
                     return;
                 }
             }
@@ -755,6 +755,47 @@ public sealed partial class MainWindow
                 try
                 {
                     await proc.WaitForExitAsync();
+
+                    // The launched process exited — but it might be a wrapper/launcher (SKSE, MO2)
+                    // that spawned the real game process. Check if any game process is still running
+                    // from the same install folder before disabling HDR.
+                    if (!string.IsNullOrEmpty(installPath))
+                    {
+                        var normalizedPath = Path.GetFullPath(installPath).TrimEnd('\\').ToLowerInvariant();
+                        System.Diagnostics.Process? survivingProc = null;
+
+                        // Give the spawned game process a moment to start (wrappers exit almost instantly)
+                        for (int attempt = 0; attempt < 5; attempt++)
+                        {
+                            await Task.Delay(1000);
+                            try
+                            {
+                                survivingProc = System.Diagnostics.Process.GetProcesses()
+                                    .FirstOrDefault(p =>
+                                    {
+                                        try
+                                        {
+                                            var mainMod = p.MainModule?.FileName;
+                                            return mainMod != null
+                                                && Path.GetFullPath(mainMod).ToLowerInvariant().StartsWith(normalizedPath);
+                                        }
+                                        catch { return false; }
+                                    });
+                            }
+                            catch { }
+
+                            if (survivingProc != null) break;
+                        }
+
+                        if (survivingProc != null)
+                        {
+                            // A game process is still running — this was a wrapper launch.
+                            // Monitor the real game process instead.
+                            _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' wrapper exited, found surviving process '{survivingProc.ProcessName}' (PID {survivingProc.Id})");
+                            await survivingProc.WaitForExitAsync();
+                        }
+                    }
+
                     if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
