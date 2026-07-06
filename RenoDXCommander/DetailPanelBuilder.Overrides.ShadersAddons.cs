@@ -190,7 +190,7 @@ public partial class DetailPanelBuilder
             "Pick .ini preset files to copy to this game's folder. Place presets in the reshade-presets folder.");
         presetBtn.Click += async (s, ev) =>
         {
-            var selected = await PresetPopupHelper.ShowAsync(_window.Content.XamlRoot);
+            var selected = await PresetPopupHelper.ShowAsync(_window.Content.XamlRoot, card.NexusModsUrl);
             if (selected != null && selected.Count > 0)
             {
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
