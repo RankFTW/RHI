@@ -382,6 +382,14 @@ public partial class MainViewModel
             _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Applied cached blacklist ({blacklist.Count} entries), {allGames.Count} games remaining");
         }
 
+        // Apply 32-bit/64-bit overrides from cached manifest so bitness is correct before card build
+        if (cachedManifest?.ThirtyTwoBitGames != null)
+            foreach (var game in cachedManifest.ThirtyTwoBitGames)
+                _manifest32BitGames.Add(game);
+        if (cachedManifest?.SixtyFourBitGames != null)
+            foreach (var game in cachedManifest.SixtyFourBitGames)
+                _manifest64BitGames.Add(game);
+
         // 8. Load installed records and aux records from disk (fast local reads)
         var records    = _installer.LoadAll();
         var auxRecords = _auxInstaller.LoadAll();
