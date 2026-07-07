@@ -255,8 +255,8 @@ The improvements above are ordered by impact-to-effort ratio. Recommended execut
 | Step | Task | Status |
 |------|------|--------|
 | 4 | **NVAPI abstraction** (Priority 6) | ✅ Done — DlssPresetService split into 6 partials (max 36KB). ProfileMatching, DriverSettings, ReBar, Export, Reset separated. |
-| 5 | **Reduce ViewModel surface** (Priority 4) | 🟡 Partial — DetailPanelBuilder injected (11 services). 5 forwarding properties removed. 6 consumers still use ViewModel: SettingsHandler, DragDropHandler, DialogService, MassDeployHandler, InstallEventHandler, GameReportEncoder. |
-| 6 | **Formalize concurrency** (Priority 3) | ❌ Not started — BackgroundTaskCoordinator, threading contract, panel rebuild state machine. |
+| 5 | **Reduce ViewModel surface** (Priority 4) | ✅ Done — All consumers migrated. DetailPanelBuilder (11 services), SettingsHandler, DragDropHandler, DialogService, MassDeployHandler, InstallEventHandler, GameReportEncoder all use direct injection. 14 forwarding properties deleted. Only 3 remain (ShaderPack, AddonPack, GameName). |
+| 6 | **Formalize concurrency** (Priority 3) | ❌ Not started — BackgroundTaskCoordinator, threading contract, panel rebuild state machine. High risk — recommend incremental approach. |
 
 ### Phase 3 — Foundation (v3.0 Territory)
 
