@@ -230,7 +230,7 @@ Each component registers itself in DI. The detail panel iterates registered comp
 
 ## Non-Priority Items (Nice-to-Have)
 
-- **Remove Grid View** — Grid/card view is unused and adds maintenance burden (separate layout code path, card builder complexity). Remove entirely — Detail view and Compact view cover all use cases.
+- ~~**Remove Grid View**~~ ✅ Done (v2.1.7) — deleted CardBuilder, OverridesFlyoutBuilder, ViewLayout.Grid. -5000 lines.
 - **Localization framework** — Currently English-only. WinUI supports `.resw` files. Not urgent for the target audience.
 - **Accessibility audit** — Screen reader support for code-behind UI elements needs manual ARIA/automation properties.
 - **Plugin system** — Allow third-party components (shader packs, custom ReShade builds) to register without app changes. Very long-term.
@@ -242,38 +242,34 @@ Each component registers itself in DI. The detail panel iterates registered comp
 
 The improvements above are ordered by impact-to-effort ratio. Recommended execution order based on dependencies and risk:
 
-### Phase 1 — Reduce Surface Area (Do First)
+### Phase 1 — Reduce Surface Area ✅ COMPLETE
 
-These steps delete code and make everything else safer. No behavioral changes.
+| Step | Task | Status |
+|------|------|--------|
+| 1 | **Remove Grid View** | ✅ Done — CardBuilder, OverridesFlyoutBuilder deleted. -5000 lines. |
+| 2 | **Split mega-files** (Priority 1) | ✅ Done — 6 files split into 26 partials. All under 50KB (except BuildCards.cs at 62KB — single method). |
+| 3 | **Unify dual UI builders** (Priority 2) | ✅ Done — OverridesFlyoutBuilder was Grid-only dead code. Deleted entirely. Only DetailPanelBuilder remains. |
 
-| Step | Task | Rationale |
-|------|------|-----------|
-| 1 | **Remove Grid View** | Deletes code, reduces blast radius for all subsequent refactors. Less to split, unify, and maintain. |
-| 2 | **Split mega-files** (Priority 1) | Pure mechanical work, zero behavioral change. Makes every following step easier to navigate and review. |
-| 3 | **Unify dual UI builders** (Priority 2) | With files smaller and grid view gone, extract SharedOverridesBuilder. Eliminates the "update both" pitfall before adding more features. |
+### Phase 2 — Structural Improvements (Partially Complete)
 
-### Phase 2 — Structural Improvements
-
-Clean boundaries and reduced coupling. Each step benefits from the splits done in Phase 1.
-
-| Step | Task | Rationale |
-|------|------|-----------|
-| 4 | **NVAPI abstraction** (Priority 6) | DlssPresetService is 103KB and the most fragile code. Splitting into Read/Write/ProfileMatching/RawApi establishes clean boundaries for future driver profile work. |
-| 5 | **Reduce ViewModel surface** (Priority 4) | With builders using shared helpers (step 3), pass services directly. Removes 25+ forwarding properties. |
-| 6 | **Formalize concurrency** (Priority 3) | Hardest one — do after splits so concurrent access points are clearly visible. |
+| Step | Task | Status |
+|------|------|--------|
+| 4 | **NVAPI abstraction** (Priority 6) | ✅ Done — DlssPresetService split into 6 partials (max 36KB). ProfileMatching, DriverSettings, ReBar, Export, Reset separated. |
+| 5 | **Reduce ViewModel surface** (Priority 4) | 🟡 Partial — DetailPanelBuilder injected (11 services). 5 forwarding properties removed. 6 consumers still use ViewModel: SettingsHandler, DragDropHandler, DialogService, MassDeployHandler, InstallEventHandler, GameReportEncoder. |
+| 6 | **Formalize concurrency** (Priority 3) | ❌ Not started — BackgroundTaskCoordinator, threading contract, panel rebuild state machine. |
 
 ### Phase 3 — Foundation (v3.0 Territory)
 
 Major architectural changes. Depend on stable boundaries from Phase 2.
 
-| Step | Task | Rationale |
-|------|------|-----------|
-| 7 | **Settings modernization** (Priority 9) | Structured per-game settings model. Do before component system — it will want clean per-game config. |
-| 8 | **Data-driven components** (Priority 7) | The big win, but depends on settings modernization and clean service boundaries from steps 4-5. |
-| 9 | **Structured error handling** (Priority 5) | Incremental alongside anything, but component system benefits most. |
-| 10 | **Fix test infrastructure** (Priority 8) | After interfaces stabilize from steps 7-8. Otherwise stubs break immediately. |
-| 11 | **Incremental panel updates** (Priority 10) | Last — the unified builder (step 3) makes this much simpler. Only worth doing once panel code is in one place. |
+| Step | Task | Status |
+|------|------|--------|
+| 7 | **Settings modernization** (Priority 9) | ❌ Not started |
+| 8 | **Data-driven components** (Priority 7) | ❌ Not started |
+| 9 | **Structured error handling** (Priority 5) | ❌ Not started |
+| 10 | **Fix test infrastructure** (Priority 8) | ❌ Not started |
+| 11 | **Incremental panel updates** (Priority 10) | ❌ Not started — only one builder now (DetailPanelBuilder), so this is simpler than originally planned. |
 
 ### Key Insight
 
-Remove Grid View → Split files → Unify builders. That sequence eliminates the most maintenance debt with the least risk, and every subsequent step benefits from it.
+Phase 1 complete: Remove Grid View → Split files → Delete dead flyout builder. That sequence eliminated ~5000 lines and the dual-builder maintenance burden. Phase 2 partially done with service injection. Concurrency (Step 6) is the next high-value target.

@@ -1,3 +1,11 @@
+## v2.1.8
+
+### Bug Fixes
+
+- Fixed Update All button staying purple after completion — now properly notifies the button to re-evaluate and resets Nexus update baselines.
+
+---
+
 ## v2.1.7
 
 ### New
