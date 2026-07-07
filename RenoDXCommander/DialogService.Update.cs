@@ -25,7 +25,7 @@ public partial class DialogService
             while (_window.Content.XamlRoot == null)
                 await Task.Delay(200);
 
-            var updateInfo = await ViewModel.UpdateServiceInstance.CheckForUpdateAsync(ViewModel.BetaOptIn);
+            var updateInfo = await _updateService.CheckForUpdateAsync(ViewModel.BetaOptIn);
             if (updateInfo == null) return; // up to date or check failed
 
             // Show update dialog on UI thread
@@ -127,7 +127,7 @@ public partial class DialogService
             });
         });
 
-        var installerPath = await ViewModel.UpdateServiceInstance.DownloadInstallerAsync(
+        var installerPath = await _updateService.DownloadInstallerAsync(
             updateInfo.DownloadUrl, progress);
 
         if (string.IsNullOrEmpty(installerPath))
@@ -147,7 +147,7 @@ public partial class DialogService
         if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
 
         // Launch installer and close RDXC
-        ViewModel.UpdateServiceInstance.LaunchInstallerAndExit(installerPath, () =>
+        _updateService.LaunchInstallerAndExit(installerPath, () =>
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
@@ -169,7 +169,7 @@ public partial class DialogService
             // Wait for UI to settle and any update dialog to finish
             await Task.Delay(1500);
 
-            var current = ViewModel.UpdateServiceInstance.CurrentVersion;
+            var current = _updateService.CurrentVersion;
             var versionStr = $"{current.Major}.{current.Minor}.{current.Build}";
             var markerFile = Path.Combine(PatchNotesDir, $"PatchNotes-{versionStr}.txt");
 

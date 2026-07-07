@@ -35,18 +35,18 @@ public partial class DragDropHandler
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedExe] Inferred game root '{gameRoot}' from exe dir '{exeDir}'");
 
         // ── Detect engine and correct install path ────────────────────────────
-        var (installPath, engine) = ViewModel.GameDetectionServiceInstance.DetectEngineAndPath(gameRoot);
+        var (installPath, engine) = _gameDetectionService.DetectEngineAndPath(gameRoot);
 
         // ── Infer game name ───────────────────────────────────────────────────
         var gameName = InferGameName(exePath, gameRoot, engine);
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedExe] Inferred name '{gameName}', engine={engine}");
 
         // ── Check for duplicates (by install path or normalized name) ─────────
-        var normName = ViewModel.GameDetectionServiceInstance.NormalizeName(gameName);
+        var normName = _gameDetectionService.NormalizeName(gameName);
         var normInstall = installPath.TrimEnd(Path.DirectorySeparatorChar).ToLowerInvariant();
 
         var existingCard = ViewModel.AllCards.FirstOrDefault(c =>
-            ViewModel.GameDetectionServiceInstance.NormalizeName(c.GameName) == normName
+            _gameDetectionService.NormalizeName(c.GameName) == normName
             || (!string.IsNullOrEmpty(c.InstallPath)
                 && c.InstallPath.TrimEnd(Path.DirectorySeparatorChar)
                     .Equals(normInstall, StringComparison.OrdinalIgnoreCase)));

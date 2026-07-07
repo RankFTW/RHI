@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -14,11 +15,17 @@ public class InstallEventHandler
 {
     private readonly MainWindow _window;
     private readonly Func<string?, Task<string?>> _pickFolderAsync;
+    private readonly IOptiScalerService _optiScalerService;
+    private readonly IREFrameworkService _reFrameworkService;
+    private readonly IShaderPackService _shaderPackService;
 
     public InstallEventHandler(MainWindow window, Func<string?, Task<string?>> pickFolderAsync)
     {
         _window = window;
         _pickFolderAsync = pickFolderAsync;
+        _optiScalerService = App.Services.GetRequiredService<IOptiScalerService>();
+        _reFrameworkService = App.Services.GetRequiredService<IREFrameworkService>();
+        _shaderPackService = App.Services.GetRequiredService<IShaderPackService>();
     }
 
     private MainViewModel ViewModel => _window.ViewModel;
@@ -196,7 +203,7 @@ public class InstallEventHandler
         card.OsProgress = 0;
         try
         {
-            await ViewModel.OptiScalerServiceInstance.InstallAsync(card,
+            await _optiScalerService.InstallAsync(card,
                 new Progress<(string message, double percent)>(p =>
                 {
                     card.OsActionMessage = p.message;
@@ -214,7 +221,7 @@ public class InstallEventHandler
                 try
                 {
                     card.OsActionMessage = "Installing PD-Upscaler REFramework...";
-                    await ViewModel.REFrameworkServiceInstance.InstallPdUpscalerAsync(
+                    await _reFrameworkService.InstallPdUpscalerAsync(
                         card.GameName, card.InstallPath, pdArtifact,
                         new Progress<(string message, double percent)>(p =>
                         {
@@ -254,7 +261,7 @@ public class InstallEventHandler
             if (ViewModel.Manifest?.PdUpscalerGames != null
                 && ViewModel.Manifest.PdUpscalerGames.ContainsKey(card.GameName))
             {
-                ViewModel.REFrameworkServiceInstance.RestoreStandardREFramework(
+                _reFrameworkService.RestoreStandardREFramework(
                     card.GameName, card.InstallPath);
                 // Restore the version display to the standard REFramework version
                 if (card.RefRecord != null)
@@ -262,7 +269,7 @@ public class InstallEventHandler
                 card.NotifyAll();
             }
 
-            ViewModel.OptiScalerServiceInstance.Uninstall(card);
+            _optiScalerService.Uninstall(card);
             card.OsActionMessage = "✖ OptiScaler removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
@@ -284,7 +291,7 @@ public class InstallEventHandler
                 card.OsActionMessage = "❌ No OptiScaler.ini found in INIs folder.";
                 return;
             }
-            ViewModel.OptiScalerServiceInstance.CopyIniToGame(card);
+            _optiScalerService.CopyIniToGame(card);
             card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }
@@ -330,7 +337,7 @@ public class InstallEventHandler
     {
         var result = await ShaderPopupHelper.ShowAsync(
             _window.Content.XamlRoot,
-            ViewModel.ShaderPackServiceInstance,
+            _shaderPackService,
             ViewModel.Settings.SelectedShaderPacks,
             ShaderPopupHelper.PopupContext.Global);
 

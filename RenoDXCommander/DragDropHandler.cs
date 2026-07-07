@@ -1,5 +1,6 @@
 // DragDropHandler.cs — Primary file: class declaration, constructor, extension validation, drag-over/drop routing, and URL/shortcut helpers.
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Models;
@@ -16,11 +17,19 @@ public partial class DragDropHandler
 {
     private readonly MainWindow _window;
     private readonly ICrashReporter _crashReporter;
+    private readonly IModInstallService _modInstallService;
+    private readonly IGameDetectionService _gameDetectionService;
+    private readonly ILumaService _lumaService;
+    private readonly IGameNameService _gameNameService;
 
     public DragDropHandler(MainWindow window, ICrashReporter crashReporter)
     {
         _window = window;
         _crashReporter = crashReporter;
+        _modInstallService = App.Services.GetRequiredService<IModInstallService>();
+        _gameDetectionService = App.Services.GetRequiredService<IGameDetectionService>();
+        _lumaService = App.Services.GetRequiredService<ILumaService>();
+        _gameNameService = App.Services.GetRequiredService<IGameNameService>();
     }
 
     private MainViewModel ViewModel => _window.ViewModel;

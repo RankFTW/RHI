@@ -14,7 +14,6 @@ public partial class MainViewModel : ObservableObject
     private readonly HttpClient        _http;
     public HttpClient HttpClient => _http;
     private readonly IModInstallService _installer;
-    public IModInstallService ModInstallServiceInstance => _installer;
     private readonly IAuxInstallService _auxInstaller;
     private readonly IREFrameworkService _refService;
     private readonly ICrashReporter _crashReporter;
@@ -50,25 +49,13 @@ public partial class MainViewModel : ObservableObject
     /// Awaited before the post-init shader sync so packs are available.
     /// </summary>
     private Task? _shaderPackReadyTask;
-    public IUpdateService UpdateServiceInstance => _updateService;
     public IShaderPackService ShaderPackServiceInstance => _shaderPackService;
     public IAddonPackService AddonPackServiceInstance => _addonPackService;
-    public IGameDetectionService GameDetectionServiceInstance => _gameDetectionService;
     public SettingsViewModel Settings => _settingsViewModel;
     /// <summary>True when the user has selected the Nightly ReShade build channel.</summary>
     public bool IsReShadeNightly => string.Equals(_settingsViewModel.ReShadeChannel, "Nightly", StringComparison.OrdinalIgnoreCase);
     public FilterViewModel Filter => _filterViewModel;
     public IGameNameService GameNameServiceInstance => _gameNameService;
-    public IPeHeaderService PeHeaderServiceInstance => _peHeaderService;
-    public IOptiScalerService OptiScalerServiceInstance => _optiScalerService;
-    public IDxvkService DxvkServiceInstance => _dxvkService;
-    public ReShadeNightlyService ReShadeNightlyServiceInstance => _rsNightlyService;
-    public IReShadeUpdateService ReShadeUpdateServiceInstance => _rsUpdateService;
-    public IOptiScalerWikiService OptiScalerWikiServiceInstance => _optiScalerWikiService;
-    public IHdrDatabaseService HdrDatabaseServiceInstance => _hdrDatabaseService;
-    public IREFrameworkService REFrameworkServiceInstance => _refService;
-    public DlssPresetService DlssPresetServiceInstance => _dlssPresetService;
-    public DofFixService DofFixServiceInstance => _dofFixService;
     public RemoteManifest? Manifest => _manifest;
 
     public bool SkipUpdateCheck
@@ -556,7 +543,6 @@ public partial class MainViewModel : ObservableObject
     private Dictionary<string, string> _gameRenames => _gameNameService.GameRenames;
 
     private readonly ILumaService _lumaService;
-    public ILumaService LumaServiceInstance => _lumaService;
     private readonly IReShadeUpdateService _rsUpdateService;
     private readonly INormalReShadeUpdateService _normalRsUpdateService;
     private readonly ReShadeNightlyService _rsNightlyService;

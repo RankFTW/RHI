@@ -16,6 +16,9 @@ public class SettingsHandler
     // ── Instance members ───────────────────────────────────────────────
 
     private readonly MainWindow _window;
+    private readonly IDxvkService _dxvkService;
+    private readonly IReShadeUpdateService _reShadeUpdateService;
+    private readonly ReShadeNightlyService _reShadeNightlyService;
 
     /// <summary>
     /// Stores the current hotkey string in KeyOverlay format ("vk,shift,ctrl,alt").
@@ -29,6 +32,9 @@ public class SettingsHandler
     public SettingsHandler(MainWindow window)
     {
         _window = window;
+        _dxvkService = App.Services.GetRequiredService<IDxvkService>();
+        _reShadeUpdateService = App.Services.GetRequiredService<IReShadeUpdateService>();
+        _reShadeNightlyService = App.Services.GetRequiredService<ReShadeNightlyService>();
     }
 
     private MainViewModel ViewModel => _window.ViewModel;
@@ -1318,7 +1324,7 @@ public class SettingsHandler
             _ => DxvkVariant.Development,
         };
 
-        var currentVariant = ViewModel.DxvkServiceInstance.SelectedVariant;
+        var currentVariant = _dxvkService.SelectedVariant;
         if (newVariant == currentVariant) return;
 
         // Persist the variant preference
@@ -1331,12 +1337,12 @@ public class SettingsHandler
         ViewModel.SaveSettingsPublic();
 
         // Update the service
-        ViewModel.DxvkServiceInstance.SelectedVariant = newVariant;
+        _dxvkService.SelectedVariant = newVariant;
 
         // Ensure the new variant's staging is ready (download if needed)
         _ = Task.Run(async () =>
         {
-            try { await ViewModel.DxvkServiceInstance.EnsureStagingAsync(); }
+            try { await _dxvkService.EnsureStagingAsync(); }
             catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.DxvkVariantCombo] Staging download failed — {ex.Message}"); }
         });
 
@@ -1403,8 +1409,8 @@ public class SettingsHandler
             try
             {
                 // Ensure both variants are available
-                var stableTask = ViewModel.ReShadeUpdateServiceInstance.EnsureLatestAsync();
-                var nightlyTask = ViewModel.ReShadeNightlyServiceInstance.EnsureLatestAsync();
+                var stableTask = _reShadeUpdateService.EnsureLatestAsync();
+                var nightlyTask = _reShadeNightlyService.EnsureLatestAsync();
                 await Task.WhenAll(stableTask, nightlyTask);
 
                 // Update the global Vulkan layer DLLs if they exist

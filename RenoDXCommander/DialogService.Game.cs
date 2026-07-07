@@ -116,8 +116,8 @@ public partial class DialogService
         try
         {
             var manifest = _window.ViewModel.Manifest;
-            var osWikiData = _window.ViewModel.OptiScalerWikiServiceInstance.CachedData;
-            var hdrDatabase = _window.ViewModel.HdrDatabaseServiceInstance.CachedData;
+            var osWikiData = _optiScalerWikiService.CachedData;
+            var hdrDatabase = _hdrDatabaseService.CachedData;
             var resolver = new AddonInfoResolver();
             var result = resolver.Resolve(card, addonType.Value, manifest, osWikiData, hdrDatabase);
 

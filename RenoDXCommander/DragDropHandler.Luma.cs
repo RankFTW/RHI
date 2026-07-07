@@ -157,7 +157,7 @@ public partial class DragDropHandler
                 return await tcs.Task;
             }
 
-            var record = await _window.ViewModel.LumaServiceInstance.InstallFromArchiveAsync(
+            var record = await _lumaService.InstallFromArchiveAsync(
                 archivePath,
                 card.InstallPath,
                 is32Bit,
@@ -179,8 +179,8 @@ public partial class DragDropHandler
             if (!card.IsLumaMode)
             {
                 card.IsLumaMode = true;
-                _window.ViewModel.GameNameServiceInstance.LumaEnabledGames.Add(gameName);
-                _window.ViewModel.GameNameServiceInstance.LumaDisabledGames.Remove(gameName);
+                _gameNameService.LumaEnabledGames.Add(gameName);
+                _gameNameService.LumaDisabledGames.Remove(gameName);
             }
 
             card.LumaRecord = record;

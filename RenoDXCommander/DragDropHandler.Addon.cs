@@ -359,7 +359,7 @@ public partial class DragDropHandler
                 InstalledAt   = DateTime.UtcNow,
                 SnapshotUrl   = targetCard.Mod?.SnapshotUrl,
             };
-            _window.ViewModel.ModInstallServiceInstance.SaveRecordPublic(installRecord);
+            _modInstallService.SaveRecordPublic(installRecord);
 
             // Update card status
             targetCard.InstalledRecord = installRecord;

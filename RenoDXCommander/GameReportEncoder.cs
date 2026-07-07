@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Text.Json;
 using Microsoft.UI.Xaml;
@@ -257,7 +258,10 @@ public static class GameReportEncoder
     private static Dictionary<string, object?> BuildReport(GameCardViewModel card, MainViewModel vm, string userNote)
     {
         var gameName = card.GameName;
-        var gns = vm.GameNameServiceInstance;
+        var gns = App.Services.GetRequiredService<IGameNameService>();
+        var peHeaderService = App.Services.GetRequiredService<IPeHeaderService>();
+        var presetService = App.Services.GetRequiredService<DlssPresetService>();
+        var updateService = App.Services.GetRequiredService<IUpdateService>();
 
         // Readable API strings (these reflect overrides already applied to the card)
         var apiStr = card.GraphicsApi.ToString();
@@ -270,7 +274,7 @@ public static class GameReportEncoder
         bool autoIs32Bit = card.Is32Bit; // fallback
         if (!string.IsNullOrEmpty(card.InstallPath))
         {
-            var rawMachine = vm.PeHeaderServiceInstance.DetectGameArchitecture(card.InstallPath);
+            var rawMachine = peHeaderService.DetectGameArchitecture(card.InstallPath);
             autoIs32Bit = rawMachine == Services.MachineType.I386;
         }
 
@@ -356,7 +360,6 @@ public static class GameReportEncoder
             };
 
             // Add preset info if available
-            var presetService = vm.DlssPresetServiceInstance;
             if (presetService.IsSupported)
             {
                 dlssInfo["srPreset"] = presetService.GetSrPreset(gameName, card.InstallPath);
@@ -431,7 +434,7 @@ public static class GameReportEncoder
             ["addons"] = addons,
             ["dlssStreamline"] = dlssInfo,
             ["userNote"] = userNote,
-            ["rhiVersion"] = vm.UpdateServiceInstance.CurrentVersion.ToString(),
+            ["rhiVersion"] = updateService.CurrentVersion.ToString(),
             ["timestamp"] = DateTime.UtcNow.ToString("O"),
         };
     }

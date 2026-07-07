@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -16,6 +17,9 @@ public partial class DialogService
 {
     private readonly MainWindow _window;
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly IUpdateService _updateService;
+    private readonly IOptiScalerWikiService _optiScalerWikiService;
+    private readonly IHdrDatabaseService _hdrDatabaseService;
 
     private static readonly string PatchNotesDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -25,6 +29,9 @@ public partial class DialogService
     {
         _window = window;
         _dispatcherQueue = window.DispatcherQueue;
+        _updateService = App.Services.GetRequiredService<IUpdateService>();
+        _optiScalerWikiService = App.Services.GetRequiredService<IOptiScalerWikiService>();
+        _hdrDatabaseService = App.Services.GetRequiredService<IHdrDatabaseService>();
     }
 
     private MainViewModel ViewModel => _window.ViewModel;

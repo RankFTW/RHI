@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Models;
@@ -13,10 +14,12 @@ namespace RenoDXCommander;
 public class MassDeployHandler
 {
     private readonly MainWindow _window;
+    private readonly IOptiScalerService _optiScalerService;
 
     public MassDeployHandler(MainWindow window)
     {
         _window = window;
+        _optiScalerService = App.Services.GetRequiredService<IOptiScalerService>();
     }
 
     public async void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
@@ -96,7 +99,7 @@ public class MassDeployHandler
         {
             try
             {
-                _window.ViewModel.OptiScalerServiceInstance.CopyIniToGame(card);
+                _optiScalerService.CopyIniToGame(card);
                 count++;
             }
             catch (Exception ex)
