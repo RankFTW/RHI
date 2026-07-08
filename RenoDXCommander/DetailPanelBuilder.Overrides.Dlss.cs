@@ -148,9 +148,9 @@ public partial class DetailPanelBuilder
             // Add tooltip explaining presets
             string presetTooltip = label switch
             {
-                "DLSS Super Resolution" => "Override the DLSS upscaling model. J/K use the 1st-gen transformer (DLSS 4.0). L/M use the 2nd-gen transformer (DLSS 4.5) with better temporal stability. Latest Recommended uses NVIDIA's per-resolution preset selection.",
-                "Ray Reconstruction" => "Override the Ray Reconstruction denoising model. Higher presets are newer model iterations. Latest Recommended uses NVIDIA's per-resolution preset selection.",
-                "Frame Generation" => "Override the Frame Generation interpolation model. Higher presets are newer model iterations. Latest Recommended uses NVIDIA's per-resolution preset selection.",
+                "DLSS Super Resolution" => "Override the DLSS upscaling model. J/K use the 1st-gen transformer (DLSS 4.0). L/M use the 2nd-gen transformer (DLSS 4.5) with better temporal stability. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
+                "Ray Reconstruction" => "Override the Ray Reconstruction denoising model. Higher presets are newer model iterations. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
+                "Frame Generation" => "Override the Frame Generation interpolation model. Higher presets are newer model iterations. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
                 _ => ""
             };
             if (!string.IsNullOrEmpty(presetTooltip))

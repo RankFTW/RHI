@@ -225,8 +225,7 @@ public partial class MainViewModel
 
         // ── Determine which bitness variants are in use ───────────────────
         bool needs64 = cards.Any(c => c.UlStatus == GameStatus.Installed && !c.Is32Bit);
-        // 32-bit ReLimiter not yet available — skip 32-bit update checks for now
-        bool needs32 = false;
+        bool needs32 = cards.Any(c => c.UlStatus == GameStatus.Installed && c.Is32Bit);
 
         // If nothing is specifically installed yet (legacy/meta-only), default to 64-bit
         if (!needs64 && !needs32)
@@ -634,6 +633,7 @@ public partial class MainViewModel
         var emuCards = _allCards
             .Where(c => c.IsEmulator && c.Status == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRenoDx)
             .ToList();
+        _crashReporter.Log($"[UpdateAllRenoDxAsync] Emulator cards eligible: {emuCards.Count} (total emulators: {_allCards.Count(c => c.IsEmulator)}, with UpdateAvailable: {_allCards.Count(c => c.IsEmulator && c.Status == GameStatus.UpdateAvailable)})");
         foreach (var card in emuCards)
             await InstallEmulatorAddonsAsync(card);
     }
@@ -1120,6 +1120,7 @@ public partial class MainViewModel
         try
         {
             var emuCards = cards.Where(c => c.IsEmulator && c.Status == GameStatus.Installed && c.EmulatorAddonNames?.Count > 0).ToList();
+            _crashReporter.Log($"[CheckForUpdatesAsync] Emulator update check: {emuCards.Count} card(s) eligible (total emulators={cards.Count(c => c.IsEmulator)}, installed={cards.Count(c => c.IsEmulator && c.Status == GameStatus.Installed)}, hasAddons={cards.Count(c => c.IsEmulator && c.EmulatorAddonNames?.Count > 0)})");
             foreach (var emuCard in emuCards)
             {
                 var deployPath = ModInstallService.GetAddonDeployPath(emuCard.InstallPath);
@@ -1128,11 +1129,11 @@ public partial class MainViewModel
                 foreach (var wikiName in emuCard.EmulatorAddonNames!)
                 {
                     var mod = _allMods.FirstOrDefault(m => m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
-                    if (mod?.SnapshotUrl == null) continue;
+                    if (mod?.SnapshotUrl == null) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — no wiki match or no SnapshotUrl"); continue; }
 
                     var fileName = Path.GetFileName(mod.SnapshotUrl);
                     var localFile = Path.Combine(deployPath, fileName);
-                    if (!File.Exists(localFile)) { anyUpdate = true; break; } // Missing addon = needs install
+                    if (!File.Exists(localFile)) { _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — file missing: {fileName}"); anyUpdate = true; break; }
 
                     // Check remote size
                     try
@@ -1143,6 +1144,7 @@ public partial class MainViewModel
                             var localSize = new FileInfo(localFile).Length;
                             if (headResp.Content.Headers.ContentLength.Value != localSize)
                             {
+                                _crashReporter.Log($"[CheckForUpdatesAsync] Emulator addon '{wikiName}' — size mismatch: local={localSize}, remote={headResp.Content.Headers.ContentLength.Value}");
                                 anyUpdate = true;
                                 break;
                             }
@@ -1153,12 +1155,20 @@ public partial class MainViewModel
 
                 if (anyUpdate)
                 {
+                    _crashReporter.Log($"[CheckForUpdatesAsync] Emulator '{emuCard.GameName}' has updates available");
                     DispatcherQueue?.TryEnqueue(() =>
                     {
                         emuCard.Status = GameStatus.UpdateAvailable;
                         HasUpdatesAvailable = AnyUpdateAvailable;
                         OnPropertyChanged(nameof(AnyUpdateAvailable));
+                        OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                        OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                        OnPropertyChanged(nameof(UpdateAllBtnBorder));
                     });
+                }
+                else
+                {
+                    _crashReporter.Log($"[CheckForUpdatesAsync] Emulator '{emuCard.GameName}' is up to date");
                 }
             }
         }

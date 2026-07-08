@@ -304,7 +304,10 @@ public partial class SettingsViewModel : ObservableObject
         s["ReShadeChannel"] = ReShadeChannel;
         if (PeakNits > 0) s["PeakNits"] = PeakNits.ToString();
         s["PeakNitsEnabled"] = PeakNitsEnabled ? "true" : "false";
-        if (PeakNitsPresets.Count < 3) s["PeakNitsPresets"] = System.Text.Json.JsonSerializer.Serialize(PeakNitsPresets);
+        if (PeakNitsPresets.Count < 3)
+            s["PeakNitsPresets"] = System.Text.Json.JsonSerializer.Serialize(PeakNitsPresets);
+        else
+            s.Remove("PeakNitsPresets"); // All 3 checked = default — remove stale non-default value
         if (AutoUpdateDlss) s["AutoUpdateDlss"] = "true";
         if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true";
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;

@@ -24,8 +24,20 @@ public class MassDeployHandler
 
     public async void MassDeployRsIni_Click(object sender, RoutedEventArgs e)
     {
+        var eligible = _window.ViewModel.AllCards.Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+        var confirmDialog = new ContentDialog
+        {
+            Title = "Confirm Mass Deployment",
+            Content = $"This will deploy reshade.ini to {eligible.Count} game(s) with ReShade installed.\n\nCustom hotkey and screenshot path settings are preserved.\n\nContinue?",
+            PrimaryButtonText = "Deploy",
+            CloseButtonText = "Cancel",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
+
         int count = 0;
-        foreach (var card in _window.ViewModel.AllCards.Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
+        foreach (var card in eligible)
         {
             try
             {
@@ -49,8 +61,20 @@ public class MassDeployHandler
 
     public async void MassDeployUlIni_Click(object sender, RoutedEventArgs e)
     {
+        var eligible = _window.ViewModel.AllCards.Where(c => c.UlStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+        var confirmDialog = new ContentDialog
+        {
+            Title = "Confirm Mass Deployment",
+            Content = $"This will deploy relimiter.ini to {eligible.Count} game(s) with ReLimiter installed.\n\nContinue?",
+            PrimaryButtonText = "Deploy",
+            CloseButtonText = "Cancel",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
+
         int count = 0;
-        foreach (var card in _window.ViewModel.AllCards.Where(c => c.UlStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
+        foreach (var card in eligible)
         {
             try
             {
@@ -68,8 +92,20 @@ public class MassDeployHandler
 
     public async void MassDeployDcIni_Click(object sender, RoutedEventArgs e)
     {
+        var eligible = _window.ViewModel.AllCards.Where(c => c.DcStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+        var confirmDialog = new ContentDialog
+        {
+            Title = "Confirm Mass Deployment",
+            Content = $"This will deploy DisplayCommander.ini to {eligible.Count} game(s) with Display Commander installed.\n\nContinue?",
+            PrimaryButtonText = "Deploy",
+            CloseButtonText = "Cancel",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
+
         int count = 0;
-        foreach (var card in _window.ViewModel.AllCards.Where(c => c.DcStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
+        foreach (var card in eligible)
         {
             try
             {
@@ -95,7 +131,20 @@ public class MassDeployHandler
             await ShowDeployResult("OptiScaler.ini", 0);
             return;
         }
-        foreach (var card in _window.ViewModel.AllCards.Where(c => c.OsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)))
+
+        var eligible = _window.ViewModel.AllCards.Where(c => c.OsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+        var confirmDialog = new ContentDialog
+        {
+            Title = "Confirm Mass Deployment",
+            Content = $"This will deploy OptiScaler.ini to {eligible.Count} game(s) with OptiScaler installed.\n\nContinue?",
+            PrimaryButtonText = "Deploy",
+            CloseButtonText = "Cancel",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
+
+        foreach (var card in eligible)
         {
             try
             {

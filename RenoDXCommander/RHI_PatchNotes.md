@@ -1,8 +1,19 @@
 ## v2.1.8
 
+### New
+
+- **32-bit ReLimiter support** — ReLimiter now works on 32-bit games. Automatically downloads and deploys the correct version based on game bitness.
+
+### Changes
+
+- Renamed "Latest Recommended" to "NVIDIA Recommended" in DLSS preset dropdowns (SR, RR, FG).
+
 ### Bug Fixes
 
 - Fixed Update All button staying purple after completion — now properly notifies the button to re-evaluate and resets Nexus update baselines.
+- Fixed Ryubing (emulator) not showing the green update indicator in the sidebar when updates are available.
+- Fixed Peak Nits preset checkboxes reverting on restart when returning to all-checked state.
+- Added confirmation dialogs to the Mass INI Deployment buttons (reshade.ini, relimiter.ini, DC.ini, OptiScaler.ini) — shows target count before proceeding.
 
 ---
 

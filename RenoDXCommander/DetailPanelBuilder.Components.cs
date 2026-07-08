@@ -227,13 +227,13 @@ public partial class DetailPanelBuilder
 
         // ReLimiter row — hidden when in Luma mode
         _window.DetailUlRow.Visibility = card.UlRowVisibility;
-        bool ulGreyed = card.UseNormalReShade || card.IsDcInstalled || card.Is32Bit || !card.IsRsInstalled;
+        bool ulGreyed = card.UseNormalReShade || card.IsDcInstalled || !card.IsRsInstalled;
         _window.DetailUlRow.Opacity = 1.0;
         _window.DetailUlRow.IsHitTestVisible = true;
         if (card.UlRowVisibility == Visibility.Visible)
         {
-            // Strikethrough the label and status when the other limiter (DC) is installed, game is 32-bit, or normal ReShade is active
-            var ulStrike = (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade)
+            // Strikethrough the label and status when the other limiter (DC) is installed or normal ReShade is active
+            var ulStrike = (card.IsDcInstalled || card.UseNormalReShade)
                 ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailUlLabel.TextDecorations = ulStrike;
@@ -243,12 +243,12 @@ public partial class DetailPanelBuilder
             _window.DetailUlStatus.Foreground = UIFactory.GetBrush(card.UlStatusColor);
             _window.DetailUlStatus.TextDecorations = card.IsUlInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
-                : (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade) ? Windows.UI.Text.TextDecorations.Strikethrough
+                : (card.IsDcInstalled || card.UseNormalReShade) ? Windows.UI.Text.TextDecorations.Strikethrough
                 : Windows.UI.Text.TextDecorations.None;
             _window.DetailUlStatus.Opacity = ulGreyed ? 0.35 : 1.0;
             _window.DetailUlInstallBtn.Tag = card;
             var ulLabel = WithInfoArrow(card.UlActionLabel, HasRealInfoContent(card, AddonType.ReLimiter), card.UlStatus == GameStatus.UpdateAvailable, _window.DetailUlInstallBtn);
-            if (card.IsDcInstalled || card.Is32Bit || card.UseNormalReShade)
+            if (card.IsDcInstalled || card.UseNormalReShade)
             {
                 _window.DetailUlInstallBtn.Content = new TextBlock { Text = card.UlActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center };
                 _window.DetailUlInstallBtn.HorizontalContentAlignment = HorizontalAlignment.Center;

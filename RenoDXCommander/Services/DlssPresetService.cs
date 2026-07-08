@@ -167,7 +167,7 @@ public partial class DlssPresetService
     private const uint NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID = 0x10C7D4A2; // RR Render Scale custom value
 
     // DLSS Preset Override mode (tells driver how to interpret preset selection)
-    // N/A=0x00 (no override), Latest Recommended=0x01, Custom=0x02
+    // N/A=0x00 (no override), NVIDIA Recommended=0x01, Custom=0x02
     private const uint DLSS_SR_PRESET_OVERRIDE_ID = 0x00634291;
 
     // DLSS Latest DLL driver override (tells driver to inject its own bundled DLL)
@@ -192,7 +192,7 @@ public partial class DlssPresetService
         ("K - TF1", 0x0000000B),
         ("L - TF2", 0x0000000C),
         ("M - TF2", 0x0000000D),
-        ("Latest Recommended", 0x00FFFFFF),
+        ("NVIDIA Recommended", 0x00FFFFFF),
     ];
 
     public static (string Name, uint Value)[] RrPresets =
@@ -200,7 +200,7 @@ public partial class DlssPresetService
         ("Default", 0x00000000),
         ("D - TF1", 0x00000004),
         ("E - TF1", 0x00000005),
-        ("Latest Recommended", 0x00FFFFFF),
+        ("NVIDIA Recommended", 0x00FFFFFF),
     ];
 
     public static (string Name, uint Value)[] FgPresets =
@@ -208,7 +208,7 @@ public partial class DlssPresetService
         ("Default", 0x00000000),
         ("A", 0x00000001),
         ("B", 0x00000002),
-        ("Latest Recommended", 0x00FFFFFE),
+        ("NVIDIA Recommended", 0x00FFFFFE),
     ];
 
     /// <summary>Named render scale options for SR and RR. "Custom" is handled separately via a TextBox.</summary>
@@ -394,16 +394,16 @@ public partial class DlssPresetService
                 continue;
             }
 
-            // Add if not already present — insert alphabetically between Default (first) and Latest Recommended (last)
+            // Add if not already present — insert alphabetically between Default (first) and NVIDIA Recommended (last)
             if (merged.Any(p => p.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase))) continue;
 
-            // Find insertion point: after Default, before Latest Recommended, alphabetical among the rest
+            // Find insertion point: after Default, before NVIDIA Recommended, alphabetical among the rest
             int insertIdx = merged.Count; // default: end
             for (int i = 1; i < merged.Count; i++) // skip index 0 (Default)
             {
-                if (merged[i].Name.Equals("Latest Recommended", StringComparison.OrdinalIgnoreCase))
+                if (merged[i].Name.Equals("NVIDIA Recommended", StringComparison.OrdinalIgnoreCase))
                 {
-                    insertIdx = i; // insert before Latest Recommended
+                    insertIdx = i; // insert before NVIDIA Recommended
                     break;
                 }
                 if (string.Compare(entry.Name, merged[i].Name, StringComparison.OrdinalIgnoreCase) < 0)
@@ -458,7 +458,7 @@ public partial class DlssPresetService
         if (result)
         {
             // Set the companion "Preset Override" setting so the driver knows to apply it
-            uint overrideMode = preset == 0x00FFFFFFu ? 0x00000001u  // Latest Recommended
+            uint overrideMode = preset == 0x00FFFFFFu ? 0x00000001u  // NVIDIA Recommended
                               : 0x00000002u;                         // Custom (any specific preset)
             SetPreset(gameName, installPath, DLSS_SR_PRESET_OVERRIDE_ID, overrideMode);
         }
