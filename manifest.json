@@ -235,7 +235,9 @@
     "Stardew Valley",
     "XF Extreme Formula",
     "FINAL FANTASY XII THE ZODIAC AGE",
-    "Dishonored 2"
+    "Dishonored 2",
+    "Watch_Dogs 2",
+    "Watch_Dogs® 2"
   ],
 
   "_comment_overrides": "=== NAME, PATH & ENGINE OVERRIDES ===",
@@ -370,7 +372,9 @@
     "Satisfactory": "Engine\\Binaries\\Win64",
     "The Witcher 3: Wild Hunt": "bin\\x64_dx12",
     "The Witcher 3: Wild Hunt - Game of the Year Edition": "bin\\x64_dx12",
-    "tModLoader": "dotnet"
+    "tModLoader": "dotnet",
+    "Watch_Dogs 2": "bin",
+    "Watch_Dogs® 2": "bin"
   },
 
   "engineOverrides": {
