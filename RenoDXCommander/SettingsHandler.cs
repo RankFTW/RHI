@@ -291,24 +291,20 @@ public class SettingsHandler
         var screenshotPath = _window.ScreenshotPathBox.Text?.Trim() ?? "";
         var perGame = _window.PerGameScreenshotCombo.SelectedIndex == 1;
 
-        // Persist screenshot settings
+        // Persist screenshot settings + hotkeys
         ViewModel.Settings.ScreenshotPath = screenshotPath;
         ViewModel.Settings.PerGameScreenshotFolders = perGame;
-
-        // Persist peak nits from textbox (user may not have pressed Enter)
-        if (int.TryParse(_window.PeakNitsBox.Text?.Trim(), out var nitsVal) && nitsVal > 0)
-            ViewModel.Settings.PeakNits = nitsVal;
+        ViewModel.Settings.OverlayHotkey = _currentHotkeyString;
+        ViewModel.Settings.ScreenshotHotkey = _currentScreenshotHotkeyString;
 
         ViewModel.SaveSettingsPublic();
 
-        // If both path and nits are empty/disabled, nothing to apply
-        var nitsActive = ViewModel.Settings.PeakNits > 0 && ViewModel.Settings.PeakNitsEnabled;
-        if (string.IsNullOrEmpty(screenshotPath) && !nitsActive)
+        if (string.IsNullOrEmpty(screenshotPath))
         {
             return;
         }
 
-        // Iterate all game cards and apply screenshot path to eligible games
+        // Iterate all game cards and apply screenshot path + hotkeys to eligible games
         int updatedCount = 0;
         foreach (var card in ViewModel.AllCards)
         {
@@ -330,18 +326,11 @@ public class SettingsHandler
 
                 foreach (var iniFile in iniFiles)
                 {
-                    if (!string.IsNullOrEmpty(screenshotPath))
-                    {
-                        AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
-                        // Also apply screenshot hotkey if non-default
-                        var ssHotkey = ViewModel.Settings.ScreenshotHotkey;
-                        if (ssHotkey != "44,0,0,0")
-                            AuxInstallService.ApplyScreenshotHotkey(iniFile, ssHotkey);
-                    }
-                    // Also apply peak nits if configured
-                    var peakNits = ViewModel.Settings.PeakNits;
-                    if (peakNits > 0)
-                        AuxInstallService.ApplyPeakNits(iniFile, peakNits);
+                    AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
+                    // Always apply hotkeys when user explicitly clicks Apply to All
+                    if (!AuxInstallService.IsRdr2(card.GameName))
+                        AuxInstallService.ApplyOverlayHotkey(iniFile, _currentHotkeyString);
+                    AuxInstallService.ApplyScreenshotHotkey(iniFile, _currentScreenshotHotkeyString);
                 }
                 updatedCount++;
             }
@@ -354,8 +343,8 @@ public class SettingsHandler
         // Show confirmation dialog
         var dialog = new ContentDialog
         {
-            Title = "Screenshots",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Title = "Screenshots & Hotkeys",
+            Content = $"Screenshot path and ReShade hotkeys applied to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -372,6 +361,68 @@ public class SettingsHandler
         var sanitized = AuxInstallService.SanitizeDirectoryName(gameName);
         if (string.IsNullOrEmpty(sanitized)) return basePath;
         return basePath + @"\" + sanitized;
+    }
+
+    /// <summary>
+    /// Handles the Apply to All Games button click for the HDR & Peak Brightness section.
+    /// Applies only peak nits to all managed reshade*.ini files.
+    /// </summary>
+    public async void ApplyPeakNitsToAll_Click(object sender, RoutedEventArgs e)
+    {
+        // Persist peak nits from textbox (user may not have pressed Enter)
+        if (int.TryParse(_window.PeakNitsBox.Text?.Trim(), out var nitsVal) && nitsVal > 0)
+            ViewModel.Settings.PeakNits = nitsVal;
+        AuxInstallService.GlobalPeakNits = ViewModel.Settings.PeakNits;
+        ViewModel.SaveSettingsPublic();
+
+        var peakNits = ViewModel.Settings.PeakNits;
+        if (peakNits <= 0 || !ViewModel.Settings.PeakNitsEnabled)
+        {
+            var emptyDialog = new ContentDialog
+            {
+                Title = "Peak Nits",
+                Content = "Peak nits is not configured or is disabled.",
+                CloseButtonText = "OK",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+            await DialogService.ShowSafeAsync(emptyDialog);
+            return;
+        }
+
+        int updatedCount = 0;
+        foreach (var card in ViewModel.AllCards)
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) continue;
+
+            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
+                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (iniFiles.Count == 0) continue;
+
+            try
+            {
+                foreach (var iniFile in iniFiles)
+                    AuxInstallService.ApplyPeakNits(iniFile, peakNits);
+                updatedCount++;
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[SettingsHandler.ApplyPeakNitsToAll_Click] Failed for '{card.GameName}' — {ex.Message}");
+            }
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "Peak Nits",
+            Content = $"Applied peak nits ({peakNits}) to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            CloseButtonText = "OK",
+            XamlRoot = _window.Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
     }
 
     public void OpenLogsFolder_Click(object sender, RoutedEventArgs e)

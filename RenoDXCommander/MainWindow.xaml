@@ -1404,7 +1404,7 @@
                                 <!-- Row 3: Apply buttons -->
                                 <Button Grid.Row="3" Grid.Column="0" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
                                         Content="Apply to All Games"
-                                        Click="ApplyReShadeHotkeys_Click"
+                                        Click="ApplyScreenshotPath_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"
                                         Foreground="{StaticResource AccentBlueBrush}"
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
@@ -1413,7 +1413,7 @@
 
                                 <Button Grid.Row="3" Grid.Column="2" x:Name="ApplyScreenshotPathBtn"
                                         Content="Apply to All Games"
-                                        Click="ApplyScreenshotPath_Click"
+                                        Click="ApplyPeakNitsToAll_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"
                                         Foreground="{StaticResource AccentBlueBrush}"
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
@@ -1438,24 +1438,10 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Batch Deploy + Defaults (single column, no row split) -->
+                                <!-- Left: Defaults + Batch Deploy (single column, no row split) -->
                                 <StackPanel Grid.Column="0" Spacing="16">
                                     <StackPanel Spacing="8">
-                                        <TextBlock Text="Batch Deploy" FontSize="14" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Deploy DLSS and Streamline DLL versions and DLSS presets to multiple games at once. Backs up originals automatically."/>
-                                        <Button Content="Batch Deploy" Click="MassDlssDeploy_Click"
-                                                Background="{StaticResource AccentBlueBgBrush}"
-                                                Foreground="{StaticResource AccentBlueBrush}"
-                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                                CornerRadius="8" Padding="12,7" FontSize="12"
-                                                HorizontalAlignment="Stretch"/>
-                                    </StackPanel>
-
-                                    <StackPanel Spacing="8">
-                                        <TextBlock Text="Defaults" FontSize="13" FontWeight="SemiBold"
+                                        <TextBlock Text="Defaults" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11"
                                                    Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
@@ -1467,6 +1453,20 @@
                                                 CornerRadius="8" Padding="12,7" FontSize="12"
                                                 HorizontalAlignment="Stretch"/>
                                         <StackPanel x:Name="DlssDefaultsSummaryPanel" x:FieldModifier="internal" Spacing="4" Margin="0,4,0,0"/>
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Batch Deploy" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Deploy DLSS and Streamline DLL versions and DLSS presets to multiple games at once. Backs up originals automatically. Pre-populated with your configured defaults."/>
+                                        <Button Content="Batch Deploy" Click="MassDlssDeploy_Click"
+                                                Background="{StaticResource AccentBlueBgBrush}"
+                                                Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"/>
                                     </StackPanel>
                                 </StackPanel>
 

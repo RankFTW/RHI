@@ -228,7 +228,7 @@ public partial class GameCardViewModel
                                                       && (!EffectiveLumaMode || LumaRenodxCompatible))
                                                       ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DualBitInstallVisibility   => Visibility.Collapsed;
-    public Visibility UpdateBadgeVisibility      => ((Status == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllRenoDx && (!string.IsNullOrEmpty(RdxInstalledVersion) || IsExternalOnly || IsEmulator))
+    public Visibility UpdateBadgeVisibility      => ((Status == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllRenoDx && (!string.IsNullOrEmpty(RdxInstalledVersion) || !string.IsNullOrEmpty(InstalledAddonFileName) || IsExternalOnly || IsEmulator))
                                                       || (RsStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllReShade && !EffectiveLumaMode)
                                                       || (UlStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllUl)
                                                       || (DcStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllDc)

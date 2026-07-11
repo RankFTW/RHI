@@ -58,6 +58,9 @@ public sealed partial class MainWindow
     private void ApplyScreenshotPath_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyScreenshotPath_Click(sender, e);
 
+    private void ApplyPeakNitsToAll_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.ApplyPeakNitsToAll_Click(sender, e);
+
     private void HotkeyBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
         => _settingsHandler.HotkeyBox_PreviewKeyDown(sender, e);
 

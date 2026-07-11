@@ -154,6 +154,7 @@
 
   "thirtyTwoBitGames": [
     "Assassin's Creed",
+    "Assassin's Creed IV Black Flag",
     "Batman: Arkham Asylum GOTY Edition",
     "Far Cry 3",
     "Max Payne 3",
@@ -356,6 +357,7 @@
     "Divinity: Original Sin 2": "DefEd\\bin",
     "ELDEN RING": "Game",
     "FarCry 6": "bin",
+    "Far Cry 3": "bin",
     "FINAL FANTASY XIV Online": "game",
     "Five Nights at Freddy's: Security Breach": "fnaf9\\Binaries\\Win64",
     "Hades": "x64",
@@ -498,6 +500,7 @@
     "Assassin's Creed® Odyssey": "DX11",
     "Baldur's Gate 3": "DX12, VLK",
     "Burnout Paradise Remastered": "DX11",
+    "Far Cry 3": "DX11",
     "BurnoutPR": "DX11",
     "Doom: The Dark Ages": "VLK",
     "Dragon Age: Inquisition": "DX11",

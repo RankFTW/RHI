@@ -348,7 +348,22 @@ public partial class MainViewModel
     [RelayCommand]
     public void UninstallReShade(GameCardViewModel? card)
     {
-        if (card?.RsRecord == null) return;
+        if (card == null) return;
+
+        // GAC symlink games may not have an RsRecord (the install skips creating one)
+        var gacPath = GetGacSymlinkPath(card.GameName);
+        bool isGacGame = gacPath != null;
+
+        // For non-GAC games, RsRecord is required
+        if (!isGacGame && card.RsRecord == null) return;
+
+        // GAC symlink removal requires admin (files are in C:\Windows\...)
+        if (isGacGame && !IsRunningAsAdminFunc())
+        {
+            card.RsActionMessage = "⚠ Administrator privileges required to remove GAC symlinks. Enable Admin Mode in Settings.";
+            card.NotifyAll();
+            return;
+        }
 
         try
         {
@@ -362,13 +377,21 @@ public partial class MainViewModel
                     useGlobalSet: true, perGameSelection: new List<string>());
 
             // Clean up GAC symlinks if this was a GAC symlink install (e.g. Terraria)
-            var gacPath = GetGacSymlinkPath(card.GameName);
-            if (gacPath != null && !string.IsNullOrEmpty(card.RsInstalledFile))
+            if (isGacGame && !string.IsNullOrEmpty(card.RsInstalledFile))
             {
-                AuxInstallService.UninstallGacSymlink(card.InstallPath, gacPath, card.RsInstalledFile);
+                AuxInstallService.UninstallGacSymlink(card.InstallPath, gacPath!, card.RsInstalledFile);
             }
 
-            _auxInstaller.Uninstall(card.RsRecord);
+            // Remove reshade.ini from the game folder (GAC games stage it there)
+            if (isGacGame && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
+                if (File.Exists(iniPath)) File.Delete(iniPath);
+            }
+
+            if (card.RsRecord != null)
+                _auxInstaller.Uninstall(card.RsRecord);
+
             card.RsRecord           = null;
             card.RsInstalledFile    = null;
             card.RsInstalledVersion = null;

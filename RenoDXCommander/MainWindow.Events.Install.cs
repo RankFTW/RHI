@@ -962,6 +962,10 @@ public sealed partial class MainWindow
         await ViewModel.RefreshAsync();
 
         RestoreScrollAndSelection(selectedName);
+
+        // If Settings page is visible, refresh the global NVIDIA driver settings
+        if (ViewModel.CurrentPage == AppPage.Settings)
+            _settingsHandler.RefreshGlobalNvidiaSettings();
     }
 
     private async Task FullRefreshWithScrollRestore()

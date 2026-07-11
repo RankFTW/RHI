@@ -12,7 +12,7 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public class LumaService : ILumaService
 {
-    private const string WikiUrl = "https://github.com/Filoppi/Luma-Framework/wiki/Mods-List";
+    private const string WikiUrl = "https://github.com/Filoppi/Luma-Framework/wiki";
 
     private static readonly string DbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -191,7 +191,9 @@ public class LumaService : ILumaService
                         break;
                 }
 
-                var text = Clean(sibling.InnerText);
+                var text = sibling.Name is "ul" or "ol"
+                    ? ExtractListItems(sibling)
+                    : Clean(sibling.InnerText);
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     if (sb.Length > 0) sb.Append('\n');
@@ -208,6 +210,14 @@ public class LumaService : ILumaService
         {
             return null;
         }
+    }
+
+    /// <summary>Extracts list items from a ul/ol element, one per line with bullet prefix.</summary>
+    private static string ExtractListItems(HtmlNode listNode)
+    {
+        var items = listNode.SelectNodes(".//li");
+        if (items == null || items.Count == 0) return Clean(listNode.InnerText);
+        return string.Join('\n', items.Select(li => "• " + Clean(li.InnerText)));
     }
 
     /// <summary>
@@ -581,7 +591,7 @@ public class LumaService : ILumaService
         if (count > 0) SaveAllRecords(records);
     }
 
-    private static string Clean(string s) => HtmlEntity.DeEntitize(s ?? "").Trim();
+    private static string Clean(string s) => System.Text.RegularExpressions.Regex.Replace(HtmlEntity.DeEntitize(s ?? "").Trim(), @"\s+", " ");
 
     // ── Update detection ──────────────────────────────────────────────────────────
 

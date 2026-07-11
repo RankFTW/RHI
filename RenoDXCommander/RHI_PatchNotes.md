@@ -1,3 +1,30 @@
+## v2.2.0-beta
+
+### Bug Fixes
+
+- Fixed "Apply to All Games" (Screenshots & Hotkeys) not writing overlay and screenshot hotkeys to reshade.ini files — only the screenshot path was being applied.
+
+---
+
+## v2.1.9
+
+### Changes
+
+- Swapped order of "Defaults" and "Batch Deploy" in the DLSS/Streamline Settings card — configure first, then deploy.
+- Batch Deploy dialog now pre-populates version and preset dropdowns with your saved defaults.
+- Luma info dialog now displays feature notes as bullet-point lists instead of a wall of text.
+- Settings page global NVIDIA driver settings now refresh automatically after a Refresh without needing to navigate away.
+
+### Bug Fixes
+
+- Fixed ReShade uninstall button doing nothing on GAC symlink games (Terraria) — the uninstall path now handles games without an aux record. Shows admin warning if not elevated instead of silently failing.
+- Fixed sidebar green update dots not appearing for users who upgraded from pre-2.1.7 — version cache could be empty while addons were installed.
+- Fixed false green update dots appearing on games with no RenoDX installed (e.g. The Surge with manual DXVK).
+- Fixed "Apply to All Games" button in the Screenshots & Hotkeys section not applying screenshot path or ReShade hotkeys — it was wired to the wrong handler. Left button now applies screenshots + hotkeys, right button applies peak nits only.
+- Fixed Luma wiki scraper not finding any games — the wiki moved to a new URL, silently returning 0 mods.
+
+---
+
 ## v2.1.8
 
 ### New

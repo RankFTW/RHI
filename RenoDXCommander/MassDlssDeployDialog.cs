@@ -106,16 +106,17 @@ public class MassDlssDeployDialog
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         });
 
-        // ── Right side: Version dropdowns ──
-        var dlssCombo = BuildVersionCombo(_dlssService.DlssVersions);
-        var dlssdCombo = BuildVersionCombo(_dlssService.DlssdVersions);
-        var dlssgCombo = BuildVersionCombo(_dlssService.DlssgVersions);
-        var slCombo = BuildVersionCombo(_dlssService.StreamlineVersions);
+        // ── Right side: Version dropdowns (pre-populated with saved defaults) ──
+        var settings = _viewModel.Settings;
+        var dlssCombo = BuildVersionCombo(_dlssService.DlssVersions, settings.DefaultDlssVersion);
+        var dlssdCombo = BuildVersionCombo(_dlssService.DlssdVersions, settings.DefaultDlssdVersion);
+        var dlssgCombo = BuildVersionCombo(_dlssService.DlssgVersions, settings.DefaultDlssgVersion);
+        var slCombo = BuildVersionCombo(_dlssService.StreamlineVersions, settings.DefaultStreamlineVersion);
 
-        // ── Preset dropdowns ──
-        var srPresetCombo = BuildPresetCombo(DlssPresetService.SrPresets);
-        var rrPresetCombo = BuildPresetCombo(DlssPresetService.RrPresets);
-        var fgPresetCombo = BuildPresetCombo(DlssPresetService.FgPresets);
+        // ── Preset dropdowns (pre-populated with saved defaults) ──
+        var srPresetCombo = BuildPresetCombo(DlssPresetService.SrPresets, settings.DefaultSrPreset);
+        var rrPresetCombo = BuildPresetCombo(DlssPresetService.RrPresets, settings.DefaultRrPreset);
+        var fgPresetCombo = BuildPresetCombo(DlssPresetService.FgPresets, settings.DefaultFgPreset);
 
         var rightPanel = new StackPanel { Spacing = 8, Width = 280 };
         rightPanel.Children.Add(BuildDropdownSection("DLSS Super Resolution", dlssCombo));
@@ -550,16 +551,23 @@ public class MassDlssDeployDialog
         return false;
     }
 
-    private ComboBox BuildVersionCombo(IReadOnlyList<string> versions)
+    private ComboBox BuildVersionCombo(IReadOnlyList<string> versions, string savedDefault = "")
     {
         var items = new List<string> { NoneOption, DefaultOption };
         items.AddRange(versions);
         items.Add(CustomOption);
 
+        int selectedIdx = 0; // Default to "None"
+        if (!string.IsNullOrEmpty(savedDefault))
+        {
+            var idx = items.IndexOf(savedDefault);
+            if (idx >= 0) selectedIdx = idx;
+        }
+
         return new ComboBox
         {
             ItemsSource = items,
-            SelectedIndex = 0,
+            SelectedIndex = selectedIdx,
             FontSize = 12,
             CornerRadius = new CornerRadius(6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -580,16 +588,23 @@ public class MassDlssDeployDialog
         return panel;
     }
 
-    private static ComboBox BuildPresetCombo((string Name, uint Value)[] presets)
+    private static ComboBox BuildPresetCombo((string Name, uint Value)[] presets, uint savedDefault = 0)
     {
         var items = new List<string> { NoneOption };
         foreach (var (name, _) in presets)
             items.Add(name);
 
+        int selectedIdx = 0; // Default to "None"
+        if (savedDefault != 0)
+        {
+            var presetIdx = Array.FindIndex(presets, p => p.Value == savedDefault);
+            if (presetIdx >= 0) selectedIdx = presetIdx + 1; // +1 for "None" at index 0
+        }
+
         return new ComboBox
         {
             ItemsSource = items,
-            SelectedIndex = 0,
+            SelectedIndex = selectedIdx,
             FontSize = 12,
             CornerRadius = new CornerRadius(6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
