@@ -4,6 +4,11 @@
 
 - Added global Power Mode setting to the Global NVIDIA Driver Settings card (next to VSync).
 - Added "Create Missing Profiles" button — creates NVIDIA driver profiles for all games that don't have one, ensuring global settings apply everywhere.
+- Added `lumaNameOverrides` manifest field — separate name mapping for Luma wiki matching (independent of RenoDX wiki overrides).
+
+### Changes
+
+- Screenshot path placeholder text changed from "D:\Screenshots" to "Type or choose screenshot folder" for clarity.
 
 ### Bug Fixes
 
