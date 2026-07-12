@@ -63,7 +63,8 @@ public class AddonInfoResolver
         AddonType addon,
         RemoteManifest? manifest,
         OptiScalerWikiData? osWikiData,
-        Dictionary<string, string>? hdrDatabase = null)
+        Dictionary<string, string>? hdrDatabase = null,
+        Dictionary<string, string>? nexusSummaries = null)
     {
         // ── Tier 1: Per-addon manifest dictionary ─────────────────────────────
         var manifestResult = TryResolveManifest(card.GameName, addon, manifest);
@@ -78,6 +79,18 @@ public class AddonInfoResolver
             var wikiResult = TryResolveWiki(card, addon, manifest, osWikiData);
             if (wikiResult != null)
                 return AttachExtras(wikiResult, card, addon, hdrDatabase);
+        }
+
+        // ── Tier 2b: Nexus mod summary (external-only games with Nexus URLs) ──
+        if (addon == AddonType.RenoDX && nexusSummaries != null
+            && nexusSummaries.TryGetValue(card.GameName, out var nexusSummary)
+            && !string.IsNullOrWhiteSpace(nexusSummary))
+        {
+            return AttachExtras(new AddonInfoResult
+            {
+                Content = nexusSummary,
+                Source = InfoSourceType.Wiki,
+            }, card, addon, hdrDatabase);
         }
 
         // ── Tier 3: Generic fallback ──────────────────────────────────────────

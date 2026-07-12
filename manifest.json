@@ -564,6 +564,11 @@
   "_comment_content": "=== PER-GAME CONTENT & NOTES ===",
 
   "gameNotes": {
+    "Assassin's Creed Black Flag Resynced": {
+      "notes": "Partial rewrite of the game's DX12 post processing shaders to fix issues in tonemapping and the appearance of UI in HDR. Optional enhancements are also available.",
+      "notesUrl": "https://www.nexusmods.com/assassinscreedblackflagresynced/mods/42",
+      "notesUrlLabel": "Nexus Mods Page"
+    },
     "CODE VEIN II": {
       "notes": "ℹ️ Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too.",
       "notesUrl": null,

@@ -37,6 +37,9 @@ public class NexusUpdateService : INexusUpdateService
     private readonly ICrashReporter _crashReporter;
     private Dictionary<string, NexusBaseline> _baselines = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Cached mod summaries from the last Nexus check. Key = game name, Value = summary text.</summary>
+    public Dictionary<string, string> ModSummaries { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     private static readonly string BaselinesPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "nexus_baselines.json");
@@ -96,6 +99,50 @@ public class NexusUpdateService : INexusUpdateService
         }
     }
 
+    /// <summary>
+    /// Fetches the Nexus mod summary for a single game on-demand (for the Info button).
+    /// </summary>
+    public async Task FetchSummaryAsync(string gameName, string nexusUrl)
+    {
+        if (ModSummaries.ContainsKey(gameName)) return;
+
+        var match = NexusUrlPattern.Match(nexusUrl);
+        if (!match.Success) return;
+
+        var domain = match.Groups[1].Value;
+        var modId = int.Parse(match.Groups[2].Value);
+
+        try
+        {
+            var ids = new[] { new { gameDomain = domain, modId } };
+            var payload = new
+            {
+                query = @"
+                    query legacyModsByDomain($ids: [CompositeDomainWithIdInput!]!) {
+                      legacyModsByDomain(ids: $ids) {
+                        nodes { modId summary }
+                      }
+                    }",
+                variables = new { ids }
+            };
+
+            var jsonPayload = JsonSerializer.Serialize(payload);
+            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+            var response = await _http.PostAsync("https://api.nexusmods.com/v2/graphql", content).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) return;
+
+            var responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var result = JsonSerializer.Deserialize<GraphQLResponse>(responseJson);
+            var node = result?.Data?.LegacyModsByDomain?.Nodes?.FirstOrDefault();
+            if (node != null && !string.IsNullOrWhiteSpace(node.Summary))
+                ModSummaries[gameName] = node.Summary;
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[NexusUpdateService.FetchSummaryAsync] Failed for '{gameName}' — {ex.Message}");
+        }
+    }
+
     /// <summary>Returns game names that have a persisted update flag (for restoring on restart).</summary>
     public HashSet<string> GetCachedUpdates()
     {
@@ -143,6 +190,7 @@ public class NexusUpdateService : INexusUpdateService
                           modId
                           version
                           updatedAt
+                          summary
                         }
                       }
                     }",
@@ -178,6 +226,10 @@ public class NexusUpdateService : INexusUpdateService
             foreach (var (gameName, domain, modId, installedVersion) in queryItems)
             {
                 if (!nodeLookup.TryGetValue(modId, out var node)) continue;
+
+                // Cache the summary for the Info button
+                if (!string.IsNullOrWhiteSpace(node.Summary))
+                    ModSummaries[gameName] = node.Summary;
 
                 if (!_baselines.TryGetValue(gameName, out var baseline))
                 {
@@ -280,6 +332,9 @@ public class NexusUpdateService : INexusUpdateService
 
         [JsonPropertyName("updatedAt")]
         public string? UpdatedAt { get; set; }
+
+        [JsonPropertyName("summary")]
+        public string? Summary { get; set; }
     }
 }
 

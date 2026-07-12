@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -118,8 +119,24 @@ public partial class DialogService
             var manifest = _window.ViewModel.Manifest;
             var osWikiData = _optiScalerWikiService.CachedData;
             var hdrDatabase = _hdrDatabaseService.CachedData;
+            var nexusService = App.Services.GetRequiredService<INexusUpdateService>() as NexusUpdateService;
+            var nexusSummaries = nexusService?.ModSummaries;
+
+            // On-demand fetch: if this is a RenoDX game with a Nexus URL and no cached summary, fetch it now
+            if (addonType == AddonType.RenoDX && nexusService != null
+                && (nexusSummaries == null || !nexusSummaries.ContainsKey(card.GameName)))
+            {
+                var nexusUrl = card.ExternalUrl;
+                if (string.IsNullOrEmpty(nexusUrl) || !nexusUrl.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase))
+                    nexusUrl = card.NexusUrl;
+                if (!string.IsNullOrEmpty(nexusUrl) && nexusUrl.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase))
+                {
+                    await nexusService.FetchSummaryAsync(card.GameName, nexusUrl);
+                    nexusSummaries = nexusService.ModSummaries;
+                }
+            }
             var resolver = new AddonInfoResolver();
-            var result = resolver.Resolve(card, addonType.Value, manifest, osWikiData, hdrDatabase);
+            var result = resolver.Resolve(card, addonType.Value, manifest, osWikiData, hdrDatabase, nexusSummaries);
 
             var textColour = Brush(ResourceKeys.TextSecondaryBrush);
             var linkColour = Brush(ResourceKeys.AccentBlueBrush);
