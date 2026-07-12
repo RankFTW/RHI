@@ -102,8 +102,33 @@ public class LumaService : ILumaService
             var statusText = cells.Count > 3 ? cells[3].InnerText : "";
             var status = statusText.Contains("🚧") ? "🚧" : "✅";
 
-            // Special Notes
-            var specialNotes = cells.Count > 4 ? Clean(cells[4].InnerText) : "";
+            // Special Notes — preserve list structure if present
+            string specialNotes = "";
+            if (cells.Count > 4)
+            {
+                var noteCell = cells[4];
+                var noteLists = noteCell.SelectNodes(".//ul|.//ol");
+                if (noteLists != null && noteLists.Count > 0)
+                {
+                    // Has structured list content — extract with line breaks
+                    var parts = new List<string>();
+                    foreach (var child in noteCell.ChildNodes)
+                    {
+                        if (child.Name is "ul" or "ol")
+                            parts.Add(ExtractListItems(child));
+                        else
+                        {
+                            var t = Clean(child.InnerText);
+                            if (!string.IsNullOrWhiteSpace(t)) parts.Add(t);
+                        }
+                    }
+                    specialNotes = string.Join("\n", parts);
+                }
+                else
+                {
+                    specialNotes = Clean(noteCell.InnerText);
+                }
+            }
 
             // Features — look for 📌 link pointing to an anchor
             string? featuresAnchor = null;
