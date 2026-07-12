@@ -102,32 +102,24 @@ public class LumaService : ILumaService
             var statusText = cells.Count > 3 ? cells[3].InnerText : "";
             var status = statusText.Contains("🚧") ? "🚧" : "✅";
 
-            // Special Notes — preserve list structure if present
+            // Special Notes — preserve structure
             string specialNotes = "";
             if (cells.Count > 4)
             {
                 var noteCell = cells[4];
-                var noteLists = noteCell.SelectNodes(".//ul|.//ol");
-                if (noteLists != null && noteLists.Count > 0)
-                {
-                    // Has structured list content — extract with line breaks
-                    var parts = new List<string>();
-                    foreach (var child in noteCell.ChildNodes)
-                    {
-                        if (child.Name is "ul" or "ol")
-                            parts.Add(ExtractListItems(child));
-                        else
-                        {
-                            var t = Clean(child.InnerText);
-                            if (!string.IsNullOrWhiteSpace(t)) parts.Add(t);
-                        }
-                    }
-                    specialNotes = string.Join("\n", parts);
-                }
-                else
-                {
-                    specialNotes = Clean(noteCell.InnerText);
-                }
+                var noteHtml = noteCell.InnerHtml;
+                noteHtml = System.Text.RegularExpressions.Regex.Replace(noteHtml, "<br\\s*/?>", "\n", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                noteHtml = System.Text.RegularExpressions.Regex.Replace(noteHtml, "<li[^>]*>", "\n• ", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                var tempDoc = new HtmlDocument();
+                tempDoc.LoadHtml(noteHtml);
+                var raw = HtmlEntity.DeEntitize(tempDoc.DocumentNode.InnerText ?? "").Trim();
+                // Insert newlines before section headers like [General], [DirectX]
+                raw = System.Text.RegularExpressions.Regex.Replace(raw, @"(\S)\[", "$1\n[");
+                // Insert newlines before bullet chars
+                raw = raw.Replace("•", "\n•");
+                // Collapse multiple newlines and trim
+                raw = System.Text.RegularExpressions.Regex.Replace(raw, @"\n{2,}", "\n\n");
+                specialNotes = System.Text.RegularExpressions.Regex.Replace(raw, @"[ \t]+", " ").Trim();
             }
 
             // Features — look for 📌 link pointing to an anchor
