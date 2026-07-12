@@ -689,6 +689,10 @@ public partial class MainViewModel
 
             newCard.LumaFeatureEnabled = LumaFeatureEnabled;
 
+            // ── Injection mode (launcher-gated games) ──────────────────────────
+            if (_manifest?.InjectionGames?.ContainsKey(game.Name) == true)
+                newCard.UseInjectionMode = true;
+
             // ── ReLimiter detection ────────────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
             {
