@@ -104,6 +104,9 @@ public interface IGameNameService
     /// <summary>Per-game custom ReShade DLL selection. Key = game name, Value = DLL filename (not full path). The DLL resides in Custom\ReShade\ folder.</summary>
     Dictionary<string, string> CustomReShadeSelection { get; }
 
+    /// <summary>Per-game injection target process names. Key = game name, Value = target process name (without .exe).</summary>
+    Dictionary<string, string> InjectionTargets { get; }
+
     /// <summary>Maps current (renamed) game name to original store-detected name.</summary>
     Dictionary<string, string> OriginalDetectedNames { get; }
 

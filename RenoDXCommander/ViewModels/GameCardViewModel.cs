@@ -35,6 +35,7 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private string? _notes;
     [ObservableProperty] private GameMod? _mod;
     [ObservableProperty] private bool _useUeExtended;
+    [ObservableProperty] private bool _useInjectionMode;
 
     // ── ReShade state ─────────────────────────────────────────────────────────────
     [ObservableProperty] private GameStatus _rsStatus  = GameStatus.NotInstalled;

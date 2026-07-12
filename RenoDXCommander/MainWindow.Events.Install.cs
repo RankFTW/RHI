@@ -640,6 +640,7 @@ public sealed partial class MainWindow
                     UseShellExecute = true,
                 });
                 MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                FireInjectionIfNeeded(card);
                 return;
             }
 
@@ -657,6 +658,7 @@ public sealed partial class MainWindow
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                     });
+                    FireInjectionIfNeeded(card);
                     return;
                 }
             }
@@ -692,6 +694,7 @@ public sealed partial class MainWindow
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                FireInjectionIfNeeded(card);
                 return;
             }
 
@@ -702,6 +705,7 @@ public sealed partial class MainWindow
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                FireInjectionIfNeeded(card);
                 return;
             }
 
@@ -725,6 +729,7 @@ public sealed partial class MainWindow
                         UseShellExecute = true,
                     });
                     MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                    FireInjectionIfNeeded(card);
                     return;
                 }
             }
@@ -735,6 +740,59 @@ public sealed partial class MainWindow
         {
             _crashReporter.Log($"[MainWindow.LaunchGame] Failed to launch '{card.GameName}' — {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// If injection mode is enabled for this game, fire-and-forget the DLL injection monitor.
+    /// Requires Admin Mode — silently skips if not elevated.
+    /// </summary>
+    private void FireInjectionIfNeeded(GameCardViewModel card)
+    {
+        var gameName = card.GameName;
+
+        if (!card.UseInjectionMode)
+            return;
+
+        // Resolve injection target: per-game override first, then manifest
+        string? targetProcessName = null;
+        if (_gameNameService.InjectionTargets.TryGetValue(gameName, out var userTarget))
+            targetProcessName = userTarget;
+        else if (ViewModel.Manifest?.InjectionGames?.TryGetValue(gameName, out var manifestTarget) == true)
+            targetProcessName = manifestTarget;
+
+        if (string.IsNullOrEmpty(targetProcessName))
+            return;
+
+        // Injection requires admin privileges (OpenProcess needs PROCESS_ALL_ACCESS)
+        if (!VulkanLayerService.IsRunningAsAdmin())
+        {
+            _crashReporter.Log($"[MainWindow.FireInjectionIfNeeded] Skipping injection for '{gameName}' — not running as admin");
+            return;
+        }
+
+        // Resolve the DLL path: ReShade DLL in the game folder
+        if (string.IsNullOrEmpty(card.InstallPath) || string.IsNullOrEmpty(card.RsInstalledFile))
+        {
+            _crashReporter.Log($"[MainWindow.FireInjectionIfNeeded] Skipping injection for '{gameName}' — no ReShade installed");
+            return;
+        }
+
+        var dllPath = Path.Combine(card.InstallPath, card.RsInstalledFile);
+        if (!File.Exists(dllPath))
+        {
+            _crashReporter.Log($"[MainWindow.FireInjectionIfNeeded] Skipping injection for '{gameName}' — DLL not found: {dllPath}");
+            return;
+        }
+
+        _crashReporter.Log($"[MainWindow.FireInjectionIfNeeded] Starting injection monitor for '{gameName}' — target='{targetProcessName}', dll='{card.RsInstalledFile}'");
+
+        // Fire-and-forget — monitor for the process and inject
+        _ = Task.Run(async () =>
+        {
+            var success = await DllInjectionService.MonitorAndInjectAsync(targetProcessName, dllPath);
+            if (!success)
+                _crashReporter.Log($"[MainWindow.FireInjectionIfNeeded] Injection failed or timed out for '{gameName}'");
+        });
     }
 
     /// <summary>

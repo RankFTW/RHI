@@ -60,6 +60,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game custom ReShade DLL selection. Key = game name, Value = DLL filename (not full path). The DLL resides in Custom\ReShade\ folder.</summary>
     private Dictionary<string, string> _customReShadeSelection = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game injection target process names. Key = game name, Value = target process name (without .exe).</summary>
+    private Dictionary<string, string> _injectionTargets = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -106,6 +109,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> EngineVersionOverrides => _engineVersionOverrides;
     /// <summary>Per-game custom ReShade DLL selection. Key = game name, Value = DLL filename.</summary>
     public Dictionary<string, string> CustomReShadeSelection => _customReShadeSelection;
+    /// <summary>Per-game injection target process names. Key = game name, Value = target process name (without .exe).</summary>
+    public Dictionary<string, string> InjectionTargets => _injectionTargets;
     public Dictionary<string, string> OriginalDetectedNames => _originalDetectedNames;
 
     public GameNameService(
@@ -329,6 +334,9 @@ public class GameNameService : IGameNameService
         _customReShadeSelection = new(Load<Dictionary<string, string>>("CustomReShadeSelection",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
+        _injectionTargets = new(Load<Dictionary<string, string>>("InjectionTargets",
+            new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
+
         _hiddenGames = new HashSet<string>(
             Load<List<string>>("HiddenGames", _hiddenGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
 
@@ -410,6 +418,7 @@ public class GameNameService : IGameNameService
                 s["LaunchArgsOverrides"] = JsonSerializer.Serialize(_launchArgsOverrides);
                 s["EngineVersionOverrides"] = JsonSerializer.Serialize(_engineVersionOverrides);
                 s["CustomReShadeSelection"] = JsonSerializer.Serialize(_customReShadeSelection);
+                s["InjectionTargets"] = JsonSerializer.Serialize(_injectionTargets);
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
@@ -551,6 +560,7 @@ public class GameNameService : IGameNameService
         MigrateDict(_launchArgsOverrides, oldName, newName);
         MigrateDict(_engineVersionOverrides, oldName, newName);
         MigrateDict(_customReShadeSelection, oldName, newName);
+        MigrateDict(_injectionTargets, oldName, newName);
 
         // Migrate DLL override config
         dllOverrideService.MigrateOverride(oldName, newName);

@@ -383,6 +383,14 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("dlssPresets")]
     public ManifestDlssPresets? DlssPresets { get; set; }
+
+    /// <summary>
+    /// Games that require DLL injection mode. The launcher spawns the game exe
+    /// in a way that bypasses local DLL proxy loading, so ReShade must be injected.
+    /// Key = game name (as detected by RHI), Value = target process name without .exe extension.
+    /// </summary>
+    [JsonPropertyName("injectionGames")]
+    public Dictionary<string, string>? InjectionGames { get; set; }
 }
 
 /// <summary>
