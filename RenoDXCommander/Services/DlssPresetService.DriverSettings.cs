@@ -226,6 +226,52 @@ public partial class DlssPresetService
 
     // ── Power / CPU get/set ───────────────────────────────────────────────────
 
+    /// <summary>Gets the global power management mode from the base profile. Returns null if not explicitly set (default = Optimal Performance 0x05).</summary>
+    public uint? GetGlobalPowerMode()
+    {
+        if (!_isSupported || _session == null) return null;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(baseProfile.Handle);
+            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+                return GetSettingRawNvApi(sessionHandle, profileHandle, POWER_MANAGEMENT_MODE_ID);
+            return null;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Sets the global power management mode on the base profile.</summary>
+    public bool SetGlobalPowerMode(uint value)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            baseProfile.SetSetting(POWER_MANAGEMENT_MODE_ID, value);
+            _session.Save();
+            CrashReporter.Log($"[DlssPresetService.SetGlobalPowerMode] Set to 0x{value:X8}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                var sessionHandle = GetHandlePtr(_session.Handle);
+                var profileHandle = GetHandlePtr(_session.BaseProfile.Handle);
+                if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+                {
+                    if (SetSettingRawNvApi(sessionHandle, profileHandle, POWER_MANAGEMENT_MODE_ID, value))
+                        return true;
+                }
+            }
+            catch { }
+            CrashReporter.Log($"[DlssPresetService.SetGlobalPowerMode] Error — {ex.Message}");
+            return false;
+        }
+    }
+
     public uint GetPowerManagementMode(string gameName, string installPath)
     {
         // Power Management: 0 is a valid value ("Adaptive"), but when the setting

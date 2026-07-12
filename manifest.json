@@ -216,6 +216,24 @@
     "White Knuckle"
   ],
 
+  "lumaNameOverrides": {
+    "Borderlands 2": "Borderlands 2 and The Pre-Sequel",
+    "Borderlands: The Pre-Sequel": "Borderlands 2 and The Pre-Sequel",
+    "Borderlands GOTY Enhanced": "Borderlands GOTY Enhanced",
+    "Batman™: Arkham Knight": "Batman Arkham Knight",
+    "Deus Ex: Human Revolution - Director's Cut": "Deus Ex: Human Revolution",
+    "Dishonored 2": "Dishonored 2 + Death of the Outsider",
+    "Dishonored: Death of the Outsider": "Dishonored 2 + Death of the Outsider",
+    "FINAL FANTASY VII REMAKE INTERGRADE": "Final Fantasy VII Remake",
+    "LEGO® City Undercover": "Lego City: Undercover",
+    "LEGO City Undercover": "Lego City: Undercover",
+    "Mafia III: Definitive Edition": "Mafia III",
+    "Metro 2033 Redux": "Metro Redux (2033 and Last Light)",
+    "Metro: Last Light Redux": "Metro Redux (2033 and Last Light)",
+    "Nioh: Complete Edition": "Nioh",
+    "Trine 5: A Clockwork Conspiracy": "Trine 5"
+  },
+
   "wikiUnlinks": [
     "Call of Duty®: Modern Warfare®",
     "Dead by Daylight",
@@ -1036,6 +1054,15 @@
   },
 
   "installWarnings": {
+    "Borderlands 2": {
+      "luma": "⚠ Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
+    },
+    "Borderlands: The Pre-Sequel": {
+      "luma": "⚠ Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
+    },
+    "Borderlands GOTY Enhanced": {
+      "luma": "⚠ Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
+    },
     "FINAL FANTASY VII REMAKE INTERGRADE": {
       "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
     },

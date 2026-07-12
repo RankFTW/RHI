@@ -343,6 +343,23 @@ public partial class DlssPresetService
     }
 
     /// <summary>
+    /// Public method: returns true if a profile already exists for this game, false if not.
+    /// </summary>
+    public bool HasProfile(string gameName, string installPath)
+    {
+        return FindProfile(gameName, installPath) != null;
+    }
+
+    /// <summary>
+    /// Public method: creates a profile for the game if one doesn't exist. Returns true if created.
+    /// </summary>
+    public bool EnsureProfileExists(string gameName, string installPath)
+    {
+        if (FindProfile(gameName, installPath) != null) return false; // already exists
+        return CreateProfileForGame(gameName, installPath) != null;
+    }
+
+    /// <summary>
     /// Ensures the game's exe is registered in the profile's Applications list.
     /// If no exe from the install path is found in the profile, adds the largest exe.
     /// This is needed because NVIDIA applies settings based on the Applications list,

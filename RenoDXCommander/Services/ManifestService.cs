@@ -154,6 +154,8 @@ public class ManifestService : IManifestService
     {
         if (m.WikiNameOverrides != null)
             m.WikiNameOverrides = new Dictionary<string, string>(m.WikiNameOverrides, StringComparer.OrdinalIgnoreCase);
+        if (m.LumaNameOverrides != null)
+            m.LumaNameOverrides = new Dictionary<string, string>(m.LumaNameOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.GameNotes != null)
             m.GameNotes = new Dictionary<string, GameNoteEntry>(m.GameNotes, StringComparer.OrdinalIgnoreCase);
         if (m.ForceExternalOnly != null)

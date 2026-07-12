@@ -336,6 +336,51 @@ public sealed partial class MainWindow
             DispatcherQueue?.TryEnqueue(() => _detailPanelBuilder?.BuildOverridesPanel(ViewModel.SelectedGame));
     }
 
+    private void GlobalPowerModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.PowerManagementOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalPowerMode(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private async void CreateMissingNvidiaProfiles_Click(object sender, RoutedEventArgs e)
+    {
+        var presetService = App.Services.GetRequiredService<DlssPresetService>();
+        if (!presetService.IsSupported) return;
+
+        var created = new List<string>();
+        foreach (var card in ViewModel.AllCards)
+        {
+            if (card.IsHidden || string.IsNullOrEmpty(card.InstallPath)) continue;
+            if (presetService.EnsureProfileExists(card.GameName, card.InstallPath))
+                created.Add(card.GameName);
+        }
+
+        var content = created.Count > 0
+            ? $"Created {created.Count} profile(s):\n\n• " + string.Join("\n• ", created)
+            : "All games already have NVIDIA profiles.";
+
+        var dialog = new ContentDialog
+        {
+            Title = "Create Missing Profiles",
+            Content = new ScrollViewer
+            {
+                Content = new TextBlock { Text = content, TextWrapping = TextWrapping.Wrap, FontSize = 12 },
+                MaxHeight = 400,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            },
+            CloseButtonText = "OK",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
     private async void ExportNvidiaProfiles_Click(object sender, RoutedEventArgs e)
     {
         try

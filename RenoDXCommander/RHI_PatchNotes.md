@@ -1,5 +1,10 @@
 ## v2.2.0-beta
 
+### New
+
+- Added global Power Mode setting to the Global NVIDIA Driver Settings card (next to VSync).
+- Added "Create Missing Profiles" button — creates NVIDIA driver profiles for all games that don't have one, ensuring global settings apply everywhere.
+
 ### Bug Fixes
 
 - Fixed "Apply to All Games" (Screenshots & Hotkeys) not writing overlay and screenshot hotkeys to reshade.ini files — only the screenshot path was being applied.

@@ -10,6 +10,9 @@ public class RemoteManifest
     [JsonPropertyName("wikiNameOverrides")]
     public Dictionary<string, string>? WikiNameOverrides { get; set; }
 
+    [JsonPropertyName("lumaNameOverrides")]
+    public Dictionary<string, string>? LumaNameOverrides { get; set; }
+
     [JsonPropertyName("ueExtendedGames")]
     public List<string>? UeExtendedGames { get; set; }
 

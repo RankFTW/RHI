@@ -510,10 +510,36 @@ public partial class MainViewModel
     // ── Luma Framework commands ───────────────────────────────────────────────────
 
     /// <summary>Fuzzy-matches a game name against the Luma completed mods list.
-    /// Also honours _nameMappings so the wiki name override box works for Luma games.</summary>
+    /// Also honours lumaNameOverrides (manifest) and _nameMappings (user) for Luma games.</summary>
     private LumaMod? MatchLumaGame(string gameName)
     {
-        // 0. User-defined name mappings take priority (same logic as RenoDX wiki matching).
+        // 0. Manifest lumaNameOverrides take highest priority for Luma matching.
+        if (_manifest?.LumaNameOverrides != null)
+        {
+            string? lumaOverride = null;
+            if (_manifest.LumaNameOverrides.TryGetValue(gameName, out var lo))
+                lumaOverride = lo;
+            else
+            {
+                var gameNorm = _gameDetectionService.NormalizeName(gameName);
+                foreach (var kv in _manifest.LumaNameOverrides)
+                {
+                    if (_gameDetectionService.NormalizeName(kv.Key) == gameNorm && !string.IsNullOrEmpty(kv.Value))
+                    { lumaOverride = kv.Value; break; }
+                }
+            }
+            if (!string.IsNullOrEmpty(lumaOverride))
+            {
+                var mappedNorm = _gameDetectionService.NormalizeName(lumaOverride);
+                foreach (var lm in _lumaMods)
+                    if (_gameDetectionService.NormalizeName(lm.Name) == mappedNorm) return lm;
+                var mappedLookup = NormalizeForLookup(lumaOverride);
+                foreach (var lm in _lumaMods)
+                    if (NormalizeForLookup(lm.Name) == mappedLookup) return lm;
+            }
+        }
+
+        // 1. User-defined name mappings (wikiNameOverrides / name box) as fallback.
         if (_nameMappings.Count > 0)
         {
             string? mapped = null;
@@ -539,6 +565,7 @@ public partial class MainViewModel
             }
         }
 
+        // 2. Direct normalized matching against detected game name.
         var norm = _gameDetectionService.NormalizeName(gameName);
         foreach (var lm in _lumaMods)
         {

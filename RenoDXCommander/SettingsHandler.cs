@@ -203,6 +203,14 @@ public class SettingsHandler
                 ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == globalVSync.Value)
                 : 0; // Default: App Controlled
             _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
+
+            // Global Power Mode
+            _window.GlobalPowerModeCombo.ItemsSource = DlssPresetService.PowerManagementOptions.Select(o => o.Name).ToArray();
+            var globalPower = presetSvc.GetGlobalPowerMode();
+            var powerIdx = globalPower.HasValue
+                ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == globalPower.Value)
+                : 0; // Default: Optimal Performance
+            _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
         }
         _window._shaderCacheComboInit = false;
 
@@ -254,6 +262,12 @@ public class SettingsHandler
             ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == globalVSync.Value)
             : 0;
         _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
+
+        var globalPower = presetSvc.GetGlobalPowerMode();
+        var powerIdx = globalPower.HasValue
+            ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == globalPower.Value)
+            : 0;
+        _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
 
         _window._shaderCacheComboInit = false;
     }

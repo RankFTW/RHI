@@ -1264,7 +1264,7 @@
                                     </Grid.ColumnDefinitions>
                                     <Grid Grid.Column="0">
                                         <TextBox x:Name="ScreenshotPathBox" x:FieldModifier="internal"
-                                                 PlaceholderText="D:\Screenshots"
+                                                 PlaceholderText="Type or choose screenshot folder"
                                                  FontSize="12" Padding="12,8,36,8"
                                                  Background="{StaticResource SurfaceInputBrush}"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
@@ -1597,6 +1597,13 @@
                                                       ToolTipService.ToolTip="Global VSync mode — applies to all games without a per-game override."
                                                       SelectionChanged="GlobalVSyncCombo_SelectionChanged"/>
                                         </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Power Mode" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="GlobalPowerModeCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Global power management mode — applies to all games without a per-game override."
+                                                      SelectionChanged="GlobalPowerModeCombo_SelectionChanged"/>
+                                        </StackPanel>
                                     </Grid>
                                 </StackPanel>
 
@@ -1679,6 +1686,19 @@
                                                 CornerRadius="8" Padding="12,7" FontSize="12"
                                                 HorizontalAlignment="Stretch"/>
                                     </Grid>
+
+                                    <!-- Create Missing Profiles -->
+                                    <TextBlock TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Games without an NVIDIA profile don't benefit from global driver settings. Create profiles for all games in your library to ensure global settings apply."/>
+                                    <Button Content="Create Missing Profiles"
+                                            Click="CreateMissingNvidiaProfiles_Click"
+                                            ToolTipService.ToolTip="Creates NVIDIA driver profiles for all games that don't have one yet. Ensures global settings like Power Mode and VSync apply to every game."
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
                                 </StackPanel>
                             </Grid>
                             </StackPanel>
