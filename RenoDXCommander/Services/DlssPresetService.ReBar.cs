@@ -416,81 +416,19 @@ if ($null -ne $profile) {{
         if (!_isSupported || _session == null || _cachedProfiles == null)
             return false;
 
-        // NvAPIWrapper's in-process binary SetSetting is broken (writes wrong struct layout).
-        // Always use the PowerShell helper which calls NvAPIWrapper from a fresh process — this works correctly.
-        return SetReBarSizeLimitElevated(gameName, installPath, sizeBytes);
+        var profile = FindProfile(gameName, installPath);
+        if (profile == null)
+        {
+            if (!AutoCreateProfiles) return false;
+            profile = CreateProfileForGame(gameName, installPath);
+            if (profile == null) return false;
+        }
+
+        var success = SetReBarSizeLimitViaPs(profile.Name, sizeBytes, useBaseProfile: false);
+        if (success) _rebarSizeLimitCache[gameName] = sizeBytes;
+        return success;
     }
 
-    /// <summary>Sets ReBAR Size Limit via raw NVAPI, falling back to PowerShell helper on failure.</summary>
-    private bool SetReBarSizeLimitElevated(string gameName, string installPath, ulong sizeBytes)
-    {
-        try
-        {
-            // Resolve the actual NVIDIA profile name (may differ from RHI game name)
-            var profile = FindProfile(gameName, installPath);
-            if (profile == null)
-            {
-                if (!AutoCreateProfiles) return false;
-                profile = CreateProfileForGame(gameName, installPath);
-                if (profile == null) return false;
-            }
-
-            EnsureNativeFunctions();
-            var sessionH = GetHandlePtr(_session!.Handle);
-            var profileH = GetHandlePtr(profile.Handle);
-
-            if (sessionH == IntPtr.Zero || profileH == IntPtr.Zero || _nativeSetSettingPtr == null)
-            {
-                CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Could not get handles — falling back to PS helper for '{gameName}'");
-                return SetReBarSizeLimitViaPs(profile.Name, sizeBytes, useBaseProfile: false);
-            }
-
-            // Write BINARY setting via raw NVAPI with correct struct layout
-            const int STRUCT_SIZE = 12320;
-            var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
-            int result;
-            try
-            {
-                unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
-
-                Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16)); // version
-                Marshal.WriteInt32(ptr, 4100, (int)REBAR_SIZE_LIMIT_ID); // settingId
-                Marshal.WriteInt32(ptr, 4104, 1); // settingType = BINARY
-                Marshal.WriteInt32(ptr, 8216, 8); // binary length = 8 bytes
-                Marshal.WriteInt64(ptr, 8220, (long)sizeBytes); // data
-
-                result = _nativeSetSettingPtr(sessionH, profileH, ptr, 0, 0);
-            }
-            finally { Marshal.FreeHGlobal(ptr); }
-
-            if (result != 0)
-            {
-                CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Raw SetSetting returned {result} for '{gameName}' — falling back to PS helper");
-                return SetReBarSizeLimitViaPs(profile.Name, sizeBytes, useBaseProfile: false);
-            }
-
-            // Save settings
-            if (_nativeSaveSettings != null)
-                _nativeSaveSettings(sessionH);
-
-            // Reload session
-            _session = DriverSettingsSession.CreateAndLoad();
-            _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
-            foreach (var p in _session.Profiles)
-                _cachedProfiles.TryAdd(p.Name, p);
-            InvalidateProfileLookupCache();
-
-            // Cache the written value
-            _rebarSizeLimitCache[gameName] = sizeBytes;
-
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Set 0x{sizeBytes:X16} for '{gameName}' via raw NVAPI");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Failed — {ex.Message}");
-            return false;
-        }
-    }
+    // (SetReBarSizeLimitElevated removed — all writes go through SetReBarSizeLimitViaPs directly)
 
 }

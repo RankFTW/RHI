@@ -842,67 +842,7 @@ $session.Save()
     public bool SetGlobalReBarSizeLimit(ulong sizeBytes)
     {
         if (!_isSupported || _session == null) return false;
-
-        try
-        {
-            EnsureNativeFunctions();
-            var baseProfile = _session.BaseProfile;
-            var sessionH = GetHandlePtr(_session.Handle);
-            var profileH = GetHandlePtr(baseProfile.Handle);
-
-            if (sessionH == IntPtr.Zero || profileH == IntPtr.Zero || _nativeSetSettingPtr == null)
-            {
-                CrashReporter.Log("[DlssPresetService.SetGlobalReBarSizeLimit] Could not get handles — falling back to PS helper");
-                return SetReBarSizeLimitViaPs(null, sizeBytes, useBaseProfile: true);
-            }
-
-            // Write BINARY setting via raw NVAPI with correct struct layout
-            const int STRUCT_SIZE = 12320;
-            var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
-            int result;
-            try
-            {
-                unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
-
-                Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16)); // version
-                Marshal.WriteInt32(ptr, 4100, (int)REBAR_SIZE_LIMIT_ID); // settingId
-                Marshal.WriteInt32(ptr, 4104, 1); // settingType = BINARY
-                Marshal.WriteInt32(ptr, 8216, 8); // binary length = 8 bytes
-                Marshal.WriteInt64(ptr, 8220, (long)sizeBytes); // data
-
-                result = _nativeSetSettingPtr(sessionH, profileH, ptr, 0, 0);
-            }
-            finally { Marshal.FreeHGlobal(ptr); }
-
-            if (result != 0)
-            {
-                CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Raw SetSetting returned {result} — falling back to PS helper");
-                return SetReBarSizeLimitViaPs(null, sizeBytes, useBaseProfile: true);
-            }
-
-            // Save
-            if (_nativeSaveSettings != null)
-                _nativeSaveSettings(sessionH);
-
-            // Reload session
-            try
-            {
-                _session = DriverSettingsSession.CreateAndLoad();
-                _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
-                foreach (var p in _session.Profiles)
-                    _cachedProfiles.TryAdd(p.Name, p);
-                InvalidateProfileLookupCache();
-            }
-            catch { }
-
-            CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Set to 0x{sizeBytes:X16}");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Error — {ex.Message}");
-            return false;
-        }
+        return SetReBarSizeLimitViaPs(null, sizeBytes, useBaseProfile: true);
     }
 
 }
