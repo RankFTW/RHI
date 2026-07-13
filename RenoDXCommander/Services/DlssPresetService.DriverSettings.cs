@@ -842,37 +842,47 @@ $session.Save()
     public bool SetGlobalReBarSizeLimit(ulong sizeBytes)
     {
         if (!_isSupported || _session == null) return false;
-        // Use the PowerShell helper approach — same as per-game (binary settings broken in-process)
+
         try
         {
-            var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_global_rebar_size.ps1");
-            var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
-            var hexBytes = BitConverter.ToString(BitConverter.GetBytes(sizeBytes)).Replace("-", ",0x");
+            EnsureNativeFunctions();
+            var baseProfile = _session.BaseProfile;
+            var sessionH = GetHandlePtr(_session.Handle);
+            var profileH = GetHandlePtr(baseProfile.Handle);
 
-            var script = $@"
-Add-Type -Path '{nvApiPath.Replace("'", "''")}'
-[NvAPIWrapper.NVIDIA]::Initialize()
-$session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
-$baseProfile = $session.BaseProfile
-[byte[]]$bytes = @(0x{hexBytes})
-$baseProfile.SetSetting([uint32]0x000F00FF, $bytes)
-$session.Save()
-";
-            File.WriteAllText(scriptPath, script);
-
-            var psi = new System.Diagnostics.ProcessStartInfo
+            if (sessionH == IntPtr.Zero || profileH == IntPtr.Zero || _nativeSetSettingPtr == null)
             {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
-            var process = System.Diagnostics.Process.Start(psi);
-            if (process == null) return false;
-            process.WaitForExit(10000);
-            try { File.Delete(scriptPath); } catch { }
+                CrashReporter.Log("[DlssPresetService.SetGlobalReBarSizeLimit] Could not get handles or native function");
+                return false;
+            }
 
-            // Reload session so in-process reads see the new value
+            // Write BINARY setting via raw NVAPI with correct struct layout
+            const int STRUCT_SIZE = 12320;
+            var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
+            try
+            {
+                unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
+
+                Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16)); // version
+                Marshal.WriteInt32(ptr, 4100, (int)REBAR_SIZE_LIMIT_ID); // settingId
+                Marshal.WriteInt32(ptr, 4104, 1); // settingType = BINARY
+                Marshal.WriteInt32(ptr, 8216, 8); // binary length = 8 bytes
+                Marshal.WriteInt64(ptr, 8220, (long)sizeBytes); // data
+
+                int result = _nativeSetSettingPtr(sessionH, profileH, ptr, 0, 0);
+                if (result != 0)
+                {
+                    CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Raw SetSetting returned {result}");
+                    return false;
+                }
+            }
+            finally { Marshal.FreeHGlobal(ptr); }
+
+            // Save
+            if (_nativeSaveSettings != null)
+                _nativeSaveSettings(sessionH);
+
+            // Reload session
             try
             {
                 _session = DriverSettingsSession.CreateAndLoad();

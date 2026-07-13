@@ -358,57 +358,77 @@ if ($null -ne $profile) {{
         {
             // Resolve the actual NVIDIA profile name (may differ from RHI game name)
             var profile = FindProfile(gameName, installPath);
-            var profileName = profile?.Name ?? gameName;
-
-            var scriptPath = Path.Combine(Path.GetTempPath(), "rhi_rebar_size.ps1");
-            var nvApiPath = Path.Combine(AppContext.BaseDirectory, "NvAPIWrapper.dll");
-            var hexBytes = BitConverter.ToString(BitConverter.GetBytes(sizeBytes)).Replace("-", ",0x");
-
-            var script = $@"
-Add-Type -Path '{nvApiPath.Replace("'", "''")}'
-[NvAPIWrapper.NVIDIA]::Initialize()
-$session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
-$profile = $null
-foreach ($p in $session.Profiles) {{
-    if ($p.Name -eq '{profileName.Replace("'", "''")}') {{ $profile = $p; break }}
-}}
-if ($null -ne $profile) {{
-    [byte[]]$bytes = @(0x{hexBytes})
-    $profile.SetSetting([uint32]0x000F00FF, $bytes)
-    $session.Save()
-}}
-";
-            File.WriteAllText(scriptPath, script);
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Script: bytes=0x{hexBytes}, game='{gameName}'");
-
-            var psi = new System.Diagnostics.ProcessStartInfo
+            if (profile == null)
             {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
+                if (!AutoCreateProfiles) return false;
+                profile = CreateProfileForGame(gameName, installPath);
+                if (profile == null) return false;
+            }
 
-            var process = System.Diagnostics.Process.Start(psi);
-            if (process == null)
+            EnsureNativeFunctions();
+            var sessionH = GetHandlePtr(_session!.Handle);
+            var profileH = GetHandlePtr(profile.Handle);
+
+            if (sessionH == IntPtr.Zero || profileH == IntPtr.Zero)
             {
-                CrashReporter.Log("[DlssPresetService.SetReBarSizeLimitElevated] Process.Start returned null");
+                CrashReporter.Log("[DlssPresetService.SetReBarSizeLimitElevated] Could not get handles");
                 return false;
             }
-            process.WaitForExit(10000);
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] PS exited with code {process.ExitCode}");
-            try { File.Delete(scriptPath); } catch { }
 
+            // Write BINARY setting via raw NVAPI with correct struct layout
+            const int STRUCT_SIZE = 12320;
+            var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
+            try
+            {
+                unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
+
+                Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16)); // version
+                Marshal.WriteInt32(ptr, 4100, (int)REBAR_SIZE_LIMIT_ID); // settingId
+                Marshal.WriteInt32(ptr, 4104, 1); // settingType = BINARY
+
+                // currentValue union at offset 8220: write 8 bytes of data directly
+                Marshal.WriteInt64(ptr, 8220, (long)sizeBytes);
+
+                // Also set binary length hint (some drivers check this)
+                // predefinedValue binary length at offset 4120
+                // currentValue binary length — the union starts at 8220, but for the raw API
+                // the first 4 bytes might be the length for BINARY_SETTING struct
+                // Based on successful reads: data is at 8220, so we write raw bytes there
+                // and set the length at offset 8216 (end of predefined area / start of current meta)
+                Marshal.WriteInt32(ptr, 8216, 8); // binary length = 8 bytes
+
+                if (_nativeSetSettingPtr != null)
+                {
+                    int result = _nativeSetSettingPtr(sessionH, profileH, ptr, 0, 0);
+                    if (result != 0)
+                    {
+                        CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Raw SetSetting returned {result} for '{gameName}'");
+                        return false;
+                    }
+                }
+                else
+                {
+                    CrashReporter.Log("[DlssPresetService.SetReBarSizeLimitElevated] Native SetSetting not available");
+                    return false;
+                }
+            }
+            finally { Marshal.FreeHGlobal(ptr); }
+
+            // Save settings
+            if (_nativeSaveSettings != null)
+                _nativeSaveSettings(sessionH);
+
+            // Reload session
             _session = DriverSettingsSession.CreateAndLoad();
             _cachedProfiles = new Dictionary<string, DriverSettingsProfile>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in _session.Profiles)
                 _cachedProfiles.TryAdd(p.Name, p);
             InvalidateProfileLookupCache();
 
-            // Cache the written value so reads work even if GetSetting throws on newer drivers
+            // Cache the written value
             _rebarSizeLimitCache[gameName] = sizeBytes;
 
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Done for '{gameName}'");
+            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Set 0x{sizeBytes:X16} for '{gameName}' via raw NVAPI");
             return true;
         }
         catch (Exception ex)
