@@ -91,37 +91,81 @@ public partial class DlssPresetService
         if (!_isSupported || _session == null || _cachedProfiles == null)
             return 0;
 
+        // Check local cache first (populated when RHI writes the value)
+        if (_rebarSizeLimitCache.TryGetValue(gameName, out var cached))
+            return cached;
+
         try
         {
             var profile = FindProfile(gameName, installPath);
             if (profile == null) { CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] No profile for '{gameName}'"); return 0; }
 
-            // Try to read binary setting via NvAPIWrapper directly.
+            // Try raw NVAPI first — handles BINARY type correctly on all drivers
+            try
+            {
+                EnsureNativeFunctions();
+                if (_nativeGetSettingPtr != null && _session != null)
+                {
+                    const int STRUCT_SIZE = 12320;
+                    var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
+                    try
+                    {
+                        unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
+                        Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16));
+
+                        uint extraParam = 0;
+                        var sessionH = (IntPtr)typeof(DriverSettingsSession)
+                            .GetProperty("Handle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+                            .GetValue(_session)!;
+                        var profileH = (IntPtr)typeof(DriverSettingsProfile)
+                            .GetProperty("Handle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+                            .GetValue(profile)!;
+
+                        int result = _nativeGetSettingPtr(sessionH, profileH, REBAR_SIZE_LIMIT_ID, ptr, ref extraParam);
+                        if (result == 0)
+                        {
+                            // Check setting type: offset 4104 (0=DWORD, 1=BINARY)
+                            var settingType = Marshal.ReadInt32(ptr, 4104);
+                            if (settingType == 1) // BINARY
+                            {
+                                // Binary data at offset 8220, length at offset 8216
+                                var binLen = Marshal.ReadInt32(ptr, 8216);
+                                if (binLen >= 8)
+                                {
+                                    var val = (ulong)Marshal.ReadInt64(ptr, 8220);
+                                    return val;
+                                }
+                            }
+                            else // DWORD
+                            {
+                                var dword = (uint)Marshal.ReadInt32(ptr, 8220);
+                                if (dword != 0) return dword;
+                            }
+                        }
+                        // result != 0 means setting not found on this profile
+                    }
+                    finally { Marshal.FreeHGlobal(ptr); }
+                }
+            }
+            catch (Exception rawEx)
+            {
+                CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] Raw read failed for '{gameName}' — {rawEx.Message}");
+            }
+
+            // Fallback: try NvAPIWrapper (works on older drivers)
             try
             {
                 var setting = profile.GetSetting(REBAR_SIZE_LIMIT_ID);
-                if (setting.CurrentValue is byte[] bytes && bytes.Length >= 8)
+                if (setting != null)
                 {
-                    var val = BitConverter.ToUInt64(bytes, 0);
-                    CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] Read 0x{val:X16} for '{gameName}'");
-                    return val;
+                    if (setting.CurrentValue is byte[] bytes && bytes.Length >= 8)
+                        return BitConverter.ToUInt64(bytes, 0);
+                    if (setting.CurrentValue is uint dwordVal && dwordVal != 0)
+                        return dwordVal;
                 }
-                if (setting.CurrentValue is uint dwordVal && dwordVal != 0)
-                {
-                    CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] Read DWORD 0x{dwordVal:X8} for '{gameName}'");
-                    return dwordVal;
-                }
-                CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] Setting found but value type={setting.CurrentValue?.GetType().Name ?? "null"} for '{gameName}'");
             }
-            catch (Exception innerEx)
-            {
-                CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] GetSetting threw for '{gameName}' — {innerEx.Message}");
-                // Fallback: use PS helper to read
-                var psVal = ReadReBarSizeLimitViaPs(gameName);
-                if (psVal != 0) return psVal;
-            }
+            catch { /* NvAPIWrapper can't handle BINARY on newer drivers */ }
 
-            // Fallback: raw NVAPI reads DWORD position which doesn't work for BINARY
             return 0;
         }
         catch (Exception ex)
