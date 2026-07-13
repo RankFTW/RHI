@@ -852,13 +852,14 @@ $session.Save()
 
             if (sessionH == IntPtr.Zero || profileH == IntPtr.Zero || _nativeSetSettingPtr == null)
             {
-                CrashReporter.Log("[DlssPresetService.SetGlobalReBarSizeLimit] Could not get handles or native function");
-                return false;
+                CrashReporter.Log("[DlssPresetService.SetGlobalReBarSizeLimit] Could not get handles — falling back to PS helper");
+                return SetReBarSizeLimitViaPs(null, sizeBytes, useBaseProfile: true);
             }
 
             // Write BINARY setting via raw NVAPI with correct struct layout
             const int STRUCT_SIZE = 12320;
             var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
+            int result;
             try
             {
                 unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
@@ -869,14 +870,15 @@ $session.Save()
                 Marshal.WriteInt32(ptr, 8216, 8); // binary length = 8 bytes
                 Marshal.WriteInt64(ptr, 8220, (long)sizeBytes); // data
 
-                int result = _nativeSetSettingPtr(sessionH, profileH, ptr, 0, 0);
-                if (result != 0)
-                {
-                    CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Raw SetSetting returned {result}");
-                    return false;
-                }
+                result = _nativeSetSettingPtr(sessionH, profileH, ptr, 0, 0);
             }
             finally { Marshal.FreeHGlobal(ptr); }
+
+            if (result != 0)
+            {
+                CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Raw SetSetting returned {result} — falling back to PS helper");
+                return SetReBarSizeLimitViaPs(null, sizeBytes, useBaseProfile: true);
+            }
 
             // Save
             if (_nativeSaveSettings != null)
