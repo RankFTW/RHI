@@ -205,27 +205,24 @@ public sealed partial class MainWindow
         engineCombo.Items.Add("Off");
         engineCombo.Items.Add("On");
         ToolTipService.SetToolTip(engineCombo, "Deploys Engine.ini with HDR flags for games that don't have an ingame HDR option. Also disable for SDR.");
-        var engineIniDir = AuxInstallService.ResolveEngineIniDir(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
-        bool engineIniActive = false;
-        if (engineIniDir != null)
-        {
-            var engineIniFile = Path.Combine(engineIniDir, "Engine.ini");
-            if (File.Exists(engineIniFile))
-                engineIniActive = File.ReadAllText(engineIniFile).Contains("r.AllowHDR=1", StringComparison.OrdinalIgnoreCase);
-        }
+        bool engineIniActive = card.InstalledRecord?.EngineIniHdr ?? true;
         engineCombo.SelectedIndex = engineIniActive ? 1 : 0;
         engineCombo.SelectionChanged += (s, ev) =>
         {
             if (engineCombo.SelectedIndex == 1)
             {
                 AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                if (card.InstalledRecord != null) card.InstalledRecord.EngineIniHdr = true;
                 card.ActionMessage = "✅ Engine.ini HDR settings deployed.";
             }
             else
             {
                 AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                if (card.InstalledRecord != null) card.InstalledRecord.EngineIniHdr = false;
                 card.ActionMessage = "✅ Engine.ini HDR settings removed.";
             }
+            if (card.InstalledRecord != null)
+                App.Services.GetRequiredService<IModInstallService>().SaveRecordPublic(card.InstalledRecord);
             card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
         };
         enginePanel.Children.Add(engineCombo);

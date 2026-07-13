@@ -85,8 +85,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOverrides))
                     AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
 
-                // Deploy Engine.ini HDR settings for all UE-Extended games
-                if (card.UseUeExtended)
+                // Deploy Engine.ini HDR settings for UE-Extended games (skip if user disabled it)
+                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false)
                     AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
 
                 dispatcherQueue?.TryEnqueue(() =>

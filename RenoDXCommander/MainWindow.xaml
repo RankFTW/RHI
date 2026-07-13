@@ -2098,7 +2098,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Full Refresh + Purge Cache -->
+                                <!-- Left: Full Refresh + Purge Staging -->
                                 <Grid Grid.Column="0" RowSpacing="8">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
@@ -2122,7 +2122,7 @@
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                                Text="Deletes cached DLSS, Streamline, and component staging files to free disk space. Shaders, installed addons, and version metadata are preserved. Files are re-downloaded automatically when needed."/>
                                     <Button Grid.Row="3" x:Name="PurgeCacheBtn"
-                                            Content="Purge Cache"
+                                            Content="Purge Staging Files"
                                             Click="PurgeCachedFiles_Click"
                                             Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
                                             BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"

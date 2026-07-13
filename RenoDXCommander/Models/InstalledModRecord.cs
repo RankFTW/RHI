@@ -16,4 +16,11 @@ public class InstalledModRecord
     /// across relaunches regardless of local file copy or filesystem behaviour.
     /// </summary>
     public long? RemoteFileSize { get; set; }
+
+    /// <summary>
+    /// Whether Engine.ini HDR settings are enabled for this game.
+    /// Only relevant for UE-Extended games. Default true (deploy on install/update).
+    /// Set to false when user disables via the RenoDX cog dialog.
+    /// </summary>
+    public bool EngineIniHdr { get; set; } = true;
 }

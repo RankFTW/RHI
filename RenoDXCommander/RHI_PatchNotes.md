@@ -20,11 +20,16 @@
 ### Bug Fixes
 
 - Fixed "Apply to All Games" (Screenshots & Hotkeys) not writing overlay and screenshot hotkeys to reshade.ini files — only the screenshot path was being applied.
-- Fixed ReBAR Size Limit not reading back correctly on newer NVIDIA drivers — falls back to in-memory cache when the driver's API response is incompatible with NvAPIWrapper.
+- Fixed ReBAR Size Limit not reading back correctly on newer NVIDIA drivers — now uses raw NVAPI read with binary type awareness as the primary path, with NvAPIWrapper as fallback.
+- Fixed HDR Auto-Toggle setting always reverting to "On" on app restart — the "Off" state was never persisted to settings.json.
+- Fixed Update All re-deploying Engine.ini HDR settings on games where the user had explicitly disabled it via the RenoDX cog. The toggle state is now persisted in installed.json and respected by Update All.
+- Fixed Engine.ini HDR combo in the RenoDX cog showing "On" after re-opening even when the user had set it to "Off" — now reads from the persisted record instead of checking the file on disk.
 
 ### Manifest Updates
 
 - Removed incorrect Luma install warning from "Borderlands GOTY Enhanced" (only applies to Borderlands 2 and The Pre-Sequel).
+- Added split games: Call of Duty Modern Warfare II (MP / Campaign), DOOM Eternal (main / Sandbox).
+- Added ultrawide fix URL for Echoes of Aincrad.
 
 ---
 

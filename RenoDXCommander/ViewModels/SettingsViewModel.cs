@@ -323,7 +323,7 @@ public partial class SettingsViewModel : ObservableObject
         if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true";
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;
         if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
-        if (HdrAutoToggle) s["HdrAutoToggle"] = "true";
+        s["HdrAutoToggle"] = HdrAutoToggle ? "true" : "false";
         if (HdrTargetDisplays.Count > 0) s["HdrTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(HdrTargetDisplays);
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
         else s["DropHelperEnabled"] = "true";
