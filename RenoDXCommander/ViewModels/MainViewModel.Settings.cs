@@ -421,7 +421,17 @@ public partial class MainViewModel
         {
             var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
 
-            if (dlssFixActive && card.HasStreamline && card.DlssDetection != null)
+            // Resolve DLSS detection — use card's cached result, or fall back to trusted path cache
+            var detection = card.DlssDetection;
+            if (detection == null && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                try { detection = _dlssStreamlineService.TryFastDetect(card.GameName, card.InstallPath); }
+                catch { /* non-critical fallback */ }
+            }
+
+            bool hasStreamline = card.HasStreamline || !string.IsNullOrEmpty(detection?.StreamlineInterposerPath);
+
+            if (dlssFixActive && hasStreamline && detection != null)
             {
                 // Add [ADDON] LoadFromDllMain
                 if (!ini.ContainsKey("ADDON"))
@@ -432,10 +442,10 @@ public partial class MainViewModel
                 if (!ini.ContainsKey("RENODX-DLSSFIX"))
                     ini["RENODX-DLSSFIX"] = new AuxInstallService.OrderedDict();
 
-                if (!string.IsNullOrEmpty(card.DlssDetection.DlssPath))
-                    ini["RENODX-DLSSFIX"]["DLSSPath"] = card.DlssDetection.DlssPath;
-                if (!string.IsNullOrEmpty(card.DlssDetection.StreamlineInterposerPath))
-                    ini["RENODX-DLSSFIX"]["StreamlinePath"] = card.DlssDetection.StreamlineInterposerPath;
+                if (!string.IsNullOrEmpty(detection.DlssPath))
+                    ini["RENODX-DLSSFIX"]["DLSSPath"] = detection.DlssPath;
+                if (!string.IsNullOrEmpty(detection.StreamlineInterposerPath))
+                    ini["RENODX-DLSSFIX"]["StreamlinePath"] = detection.StreamlineInterposerPath;
 
                 AuxInstallService.WriteIni(iniPath, ini);
                 _crashReporter.Log($"[ApplyOrRemoveDlssFixIni] Applied DLSS Fix INI settings for '{card.GameName}'");
