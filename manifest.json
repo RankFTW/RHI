@@ -1060,6 +1060,10 @@
       { "name": "Call of Duty Modern Warfare II", "subPath": "" },
       { "name": "Call of Duty Modern Warfare II (Campaign)", "subPath": "sp22" }
     ],
+    "Call of Duty®: Modern Warfare® II": [
+      { "name": "Call of Duty Modern Warfare II", "subPath": "" },
+      { "name": "Call of Duty Modern Warfare II (Campaign)", "subPath": "sp22" }
+    ],
     "DOOM Eternal": [
       { "name": "DOOM Eternal", "subPath": "" },
       { "name": "DOOM Eternal Sandbox", "subPath": "doomSandBox" }
