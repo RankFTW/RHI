@@ -62,6 +62,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private List<uint> _hdrTargetDisplays = new();
     [ObservableProperty] private bool _dropHelperEnabled = true;
 
+    // ── Digital Vibrance ──────────────────────────────────────────────────────
+    /// <summary>Per-display DVC values. Key = display index (string), Value = 0-100.</summary>
+    public Dictionary<string, int> DigitalVibranceSettings { get; set; } = new();
+
     // ── DLSS/Streamline Defaults ──────────────────────────────────────────────
     [ObservableProperty] private string _defaultDlssVersion = "";
     [ObservableProperty] private string _defaultDlssdVersion = "";
@@ -259,6 +263,13 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("DefaultFgPreset", out var dfp) && uint.TryParse(dfp, out var dfpVal)) DefaultFgPreset = dfpVal;
         if (s.TryGetValue("DefaultSrRenderScale", out var dsr) && uint.TryParse(dsr, out var dsrVal)) DefaultSrRenderScale = dsrVal;
         if (s.TryGetValue("DefaultRrRenderScale", out var drr) && uint.TryParse(drr, out var drrVal)) DefaultRrRenderScale = drrVal;
+
+        // Digital Vibrance per-display settings
+        if (s.TryGetValue("DigitalVibrance", out var dvcVal))
+        {
+            try { DigitalVibranceSettings = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int>>(dvcVal) ?? new(); }
+            catch { DigitalVibranceSettings = new(); }
+        }
     }
 
     /// <summary>
@@ -327,6 +338,10 @@ public partial class SettingsViewModel : ObservableObject
         if (DefaultFgPreset != 0) s["DefaultFgPreset"] = DefaultFgPreset.ToString();
         if (DefaultSrRenderScale != 0) s["DefaultSrRenderScale"] = DefaultSrRenderScale.ToString();
         if (DefaultRrRenderScale != 0) s["DefaultRrRenderScale"] = DefaultRrRenderScale.ToString();
+
+        // Digital Vibrance per-display settings
+        if (DigitalVibranceSettings.Count > 0)
+            s["DigitalVibrance"] = System.Text.Json.JsonSerializer.Serialize(DigitalVibranceSettings);
     }
 
     public void LoadThemeAndDensity()

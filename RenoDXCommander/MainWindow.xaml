@@ -1605,15 +1605,8 @@
                                                       SelectionChanged="GlobalPowerModeCombo_SelectionChanged"/>
                                         </StackPanel>
                                     </Grid>
-                                </StackPanel>
 
-                                <!-- Divider -->
-                                <Border Grid.Column="1" Width="1"
-                                        Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
-
-                                <!-- Right column -->
-                                <StackPanel Grid.Column="2" Spacing="12" VerticalAlignment="Top">
+                                    <!-- ReBAR row (moved from right column) -->
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -1640,8 +1633,41 @@
                                                       SelectionChanged="GlobalReBarSizeCombo_SelectionChanged"/>
                                         </StackPanel>
                                     </Grid>
+                                </StackPanel>
 
-                                    <Grid ColumnSpacing="12">
+                                <!-- Divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
+
+                                <!-- Right column -->
+                                <StackPanel Grid.Column="2" Spacing="12" VerticalAlignment="Top">
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Adjust NVIDIA Digital Vibrance (color saturation) per-display. Saved values are automatically restored on app startup."/>
+                                    <Button Content="Digital Vibrance"
+                                            Click="DigitalVibrance_Click"
+                                            ToolTipService.ToolTip="Adjust Digital Vibrance (color saturation) per-display. Saved values are restored on app startup."
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+
+                                    <!-- Create Missing Profiles -->
+                                    <TextBlock TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Games without an NVIDIA profile don't benefit from global driver settings. Create profiles for all games in your library to ensure global settings apply."/>
+                                    <Button Content="Create Missing Profiles"
+                                            Click="CreateMissingNvidiaProfiles_Click"
+                                            ToolTipService.ToolTip="Creates NVIDIA driver profiles for all games that don't have one yet. Ensures global settings like Power Mode and VSync apply to every game."
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+
+                                    <Grid ColumnSpacing="12" Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
@@ -1686,19 +1712,6 @@
                                                 CornerRadius="8" Padding="12,7" FontSize="12"
                                                 HorizontalAlignment="Stretch"/>
                                     </Grid>
-
-                                    <!-- Create Missing Profiles -->
-                                    <TextBlock TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"
-                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Games without an NVIDIA profile don't benefit from global driver settings. Create profiles for all games in your library to ensure global settings apply."/>
-                                    <Button Content="Create Missing Profiles"
-                                            Click="CreateMissingNvidiaProfiles_Click"
-                                            ToolTipService.ToolTip="Creates NVIDIA driver profiles for all games that don't have one yet. Ensures global settings like Power Mode and VSync apply to every game."
-                                            Background="{StaticResource AccentBlueBgBrush}"
-                                            Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"/>
                                 </StackPanel>
                             </Grid>
                             </StackPanel>

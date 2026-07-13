@@ -2,17 +2,29 @@
 
 ### New
 
+- Added Digital Vibrance control to the Global NVIDIA Driver Settings card — adjust color saturation per-display with a slider (0-100). Saved values are automatically restored on app startup.
 - Added global Power Mode setting to the Global NVIDIA Driver Settings card (next to VSync).
 - Added "Create Missing Profiles" button — creates NVIDIA driver profiles for all games that don't have one, ensuring global settings apply everywhere.
 - Added `lumaNameOverrides` manifest field — separate name mapping for Luma wiki matching (independent of RenoDX wiki overrides).
+- Added Nexus mod summary on the RenoDX Info button for external-only Nexus games.
+- Added "Dump LUT Shaders" toggle to the RenoDX cog dialog (Compatibility Settings section).
 
 ### Changes
 
+- Moved ReBAR controls from the right column to the left column in the Global NVIDIA Driver Settings card (below VSync/Power Mode).
+- Reorganized the right column: Digital Vibrance → Create Missing Profiles → Export/Import → Reset/Clear.
 - Screenshot path placeholder text changed from "D:\Screenshots" to "Type or choose screenshot folder" for clarity.
+- RenoDX cog: "Set_Path" renamed to "Upgrade Path", options renamed from Off/On to HDR/SDR.
+- Import Profiles now shows a progress dialog during import.
 
 ### Bug Fixes
 
 - Fixed "Apply to All Games" (Screenshots & Hotkeys) not writing overlay and screenshot hotkeys to reshade.ini files — only the screenshot path was being applied.
+- Fixed ReBAR Size Limit not reading back correctly on newer NVIDIA drivers — falls back to in-memory cache when the driver's API response is incompatible with NvAPIWrapper.
+
+### Manifest Updates
+
+- Removed incorrect Luma install warning from "Borderlands GOTY Enhanced" (only applies to Borderlands 2 and The Pre-Sequel).
 
 ---
 

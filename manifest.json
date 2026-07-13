@@ -1069,9 +1069,6 @@
     "Borderlands: The Pre-Sequel": {
       "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
     },
-    "Borderlands GOTY Enhanced": {
-      "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
-    },
     "FINAL FANTASY VII REMAKE INTERGRADE": {
       "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
     },

@@ -214,6 +214,8 @@ public partial class MainViewModel
             {
                 // Initialize DLSS preset service in background (not needed until detail panel is shown)
                 _ = Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed (cache path) — {ex.Message}"); } });
+                // Restore saved Digital Vibrance levels on startup
+                _ = Task.Run(() => { try { DigitalVibranceService.RestoreSavedLevels(Settings.DigitalVibranceSettings); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DVC restore failed — {ex.Message}"); } });
                 await LoadCacheAndBuildCardsAsync(savedLib!);
                 _ = RunBackgroundScanAndMergeAsync(savedLib!);
                 return;
@@ -264,6 +266,8 @@ public partial class MainViewModel
             });
             // Initialize DLSS preset service (loads NVAPI + caches driver profiles)
             _ = Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed — {ex.Message}"); } });
+            // Restore saved Digital Vibrance levels on startup
+            _ = Task.Run(() => { try { DigitalVibranceService.RestoreSavedLevels(Settings.DigitalVibranceSettings); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DVC restore failed — {ex.Message}"); } });
             var dxvkTask     = Task.Run(async () => {
                 try
                 {

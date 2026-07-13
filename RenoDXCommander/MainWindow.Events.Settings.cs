@@ -460,8 +460,32 @@ public sealed partial class MainWindow
         var data = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
         if (data == null || data.Count == 0) return;
 
+        // Show progress dialog
+        var progressText = new TextBlock
+        {
+            Text = "Importing profiles...",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var progressPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        progressPanel.Children.Add(new ProgressRing { IsActive = true, Width = 20, Height = 20 });
+        progressPanel.Children.Add(progressText);
+
+        var progressDialog = new ContentDialog
+        {
+            Title = "Importing...",
+            Content = progressPanel,
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        _ = DialogService.ShowSafeAsync(progressDialog);
+        await Task.Delay(100); // Let dialog render
+
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
-        var count = presetService.ImportProfiles(data);
+        var count = await Task.Run(() => presetService.ImportProfiles(data));
+
+        progressDialog.Hide();
 
         // Refresh settings page to reflect imported global values
         _settingsHandler.RefreshGlobalNvidiaSettings();
@@ -474,6 +498,187 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         });
+    }
+
+    private async void DigitalVibrance_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var displays = DigitalVibranceService.EnumerateDisplays();
+            if (displays.Count == 0)
+            {
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "Digital Vibrance",
+                    Content = "No NVIDIA displays detected. Digital Vibrance requires an NVIDIA GPU with compatible drivers.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                });
+                return;
+            }
+
+            var settings = ViewModel.Settings;
+            var panel = new StackPanel { Spacing = 16, MinWidth = 320 };
+
+            // Display selector
+            var displayCombo = new ComboBox
+            {
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            foreach (var d in displays)
+                displayCombo.Items.Add(d.Name);
+            displayCombo.SelectedIndex = 0;
+
+            var displayLabel = new TextBlock
+            {
+                Text = "Monitor",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            };
+
+            // Slider + value display
+            var sliderValueText = new TextBlock
+            {
+                FontSize = 13,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                HorizontalAlignment = HorizontalAlignment.Right,
+            };
+            var slider = new Slider
+            {
+                Minimum = 0,
+                Maximum = 100,
+                StepFrequency = 1,
+                Value = 50,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            sliderValueText.Text = $"{(int)slider.Value}%";
+
+            var sliderLabel = new TextBlock
+            {
+                Text = "Digital Vibrance (0 = desaturated, 50 = neutral, 100 = maximum)",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+                TextWrapping = TextWrapping.Wrap,
+            };
+
+            // Load current level for the first display
+            var currentLevel = DigitalVibranceService.GetLevel(displays[0].Index);
+            slider.Value = currentLevel;
+            sliderValueText.Text = $"{currentLevel}%";
+
+            // Slider change — apply immediately
+            slider.ValueChanged += (s, args) =>
+            {
+                var level = (int)args.NewValue;
+                sliderValueText.Text = $"{level}%";
+                var selectedIdx = displayCombo.SelectedIndex;
+                if (selectedIdx >= 0 && selectedIdx < displays.Count)
+                    DigitalVibranceService.SetLevel(displays[selectedIdx].Index, level);
+            };
+
+            // Display combo change — load the level for the newly selected display
+            displayCombo.SelectionChanged += (s, args) =>
+            {
+                var idx = displayCombo.SelectedIndex;
+                if (idx >= 0 && idx < displays.Count)
+                {
+                    var level = DigitalVibranceService.GetLevel(displays[idx].Index);
+                    slider.Value = level;
+                    sliderValueText.Text = $"{level}%";
+                }
+            };
+
+            // Buttons row
+            var saveBtn = new Button
+            {
+                Content = "Save",
+                Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+                Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+                BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(16, 6, 16, 6),
+                FontSize = 12,
+            };
+            var resetBtn = new Button
+            {
+                Content = "Reset to 50",
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(16, 6, 16, 6),
+                FontSize = 12,
+            };
+            var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            btnRow.Children.Add(saveBtn);
+            btnRow.Children.Add(resetBtn);
+
+            var statusText = new TextBlock
+            {
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            };
+
+            // Save button — persist current slider value for the selected display
+            saveBtn.Click += (s, args) =>
+            {
+                var idx = displayCombo.SelectedIndex;
+                if (idx >= 0 && idx < displays.Count)
+                {
+                    var level = (int)slider.Value;
+                    settings.DigitalVibranceSettings[displays[idx].Index.ToString()] = level;
+                    ViewModel.SaveSettingsPublic();
+                    statusText.Text = $"Saved: Display {displays[idx].Name} = {level}%";
+                    CrashReporter.Log($"[DigitalVibrance_Click] Saved display {displays[idx].Index} ({displays[idx].Name}) = {level}");
+                }
+            };
+
+            // Reset button — set slider to 50, apply, and persist
+            resetBtn.Click += (s, args) =>
+            {
+                slider.Value = 50;
+                var idx = displayCombo.SelectedIndex;
+                if (idx >= 0 && idx < displays.Count)
+                {
+                    DigitalVibranceService.SetLevel(displays[idx].Index, 50);
+                    settings.DigitalVibranceSettings[displays[idx].Index.ToString()] = 50;
+                    ViewModel.SaveSettingsPublic();
+                    statusText.Text = $"Reset: Display {displays[idx].Name} = 50% (neutral)";
+                }
+            };
+
+            // Build the panel
+            panel.Children.Add(displayLabel);
+            panel.Children.Add(displayCombo);
+            panel.Children.Add(sliderLabel);
+
+            var sliderRow = new Grid();
+            sliderRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            sliderRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(slider, 0);
+            Grid.SetColumn(sliderValueText, 1);
+            sliderRow.Children.Add(slider);
+            sliderRow.Children.Add(sliderValueText);
+            panel.Children.Add(sliderRow);
+
+            panel.Children.Add(btnRow);
+            panel.Children.Add(statusText);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Digital Vibrance",
+                Content = panel,
+                CloseButtonText = "Close",
+                XamlRoot = Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            await DialogService.ShowSafeAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DigitalVibrance_Click] Error — {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     private async void ResetAllNvidiaProfiles_Click(object sender, RoutedEventArgs e)

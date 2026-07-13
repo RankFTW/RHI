@@ -94,20 +94,32 @@ public partial class DlssPresetService
         try
         {
             var profile = FindProfile(gameName, installPath);
-            if (profile == null) return 0;
+            if (profile == null) { CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] No profile for '{gameName}'"); return 0; }
 
             // Try to read binary setting via NvAPIWrapper directly.
-            // profile.Settings enumeration crashes on BINARY settings, but we can
-            // try to read just this one setting's binary value.
             try
             {
                 var setting = profile.GetSetting(REBAR_SIZE_LIMIT_ID);
                 if (setting.CurrentValue is byte[] bytes && bytes.Length >= 8)
-                    return BitConverter.ToUInt64(bytes, 0);
+                {
+                    var val = BitConverter.ToUInt64(bytes, 0);
+                    CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] Read 0x{val:X16} for '{gameName}'");
+                    return val;
+                }
                 if (setting.CurrentValue is uint dwordVal && dwordVal != 0)
+                {
+                    CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] Read DWORD 0x{dwordVal:X8} for '{gameName}'");
                     return dwordVal;
+                }
+                CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] Setting found but value type={setting.CurrentValue?.GetType().Name ?? "null"} for '{gameName}'");
             }
-            catch { }
+            catch (Exception innerEx)
+            {
+                CrashReporter.Log($"[DlssPresetService.GetReBarSizeLimit] GetSetting threw for '{gameName}' — {innerEx.Message}");
+                // Fallback: use PS helper to read
+                var psVal = ReadReBarSizeLimitViaPs(gameName);
+                if (psVal != 0) return psVal;
+            }
 
             // Fallback: raw NVAPI reads DWORD position which doesn't work for BINARY
             return 0;
@@ -118,6 +130,21 @@ public partial class DlssPresetService
             return 0;
         }
     }
+
+    /// <summary>Reads ReBAR Size Limit via a PowerShell helper (fallback for drivers where GetSetting throws).</summary>
+    private ulong ReadReBarSizeLimitViaPs(string gameName)
+    {
+        // If we've previously written a value for this game, use our local cache
+        if (_rebarSizeLimitCache.TryGetValue(gameName, out var cached))
+        {
+            CrashReporter.Log($"[DlssPresetService.ReadReBarSizeLimitViaPs] Using cached value 0x{cached:X16} for '{gameName}'");
+            return cached;
+        }
+        return 0;
+    }
+
+    // Local cache for ReBAR size limits written during this session
+    private readonly Dictionary<string, ulong> _rebarSizeLimitCache = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Enables or disables ReBAR for a game. When enabling, also sets Mode to the specified value.</summary>
     public bool SetReBarEnabled(string gameName, string installPath, bool enabled, uint mode = 0x00000000)
@@ -334,6 +361,9 @@ if ($null -ne $profile) {{
             foreach (var p in _session.Profiles)
                 _cachedProfiles.TryAdd(p.Name, p);
             InvalidateProfileLookupCache();
+
+            // Cache the written value so reads work even if GetSetting throws on newer drivers
+            _rebarSizeLimitCache[gameName] = sizeBytes;
 
             CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitElevated] Done for '{gameName}'");
             return true;

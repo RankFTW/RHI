@@ -382,8 +382,10 @@ public sealed partial class MainWindow
                                   && !kv.Key.Equals("Upgrade_UseSCRGB", StringComparison.OrdinalIgnoreCase)
                                   && !kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
                                   && !kv.Key.Equals("Upgrade_SwapChainCompatibility", StringComparison.OrdinalIgnoreCase))
-                              || kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
+                              || kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase)
+                              || kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(kv => kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase) ? 1 : 0) // DumpLUT last
+                    .ThenBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
                 if (upgradeKeys.Count > 0)
@@ -413,9 +415,13 @@ public sealed partial class MainWindow
                         int row = i / 2;
                         int col = (i % 2) * 2; // 0 or 2
 
+                        bool isSetPath = kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase);
+                        bool isDumpLut = kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase);
+                        bool isBinaryToggle = isSetPath || isDumpLut;
+
                         var label = new TextBlock
                         {
-                            Text = kv.Key,
+                            Text = isSetPath ? "Upgrade Path" : isDumpLut ? "Dump LUT Shaders" : kv.Key,
                             FontSize = 11,
                             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                             VerticalAlignment = VerticalAlignment.Center,
@@ -425,13 +431,13 @@ public sealed partial class MainWindow
                         settingsGrid.Children.Add(label);
 
                         var combo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
-                        bool isSetPath = kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase);
 
-                        if (isSetPath) { combo.Items.Add("Off"); combo.Items.Add("On"); }
+                        if (isSetPath) { combo.Items.Add("HDR"); combo.Items.Add("SDR"); }
+                        else if (isDumpLut) { combo.Items.Add("Off"); combo.Items.Add("On"); }
                         else { combo.Items.Add("Off"); combo.Items.Add("Output size"); combo.Items.Add("Output ratio"); combo.Items.Add("Any size"); }
 
                         int.TryParse(kv.Value, out var currentVal);
-                        combo.SelectedIndex = isSetPath
+                        combo.SelectedIndex = isBinaryToggle
                             ? (currentVal >= 0 && currentVal <= 1 ? currentVal : 0)
                             : (currentVal >= 0 && currentVal <= 3 ? currentVal : 0);
 
