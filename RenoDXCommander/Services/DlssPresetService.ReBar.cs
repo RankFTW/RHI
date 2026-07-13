@@ -114,35 +114,34 @@ public partial class DlssPresetService
                         Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16));
 
                         uint extraParam = 0;
-                        var sessionH = (IntPtr)typeof(DriverSettingsSession)
-                            .GetProperty("Handle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                            .GetValue(_session)!;
-                        var profileH = (IntPtr)typeof(DriverSettingsProfile)
-                            .GetProperty("Handle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                            .GetValue(profile)!;
+                        var sessionH = GetHandlePtr(_session.Handle);
+                        var profileH = GetHandlePtr(profile.Handle);
 
-                        int result = _nativeGetSettingPtr(sessionH, profileH, REBAR_SIZE_LIMIT_ID, ptr, ref extraParam);
-                        if (result == 0)
+                        if (sessionH != IntPtr.Zero && profileH != IntPtr.Zero)
                         {
-                            // Check setting type: offset 4104 (0=DWORD, 1=BINARY)
-                            var settingType = Marshal.ReadInt32(ptr, 4104);
-                            if (settingType == 1) // BINARY
+                            int result = _nativeGetSettingPtr(sessionH, profileH, REBAR_SIZE_LIMIT_ID, ptr, ref extraParam);
+                            if (result == 0)
                             {
-                                // Binary data at offset 8220, length at offset 8216
-                                var binLen = Marshal.ReadInt32(ptr, 8216);
-                                if (binLen >= 8)
+                                // Check setting type: offset 4104 (0=DWORD, 1=BINARY)
+                                var settingType = Marshal.ReadInt32(ptr, 4104);
+                                if (settingType == 1) // BINARY
                                 {
-                                    var val = (ulong)Marshal.ReadInt64(ptr, 8220);
-                                    return val;
+                                    // Binary data at offset 8220, length at offset 8216
+                                    var binLen = Marshal.ReadInt32(ptr, 8216);
+                                    if (binLen >= 8)
+                                    {
+                                        var val = (ulong)Marshal.ReadInt64(ptr, 8220);
+                                        return val;
+                                    }
+                                }
+                                else // DWORD
+                                {
+                                    var dword = (uint)Marshal.ReadInt32(ptr, 8220);
+                                    if (dword != 0) return dword;
                                 }
                             }
-                            else // DWORD
-                            {
-                                var dword = (uint)Marshal.ReadInt32(ptr, 8220);
-                                if (dword != 0) return dword;
-                            }
+                            // result != 0 means setting not found on this profile
                         }
-                        // result != 0 means setting not found on this profile
                     }
                     finally { Marshal.FreeHGlobal(ptr); }
                 }
