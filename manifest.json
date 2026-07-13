@@ -1026,7 +1026,11 @@
   "launchExeOverrides": {
     "Returnal™": "Returnal-Win64-Shipping.exe",
     "The Elder Scrolls V: Skyrim Special Edition": "SkyrimSE.exe",
-    "Skyrim Creation Kit": "CreationKit.exe"
+    "Skyrim Creation Kit": "CreationKit.exe",
+    "Call of Duty Modern Warfare II": "cod22-cod.exe",
+    "Call of Duty Modern Warfare II (Campaign)": "sp22-cod.exe",
+    "DOOM Eternal": "DOOMEternalx64vk.exe",
+    "DOOM Eternal Sandbox": "DOOMSandBox64vk.exe"
   },
 
   "splitGames": {
@@ -1051,6 +1055,14 @@
     "Skyrim Special Edition: Creation Kit": [
       { "name": "The Elder Scrolls V: Skyrim Special Edition", "subPath": "" },
       { "name": "Skyrim Creation Kit", "subPath": "" }
+    ],
+    "Call of Duty Modern Warfare II (Reboot)": [
+      { "name": "Call of Duty Modern Warfare II", "subPath": "" },
+      { "name": "Call of Duty Modern Warfare II (Campaign)", "subPath": "sp22" }
+    ],
+    "DOOM Eternal": [
+      { "name": "DOOM Eternal", "subPath": "" },
+      { "name": "DOOM Eternal Sandbox", "subPath": "doomSandBox" }
     ]
   },
 
