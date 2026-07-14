@@ -32,6 +32,7 @@
 - Fixed Engine.ini HDR combo in the RenoDX cog showing "On" after re-opening even when the user had set it to "Off" — now reads from the persisted record instead of checking the file on disk.
 - Fixed DLSS Fix INI (`[RENODX-DLSSFIX]` section) not being written to reshade.ini on some systems when toggling the addon — added fallback to trusted path cache for DLSS/Streamline path resolution.
 - Fixed "Browse" button for launch executable opening System32 instead of the game folder — forward slashes in Ubisoft Connect paths weren't compatible with the Win32 file dialog.
+- Fixed RenoDX update detection failing for addons using rolling release tags (`snapshot`/`latest`) when the file size didn't change between versions. Now uses full download + SHA256 hash comparison instead of HEAD Content-Length for these URLs.
 
 ### Manifest Updates
 

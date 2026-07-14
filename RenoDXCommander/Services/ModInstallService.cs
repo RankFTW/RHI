@@ -58,6 +58,9 @@ public class ModInstallService : IModInstallService
         return url;
     }
 
+    /// <summary>Public accessor for URL resolution — used by UpdateOrchestrationService for deduplication.</summary>
+    public static string ResolveSnapshotUrlPublic(string url) => ResolveSnapshotUrl(url);
+
     public async Task<InstalledModRecord> InstallAsync(
         GameMod mod,
         string gameInstallPath,
@@ -325,15 +328,26 @@ public class ModInstallService : IModInstallService
     /// </summary>
     /// <param name="url">The resolved snapshot URL to evaluate.</param>
     /// <returns>
-    /// <c>true</c> if the URL is hosted on a <c>*.github.io</c> domain and should
-    /// be routed through <see cref="CheckForUpdateByDownloadAsync"/>; otherwise <c>false</c>.
+    /// <c>true</c> if the URL uses a rolling release tag (snapshot/latest) where
+    /// same-size updates are common, or is hosted on a <c>*.github.io</c> domain
+    /// where HEAD Content-Length is unreliable.
     /// </returns>
     private static bool ShouldUseDownloadCheck(string url)
     {
         try
         {
-            var host = new Uri(url).Host;
-            return host.EndsWith(".github.io", StringComparison.OrdinalIgnoreCase);
+            var uri = new Uri(url);
+            if (uri.Host.EndsWith(".github.io", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Rolling release tags (snapshot, latest) can have same-size updates —
+            // Content-Length comparison won't detect content changes. Use hash-based check.
+            var path = uri.AbsolutePath;
+            if (path.Contains("/snapshot/", StringComparison.OrdinalIgnoreCase)
+             || path.Contains("/latest/", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return false;
         }
         catch
         {

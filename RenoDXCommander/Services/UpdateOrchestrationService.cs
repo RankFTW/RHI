@@ -497,21 +497,38 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
         _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {installed.Count} RenoDX mods to check");
 
-        var tasks = installed.Select(async card =>
+        // Deduplicate: group by resolved URL so each unique addon is only downloaded once.
+        // Games sharing the same snapshot URL (e.g. all generic Unity games) are checked together.
+        var groupedByUrl = installed.GroupBy(c => ModInstallService.ResolveSnapshotUrlPublic(c.InstalledRecord!.SnapshotUrl!),
+            StringComparer.OrdinalIgnoreCase);
+
+        var tasks = groupedByUrl.Select(async group =>
         {
-            var record = card.InstalledRecord!;
+            var resolvedUrl = group.Key;
+            var firstCard = group.First();
+            var firstRecord = firstCard.InstalledRecord!;
+
             bool updateAvailable;
             try
             {
-                updateAvailable = await _installer.CheckForUpdateAsync(record).ConfigureAwait(false);
+                updateAvailable = await _installer.CheckForUpdateAsync(firstRecord).ConfigureAwait(false);
             }
-            catch (Exception ex) { _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update check failed for '{card.GameName}' — {ex.Message}"); return; }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update check failed for URL '{resolvedUrl}' (representative: '{firstCard.GameName}') — {ex.Message}");
+                return;
+            }
 
             if (updateAvailable)
             {
-                try { _installer.SaveRecordPublic(record); }
-                catch (Exception ex) { _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Failed to save record for '{card.GameName}' — {ex.Message}"); }
-                dispatcherQueue?.TryEnqueue(() => { card.Status = GameStatus.UpdateAvailable; });
+                // Apply result to ALL games sharing this URL
+                foreach (var card in group)
+                {
+                    try { _installer.SaveRecordPublic(card.InstalledRecord!); }
+                    catch (Exception ex) { _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Failed to save record for '{card.GameName}' — {ex.Message}"); }
+                    dispatcherQueue?.TryEnqueue(() => { card.Status = GameStatus.UpdateAvailable; });
+                }
+                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update detected for '{resolvedUrl}' — {group.Count()} game(s) flagged");
             }
         });
 
