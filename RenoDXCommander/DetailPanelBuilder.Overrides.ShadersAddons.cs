@@ -349,7 +349,10 @@ public partial class DetailPanelBuilder
                 ofn.file = new string(new char[260]);
                 ofn.maxFile = ofn.file.Length;
                 ofn.title = "Select Game Executable";
-                ofn.initialDir = card.InstallPath;
+                var browseDir = card.InstallPath is { Length: > 0 } bp && System.IO.Directory.Exists(bp) ? bp
+                              : card.DetectedGame?.InstallPath is { Length: > 0 } dp && System.IO.Directory.Exists(dp) ? dp
+                              : Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                ofn.initialDir = browseDir.Replace('/', '\\');
                 ofn.flags = 0x00080000 | 0x00001000;
                 return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
             });

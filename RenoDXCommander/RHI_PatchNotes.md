@@ -1,4 +1,4 @@
-## v2.2.0-beta
+## v2.2.0-beta2
 
 ### New
 
@@ -13,6 +13,7 @@
 
 - Moved ReBAR controls from the right column to the left column in the Global NVIDIA Driver Settings card (below VSync/Power Mode).
 - Reorganized the right column: Digital Vibrance → Create Missing Profiles → Export/Import → Reset/Clear.
+- Renamed "Purge Cache" to "Purge Staging Files" with an added description.
 - Screenshot path placeholder text changed from "D:\Screenshots" to "Type or choose screenshot folder" for clarity.
 - RenoDX cog: "Set_Path" renamed to "Upgrade Path", options renamed from Off/On to HDR/SDR.
 - Import Profiles now shows a progress dialog during import.
@@ -20,10 +21,13 @@
 ### Bug Fixes
 
 - Fixed "Apply to All Games" (Screenshots & Hotkeys) not writing overlay and screenshot hotkeys to reshade.ini files — only the screenshot path was being applied.
-- Fixed ReBAR Size Limit not reading back correctly on newer NVIDIA drivers — now uses raw NVAPI read with binary type awareness as the primary path, with NvAPIWrapper as fallback.
+- Fixed ReBAR Size Limit not reading back correctly on some systems — now uses raw NVAPI read with binary type awareness, with NvAPIWrapper as fallback.
+- Fixed ReBAR Size Limit write corrupting the profile on some systems — NvAPIWrapper wrote the array length instead of data. Writes now always use the PowerShell helper which works reliably.
 - Fixed HDR Auto-Toggle setting always reverting to "On" on app restart — the "Off" state was never persisted to settings.json.
 - Fixed Update All re-deploying Engine.ini HDR settings on games where the user had explicitly disabled it via the RenoDX cog. The toggle state is now persisted in installed.json and respected by Update All.
 - Fixed Engine.ini HDR combo in the RenoDX cog showing "On" after re-opening even when the user had set it to "Off" — now reads from the persisted record instead of checking the file on disk.
+- Fixed DLSS Fix INI (`[RENODX-DLSSFIX]` section) not being written to reshade.ini on some systems when toggling the addon — added fallback to trusted path cache for DLSS/Streamline path resolution.
+- Fixed "Browse" button for launch executable opening System32 instead of the game folder — forward slashes in Ubisoft Connect paths weren't compatible with the Win32 file dialog.
 
 ### Manifest Updates
 
