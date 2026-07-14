@@ -48,7 +48,7 @@ public static class AddonManagerDialog
 
         var panel = new StackPanel { Spacing = 8 };
 
-        // Custom addons folder link at top
+        // Folder link at top
         var customFolderPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "RHI", "Custom", "Addons");
@@ -85,7 +85,6 @@ public static class AddonManagerDialog
         var customAddons = addonPackService.GetCustomAddons();
         if (customAddons.Count > 0)
         {
-            // Add a subtle separator/header
             panel.Children.Add(new TextBlock
             {
                 Text = "Custom Addons",

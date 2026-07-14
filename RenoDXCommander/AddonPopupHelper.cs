@@ -31,6 +31,10 @@ public static class AddonPopupHelper
                      || !string.IsNullOrEmpty(a.DownloadUrl64))
             .ToList();
 
+        // Include custom addons (local files, no download URLs)
+        var customAddons = addonPackService.GetCustomAddons();
+        availableAddons.AddRange(customAddons);
+
         if (availableAddons.Count == 0)
         {
             var emptyDlg = new ContentDialog
@@ -57,8 +61,40 @@ public static class AddonPopupHelper
 
         var panel = new StackPanel { Spacing = 8 };
 
-        foreach (var entry in availableAddons)
+        // Folder link at top
+        var customFolderPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "Custom", "Addons");
+        var folderLink = new HyperlinkButton
         {
+            Content = "Place custom .addon64/.addon32 files here",
+            FontSize = 11,
+            Foreground = Brush(ResourceKeys.AccentBlueBrush),
+            Padding = new Thickness(0),
+            Margin = new Thickness(0, 0, 0, 4),
+        };
+        folderLink.Click += (_, _) =>
+        {
+            try
+            {
+                Directory.CreateDirectory(customFolderPath);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = customFolderPath,
+                    UseShellExecute = true,
+                });
+            }
+            catch { }
+        };
+        panel.Children.Add(folderLink);
+
+        // Separate managed and custom addons
+        var managedAddons = availableAddons.Where(a => !a.SectionId.StartsWith("custom-", StringComparison.OrdinalIgnoreCase)).ToList();
+        var customAddonsList = availableAddons.Where(a => a.SectionId.StartsWith("custom-", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        foreach (var entry in managedAddons)
+        {
+            var isCustom = false;
             var isDownloaded = addonPackService.IsDownloaded(entry.PackageName);
             var isSelected = selected.Contains(entry.PackageName);
 
@@ -110,6 +146,7 @@ public static class AddonPopupHelper
             // Capture for the lambda
             var capturedEntry = entry;
             var capturedTickMark = tickMark;
+            var isCustomAddon = entry.SectionId.StartsWith("custom-", StringComparison.OrdinalIgnoreCase);
 
             toggle.Toggled += async (s, ev) =>
             {
@@ -117,8 +154,8 @@ public static class AddonPopupHelper
 
                 if (toggle.IsOn)
                 {
-                    // Download if not already staged
-                    if (!addonPackService.IsDownloaded(capturedEntry.PackageName))
+                    // Download if not already staged (skip for custom addons — they're local files)
+                    if (!isCustomAddon && !addonPackService.IsDownloaded(capturedEntry.PackageName))
                     {
                         toggle.IsEnabled = false;
                         try
@@ -159,6 +196,87 @@ public static class AddonPopupHelper
                 BorderBrush = Brush(ResourceKeys.BorderSubtleBrush),
                 BorderThickness = new Thickness(1),
             });
+        }
+
+        // Custom addons section
+        if (customAddonsList.Count > 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Custom Addons",
+                FontSize = 12,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                Opacity = 0.6,
+                Margin = new Thickness(0, 12, 0, 4),
+            });
+
+            foreach (var entry in customAddonsList)
+            {
+                var isCustom = true;
+                var isDownloaded = true;
+                var isSelected = selected.Contains(entry.PackageName);
+
+                var textPanel = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+                var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+                nameRow.Children.Add(new TextBlock
+                {
+                    Text = entry.PackageName,
+                    FontSize = 13,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                });
+                nameRow.Children.Add(new TextBlock
+                {
+                    Text = "✓",
+                    FontSize = 13,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+                textPanel.Children.Add(nameRow);
+
+                if (!string.IsNullOrEmpty(entry.PackageDescription))
+                {
+                    textPanel.Children.Add(new TextBlock
+                    {
+                        Text = entry.PackageDescription,
+                        FontSize = 11,
+                        Opacity = 0.6,
+                        Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                        TextWrapping = TextWrapping.Wrap,
+                        MaxWidth = 450,
+                    });
+                }
+
+                bool suppressToggle = false;
+                var toggle = new ToggleSwitch
+                {
+                    IsOn = isSelected,
+                    OnContent = "On",
+                    OffContent = "Off",
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                toggle.Toggled += (s, ev) => { if (suppressToggle) return; };
+                toggles.Add((entry.PackageName, toggle));
+
+                var rowGrid = new Grid { ColumnSpacing = 12 };
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                Grid.SetColumn(textPanel, 0);
+                Grid.SetColumn(toggle, 1);
+                rowGrid.Children.Add(textPanel);
+                rowGrid.Children.Add(toggle);
+
+                panel.Children.Add(new Border
+                {
+                    Child = rowGrid,
+                    Padding = new Thickness(10, 8, 10, 8),
+                    CornerRadius = new CornerRadius(6),
+                    Background = Brush(ResourceKeys.SurfaceRaisedBrush),
+                    BorderBrush = Brush(ResourceKeys.BorderSubtleBrush),
+                    BorderThickness = new Thickness(1),
+                });
+            }
         }
 
         var scrollViewer = new ScrollViewer

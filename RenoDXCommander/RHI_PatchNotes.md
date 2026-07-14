@@ -8,6 +8,7 @@
 - Added `lumaNameOverrides` manifest field — separate name mapping for Luma wiki matching (independent of RenoDX wiki overrides).
 - Added Nexus mod summary on the RenoDX Info button for external-only Nexus games.
 - Added "Dump LUT Shaders" toggle to the RenoDX cog dialog (Compatibility Settings section).
+- Added Custom Addons folder (`%LocalAppData%\RHI\Custom\Addons\`) — place `.addon64`/`.addon32` files here and they appear in the Addon Manager and per-game Select Addons picker with on/off toggles. No download needed — deployed directly from the folder.
 
 ### Changes
 
