@@ -1438,9 +1438,13 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Defaults + Batch Deploy (single column, no row split) -->
-                                <StackPanel Grid.Column="0" Spacing="16">
-                                    <StackPanel Spacing="8">
+                                <!-- Left: Defaults + Batch Deploy -->
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Spacing="8">
                                         <TextBlock Text="Defaults" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11"
@@ -1455,7 +1459,7 @@
                                         <StackPanel x:Name="DlssDefaultsSummaryPanel" x:FieldModifier="internal" Spacing="4" Margin="0,4,0,0"/>
                                     </StackPanel>
 
-                                    <StackPanel Spacing="8">
+                                    <StackPanel Grid.Row="1" Spacing="8">
                                         <TextBlock Text="Batch Deploy" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11"
@@ -1468,15 +1472,15 @@
                                                 CornerRadius="8" Padding="12,7" FontSize="12"
                                                 HorizontalAlignment="Stretch"/>
                                     </StackPanel>
-                                </StackPanel>
+                                </Grid>
 
                                 <!-- Divider -->
                                 <Border Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderSubtleBrush}" Margin="16,0"/>
 
-                                <!-- Right: On-Screen Indicator + Auto-Update -->
+                                <!-- Right: DLSS & G-Sync Indicators + Auto-Update -->
                                 <StackPanel Grid.Column="2" Spacing="8">
-                                    <TextBlock Text="On-Screen Indicator" FontSize="14" FontWeight="SemiBold"
+                                    <TextBlock Text="DLSS On-Screen Indicator" FontSize="13" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
@@ -1484,6 +1488,15 @@
                                     <ComboBox x:Name="DlssIndicatorCombo" x:FieldModifier="internal"
                                               FontSize="12" HorizontalAlignment="Stretch"
                                               SelectionChanged="DlssIndicatorCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Enabled"/>
+                                        <ComboBoxItem Content="Disabled"/>
+                                    </ComboBox>
+
+                                    <TextBlock Text="G-Sync On-Screen Indicator" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,8,0,0"/>
+                                    <ComboBox x:Name="GSyncIndicatorCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              SelectionChanged="GSyncIndicatorCombo_SelectionChanged">
                                         <ComboBoxItem Content="Enabled"/>
                                         <ComboBoxItem Content="Disabled"/>
                                     </ComboBox>

@@ -9,6 +9,8 @@
 - Added Nexus mod summary on the RenoDX Info button for external-only Nexus games.
 - Added "Dump LUT Shaders" toggle to the RenoDX cog dialog (Compatibility Settings section).
 - Added Custom Addons folder (`%LocalAppData%\RHI\Custom\Addons\`) — place `.addon64`/`.addon32` files here and they appear in the Addon Manager and per-game Select Addons picker with on/off toggles. No download needed — deployed directly from the folder.
+- Added per-game G-Sync disable toggle in the driver settings panel — force G-Sync off for specific games without changing the global setting.
+- Added G-Sync On-Screen Indicator toggle in the DLSS/Streamline Settings card (below the DLSS indicator).
 
 ### Changes
 

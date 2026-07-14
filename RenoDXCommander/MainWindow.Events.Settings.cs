@@ -889,6 +889,15 @@ public sealed partial class MainWindow
         }
     }
 
+    private void GSyncIndicatorCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_dlssIndicatorInitializing) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        bool enabled = combo.SelectedIndex == 0;
+        var presetService = App.Services.GetRequiredService<DlssPresetService>();
+        presetService.SetGSyncIndicator(enabled);
+    }
+
     private void AutoUpdateDlssCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;

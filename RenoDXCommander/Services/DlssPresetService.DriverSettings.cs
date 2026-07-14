@@ -38,6 +38,12 @@ public partial class DlssPresetService
     private const uint GSYNC_GLOBAL_MODE_ID = 0x1094F1F7;
     private const uint PREFERRED_REFRESH_RATE_ID = 0x0064B541;
 
+    // G-Sync per-game disable settings
+    private const uint GSYNC_GLOBAL_FEATURE_ID = 0x1094F157;      // On=0x01, Off=0x00
+    private const uint GSYNC_REQUESTED_STATE_ID = 0x10A879AC;     // Allow=0x00, Force Off=0x01
+    private const uint GSYNC_STATE_ID = 0x10A879CF;               // Allow=0x00, Force Off=0x01
+    private const uint GSYNC_INDICATOR_ID = 0x10029538;           // Off=0x00, On=0x01 (global)
+
     // ── VSync option arrays ───────────────────────────────────────────────────
 
     public static readonly (string Name, uint Value)[] VSyncModeOptions =
@@ -673,6 +679,96 @@ $destroyDel.Invoke($hSession) | Out-Null
         catch (Exception ex)
         {
             CrashReporter.Log($"[DlssPresetService.SetGSyncMode] Error — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Gets whether G-Sync is disabled for a specific game. Returns true if G-Sync is enabled (Allow), false if disabled (Force Off).</summary>
+    public bool GetPerGameGSyncEnabled(string gameName, string installPath)
+    {
+        // If the Requested State setting is "Force Off" (0x01), G-Sync is disabled for this game
+        var val = GetPreset(gameName, installPath, GSYNC_REQUESTED_STATE_ID);
+        return val != 0x01; // 0x00 (Allow) or not set = enabled
+    }
+
+    /// <summary>Sets per-game G-Sync state. When disabled, writes Force Off to all three G-Sync control settings. When enabled, deletes them (inherit from global).</summary>
+    public bool SetPerGameGSyncEnabled(string gameName, string installPath, bool enabled)
+    {
+        if (!_isSupported || _session == null || _cachedProfiles == null)
+            return false;
+
+        try
+        {
+            if (enabled)
+            {
+                // Delete all three per-game settings so the game inherits from global
+                DeletePreset(gameName, installPath, GSYNC_GLOBAL_FEATURE_ID);
+                DeletePreset(gameName, installPath, GSYNC_REQUESTED_STATE_ID);
+                DeletePreset(gameName, installPath, GSYNC_STATE_ID);
+            }
+            else
+            {
+                // Force Off: disable G-Sync for this game
+                SetPreset(gameName, installPath, GSYNC_GLOBAL_FEATURE_ID, 0x00);
+                SetPreset(gameName, installPath, GSYNC_REQUESTED_STATE_ID, 0x01);
+                SetPreset(gameName, installPath, GSYNC_STATE_ID, 0x01);
+            }
+
+            CrashReporter.Log($"[DlssPresetService.SetPerGameGSyncEnabled] Set G-Sync {(enabled ? "Enabled" : "Disabled")} for '{gameName}'");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.SetPerGameGSyncEnabled] Error for '{gameName}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Gets the global G-Sync indicator overlay state. Returns true if enabled.</summary>
+    public bool GetGSyncIndicator()
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var setting = baseProfile.Settings.FirstOrDefault(s => s.SettingId == GSYNC_INDICATOR_ID);
+            if (setting?.CurrentValue is uint val) return val == 0x01;
+
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(baseProfile.Handle);
+            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+            {
+                var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, GSYNC_INDICATOR_ID);
+                if (rawVal.HasValue) return rawVal.Value == 0x01;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    /// <summary>Sets the global G-Sync indicator overlay (On/Off). Global setting on base profile.</summary>
+    public bool SetGSyncIndicator(bool enabled)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            baseProfile.SetSetting(GSYNC_INDICATOR_ID, enabled ? 1u : 0u);
+            _session.Save();
+            CrashReporter.Log($"[DlssPresetService.SetGSyncIndicator] Set to {(enabled ? "On" : "Off")}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Try raw API fallback
+            var sessionH = GetHandlePtr(_session.Handle);
+            var baseH = GetHandlePtr(_session.BaseProfile.Handle);
+            if (sessionH != IntPtr.Zero && baseH != IntPtr.Zero)
+            {
+                if (SetSettingRawNvApi(sessionH, baseH, GSYNC_INDICATOR_ID, enabled ? 1u : 0u))
+                    return true;
+            }
+            CrashReporter.Log($"[DlssPresetService.SetGSyncIndicator] Error — {ex.Message}");
             return false;
         }
     }

@@ -141,6 +141,10 @@ public class SettingsHandler
         }
         _window._dlssIndicatorInitializing = false;
 
+        // Initialize G-Sync Indicator combo
+        var presetSvcForGsync = App.Services.GetRequiredService<DlssPresetService>();
+        _window.GSyncIndicatorCombo.SelectedIndex = presetSvcForGsync.GetGSyncIndicator() ? 0 : 1; // 0=Enabled, 1=Disabled
+
         // Initialize DLSS/Streamline auto-update combos
         _window.AutoUpdateDlssCombo.SelectedIndex = ViewModel.Settings.AutoUpdateDlss ? 1 : 0;
         _window.AutoUpdateStreamlineCombo.SelectedIndex = ViewModel.Settings.AutoUpdateStreamline ? 1 : 0;

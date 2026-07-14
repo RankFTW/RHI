@@ -277,10 +277,10 @@ public partial class DetailPanelBuilder
             nvidiaGrid.Children.Add(smoothCol);
             nvidiaGrid.Children.Add(MakeDlssDivider(5));
 
-            // ── Column 6: Power / CPU ──
+            // ── Column 6: Other (Power, G-Sync, Restore) ──
             var powerCol = new StackPanel { Spacing = 4 };
-            var powerLabel = new TextBlock { Text = "Power", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            ToolTipService.SetToolTip(powerLabel, "GPU power management. Maximum Performance prevents clock throttling. Optimal is NVIDIA's recommended default.");
+            var powerLabel = new TextBlock { Text = "Other", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            ToolTipService.SetToolTip(powerLabel, "Power management, G-Sync control, and profile reset.");
             powerCol.Children.Add(powerLabel);
 
             // Power Management Mode
@@ -312,7 +312,31 @@ public partial class DetailPanelBuilder
                 init = false;
             }
 
-            // Restore Profile Defaults button (aligned with Flip Pacing combo in Smooth Motion column)
+            // G-Sync per-game toggle
+            {
+                powerCol.Children.Add(new TextBlock { Text = "G-Sync", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                bool gsyncEnabled = nvidiaPresetService.GetPerGameGSyncEnabled(card.GameName, installPathSafe);
+                var gsyncCombo = new ComboBox
+                {
+                    ItemsSource = new[] { "Enabled", "Disabled" },
+                    SelectedIndex = gsyncEnabled ? 0 : 1,
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    CornerRadius = new CornerRadius(6),
+                };
+                ToolTipService.SetToolTip(gsyncCombo, "Per-game G-Sync control. Disabled forces G-Sync off for this game regardless of global setting.");
+                var gsyncInit = true;
+                gsyncCombo.SelectionChanged += (s, ev) =>
+                {
+                    if (gsyncInit) return;
+                    bool enabled = gsyncCombo.SelectedIndex == 0;
+                    nvidiaPresetService.SetPerGameGSyncEnabled(card.GameName, installPathSafe, enabled);
+                };
+                powerCol.Children.Add(gsyncCombo);
+                gsyncInit = false;
+            }
+
+            // Restore Profile Defaults button (label spacer to align with 3rd row combos)
             powerCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
             var restoreProfileBtn = new Button
             {
