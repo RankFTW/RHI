@@ -22,7 +22,8 @@
 
 - Fixed "Apply to All Games" (Screenshots & Hotkeys) not writing overlay and screenshot hotkeys to reshade.ini files — only the screenshot path was being applied.
 - Fixed ReBAR Size Limit not reading back correctly on some systems — now uses raw NVAPI read with binary type awareness, with NvAPIWrapper as fallback.
-- Fixed ReBAR Size Limit write corrupting the profile on some systems — NvAPIWrapper wrote the array length instead of data. Writes now always use the PowerShell helper which works reliably.
+- Fixed ReBAR Size Limit write corrupting the profile on some systems — NvAPIWrapper's binary marshalling is broken (produces doubled values or garbage). All ReBAR Size Limit writes now use raw NVAPI with the correct BINARY struct layout (matching NVPI), with PowerShell helper as fallback.
+- Fixed "Restore DLSS/Streamline Defaults" resetting Render Scale to Performance (50%) instead of clearing it — the fallback in DeletePreset was writing 0x00 (Performance) instead of 0x03 (App Controlled) for render scale mode settings.
 - Fixed HDR Auto-Toggle setting always reverting to "On" on app restart — the "Off" state was never persisted to settings.json.
 - Fixed Update All re-deploying Engine.ini HDR settings on games where the user had explicitly disabled it via the RenoDX cog. The toggle state is now persisted in installed.json and respected by Update All.
 - Fixed Engine.ini HDR combo in the RenoDX cog showing "On" after re-opening even when the user had set it to "Off" — now reads from the persisted record instead of checking the file on disk.

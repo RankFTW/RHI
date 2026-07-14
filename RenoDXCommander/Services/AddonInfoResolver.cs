@@ -26,7 +26,7 @@ public class AddonInfoResolver
         "RenoDX is an HDR mod framework that upgrades SDR games to HDR using ReShade. It provides per-game tone mapping and color space conversion.";
 
     public const string FallbackNativeHdr =
-        "This game uses UE-Extended with native HDR. You must enable HDR in the game's display settings for the mod to work.";
+        "This game is set to use UE-Extended. It is automatically configured to use native HDR and an Engine.ini will be automatically deployed upon installation. If there is an ingame HDR option then enable that too.";
 
     public const string FallbackReLimiter =
         "ReLimiter is a frame limiter that works alongside ReShade to reduce input lag and improve frame pacing in games.";

@@ -124,8 +124,10 @@ public partial class DlssPresetService
             catch (Exception delEx)
             {
                 CrashReporter.Log($"[DlssPresetService.DeletePreset] DeleteSetting 0x{settingId:X8} failed for '{gameName}' — {delEx.Message}");
-                // Fallback: write 0 to clear it
-                SetPreset(gameName, installPath, settingId, 0);
+                // Fallback: write the correct default value for this setting
+                // (NOT 0 — some settings use 0 as a meaningful non-default value)
+                var defaultValue = GetSettingDefaultValue(settingId);
+                SetPreset(gameName, installPath, settingId, defaultValue);
             }
             _session.Save();
             CrashReporter.Log($"[DlssPresetService.DeletePreset] Deleted 0x{settingId:X8} for '{gameName}'");
@@ -136,6 +138,20 @@ public partial class DlssPresetService
             CrashReporter.Log($"[DlssPresetService.DeletePreset] Error for '{gameName}' — {ex.Message}");
             return false;
         }
+    }
+
+    /// <summary>
+    /// Returns the correct "cleared/default/no-override" value for a given setting ID.
+    /// Used as fallback when profile.DeleteSetting fails.
+    /// </summary>
+    private static uint GetSettingDefaultValue(uint settingId)
+    {
+        return settingId switch
+        {
+            NGX_DLSS_SR_RENDER_SCALE_ID => 0x03,      // App Controlled (Default) — NOT 0x00 which is Performance
+            NGX_DLSS_RR_RENDER_SCALE_ID => 0x03,      // App Controlled (Default) — NOT 0x00 which is Performance
+            _ => 0x00,                                  // Most settings: 0 = Default/Off/No Override
+        };
     }
 
     /// <summary>

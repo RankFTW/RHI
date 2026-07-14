@@ -288,9 +288,15 @@ $session.Save()
             {
                 profile.SetSetting(REBAR_EXPR_MODES_ID, mode);
                 // Also set Size Limit to 1GB default if not already set
-                var existingSizeSetting = profile.Settings.FirstOrDefault(s => s.SettingId == REBAR_SIZE_LIMIT_ID);
-                if (existingSizeSetting == null)
-                    profile.SetSetting(REBAR_SIZE_LIMIT_ID, BitConverter.GetBytes(0x0000000040000000UL));
+                var existingSize = GetReBarSizeLimit(gameName, installPath);
+                if (existingSize == 0)
+                {
+                    // Use raw binary write (NvAPIWrapper's SetSetting(uint, byte[]) is broken for BINARY)
+                    var sessionH = GetHandlePtr(_session.Handle);
+                    var profileH = GetHandlePtr(profile.Handle);
+                    if (sessionH != IntPtr.Zero && profileH != IntPtr.Zero)
+                        SetBinarySettingRawNvApi(sessionH, profileH, REBAR_SIZE_LIMIT_ID, BitConverter.GetBytes(0x0000000040000000UL));
+                }
             }
             else
             {
@@ -350,11 +356,6 @@ if ($null -eq $profile) {{
 if ($null -ne $profile) {{
     $profile.SetSetting([uint32]0x000F00BA, [uint32]{featureVal})
     $profile.SetSetting([uint32]0x00C09D09, [uint32]{modeVal})
-    [byte[]]$sizeBytes = @(0x00,0x00,0x00,0x40,0x00,0x00,0x00,0x00)
-    $existingSize = $profile.Settings | Where-Object {{ $_.SettingId -eq 0x000F00FF }}
-    if ($null -eq $existingSize -and {featureVal} -eq 1) {{
-        $profile.SetSetting([uint32]0x000F00FF, $sizeBytes)
-    }}
     $session.Save()
     Write-Host 'OK'
 }} else {{
@@ -386,6 +387,23 @@ if ($null -ne $profile) {{
             foreach (var p in _session.Profiles)
                 _cachedProfiles.TryAdd(p.Name, p);
             InvalidateProfileLookupCache();
+
+            // After session reload, set Size Limit to 1GB default via raw binary if enabling and not already set
+            if (enabled)
+            {
+                var existingSize = GetReBarSizeLimit(gameName, installPath);
+                if (existingSize == 0)
+                {
+                    var freshProfile = FindProfile(gameName, installPath);
+                    if (freshProfile != null)
+                    {
+                        var sH = GetHandlePtr(_session.Handle);
+                        var pH = GetHandlePtr(freshProfile.Handle);
+                        if (sH != IntPtr.Zero && pH != IntPtr.Zero)
+                            SetBinarySettingRawNvApi(sH, pH, REBAR_SIZE_LIMIT_ID, BitConverter.GetBytes(0x0000000040000000UL));
+                    }
+                }
+            }
 
             CrashReporter.Log($"[DlssPresetService.SetReBarElevated] Elevated process completed for '{gameName}'");
             return true;
@@ -424,8 +442,29 @@ if ($null -ne $profile) {{
             if (profile == null) return false;
         }
 
-        var success = SetReBarSizeLimitViaPs(profile.Name, sizeBytes, useBaseProfile: false);
-        if (success) _rebarSizeLimitCache[gameName] = sizeBytes;
+        // Use raw NVAPI binary write (same approach as NVPI) — works on all systems
+        var sessionH = GetHandlePtr(_session.Handle);
+        var profileH = GetHandlePtr(profile.Handle);
+        if (sessionH == IntPtr.Zero || profileH == IntPtr.Zero)
+        {
+            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Failed to get native handles for '{gameName}'");
+            return false;
+        }
+
+        var data = BitConverter.GetBytes(sizeBytes); // 8 bytes, little-endian
+        var success = SetBinarySettingRawNvApi(sessionH, profileH, REBAR_SIZE_LIMIT_ID, data);
+        if (success)
+        {
+            _rebarSizeLimitCache[gameName] = sizeBytes;
+            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Set 0x{sizeBytes:X16} for '{gameName}' via raw binary NVAPI");
+        }
+        else
+        {
+            // Fallback to PS helper (legacy path for edge cases)
+            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Raw binary write failed for '{gameName}', trying PS helper...");
+            success = SetReBarSizeLimitViaPs(profile.Name, sizeBytes, useBaseProfile: false);
+            if (success) _rebarSizeLimitCache[gameName] = sizeBytes;
+        }
         return success;
     }
 

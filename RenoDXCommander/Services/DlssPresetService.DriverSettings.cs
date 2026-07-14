@@ -842,6 +842,22 @@ $session.Save()
     public bool SetGlobalReBarSizeLimit(ulong sizeBytes)
     {
         if (!_isSupported || _session == null) return false;
+
+        // Try raw NVAPI binary write first (same approach as NVPI)
+        var sessionH = GetHandlePtr(_session.Handle);
+        var baseH = GetHandlePtr(_session.BaseProfile.Handle);
+        if (sessionH != IntPtr.Zero && baseH != IntPtr.Zero)
+        {
+            var data = BitConverter.GetBytes(sizeBytes);
+            if (SetBinarySettingRawNvApi(sessionH, baseH, REBAR_SIZE_LIMIT_ID, data))
+            {
+                CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Set 0x{sizeBytes:X16} via raw binary NVAPI");
+                return true;
+            }
+        }
+
+        // Fallback to PS helper
+        CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Raw write failed, trying PS helper...");
         return SetReBarSizeLimitViaPs(null, sizeBytes, useBaseProfile: true);
     }
 

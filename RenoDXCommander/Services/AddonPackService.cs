@@ -28,6 +28,10 @@ public class AddonPackService : IAddonPackService
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "RHI", "addon_deployments.json");
 
+    private static readonly string CustomAddonsDir =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "Custom", "Addons");
+
     private readonly HttpClient _http;
     private List<AddonEntry> _packs = new();
     private readonly SemaphoreSlim _downloadLock = new(1, 1);
@@ -55,7 +59,11 @@ public class AddonPackService : IAddonPackService
         EffectInstallPath: null,
         DeployFileName: "renodx-dlssfix");
 
-    public AddonPackService(HttpClient http) => _http = http;
+    public AddonPackService(HttpClient http)
+    {
+        _http = http;
+        try { Directory.CreateDirectory(CustomAddonsDir); } catch { }
+    }
 
     // ── Public properties ─────────────────────────────────────────────────────────
 
@@ -449,11 +457,22 @@ public class AddonPackService : IAddonPackService
         {
             var safeName = SanitizeFileName(packageName);
             var stagingFile = Path.Combine(StagingDir, safeName + bitnessExt);
+            var isCustom = false;
 
             if (!File.Exists(stagingFile))
             {
-                CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping '{packageName}' — no {bitnessExt} variant in staging.");
-                continue;
+                // Check if this is a custom addon (deployed directly from Custom\Addons folder)
+                var customPath = Path.Combine(CustomAddonsDir, packageName + bitnessExt);
+                if (File.Exists(customPath))
+                {
+                    stagingFile = customPath;
+                    isCustom = true;
+                }
+                else
+                {
+                    CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping '{packageName}' — no {bitnessExt} variant in staging or custom folder.");
+                    continue;
+                }
             }
 
             // Use DeployFileName if the entry specifies one, otherwise use the original
@@ -498,6 +517,12 @@ public class AddonPackService : IAddonPackService
                         deployName = safeName;
                     }
                 }
+            }
+
+            // For custom addons, always use the original filename
+            if (isCustom)
+            {
+                deployName = packageName;
             }
 
             var destFile = Path.Combine(installPath, deployName + bitnessExt);
@@ -565,6 +590,58 @@ public class AddonPackService : IAddonPackService
         SaveDeployments(deployments);
 
         CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Deployment complete for '{gameName}'. Deployed {deployedFileNames.Count} addon(s).");
+    }
+
+    // ── Custom Addons ───────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public IReadOnlyList<AddonEntry> GetCustomAddons()
+    {
+        if (!Directory.Exists(CustomAddonsDir))
+            return Array.Empty<AddonEntry>();
+
+        var results = new List<AddonEntry>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var file in Directory.EnumerateFiles(CustomAddonsDir))
+        {
+            var ext = Path.GetExtension(file);
+            if (!ext.Equals(".addon64", StringComparison.OrdinalIgnoreCase) &&
+                !ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var baseName = Path.GetFileNameWithoutExtension(file);
+            if (!seen.Add(baseName)) continue; // Avoid duplicates if both 32/64 present
+
+            results.Add(new AddonEntry(
+                SectionId: $"custom-{baseName}",
+                PackageName: baseName,
+                PackageDescription: "Custom addon (local file)",
+                DownloadUrl: null,
+                DownloadUrl32: null,
+                DownloadUrl64: null,
+                RepositoryUrl: null,
+                EffectInstallPath: null,
+                DeployFileName: baseName));
+        }
+
+        return results.AsReadOnly();
+    }
+
+    /// <inheritdoc />
+    public bool IsCustomAddon(string packageName)
+    {
+        if (!Directory.Exists(CustomAddonsDir)) return false;
+        return File.Exists(Path.Combine(CustomAddonsDir, packageName + ".addon64"))
+            || File.Exists(Path.Combine(CustomAddonsDir, packageName + ".addon32"));
+    }
+
+    /// <inheritdoc />
+    public string? GetCustomAddonPath(string packageName, bool is32Bit)
+    {
+        var ext = is32Bit ? ".addon32" : ".addon64";
+        var path = Path.Combine(CustomAddonsDir, packageName + ext);
+        return File.Exists(path) ? path : null;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

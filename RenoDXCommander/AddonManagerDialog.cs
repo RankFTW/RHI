@@ -48,10 +48,59 @@ public static class AddonManagerDialog
 
         var panel = new StackPanel { Spacing = 8 };
 
+        // Custom addons folder link at top
+        var customFolderPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "Custom", "Addons");
+        var folderLink = new HyperlinkButton
+        {
+            Content = "Place custom .addon64/.addon32 files here",
+            FontSize = 11,
+            Foreground = Brush(ResourceKeys.AccentBlueBrush),
+            Padding = new Thickness(0),
+            Margin = new Thickness(0, 0, 0, 4),
+        };
+        folderLink.Click += (_, _) =>
+        {
+            try
+            {
+                Directory.CreateDirectory(customFolderPath);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = customFolderPath,
+                    UseShellExecute = true,
+                });
+            }
+            catch { }
+        };
+        panel.Children.Add(folderLink);
+
         foreach (var entry in packs)
         {
             var row = BuildAddonRow(entry, addonPackService, xamlRoot, enabledAddons, onEnabledChanged);
             panel.Children.Add(row);
+        }
+
+        // Custom addons section
+        var customAddons = addonPackService.GetCustomAddons();
+        if (customAddons.Count > 0)
+        {
+            // Add a subtle separator/header
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Custom Addons",
+                FontSize = 12,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                Opacity = 0.6,
+                Margin = new Thickness(0, 12, 0, 4),
+            });
+
+            foreach (var entry in customAddons)
+            {
+                var row = BuildAddonRow(entry, addonPackService, xamlRoot, enabledAddons, onEnabledChanged);
+                panel.Children.Add(row);
+            }
         }
 
         var scrollViewer = new ScrollViewer
@@ -100,8 +149,10 @@ public static class AddonManagerDialog
     private static Border BuildAddonRow(AddonEntry entry, IAddonPackService addonPackService,
         XamlRoot xamlRoot, List<string> enabledAddons, Action onEnabledChanged)
     {
-        var isDownloaded = addonPackService.IsDownloaded(entry.PackageName);
+        var isCustomAddon = entry.SectionId.StartsWith("custom-", StringComparison.OrdinalIgnoreCase);
+        var isDownloaded = isCustomAddon || addonPackService.IsDownloaded(entry.PackageName);
         var actionType = GetActionType(entry);
+        if (isCustomAddon) actionType = "download"; // Custom addons use toggle without download
         var isEnabled = enabledAddons.Contains(entry.PackageName, StringComparer.OrdinalIgnoreCase);
 
         // Left side: name (with green ✓ if downloaded) + description
@@ -173,8 +224,8 @@ public static class AddonManagerDialog
 
                 if (toggle.IsOn)
                 {
-                    // Download if not already staged, then enable
-                    if (!addonPackService.IsDownloaded(entry.PackageName))
+                    // Download if not already staged (skip for custom addons — they're local files)
+                    if (!isCustomAddon && !addonPackService.IsDownloaded(entry.PackageName))
                     {
                         toggle.IsEnabled = false;
                         try

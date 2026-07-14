@@ -125,6 +125,60 @@ public partial class DlssPresetService
     }
 
     /// <summary>
+    /// Sets a BINARY setting directly via raw NVAPI, bypassing NvAPIWrapper.
+    /// Replicates NVPI's StoreBinaryValue approach: settingType=1 (BINARY),
+    /// currentValue = [int32 length][data bytes].
+    /// Used for QWORD/binary settings like ReBAR Size Limit (0x000F00FF).
+    /// </summary>
+    private bool SetBinarySettingRawNvApi(IntPtr sessionHandle, IntPtr profileHandle, uint settingId, byte[] data)
+    {
+        EnsureNativeFunctions();
+        if (_nativeSetSettingPtr == null || _nativeSaveSettings == null) return false;
+
+        const int STRUCT_SIZE = 12320;
+        var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
+        try
+        {
+            unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
+
+            // version at offset 0: size | (1 << 16)
+            Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16));
+            // settingId at offset 4100
+            Marshal.WriteInt32(ptr, 4100, (int)settingId);
+            // settingType at offset 4104: 1 = BINARY (matches NVPI's NVDRS_BINARY_TYPE enum)
+            Marshal.WriteInt32(ptr, 4104, 1);
+            // settingLocation at offset 4108: 0 = CURRENT_PROFILE_LOCATION
+            Marshal.WriteInt32(ptr, 4108, 0);
+
+            // currentValue union at offset 8220:
+            // NVPI's binaryValue layout: [int32 length][data bytes]
+            Marshal.WriteInt32(ptr, 8220, data.Length);
+            Marshal.Copy(data, 0, ptr + 8224, data.Length);
+
+            int result = _nativeSetSettingPtr(sessionHandle, profileHandle, ptr, 0, 0);
+            if (result != 0)
+            {
+                CrashReporter.Log($"[DlssPresetService.SetBinarySettingRawNvApi] NvAPI_DRS_SetSetting returned {result} for 0x{settingId:X8} (len={data.Length})");
+                return false;
+            }
+
+            int saveResult = _nativeSaveSettings(sessionHandle);
+            if (saveResult != 0)
+            {
+                CrashReporter.Log($"[DlssPresetService.SetBinarySettingRawNvApi] NvAPI_DRS_SaveSettings returned {saveResult}");
+                return false;
+            }
+
+            CrashReporter.Log($"[DlssPresetService.SetBinarySettingRawNvApi] Set BINARY 0x{settingId:X8} (len={data.Length}) via raw NVAPI");
+            return true;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(ptr);
+        }
+    }
+
+    /// <summary>
     /// Gets a DWORD setting directly via raw NVAPI, bypassing NvAPIWrapper.
     /// Used for settings that NvAPIWrapper can't read (newer setting IDs).
     /// </summary>
