@@ -1,1 +1,1 @@
-Hi all, thanks to everyone who continues to use RHI. We have now reached a combined total download count of over 36k. Here's to many more! 
+Hi all, 2.2.0 has just released. If anybody has any issues with anything RHI releated pop on to Discord and let me know so I can work towards fixing it. Thank you all again for your support.
