@@ -1583,11 +1583,32 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="G-Sync" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="GSyncEnableCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Globally enables or disables G-Sync/FreeSync variable refresh rate."
+                                                      SelectionChanged="GSyncEnableCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
                                             <TextBlock Text="G-Sync Mode" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
                                             <ComboBox x:Name="GSyncModeCombo" x:FieldModifier="internal"
                                                       FontSize="12" HorizontalAlignment="Stretch"
                                                       ToolTipService.ToolTip="Controls G-Sync/FreeSync variable refresh rate. Fullscreen and Windowed recommended for seamless experience."
                                                       SelectionChanged="GSyncModeCombo_SelectionChanged"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="FPS Limit" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                            <ComboBox x:Name="FpsLimitCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Global FPS cap via NVIDIA driver. VRR-optimal presets cap just below refresh rate to stay in VRR range."
+                                                      SelectionChanged="FpsLimitCombo_SelectionChanged"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Spacing="4">
                                             <TextBlock Text="Preferred Refresh Rate" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
@@ -1619,7 +1640,7 @@
                                         </StackPanel>
                                     </Grid>
 
-                                    <!-- ReBAR row (moved from right column) -->
+                                    <!-- ReBAR row -->
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>

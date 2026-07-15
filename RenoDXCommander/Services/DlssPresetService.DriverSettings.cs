@@ -44,6 +44,9 @@ public partial class DlssPresetService
     private const uint GSYNC_STATE_ID = 0x10A879CF;               // Allow=0x00, Force Off=0x01
     private const uint GSYNC_INDICATOR_ID = 0x10029538;           // Off=0x00, On=0x01 (global)
 
+    // FPS Limiter V3 (global)
+    private const uint FPS_LIMITER_V3_ID = 0x10835002;        // Off=0x00, value=FPS cap as uint
+
     // ── VSync option arrays ───────────────────────────────────────────────────
 
     public static readonly (string Name, uint Value)[] VSyncModeOptions =
@@ -159,6 +162,31 @@ public partial class DlssPresetService
     [
         ("App Setting", 0x00000000),
         ("Highest available", 0x00000001),
+    ];
+
+    public static readonly (string Name, uint Value)[] GSyncEnableOptions =
+    [
+        ("Enabled", 0x00000001),
+        ("Disabled", 0x00000000),
+    ];
+
+    public static readonly (string Name, uint Value)[] FpsLimiterPresets =
+    [
+        ("Off", 0),
+        ("59 FPS (60Hz VRR Cap)", 59),
+        ("73 FPS (75Hz VRR Cap)", 73),
+        ("97 FPS (100Hz VRR Cap)", 97),
+        ("116 FPS (120Hz VRR Cap)", 116),
+        ("138 FPS (144Hz VRR Cap)", 138),
+        ("157 FPS (165Hz VRR Cap)", 157),
+        ("171 FPS (180Hz VRR Cap)", 171),
+        ("189 FPS (200Hz VRR Cap)", 189),
+        ("224 FPS (240Hz VRR Cap)", 224),
+        ("258 FPS (280Hz VRR Cap)", 258),
+        ("275 FPS (300Hz VRR Cap)", 275),
+        ("324 FPS (360Hz VRR Cap)", 324),
+        ("416 FPS (480Hz VRR Cap)", 416),
+        ("Custom...", uint.MaxValue),
     ];
 
     // ── VSync get/set ─────────────────────────────────────────────────────────
@@ -679,6 +707,105 @@ $destroyDel.Invoke($hSession) | Out-Null
         catch (Exception ex)
         {
             CrashReporter.Log($"[DlssPresetService.SetGSyncMode] Error — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Gets the global G-Sync Feature enable state. Returns 1 (On) by default.</summary>
+    public uint GetGlobalGSyncEnabled()
+    {
+        if (!_isSupported || _session == null) return 0x00000001; // Default: On
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var setting = baseProfile.Settings.FirstOrDefault(s => s.SettingId == GSYNC_GLOBAL_FEATURE_ID);
+            if (setting?.CurrentValue is uint val) return val;
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(baseProfile.Handle);
+            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+            {
+                var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, GSYNC_GLOBAL_FEATURE_ID);
+                if (rawVal.HasValue) return rawVal.Value;
+            }
+        }
+        catch { }
+        return 0x00000001;
+    }
+
+    /// <summary>Sets the global G-Sync Feature enable state on the base profile.</summary>
+    public bool SetGlobalGSyncEnabled(uint value)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            baseProfile.SetSetting(GSYNC_GLOBAL_FEATURE_ID, value);
+
+            // When disabling, also force off Requested State and State (same as per-game disable)
+            if (value == 0x00000000)
+            {
+                baseProfile.SetSetting(GSYNC_REQUESTED_STATE_ID, 0x00000001); // Force Off
+                baseProfile.SetSetting(GSYNC_STATE_ID, 0x00000001);           // Force Off
+            }
+            else
+            {
+                // When enabling, set Requested State and State back to Allow
+                baseProfile.SetSetting(GSYNC_REQUESTED_STATE_ID, 0x00000000); // Allow
+                baseProfile.SetSetting(GSYNC_STATE_ID, 0x00000000);           // Allow
+            }
+
+            _session.Save();
+            CrashReporter.Log($"[DlssPresetService.SetGlobalGSyncEnabled] Set to 0x{value:X8}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.SetGlobalGSyncEnabled] Error — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Gets the global FPS Limiter V3 value. Returns 0 (Off) by default.</summary>
+    public uint GetGlobalFpsLimit()
+    {
+        if (!_isSupported || _session == null) return 0;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var setting = baseProfile.Settings.FirstOrDefault(s => s.SettingId == FPS_LIMITER_V3_ID);
+            if (setting?.CurrentValue is uint val) return val;
+            var sessionHandle = GetHandlePtr(_session.Handle);
+            var profileHandle = GetHandlePtr(baseProfile.Handle);
+            if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+            {
+                var rawVal = GetSettingRawNvApi(sessionHandle, profileHandle, FPS_LIMITER_V3_ID);
+                if (rawVal.HasValue) return rawVal.Value;
+            }
+        }
+        catch { }
+        return 0;
+    }
+
+    /// <summary>Sets the global FPS Limiter V3 value on the base profile. 0 = Off.</summary>
+    public bool SetGlobalFpsLimit(uint fps)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            baseProfile.SetSetting(FPS_LIMITER_V3_ID, fps);
+            _session.Save();
+            CrashReporter.Log($"[DlssPresetService.SetGlobalFpsLimit] Set to {fps}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Try raw API fallback
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(_session.BaseProfile.Handle);
+            if (sH != IntPtr.Zero && pH != IntPtr.Zero && SetSettingRawNvApi(sH, pH, FPS_LIMITER_V3_ID, fps))
+                return true;
+            CrashReporter.Log($"[DlssPresetService.SetGlobalFpsLimit] Error — {ex.Message}");
             return false;
         }
     }

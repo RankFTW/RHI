@@ -367,6 +367,29 @@ public class WindowStateManager
             // Apply the bounds
             if (_windowBounds is var (x, y, w, h) && w >= 400 && h >= 300 && w <= 7680 && h <= 4320)
             {
+                // Clamp to work area so the window doesn't cover the taskbar auto-hide zone
+                var hMonitor = NativeInterop.MonitorFromWindow(_hwnd, NativeInterop.MONITOR_DEFAULTTONEAREST);
+                if (hMonitor != IntPtr.Zero)
+                {
+                    var mi = new NativeInterop.MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<NativeInterop.MONITORINFO>() };
+                    if (NativeInterop.GetMonitorInfo(hMonitor, ref mi))
+                    {
+                        var work = mi.rcWork;
+                        // Ensure bottom edge doesn't exceed work area
+                        if (y + h > work.Bottom)
+                            y = work.Bottom - h;
+                        // Ensure top edge isn't above work area
+                        if (y < work.Top)
+                            y = work.Top;
+                        // Ensure right edge doesn't exceed work area
+                        if (x + w > work.Right)
+                            x = work.Right - w;
+                        // Ensure left edge isn't off-screen
+                        if (x < work.Left)
+                            x = work.Left;
+                    }
+                }
+
                 if (positionOnly)
                 {
                     // Restore position only — size will be set by ApplyCompactSize
@@ -379,6 +402,12 @@ public class WindowStateManager
                 {
                     NativeInterop.SetWindowPos(_hwnd, IntPtr.Zero, x, y, w, h, 0x0040 /* SWP_NOZORDER */);
                 }
+            }
+
+            // Restore maximized state if it was saved (skip for compact mode)
+            if (!positionOnly && doc.TryGetProperty("Maximized", out var maxProp) && maxProp.GetBoolean())
+            {
+                NativeInterop.ShowWindow(_hwnd, NativeInterop.SW_MAXIMIZE);
             }
         }
         catch { }
@@ -443,15 +472,20 @@ public class WindowStateManager
     {
         try
         {
-            // Capture final bounds
-            CaptureCurrentBounds();
+            // Check if maximized BEFORE capturing bounds (maximized gives full-screen coords)
+            bool isMaximized = NativeInterop.IsZoomed(_hwnd);
+
+            // Capture final bounds (these are the restored-position bounds even when maximized)
+            if (!isMaximized)
+                CaptureCurrentBounds();
 
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_windowSettingsPath)!);
-            var data = new Dictionary<string, int>();
+            var data = new Dictionary<string, object>();
             if (_windowBounds is var (x, y, w, h))
             {
                 data["X"] = x; data["Y"] = y; data["W"] = w; data["H"] = h;
             }
+            data["Maximized"] = isMaximized;
             var json = System.Text.Json.JsonSerializer.Serialize(data);
             System.IO.File.WriteAllText(_windowSettingsPath, json);
         }

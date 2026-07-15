@@ -170,10 +170,29 @@ public class SettingsHandler
             var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == precompile);
             _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
 
+            // G-Sync Enable
+            _window.GSyncEnableCombo.ItemsSource = DlssPresetService.GSyncEnableOptions.Select(o => o.Name).ToArray();
+            var gsyncEnable = presetSvc.GetGlobalGSyncEnabled();
+            var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == gsyncEnable);
+            _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;
+
             _window.GSyncModeCombo.ItemsSource = DlssPresetService.GSyncModeOptions.Select(o => o.Name).ToArray();
             var gsync = presetSvc.GetGSyncMode();
             var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
             _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
+
+            // FPS Limit
+            var fpsItems = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
+            var fpsLimit = presetSvc.GetGlobalFpsLimit();
+            var fpsIdx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == fpsLimit);
+            if (fpsIdx < 0 && fpsLimit > 0)
+            {
+                // Custom value — insert before "Custom..." at the end
+                fpsItems.Insert(fpsItems.Count - 1, $"{fpsLimit} FPS (Custom)");
+                fpsIdx = fpsItems.Count - 2;
+            }
+            _window.FpsLimitCombo.ItemsSource = fpsItems.ToArray();
+            _window.FpsLimitCombo.SelectedIndex = fpsIdx >= 0 ? fpsIdx : 0;
 
             _window.PreferredRefreshRateCombo.ItemsSource = DlssPresetService.PreferredRefreshRateOptions.Select(o => o.Name).ToArray();
             var refreshRate = presetSvc.GetPreferredRefreshRate();
@@ -247,6 +266,21 @@ public class SettingsHandler
         var gsync = presetSvc.GetGSyncMode();
         var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
         _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
+
+        var gsyncEnable = presetSvc.GetGlobalGSyncEnabled();
+        var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == gsyncEnable);
+        _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;
+
+        var fpsLimit = presetSvc.GetGlobalFpsLimit();
+        var fpsItems = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
+        var fpsIdx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == fpsLimit);
+        if (fpsIdx < 0 && fpsLimit > 0)
+        {
+            fpsItems.Insert(fpsItems.Count - 1, $"{fpsLimit} FPS (Custom)");
+            fpsIdx = fpsItems.Count - 2;
+        }
+        _window.FpsLimitCombo.ItemsSource = fpsItems.ToArray();
+        _window.FpsLimitCombo.SelectedIndex = fpsIdx >= 0 ? fpsIdx : 0;
 
         var refreshRate = presetSvc.GetPreferredRefreshRate();
         var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);

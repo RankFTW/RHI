@@ -277,6 +277,81 @@ public sealed partial class MainWindow
         }
     }
 
+    private void GSyncEnableCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.GSyncEnableOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalGSyncEnabled(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private void FpsLimitCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+
+        var selectedText = combo.SelectedItem as string;
+        if (selectedText == "Custom...")
+        {
+            FpsLimitCombo_Custom(combo);
+            return;
+        }
+
+        var presets = DlssPresetService.FpsLimiterPresets;
+        if (combo.SelectedIndex < presets.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalFpsLimit(presets[combo.SelectedIndex].Value);
+        }
+    }
+
+    private async void FpsLimitCombo_Custom(ComboBox combo)
+    {
+        // Show a simple input dialog for custom FPS value
+        var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
+        var dialog = new ContentDialog
+        {
+            Title = "Custom FPS Limit",
+            Content = textBox,
+            PrimaryButtonText = "Set",
+            CloseButtonText = "Cancel",
+            XamlRoot = this.Content.XamlRoot,
+            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+        };
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text, out var fps) && fps >= 20 && fps <= 1000)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalFpsLimit(fps);
+
+            // Add the custom value to the combo and select it
+            _shaderCacheComboInit = true;
+            var items = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
+            items.Add($"{fps} FPS (Custom)");
+            combo.ItemsSource = items.ToArray();
+            combo.SelectedIndex = items.Count - 1;
+            _shaderCacheComboInit = false;
+        }
+        else
+        {
+            // Revert to previous selection
+            _shaderCacheComboInit = true;
+            var currentFps = App.Services.GetRequiredService<DlssPresetService>().GetGlobalFpsLimit();
+            var idx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == currentFps);
+            combo.SelectedIndex = idx >= 0 ? idx : 0;
+            _shaderCacheComboInit = false;
+        }
+    }
+
+    private void FpsLimitCombo_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        // No longer needed — non-editable ComboBox
+    }
+
     private void PreferredRefreshRateCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_shaderCacheComboInit) return;

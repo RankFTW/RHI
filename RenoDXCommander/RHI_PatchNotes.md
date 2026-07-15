@@ -1,3 +1,21 @@
+## v2.2.1-beta
+
+### New
+
+- Window now reopens maximized if it was closed maximized. Maximized state is persisted across sessions.
+- Added global G-Sync Enable toggle to the Global NVIDIA Driver Settings card — enable or disable G-Sync globally.
+- Added global FPS Limit (Frame Rate Limiter V3) to the Global NVIDIA Driver Settings card — pick a VRR-optimal preset or type any custom FPS cap (20-1000).
+
+### Changes
+
+- Rearranged Global NVIDIA Driver Settings card: G-Sync Enable + Mode on one row, FPS Limit + Preferred Refresh Rate on the next, then VSync + Power Mode, then ReBAR.
+
+### Bug Fixes
+
+- Fixed window position restore suppressing the Windows taskbar auto-hide — restored bounds are now clamped to the monitor work area.
+
+---
+
 ## v2.2.0
 
 ### New
