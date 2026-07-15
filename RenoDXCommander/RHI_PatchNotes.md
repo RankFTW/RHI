@@ -2,15 +2,15 @@
 
 ### New
 
-- Added Digital Vibrance control to the Global NVIDIA Driver Settings card — adjust color saturation per-display with a slider (0-100). Saved values are automatically restored on app startup.
-- Added global Power Mode setting to the Global NVIDIA Driver Settings card (next to VSync).
-- Added "Create Missing Profiles" button — creates NVIDIA driver profiles for all games that don't have one, ensuring global settings apply everywhere.
-- Added `lumaNameOverrides` manifest field — separate name mapping for Luma wiki matching (independent of RenoDX wiki overrides).
-- Added Nexus mod summary on the RenoDX Info button for external-only Nexus games.
-- Added "Dump LUT Shaders" toggle to the RenoDX cog dialog (Compatibility Settings section).
 - Added Custom Addons folder (`%LocalAppData%\RHI\Custom\Addons\`) — place `.addon64`/`.addon32` files here and they appear in the Addon Manager and per-game Select Addons picker with on/off toggles. No download needed — deployed directly from the folder.
 - Added per-game G-Sync disable toggle in the driver settings panel — force G-Sync off for specific games without changing the global setting.
 - Added G-Sync On-Screen Indicator toggle in the DLSS/Streamline Settings card (below the DLSS indicator).
+- Added Digital Vibrance control to the Global NVIDIA Driver Settings card — adjust color saturation per-display with a slider (0-100). Saved values are automatically restored on app startup.
+- Added global Power Mode setting to the Global NVIDIA Driver Settings card (next to VSync).
+- Added "Create Missing Profiles" button — creates NVIDIA driver profiles for all games that don't have one, ensuring global settings apply everywhere.
+- Added Nexus mod summary on the RenoDX Info button for external-only Nexus games.
+- Added "Dump LUT Shaders" toggle to the RenoDX cog dialog (Compatibility Settings section).
+- Added `lumaNameOverrides` manifest field — separate name mapping for Luma wiki matching (independent of RenoDX wiki overrides).
 
 ### Changes
 
@@ -19,20 +19,20 @@
 - Renamed "Purge Cache" to "Purge Staging Files" with an added description.
 - Screenshot path placeholder text changed from "D:\Screenshots" to "Type or choose screenshot folder" for clarity.
 - RenoDX cog: "Set_Path" renamed to "Upgrade Path", options renamed from Off/On to HDR/SDR.
-- Import Profiles now shows a progress dialog during import.
+- Import NVIDIA Driver Profiles now shows a progress dialog during import.
 
 ### Bug Fixes
 
-- Fixed "Apply to All Games" (Screenshots & Hotkeys) not writing overlay and screenshot hotkeys to reshade.ini files — only the screenshot path was being applied.
-- Fixed ReBAR Size Limit not reading back correctly on some systems — now uses raw NVAPI read with binary type awareness, with NvAPIWrapper as fallback.
+- Fixed RenoDX update detection failing for addons using rolling release tags (`snapshot`/`latest`) when the file size didn't change between versions. Now uses full download + SHA256 hash comparison instead of HEAD Content-Length for these URLs.
 - Fixed ReBAR Size Limit write corrupting the profile on some systems — NvAPIWrapper's binary marshalling is broken (produces doubled values or garbage). All ReBAR Size Limit writes now use raw NVAPI with the correct BINARY struct layout (matching NVPI), with PowerShell helper as fallback.
+- Fixed ReBAR Size Limit not reading back correctly on some systems — now uses raw NVAPI read with binary type awareness, with NvAPIWrapper as fallback. Note: some driver/system combinations still cannot read externally-set values — the in-memory cache covers values set within RHI.
 - Fixed "Restore DLSS/Streamline Defaults" resetting Render Scale to Performance (50%) instead of clearing it — the fallback in DeletePreset was writing 0x00 (Performance) instead of 0x03 (App Controlled) for render scale mode settings.
-- Fixed HDR Auto-Toggle setting always reverting to "On" on app restart — the "Off" state was never persisted to settings.json.
+- Fixed "Apply to All Games" (Screenshots & Hotkeys) not writing overlay and screenshot hotkeys to reshade.ini files — only the screenshot path was being applied.
 - Fixed Update All re-deploying Engine.ini HDR settings on games where the user had explicitly disabled it via the RenoDX cog. The toggle state is now persisted in installed.json and respected by Update All.
+- Fixed HDR Auto-Toggle setting always reverting to "On" on app restart — the "Off" state was never persisted to settings.json.
 - Fixed Engine.ini HDR combo in the RenoDX cog showing "On" after re-opening even when the user had set it to "Off" — now reads from the persisted record instead of checking the file on disk.
 - Fixed DLSS Fix INI (`[RENODX-DLSSFIX]` section) not being written to reshade.ini on some systems when toggling the addon — added fallback to trusted path cache for DLSS/Streamline path resolution.
 - Fixed "Browse" button for launch executable opening System32 instead of the game folder — forward slashes in Ubisoft Connect paths weren't compatible with the Win32 file dialog.
-- Fixed RenoDX update detection failing for addons using rolling release tags (`snapshot`/`latest`) when the file size didn't change between versions. Now uses full download + SHA256 hash comparison instead of HEAD Content-Length for these URLs.
 
 ### Manifest Updates
 
