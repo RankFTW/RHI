@@ -226,7 +226,7 @@ public sealed partial class MainWindow
             card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
         };
         enginePanel.Children.Add(engineCombo);
-        enginePanel.Visibility = card.UseUeExtended ? Visibility.Visible : Visibility.Collapsed;
+        enginePanel.Visibility = (card.UseUeExtended && card.Status == GameStatus.Installed) ? Visibility.Visible : Visibility.Collapsed;
 
         if (card.UeExtendedToggleVisibility == Visibility.Visible)
         {
@@ -243,7 +243,7 @@ public sealed partial class MainWindow
                 if (enable != card.UseUeExtended)
                     ViewModel.ToggleUeExtended(card);
                 // Show/hide Engine.ini combo reactively
-                enginePanel.Visibility = enable ? Visibility.Visible : Visibility.Collapsed;
+                enginePanel.Visibility = (enable && card.Status == GameStatus.Installed) ? Visibility.Visible : Visibility.Collapsed;
             };
             uePanel.Children.Add(ueCombo);
             topRow.Children.Add(uePanel);

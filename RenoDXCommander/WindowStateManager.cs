@@ -368,7 +368,8 @@ public class WindowStateManager
             if (_windowBounds is var (x, y, w, h) && w >= 400 && h >= 300 && w <= 7680 && h <= 4320)
             {
                 // Clamp to work area so the window doesn't cover the taskbar auto-hide zone
-                var hMonitor = NativeInterop.MonitorFromWindow(_hwnd, NativeInterop.MONITOR_DEFAULTTONEAREST);
+                // Use the saved coordinates to determine which monitor the window belongs to
+                var hMonitor = NativeInterop.MonitorFromPoint(new NativeInterop.POINTL { x = x, y = y }, NativeInterop.MONITOR_DEFAULTTONEAREST);
                 if (hMonitor != IntPtr.Zero)
                 {
                     var mi = new NativeInterop.MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<NativeInterop.MONITORINFO>() };
