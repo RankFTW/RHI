@@ -314,21 +314,21 @@ public partial class AuxInstallService
                 ["PreventFullscreen"] = "1",
                 ["SettingsMode"] = "2",
                 ["Set_Path"] = "0",
-                ["Upgrade_B10G10R10A2_UNORM"] = "0",
-                ["Upgrade_B8G8R8A8_TYPELESS"] = "0",
-                ["Upgrade_B8G8R8A8_UNORM"] = "0",
-                ["Upgrade_B8G8R8A8_UNORM_SRGB"] = "0",
-                ["Upgrade_CopyDestinations"] = "0",
-                ["Upgrade_R10G10B10A2_TYPELESS"] = "0",
-                ["Upgrade_R10G10B10A2_UNORM"] = "0",
-                ["Upgrade_R11G11B10_FLOAT"] = "0",
-                ["Upgrade_R16G16B16A16_TYPELESS"] = "0",
-                ["Upgrade_R8G8B8A8_SNORM"] = "0",
-                ["Upgrade_R8G8B8A8_TYPELESS"] = "0",
-                ["Upgrade_R8G8B8A8_UNORM"] = "0",
-                ["Upgrade_R8G8B8A8_UNORM_SRGB"] = "0",
-                ["Upgrade_SwapChainCompatibility"] = "0",
-                ["Upgrade_UseSCRGB"] = "0",
+                ["Upgrade_B10G10R10A2_UNORM"] = "",
+                ["Upgrade_B8G8R8A8_TYPELESS"] = "",
+                ["Upgrade_B8G8R8A8_UNORM"] = "",
+                ["Upgrade_B8G8R8A8_UNORM_SRGB"] = "",
+                ["Upgrade_CopyDestinations"] = "",
+                ["Upgrade_R10G10B10A2_TYPELESS"] = "",
+                ["Upgrade_R10G10B10A2_UNORM"] = "",
+                ["Upgrade_R11G11B10_FLOAT"] = "",
+                ["Upgrade_R16G16B16A16_TYPELESS"] = "",
+                ["Upgrade_R8G8B8A8_SNORM"] = "",
+                ["Upgrade_R8G8B8A8_TYPELESS"] = "",
+                ["Upgrade_R8G8B8A8_UNORM"] = "",
+                ["Upgrade_R8G8B8A8_UNORM_SRGB"] = "",
+                ["Upgrade_SwapChainCompatibility"] = "",
+                ["Upgrade_UseSCRGB"] = "",
             };
 
             if (!ini.TryGetValue(section, out var existingKeys))
@@ -356,6 +356,78 @@ public partial class AuxInstallService
         catch (Exception ex)
         {
             CrashReporter.Log($"[AuxInstallService.ApplyRenoDxNativeHdrSettings] Failed for '{gameDir}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Pre-populates [renodx] section keys with empty values for generic UE or Unity addons.
+    /// The addon fills in game-specific defaults on first launch. Only adds missing keys.
+    /// </summary>
+    public static void ApplyRenodxKeyPlaceholders(string gameDir, string addonType)
+    {
+        var iniFilePath = Path.Combine(gameDir, "reshade.ini");
+        if (!File.Exists(iniFilePath)) return;
+
+        string[] keys;
+        if (addonType == "Unity")
+        {
+            keys = new[]
+            {
+                "Blit_Copy_Hack", "DumpUberShaders", "ForceBorderless", "Force_Pipeline_Cloning",
+                "PreventFullscreen", "Scaling_Offset", "SettingsMode", "Swapchain_Encoding", "Tonemap_Offset",
+                "Upgrade_CopyDestinations", "Upgrade_R10G10B10A2_TYPELESS", "Upgrade_R10G10B10A2_UNORM",
+                "Upgrade_R11G11B10_FLOAT", "Upgrade_R16G16B16A16_TYPELESS",
+                "Upgrade_R8G8B8A8_TYPELESS", "Upgrade_R8G8B8A8_UNORM", "Upgrade_R8G8B8A8_UNORM_SRGB",
+                "Upgrade_UseSCRGB", "Use_Resource_Cloning", "Use_Swapchain_Proxy",
+            };
+        }
+        else // Generic UE
+        {
+            keys = new[]
+            {
+                "DumpLUTShaders", "ForceBorderless", "PreventFullscreen", "SettingsMode",
+                "Upgrade_B10G10R10A2_UNORM", "Upgrade_B8G8R8A8_TYPELESS", "Upgrade_B8G8R8A8_UNORM",
+                "Upgrade_B8G8R8A8_UNORM_SRGB", "Upgrade_CopyDestinations",
+                "Upgrade_R10G10B10A2_TYPELESS", "Upgrade_R10G10B10A2_UNORM",
+                "Upgrade_R11G11B10_FLOAT", "Upgrade_R16G16B16A16_TYPELESS",
+                "Upgrade_R8G8B8A8_SNORM", "Upgrade_R8G8B8A8_TYPELESS",
+                "Upgrade_R8G8B8A8_UNORM", "Upgrade_R8G8B8A8_UNORM_SRGB",
+                "Upgrade_SwapChainCompatibility", "Upgrade_UseSCRGB",
+            };
+        }
+
+        try
+        {
+            var ini = ParseIni(File.ReadAllLines(iniFilePath));
+            const string section = "renodx";
+
+            if (!ini.TryGetValue(section, out var existingKeys))
+            {
+                var newSection = new OrderedDict();
+                foreach (var key in keys)
+                    newSection[key] = "";
+                ini[section] = newSection;
+            }
+            else
+            {
+                bool changed = false;
+                foreach (var key in keys)
+                {
+                    if (!existingKeys.ContainsKey(key))
+                    {
+                        existingKeys[key] = "";
+                        changed = true;
+                    }
+                }
+                if (!changed) return;
+            }
+
+            WriteIni(iniFilePath, ini);
+            CrashReporter.Log($"[AuxInstallService.ApplyRenodxKeyPlaceholders] Applied {addonType} placeholders to '{iniFilePath}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.ApplyRenodxKeyPlaceholders] Failed for '{gameDir}' — {ex.Message}");
         }
     }
 

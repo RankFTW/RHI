@@ -80,6 +80,12 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 if (card.UseUeExtended)
                     AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
 
+                // Pre-populate [renodx] key placeholders for generic UE/Unity addons (addon fills values on first launch)
+                if (!card.UseUeExtended && card.EngineHint?.Contains("Unreal") == true)
+                    AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unreal");
+                else if (!card.UseUeExtended && card.EngineHint?.Contains("Unity") == true)
+                    AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unity");
+
                 // Apply per-game [renodx] INI overrides from manifest
                 if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
                     && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOverrides))

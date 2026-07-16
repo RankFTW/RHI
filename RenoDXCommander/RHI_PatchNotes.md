@@ -13,6 +13,8 @@
 ### Changes
 
 - Engine.ini `r.LUT.UpdateEveryFrame=1` is now automatically deployed for all Unreal Engine games when installing any RenoDX mod. A per-game toggle (On by default) in the RenoDX cog → Engine.ini Settings section allows disabling it if needed. Engine.ini HDR toggle also moved into this section.
+- RenoDX `[renodx]` Upgrade keys are now pre-populated with empty values on install for all generic UE and Unity games. The addon fills in game-specific defaults on first launch — previously users had to launch the game before Compatibility Settings appeared in the cog dialog.
+- UE-Extended `Upgrade_*` keys now write empty values instead of `=0`, allowing the addon to populate game-specific defaults rather than being blocked by a pre-set zero.
 - Per-game MFG Dynamic settings now inherit from global defaults when mode is changed — no longer writes explicit "Off" that blocks inheritance.
 - Aligned UE-Extended and Set Maximum Nits controls with the Compatibility Settings grid layout in the RenoDX cog dialog.
 - Rearranged Global NVIDIA Driver Settings card: G-Sync Enable + Mode on one row, FPS Limit + Preferred Refresh Rate on the next, then VSync + Power Mode, then ReBAR.
