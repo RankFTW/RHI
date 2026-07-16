@@ -409,7 +409,7 @@ public partial class AuxInstallService
                 "r.HDR.Display.OutputDevice",
                 "r.HDR.Display.ColorGamut",
                 "r.HDR.UI.CompositeMode",
-                "r.LUT.UpdateEveryFrame",
+                // r.LUT.UpdateEveryFrame is NOT removed here — it's always deployed with UE-Extended
             };
 
             var lines = File.ReadAllLines(engineIniPath).ToList();
@@ -738,6 +738,137 @@ public partial class AuxInstallService
         catch (Exception ex)
         {
             CrashReporter.Log($"[AuxInstallService.ApplyEngineIniHdrSettings] Failed for '{installPath}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Unconditionally ensures r.LUT.UpdateEveryFrame=1 exists in Engine.ini for UE-Extended games.
+    /// This is always deployed regardless of the EngineIniHdr toggle state.
+    /// </summary>
+    public static void ApplyEngineIniLutSetting(string installPath, string? projectNameOverride = null, string? gameName = null)
+    {
+        try
+        {
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName);
+            if (configDir == null)
+            {
+                CrashReporter.Log($"[AuxInstallService.ApplyEngineIniLutSetting] Could not resolve config dir for '{installPath}'");
+                return;
+            }
+
+            var engineIniPath = Path.Combine(configDir, "Engine.ini");
+
+            // Remove read-only if present so we can write
+            if (File.Exists(engineIniPath))
+            {
+                var attrs = File.GetAttributes(engineIniPath);
+                if (attrs.HasFlag(FileAttributes.ReadOnly))
+                    File.SetAttributes(engineIniPath, attrs & ~FileAttributes.ReadOnly);
+            }
+
+            var existingLines = File.Exists(engineIniPath) ? File.ReadAllLines(engineIniPath) : Array.Empty<string>();
+
+            // Check if key already exists
+            bool found = existingLines.Any(l =>
+                l.TrimStart().StartsWith("r.LUT.UpdateEveryFrame=", StringComparison.OrdinalIgnoreCase));
+
+            if (found)
+            {
+                // Already present — just ensure read-only
+                if (File.Exists(engineIniPath))
+                    File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
+                return;
+            }
+
+            // Append the section + key
+            var existingText = string.Join("\n", existingLines);
+            var sectionHeader = "[/Script/Engine.RendererSettings]";
+            bool sectionExists = existingLines.Any(l =>
+                l.Trim().Equals(sectionHeader, StringComparison.OrdinalIgnoreCase));
+
+            var appendBuilder = new System.Text.StringBuilder();
+            appendBuilder.AppendLine();
+            appendBuilder.AppendLine(sectionHeader);
+            appendBuilder.AppendLine("r.LUT.UpdateEveryFrame=1");
+
+            var appendText = appendBuilder.ToString();
+            if (!existingText.EndsWith("\n") && !existingText.EndsWith("\r\n") && existingText.Length > 0)
+                appendText = "\n" + appendText;
+
+            File.AppendAllText(engineIniPath, appendText);
+
+            // Set read-only
+            File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
+            CrashReporter.Log($"[AuxInstallService.ApplyEngineIniLutSetting] Applied r.LUT.UpdateEveryFrame=1 to '{engineIniPath}' (read-only)");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.ApplyEngineIniLutSetting] Failed for '{installPath}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes r.LUT.UpdateEveryFrame from Engine.ini. Uses line filtering (preserves duplicate keys).
+    /// Removes read-only first, removes empty section headers left behind, re-sets read-only if file still has content.
+    /// </summary>
+    public static void RemoveEngineIniLutSetting(string installPath, string? projectNameOverride = null, string? gameName = null)
+    {
+        try
+        {
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName);
+            if (configDir == null) return;
+
+            var engineIniPath = Path.Combine(configDir, "Engine.ini");
+            if (!File.Exists(engineIniPath)) return;
+
+            // Remove read-only so we can modify
+            var attrs = File.GetAttributes(engineIniPath);
+            if (attrs.HasFlag(FileAttributes.ReadOnly))
+                File.SetAttributes(engineIniPath, attrs & ~FileAttributes.ReadOnly);
+
+            var lines = File.ReadAllLines(engineIniPath).ToList();
+            var filtered = lines.Where(line =>
+                !line.TrimStart().StartsWith("r.LUT.UpdateEveryFrame=", StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Remove empty section headers
+            var cleaned = new List<string>();
+            for (int i = 0; i < filtered.Count; i++)
+            {
+                var line = filtered[i];
+                if (line.TrimStart().StartsWith('[') && line.Contains(']'))
+                {
+                    bool hasContent = false;
+                    for (int j = i + 1; j < filtered.Count; j++)
+                    {
+                        if (string.IsNullOrWhiteSpace(filtered[j])) continue;
+                        if (filtered[j].TrimStart().StartsWith('[')) break;
+                        hasContent = true;
+                        break;
+                    }
+                    if (!hasContent) continue;
+                }
+                cleaned.Add(line);
+            }
+
+            // Trim trailing empty lines
+            while (cleaned.Count > 0 && string.IsNullOrWhiteSpace(cleaned[^1]))
+                cleaned.RemoveAt(cleaned.Count - 1);
+
+            if (cleaned.Count == 0 || cleaned.All(string.IsNullOrWhiteSpace))
+            {
+                File.Delete(engineIniPath);
+                CrashReporter.Log($"[AuxInstallService.RemoveEngineIniLutSetting] Deleted empty Engine.ini at '{engineIniPath}'");
+            }
+            else
+            {
+                File.WriteAllLines(engineIniPath, cleaned);
+                File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
+                CrashReporter.Log($"[AuxInstallService.RemoveEngineIniLutSetting] Removed r.LUT.UpdateEveryFrame from '{engineIniPath}'");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.RemoveEngineIniLutSetting] Failed for '{installPath}' — {ex.Message}");
         }
     }
 

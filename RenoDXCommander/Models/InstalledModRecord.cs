@@ -23,4 +23,11 @@ public class InstalledModRecord
     /// Set to false when user disables via the RenoDX cog dialog.
     /// </summary>
     public bool EngineIniHdr { get; set; } = true;
+
+    /// <summary>
+    /// Whether Engine.ini r.LUT.UpdateEveryFrame=1 is enabled for this game.
+    /// Applies to all Unreal Engine games with RenoDX. Default true.
+    /// Set to false when user disables via the RenoDX cog dialog.
+    /// </summary>
+    public bool EngineIniLut { get; set; } = true;
 }

@@ -196,43 +196,22 @@ public sealed partial class MainWindow
                 Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             });
         }
-        var topRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 16 };
-
-        // Engine.ini panel (created upfront, visibility toggled dynamically)
-        var enginePanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
-        enginePanel.Children.Add(new TextBlock { Text = "Engine.ini HDR", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), VerticalAlignment = VerticalAlignment.Center });
-        var engineCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
-        engineCombo.Items.Add("Off");
-        engineCombo.Items.Add("On");
-        ToolTipService.SetToolTip(engineCombo, "Deploys Engine.ini with HDR flags for games that don't have an ingame HDR option. Also disable for SDR.");
-        bool engineIniActive = card.InstalledRecord?.EngineIniHdr ?? true;
-        engineCombo.SelectedIndex = engineIniActive ? 1 : 0;
-        engineCombo.SelectionChanged += (s, ev) =>
-        {
-            if (engineCombo.SelectedIndex == 1)
-            {
-                AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
-                if (card.InstalledRecord != null) card.InstalledRecord.EngineIniHdr = true;
-                card.ActionMessage = "✅ Engine.ini HDR settings deployed.";
-            }
-            else
-            {
-                AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
-                if (card.InstalledRecord != null) card.InstalledRecord.EngineIniHdr = false;
-                card.ActionMessage = "✅ Engine.ini HDR settings removed.";
-            }
-            if (card.InstalledRecord != null)
-                App.Services.GetRequiredService<IModInstallService>().SaveRecordPublic(card.InstalledRecord);
-            card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
-        };
-        enginePanel.Children.Add(engineCombo);
-        enginePanel.Visibility = (card.UseUeExtended && card.Status == GameStatus.Installed) ? Visibility.Visible : Visibility.Collapsed;
+        var topGrid = new Grid { ColumnSpacing = 12, RowSpacing = 6 };
+        topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+        topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+        int topGridRow = 0;
 
         if (card.UeExtendedToggleVisibility == Visibility.Visible)
         {
-            var uePanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
-            uePanel.Children.Add(new TextBlock { Text = "UE-Extended", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), VerticalAlignment = VerticalAlignment.Center });
-            var ueCombo = new ComboBox { FontSize = 12, MinWidth = 80 };
+            topGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var ueLabel = new TextBlock { Text = "UE-Extended", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetRow(ueLabel, topGridRow);
+            Grid.SetColumn(ueLabel, 0);
+            topGrid.Children.Add(ueLabel);
+
+            var ueCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
             ueCombo.Items.Add("Off");
             ueCombo.Items.Add("On");
             ToolTipService.SetToolTip(ueCombo, "Switch between using UE-Extended or the game specific mod/generic Unreal RenoDX mod.");
@@ -242,17 +221,14 @@ public sealed partial class MainWindow
                 bool enable = ueCombo.SelectedIndex == 1;
                 if (enable != card.UseUeExtended)
                     ViewModel.ToggleUeExtended(card);
-                // Show/hide Engine.ini combo reactively
-                enginePanel.Visibility = (enable && card.Status == GameStatus.Installed) ? Visibility.Visible : Visibility.Collapsed;
             };
-            uePanel.Children.Add(ueCombo);
-            topRow.Children.Add(uePanel);
+            Grid.SetRow(ueCombo, topGridRow);
+            Grid.SetColumn(ueCombo, 1);
+            topGrid.Children.Add(ueCombo);
+            topGridRow++;
         }
 
-        topRow.Children.Add(enginePanel);
-        content.Children.Add(topRow);
-
-        // ── Peak Nits (toneMapPeakNits in [renodx-preset*] sections) ──────────
+        // ── Peak Nits row (inside topGrid for alignment) ──────────────────────
         if (File.Exists(iniPath))
         {
             var peakIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
@@ -263,20 +239,25 @@ public sealed partial class MainWindow
             if (presetWithNits.Value != null && presetWithNits.Value.TryGetValue("ToneMapPeakNits", out var nv))
                 currentNits = double.TryParse(nv, out var dv) ? ((int)dv).ToString() : nv;
 
-            var nitsPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 10 };
-            nitsPanel.Children.Add(new TextBlock
+            topGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // Label in column 0
+            var nitsLabel = new TextBlock
             {
                 Text = "Set Maximum Nits",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
-            });
+            };
+            Grid.SetRow(nitsLabel, topGridRow);
+            Grid.SetColumn(nitsLabel, 0);
+            topGrid.Children.Add(nitsLabel);
 
             var nitsBox = new TextBox
             {
                 Text = currentNits,
                 Width = 100,
-                FontSize = 12,
+                FontSize = 11,
                 PlaceholderText = "nits",
                 VerticalAlignment = VerticalAlignment.Center,
             };
@@ -333,7 +314,7 @@ public sealed partial class MainWindow
                 Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
                 BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8), Padding = new Thickness(10, 5, 10, 5), FontSize = 12,
+                CornerRadius = new CornerRadius(8), Padding = new Thickness(10, 5, 10, 5), FontSize = 11,
             };
             ToolTipService.SetToolTip(autoBtn, "Reads your monitor's peak brightness automatically.");
             autoBtn.Click += async (s, ev) =>
@@ -363,10 +344,17 @@ public sealed partial class MainWindow
                 catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
             };
 
-            nitsPanel.Children.Add(autoBtn);
-            nitsPanel.Children.Add(nitsBox);
-            content.Children.Add(nitsPanel);
+            var nitsInputPanel = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+            nitsInputPanel.Children.Add(nitsBox);
+            nitsInputPanel.Children.Add(autoBtn);
+            Grid.SetRow(nitsInputPanel, topGridRow);
+            Grid.SetColumn(nitsInputPanel, 1);
+            Grid.SetColumnSpan(nitsInputPanel, 3);
+            topGrid.Children.Add(nitsInputPanel);
+            topGridRow++;
         }
+
+        content.Children.Add(topGrid);
 
         // ── Compatibility Settings from [renodx] section ──────────────────────
         if (File.Exists(iniPath))
@@ -535,6 +523,112 @@ public sealed partial class MainWindow
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 FontStyle = Windows.UI.Text.FontStyle.Italic,
             });
+        }
+
+        // ── Engine.ini Settings (only for Unreal Engine games) ────────────────
+        if (card.EngineHint?.Contains("Unreal") == true && card.Status == GameStatus.Installed)
+        {
+            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
+            content.Children.Add(new TextBlock
+            {
+                Text = "Engine.ini Settings",
+                FontSize = 13,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+
+            var engineIniGrid = new Grid { ColumnSpacing = 12, RowSpacing = 6 };
+            engineIniGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            engineIniGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+            engineIniGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            engineIniGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+            engineIniGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // HDR Settings toggle (only for UE-Extended games)
+            if (card.UseUeExtended)
+            {
+                var hdrLabel = new TextBlock
+                {
+                    Text = "HDR Settings",
+                    FontSize = 11,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                Grid.SetRow(hdrLabel, 0);
+                Grid.SetColumn(hdrLabel, 0);
+                engineIniGrid.Children.Add(hdrLabel);
+
+                var hdrCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+                hdrCombo.Items.Add("Off");
+                hdrCombo.Items.Add("On");
+                ToolTipService.SetToolTip(hdrCombo, "Deploys Engine.ini with HDR flags for games that don't have an ingame HDR option. Disable for SDR.");
+                bool hdrActive = card.InstalledRecord?.EngineIniHdr ?? true;
+                hdrCombo.SelectedIndex = hdrActive ? 1 : 0;
+                hdrCombo.SelectionChanged += (s, ev) =>
+                {
+                    if (hdrCombo.SelectedIndex == 1)
+                    {
+                        AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                        if (card.InstalledRecord != null) card.InstalledRecord.EngineIniHdr = true;
+                        card.ActionMessage = "✅ Engine.ini HDR settings deployed.";
+                    }
+                    else
+                    {
+                        AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                        if (card.InstalledRecord != null) card.InstalledRecord.EngineIniHdr = false;
+                        card.ActionMessage = "✅ Engine.ini HDR settings removed.";
+                    }
+                    if (card.InstalledRecord != null)
+                        App.Services.GetRequiredService<IModInstallService>().SaveRecordPublic(card.InstalledRecord);
+                    card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+                };
+                Grid.SetRow(hdrCombo, 0);
+                Grid.SetColumn(hdrCombo, 1);
+                engineIniGrid.Children.Add(hdrCombo);
+            }
+
+            // LUT Update Every Frame toggle
+            int lutCol = card.UseUeExtended ? 2 : 0;
+            var lutLabel = new TextBlock
+            {
+                Text = "LUT Update Every Frame",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetRow(lutLabel, 0);
+            Grid.SetColumn(lutLabel, lutCol);
+            engineIniGrid.Children.Add(lutLabel);
+
+            var lutCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+            lutCombo.Items.Add("Off");
+            lutCombo.Items.Add("On");
+            ToolTipService.SetToolTip(lutCombo, "Writes r.LUT.UpdateEveryFrame=1 to Engine.ini. Ensures the game recalculates LUTs each frame for accurate HDR color.");
+            bool lutActive = card.InstalledRecord?.EngineIniLut ?? true;
+            lutCombo.SelectedIndex = lutActive ? 1 : 0;
+            lutCombo.SelectionChanged += (s, ev) =>
+            {
+                if (lutCombo.SelectedIndex == 1)
+                {
+                    AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                    if (card.InstalledRecord != null) card.InstalledRecord.EngineIniLut = true;
+                    card.ActionMessage = "✅ LUT Update Every Frame enabled in Engine.ini.";
+                }
+                else
+                {
+                    AuxInstallService.RemoveEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                    if (card.InstalledRecord != null) card.InstalledRecord.EngineIniLut = false;
+                    card.ActionMessage = "✅ LUT Update Every Frame removed from Engine.ini.";
+                }
+                if (card.InstalledRecord != null)
+                    App.Services.GetRequiredService<IModInstallService>().SaveRecordPublic(card.InstalledRecord);
+                card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+            };
+            Grid.SetRow(lutCombo, 0);
+            Grid.SetColumn(lutCombo, lutCol + 1);
+            engineIniGrid.Children.Add(lutCombo);
+
+            content.Children.Add(engineIniGrid);
         }
 
         // ── Preset Export/Import buttons (side by side) ───────────────────────

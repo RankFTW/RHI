@@ -775,6 +775,10 @@ public partial class MainViewModel
             if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false)
                 AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
 
+            // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
+            if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)
+                AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+
             // Update only this card's observable properties in-place.
             // The card is already in DisplayedGames — WinUI bindings update the
             // card visually the moment each property changes. No collection

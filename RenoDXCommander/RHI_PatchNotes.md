@@ -1,19 +1,21 @@
-## v2.2.1-beta
+## v2.2.1-beta2
 
 ### New
 
-- Window now reopens maximized if it was closed maximized. Maximized state is persisted across sessions.
-- Added global G-Sync Enable toggle to the Global NVIDIA Driver Settings card — enable or disable G-Sync globally.
 - Added global FPS Limit (Frame Rate Limiter V3) to the Global NVIDIA Driver Settings card — pick a VRR-optimal preset or select Custom to type any value.
+- Added global G-Sync Enable toggle to the Global NVIDIA Driver Settings card — enable or disable G-Sync globally.
 - Added global DMFG Defaults section to the DLSS/Streamline Settings card — set Frame Count and Target FPS once globally, then just enable Dynamic mode per-game.
 - Installing ReLimiter or Display Commander now automatically disables the driver FPS cap for that game (prevents conflict with software frame limiter). Uninstalling restores global inheritance.
-- Added RenoFX HDR Toolkit shader (by OopyDoopy) to the shader pack list.
 - RenoDX cog Compatibility Settings can now be extended via manifest (`renodxExtraSettings`) — new toggles added without client updates.
+- Added RenoFX HDR Toolkit shader (by OopyDoopy) to the shader pack list.
+- Window now reopens maximized if it was closed maximized. Maximized state is persisted across sessions.
 
 ### Changes
 
-- Rearranged Global NVIDIA Driver Settings card: G-Sync Enable + Mode on one row, FPS Limit + Preferred Refresh Rate on the next, then VSync + Power Mode, then ReBAR.
+- Engine.ini `r.LUT.UpdateEveryFrame=1` is now automatically deployed for all Unreal Engine games when installing any RenoDX mod. A per-game toggle (On by default) in the RenoDX cog → Engine.ini Settings section allows disabling it if needed. Engine.ini HDR toggle also moved into this section.
 - Per-game MFG Dynamic settings now inherit from global defaults when mode is changed — no longer writes explicit "Off" that blocks inheritance.
+- Aligned UE-Extended and Set Maximum Nits controls with the Compatibility Settings grid layout in the RenoDX cog dialog.
+- Rearranged Global NVIDIA Driver Settings card: G-Sync Enable + Mode on one row, FPS Limit + Preferred Refresh Rate on the next, then VSync + Power Mode, then ReBAR.
 
 ### Bug Fixes
 
@@ -21,10 +23,11 @@
 
 ### Manifest Updates
 
+- Added Black Myth: Wukong to `nativeHdrGames`.
 - Added Darkest Dungeon® — 64-bit override and install path override (`DarkestDungeon_windows\win64`).
 - Added `Upgrade_CopyDestinations` to `renodxExtraSettings` (appears in RenoDX cog Compatibility Settings).
 - Added Lords of the Fallen → "Lords of the Fallen (2023)" profile name override.
-- Added Black Myth: Wukong to `nativeHdrGames`.
+- Fixed Denshattack! incorrectly matching FF7 Remake mod — added wikiUnlinks + snapshotOverrides to force generic UE addon.
 
 ---
 
