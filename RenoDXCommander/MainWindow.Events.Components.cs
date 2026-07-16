@@ -458,21 +458,18 @@ public sealed partial class MainWindow
                     var extraSettings = AuxInstallService.GlobalManifest?.RenodxExtraSettings;
                     if (extraSettings?.Count > 0)
                     {
-                        var extraGrid = new Grid { ColumnSpacing = 12, RowSpacing = 6 };
-                        extraGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                        extraGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
-                        extraGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                        extraGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
-
-                        int extraTotal = (extraSettings.Count + 1) / 2;
-                        for (int r = 0; r < extraTotal; r++)
-                            extraGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                        // Append to the existing settings grid (continue from where hardcoded keys left off)
+                        int startIdx = upgradeKeys.Count;
+                        int extraRows = (startIdx + extraSettings.Count + 1) / 2 - settingsGrid.RowDefinitions.Count;
+                        for (int r = 0; r < extraRows; r++)
+                            settingsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
                         for (int i = 0; i < extraSettings.Count; i++)
                         {
                             var setting = extraSettings[i];
-                            int row = i / 2;
-                            int col = (i % 2) * 2;
+                            int idx = startIdx + i;
+                            int row = idx / 2;
+                            int col = (idx % 2) * 2;
 
                             var extraLabel = new TextBlock
                             {
@@ -483,11 +480,10 @@ public sealed partial class MainWindow
                             };
                             Grid.SetRow(extraLabel, row);
                             Grid.SetColumn(extraLabel, col);
-                            extraGrid.Children.Add(extraLabel);
+                            settingsGrid.Children.Add(extraLabel);
 
                             var extraCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
 
-                            // Use manifest-defined options, or default to Off/On
                             var options = setting.Options?.Count > 0
                                 ? setting.Options
                                 : new List<RenodxExtraOption> { new() { Value = "0", Name = "Off" }, new() { Value = "1", Name = "On" } };
@@ -495,7 +491,6 @@ public sealed partial class MainWindow
                             foreach (var opt in options)
                                 extraCombo.Items.Add(opt.Name);
 
-                            // Read current value from INI
                             string currentExtraVal = setting.Default;
                             if (renodxSection.TryGetValue(setting.Key, out var existingVal))
                                 currentExtraVal = existingVal;
@@ -514,10 +509,8 @@ public sealed partial class MainWindow
 
                             Grid.SetRow(extraCombo, row);
                             Grid.SetColumn(extraCombo, col + 1);
-                            extraGrid.Children.Add(extraCombo);
+                            settingsGrid.Children.Add(extraCombo);
                         }
-
-                        content.Children.Add(extraGrid);
                     }
                 }
             }

@@ -8,6 +8,7 @@
 - Added global DMFG Defaults section to the DLSS/Streamline Settings card — set Frame Count and Target FPS once globally, then just enable Dynamic mode per-game.
 - Installing ReLimiter or Display Commander now automatically disables the driver FPS cap for that game (prevents conflict with software frame limiter). Uninstalling restores global inheritance.
 - Added RenoFX HDR Toolkit shader (by OopyDoopy) to the shader pack list.
+- RenoDX cog Compatibility Settings can now be extended via manifest (`renodxExtraSettings`) — new toggles added without client updates.
 
 ### Changes
 
