@@ -19,6 +19,13 @@
 
 - Fixed window position restore suppressing the Windows taskbar auto-hide — restored bounds are now clamped to the monitor work area.
 
+### Manifest Updates
+
+- Added Darkest Dungeon® — 64-bit override and install path override (`DarkestDungeon_windows\win64`).
+- Added `Upgrade_CopyDestinations` to `renodxExtraSettings` (appears in RenoDX cog Compatibility Settings).
+- Added Lords of the Fallen → "Lords of the Fallen (2023)" profile name override.
+- Added Black Myth: Wukong to `nativeHdrGames`.
+
 ---
 
 ## v2.2.0

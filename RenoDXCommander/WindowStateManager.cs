@@ -476,9 +476,25 @@ public class WindowStateManager
             // Check if maximized BEFORE capturing bounds (maximized gives full-screen coords)
             bool isMaximized = NativeInterop.IsZoomed(_hwnd);
 
-            // Capture final bounds (these are the restored-position bounds even when maximized)
             if (!isMaximized)
+            {
                 CaptureCurrentBounds();
+            }
+            else
+            {
+                // When maximized, use GetWindowPlacement to get the restore position
+                // (where the window would go if un-maximized — preserves correct monitor)
+                var placement = new NativeInterop.WINDOWPLACEMENT();
+                placement.length = System.Runtime.InteropServices.Marshal.SizeOf<NativeInterop.WINDOWPLACEMENT>();
+                if (NativeInterop.GetWindowPlacement(_hwnd, ref placement))
+                {
+                    var r = placement.rcNormalPosition;
+                    var rw = r.Right - r.Left;
+                    var rh = r.Bottom - r.Top;
+                    if (rw >= 100 && rh >= 100)
+                        _windowBounds = (r.Left, r.Top, rw, rh);
+                }
+            }
 
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_windowSettingsPath)!);
             var data = new Dictionary<string, object>();
