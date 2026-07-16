@@ -863,6 +863,12 @@ public partial class MainViewModel
             AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
             AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
         }
+        // Clean up [renodx] section for generic UE/Unity games to avoid stale values conflicting with a different addon
+        else if (!string.IsNullOrEmpty(card.InstallPath)
+                 && (card.EngineHint?.Contains("Unreal") == true || card.EngineHint?.Contains("Unity") == true))
+        {
+            AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
+        }
 
         SaveLibrary();
         _filterViewModel.UpdateCounts();
