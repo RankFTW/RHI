@@ -1080,6 +1080,17 @@
     }
   },
 
+  "renodxExtraSettings": [
+    {
+      "key": "Upgrade_CopyDestinations",
+      "label": "Upgrade Copy Destinations",
+      "options": [
+        { "value": "0", "name": "Off" },
+        { "value": "1", "name": "On" }
+      ]
+    }
+  ],
+
   "installWarnings": {
     "Borderlands 2": {
       "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"

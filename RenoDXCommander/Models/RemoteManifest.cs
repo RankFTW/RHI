@@ -314,6 +314,14 @@ public class RemoteManifest
     public Dictionary<string, Dictionary<string, string>>? RenodxIniOverrides { get; set; }
 
     /// <summary>
+    /// Extra [renodx] INI toggles to show in the RenoDX cog Compatibility Settings UI.
+    /// Each entry defines a key name, display label, and default value.
+    /// Added dynamically without client updates.
+    /// </summary>
+    [JsonPropertyName("renodxExtraSettings")]
+    public List<RenodxExtraSetting>? RenodxExtraSettings { get; set; }
+
+    /// <summary>
     /// List of legacy ReShade versions available in the per-game version picker.
     /// Managed server-side — when a new stable releases, the old version is added here.
     /// </summary>
@@ -508,4 +516,33 @@ public class ManifestPresetEntry
 
     [JsonPropertyName("disabled")]
     public bool? Disabled { get; set; }
+}
+
+public class RenodxExtraSetting
+{
+    [JsonPropertyName("key")]
+    public string Key { get; set; } = "";
+
+    [JsonPropertyName("label")]
+    public string? Label { get; set; }
+
+    [JsonPropertyName("default")]
+    public string Default { get; set; } = "0";
+
+    /// <summary>
+    /// ComboBox options mapping value to display label.
+    /// E.g. [{"value":"0","name":"Off"},{"value":"1","name":"On"},{"value":"2","name":"Gamma"}]
+    /// If null/empty, defaults to Off(0)/On(1).
+    /// </summary>
+    [JsonPropertyName("options")]
+    public List<RenodxExtraOption>? Options { get; set; }
+}
+
+public class RenodxExtraOption
+{
+    [JsonPropertyName("value")]
+    public string Value { get; set; } = "0";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
 }
