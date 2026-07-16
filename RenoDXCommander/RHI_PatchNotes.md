@@ -30,6 +30,7 @@
 - Added `Upgrade_CopyDestinations` to `renodxExtraSettings` (appears in RenoDX cog Compatibility Settings).
 - Added Lords of the Fallen → "Lords of the Fallen (2023)" profile name override.
 - Fixed Denshattack! incorrectly matching FF7 Remake mod — added wikiUnlinks + snapshotOverrides to force generic UE addon.
+- Added Denshattack! PCGW URL override.
 
 ---
 
