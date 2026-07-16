@@ -199,6 +199,24 @@ public class SettingsHandler
             var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
             _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0; // Default: App Setting
 
+            // DMFG Defaults (global base profile)
+            _window.DmfgFrameCountCombo.ItemsSource = DlssPresetService.DmfgFrameCountOptions.Select(o => o.Name).ToArray();
+            var dmfgCount = presetSvc.GetGlobalDmfgFrameCount();
+            var dmfgCountIdx = Array.FindIndex(DlssPresetService.DmfgFrameCountOptions, o => o.Value == dmfgCount);
+            _window.DmfgFrameCountCombo.SelectedIndex = dmfgCountIdx >= 0 ? dmfgCountIdx : 0;
+
+            var dmfgFpsItems = DlssPresetService.DmfgTargetFpsOptions.Select(o => o.Name).ToList();
+            var dmfgFps = presetSvc.GetGlobalDmfgTargetFps();
+            var dmfgFpsIdx = Array.FindIndex(DlssPresetService.DmfgTargetFpsOptions, o => o.Value == dmfgFps);
+            if (dmfgFpsIdx < 0 && dmfgFps > 0 && dmfgFps != 0x01000000)
+            {
+                // Custom value — insert before "Custom..." at the end
+                dmfgFpsItems.Insert(dmfgFpsItems.Count - 1, $"{dmfgFps} FPS (Custom)");
+                dmfgFpsIdx = dmfgFpsItems.Count - 2;
+            }
+            _window.DmfgTargetFpsCombo.ItemsSource = dmfgFpsItems.ToArray();
+            _window.DmfgTargetFpsCombo.SelectedIndex = dmfgFpsIdx >= 0 ? dmfgFpsIdx : 0;
+
             // Global ReBAR
             var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
             _window.GlobalReBarEnableCombo.ItemsSource = new[] { "Off", "On" };

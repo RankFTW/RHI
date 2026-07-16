@@ -189,6 +189,37 @@ public partial class DlssPresetService
         ("Custom...", uint.MaxValue),
     ];
 
+    // ── DMFG option arrays (global defaults) ──────────────────────────────────
+
+    public static readonly (string Name, uint Value)[] DmfgFrameCountOptions =
+    [
+        ("Off", 0x00000000),
+        ("3x [50 Series+]", 0x00000002),
+        ("4x [50 Series+]", 0x00000003),
+        ("5x [50 Series+]", 0x00000004),
+        ("6x [50 Series+]", 0x00000005),
+    ];
+
+    public static readonly (string Name, uint Value)[] DmfgTargetFpsOptions =
+    [
+        ("Off", 0x00000000),
+        ("Max Refresh Rate", 0x01000000),
+        ("59 FPS (60Hz VRR Cap)", 59),
+        ("73 FPS (75Hz VRR Cap)", 73),
+        ("97 FPS (100Hz VRR Cap)", 97),
+        ("116 FPS (120Hz VRR Cap)", 116),
+        ("138 FPS (144Hz VRR Cap)", 138),
+        ("157 FPS (165Hz VRR Cap)", 157),
+        ("171 FPS (180Hz VRR Cap)", 171),
+        ("189 FPS (200Hz VRR Cap)", 189),
+        ("224 FPS (240Hz VRR Cap)", 224),
+        ("258 FPS (280Hz VRR Cap)", 258),
+        ("275 FPS (300Hz VRR Cap)", 275),
+        ("324 FPS (360Hz VRR Cap)", 324),
+        ("416 FPS (480Hz VRR Cap)", 416),
+        ("Custom...", uint.MaxValue),
+    ];
+
     // ── VSync get/set ─────────────────────────────────────────────────────────
 
     public uint GetVSyncMode(string gameName, string installPath)
@@ -806,6 +837,96 @@ $destroyDel.Invoke($hSession) | Out-Null
             if (sH != IntPtr.Zero && pH != IntPtr.Zero && SetSettingRawNvApi(sH, pH, FPS_LIMITER_V3_ID, fps))
                 return true;
             CrashReporter.Log($"[DlssPresetService.SetGlobalFpsLimit] Error — {ex.Message}");
+            return false;
+        }
+    }
+
+    // ── Global DMFG Defaults (base profile) ───────────────────────────────────
+
+    /// <summary>Gets the global DMFG Dynamic Max Frame Count. Returns 0 (Off) by default.</summary>
+    public uint GetGlobalDmfgFrameCount()
+    {
+        if (!_isSupported || _session == null) return 0;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var setting = baseProfile.Settings.FirstOrDefault(s => s.SettingId == MFG_DYNAMIC_MAX_COUNT_ID);
+            if (setting?.CurrentValue is uint val) return val;
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(baseProfile.Handle);
+            if (sH != IntPtr.Zero && pH != IntPtr.Zero)
+            {
+                var rawVal = GetSettingRawNvApi(sH, pH, MFG_DYNAMIC_MAX_COUNT_ID);
+                if (rawVal.HasValue) return rawVal.Value;
+            }
+        }
+        catch { }
+        return 0;
+    }
+
+    /// <summary>Sets the global DMFG Dynamic Max Frame Count on the base profile.</summary>
+    public bool SetGlobalDmfgFrameCount(uint value)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            baseProfile.SetSetting(MFG_DYNAMIC_MAX_COUNT_ID, value);
+            _session.Save();
+            CrashReporter.Log($"[DlssPresetService.SetGlobalDmfgFrameCount] Set to 0x{value:X8}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(_session.BaseProfile.Handle);
+            if (sH != IntPtr.Zero && pH != IntPtr.Zero && SetSettingRawNvApi(sH, pH, MFG_DYNAMIC_MAX_COUNT_ID, value))
+                return true;
+            CrashReporter.Log($"[DlssPresetService.SetGlobalDmfgFrameCount] Error — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Gets the global DMFG Dynamic Target FPS. Returns 0 (Off) by default.</summary>
+    public uint GetGlobalDmfgTargetFps()
+    {
+        if (!_isSupported || _session == null) return 0;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            var setting = baseProfile.Settings.FirstOrDefault(s => s.SettingId == MFG_DYNAMIC_TARGET_FPS_ID);
+            if (setting?.CurrentValue is uint val) return val;
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(baseProfile.Handle);
+            if (sH != IntPtr.Zero && pH != IntPtr.Zero)
+            {
+                var rawVal = GetSettingRawNvApi(sH, pH, MFG_DYNAMIC_TARGET_FPS_ID);
+                if (rawVal.HasValue) return rawVal.Value;
+            }
+        }
+        catch { }
+        return 0;
+    }
+
+    /// <summary>Sets the global DMFG Dynamic Target FPS on the base profile. 0 = Off, 0x01000000 = Max Refresh Rate, or FPS value.</summary>
+    public bool SetGlobalDmfgTargetFps(uint value)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var baseProfile = _session.BaseProfile;
+            baseProfile.SetSetting(MFG_DYNAMIC_TARGET_FPS_ID, value);
+            _session.Save();
+            CrashReporter.Log($"[DlssPresetService.SetGlobalDmfgTargetFps] Set to 0x{value:X8}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(_session.BaseProfile.Handle);
+            if (sH != IntPtr.Zero && pH != IntPtr.Zero && SetSettingRawNvApi(sH, pH, MFG_DYNAMIC_TARGET_FPS_ID, value))
+                return true;
+            CrashReporter.Log($"[DlssPresetService.SetGlobalDmfgTargetFps] Error — {ex.Message}");
             return false;
         }
     }

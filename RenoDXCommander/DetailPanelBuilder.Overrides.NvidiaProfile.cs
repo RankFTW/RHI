@@ -219,8 +219,8 @@ public partial class DetailPanelBuilder
                     // Reset MFG settings
                     presetService.SetMfgMode(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetMfgGenerationFactor(targetCard.GameName, targetCard.InstallPath, 0);
-                    presetService.SetMfgDynamicMaxCount(targetCard.GameName, targetCard.InstallPath, 0);
-                    presetService.SetMfgDynamicTargetFps(targetCard.GameName, targetCard.InstallPath, 0);
+                    presetService.DeleteMfgDynamicMaxCount(targetCard.GameName, targetCard.InstallPath);
+                    presetService.DeleteMfgDynamicTargetFps(targetCard.GameName, targetCard.InstallPath);
                     targetCard.RefreshDlssVersions(dlssService);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));
                 }

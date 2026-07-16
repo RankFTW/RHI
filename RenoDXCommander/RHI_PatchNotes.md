@@ -4,11 +4,15 @@
 
 - Window now reopens maximized if it was closed maximized. Maximized state is persisted across sessions.
 - Added global G-Sync Enable toggle to the Global NVIDIA Driver Settings card — enable or disable G-Sync globally.
-- Added global FPS Limit (Frame Rate Limiter V3) to the Global NVIDIA Driver Settings card — pick a VRR-optimal preset or type any custom FPS cap (20-1000).
+- Added global FPS Limit (Frame Rate Limiter V3) to the Global NVIDIA Driver Settings card — pick a VRR-optimal preset or select Custom to type any value.
+- Added global DMFG Defaults section to the DLSS/Streamline Settings card — set Frame Count and Target FPS once globally, then just enable Dynamic mode per-game.
+- Installing ReLimiter or Display Commander now automatically disables the driver FPS cap for that game (prevents conflict with software frame limiter). Uninstalling restores global inheritance.
+- Added RenoFX HDR Toolkit shader (by OopyDoopy) to the shader pack list.
 
 ### Changes
 
 - Rearranged Global NVIDIA Driver Settings card: G-Sync Enable + Mode on one row, FPS Limit + Preferred Refresh Rate on the next, then VSync + Power Mode, then ReBAR.
+- Per-game MFG Dynamic settings now inherit from global defaults when mode is changed — no longer writes explicit "Off" that blocks inheritance.
 
 ### Bug Fixes
 

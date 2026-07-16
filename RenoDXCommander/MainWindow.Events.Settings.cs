@@ -306,7 +306,31 @@ public sealed partial class MainWindow
         {
             var presetService = App.Services.GetRequiredService<DlssPresetService>();
             presetService.SetGlobalFpsLimit(presets[combo.SelectedIndex].Value);
+
+            // Ensure games with ReLimiter/DC have per-game FPS cap disabled
+            if (presets[combo.SelectedIndex].Value > 0)
+                DisableFpsLimitForFrameLimiterGames(presetService);
         }
+    }
+
+    /// <summary>
+    /// Writes FPS Limiter = Off to all games that have ReLimiter or DC installed,
+    /// preventing the global driver cap from conflicting with the software limiter.
+    /// </summary>
+    private void DisableFpsLimitForFrameLimiterGames(DlssPresetService presetService)
+    {
+        _ = Task.Run(() =>
+        {
+            foreach (var card in ViewModel.AllCards)
+            {
+                if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                if (card.UlStatus == Models.GameStatus.Installed || card.DcStatus == Models.GameStatus.Installed)
+                {
+                    try { presetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
+                    catch { }
+                }
+            }
+        });
     }
 
     private async void FpsLimitCombo_Custom(ComboBox combo)
@@ -327,6 +351,9 @@ public sealed partial class MainWindow
         {
             var presetService = App.Services.GetRequiredService<DlssPresetService>();
             presetService.SetGlobalFpsLimit(fps);
+
+            // Ensure games with ReLimiter/DC have per-game FPS cap disabled
+            DisableFpsLimitForFrameLimiterGames(presetService);
 
             // Add the custom value to the combo and select it
             _shaderCacheComboInit = true;
@@ -361,6 +388,73 @@ public sealed partial class MainWindow
         {
             var presetService = App.Services.GetRequiredService<DlssPresetService>();
             presetService.SetPreferredRefreshRate(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private void DmfgFrameCountCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        var options = DlssPresetService.DmfgFrameCountOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalDmfgFrameCount(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private void DmfgTargetFpsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_shaderCacheComboInit) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+
+        var selectedText = combo.SelectedItem as string;
+        if (selectedText == "Custom...")
+        {
+            DmfgTargetFpsCombo_Custom(combo);
+            return;
+        }
+
+        var options = DlssPresetService.DmfgTargetFpsOptions;
+        if (combo.SelectedIndex < options.Length)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalDmfgTargetFps(options[combo.SelectedIndex].Value);
+        }
+    }
+
+    private async void DmfgTargetFpsCombo_Custom(ComboBox combo)
+    {
+        var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
+        var dialog = new ContentDialog
+        {
+            Title = "Custom DMFG Target FPS",
+            Content = textBox,
+            PrimaryButtonText = "Set",
+            CloseButtonText = "Cancel",
+            XamlRoot = this.Content.XamlRoot,
+            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+        };
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text, out var fps) && fps >= 20 && fps <= 1000)
+        {
+            var presetService = App.Services.GetRequiredService<DlssPresetService>();
+            presetService.SetGlobalDmfgTargetFps(fps);
+
+            _shaderCacheComboInit = true;
+            var items = DlssPresetService.DmfgTargetFpsOptions.Select(o => o.Name).ToList();
+            items.Insert(items.Count - 1, $"{fps} FPS (Custom)");
+            combo.ItemsSource = items.ToArray();
+            combo.SelectedIndex = items.Count - 2;
+            _shaderCacheComboInit = false;
+        }
+        else
+        {
+            _shaderCacheComboInit = true;
+            var currentFps = App.Services.GetRequiredService<DlssPresetService>().GetGlobalDmfgTargetFps();
+            var idx = Array.FindIndex(DlssPresetService.DmfgTargetFpsOptions, o => o.Value == currentFps);
+            combo.SelectedIndex = idx >= 0 ? idx : 0;
+            _shaderCacheComboInit = false;
         }
     }
 

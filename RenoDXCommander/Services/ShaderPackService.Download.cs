@@ -193,6 +193,18 @@ public partial class ShaderPackService
             Directory.CreateDirectory(ShadersDir);
             Directory.CreateDirectory(TexturesDir);
 
+            // Direct .fx/.fxh file — not an archive, just copy to Shaders folder
+            var cacheExt = Path.GetExtension(cachePath);
+            if (cacheExt.Equals(".fx", StringComparison.OrdinalIgnoreCase) || cacheExt.Equals(".fxh", StringComparison.OrdinalIgnoreCase))
+            {
+                var destPath = Path.Combine(ShadersDir, pack.Id, Path.GetFileName(cachePath));
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                File.Copy(cachePath, destPath, overwrite: true);
+                RecordExtractedFiles(pack.Id, cachePath);
+                CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Copied direct shader file");
+            }
+            else
+            {
             using var archive = ArchiveFactory.Open(cachePath);
             foreach (var entry in archive.Entries)
             {
@@ -269,6 +281,7 @@ public partial class ShaderPackService
             // Record which files this pack contributed so we can verify presence later
             RecordExtractedFiles(pack.Id, cachePath);
             CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Extracted successfully");
+            } // end else (archive extraction)
         }
         catch (Exception ex)
         {
@@ -347,6 +360,15 @@ public partial class ShaderPackService
         try
         {
             var files = new List<string>();
+
+            // Direct .fx/.fxh file — not an archive, just record the single file
+            var cacheExt = Path.GetExtension(cachePath);
+            if (cacheExt.Equals(".fx", StringComparison.OrdinalIgnoreCase) || cacheExt.Equals(".fxh", StringComparison.OrdinalIgnoreCase))
+            {
+                files.Add(Path.Combine("Shaders", packId, Path.GetFileName(cachePath)));
+            }
+            else
+            {
             using var archive = ArchiveFactory.Open(cachePath);
             foreach (var entry in archive.Entries)
             {
@@ -387,6 +409,7 @@ public partial class ShaderPackService
                 var subDir = rootDir == ShadersDir ? "Shaders" : "Textures";
                 files.Add(Path.Combine(subDir, packId, relInRoot.Replace('/', Path.DirectorySeparatorChar)));
             }
+            } // end else (archive recording)
 
             Dictionary<string, string> d = new();
             if (File.Exists(SettingsPath))

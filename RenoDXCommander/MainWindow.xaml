@@ -1438,11 +1438,12 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Defaults + Batch Deploy -->
+                                <!-- Left: Defaults + DMFG Defaults + Batch Deploy -->
                                 <Grid Grid.Column="0">
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
                                         <TextBlock Text="Defaults" FontSize="14" FontWeight="SemiBold"
@@ -1459,7 +1460,36 @@
                                         <StackPanel x:Name="DlssDefaultsSummaryPanel" x:FieldModifier="internal" Spacing="4" Margin="0,4,0,0"/>
                                     </StackPanel>
 
-                                    <StackPanel Grid.Row="1" Spacing="8">
+                                    <!-- DMFG Defaults (global base profile) -->
+                                    <StackPanel Grid.Row="1" Spacing="8" Margin="0,16,0,0">
+                                        <TextBlock Text="DMFG Defaults" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Global Dynamic Multi Frame Generation defaults. Set these once — then just enable Dynamic mode on each game's MFG dialog."/>
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Spacing="4">
+                                                <TextBlock Text="Frame Count" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                                <ComboBox x:Name="DmfgFrameCountCombo" x:FieldModifier="internal"
+                                                          FontSize="12" HorizontalAlignment="Stretch"
+                                                          ToolTipService.ToolTip="Global DMFG max frame count. Games using Dynamic mode inherit this unless overridden per-game."
+                                                          SelectionChanged="DmfgFrameCountCombo_SelectionChanged"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Spacing="4">
+                                                <TextBlock Text="Target FPS" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}"/>
+                                                <ComboBox x:Name="DmfgTargetFpsCombo" x:FieldModifier="internal"
+                                                          FontSize="12" HorizontalAlignment="Stretch"
+                                                          ToolTipService.ToolTip="Global DMFG target frame rate. Off = no target. Max Refresh Rate = match display. Or pick a specific FPS."
+                                                          SelectionChanged="DmfgTargetFpsCombo_SelectionChanged"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2" Spacing="8" Margin="0,16,0,0">
                                         <TextBlock Text="Batch Deploy" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11"

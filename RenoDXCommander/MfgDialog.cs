@@ -310,25 +310,30 @@ public static class MfgDialog
             if (modeValue == MODE_OFF)
             {
                 presetService.SetMfgGenerationFactor(gameName, installPath, 0);
-                presetService.SetMfgDynamicMaxCount(gameName, installPath, 0);
-                presetService.SetMfgDynamicTargetFps(gameName, installPath, 0);
+                presetService.DeleteMfgDynamicMaxCount(gameName, installPath);
+                presetService.DeleteMfgDynamicTargetFps(gameName, installPath);
                 currentFactor = 0;
                 currentDynamicMax = 0;
                 currentTargetFps = 0;
             }
             else if (modeValue == MODE_FIXED)
             {
-                // Switching to Fixed: clear dynamic settings
-                presetService.SetMfgDynamicMaxCount(gameName, installPath, 0);
-                presetService.SetMfgDynamicTargetFps(gameName, installPath, 0);
+                // Switching to Fixed: delete dynamic settings (inherit from global)
+                presetService.DeleteMfgDynamicMaxCount(gameName, installPath);
+                presetService.DeleteMfgDynamicTargetFps(gameName, installPath);
                 currentDynamicMax = 0;
                 currentTargetFps = 0;
             }
             else if (modeValue == MODE_DYNAMIC)
             {
-                // Switching to Dynamic: clear fixed settings
+                // Switching to Dynamic: clear fixed settings, delete dynamic to inherit global
                 presetService.SetMfgGenerationFactor(gameName, installPath, 0);
+                presetService.DeleteMfgDynamicMaxCount(gameName, installPath);
+                presetService.DeleteMfgDynamicTargetFps(gameName, installPath);
                 currentFactor = 0;
+                // Re-read effective values (now inheriting from global base profile)
+                currentDynamicMax = presetService.GetMfgDynamicMaxCount(gameName, installPath);
+                currentTargetFps = presetService.GetMfgDynamicTargetFps(gameName, installPath);
             }
 
             PopulateCountCombo(idx);

@@ -125,9 +125,12 @@ public partial class DlssPresetService
             {
                 CrashReporter.Log($"[DlssPresetService.DeletePreset] DeleteSetting 0x{settingId:X8} failed for '{gameName}' — {delEx.Message}");
                 // Fallback: write the correct default value for this setting
-                // (NOT 0 — some settings use 0 as a meaningful non-default value)
+                // For settings where writing 0 would block global inheritance (MFG dynamic settings),
+                // skip the fallback entirely — a failed delete is better than writing an explicit Off.
                 var defaultValue = GetSettingDefaultValue(settingId);
-                SetPreset(gameName, installPath, settingId, defaultValue);
+                if (defaultValue.HasValue)
+                    SetPreset(gameName, installPath, settingId, defaultValue.Value);
+                // else: no fallback — leave the setting as-is (or absent)
             }
             _session.Save();
             CrashReporter.Log($"[DlssPresetService.DeletePreset] Deleted 0x{settingId:X8} for '{gameName}'");
@@ -142,14 +145,17 @@ public partial class DlssPresetService
 
     /// <summary>
     /// Returns the correct "cleared/default/no-override" value for a given setting ID.
-    /// Used as fallback when profile.DeleteSetting fails.
+    /// Returns null for settings where writing ANY value would block global inheritance
+    /// (i.e. the only correct "clear" is a true delete).
     /// </summary>
-    private static uint GetSettingDefaultValue(uint settingId)
+    private static uint? GetSettingDefaultValue(uint settingId)
     {
         return settingId switch
         {
             NGX_DLSS_SR_RENDER_SCALE_ID => 0x03,      // App Controlled (Default) — NOT 0x00 which is Performance
             NGX_DLSS_RR_RENDER_SCALE_ID => 0x03,      // App Controlled (Default) — NOT 0x00 which is Performance
+            MFG_DYNAMIC_MAX_COUNT_ID => null,          // Must be truly deleted — writing 0 = "Off" which blocks global
+            MFG_DYNAMIC_TARGET_FPS_ID => null,         // Must be truly deleted — writing 0 = "Off" which blocks global
             _ => 0x00,                                  // Most settings: 0 = Default/Off/No Override
         };
     }

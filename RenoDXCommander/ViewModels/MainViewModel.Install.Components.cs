@@ -328,6 +328,10 @@ public partial class MainViewModel
             // Deploy relimiter.ini from AppData if not already present in game folder
             AuxInstallService.DeployUlIniIfAbsent(card.InstallPath);
 
+            // Disable driver FPS limiter for this game (conflicts with ReLimiter)
+            try { _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
+            catch { }
+
             // Apply shared presets setting to the newly deployed INI if enabled
             if (_settingsViewModel.UlSharedPresets)
             {
@@ -503,6 +507,10 @@ public partial class MainViewModel
                 foreach (var f in Directory.GetFiles(card.InstallPath, "relimiter*.csv")) File.Delete(f);
             }
             catch { /* best effort */ }
+
+            // Restore driver FPS limiter inheritance (delete per-game override set on install)
+            try { _dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x10835002); }
+            catch { }
 
             card.UlInstalledFile = null;
             card.UlInstalledVersion = null;
@@ -755,6 +763,10 @@ public partial class MainViewModel
             // Deploy DisplayCommander.ini from AppData if not already present in game folder
             AuxInstallService.DeployDcIniIfAbsent(card.InstallPath);
 
+            // Disable driver FPS limiter for this game (conflicts with Display Commander)
+            try { _dlssPresetService.SetPerGameFpsLimit(card.GameName, card.InstallPath, 0); }
+            catch { }
+
             // Create and persist AuxInstalledRecord for DC tracking
             var dcRecord = new AuxInstalledRecord
             {
@@ -818,6 +830,10 @@ public partial class MainViewModel
             var dcRecord = _auxInstaller.FindRecord(card.GameName, card.InstallPath, "DisplayCommander");
             if (dcRecord != null)
                 _auxInstaller.RemoveRecord(dcRecord);
+
+            // Restore driver FPS limiter inheritance (delete per-game override set on install)
+            try { _dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x10835002); }
+            catch { }
 
             card.DcInstalledFile = null;
             card.DcInstalledVersion = null;
