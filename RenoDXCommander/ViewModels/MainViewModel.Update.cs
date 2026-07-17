@@ -7,6 +7,42 @@ namespace RenoDXCommander.ViewModels;
 
 public partial class MainViewModel
 {
+    private System.Threading.Timer? _updateCheckTimer;
+
+    /// <summary>
+    /// Starts a repeating 4-hour timer that re-runs all update checks.
+    /// Called after the initial background scan completes.
+    /// </summary>
+    internal void StartPeriodicUpdateCheckTimer()
+    {
+        var interval = TimeSpan.FromHours(4);
+        _updateCheckTimer = new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                _crashReporter.Log("[MainViewModel] Periodic update check triggered (4h timer)");
+                _forceUpdateCheck = true; // bypass cooldown since we ARE the cooldown
+                var records = _installer.LoadAll();
+                var auxRecords = _auxInstaller.LoadAll();
+                await CheckForUpdatesAsync(_allCards, records, auxRecords);
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel] Periodic update check failed — {ex.Message}");
+            }
+
+            // Also check for RHI app updates on the UI thread
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                PeriodicAppUpdateCheck?.Invoke();
+            });
+        }, null, interval, interval);
+        _crashReporter.Log("[MainViewModel] Periodic update check timer started (4h interval)");
+    }
+
+    /// <summary>Callback set by MainWindow to trigger app update check from the periodic timer.</summary>
+    public Action? PeriodicAppUpdateCheck { get; set; }
+
     internal void NotifyUpdateButtonChanged()
     {
         HasUpdatesAvailable = AnyUpdateAvailable;

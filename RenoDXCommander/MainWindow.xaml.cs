@@ -194,6 +194,8 @@ public sealed partial class MainWindow : Window
             if (ViewModel.SelectedGame != null && GameList.Items.Contains(ViewModel.SelectedGame))
                 GameList.ScrollIntoView(ViewModel.SelectedGame);
         };
+        ViewModel.PeriodicAppUpdateCheck = () =>
+            CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.PeriodicAppUpdate");
         ViewModel.PropertyChanged += OnViewModelChanged;
         GameList.ItemsSource = ViewModel.DisplayedGames;
         // Apply initial visibility

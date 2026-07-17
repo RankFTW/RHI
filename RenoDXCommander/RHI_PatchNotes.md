@@ -5,6 +5,7 @@
 - **System Tray** — close RHI to the system tray instead of exiting. Double-click the tray icon to restore the window, right-click for a quick-launch menu with your last 5 played games + Open/Exit. RHI stays running in the background for file watching and HDR auto-toggle.
 - **Jump List** — right-click the RHI icon on the taskbar or system tray to see and launch recent games directly, just like Steam. Works in both normal and Admin Mode.
 - Both features are optional (Off by default) and configurable in Settings → System & Maintenance → System Tray.
+- **Automatic Update Checks** — RHI now re-checks all mod and app updates every 4 hours while running. No restart needed — update indicators stay current even when minimized to the system tray.
 - Clicking the pinned taskbar shortcut while RHI is hidden in the tray brings the window back instantly.
 - Added global FPS Limit (Frame Rate Limiter V3) to the Global NVIDIA Driver Settings card — pick a VRR-optimal preset or select Custom to type any value.
 - Added global G-Sync Enable toggle to the Global NVIDIA Driver Settings card — enable or disable G-Sync globally.

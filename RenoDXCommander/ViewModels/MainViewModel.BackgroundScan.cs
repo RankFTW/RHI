@@ -243,6 +243,9 @@ public partial class MainViewModel
                 // DLSS/Streamline auto-update (runs after manifest is fetched and cards have detection)
                 try { await RunDlssAutoUpdateAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS auto-update failed — {ex.Message}"); }
+
+                // Start periodic update check timer (fires every 4h while app is running)
+                StartPeriodicUpdateCheckTimer();
             });
 
             // Update status text with final counts
