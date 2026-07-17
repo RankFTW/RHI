@@ -159,15 +159,16 @@ public static class TrayIconService
             }
 
             if (recentGames.Count > 0)
-                jumpList.AppendCategory("Recent Games", (IObjectArray)collection);
+                jumpList.AddUserTasks((IObjectArray)collection);
 
             jumpList.CommitList();
             Marshal.ReleaseComObject(collection);
             Marshal.ReleaseComObject(jumpList);
+            CrashReporter.Log($"[TrayIconService.UpdateJumpList] Registered {recentGames.Count} games in jump list");
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[TrayIconService.UpdateJumpList] Failed — {ex.Message}");
+            CrashReporter.Log($"[TrayIconService.UpdateJumpList] Failed — {ex.GetType().Name}: {ex.Message}");
         }
     }
 
