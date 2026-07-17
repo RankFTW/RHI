@@ -138,7 +138,7 @@ public static class TrayIconService
             jumpList.BeginList(out _, out var removedItems);
             Marshal.ReleaseComObject(removedItems);
 
-            var collection = (IObjectCollection)new CoClass_EnumerableObjectCollection();
+            dynamic collection = Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("2d3468c1-36a7-43b6-ac24-d3f02fd9607a"))!)!;
             var exePath = Environment.ProcessPath!;
 
             foreach (var game in recentGames.Take(5))
