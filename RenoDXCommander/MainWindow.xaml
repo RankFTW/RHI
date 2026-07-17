@@ -2248,7 +2248,7 @@
                                         <TextBlock Text="System Tray" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Minimize to system tray on close. Right-click the tray icon to quickly launch recent games."/>
+                                                   Text="Minimize to system tray on close. Right-click the tray icon or pinned taskbar icon to quickly launch recent games."/>
                                     </StackPanel>
                                     <Grid Grid.Row="3" ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
