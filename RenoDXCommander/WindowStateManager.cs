@@ -40,6 +40,9 @@ public class WindowStateManager
         _crashReporter = crashReporter;
     }
 
+    /// <summary>The native HWND of the managed window.</summary>
+    public IntPtr Hwnd => _hwnd;
+
     /// <summary>
     /// Enables or disables window size locking for Compact mode.
     /// When locked, WM_GETMINMAXINFO enforces both min and max track size
@@ -244,6 +247,12 @@ public class WindowStateManager
         if (msg == NativeInterop.WM_DROPFILES)
         {
             HandleWin32Drop(wParam);
+            return IntPtr.Zero;
+        }
+
+        if (msg == (uint)TrayIconService.WM_TRAYICON)
+        {
+            TrayIconService.HandleTrayMessage(lParam);
             return IntPtr.Zero;
         }
 

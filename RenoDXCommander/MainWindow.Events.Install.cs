@@ -599,11 +599,14 @@ public sealed partial class MainWindow
             LaunchGame(card);
     }
 
-    private void LaunchGame(GameCardViewModel card)
+    internal void LaunchGame(GameCardViewModel card)
     {
         try
         {
             var gameName = card.GameName;
+
+            // Track recent launches
+            TrackRecentLaunch(gameName);
             var launchArgs = _gameNameService.LaunchArgsOverrides
                 .TryGetValue(gameName, out var args) ? args : null;
 
@@ -735,6 +738,20 @@ public sealed partial class MainWindow
         {
             _crashReporter.Log($"[MainWindow.LaunchGame] Failed to launch '{card.GameName}' — {ex.Message}");
         }
+    }
+
+    private void TrackRecentLaunch(string gameName)
+    {
+        var recent = ViewModel.Settings.RecentLaunches;
+        recent.Remove(gameName);
+        recent.Insert(0, gameName);
+        if (recent.Count > 5) recent.RemoveRange(5, recent.Count - 5);
+        ViewModel.Settings.RecentLaunches = recent;
+        ViewModel.SaveSettingsPublic();
+
+        TrayIconService.UpdateRecentGames(recent);
+        if (ViewModel.Settings.RecentGamesMenu)
+            TrayIconService.UpdateJumpList(recent);
     }
 
     /// <summary>

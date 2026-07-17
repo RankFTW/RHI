@@ -1155,6 +1155,25 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
     }
 
+    private void CloseToTrayCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
+        ViewModel.Settings.CloseToTray = ((ComboBox)sender).SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void RecentGamesCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
+        ViewModel.Settings.RecentGamesMenu = ((ComboBox)sender).SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+        // Update jump list immediately
+        if (ViewModel.Settings.RecentGamesMenu)
+            TrayIconService.UpdateJumpList(ViewModel.Settings.RecentLaunches);
+        else
+            TrayIconService.ClearJumpList();
+    }
+
     private void HdrToggle_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
