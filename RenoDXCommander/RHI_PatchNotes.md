@@ -23,6 +23,7 @@
 ### Bug Fixes
 
 - Fixed window position restore suppressing the Windows taskbar auto-hide — restored bounds are now clamped to the monitor work area.
+- Fixed Engine.ini HDR/LUT toggle state resetting to On after Update All — the new install record now preserves the user's toggle choices from the previous record.
 
 ### Manifest Updates
 
