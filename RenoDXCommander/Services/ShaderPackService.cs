@@ -483,7 +483,7 @@ public partial class ShaderPackService : IShaderPackService
             Id          : "RenoFXHDRToolkit",
             DisplayName : "RenoFX HDR Toolkit by OopyDoopy",
             Kind        : SourceKind.DirectUrl,
-            Url         : "https://raw.githubusercontent.com/OopyDoopy/renodx/main/src/reshadefx/RenoFXHDRToolkit.fx",
+            Url         : "https://github.com/clshortfuse/renofx/archive/refs/heads/main.zip",
             IsMinimum   : false,
             Description : "SDR to HDR conversion, tone mapping, and color grading for games without a RenoDX mod",
             Category    : PackCategory.Recommended
