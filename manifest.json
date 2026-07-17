@@ -373,6 +373,7 @@
     "Batman: Arkham Asylum GOTY Edition": "Binaries",
     "Borderlands: The Pre-Sequel": "Binaries\\Win32",
     "Crimson Desert": "bin64",
+    "Crysis Remastered": "Bin64",
     "Cyberpunk 2077": "bin\\x64",
     "Darkest Dungeon®": "DarkestDungeon_windows\\win64",
     "Deus Ex - Mankind Divided": "retail",
@@ -1030,6 +1031,7 @@
   },
 
   "launchExeOverrides": {
+    "Crysis Remastered": "CrysisRemastered.exe",
     "Returnal™": "Returnal-Win64-Shipping.exe",
     "The Elder Scrolls V: Skyrim Special Edition": "SkyrimSE.exe",
     "Skyrim Creation Kit": "CreationKit.exe",
