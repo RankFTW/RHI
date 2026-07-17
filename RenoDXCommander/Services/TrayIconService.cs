@@ -8,6 +8,19 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public static class TrayIconService
 {
+    private const string AppId = "RHI.ReShadeHDRInstaller";
+
+    /// <summary>
+    /// Sets the App User Model ID for the current process.
+    /// Must be called early at startup so Windows associates the jump list with this exe.
+    /// </summary>
+    public static void SetProcessAppId()
+    {
+        SetCurrentProcessExplicitAppUserModelID(AppId);
+    }
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
     private static IntPtr _hwnd;
     private static bool _iconCreated;
     private static List<string> _recentGames = new();
@@ -120,7 +133,7 @@ public static class TrayIconService
         try
         {
             var jumpList = (ICustomDestinationList)new CoClass_DestinationList();
-            jumpList.SetAppID("RHI");
+            jumpList.SetAppID(AppId);
 
             jumpList.BeginList(out _, out var removedItems);
             Marshal.ReleaseComObject(removedItems);
@@ -163,8 +176,8 @@ public static class TrayIconService
         try
         {
             var jumpList = (ICustomDestinationList)new CoClass_DestinationList();
-            jumpList.SetAppID("RHI");
-            jumpList.DeleteList("RHI");
+            jumpList.SetAppID(AppId);
+            jumpList.DeleteList(AppId);
             Marshal.ReleaseComObject(jumpList);
         }
         catch { }

@@ -120,6 +120,9 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Set App User Model ID early so Windows associates jump lists with this process
+        TrayIconService.SetProcessAppId();
+
         // ── One-time migration from legacy AppData folders ───────
         MigrateLegacyAppData();
         DownloadsMigrationService.RunOnce();
