@@ -165,12 +165,11 @@ public static class TrayIconService
 
     public static void ClearJumpList()
     {
+        // SHAddToRecentDocs items can't be selectively removed by the app.
+        // Clear all recent docs for this process (only affects our own entries).
         try
         {
-            var jumpList = (ICustomDestinationList)new CoClass_DestinationList();
-            jumpList.SetAppID(AppId);
-            jumpList.DeleteList(AppId);
-            Marshal.ReleaseComObject(jumpList);
+            SHAddToRecentDocsPtr(SHARD_PIDL, IntPtr.Zero);
         }
         catch { }
     }
@@ -239,6 +238,7 @@ public static class TrayIconService
     private static extern void SHAddToRecentDocsPtr(uint uFlags, IntPtr pv);
     private const uint SHARD_PATHW = 0x00000003;
     private const uint SHARD_LINK = 0x00000006;
+    private const uint SHARD_PIDL = 0x00000001;
 
     // ── COM interfaces for Jump List ────────────────────────────────────────────
 
