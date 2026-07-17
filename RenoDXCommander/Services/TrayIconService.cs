@@ -134,7 +134,6 @@ public static class TrayIconService
         {
             var exePath = Environment.ProcessPath!;
 
-            // Use SHAddToRecentDocs with IShellLink — Windows manages the "Recent" category automatically
             foreach (var game in recentGames.Take(5))
             {
                 var link = (IShellLinkW)new CoClass_ShellLink();
@@ -142,7 +141,7 @@ public static class TrayIconService
                 link.SetArguments($"--launch \"{game}\"");
                 link.SetDescription(game);
 
-                // Set System.Title property so the jump list shows the game name
+                // Set System.Title so the jump list shows the game name
                 var store = (IPropertyStore)link;
                 var titleKey = new PROPERTYKEY { fmtid = new Guid("F29F85E0-4FF9-1068-AB91-08002B27B3D9"), pid = 2 };
                 var pv = new PROPVARIANT { vt = 31, pwszVal = Marshal.StringToCoTaskMemUni(game) };
@@ -150,17 +149,13 @@ public static class TrayIconService
                 store.Commit();
                 Marshal.FreeCoTaskMem(pv.pwszVal);
 
-                // Persist the link to a temp .lnk file, then add via SHAddToRecentDocs
-                var linkFile = (IPersistFile)link;
-                var tempLnk = Path.Combine(Path.GetTempPath(), $"RHI_{game.GetHashCode():X8}.lnk");
-                linkFile.Save(tempLnk, true);
-
-                SHAddToRecentDocs(SHARD_PATHW, tempLnk);
-
-                try { File.Delete(tempLnk); } catch { }
+                // Pass IShellLink directly to SHAddToRecentDocs
+                var linkPtr = Marshal.GetComInterfaceForObject(link, typeof(IShellLinkW));
+                SHAddToRecentDocsPtr(SHARD_LINK, linkPtr);
+                Marshal.Release(linkPtr);
             }
 
-            CrashReporter.Log($"[TrayIconService.UpdateJumpList] Added {recentGames.Count} games via SHAddToRecentDocs");
+            CrashReporter.Log($"[TrayIconService.UpdateJumpList] Added {recentGames.Count} games via SHAddToRecentDocs (SHARD_LINK)");
         }
         catch (Exception ex)
         {
@@ -240,7 +235,10 @@ public static class TrayIconService
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern void SHAddToRecentDocs(uint uFlags, string pv);
+    [DllImport("shell32.dll", EntryPoint = "SHAddToRecentDocs")]
+    private static extern void SHAddToRecentDocsPtr(uint uFlags, IntPtr pv);
     private const uint SHARD_PATHW = 0x00000003;
+    private const uint SHARD_LINK = 0x00000006;
 
     // ── COM interfaces for Jump List ────────────────────────────────────────────
 
