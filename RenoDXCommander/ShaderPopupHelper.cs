@@ -147,6 +147,7 @@ public static class ShaderPopupHelper
             Content                    = panel,
             MaxHeight                  = 700,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding                    = new Thickness(0, 0, 16, 0),
         };
 
         var dlg = new ContentDialog
@@ -158,8 +159,9 @@ public static class ShaderPopupHelper
             XamlRoot          = xamlRoot,
             Background        = Brush(ResourceKeys.SurfaceOverlayBrush),
             RequestedTheme    = ElementTheme.Dark,
-            MinWidth          = 750,
+            MinWidth          = 850,
         };
+        dlg.Resources["ContentDialogMaxWidth"] = 900.0;
 
         var dialogResult = await DialogService.ShowSafeAsync(dlg);
         if (dialogResult != ContentDialogResult.Primary)
