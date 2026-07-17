@@ -132,22 +132,27 @@ public static class TrayIconService
     {
         try
         {
+            CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 1: Creating DestinationList");
             var jumpList = (ICustomDestinationList)new CoClass_DestinationList();
             jumpList.SetAppID(AppId);
 
+            CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 2: BeginList");
             jumpList.BeginList(out _, out var removedItems);
             Marshal.ReleaseComObject(removedItems);
 
+            CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 3: Creating collection");
             dynamic collection = Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("2d3468c1-36a7-43b6-ac24-d3f02fd9607a"))!)!;
             var exePath = Environment.ProcessPath!;
 
             foreach (var game in recentGames.Take(5))
             {
+                CrashReporter.Log($"[TrayIconService.UpdateJumpList] Step 4: Creating ShellLink for '{game}'");
                 var link = (IShellLinkW)new CoClass_ShellLink();
                 link.SetPath(exePath);
                 link.SetArguments($"--launch \"{game}\"");
                 link.SetDescription(game);
 
+                CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 5: Setting title property");
                 var store = (IPropertyStore)link;
                 var titleKey = new PROPERTYKEY { fmtid = new Guid("F29F85E0-4FF9-1068-AB91-08002B27B3D9"), pid = 2 };
                 var pv = new PROPVARIANT { vt = 31, pwszVal = Marshal.StringToCoTaskMemUni(game) }; // VT_LPWSTR
@@ -155,12 +160,17 @@ public static class TrayIconService
                 store.Commit();
                 Marshal.FreeCoTaskMem(pv.pwszVal);
 
+                CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 6: AddObject to collection");
                 collection.AddObject(link);
             }
 
             if (recentGames.Count > 0)
+            {
+                CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 7: AddUserTasks");
                 jumpList.AddUserTasks(collection);
+            }
 
+            CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 8: CommitList");
             jumpList.CommitList();
             Marshal.ReleaseComObject(collection);
             Marshal.ReleaseComObject(jumpList);
