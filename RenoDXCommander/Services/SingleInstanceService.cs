@@ -60,8 +60,14 @@ public static class SingleInstanceService
         {
             try
             {
-                using var server = new NamedPipeServerStream(PipeName, PipeDirection.In, 1,
-                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                var pipeSecurity = new System.IO.Pipes.PipeSecurity();
+                pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule(
+                    new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.WorldSid, null),
+                    System.IO.Pipes.PipeAccessRights.ReadWrite,
+                    System.Security.AccessControl.AccessControlType.Allow));
+
+                using var server = NamedPipeServerStreamAcl.Create(PipeName, PipeDirection.In, 1,
+                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 0, 0, pipeSecurity);
                 await server.WaitForConnectionAsync(ct);
                 using var reader = new StreamReader(server);
                 var line = await reader.ReadLineAsync(ct);
