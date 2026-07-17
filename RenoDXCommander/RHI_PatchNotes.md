@@ -1,7 +1,11 @@
-## v2.2.1-beta2
+## v2.2.1-beta3
 
 ### New
 
+- **System Tray** — close RHI to the system tray instead of exiting. Double-click the tray icon to restore the window, right-click for a quick-launch menu with your last 5 played games + Open/Exit. RHI stays running in the background for file watching and HDR auto-toggle.
+- **Taskbar Jump List** — right-click the RHI icon on the taskbar (pinned or running) to see and launch recent games directly from Windows, just like Steam. Works in both normal and Admin Mode.
+- Both features are optional (Off by default) and configurable in Settings → System & Maintenance → System Tray.
+- Clicking the pinned taskbar shortcut while RHI is hidden in the tray brings the window back instantly.
 - Added global FPS Limit (Frame Rate Limiter V3) to the Global NVIDIA Driver Settings card — pick a VRR-optimal preset or select Custom to type any value.
 - Added global G-Sync Enable toggle to the Global NVIDIA Driver Settings card — enable or disable G-Sync globally.
 - Added global DMFG Defaults section to the DLSS/Streamline Settings card — set Frame Count and Target FPS once globally, then just enable Dynamic mode per-game.

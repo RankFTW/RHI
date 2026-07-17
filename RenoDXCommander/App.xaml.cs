@@ -8,6 +8,7 @@ namespace RenoDXCommander;
 public partial class App : Application
 {
     private Window? _window;
+    internal static string? _pendingLaunchGame;
 
     /// <summary>
     /// The application-wide DI service provider.
@@ -137,14 +138,27 @@ public partial class App : Application
                 addonArg = cmdArgs[1];
         }
 
+        // Handle --launch argument (from jump list or command line)
+        var launchIdx = Array.IndexOf(cmdArgs, "--launch");
+        string? launchGameArg = null;
+        if (launchIdx >= 0 && launchIdx < cmdArgs.Length - 1)
+            launchGameArg = cmdArgs[launchIdx + 1];
+
         if (!SingleInstanceService.TryAcquire())
         {
-            // Another instance is running — forward the file and exit
-            if (addonArg != null)
+            // Another instance is running — forward the file or launch command and exit
+            if (launchGameArg != null)
+                SingleInstanceService.SendToRunningInstance($"--launch:{launchGameArg}");
+            else if (addonArg != null)
                 SingleInstanceService.SendToRunningInstance(addonArg);
+            else
+                SingleInstanceService.SendToRunningInstance("--activate");
             Environment.Exit(0);
             return;
         }
+
+        // Store pending launch for after window initializes
+        _pendingLaunchGame = launchGameArg;
 
         // ── Admin Mode: if the scheduled task exists and we're not elevated, relaunch via task ──
         if (!IsRunningAsAdmin() && IsAdminTaskRegistered())
@@ -178,8 +192,27 @@ public partial class App : Application
         SingleInstanceService.StartListening();
         SingleInstanceService.FileReceived += path =>
         {
-            if (_window is MainWindow mw)
-                mw.DispatcherQueue.TryEnqueue(() => mw.HandleAddonFile(path));
+            if (path == "--activate")
+            {
+                if (_window is MainWindow mw0)
+                    mw0.DispatcherQueue.TryEnqueue(() => mw0.Activate());
+                return;
+            }
+            if (path.StartsWith("--launch:"))
+            {
+                var gameName = path.Substring("--launch:".Length);
+                if (_window is MainWindow mw)
+                    mw.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        mw.Activate();
+                        var card = mw.ViewModel.AllCards.FirstOrDefault(c =>
+                            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+                        if (card != null) mw.LaunchGame(card);
+                    });
+                return;
+            }
+            if (_window is MainWindow mw2)
+                mw2.DispatcherQueue.TryEnqueue(() => mw2.HandleAddonFile(path));
         };
 
         // Handle addon file passed on first launch

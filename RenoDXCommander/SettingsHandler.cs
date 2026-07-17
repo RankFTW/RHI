@@ -258,8 +258,13 @@ public class SettingsHandler
         // Initialize admin mode combo
         InitAdminModeCombo(_window.AdminModeCombo);
 
-        // Initialize drop helper combo
+        // Initialize drop helper combo (greyed out when not in admin mode — not needed)
         _window.DropHelperCombo.SelectedIndex = ViewModel.Settings.DropHelperEnabled ? 1 : 0;
+        _window.DropHelperCombo.IsEnabled = VulkanLayerService.IsRunningAsAdmin();
+
+        // Initialize tray combos
+        _window.CloseToTrayCombo.SelectedIndex = ViewModel.Settings.CloseToTray ? 1 : 0;
+        _window.RecentGamesCombo.SelectedIndex = ViewModel.Settings.RecentGamesMenu ? 1 : 0;
     }
 
     /// <summary>

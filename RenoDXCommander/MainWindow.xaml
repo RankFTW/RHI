@@ -2200,38 +2200,80 @@
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
-                                <!-- Right: Admin Mode -->
+                                <!-- Right: Admin Mode + System Tray -->
                                 <Grid Grid.Column="2" RowSpacing="8">
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Spacing="8">
+                                    <!-- Admin Mode description + combo -->
+                                    <StackPanel Grid.Row="0" Spacing="4">
                                         <TextBlock Text="Admin Mode" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Creates a scheduled task to launch RHI with elevated privileges. Required for ReBAR, Low Latency Ultra, and Smooth Motion driver settings."/>
+                                                   Text="Creates a scheduled task to launch RHI with elevated privileges. Required for ReBAR, Low Latency Ultra, and Smooth Motion driver settings. The Drop Helper enables Discord drag-and-drop when running elevated."/>
                                     </StackPanel>
-                                    <ComboBox Grid.Row="1" x:Name="AdminModeCombo" x:FieldModifier="internal"
-                                              SelectionChanged="AdminModeCombo_SelectionChanged"
-                                              FontSize="12" MinWidth="70" Padding="8,4"
-                                              CornerRadius="8" HorizontalAlignment="Stretch">
-                                        <ComboBoxItem Content="Off"/>
-                                        <ComboBoxItem Content="On"/>
-                                    </ComboBox>
-                                    <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,0">
-                                        <TextBlock Text="Drop Helper" FontSize="12"
-                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
-                                        <ComboBox x:Name="DropHelperCombo" x:FieldModifier="internal"
-                                                  SelectionChanged="DropHelperCombo_SelectionChanged"
-                                                  FontSize="12" Padding="8,4"
-                                                  CornerRadius="8" HorizontalAlignment="Stretch"
-                                                  ToolTipService.ToolTip="The drop helper window enables Discord drag-and-drop in admin mode. Disable if you don't need it. Restart required.">
-                                            <ComboBoxItem Content="Off"/>
-                                            <ComboBoxItem Content="On"/>
-                                        </ComboBox>
+                                    <Grid Grid.Row="1" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="Admin Mode" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <ComboBox x:Name="AdminModeCombo" x:FieldModifier="internal"
+                                                      SelectionChanged="AdminModeCombo_SelectionChanged"
+                                                      FontSize="12" Padding="8,4"
+                                                      CornerRadius="8" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="Off"/>
+                                                <ComboBoxItem Content="On"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Drop Helper" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <ComboBox x:Name="DropHelperCombo" x:FieldModifier="internal"
+                                                      SelectionChanged="DropHelperCombo_SelectionChanged"
+                                                      FontSize="12" Padding="8,4"
+                                                      CornerRadius="8" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="The drop helper window enables Discord drag-and-drop in admin mode. Disable if you don't need it. Restart required.">
+                                                <ComboBoxItem Content="Off"/>
+                                                <ComboBoxItem Content="On"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+                                    <!-- System Tray description + combos -->
+                                    <StackPanel Grid.Row="2" Spacing="4" Margin="0,12,0,0">
+                                        <TextBlock Text="System Tray" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Minimize to system tray on close. Right-click the tray icon or pinned taskbar icon to quickly launch recent games."/>
                                     </StackPanel>
+                                    <Grid Grid.Row="3" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="Close to Tray" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <ComboBox x:Name="CloseToTrayCombo" x:FieldModifier="internal"
+                                                      SelectionChanged="CloseToTrayCombo_SelectionChanged"
+                                                      FontSize="12" Padding="8,4" CornerRadius="8" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="Off"/>
+                                                <ComboBoxItem Content="On"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Recent Games" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <ComboBox x:Name="RecentGamesCombo" x:FieldModifier="internal"
+                                                      SelectionChanged="RecentGamesCombo_SelectionChanged"
+                                                      FontSize="12" Padding="8,4" CornerRadius="8" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="Off"/>
+                                                <ComboBoxItem Content="On"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
                                 </Grid>
                             </Grid>
                             </StackPanel>
