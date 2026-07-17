@@ -138,14 +138,23 @@ public static class TrayIconService
 
             CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 2: BeginList");
             jumpList.BeginList(out _, out var removedItems);
-            Marshal.ReleaseComObject(removedItems);
+            if (removedItems != null) try { Marshal.ReleaseComObject(removedItems); } catch { }
 
             CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 3: Creating collection");
             var collectionType = Type.GetTypeFromCLSID(new Guid("2d3468c1-36a7-43b6-ac24-d3f02fd9607a"))!;
             var collectionRaw = Activator.CreateInstance(collectionType)!;
-            var collectionPtr = Marshal.GetIUnknownForObject(collectionRaw);
-            var collection = (IObjectCollection)Marshal.GetObjectForIUnknown(collectionPtr);
-            Marshal.Release(collectionPtr);
+            IObjectCollection collection;
+            try
+            {
+                var collectionPtr = Marshal.GetIUnknownForObject(collectionRaw);
+                collection = (IObjectCollection)Marshal.GetObjectForIUnknown(collectionPtr);
+                Marshal.Release(collectionPtr);
+            }
+            catch (InvalidCastException)
+            {
+                // Fallback: direct cast (works on some system configs)
+                collection = (IObjectCollection)collectionRaw;
+            }
             var exePath = Environment.ProcessPath!;
 
             foreach (var game in recentGames.Take(5))
