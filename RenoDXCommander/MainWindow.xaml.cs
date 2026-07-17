@@ -140,7 +140,14 @@ public sealed partial class MainWindow : Window
 
         // Jump list (taskbar right-click) — independent of tray icon
         if (ViewModel.Settings.RecentGamesMenu && ViewModel.Settings.RecentLaunches.Count > 0)
+        {
+            _crashReporter.Log($"[MainWindow] Updating jump list with {ViewModel.Settings.RecentLaunches.Count} games");
             TrayIconService.UpdateJumpList(ViewModel.Settings.RecentLaunches);
+        }
+        else
+        {
+            _crashReporter.Log($"[MainWindow] Jump list skipped — RecentGamesMenu={ViewModel.Settings.RecentGamesMenu}, RecentLaunches.Count={ViewModel.Settings.RecentLaunches.Count}");
+        }
 
         // Apply compact size and lock immediately in the constructor.
         // There may be a tiny WinUI layout adjustment on first render, but the lock
