@@ -141,7 +141,11 @@ public static class TrayIconService
             Marshal.ReleaseComObject(removedItems);
 
             CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 3: Creating collection");
-            dynamic collection = Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("2d3468c1-36a7-43b6-ac24-d3f02fd9607a"))!)!;
+            var collectionType = Type.GetTypeFromCLSID(new Guid("2d3468c1-36a7-43b6-ac24-d3f02fd9607a"))!;
+            var collectionRaw = Activator.CreateInstance(collectionType)!;
+            var collectionPtr = Marshal.GetIUnknownForObject(collectionRaw);
+            var collection = (IObjectCollection)Marshal.GetObjectForIUnknown(collectionPtr);
+            Marshal.Release(collectionPtr);
             var exePath = Environment.ProcessPath!;
 
             foreach (var game in recentGames.Take(5))
@@ -167,12 +171,12 @@ public static class TrayIconService
             if (recentGames.Count > 0)
             {
                 CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 7: AddUserTasks");
-                jumpList.AddUserTasks(collection);
+                jumpList.AddUserTasks(collectionRaw);
             }
 
             CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 8: CommitList");
             jumpList.CommitList();
-            Marshal.ReleaseComObject(collection);
+            Marshal.ReleaseComObject(collectionRaw);
             Marshal.ReleaseComObject(jumpList);
             CrashReporter.Log($"[TrayIconService.UpdateJumpList] Registered {recentGames.Count} games in jump list");
         }
