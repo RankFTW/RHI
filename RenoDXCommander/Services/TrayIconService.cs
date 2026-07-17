@@ -132,62 +132,35 @@ public static class TrayIconService
     {
         try
         {
-            CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 1: Creating DestinationList");
-            var jumpList = (ICustomDestinationList)new CoClass_DestinationList();
-            jumpList.SetAppID(AppId);
-
-            CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 2: BeginList");
-            jumpList.BeginList(out _, out var removedItems);
-            if (removedItems != null) try { Marshal.ReleaseComObject(removedItems); } catch { }
-
-            CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 3: Creating collection");
-            var collectionType = Type.GetTypeFromCLSID(new Guid("2d3468c1-36a7-43b6-ac24-d3f02fd9607a"))!;
-            var collectionRaw = Activator.CreateInstance(collectionType)!;
-            IObjectCollection collection;
-            try
-            {
-                var collectionPtr = Marshal.GetIUnknownForObject(collectionRaw);
-                collection = (IObjectCollection)Marshal.GetObjectForIUnknown(collectionPtr);
-                Marshal.Release(collectionPtr);
-            }
-            catch (InvalidCastException)
-            {
-                // Fallback: direct cast (works on some system configs)
-                collection = (IObjectCollection)collectionRaw;
-            }
             var exePath = Environment.ProcessPath!;
 
+            // Use SHAddToRecentDocs with IShellLink — Windows manages the "Recent" category automatically
             foreach (var game in recentGames.Take(5))
             {
-                CrashReporter.Log($"[TrayIconService.UpdateJumpList] Step 4: Creating ShellLink for '{game}'");
                 var link = (IShellLinkW)new CoClass_ShellLink();
                 link.SetPath(exePath);
                 link.SetArguments($"--launch \"{game}\"");
                 link.SetDescription(game);
 
-                CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 5: Setting title property");
+                // Set System.Title property so the jump list shows the game name
                 var store = (IPropertyStore)link;
                 var titleKey = new PROPERTYKEY { fmtid = new Guid("F29F85E0-4FF9-1068-AB91-08002B27B3D9"), pid = 2 };
-                var pv = new PROPVARIANT { vt = 31, pwszVal = Marshal.StringToCoTaskMemUni(game) }; // VT_LPWSTR
+                var pv = new PROPVARIANT { vt = 31, pwszVal = Marshal.StringToCoTaskMemUni(game) };
                 store.SetValue(ref titleKey, ref pv);
                 store.Commit();
                 Marshal.FreeCoTaskMem(pv.pwszVal);
 
-                CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 6: AddObject to collection");
-                collection.AddObject(link);
+                // Persist the link to a temp .lnk file, then add via SHAddToRecentDocs
+                var linkFile = (IPersistFile)link;
+                var tempLnk = Path.Combine(Path.GetTempPath(), $"RHI_{game.GetHashCode():X8}.lnk");
+                linkFile.Save(tempLnk, true);
+
+                SHAddToRecentDocs(SHARD_PATHW, tempLnk);
+
+                try { File.Delete(tempLnk); } catch { }
             }
 
-            if (recentGames.Count > 0)
-            {
-                CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 7: AddUserTasks");
-                jumpList.AddUserTasks(collectionRaw);
-            }
-
-            CrashReporter.Log("[TrayIconService.UpdateJumpList] Step 8: CommitList");
-            jumpList.CommitList();
-            Marshal.ReleaseComObject(collectionRaw);
-            Marshal.ReleaseComObject(jumpList);
-            CrashReporter.Log($"[TrayIconService.UpdateJumpList] Registered {recentGames.Count} games in jump list");
+            CrashReporter.Log($"[TrayIconService.UpdateJumpList] Added {recentGames.Count} games via SHAddToRecentDocs");
         }
         catch (Exception ex)
         {
@@ -265,6 +238,10 @@ public static class TrayIconService
     [DllImport("user32.dll")]
     private static extern IntPtr LoadIcon(IntPtr hInstance, IntPtr lpIconName);
 
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern void SHAddToRecentDocs(uint uFlags, string pv);
+    private const uint SHARD_PATHW = 0x00000003;
+
     // ── COM interfaces for Jump List ────────────────────────────────────────────
 
     [ComImport, Guid("77f10cf0-3db5-4966-b520-b7c54fd35ed6")]
@@ -338,6 +315,18 @@ public static class TrayIconService
         void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, uint dwReserved);
         void Resolve(IntPtr hwnd, uint fFlags);
         void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
+    }
+
+    [ComImport, Guid("0000010b-0000-0000-C000-000000000046")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IPersistFile
+    {
+        void GetClassID(out Guid pClassID);
+        [PreserveSig] int IsDirty();
+        void Load([MarshalAs(UnmanagedType.LPWStr)] string pszFileName, uint dwMode);
+        void Save([MarshalAs(UnmanagedType.LPWStr)] string pszFileName, [MarshalAs(UnmanagedType.Bool)] bool fRemember);
+        void SaveCompleted([MarshalAs(UnmanagedType.LPWStr)] string pszFileName);
+        void GetCurFile([MarshalAs(UnmanagedType.LPWStr)] out string ppszFileName);
     }
 
     [ComImport, Guid("886d8eeb-8cf2-4446-8d02-cdba1dbdcf99")]
