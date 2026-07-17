@@ -23,6 +23,7 @@ public static class TrayIconService
     private static extern int SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
     private static IntPtr _hwnd;
     private static bool _iconCreated;
+    public static bool IsInitialized => _iconCreated;
     private static List<string> _recentGames = new();
     private static Action? _onShowWindow;
     private static Action? _onExit;

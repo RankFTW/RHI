@@ -1160,6 +1160,23 @@ public sealed partial class MainWindow
         if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
         ViewModel.Settings.CloseToTray = ((ComboBox)sender).SelectedIndex == 1;
         ViewModel.SaveSettingsPublic();
+
+        // Initialize tray icon immediately if enabling and not yet created
+        if (ViewModel.Settings.CloseToTray && !TrayIconService.IsInitialized)
+        {
+            TrayIconService.Initialize(
+                _windowStateManager.Hwnd,
+                onShowWindow: () => { this.Activate(); },
+                onExit: () => { _forceClose = true; this.Close(); },
+                onLaunchGame: (name) =>
+                {
+                    var card = ViewModel.AllCards.FirstOrDefault(c =>
+                        c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
+                    if (card != null)
+                        DispatcherQueue.TryEnqueue(() => LaunchGame(card));
+                });
+            TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentLaunches);
+        }
     }
 
     private void RecentGamesCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
