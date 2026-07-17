@@ -61,6 +61,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _hdrAutoToggle;
     [ObservableProperty] private List<uint> _hdrTargetDisplays = new();
     [ObservableProperty] private bool _dropHelperEnabled = true;
+    [ObservableProperty] private bool _closeToTray;
+    [ObservableProperty] private bool _recentGamesMenu;
+    [ObservableProperty] private List<string> _recentLaunches = new();
 
     // ── Digital Vibrance ──────────────────────────────────────────────────────
     /// <summary>Per-display DVC values. Key = display index (string), Value = 0-100.</summary>
@@ -252,6 +255,13 @@ public partial class SettingsViewModel : ObservableObject
             catch { HdrTargetDisplays = new(); }
         }
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
+        if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
+        if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
+        if (s.TryGetValue("RecentLaunches", out var rlVal))
+        {
+            try { RecentLaunches = System.Text.Json.JsonSerializer.Deserialize<List<string>>(rlVal) ?? new(); }
+            catch { RecentLaunches = new(); }
+        }
 
         // DLSS/Streamline defaults
         if (s.TryGetValue("DefaultDlssVersion", out var ddv)) DefaultDlssVersion = ddv ?? "";
@@ -327,6 +337,9 @@ public partial class SettingsViewModel : ObservableObject
         if (HdrTargetDisplays.Count > 0) s["HdrTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(HdrTargetDisplays);
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
         else s["DropHelperEnabled"] = "true";
+        s["CloseToTray"] = CloseToTray ? "true" : "false";
+        s["RecentGamesMenu"] = RecentGamesMenu ? "true" : "false";
+        if (RecentLaunches.Count > 0) s["RecentLaunches"] = System.Text.Json.JsonSerializer.Serialize(RecentLaunches);
 
         // DLSS/Streamline defaults
         if (!string.IsNullOrEmpty(DefaultDlssVersion)) s["DefaultDlssVersion"] = DefaultDlssVersion;
