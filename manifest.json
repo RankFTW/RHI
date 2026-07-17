@@ -1170,6 +1170,13 @@
     },
     "renodx-dlssfix": {
       "description": "Makes ReShade draw on native game frames instead of generated frames. Also hides DLSS upscaling from ReShade."
+    },
+    "renodx-upgrade": {
+      "packageName": "RenoDX Upgrade",
+      "description": "Enables inverse tone mapping (ITM) and resource upgrades for HDR in DX9+ games. Use with RenoFX HDR Toolkit shader for full HDR conversion. Not needed alongside RenoDX or Luma mods.",
+      "downloadUrl64": "https://github.com/OopyDoopy/renodx/releases/download/snapshot/renodx-upgrade.addon64",
+      "downloadUrl32": "https://github.com/OopyDoopy/renodx/releases/download/snapshot/renodx-upgrade.addon32",
+      "repositoryUrl": "https://github.com/OopyDoopy/renodx"
     }
   }
 }
