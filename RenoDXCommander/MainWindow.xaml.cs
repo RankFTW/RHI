@@ -43,6 +43,7 @@ public sealed partial class MainWindow : Window
     internal DetailPanelBuilder DetailPanelBuilderInstance => _detailPanelBuilder;
 
     private string? _pendingReselect;
+    private bool _forceClose;
 
     public MainWindow(MainViewModel viewModel, ICrashReporter crashReporter)
     {
@@ -117,6 +118,29 @@ public sealed partial class MainWindow : Window
         _windowStateManager = new WindowStateManager(this, hwnd, _dragDropHandler, _crashReporter);
         _windowStateManager.InstallWndProcSubclass();
         _windowStateManager.EnableDragAccept(ViewModel.Settings.DropHelperEnabled);
+
+        // Initialize system tray
+        if (ViewModel.Settings.CloseToTray || ViewModel.Settings.RecentGamesMenu)
+        {
+            TrayIconService.Initialize(
+                _windowStateManager.Hwnd,
+                onShowWindow: () => { this.Activate(); },
+                onExit: () => { _forceClose = true; this.Close(); },
+                onLaunchGame: (name) =>
+                {
+                    var card = ViewModel.AllCards.FirstOrDefault(c =>
+                        c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
+                    if (card != null)
+                    {
+                        DispatcherQueue.TryEnqueue(() => LaunchGame(card));
+                    }
+                });
+            TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentLaunches);
+        }
+
+        // Jump list (taskbar right-click) — independent of tray icon
+        if (ViewModel.Settings.RecentGamesMenu && ViewModel.Settings.RecentLaunches.Count > 0)
+            TrayIconService.UpdateJumpList(ViewModel.Settings.RecentLaunches);
 
         // Apply compact size and lock immediately in the constructor.
         // There may be a tiny WinUI layout adjustment on first render, but the lock
@@ -196,6 +220,21 @@ public sealed partial class MainWindow : Window
         else
             _addonFileWatcher.Start();
         this.Closed += MainWindow_Closed;
+
+        // Handle pending launch from --launch argument
+        if (!string.IsNullOrEmpty(App._pendingLaunchGame))
+        {
+            var name = App._pendingLaunchGame;
+            App._pendingLaunchGame = null;
+            DispatcherQueue.TryEnqueue(async () =>
+            {
+                // Wait for cards to be built
+                await Task.Delay(2000);
+                var card = ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
+                if (card != null) LaunchGame(card);
+            });
+        }
     }
 
     private void MainWindow_Activated(object? sender, WindowActivatedEventArgs e)
@@ -222,18 +261,23 @@ public sealed partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, WindowEventArgs e)
     {
-        // Unsubscribe from ViewModel property changes to avoid leaks (Requirement 8.5)
-        ViewModel.PropertyChanged -= OnViewModelChanged;
+        if (ViewModel.Settings.CloseToTray && !_forceClose)
+        {
+            e.Handled = true;
+            this.AppWindow.Hide();
+            return;
+        }
 
-        // Unsubscribe detail panel builder from current card's PropertyChanged
+        // Normal close cleanup
+        ViewModel.PropertyChanged -= OnViewModelChanged;
         if (_detailPanelBuilder.CurrentDetailCard != null)
             _detailPanelBuilder.CurrentDetailCard.PropertyChanged -= _detailPanelBuilder.DetailCard_PropertyChanged;
-
         _addonFileWatcher.Dispose();
         _windowStateManager.CleanupOleDragDrop();
+        TrayIconService.Dispose();
         SingleInstanceService.Stop();
-        ViewModel.SaveSettingsPublic(); // persist GridLayout and other settings
-        ViewModel.SaveLibraryPublic();  // persist LastSelectedGame and other library state
+        ViewModel.SaveSettingsPublic();
+        ViewModel.SaveLibraryPublic();
         _windowStateManager.SaveWindowBounds();
     }
 
