@@ -21,6 +21,25 @@ public partial class MainViewModel
             try
             {
                 _crashReporter.Log("[MainViewModel] Periodic update check triggered (4h timer)");
+
+                // Re-fetch manifest (picks up new game entries, overrides, etc.)
+                try
+                {
+                    var freshManifest = await _manifestService.FetchAsync();
+                    if (freshManifest != null)
+                    {
+                        _manifest = freshManifest;
+                        AuxInstallService.GlobalManifest = _manifest;
+                        ApplyManifest(_manifest);
+                        _crashReporter.Log("[MainViewModel] Periodic manifest refresh complete");
+                    }
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic manifest fetch failed — {ex.Message}"); }
+
+                // Re-fetch DLSS manifest
+                try { await _dlssStreamlineService.FetchManifestAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic DLSS manifest fetch failed — {ex.Message}"); }
+
                 _forceUpdateCheck = true; // bypass cooldown since we ARE the cooldown
                 var records = _installer.LoadAll();
                 var auxRecords = _auxInstaller.LoadAll();
