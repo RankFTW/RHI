@@ -159,7 +159,7 @@ public static class TrayIconService
             }
 
             if (recentGames.Count > 0)
-                jumpList.AddUserTasks((IObjectArray)collection);
+                jumpList.AddUserTasks(collection);
 
             jumpList.CommitList();
             Marshal.ReleaseComObject(collection);
