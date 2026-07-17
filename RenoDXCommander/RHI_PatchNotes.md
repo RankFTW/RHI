@@ -3,7 +3,7 @@
 ### New
 
 - **System Tray** — close RHI to the system tray instead of exiting. Double-click the tray icon to restore the window, right-click for a quick-launch menu with your last 5 played games + Open/Exit. RHI stays running in the background for file watching and HDR auto-toggle.
-- **Taskbar Jump List** — right-click the RHI icon on the taskbar (pinned or running) to see and launch recent games directly from Windows, just like Steam. Works in both normal and Admin Mode.
+- **Jump List** — right-click the RHI icon on the taskbar or system tray to see and launch recent games directly, just like Steam. Works in both normal and Admin Mode.
 - Both features are optional (Off by default) and configurable in Settings → System & Maintenance → System Tray.
 - Clicking the pinned taskbar shortcut while RHI is hidden in the tray brings the window back instantly.
 - Added global FPS Limit (Frame Rate Limiter V3) to the Global NVIDIA Driver Settings card — pick a VRR-optimal preset or select Custom to type any value.
@@ -38,6 +38,9 @@
 - Fixed Denshattack! incorrectly matching FF7 Remake mod — added wikiUnlinks + snapshotOverrides to force generic UE addon.
 - Added Denshattack! PCGW URL override.
 - Added Crysis Remastered install path override (`Bin64`) and launch exe override.
+- Added Denshattack! to `nativeHdrGames`.
+- Added `renodx-upgrade` addon — ITM and resource upgrades for HDR in DX9+ games (use with RenoFX HDR Toolkit shader).
+- Updated RenoFX HDR Toolkit shader source to `clshortfuse/renofx` repo.
 
 ---
 
