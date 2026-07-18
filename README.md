@@ -11,7 +11,7 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 ## Why RHI?
 
 - **8-store detection** — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, Rockstar. No manual setup.
-- **9 managed components** — ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma Framework, DXVK, DOF Fix. One-click install, update, and removal for each.
+- **10 managed components** — ReShade, RenoDX, RenoDX Upgrade, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma Framework, DXVK, DOF Fix. One-click install, update, and removal for each.
 - **46 shader packs** — Essential, Recommended, and Extra categories. Global or per-game selection.
 - **DLSS & Streamline management** — swap SR, Ray Reconstruction, and Frame Generation independently. Update or downgrade Streamline as a set. Per-game DLSS presets without NVIDIA Profile Inspector.
 - **Nvidia Profile Overrides** — VSync, Low Latency, Smooth Motion, Power Mode, ReBAR, Multi Frame Generation, DLSS render scale (33–100%). All per-game, written directly to NVIDIA driver profiles.
@@ -19,10 +19,14 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **DLSS & Streamline Defaults** — configure preferred versions, presets, and render scales. One-click Quick Apply per game.
 - **Profile Export/Import** — back up all per-game NVIDIA profile settings to JSON. Restore after driver updates.
 - **Drag-and-drop** — drop an exe, addon, preset, Luma archive, or URL. RHI figures out what to do.
-- **Three view modes** — Detail View, Grid View, Simple View. Fresh installs default to Simple View.
+- **Two view modes** — Detail and Compact. Toggle between them in one click.
 - **Game Launch** — Steam uses `-applaunch` (with overlay and playtime tracking), Epic uses its protocol, everything else launches directly. Custom exe and arguments per game.
 - **HDR Auto-Toggle** — automatically enables Windows HDR on game launch and disables on exit. Global or per-game. No more manual toggling in Windows Settings.
 - **Running game indicator** — sidebar highlights green when a game launched through RHI is running.
+- **System Tray & Jump List** — minimize to the system tray on close. Right-click the tray or taskbar icon to launch recent games instantly.
+- **Automatic background updates** — all mod and app updates re-checked every 4 hours while running.
+- **Custom Addons** — drop `.addon64`/`.addon32` files in the Custom folder. They appear in the Addon Manager with on/off toggles.
+- **Digital Vibrance** — per-display color saturation control (0–100) restored automatically on startup.
 - **DLSS / Streamline Auto-Update** — games on the latest version are automatically swapped when a new release appears. Manually chosen older versions are left alone.
 - **Peak Brightness** — set your monitor's peak nits once, automatically written to all reshade.ini files on every deploy.
 - **Luma + RenoDX coexistence** — for compatible games, both frameworks run side by side.
@@ -49,6 +53,7 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 | [Luma Framework](https://github.com/Filoppi/Luma-Framework) | DX11 HDR modding framework. Toggle per game — ReShade and RenoDX are swapped automatically. |
 | [DXVK](https://github.com/doitsujin/dxvk) | DirectX-to-Vulkan translation for DX8–DX10 games. Variants: Development, Stable, Lilium HDR (scRGB output). Per-game selection. |
 | [DOF Fix](https://github.com/RankFTW/rhi-repo/releases) | Fixes depth-of-field stepping/tiling artifacts in Unreal Engine 5.0–5.6 games. One-click install, participates in Update All. |
+| [RenoDX Upgrade](https://github.com/OopyDoopy/renodx) | Inverse tone mapping and resource upgrades for HDR in DX9+ games. Use with RenoFX shader for full HDR conversion. Not needed with RenoDX/Luma mods. |
 
 ---
 
@@ -74,6 +79,8 @@ All per-game via NVIDIA driver profiles. Requires admin (Task Scheduler-based pe
 - **Smooth Motion** — Enable + APIs + Flip Pacing
 - **Power Mode** — Adaptive / Prefer Max Performance / Optimal
 - **ReBAR** — Enable / Mode / Size Limit
+- **FPS Limit** — VRR-optimal presets or custom value. Auto-disabled per-game when ReLimiter/DC installed.
+- **G-Sync** — Per-game disable toggle
 - **Profile Export/Import** — back up all settings to JSON, restore after driver updates
 
 ### Global Nvidia Settings (Settings page)
@@ -84,14 +91,19 @@ All per-game via NVIDIA driver profiles. Requires admin (Task Scheduler-based pe
 - Preferred Refresh Rate
 - Global ReBAR (On/Off + Size)
 - DLSS On-Screen Indicator
+- FPS Limit (Frame Rate Limiter V3)
+- G-Sync Enable
+- G-Sync On-Screen Indicator
+- Digital Vibrance (per-display)
+- DMFG Defaults (Frame Count + Target FPS)
 
 ### Admin Mode
 
-Task Scheduler-based persistent elevation. Toggle Off/On in Settings. When enabled, RHI silently relaunches elevated on startup — no per-operation UAC prompts. Required for ReBAR, Low Latency (ULL), Smooth Motion, and CPU Scheduling writes.
+Task Scheduler-based persistent elevation. Toggle Off/On in Settings. When enabled, RHI silently relaunches elevated on startup — no per-operation UAC prompts. Required for ReBAR, Low Latency (ULL), Smooth Motion writes. Drop Helper provides Discord drag-and-drop in admin mode.
 
 ### Per-Game Overrides
 
-DLL naming · Shader mode (Global/Custom/Select/Off) · Addon mode (Global/Select/Off) · Bitness · Graphics API · ReShade channel (Stable/Nightly/Custom/Legacy/No Addons) · DXVK variant · Launch exe + arguments · Update inclusion toggles · Wiki name mapping · HDR auto-toggle
+DLL naming · Shader mode (Global/Custom/Select/Off) · Addon mode (Global/Select/Off) · Bitness · Graphics API · ReShade channel (Stable/Nightly/Custom/Legacy/No Addons) · DXVK variant · Launch exe + arguments · Update inclusion toggles · Wiki name mapping · HDR auto-toggle · G-Sync disable
 
 ### DOF Fix
 
