@@ -243,7 +243,7 @@ public class AddonPackService : IAddonPackService
                 if (string.IsNullOrEmpty(entry.DownloadUrl) && string.IsNullOrEmpty(entry.DownloadUrl32) && string.IsNullOrEmpty(entry.DownloadUrl64))
                     continue;
 
-                merged.Add(new AddonEntry(
+                merged.Insert(0, new AddonEntry(
                     SectionId: id,
                     PackageName: entry.PackageName,
                     PackageDescription: entry.Description,
