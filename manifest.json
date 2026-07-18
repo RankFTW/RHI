@@ -1139,6 +1139,17 @@
 
   "_comment_shaderPacks": "=== SHADER PACK OVERRIDES (add/disable/update packs without app update) ===",
   "shaderPacks": {
+    "CrosireSlim": {
+      "displayName": "crosire reshade-shaders (slim)",
+      "kind": "DirectUrl",
+      "url": "https://github.com/crosire/reshade-shaders/archive/refs/heads/slim.zip",
+      "isMinimum": true,
+      "description": "ReShade framework headers and base shaders (Blending.fxh, StageDepth, etc.)",
+      "category": "Essential"
+    },
+    "CrosireMaster": {
+      "requires": ["CrosireSlim"]
+    }
   },
 
   "dlssPresets": {

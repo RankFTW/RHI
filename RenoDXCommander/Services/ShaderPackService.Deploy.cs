@@ -8,6 +8,28 @@ public partial class ShaderPackService
     // ── Pack filtering ────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Expands a set of pack IDs to include all transitive dependencies (Requires).
+    /// Prevents infinite loops via visited-set tracking.
+    /// </summary>
+    private IEnumerable<string> ExpandDependencies(IEnumerable<string> packIds)
+    {
+        var result = new HashSet<string>(packIds, StringComparer.OrdinalIgnoreCase);
+        var queue = new Queue<string>(result);
+        while (queue.Count > 0)
+        {
+            var id = queue.Dequeue();
+            var pack = _packs.FirstOrDefault(p => p.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            if (pack?.Requires == null) continue;
+            foreach (var dep in pack.Requires)
+            {
+                if (result.Add(dep))
+                    queue.Enqueue(dep);
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Returns packs whose Id is in the given set. Unknown IDs are silently ignored.
     /// </summary>
     private IEnumerable<ShaderPack> PacksForIds(IEnumerable<string> packIds)
@@ -17,15 +39,17 @@ public partial class ShaderPackService
     }
 
     /// <summary>
-    /// Deploys only the packs matching the given <paramref name="packIds"/>.
+    /// Deploys only the packs matching the given <paramref name="packIds"/>,
+    /// plus any transitive dependencies declared via <see cref="ShaderPack.Requires"/>.
     /// Used to deploy the user's chosen subset of shader packs.
     /// </summary>
     private void DeployPacksIfAbsent(IEnumerable<string> packIds, string destShadersDir, string destTexturesDir)
     {
+        var expandedIds = ExpandDependencies(packIds);
         var shadersFiles = new List<string>();
         var texturesFiles = new List<string>();
 
-        foreach (var pack in PacksForIds(packIds))
+        foreach (var pack in PacksForIds(expandedIds))
         {
             try
             {
@@ -85,10 +109,12 @@ public partial class ShaderPackService
     }
 
     /// <summary>
-    /// Collects relative paths for all files belonging to packs matching the given <paramref name="packIds"/>.
+    /// Collects relative paths for all files belonging to packs matching the given <paramref name="packIds"/>
+    /// plus their transitive dependencies.
     /// </summary>
     private (List<string> shaders, List<string> textures) FilesForIds(IEnumerable<string> packIds)
     {
+        var expandedIds = ExpandDependencies(packIds);
         var shaders = new List<string>();
         var textures = new List<string>();
         try
@@ -96,7 +122,7 @@ public partial class ShaderPackService
             if (!File.Exists(SettingsPath)) return (shaders, textures);
             var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
             if (d == null) return (shaders, textures);
-            foreach (var pack in PacksForIds(packIds))
+            foreach (var pack in PacksForIds(expandedIds))
             {
                 if (!d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json)) continue;
                 var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();

@@ -37,13 +37,13 @@ public partial class ShaderPackService
     }
 
     /// <summary>
-    /// Downloads and extracts only the specified packs (on-demand).
+    /// Downloads and extracts only the specified packs and their transitive dependencies (on-demand).
     /// Packs that are already cached are skipped.
     /// </summary>
     public async Task EnsurePacksAsync(IEnumerable<string> packIds, IProgress<string>? progress = null)
     {
-        var idSet = new HashSet<string>(packIds, StringComparer.OrdinalIgnoreCase);
-        var needed = _packs.Where(p => idSet.Contains(p.Id)).ToList();
+        var expandedIds = ExpandDependencies(packIds);
+        var needed = _packs.Where(p => expandedIds.Contains(p.Id)).ToList();
         if (needed.Count == 0) return;
 
         var tasks = needed.Select(pack => Task.Run(async () =>

@@ -14,6 +14,7 @@
 - Added RenoFX HDR Toolkit shader pack (Recommended category) — SDR to HDR conversion, tone mapping, and color grading for games without a RenoDX mod.
 - Added `renodx-upgrade` addon — ITM and resource upgrades for HDR in DX9+ games. Use alongside the RenoFX shader.
 - Window now reopens maximized if it was closed maximized.
+- Shader pack dependencies are now automatically resolved at deploy time — selecting a pack that requires another pack (e.g. for shared `#include` files) will pull in the dependency automatically, even if it wasn't explicitly selected.
 
 ### Changes
 
