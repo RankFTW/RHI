@@ -153,6 +153,7 @@ public partial class App : Application
                 SingleInstanceService.SendToRunningInstance(addonArg);
             else
                 SingleInstanceService.SendToRunningInstance("--activate");
+            try { File.Delete(CrashReporter.CurrentSessionLogPath); } catch { }
             Environment.Exit(0);
             return;
         }
@@ -172,6 +173,7 @@ public partial class App : Application
                     CreateNoWindow = true,
                 };
                 System.Diagnostics.Process.Start(psi);
+                try { File.Delete(CrashReporter.CurrentSessionLogPath); } catch { }
                 Environment.Exit(0);
                 return;
             }

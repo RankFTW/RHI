@@ -42,6 +42,9 @@ public static class CrashReporter
     /// <summary>Session log file path, created fresh each time the app starts.</summary>
     private static readonly string SessionLogPath;
 
+    /// <summary>Gets the current session log file path (for cleanup on early exit).</summary>
+    public static string CurrentSessionLogPath => SessionLogPath;
+
     /// <summary>Maximum number of session log files kept on disk.</summary>
     private const int MaxSessionLogs = 10;
 
