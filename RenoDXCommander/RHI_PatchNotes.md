@@ -1,46 +1,43 @@
-## v2.2.1-beta3
+## v2.2.1
+
+### ✨ Highlights
+
+- **System Tray & Jump List** — RHI can now minimize to the system tray when closed. Right-click the tray icon or pinned taskbar icon to instantly launch your recent games — just like Steam. Double-click to restore the window. Optional, Off by default. Configure in Settings → System & Maintenance.
+- **Automatic Background Updates** — while running (especially in the tray), RHI re-checks all mod and app updates every 4 hours automatically. Manifest changes, new mods, version bumps — everything stays current without restart.
+- **Global FPS Limit** — new driver-level frame rate cap in the NVIDIA Settings card. Pick a VRR-optimal preset (caps at VRR range for your refresh rate) or type any custom value. Installing ReLimiter or Display Commander now automatically disables it per-game to prevent conflicts.
 
 ### New
 
-- **System Tray** — close RHI to the system tray instead of exiting. Double-click the tray icon to restore the window, right-click for a quick-launch menu with your last 5 played games + Open/Exit. RHI stays running in the background for file watching and HDR auto-toggle.
-- **Jump List** — right-click the RHI icon on the taskbar or system tray to see and launch recent games directly, just like Steam. Works in both normal and Admin Mode.
-- Both features are optional (Off by default) and configurable in Settings → System & Maintenance → System Tray.
-- **Automatic Update Checks** — RHI now re-checks all mod and app updates every 4 hours while running. No restart needed — update indicators stay current even when minimized to the system tray.
-- Clicking the pinned taskbar shortcut while RHI is hidden in the tray brings the window back instantly.
-- Added global FPS Limit (Frame Rate Limiter V3) to the Global NVIDIA Driver Settings card — pick a VRR-optimal preset or select Custom to type any value.
-- Added global G-Sync Enable toggle to the Global NVIDIA Driver Settings card — enable or disable G-Sync globally.
-- Added global DMFG Defaults section to the DLSS/Streamline Settings card — set Frame Count and Target FPS once globally, then just enable Dynamic mode per-game.
-- Installing ReLimiter or Display Commander now automatically disables the driver FPS cap for that game (prevents conflict with software frame limiter). Uninstalling restores global inheritance.
-- RenoDX cog Compatibility Settings can now be extended via manifest (`renodxExtraSettings`) — new toggles added without client updates.
-- Added RenoFX HDR Toolkit shader (by OopyDoopy) to the shader pack list.
-- Window now reopens maximized if it was closed maximized. Maximized state is persisted across sessions.
+- Added global G-Sync Enable toggle to the NVIDIA Driver Settings card.
+- Added global DMFG Defaults (Frame Count + Target FPS) — set once, apply per-game with a single Dynamic mode click.
+- RenoDX cog Compatibility Settings can now be extended remotely via manifest — new toggles appear without app updates.
+- Added RenoFX HDR Toolkit shader pack (Recommended category) — SDR to HDR conversion, tone mapping, and color grading for games without a RenoDX mod.
+- Added `renodx-upgrade` addon — ITM and resource upgrades for HDR in DX9+ games. Use alongside the RenoFX shader.
+- Window now reopens maximized if it was closed maximized.
 
 ### Changes
 
-- Engine.ini `r.LUT.UpdateEveryFrame=1` is now automatically deployed for all Unreal Engine games when installing any RenoDX mod. A per-game toggle (On by default) in the RenoDX cog → Engine.ini Settings section allows disabling it if needed. Engine.ini HDR toggle also moved into this section.
-- RenoDX `[renodx]` Upgrade keys are now pre-populated with empty values on install for all generic UE and Unity games. The addon fills in game-specific defaults on first launch — previously users had to launch the game before Compatibility Settings appeared in the cog dialog.
-- UE-Extended `Upgrade_*` keys now write empty values instead of `=0`, allowing the addon to populate game-specific defaults rather than being blocked by a pre-set zero.
-- Uninstalling any RenoDX mod on Unreal/Unity games now removes the `[renodx]` section from reshade.ini, preventing stale settings from conflicting when switching between generic and UE-Extended addons.
-- Per-game MFG Dynamic settings now inherit from global defaults when mode is changed — no longer writes explicit "Off" that blocks inheritance.
-- Aligned UE-Extended and Set Maximum Nits controls with the Compatibility Settings grid layout in the RenoDX cog dialog.
-- Rearranged Global NVIDIA Driver Settings card: G-Sync Enable + Mode on one row, FPS Limit + Preferred Refresh Rate on the next, then VSync + Power Mode, then ReBAR.
+- **Engine.ini auto-deploy for all UE games** — `r.LUT.UpdateEveryFrame=1` is now written automatically for every Unreal Engine game on RenoDX install. Per-game On/Off toggle in the RenoDX cog → Engine.ini Settings section. Engine.ini HDR toggle moved into the same section.
+- RenoDX Upgrade keys are now pre-populated on install for UE and Unity games, so Compatibility Settings appear in the cog dialog immediately (no first launch required). Values are left empty to let the addon fill in game-specific defaults.
+- Uninstalling RenoDX on Unreal/Unity games now clears the `[renodx]` section from reshade.ini, preventing stale settings when switching between addon types.
+- Per-game DMFG Dynamic settings now inherit from global defaults instead of writing "Off" that blocked inheritance.
+- Rearranged NVIDIA Driver Settings card layout for better grouping.
+- Improved RenoDX cog dialog layout — controls properly aligned across all sections.
 
 ### Bug Fixes
 
-- Fixed window position restore suppressing the Windows taskbar auto-hide — restored bounds are now clamped to the monitor work area.
-- Fixed Engine.ini HDR/LUT toggle state resetting to On after Update All — the new install record now preserves the user's toggle choices from the previous record.
+- Fixed window position restore suppressing Windows taskbar auto-hide.
+- Fixed Engine.ini HDR/LUT toggle resetting to On after Update All.
+- Stub session logs from admin relaunch and second-instance exits are now auto-deleted.
 
 ### Manifest Updates
 
-- Added Black Myth: Wukong to `nativeHdrGames`.
-- Added Darkest Dungeon® — 64-bit override and install path override (`DarkestDungeon_windows\win64`).
-- Added `Upgrade_CopyDestinations` to `renodxExtraSettings` (appears in RenoDX cog Compatibility Settings).
-- Added Lords of the Fallen → "Lords of the Fallen (2023)" profile name override.
-- Fixed Denshattack! incorrectly matching FF7 Remake mod — added wikiUnlinks + snapshotOverrides to force generic UE addon.
-- Added Denshattack! PCGW URL override.
-- Added Crysis Remastered install path override (`Bin64`) and launch exe override.
-- Added Denshattack! to `nativeHdrGames`.
-- Added `renodx-upgrade` addon — ITM and resource upgrades for HDR in DX9+ games (use with RenoFX HDR Toolkit shader).
+- Added Black Myth: Wukong and Denshattack! to `nativeHdrGames`.
+- Added Crysis Remastered install path override (`Bin64`).
+- Added Darkest Dungeon® 64-bit + install path override.
+- Added Lords of the Fallen profile name override.
+- Added ARC Raiders to wikiUnlinks (no RenoDX mod).
+- Fixed Denshattack! incorrectly matching FF7 Remake mod.
 - Updated RenoFX HDR Toolkit shader source to `clshortfuse/renofx` repo.
 
 ---
