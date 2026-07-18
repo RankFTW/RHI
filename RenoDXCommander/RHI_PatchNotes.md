@@ -39,6 +39,9 @@
 - Added ARC Raiders to wikiUnlinks (no RenoDX mod).
 - Fixed Denshattack! incorrectly matching FF7 Remake mod.
 - Updated RenoFX HDR Toolkit shader source to `clshortfuse/renofx` repo.
+- Fixed Call of Duty Modern Warfare II split names missing ® symbols (sorting fix).
+- Added Mp3tag to blacklist.
+- Added ARC Raiders to wikiUnlinks.
 
 ---
 
