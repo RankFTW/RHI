@@ -31,6 +31,8 @@ This document covers every feature in RHI. For a quick overview, see the [README
 - [Game Launch](#game-launch)
 - [HDR Auto-Toggle](#hdr-auto-toggle)
 - [Running Game Indicator](#running-game-indicator)
+- [System Tray & Jump List](#system-tray--jump-list)
+- [Digital Vibrance](#digital-vibrance)
 - [Peak Brightness (Nits)](#peak-brightness-nits)
 - [DOF Fix](#dof-fix)
 - [Per-Game Overrides](#per-game-overrides)
@@ -55,7 +57,7 @@ This document covers every feature in RHI. For a quick overview, see the [README
 
 ## Layout and Views
 
-RHI has three view modes, a Settings page, and an About page. Your chosen view, window size, and window position are remembered across restarts. Fresh installs default to Simple View.
+RHI has two view modes, a Settings page, and an About page. Your chosen view, window size, and window position are remembered across restarts. Fresh installs default to Compact View.
 
 ### Detail View
 
@@ -66,19 +68,14 @@ A game list sidebar on the left, and a multi-section detail panel on the right. 
 3. **Nvidia Profile Overrides** — DLSS/Streamline management and driver profile settings (VSync, Latency, Smooth Motion, Power, ReBAR)
 4. **Management** — change install folder, reset overrides, copy diagnostic report
 
-### Grid View
-
-A card-based layout showing all games as a grid of tiles. Each card shows the game name, platform icon, API badge, installed component dots, wiki status, and update highlights. Click a card to open a management popout with the same install/uninstall controls and overrides available in Detail View.
-
-### Simple View
+### Compact View
 
 A paged layout showing the same content as Detail View, split across three navigable pages:
-
 - **Page 1** — Components (game info, install buttons)
 - **Page 2** — Game Overrides
 - **Page 3** — Nvidia Profile Overrides + Management
 
-Use the arrow buttons on the sides to cycle between pages. The window locks to a fixed compact size in Simple View and restores your previous size when you switch back.
+Use the arrow buttons on the sides to cycle between pages. The window locks to a fixed compact size in Compact View and restores your previous size when you switch back.
 
 ### Toolbar
 
@@ -89,7 +86,7 @@ Use the arrow buttons on the sides to cycle between pages. The window locks to a
 | Update All | Updates ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, and RE Framework across all eligible games. Lights up purple when updates are available. |
 | Links | Dropdown with quick links: RenoDX Wiki, Luma Wiki, RHI GitHub, ReLimiter GitHub, Display Commander GitHub. |
 | Help | Dropdown: Discord support channel, this guide, Ko-fi, and About page. |
-| Views | Dropdown: Simple, Detail, and Grid view. |
+| Views | Toggle button: switches between Detail and Compact view. |
 | Settings | Opens the Settings page. |
 
 ### Sidebar (Detail View)
@@ -485,8 +482,19 @@ Located in the Settings page, these write to the global/base NVIDIA driver profi
 | Global ReBAR Enable | Off / On (requires admin) |
 | Global ReBAR Size | 512MB, 1GB (default), 1.5GB, 2GB, 4GB, 6GB |
 | DLSS On-Screen Indicator | Enabled / Disabled (registry-based) |
+| FPS Limit (Frame Rate Limiter V3) | VRR-optimal presets or custom value |
+| G-Sync Enable | Global on/off toggle |
+| G-Sync On-Screen Indicator | Enabled / Disabled |
+| Digital Vibrance | Per-display saturation (0–100) |
+| DMFG Defaults | Set Frame Count and Target FPS globally, apply per-game with one click |
 
 When Global ReBAR is enabled, per-game ReBAR dropdowns show "Global (On/Off)" and "Global (1GB)" as the first option — selecting it inherits from global.
+
+---
+
+## Digital Vibrance
+
+Per-display color saturation control available in Settings → Global NVIDIA Driver Settings. Adjust a slider (0–100) for each connected display. Saved values are automatically restored on every app startup. Uses NVAPI directly — no NVIDIA Control Panel required.
 
 ---
 
@@ -497,7 +505,7 @@ Task Scheduler-based persistent elevation. Located in Settings → Data & Custom
 - **Off** — RHI runs as a normal user. ReBAR, Low Latency (ULL), Smooth Motion, and some driver settings cannot be written.
 - **On** — Creates a scheduled task named "RHI Admin Mode". On subsequent launches, RHI silently relaunches through the task with admin privileges — no UAC prompt each time.
 
-Toggling On triggers a one-time UAC prompt to create the task. Toggling Off deletes it. Drag-and-drop continues to work when elevated (UIPI bypass).
+Toggling On triggers a one-time UAC prompt to create the task. Toggling Off deletes it. Drag-and-drop continues to work when elevated (UIPI bypass). The Drop Helper enables Discord drag-and-drop when running elevated.
 
 ---
 
@@ -593,6 +601,10 @@ Click "ReShade Addons" in the toolbar. Toggle addons On/Off globally. Enabled ad
 - **RenoDX DevKit** — development tool for mod authors
 - **DLSS Fix** — makes ReShade draw on native game frames. Auto-configures reshade.ini with DLSS/Streamline paths.
 
+### Custom Addons
+
+Place `.addon64` or `.addon32` files in `%LocalAppData%\RHI\Custom\Addons\`. They appear in the Addon Manager dialog and the per-game "Select Addons" picker with on/off toggles. Custom addons are deployed directly from this folder — no download needed. They participate in stale removal tracking and work alongside the built-in addon packs.
+
 ---
 
 ## Game Launch
@@ -624,6 +636,28 @@ Automatically enables Windows HDR when a game is launched through RHI and disabl
 ### Running Game Indicator
 
 The sidebar item turns green when a game launched through RHI is currently running. Returns to normal when the game exits. Only tracks games launched via the Launch button (not externally launched games).
+
+---
+
+## System Tray & Jump List
+
+RHI can minimize to the system tray when you close the window, keeping the file watcher, HDR auto-toggle, and background update checks running without a visible window.
+
+### Close to Tray
+
+When enabled (Settings → System & Maintenance → System Tray), clicking the window close button hides RHI to the system tray instead of exiting. Double-click the tray icon to restore the window. Right-click the tray icon for a context menu showing your last 5 launched games, plus Open and Exit options.
+
+### Jump List
+
+When "Recent Games" is enabled, right-clicking the RHI icon on the taskbar shows your recent games in the Windows jump list — the same "Recent" section you see on Steam. Click any game to launch it instantly. Works in both normal and Admin Mode.
+
+### Activate from Shortcut
+
+If RHI is hidden in the tray and you click a pinned taskbar shortcut or launch RHI again, the existing instance is brought back to the foreground instead of starting a new one.
+
+### Background Update Checks
+
+While running (especially useful in the tray), RHI automatically re-checks all mod updates, the manifest, and the app version every 4 hours. No manual refresh or restart needed.
 
 ### Peak Brightness (Nits)
 
