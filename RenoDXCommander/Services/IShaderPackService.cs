@@ -21,6 +21,11 @@ public interface IShaderPackService
     /// </summary>
     string[] GetRequiredPacks(string packId);
 
+    /// <summary>
+    /// Expands a set of pack IDs to include all transitive dependencies.
+    /// </summary>
+    IEnumerable<string> ExpandPackDependencies(IEnumerable<string> packIds);
+
     Task EnsureLatestAsync(IProgress<string>? progress = null);
 
     /// <summary>

@@ -11,6 +11,13 @@ public partial class ShaderPackService
     /// Expands a set of pack IDs to include all transitive dependencies (Requires).
     /// Prevents infinite loops via visited-set tracking.
     /// </summary>
+    public IEnumerable<string> ExpandPackDependencies(IEnumerable<string> packIds)
+        => ExpandDependencies(packIds);
+
+    /// <summary>
+    /// Expands a set of pack IDs to include all transitive dependencies (Requires).
+    /// Prevents infinite loops via visited-set tracking.
+    /// </summary>
     private IEnumerable<string> ExpandDependencies(IEnumerable<string> packIds)
     {
         var result = new HashSet<string>(packIds, StringComparer.OrdinalIgnoreCase);

@@ -868,6 +868,9 @@ public partial class MainViewModel
             var packFileLists = BuildPackFileLists();
             var (matchedPackIds, unresolvedFiles) = ShaderResolver.Resolve(allFxFiles, packFileLists);
 
+            // 3b. Expand dependencies — if a matched pack requires another, include it
+            var expandedPackIds = _shaderPackService.ExpandPackDependencies(matchedPackIds).ToList();
+
             // 4. Log unresolved files
             foreach (var unresolved in unresolvedFiles)
                 _crashReporter.Log($"[MainViewModel.ApplyPresetShaders] Unresolved shader: {unresolved}");
@@ -885,12 +888,12 @@ public partial class MainViewModel
             if (_gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var existing))
             {
                 var merged = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
-                merged.UnionWith(matchedPackIds);
+                merged.UnionWith(expandedPackIds);
                 _gameNameService.PerGameShaderSelection[gameName] = merged.ToList();
             }
             else
             {
-                _gameNameService.PerGameShaderSelection[gameName] = matchedPackIds.ToList();
+                _gameNameService.PerGameShaderSelection[gameName] = expandedPackIds;
             }
 
             // 7. Persist
