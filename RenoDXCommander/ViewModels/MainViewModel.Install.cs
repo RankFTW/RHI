@@ -767,6 +767,7 @@ public partial class MainViewModel
             {
                 record.EngineIniHdr = card.InstalledRecord.EngineIniHdr;
                 record.EngineIniLut = card.InstalledRecord.EngineIniLut;
+                _installer.SaveRecordPublic(record);
             }
 
             // Apply [renodx] Native HDR settings for UE-Extended games
