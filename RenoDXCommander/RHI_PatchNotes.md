@@ -29,6 +29,7 @@
 
 - Fixed window position restore suppressing Windows taskbar auto-hide.
 - Fixed Engine.ini HDR/LUT toggle resetting to On after Update All.
+- Fixed Lilium HDR DXVK games showing "ReShade required" on ReLimiter/DC after Refresh despite Vulkan ReShade being active.
 - Stub session logs from admin relaunch and second-instance exits are now auto-deleted.
 
 ### Manifest Updates

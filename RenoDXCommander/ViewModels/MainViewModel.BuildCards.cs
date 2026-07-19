@@ -978,6 +978,18 @@ public partial class MainViewModel
                     newCard.ExcludeFromUpdateAllDxvk = true;
             }
 
+            // ── Re-check Vulkan RS after DXVK detection (Lilium HDR sets GraphicsApi=Vulkan above) ──
+            if (newCard.RequiresVulkanInstall && newCard.RsStatus == GameStatus.NotInstalled)
+            {
+                bool rsIniExists = File.Exists(Path.Combine(newCard.InstallPath, "reshade.ini"));
+                if (rsIniExists)
+                {
+                    newCard.RsStatus = GameStatus.Installed;
+                    newCard.RsInstalledVersion = AuxInstallService.ReadInstalledVersion(
+                        VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+                }
+            }
+
             // ── Engine version user override (for games where detection failed) ──
             if (newCard.EngineHint == "Unreal Engine" && _gameNameService.EngineVersionOverrides.TryGetValue(game.Name, out var evOverride))
                 newCard.EngineHint = evOverride;
