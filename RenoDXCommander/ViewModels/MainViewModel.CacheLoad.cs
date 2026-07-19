@@ -604,6 +604,20 @@ public partial class MainViewModel
             if (savedLib.ExcludeFromUpdateAllDxvk.Contains(game.Name))
                 newCard.ExcludeFromUpdateAllDxvk = true;
 
+            // Vulkan RS detection: if Lilium HDR mode set the game to Vulkan, RS status
+            // depends on reshade.ini existence (not aux record — Vulkan layer has no aux record)
+            if (newCard.RequiresVulkanInstall && rsRec == null)
+            {
+                bool rsIniExists = File.Exists(Path.Combine(game.InstallPath, "reshade.ini"));
+                if (rsIniExists)
+                {
+                    newCard.RsStatus = GameStatus.Installed;
+                    newCard.RsInstalledVersion = savedLib.RsInstalledVersions?.TryGetValue(game.Name, out var vulkanVer) == true
+                        ? vulkanVer
+                        : AuxInstallService.ReadInstalledVersion(VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+                }
+            }
+
             // Engine version user override (for games where detection failed)
             if (newCard.EngineHint == "Unreal Engine" && _gameNameService.EngineVersionOverrides.TryGetValue(game.Name, out var evOverride2))
                 newCard.EngineHint = evOverride2;
