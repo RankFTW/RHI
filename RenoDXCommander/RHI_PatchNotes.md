@@ -1,3 +1,11 @@
+## v2.2.3
+
+### Manifest Updates
+
+- Fixed Batman™: Arkham Knight incorrectly showing as DX9 (now DX11).
+
+---
+
 ## v2.2.2
 
 ### Changes
