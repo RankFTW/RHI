@@ -44,6 +44,7 @@ public sealed partial class MainWindow : Window
 
     private string? _pendingReselect;
     private bool _forceClose;
+    private DispatcherTimer? _shutdownSignalTimer;
 
     public MainWindow(MainViewModel viewModel, ICrashReporter crashReporter)
     {
@@ -244,6 +245,25 @@ public sealed partial class MainWindow : Window
                 if (card != null) LaunchGame(card);
             });
         }
+
+        // Installer shutdown signal — allows the Inno Setup installer to request
+        // graceful shutdown even when RHI is running elevated (cross-privilege safe).
+        _shutdownSignalTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _shutdownSignalTimer.Tick += (_, _) =>
+        {
+            var signalPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RHI", "rhi_shutdown_requested");
+            if (File.Exists(signalPath))
+            {
+                try { File.Delete(signalPath); } catch { }
+                _shutdownSignalTimer?.Stop();
+                _crashReporter.Log("[MainWindow] Shutdown signal received from installer — exiting");
+                _forceClose = true;
+                this.Close();
+            }
+        };
+        _shutdownSignalTimer.Start();
     }
 
     private void MainWindow_Activated(object? sender, WindowActivatedEventArgs e)

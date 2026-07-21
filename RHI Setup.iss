@@ -59,3 +59,47 @@ Type: filesandordirs; Name: "{localappdata}\RHI"
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+[Code]
+function IsRhiRunning(): Boolean;
+var
+  WMI: Variant;
+  Procs: Variant;
+begin
+  Result := False;
+  try
+    WMI := CreateOleObject('WbemScripting.SWbemLocator');
+    WMI := WMI.ConnectServer('.', 'root\cimv2');
+    Procs := WMI.ExecQuery('SELECT * FROM Win32_Process WHERE Name="RHI.exe"');
+    Result := (Procs.Count > 0);
+  except
+  end;
+end;
+
+function InitializeSetup(): Boolean;
+var
+  SignalDir, SignalPath: String;
+  WaitCount: Integer;
+begin
+  Result := True;
+
+  // Only signal if RHI is actually running
+  if not IsRhiRunning() then Exit;
+
+  // Write shutdown signal file to %LocalAppData%\RHI\
+  SignalDir := ExpandConstant('{localappdata}\RHI');
+  if not DirExists(SignalDir) then
+    ForceDirectories(SignalDir);
+  SignalPath := SignalDir + '\rhi_shutdown_requested';
+  SaveStringToFile(SignalPath, 'update', False);
+
+  // Wait up to 10 seconds for RHI to close itself
+  WaitCount := 0;
+  while (WaitCount < 20) and IsRhiRunning() do
+  begin
+    Sleep(500);
+    WaitCount := WaitCount + 1;
+  end;
+
+  // If still running, Inno's default CloseApplications will handle it
+end;
+
