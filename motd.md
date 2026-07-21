@@ -1,1 +1,1 @@
-Hi all, 2.2.0 has just released. If anybody has any issues with anything RHI releated pop on to Discord and let me know so I can work towards fixing it. Thank you all again for your support.
+Welcome to all the new users! Any issues, just message me on Discord.
