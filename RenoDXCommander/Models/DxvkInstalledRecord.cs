@@ -27,9 +27,9 @@ public class DxvkInstalledRecord
     public bool InOptiScalerPlugins { get; set; }
 
     /// <summary>
-    /// True when DXVK was installed using the ReShade proxy chain method (DX8/DX9 games).
-    /// In proxy mode, DXVK is deployed as dxgi_dxvk.dll and ReShade's [PROXY] section
-    /// chains to it, instead of using the Vulkan implicit layer.
+    /// Legacy field — no longer set on new installs. Kept for backwards compatibility
+    /// with existing records from before the direct-mode migration.
+    /// When true on an old record, the uninstall path handles migration cleanup.
     /// </summary>
     public bool IsProxyMode { get; set; }
 

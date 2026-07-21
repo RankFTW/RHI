@@ -100,8 +100,8 @@ public partial class MainViewModel
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);
             SaveLibrary();
 
-            // Persist Vulkan rendering path if Lilium HDR mode switched the game to Vulkan
-            if (card.DxvkRecord?.IsLiliumHdrMode == true && card.VulkanRenderingPath == "Vulkan")
+            // Persist Vulkan rendering path if direct DX9 mode switched the game to Vulkan
+            if (card.DxvkRecord?.InstalledDlls.Contains("d3d9.dll") == true && card.VulkanRenderingPath == "Vulkan")
                 SetVulkanRenderingPath(card.GameName, "Vulkan");
         }
         catch (Exception ex)

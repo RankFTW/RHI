@@ -947,8 +947,8 @@ public partial class MainViewModel
                     newCard.DxvkStatus = GameStatus.Installed;
                     newCard.DxvkInstalledVersion = dxvkRec.DxvkVersion;
 
-                    // Lilium HDR mode: game is operating in Vulkan mode via DXVK
-                    if (dxvkRec.IsLiliumHdrMode)
+                    // Direct DX9 mode (any variant): game is operating in Vulkan mode via DXVK
+                    if (dxvkRec.IsLiliumHdrMode || dxvkRec.InstalledDlls.Contains("d3d9.dll"))
                     {
                         newCard.VulkanRenderingPath = "Vulkan";
                         newCard.GraphicsApi = GraphicsApiType.Vulkan;

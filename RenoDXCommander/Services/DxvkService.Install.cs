@@ -83,34 +83,30 @@ public partial class DxvkService
 
             progress?.Report(("Resolving deployment paths...", 15));
 
-            // ── DX8/DX9 Proxy Mode ──────────────────────────────────────
-            // For DX8/DX9 games, use the ReShade proxy chain method:
-            // ReShade stays as d3d9.dll (DX proxy), DXVK is deployed as
-            // dxgi_dxvk.dll, and ReShade's [PROXY] section chains to it.
-            // No Vulkan layer needed.
-            // EXCEPTION: Lilium HDR deploys DXVK as d3d9.dll directly and uses
-            // Vulkan layer ReShade for HDR shader support (SM5).
-            bool useProxyMode = IsProxyModeApi(card.GraphicsApi);
+            // ── DX8/DX9 Direct Mode ─────────────────────────────────────
+            // All variants deploy DXVK as d3d9.dll directly for DX8/DX9 games.
+            // ReShade switches to the global Vulkan implicit layer (same as DX10/DX11).
+            // Lilium HDR additionally sets NVIDIA profile present method for HDR routing.
+            bool isDx9DirectMode = IsProxyModeApi(card.GraphicsApi);
 
-            if (useProxyMode && _selectedVariant == DxvkVariant.LiliumHdr)
+            if (isDx9DirectMode)
             {
-                // ── Lilium HDR on DX9: DXVK as d3d9.dll + Vulkan layer ReShade ──
-                progress?.Report(("Deploying Lilium HDR DXVK...", 35));
+                progress?.Report(("Deploying DXVK as d3d9.dll...", 35));
 
                 var srcDll = Path.Combine(StagingDir, archFolder, "d3d9.dll");
                 if (!File.Exists(srcDll))
                 {
-                    CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR: staged d3d9.dll not found at '{srcDll}'");
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Direct DX9: staged d3d9.dll not found at '{srcDll}'");
                     progress?.Report(("DXVK d3d9.dll not found in staging", 0));
                     return;
                 }
 
-                // Step 1: Remove existing DXVK proxy if present
+                // Step 1: Remove existing legacy DXVK proxy if present (migration from old installs)
                 var existingProxy = Path.Combine(card.InstallPath, ProxyDxvkDllName);
                 if (File.Exists(existingProxy))
                 {
                     File.Delete(existingProxy);
-                    CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: removed existing dxgi_dxvk.dll proxy");
+                    CrashReporter.Log("[DxvkService.InstallAsync] Direct DX9: removed legacy dxgi_dxvk.dll proxy");
                 }
                 RemoveProxySectionFromReShadeIni(card.InstallPath);
 
@@ -122,52 +118,57 @@ public partial class DxvkService
                     var backupPath = localReshade + ".reshade_backup";
                     try { File.Copy(localReshade, backupPath, overwrite: true); } catch { }
                     File.Delete(localReshade);
-                    CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: removed local ReShade d3d9.dll (backed up)");
+                    CrashReporter.Log("[DxvkService.InstallAsync] Direct DX9: removed local ReShade d3d9.dll (backed up)");
                 }
 
-                // Step 3: Deploy Lilium DXVK as d3d9.dll
+                // Step 3: Deploy DXVK as d3d9.dll
                 progress?.Report(("Deploying DXVK as d3d9.dll...", 50));
                 CopyFileWithLockHandling(srcDll, localReshade, "d3d9.dll", card.GameName);
-                CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: deployed DXVK as d3d9.dll");
+                CrashReporter.Log($"[DxvkService.InstallAsync] Direct DX9: deployed DXVK as d3d9.dll (variant={_selectedVariant})");
 
-                // Step 4: Deploy dxvk.conf with HDR settings
+                // Step 4: Deploy dxvk.conf
                 progress?.Report(("Configuring dxvk.conf...", 60));
-                var liliumConfPath = Path.Combine(card.InstallPath, "dxvk.conf");
-                bool liliumDeployedConf = false;
+                var dx9ConfPath = Path.Combine(card.InstallPath, "dxvk.conf");
+                bool dx9DeployedConf = false;
                 try
                 {
-                    File.WriteAllText(liliumConfPath, GetLiliumD3d9ConfContent(_liliumPresetIndex));
-                    liliumDeployedConf = true;
-                    CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: deployed dxvk.conf with HDR settings");
+                    var confContent = _selectedVariant == DxvkVariant.LiliumHdr
+                        ? GetLiliumD3d9ConfContent(_liliumPresetIndex)
+                        : DefaultDxvkConfContent;
+                    File.WriteAllText(dx9ConfPath, confContent);
+                    dx9DeployedConf = true;
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Direct DX9: deployed dxvk.conf (variant={_selectedVariant})");
                 }
                 catch (Exception ex)
                 {
-                    CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR: dxvk.conf deploy failed — {ex.Message}");
+                    CrashReporter.Log($"[DxvkService.InstallAsync] Direct DX9: dxvk.conf deploy failed — {ex.Message}");
                 }
 
-                // Step 5: Deploy Vulkan reshade.ini (no [PROXY] section)
+                // Step 5: Deploy Vulkan reshade.ini + footprint (no [PROXY] section)
                 progress?.Report(("Configuring Vulkan ReShade...", 70));
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName);
                 VulkanFootprintService.Create(card.InstallPath);
-                CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: deployed Vulkan reshade.ini + footprint");
+                CrashReporter.Log("[DxvkService.InstallAsync] Direct DX9: deployed Vulkan reshade.ini + footprint");
 
-                // Step 5b: Set NVIDIA profile settings for HDR DXVK present mode
-                progress?.Report(("Setting NVIDIA profile...", 78));
-                try
+                // Step 5b: Lilium HDR only — set NVIDIA profile settings for HDR present mode
+                if (_selectedVariant == DxvkVariant.LiliumHdr)
                 {
-                    var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
-                    // "Present Method - (Vulkan/OpenGL)" = Prefer layered on DXGI Swapchain
-                    presetSvc.SetLiliumPresentMethod(card.GameName, card.InstallPath);
-                    CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: set NVIDIA present method settings");
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR: NVIDIA profile settings failed — {ex.Message}");
+                    progress?.Report(("Setting NVIDIA profile...", 78));
+                    try
+                    {
+                        var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
+                        presetSvc.SetLiliumPresentMethod(card.GameName, card.InstallPath);
+                        CrashReporter.Log("[DxvkService.InstallAsync] Lilium HDR: set NVIDIA present method settings");
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR: NVIDIA profile settings failed — {ex.Message}");
+                    }
                 }
 
                 // Step 6: Save tracking record
                 progress?.Report(("Saving install record...", 85));
-                var liliumRecord = new DxvkInstalledRecord
+                var dx9Record = new DxvkInstalledRecord
                 {
                     GameName = card.GameName,
                     InstallPath = card.InstallPath,
@@ -175,19 +176,18 @@ public partial class DxvkService
                     InstalledDlls = new List<string> { "d3d9.dll" },
                     PluginFolderDlls = new List<string>(),
                     BackedUpFiles = new List<string>(),
-                    DeployedConf = liliumDeployedConf,
+                    DeployedConf = dx9DeployedConf,
                     InOptiScalerPlugins = false,
-                    IsProxyMode = false, // NOT proxy mode — DXVK IS d3d9.dll
-                    IsLiliumHdrMode = true,
+                    IsProxyMode = false,
+                    IsLiliumHdrMode = _selectedVariant == DxvkVariant.LiliumHdr,
                     InstalledAt = DateTime.UtcNow,
                 };
-                SaveRecord(liliumRecord);
+                SaveRecord(dx9Record);
 
-                card.DxvkInstalledVersion = liliumRecord.DxvkVersion;
+                card.DxvkInstalledVersion = dx9Record.DxvkVersion;
                 card.DxvkStatus = GameStatus.Installed;
-                card.DxvkRecord = liliumRecord;
-                card.VulkanRenderingPath = "Vulkan"; // Game now uses Vulkan layer ReShade
-                // Switch Graphics API override to Vulkan so RS detection reads the Vulkan layer
+                card.DxvkRecord = dx9Record;
+                card.VulkanRenderingPath = "Vulkan";
                 card.GraphicsApi = GraphicsApiType.Vulkan;
                 HasUpdate = false;
 
@@ -198,84 +198,8 @@ public partial class DxvkService
                 card.RsStatus = GameStatus.Installed;
                 card.NotifyAll();
 
-                progress?.Report(("Lilium HDR DXVK installed!", 100));
-                CrashReporter.Log($"[DxvkService.InstallAsync] Lilium HDR install complete for {card.GameName}");
-                return;
-            }
-
-            if (useProxyMode)
-            {
-                progress?.Report(("Deploying DXVK (proxy mode)...", 35));
-
-                // The source DLL is DXVK's d3d9.dll from staging
-                var srcDll = Path.Combine(StagingDir, archFolder, "d3d9.dll");
-                if (!File.Exists(srcDll))
-                {
-                    CrashReporter.Log($"[DxvkService.InstallAsync] Proxy mode: staged d3d9.dll not found at '{srcDll}'");
-                    progress?.Report(("DXVK d3d9.dll not found in staging", 0));
-                    return;
-                }
-
-                // Deploy as dxgi_dxvk.dll in the game folder
-                var destDll = Path.Combine(card.InstallPath, ProxyDxvkDllName);
-                CopyFileWithLockHandling(srcDll, destDll, ProxyDxvkDllName, card.GameName);
-                CrashReporter.Log($"[DxvkService.InstallAsync] Proxy mode: deployed {ProxyDxvkDllName} to game root");
-
-                // Add [PROXY] section to reshade.ini
-                progress?.Report(("Configuring ReShade proxy chain...", 50));
-                AddProxySectionToReShadeIni(card.InstallPath);
-
-                progress?.Report(("Configuring dxvk.conf...", 65));
-
-                // Deploy default dxvk.conf if none exists
-                var proxyConfPath = Path.Combine(card.InstallPath, "dxvk.conf");
-                bool proxyDeployedConf = false;
-                {
-                    try
-                    {
-                        var confContent = DefaultDxvkConfContent;
-
-                        // Lilium HDR uses its own complete conf (no base lines)
-                        if (_selectedVariant == DxvkVariant.LiliumHdr)
-                        {
-                            confContent = GetLiliumD3d9ConfContent(_liliumPresetIndex);
-                            CrashReporter.Log("[DxvkService.InstallAsync] Proxy mode: using Lilium HDR d3d9 conf");
-                        }
-
-                        File.WriteAllText(proxyConfPath, confContent);
-                        proxyDeployedConf = true;
-                        CrashReporter.Log($"[DxvkService.InstallAsync] Deployed dxvk.conf (proxy mode, variant={_selectedVariant})");
-                    }
-                    catch (Exception ex)
-                    {
-                        CrashReporter.Log($"[DxvkService.InstallAsync] Failed to deploy dxvk.conf — {ex.Message}");
-                    }
-                }
-
-                progress?.Report(("Saving install record...", 80));
-
-                var proxyRecord = new DxvkInstalledRecord
-                {
-                    GameName = card.GameName,
-                    InstallPath = card.InstallPath,
-                    DxvkVersion = FormatVersionForDisplay(StagedVersion),
-                    InstalledDlls = new List<string> { ProxyDxvkDllName },
-                    PluginFolderDlls = new List<string>(),
-                    BackedUpFiles = new List<string>(),
-                    DeployedConf = proxyDeployedConf,
-                    InOptiScalerPlugins = false,
-                    IsProxyMode = true,
-                    InstalledAt = DateTime.UtcNow,
-                };
-                SaveRecord(proxyRecord);
-
-                card.DxvkInstalledVersion = proxyRecord.DxvkVersion;
-                card.DxvkStatus = GameStatus.Installed;
-                card.DxvkRecord = proxyRecord;
-                HasUpdate = false;
-
-                progress?.Report(("DXVK installed (proxy mode)!", 100));
-                CrashReporter.Log($"[DxvkService.InstallAsync] Proxy mode install complete for {card.GameName}");
+                progress?.Report(("DXVK installed!", 100));
+                CrashReporter.Log($"[DxvkService.InstallAsync] Direct DX9 install complete for {card.GameName} (variant={_selectedVariant})");
                 return;
             }
 
@@ -512,16 +436,16 @@ public partial class DxvkService
             }
 
             // ── 5. Coordinate ReShade mode switching ─────────────────────
-            if (record.IsLiliumHdrMode)
+            if (record.IsLiliumHdrMode || record.InstalledDlls.Contains("d3d9.dll"))
             {
-                // Lilium HDR mode: DXVK was d3d9.dll, ReShade was on Vulkan layer.
+                // Direct DX9 mode (all variants): DXVK was d3d9.dll, ReShade was on Vulkan layer.
                 // Restore ReShade as local d3d9.dll and remove Vulkan footprint.
                 var reshadeBackup = Path.Combine(gameDir, "d3d9.dll.reshade_backup");
                 var d3d9Path = Path.Combine(gameDir, "d3d9.dll");
                 if (File.Exists(reshadeBackup) && !File.Exists(d3d9Path))
                 {
                     File.Move(reshadeBackup, d3d9Path);
-                    CrashReporter.Log("[DxvkService.Uninstall] Lilium HDR: restored ReShade d3d9.dll from backup");
+                    CrashReporter.Log("[DxvkService.Uninstall] Direct DX9: restored ReShade d3d9.dll from backup");
                 }
                 else if (!File.Exists(d3d9Path))
                 {
@@ -530,7 +454,7 @@ public partial class DxvkService
                     if (File.Exists(stagedRs))
                     {
                         File.Copy(stagedRs, d3d9Path);
-                        CrashReporter.Log("[DxvkService.Uninstall] Lilium HDR: reinstalled ReShade d3d9.dll from staging");
+                        CrashReporter.Log("[DxvkService.Uninstall] Direct DX9: reinstalled ReShade d3d9.dll from staging");
                     }
                 }
                 // Clean up backup file if d3d9.dll was restored
@@ -546,29 +470,35 @@ public partial class DxvkService
                 AuxInstallService.MergeRsIni(gameDir, gameName: card.GameName);
                 // Reset card to non-Vulkan — re-apply API from detection/override
                 card.VulkanRenderingPath = "DirectX";
-                // Re-resolve GraphicsApi: check for manifest API override, fall back to DX9 for proxy-mode eligible games
-                var resolvedApi = GraphicsApiType.DirectX9; // Safe default for games that had Lilium HDR (DX8/DX9 only)
-                card.GraphicsApi = resolvedApi;
+                card.GraphicsApi = GraphicsApiType.DirectX9; // Safe default for DX8/DX9 games
                 // Update RS version to reflect the restored local DLL
-                var rsFilename = card.Is32Bit ? "d3d9.dll" : "d3d9.dll"; // DX9 games always use d3d9.dll
-                var restoredRsVersion = AuxInstallService.ReadInstalledVersion(gameDir, rsFilename);
+                var restoredRsVersion = AuxInstallService.ReadInstalledVersion(gameDir, "d3d9.dll");
                 if (restoredRsVersion != null)
                     card.RsInstalledVersion = restoredRsVersion;
-                // Clear NVIDIA profile present method settings
-                try
+                // Lilium HDR only: clear NVIDIA profile present method settings
+                if (record.IsLiliumHdrMode)
                 {
-                    var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
-                    presetSvc.ClearLiliumPresentMethod(card.GameName, card.InstallPath);
+                    try
+                    {
+                        var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
+                        presetSvc.ClearLiliumPresentMethod(card.GameName, card.InstallPath);
+                    }
+                    catch { }
                 }
-                catch { }
                 card.NotifyAll();
-                CrashReporter.Log("[DxvkService.Uninstall] Lilium HDR: switched back to local ReShade + standard reshade.ini");
+                CrashReporter.Log("[DxvkService.Uninstall] Direct DX9: switched back to local ReShade + standard reshade.ini");
             }
             else if (record.IsProxyMode)
             {
-                // Proxy mode: remove [PROXY] section from reshade.ini
+                // Legacy proxy mode (pre-migration installs): remove proxy DLL + [PROXY] section,
+                // then do the same Vulkan cleanup in case the proxy was partially migrated
+                var proxyDll = Path.Combine(gameDir, ProxyDxvkDllName);
+                if (File.Exists(proxyDll))
+                {
+                    try { File.Delete(proxyDll); } catch { }
+                }
                 RemoveProxySectionFromReShadeIni(gameDir);
-                CrashReporter.Log($"[DxvkService.Uninstall] Removed [PROXY] section from reshade.ini (proxy mode)");
+                CrashReporter.Log($"[DxvkService.Uninstall] Legacy proxy mode: removed proxy DLL + [PROXY] section");
             }
             else
             {
@@ -645,9 +575,10 @@ public partial class DxvkService
             progress?.Report(("Updating DXVK DLLs...", 30));
 
             // ── 2. Determine arch folder for staging ─────────────────────
-            // For Lilium HDR mode, card.GraphicsApi is Vulkan (runtime override) — use the
+            // For direct DX9 mode (any variant), card.GraphicsApi is Vulkan (runtime override) — use the
             // original API from the record to determine the correct source folder.
-            var updateApi = existingRecord.IsLiliumHdrMode ? GraphicsApiType.DirectX9 : card.GraphicsApi;
+            var isDx9DirectInstall = existingRecord.InstalledDlls.Contains("d3d9.dll");
+            var updateApi = isDx9DirectInstall ? GraphicsApiType.DirectX9 : card.GraphicsApi;
             var (archFolder, dllNames) = DetermineRequiredDlls(updateApi, card.Is32Bit);
 
             // ── 3. Re-deploy DLLs to game root (overwrite existing DXVK DLLs) ──
@@ -682,17 +613,26 @@ public partial class DxvkService
 
             progress?.Report(("Saving updated record...", 80));
 
-            // ── 5. Rewrite dxvk.conf if Lilium HDR ───────────────────────
-            if (existingRecord.IsLiliumHdrMode)
+            // ── 5. Rewrite dxvk.conf for direct DX9 installs ────────────
+            if (isDx9DirectInstall)
             {
                 var confPath = Path.Combine(card.InstallPath, "dxvk.conf");
-                // Determine DX9 vs DX11 from the installed DLLs
-                var isDx9 = existingRecord.InstalledDlls.Any(d => d.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase));
-                var confContent = isDx9
-                    ? GetLiliumD3d9ConfContent(_liliumPresetIndex)
-                    : GetLiliumD3d11ConfContent(_liliumPresetIndex);
-                File.WriteAllText(confPath, confContent);
-                CrashReporter.Log($"[DxvkService.UpdateAsync] Rewrote dxvk.conf with {(isDx9 ? "DX9" : "DX11")} Lilium preset {_liliumPresetIndex}");
+                if (existingRecord.IsLiliumHdrMode)
+                {
+                    // Lilium HDR: determine DX9 vs DX11 from the installed DLLs
+                    var isDx9 = existingRecord.InstalledDlls.Any(d => d.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase));
+                    var confContent = isDx9
+                        ? GetLiliumD3d9ConfContent(_liliumPresetIndex)
+                        : GetLiliumD3d11ConfContent(_liliumPresetIndex);
+                    File.WriteAllText(confPath, confContent);
+                    CrashReporter.Log($"[DxvkService.UpdateAsync] Rewrote dxvk.conf with {(isDx9 ? "DX9" : "DX11")} Lilium preset {_liliumPresetIndex}");
+                }
+                else
+                {
+                    // Dev/Stable DX9: rewrite default conf
+                    File.WriteAllText(confPath, DefaultDxvkConfContent);
+                    CrashReporter.Log("[DxvkService.UpdateAsync] Rewrote dxvk.conf with default content (direct DX9 mode)");
+                }
             }
 
             // ── 6. Update tracking record version ────────────────────────

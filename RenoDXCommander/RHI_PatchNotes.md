@@ -1,3 +1,11 @@
+## v2.2.2
+
+### Changes
+
+- **DXVK on DX8/DX9 games now uses Vulkan layer mode for all variants** — Development and Stable DXVK are no longer deployed as a proxy (`dxgi_dxvk.dll` + `[PROXY]` chain). All variants now deploy as `d3d9.dll` directly and use the global Vulkan ReShade layer, matching the approach previously exclusive to Lilium HDR. Existing proxy-mode installs continue to work — reinstall or update DXVK to get the new behavior.
+
+---
+
 ## v2.2.1
 
 ### ✨ Highlights
