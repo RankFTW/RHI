@@ -4,6 +4,7 @@
 
 - Fixed Batman™: Arkham Knight incorrectly showing as DX9 (now DX11).
 - Fixed Grim Dawn showing as 32-bit and deploying to wrong path (now 64-bit with `x64` subfolder override).
+- Added DragonSword : Awakening to native HDR games.
 
 ---
 
