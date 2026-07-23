@@ -18,6 +18,8 @@
 - Added Avowed engine version override (Unreal Engine 5.3.2).
 - Added engine version overrides: Call of the Elder Gods (5.6.1), Denshattack! (5.x), Dragon Quest VII Reimagined (4.27.2), Ghostwire: Tokyo (4.27.2), Palworld (5.1.1), Shin Megami Tensei V: Vengeance (4.27.2).
 - Fixed Halo: Campaign Evolved install path (was pointing to DigitalExtras instead of `Meteorite\Binaries\Win64`).
+- Added Halo: Campaign Evolved to native HDR games.
+- Added Halo: Campaign Evolved Nexus URL override.
 - Added `engineHintOverrides` manifest field for remote engine hint corrections.
 
 ---

@@ -88,6 +88,7 @@
     "Echoes of Aincrad DEMO Version",
     "Echoes of the End",
     "Gothic 1 Remake",
+    "Halo: Campaign Evolved",
     "Hell is Us",
     "High on Life 2",
     "Kaku: Ancient Seal",
@@ -932,6 +933,7 @@
 
   "nexusUrlOverrides": {
     "Gothic II: Gold Classic": "https://www.nexusmods.com/games/gothic2",
+    "Halo: Campaign Evolved": "https://www.nexusmods.com/games/halocampaignevolved",
     "AFOP": "https://www.nexusmods.com/games/avatarfrontiersofpandora",
     "Deadly Premonition 2": "https://www.nexusmods.com/games/deadlypremonition2ablessingindisguise",
     "DEATH STRANDING DIRECTOR'S CUT": "https://www.nexusmods.com/games/deathstranding",
