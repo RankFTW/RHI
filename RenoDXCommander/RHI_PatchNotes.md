@@ -15,6 +15,7 @@
 - Added DragonSword : Awakening to native HDR games.
 - Fixed The Town of Light ReShade DLL override (needs `d3d11.dll` instead of default `dxgi.dll`).
 - Added empty `engineHintOverrides` field (ready for per-game population).
+- Added Avowed engine version override (Unreal Engine 5.3.2).
 - Added `engineHintOverrides` manifest field for remote engine hint corrections.
 
 ---
