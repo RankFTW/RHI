@@ -556,7 +556,8 @@
     "Neverness To Everness": { "reshade": "d3d12.dll", "dc": "" },
     "Ori and the Blind Forest: Definitive Edition": { "reshade": "dxgi.dll", "dc": "" },
     "Terraria": { "reshade": "d3d9.dll", "dc": "" },
-    "The Elder Scrolls III: Morrowind": { "reshade": "opengl32.dll", "dc": "" }
+    "The Elder Scrolls III: Morrowind": { "reshade": "opengl32.dll", "dc": "" },
+    "The Town of Light": { "reshade": "d3d11.dll", "dc": "" }
   },
 
   "gacSymlinkGames": {
