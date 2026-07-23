@@ -141,7 +141,13 @@
   },
 
   "engineHintOverrides": {
-    "Avowed": "Unreal Engine 5.3.2"
+    "Avowed": "Unreal Engine 5.3.2",
+    "Call of the Elder Gods": "Unreal Engine 5.6.1",
+    "Denshattack!": "Unreal Engine 5",
+    "Dragon Quest VII Reimagined": "Unreal Engine 4.27.2",
+    "Ghostwire: Tokyo": "Unreal Engine 4.27.2",
+    "Palworld": "Unreal Engine 5.1.1",
+    "Shin Megami Tensei V: Vengeance": "Unreal Engine 4.27.2"
   },
 
   "emulatorGames": {
