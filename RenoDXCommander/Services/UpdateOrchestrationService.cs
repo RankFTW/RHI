@@ -85,8 +85,12 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 }
 
                 // Apply [renodx] Native HDR settings for UE-Extended games
+                // UE4: Set_Path=1 (SDR upgrade path), UE5: Set_Path=0 (native HDR path)
                 if (card.UseUeExtended)
-                    AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+                {
+                    bool isUe4 = card.EngineHint?.Contains("Unreal Engine 4") == true;
+                    AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath, usesSdrPath: isUe4);
+                }
 
                 // Pre-populate [renodx] key placeholders for generic UE/Unity addons (addon fills values on first launch)
                 if (!card.UseUeExtended && card.EngineHint?.Contains("Unreal") == true)
@@ -99,8 +103,10 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOverrides))
                     AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
 
-                // Deploy Engine.ini HDR settings for UE-Extended games (skip if user disabled it)
-                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false)
+                // Deploy Engine.ini HDR settings for UE-Extended games
+                // UE4: skip HDR keys (no native HDR pipeline) — user can still enable manually via cog
+                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false
+                    && !(card.EngineHint?.Contains("Unreal Engine 4") == true))
                     AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
 
                 // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)

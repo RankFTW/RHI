@@ -1,11 +1,21 @@
 ## v2.2.3
 
+### New
+
+- **Engine version manifest overrides** (`engineHintOverrides`) — allows specifying exact UE versions per game remotely (e.g. "Unreal Engine 4.27.2", "Unreal Engine 5.4.3"). Used for Game Pass games where auto-detection fails, and for accurate DOF Fix eligibility without needing `dofFixForceGames`.
+
+### Changes
+
+- **UE4 UE-Extended games now default to SDR upgrade path** — on fresh install, UE4 games get `Set_Path=1` (SDR→HDR conversion) instead of `Set_Path=0` (native HDR). Engine.ini HDR keys are also skipped by default for UE4 (no native HDR pipeline). Users can still enable both manually via the RenoDX cog dialog. Existing installs are not touched.
+
 ### Manifest Updates
 
 - Fixed Batman™: Arkham Knight incorrectly showing as DX9 (now DX11).
 - Fixed Grim Dawn showing as 32-bit and deploying to wrong path (now 64-bit with `x64` subfolder override).
 - Added DragonSword : Awakening to native HDR games.
 - Fixed The Town of Light ReShade DLL override (needs `d3d11.dll` instead of default `dxgi.dll`).
+- Added empty `engineHintOverrides` field (ready for per-game population).
+- Added `engineHintOverrides` manifest field for remote engine hint corrections.
 
 ---
 

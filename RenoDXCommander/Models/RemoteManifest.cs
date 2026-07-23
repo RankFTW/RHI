@@ -25,6 +25,9 @@ public class RemoteManifest
     [JsonPropertyName("engineIniPathOverrides")]
     public Dictionary<string, string>? EngineIniPathOverrides { get; set; }
 
+    [JsonPropertyName("engineHintOverrides")]
+    public Dictionary<string, string>? EngineHintOverrides { get; set; }
+
     [JsonPropertyName("emulatorGames")]
     public Dictionary<string, EmulatorConfig>? EmulatorGames { get; set; }
 

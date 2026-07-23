@@ -990,6 +990,11 @@ public partial class MainViewModel
                 }
             }
 
+            // ── Engine version manifest override (for Game Pass / undetectable games) ──
+            if (_manifest?.EngineHintOverrides != null
+                && _manifest.EngineHintOverrides.TryGetValue(game.Name, out var manifestEngineHint))
+                newCard.EngineHint = manifestEngineHint;
+
             // ── Engine version user override (for games where detection failed) ──
             if (newCard.EngineHint == "Unreal Engine" && _gameNameService.EngineVersionOverrides.TryGetValue(game.Name, out var evOverride))
                 newCard.EngineHint = evOverride;

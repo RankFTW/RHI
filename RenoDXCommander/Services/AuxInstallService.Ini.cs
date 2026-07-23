@@ -296,7 +296,7 @@ public partial class AuxInstallService
     /// If the [renodx] section already exists with the correct keys, no changes are made.
     /// Other sections in the file are preserved untouched.
     /// </summary>
-    public static void ApplyRenoDxNativeHdrSettings(string gameDir)
+    public static void ApplyRenoDxNativeHdrSettings(string gameDir, bool usesSdrPath = false)
     {
         var iniFilePath = Path.Combine(gameDir, "reshade.ini");
         if (!File.Exists(iniFilePath)) return;
@@ -313,7 +313,7 @@ public partial class AuxInstallService
                 ["FxUpgradeRender"] = "1",
                 ["PreventFullscreen"] = "1",
                 ["SettingsMode"] = "2",
-                ["Set_Path"] = "0",
+                ["Set_Path"] = usesSdrPath ? "1" : "0",
                 ["Upgrade_B10G10R10A2_UNORM"] = "",
                 ["Upgrade_B8G8R8A8_TYPELESS"] = "",
                 ["Upgrade_B8G8R8A8_UNORM"] = "",

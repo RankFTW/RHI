@@ -140,6 +140,9 @@
     "System Shock": "%USERPROFILE%\\Saved Games\\Nightdive Studios\\SystemShock\\Saved\\Config\\WindowsNoEditor"
   },
 
+  "engineHintOverrides": {
+  },
+
   "emulatorGames": {
     "Ryubing": {
       "addons": [
