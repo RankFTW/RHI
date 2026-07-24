@@ -117,11 +117,13 @@ public partial class DetailPanelBuilder
             _window.DetailEngineBadge.Visibility = Visibility.Visible;
 
             // Clickable when version is vague (no specific number detected) and it's Unreal
+            // NOT clickable when: specific version set (e.g. 5.3.2, 4.27.2), or Legacy engine
+            bool hasSpecificVersion = System.Text.RegularExpressions.Regex.IsMatch(card.EngineHint, @"Unreal Engine \d");
+            bool isVague = card.EngineHint == "Unreal Engine" || card.EngineHint == "Unreal Engine 5";
             bool isClickable = card.EngineHint.IndexOf("Unreal", StringComparison.OrdinalIgnoreCase) >= 0
-                && !card.EngineHint.Contains("5.", StringComparison.Ordinal)
-                && !card.EngineHint.Contains("4.", StringComparison.Ordinal)
+                && !hasSpecificVersion
                 && !card.EngineHint.Contains("Legacy", StringComparison.OrdinalIgnoreCase)
-                || _gameNameService.EngineVersionOverrides.ContainsKey(card.GameName);
+                || (isVague && _gameNameService.EngineVersionOverrides.ContainsKey(card.GameName));
             _window.DetailEngineText.TextDecorations = isClickable ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None;
             _window.DetailEngineBadge.Tag = isClickable ? card : null;
             if (isClickable)
