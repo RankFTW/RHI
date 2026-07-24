@@ -793,9 +793,15 @@ public partial class MainViewModel
             // Deploy Engine.ini HDR settings for UE-Extended games
             // UE4: skip HDR keys (no native HDR pipeline) — user can still enable manually via cog
             // UE5: deploy HDR keys (enable native HDR output)
-            if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false
-                && !(card.EngineHint?.Contains("Unreal Engine 4") == true))
+            bool isUe4Game = card.EngineHint?.Contains("Unreal Engine 4") == true;
+            if (card.UseUeExtended && record.EngineIniHdr != false && !isUe4Game)
                 AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+            else if (card.UseUeExtended && isUe4Game)
+            {
+                // UE4: record that HDR was intentionally not deployed (so cog dialog shows "Off")
+                record.EngineIniHdr = false;
+                _installer.SaveRecordPublic(record);
+            }
 
             // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
             if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)

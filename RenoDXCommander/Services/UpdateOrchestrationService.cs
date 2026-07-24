@@ -105,9 +105,14 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
                 // Deploy Engine.ini HDR settings for UE-Extended games
                 // UE4: skip HDR keys (no native HDR pipeline) — user can still enable manually via cog
-                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false
-                    && !(card.EngineHint?.Contains("Unreal Engine 4") == true))
+                bool isUe4Update = card.EngineHint?.Contains("Unreal Engine 4") == true;
+                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false && !isUe4Update)
                     AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                else if (card.UseUeExtended && isUe4Update && card.InstalledRecord != null && card.InstalledRecord.EngineIniHdr)
+                {
+                    card.InstalledRecord.EngineIniHdr = false;
+                    _installer.SaveRecordPublic(card.InstalledRecord);
+                }
 
                 // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
                 if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)

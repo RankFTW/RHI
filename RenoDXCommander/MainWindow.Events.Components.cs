@@ -562,7 +562,8 @@ public sealed partial class MainWindow
                 hdrCombo.Items.Add("Off");
                 hdrCombo.Items.Add("On");
                 ToolTipService.SetToolTip(hdrCombo, "Deploys Engine.ini with HDR flags for games that don't have an ingame HDR option. Disable for SDR.");
-                bool hdrActive = card.InstalledRecord?.EngineIniHdr ?? true;
+                bool hdrDefault = !(card.EngineHint?.Contains("Unreal Engine 4") == true); // UE4 defaults to Off
+                bool hdrActive = card.InstalledRecord?.EngineIniHdr ?? hdrDefault;
                 hdrCombo.SelectedIndex = hdrActive ? 1 : 0;
                 hdrCombo.SelectionChanged += (s, ev) =>
                 {
