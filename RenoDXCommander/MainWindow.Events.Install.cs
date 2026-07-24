@@ -475,6 +475,13 @@ public sealed partial class MainWindow
         if (_dofFixService.IsForceEligible(card.GameName))
             return;
 
+        // Games with a specific engine version (from manifest or auto-detection) cannot be toggled.
+        // The badge toggle is only for games with vague "Unreal Engine" (no version suffix).
+        if (card.EngineHint != null && card.EngineHint != "Unreal Engine"
+            && card.EngineHint != "Unreal Engine 5"
+            && System.Text.RegularExpressions.Regex.IsMatch(card.EngineHint, @"Unreal Engine \d"))
+            return;
+
         // Show first-time warning dialog
         if (!ViewModel.Settings.EngineBadgeWarningDismissed)
         {
