@@ -22,6 +22,7 @@
 - Added DragonSword : Awakening to native HDR games.
 - Fixed The Town of Light ReShade DLL override (needs `d3d11.dll` instead of default `dxgi.dll`).
 - Fixed LEGO® Voyagers showing as 32-bit (now 64-bit).
+- Added DragonSword : Awakening ultrawide fix URL override.
 - Added empty `engineHintOverrides` field (ready for per-game population).
 - Added Avowed engine version override (Unreal Engine 5.3.2).
 - Added engine version overrides: Call of the Elder Gods (5.6.1), Denshattack! (5.6.1), Dragon Quest VII Reimagined (4.27.2), Ghostwire: Tokyo (4.27.2), Palworld (5.1.1), Shin Megami Tensei V: Vengeance (4.27.2).
