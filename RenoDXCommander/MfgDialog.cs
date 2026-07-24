@@ -163,6 +163,13 @@ public static class MfgDialog
             "The target output frame rate for dynamic frame generation. Only active in Dynamic mode.");
         panel.Children.Add(fpsCombo);
 
+        // Inline custom FPS input (shown when "Custom..." is selected)
+        var customFpsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Visibility = Visibility.Collapsed };
+        var customFpsBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13, MinWidth = 100 };
+        var customFpsBtn = new Button { Content = "Set", FontSize = 12 };
+        customFpsPanel.Children.Add(customFpsBox);
+        customFpsPanel.Children.Add(customFpsBtn);
+        panel.Children.Add(customFpsPanel);
         // ── Populate and wire up state ──
         bool suppressEvents = true;
 
@@ -244,15 +251,10 @@ public static class MfgDialog
         };
         var vrrFpsSet = new HashSet<uint>(vrrCapOptions.Select(o => o.Fps));
 
-        // Build the full FPS items list: VRR caps first, then remaining values
+        // Build the FPS items list: VRR caps only + Custom option (matches Settings page pattern)
         var fpsItemsList = new List<(uint Fps, string Label)>();
         foreach (var opt in vrrCapOptions)
             fpsItemsList.Add(opt);
-        for (uint fps = 60; fps <= 500; fps++)
-        {
-            if (!vrrFpsSet.Contains(fps))
-                fpsItemsList.Add((fps, $"{fps} FPS"));
-        }
 
         void PopulateFpsCombo(int selectedModeIndex)
         {
@@ -266,6 +268,12 @@ public static class MfgDialog
                 foreach (var item in fpsItemsList)
                     fpsCombo.Items.Add(item.Label);
 
+                // If current value is a custom FPS (not in VRR presets), insert it before Custom
+                if (currentTargetFps > 0 && currentTargetFps != TARGET_FPS_MAX_REFRESH
+                    && !vrrFpsSet.Contains(currentTargetFps))
+                    fpsCombo.Items.Add($"{currentTargetFps} FPS (Custom)");
+
+                fpsCombo.Items.Add("Custom...");
                 fpsCombo.IsEnabled = true;
 
                 // Select based on current value
@@ -276,7 +284,14 @@ public static class MfgDialog
                 else
                 {
                     int matchIdx = fpsItemsList.FindIndex(o => o.Fps == currentTargetFps);
-                    fpsCombo.SelectedIndex = matchIdx >= 0 ? matchIdx + 2 : 0;
+                    if (matchIdx >= 0)
+                        fpsCombo.SelectedIndex = matchIdx + 2;
+                    else
+                    {
+                        // Custom value — select the "(Custom)" item
+                        int customIdx = fpsCombo.Items.Count - 2; // before "Custom..."
+                        fpsCombo.SelectedIndex = customIdx;
+                    }
                 }
             }
             else // Default or Fixed
@@ -369,13 +384,54 @@ public static class MfgDialog
             var idx = fpsCombo.SelectedIndex;
             if (idx < 0) return;
 
+            var selectedText = fpsCombo.SelectedItem as string ?? "";
+
+            // "Custom..." shows inline TextBox for manual entry
+            if (selectedText == "Custom...")
+            {
+                customFpsPanel.Visibility = Visibility.Visible;
+                customFpsBox.Text = "";
+                customFpsBox.Focus(FocusState.Programmatic);
+                return;
+            }
+
+            customFpsPanel.Visibility = Visibility.Collapsed;
+
             uint value;
             if (idx == 0) value = TARGET_FPS_OFF;
             else if (idx == 1) value = TARGET_FPS_MAX_REFRESH;
-            else value = fpsItemsList[idx - 2].Fps;
+            else if (idx - 2 < fpsItemsList.Count)
+                value = fpsItemsList[idx - 2].Fps;
+            else
+                return; // Custom label item — don't set
 
             presetService.SetMfgDynamicTargetFps(gameName, installPath, value);
             currentTargetFps = value;
+        };
+
+        // Custom FPS "Set" button handler
+        customFpsBtn.Click += (s, ev) =>
+        {
+            if (uint.TryParse(customFpsBox.Text, out var customFps) && customFps >= 20 && customFps <= 1000)
+            {
+                presetService.SetMfgDynamicTargetFps(gameName, installPath, customFps);
+                currentTargetFps = customFps;
+                customFpsPanel.Visibility = Visibility.Collapsed;
+                PopulateFpsCombo(modeCombo.SelectedIndex);
+            }
+        };
+        customFpsBox.KeyDown += (s, ev) =>
+        {
+            if (ev.Key == Windows.System.VirtualKey.Enter)
+            {
+                if (uint.TryParse(customFpsBox.Text, out var customFps) && customFps >= 20 && customFps <= 1000)
+                {
+                    presetService.SetMfgDynamicTargetFps(gameName, installPath, customFps);
+                    currentTargetFps = customFps;
+                    customFpsPanel.Visibility = Visibility.Collapsed;
+                    PopulateFpsCombo(modeCombo.SelectedIndex);
+                }
+            }
         };
 
         // ── Show dialog ──

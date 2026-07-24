@@ -7,6 +7,13 @@
 ### Changes
 
 - **UE4 UE-Extended games now default to SDR upgrade path** — on fresh install, UE4 games get `Set_Path=1` (SDR→HDR conversion) instead of `Set_Path=0` (native HDR). Engine.ini HDR keys are also skipped by default for UE4. Users can still enable both manually via the RenoDX cog dialog. Existing installs are not touched.
+- Per-game MFG Target FPS dropdown now uses VRR presets + "Custom..." dialog instead of listing every value from 60-500.
+- Engine badge no longer appears clickable when a specific version is set (manifest override or auto-detection).
+
+### Bug Fixes
+
+- Fixed UE4 games showing Engine.ini HDR as "On" in cog dialog after fresh install despite HDR keys not being deployed.
+- Fixed Update All overriding user's manual Engine.ini HDR toggle on UE4 games.
 
 ### Manifest Updates
 
