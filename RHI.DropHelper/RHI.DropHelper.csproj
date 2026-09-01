@@ -8,4 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>RHI.DropHelper</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RenoDXCommander.Tests" />
+  </ItemGroup>
 </Project>

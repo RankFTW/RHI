@@ -13,6 +13,7 @@
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
     <UseWinUI>true</UseWinUI>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +31,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RenoDXCommander\RenoDXCommander.csproj" />
+    <ProjectReference Include="..\RHI.DropHelper\RHI.DropHelper.csproj" />
   </ItemGroup>
 
 </Project>
