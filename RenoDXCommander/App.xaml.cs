@@ -132,7 +132,21 @@ public partial class App : Application
         // ── One-time migration from legacy AppData folders ───────
         MigrateLegacyAppData();
         DownloadsMigrationService.RunOnce();
-        UiLanguage.Apply(SettingsViewModel.LoadSettingsFile().GetValueOrDefault("UiLanguage"));
+        var uiLanguage = SettingsViewModel.LoadSettingsFile().GetValueOrDefault("UiLanguage");
+        if (string.IsNullOrWhiteSpace(uiLanguage))
+        {
+            try
+            {
+                var installerLanguagePath = Path.Combine(AppContext.BaseDirectory, "ui-language.txt");
+                if (File.Exists(installerLanguagePath))
+                    uiLanguage = File.ReadAllText(installerLanguagePath).Trim();
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[App.OnLaunched] Failed to read installer language — {ex.Message}");
+            }
+        }
+        UiLanguage.Apply(uiLanguage);
 
         // Single-instance check: if another instance is already running,
         // forward the addon file path and exit immediately.
