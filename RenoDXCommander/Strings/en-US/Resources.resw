@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="App_Subtitle.Text" xml:space="preserve"><value>Simplified PC Gaming</value></data>
+  <data name="Toolbar_NewModsButton.Content" xml:space="preserve"><value>New Mods Available</value></data>
+  <data name="Toolbar_NewModsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>New RenoDX mods have been added to the wiki</value></data>
+  <data name="Toolbar_FaqButton.Content" xml:space="preserve"><value>Quick Start</value></data>
+  <data name="Toolbar_FaqButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Quick Start Guide</value></data>
+  <data name="Toolbar_RefreshButton.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Toolbar_RefreshButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Rescan game library and fetch latest mod info</value></data>
+  <data name="Toolbar_ShadersAddonsButton.Content" xml:space="preserve"><value>Shaders/Addons</value></data>
+  <data name="Toolbar_ShadersAddonsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Manage global shaders and ReShade addons</value></data>
+  <data name="Toolbar_ChooseShadersItem.Text" xml:space="preserve"><value>Global Shaders</value></data>
+  <data name="Toolbar_ReShadeAddonsItem.Text" xml:space="preserve"><value>ReShade Addons</value></data>
+  <data name="Toolbar_UpdateButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Update components</value></data>
+  <data name="Toolbar_LinksButton.Content" xml:space="preserve"><value>Links</value></data>
+  <data name="Toolbar_LinksButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Useful links and resources</value></data>
+  <data name="Toolbar_RenoDXWikiItem.Text" xml:space="preserve"><value>RenoDX Wiki</value></data>
+  <data name="Toolbar_LumaWikiItem.Text" xml:space="preserve"><value>Luma Wiki</value></data>
+  <data name="Toolbar_RhiGitHubItem.Text" xml:space="preserve"><value>RHI GitHub</value></data>
+  <data name="Toolbar_ReLimiterGitHubItem.Text" xml:space="preserve"><value>ReLimiter GitHub</value></data>
+  <data name="Toolbar_SupportButton.Content" xml:space="preserve"><value>Help</value></data>
+  <data name="Toolbar_SupportButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Support and help resources</value></data>
+  <data name="Toolbar_DiscordItem.Text" xml:space="preserve"><value>Discord</value></data>
+  <data name="Toolbar_GuideItem.Text" xml:space="preserve"><value>Guide</value></data>
+  <data name="Toolbar_KofiItem.Text" xml:space="preserve"><value>Ko-fi</value></data>
+  <data name="Toolbar_AboutItem.Text" xml:space="preserve"><value>About</value></data>
+  <data name="Toolbar_SettingsButton.Content" xml:space="preserve"><value>Settings</value></data>
+  <data name="Toolbar_SettingsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Open settings</value></data>
+  <data name="Loading_Title.Text" xml:space="preserve"><value>Loading...</value></data>
+  <data name="Sidebar_SearchBox.PlaceholderText" xml:space="preserve"><value>Filter games...</value></data>
+  <data name="Sidebar_SaveFilterButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Save current search as a custom filter</value></data>
+  <data name="Sidebar_AddGameButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Manually add a game</value></data>
+  <data name="Sidebar_FilterDetected.Content" xml:space="preserve"><value>All Games</value></data>
+  <data name="Sidebar_FilterInstalled.Content" xml:space="preserve"><value>Installed</value></data>
+  <data name="Sidebar_FilterFavourites.Content" xml:space="preserve"><value>Favourites</value></data>
+  <data name="Sidebar_FilterHidden.Content" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Sidebar_FilterUnreal.Content" xml:space="preserve"><value>Unreal</value></data>
+  <data name="Sidebar_FilterUnity.Content" xml:space="preserve"><value>Unity</value></data>
+  <data name="Sidebar_FilterOther.Content" xml:space="preserve"><value>Other</value></data>
+  <data name="Settings_BackButton.Content" xml:space="preserve"><value>&#8592; Back to Games</value></data>
+  <data name="Settings_Title.Text" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_Language_Title.Text" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings_Language_Description.Text" xml:space="preserve"><value>Choose the interface language. New languages can be added as additional resource files.</value></data>
+  <data name="Settings_Language_Label.Text" xml:space="preserve"><value>Interface language</value></data>
+  <data name="Settings_Language_Auto.Content" xml:space="preserve"><value>Follow system</value></data>
+  <data name="Settings_Language_English.Content" xml:space="preserve"><value>English (United States)</value></data>
+  <data name="Settings_Language_SimplifiedChinese.Content" xml:space="preserve"><value>Simplified Chinese</value></data>
+  <data name="Settings_Language_RestartNote.Text" xml:space="preserve"><value>Language changes take effect after restarting RHI.</value></data>
+  <data name="Settings_ComponentUpdates_Title.Text" xml:space="preserve"><value>Component Updates</value></data>
+  <data name="Settings_ComponentUpdates_CheckHeader.Text" xml:space="preserve"><value>Check For Updates</value></data>
+  <data name="Settings_ComponentUpdates_CheckDescription.Text" xml:space="preserve"><value>Fetches the latest manifest data and checks all components for available updates. Bypasses the 4-hour cooldown.</value></data>
+  <data name="Settings_ComponentUpdates_CheckButton.Content" xml:space="preserve"><value>Check For Updates</value></data>
+  <data name="Settings_ComponentUpdates_CheckButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Check all components and the app for available updates</value></data>
+  <data name="Settings_ComponentUpdates_AutoHeader.Text" xml:space="preserve"><value>Automatic Updates</value></data>
+  <data name="Settings_ComponentUpdates_AutoDescription.Text" xml:space="preserve"><value>When enabled, RHI silently installs component updates in the background after each update check. Games that are running when an update is detected will be retried automatically once they close. Does not apply to app updates.</value></data>
+  <data name="Settings_ComponentUpdates_No.Content" xml:space="preserve"><value>No</value></data>
+  <data name="Settings_ComponentUpdates_Yes.Content" xml:space="preserve"><value>Yes</value></data>
+</root>

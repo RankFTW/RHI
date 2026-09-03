@@ -132,6 +132,7 @@ public partial class App : Application
         // ── One-time migration from legacy AppData folders ───────
         MigrateLegacyAppData();
         DownloadsMigrationService.RunOnce();
+        UiLanguage.Apply(SettingsViewModel.LoadSettingsFile().GetValueOrDefault("UiLanguage"));
 
         // Single-instance check: if another instance is already running,
         // forward the addon file path and exit immediately.

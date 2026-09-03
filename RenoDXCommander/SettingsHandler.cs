@@ -28,6 +28,7 @@ public class SettingsHandler
     internal string _currentUlHotkeyString = "F12";
     internal string _currentOsHotkeyString = "Insert";
     internal string _currentScreenshotHotkeyString = "44,0,0,0";
+    private bool _uiLanguageComboInitializing;
 
     public SettingsHandler(MainWindow window)
     {
@@ -39,6 +40,31 @@ public class SettingsHandler
 
     private MainViewModel ViewModel => _window.ViewModel;
 
+    private void InitializeUiLanguageCombo()
+    {
+        _uiLanguageComboInitializing = true;
+        var language = ViewModel.Settings.UiLanguage;
+        _window.UiLanguageCombo.SelectedIndex = language switch
+        {
+            UiLanguage.English => 1,
+            UiLanguage.SimplifiedChinese => 2,
+            _ => 0,
+        };
+        _uiLanguageComboInitializing = false;
+    }
+
+    public void UiLanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_uiLanguageComboInitializing) return;
+
+        var selected = ((sender as ComboBox)?.SelectedItem as ComboBoxItem)?.Tag as string;
+        if (string.IsNullOrWhiteSpace(selected)) return;
+
+        ViewModel.Settings.UiLanguage = UiLanguage.Normalize(selected);
+        UiLanguage.Apply(ViewModel.Settings.UiLanguage);
+        ViewModel.SaveSettingsPublic();
+    }
+
     public void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.NavigateToSettingsCommand.Execute(null);
@@ -48,6 +74,7 @@ public class SettingsHandler
         // Sync toggle state with ViewModel
         _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+        InitializeUiLanguageCombo();
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
         // Populate screenshot path and per-game combo

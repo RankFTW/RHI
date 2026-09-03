@@ -67,6 +67,9 @@ public sealed partial class MainWindow
     private void CustomShadersCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.CustomShadersCombo_SelectionChanged(sender, e);
 
+    private void UiLanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.UiLanguageCombo_SelectionChanged(sender, e);
+
     private void ApplyScreenshotPath_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.ApplyScreenshotPath_Click(sender, e);
 

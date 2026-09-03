@@ -76,6 +76,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _resolutionTarget = "";
     [ObservableProperty] private List<uint> _resTargetDisplays = new();
     [ObservableProperty] private bool _dropHelperEnabled = true;
+    [ObservableProperty] private string _uiLanguage = Services.UiLanguage.Auto;
     [ObservableProperty] private bool _closeToTray;
     [ObservableProperty] private bool _recentGamesMenu;
     [ObservableProperty] private bool _startWithWindows;
@@ -307,6 +308,7 @@ public partial class SettingsViewModel : ObservableObject
             catch { ResTargetDisplays = new(); }
         }
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
+        if (s.TryGetValue("UiLanguage", out var uiLanguageVal)) UiLanguage = Services.UiLanguage.Normalize(uiLanguageVal);
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
         if (s.TryGetValue("StartWithWindows", out var swwVal)) StartWithWindows = swwVal == "true";
@@ -406,6 +408,7 @@ public partial class SettingsViewModel : ObservableObject
         if (ResTargetDisplays.Count > 0) s["ResTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(ResTargetDisplays);
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
         else s["DropHelperEnabled"] = "true";
+        s["UiLanguage"] = Services.UiLanguage.Normalize(UiLanguage);
         s["CloseToTray"] = CloseToTray ? "true" : "false";
         s["RecentGamesMenu"] = RecentGamesMenu ? "true" : "false";
         s["StartWithWindows"] = StartWithWindows ? "true" : "false";

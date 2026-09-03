@@ -38,20 +38,20 @@
                         <TextBlock FontSize="15" FontWeight="Bold">
                             <Run Text="RHI" Foreground="{StaticResource AccentTealBrush}"/>
                         </TextBlock>
-                        <TextBlock Text="Simplified PC Gaming" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
+                        <TextBlock x:Uid="App_Subtitle" Text="Simplified PC Gaming" FontSize="10" Foreground="{StaticResource AccentTealDimBrush}"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Action buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Button x:Name="NewModsBtn" Content="New Mods Available"
+                    <Button x:Name="NewModsBtn" x:Uid="Toolbar_NewModsButton" Content="New Mods Available"
                             Click="NewModsButton_Click"
                             Visibility="{x:Bind ViewModel.NewWikiModsButtonVisibility, Mode=OneWay}"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentGreenBrush}"
                             BorderBrush="{StaticResource AccentGreenBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="New RenoDX mods have been added to the wiki"/>
-                    <Button x:Name="FaqBtn" Content="Quick Start"
+                    <Button x:Name="FaqBtn" x:Uid="Toolbar_FaqButton" Content="Quick Start"
                             Click="FaqButton_Click"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
@@ -60,28 +60,28 @@
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
-                    <Button x:Name="RefreshBtn" Content="Refresh"
+                    <Button x:Name="RefreshBtn" x:Uid="Toolbar_RefreshButton" Content="Refresh"
                             Click="RefreshButton_Click"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Rescan game library and fetch latest mod info"/>
-                    <Button x:Name="ShadersAddonsBtn" Content="Shaders/Addons"
+                    <Button x:Name="ShadersAddonsBtn" x:Uid="Toolbar_ShadersAddonsButton" Content="Shaders/Addons"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Manage global shaders and ReShade addons">
                         <Button.Flyout>
                             <MenuFlyout Placement="Bottom">
-                                <MenuFlyoutItem x:Name="ChooseShadersItem" Text="Global Shaders" Click="ChooseShadersButton_Click"/>
-                                <MenuFlyoutItem x:Name="ReShadeAddonsItem" Text="ReShade Addons" Click="ReShadeAddonsButton_Click"/>
+                                <MenuFlyoutItem x:Name="ChooseShadersItem" x:Uid="Toolbar_ChooseShadersItem" Text="Global Shaders" Click="ChooseShadersButton_Click"/>
+                                <MenuFlyoutItem x:Name="ReShadeAddonsItem" x:Uid="Toolbar_ReShadeAddonsItem" Text="ReShade Addons" Click="ReShadeAddonsButton_Click"/>
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
-                    <Button x:Name="UpdateBtn" Content="Update All"
+                    <Button x:Name="UpdateBtn" x:Uid="Toolbar_UpdateButton" Content="Update All"
                             Click="UpdateAllButton_Click"
                             Background="{StaticResource SurfaceInputBrush}"
                             Foreground="{StaticResource TextTertiaryBrush}"
@@ -92,31 +92,31 @@
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
-                    <Button x:Name="LinksBtn" Content="Links"
+                    <Button x:Name="LinksBtn" x:Uid="Toolbar_LinksButton" Content="Links"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Useful links and resources">
                         <Button.Flyout>
                             <MenuFlyout Placement="Bottom">
-                                <MenuFlyoutItem Text="RenoDX Wiki" Click="LinkRenoDxWiki_Click"/>
-                                <MenuFlyoutItem Text="Luma Wiki" Click="LinkLumaWiki_Click"/>
-                                <MenuFlyoutItem Text="RHI GitHub" Click="LinkRhiGithub_Click"/>
-                                <MenuFlyoutItem Text="ReLimiter GitHub" Click="LinkReLimiterGithub_Click"/>
+                                <MenuFlyoutItem x:Uid="Toolbar_RenoDXWikiItem" Text="RenoDX Wiki" Click="LinkRenoDxWiki_Click"/>
+                                <MenuFlyoutItem x:Uid="Toolbar_LumaWikiItem" Text="Luma Wiki" Click="LinkLumaWiki_Click"/>
+                                <MenuFlyoutItem x:Uid="Toolbar_RhiGitHubItem" Text="RHI GitHub" Click="LinkRhiGithub_Click"/>
+                                <MenuFlyoutItem x:Uid="Toolbar_ReLimiterGitHubItem" Text="ReLimiter GitHub" Click="LinkReLimiterGithub_Click"/>
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
-                    <Button x:Name="SupportBtn" Content="Help"
+                    <Button x:Name="SupportBtn" x:Uid="Toolbar_SupportButton" Content="Help"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Support and help resources">
                         <Button.Flyout>
                             <MenuFlyout Placement="Bottom">
-                                <MenuFlyoutItem Text="Discord" Click="SupportDiscord_Click"/>
-                                <MenuFlyoutItem Text="Guide" Click="SupportGuide_Click"/>
-                                <MenuFlyoutItem Text="Ko-fi" Click="SupportKofi_Click"/>
-                                <MenuFlyoutItem Text="About" Click="AboutButton_Click"/>
+                                <MenuFlyoutItem x:Uid="Toolbar_DiscordItem" Text="Discord" Click="SupportDiscord_Click"/>
+                                <MenuFlyoutItem x:Uid="Toolbar_GuideItem" Text="Guide" Click="SupportGuide_Click"/>
+                                <MenuFlyoutItem x:Uid="Toolbar_KofiItem" Text="Ko-fi" Click="SupportKofi_Click"/>
+                                <MenuFlyoutItem x:Uid="Toolbar_AboutItem" Text="About" Click="AboutButton_Click"/>
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
@@ -129,7 +129,7 @@
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Toggle between Detail and Simple view"/>
-                    <Button x:Name="SettingsBtn" Content="Settings"
+                    <Button x:Name="SettingsBtn" x:Uid="Toolbar_SettingsButton" Content="Settings"
                             Click="SettingsButton_Click" IsEnabled="False"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
@@ -147,7 +147,7 @@
                         Spacing="16" Visibility="Collapsed" Canvas.ZIndex="10">
                 <ProgressRing x:Name="LoadingRing" IsActive="True" Width="48" Height="48"
                               Foreground="{StaticResource AccentBlueBrush}"/>
-                <TextBlock x:Name="LoadingTitle" Text="Loading..." FontSize="16"
+                <TextBlock x:Name="LoadingTitle" x:Uid="Loading_Title" Text="Loading..." FontSize="16"
                            Foreground="{StaticResource ChipTextBrush}" HorizontalAlignment="Center"/>
                 <TextBlock x:Name="LoadingSubtitle" Text="" FontSize="12"
                            Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center"/>
@@ -178,14 +178,14 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="SearchBox" Grid.Column="0"
+                                <TextBox x:Name="SearchBox" Grid.Column="0" x:Uid="Sidebar_SearchBox"
                                          PlaceholderText="Filter games..."
                                          TextChanged="SearchBox_TextChanged"
                                          Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                          BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
                                          CornerRadius="8" Padding="10,7"
                                          FontSize="12"/>
-                                <Button x:Name="SaveFilterButton" Grid.Column="1"
+                                <Button x:Name="SaveFilterButton" Grid.Column="1" x:Uid="Sidebar_SaveFilterButton"
                                         Content="+"
                                         Click="SaveFilterButton_Click"
                                         Visibility="Collapsed"
@@ -198,7 +198,7 @@
                                         FontSize="14" FontWeight="Bold"
                                         VerticalAlignment="Center"
                                         ToolTipService.ToolTip="Save current search as a custom filter"/>
-                                <Button x:Name="AddGameBtn" Grid.Column="2"
+                                <Button x:Name="AddGameBtn" Grid.Column="2" x:Uid="Sidebar_AddGameButton"
                                         Content="+"
                                         Click="AddGameButton_Click"
                                         Background="{StaticResource AccentGreenBgBrush}"
@@ -218,33 +218,33 @@
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
                             <StackPanel Spacing="4">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
-                                    <Button x:Name="FilterDetected" Content="All Games" Tag="Detected"
+                                    <Button x:Name="FilterDetected" x:Uid="Sidebar_FilterDetected" Content="All Games" Tag="Detected"
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipActiveBrush}" Foreground="White"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
-                                    <Button x:Name="FilterInstalled" Content="Installed" Tag="Installed"
+                                    <Button x:Name="FilterInstalled" x:Uid="Sidebar_FilterInstalled" Content="Installed" Tag="Installed"
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
-                                    <Button x:Name="FilterFavourites" Content="Favourites" Tag="Favourites"
+                                    <Button x:Name="FilterFavourites" x:Uid="Sidebar_FilterFavourites" Content="Favourites" Tag="Favourites"
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
-                                    <Button x:Name="FilterHidden" Content="Hidden" Tag="Hidden"
+                                    <Button x:Name="FilterHidden" x:Uid="Sidebar_FilterHidden" Content="Hidden" Tag="Hidden"
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="4">
-                                    <Button x:Name="FilterUnreal" Content="Unreal" Tag="Unreal"
+                                    <Button x:Name="FilterUnreal" x:Uid="Sidebar_FilterUnreal" Content="Unreal" Tag="Unreal"
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
-                                    <Button x:Name="FilterUnity" Content="Unity" Tag="Unity"
+                                    <Button x:Name="FilterUnity" x:Uid="Sidebar_FilterUnity" Content="Unity" Tag="Unity"
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
-                                    <Button x:Name="FilterOther" Content="Other" Tag="Other"
+                                    <Button x:Name="FilterOther" x:Uid="Sidebar_FilterOther" Content="Other" Tag="Other"
                                             Click="Filter_Click"
                                             Background="{StaticResource ChipDefaultBrush}" Foreground="{StaticResource ChipTextBrush}"
                                             BorderThickness="0" CornerRadius="7" Padding="10,5" FontSize="11"/>
@@ -1200,12 +1200,12 @@
                 <Border Grid.Row="0" Padding="24,12,24,10" Background="Transparent"
                         BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                        <Button x:Name="SettingsBackBtn" Content="← Back to Games"
+                        <Button x:Name="SettingsBackBtn" x:Uid="Settings_BackButton" Content="← Back to Games"
                                 Click="SettingsBack_Click"
                                 Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                 BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                 CornerRadius="8" Padding="12,6" FontSize="12"/>
-                        <TextBlock Text="Settings" FontSize="20" FontWeight="Bold"
+                        <TextBlock x:Uid="Settings_Title" Text="Settings" FontSize="20" FontWeight="Bold"
                                    Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -1216,12 +1216,45 @@
                                 HorizontalAlignment="Center">
 
                         <!-- ══════════════════════════════════════════════════════════
+                             CARD 0: LANGUAGE
+                             ══════════════════════════════════════════════════════════ -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="8">
+                                <TextBlock x:Uid="Settings_Language_Title" Text="Language" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock x:Uid="Settings_Language_Description" Text="Choose the interface language. New languages can be added as additional resource files."
+                                           TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"/>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" x:Uid="Settings_Language_Label" Text="Interface language" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" x:Name="UiLanguageCombo" x:FieldModifier="internal"
+                                              SelectionChanged="UiLanguageCombo_SelectionChanged"
+                                              FontSize="12" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem x:Uid="Settings_Language_Auto" Content="Follow system" Tag="auto"/>
+                                        <ComboBoxItem x:Uid="Settings_Language_English" Content="English (United States)" Tag="en-US"/>
+                                        <ComboBoxItem x:Uid="Settings_Language_SimplifiedChinese" Content="Simplified Chinese" Tag="zh-CN"/>
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock x:Uid="Settings_Language_RestartNote" Text="Language changes take effect after restarting RHI."
+                                           TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource TextTertiaryBrush}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ══════════════════════════════════════════════════════════
                              CARD 1: GAME LIBRARY
                              ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="12">
-                            <TextBlock Text="Component Updates" FontSize="15" FontWeight="Bold"
+                            <TextBlock x:Uid="Settings_ComponentUpdates_Title" Text="Component Updates" FontSize="15" FontWeight="Bold"
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
@@ -1237,12 +1270,12 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
-                                        <TextBlock Text="Check For Updates" FontSize="13" FontWeight="SemiBold"
+                                        <TextBlock x:Uid="Settings_ComponentUpdates_CheckHeader" Text="Check For Updates" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                        <TextBlock x:Uid="Settings_ComponentUpdates_CheckDescription" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                                    Text="Fetches the latest manifest data and checks all components for available updates. Bypasses the 4-hour cooldown."/>
                                     </StackPanel>
-                                    <Button Grid.Row="1" x:Name="CheckForUpdatesBtn" Content="Check For Updates"
+                                    <Button Grid.Row="1" x:Name="CheckForUpdatesBtn" x:Uid="Settings_ComponentUpdates_CheckButton" Content="Check For Updates"
                                             Click="CheckForUpdatesButton_Click"
                                             Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
@@ -1258,16 +1291,16 @@
 
                                 <!-- Right: Automatic Updates -->
                                 <StackPanel Grid.Column="2" Spacing="8">
-                                    <TextBlock Text="Automatic Updates" FontSize="13" FontWeight="SemiBold"
+                                    <TextBlock x:Uid="Settings_ComponentUpdates_AutoHeader" Text="Automatic Updates" FontSize="13" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                    <TextBlock x:Uid="Settings_ComponentUpdates_AutoDescription" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                                Text="When enabled, RHI silently installs component updates in the background after each update check. Games that are running when an update is detected will be retried automatically once they close. Does not apply to app updates."/>
                                     <ComboBox x:Name="AutoUpdateComponentsCombo" x:FieldModifier="internal"
                                               FontSize="12" HorizontalAlignment="Stretch"
                                               ToolTipService.ToolTip="Automatically install ReShade, RenoDX, ReLimiter, DC, OptiScaler, RE Framework, Luma, DXVK and DOF Fix updates silently in the background"
                                               SelectionChanged="AutoUpdateComponentsCombo_SelectionChanged">
-                                        <ComboBoxItem Content="No"/>
-                                        <ComboBoxItem Content="Yes"/>
+                                        <ComboBoxItem x:Uid="Settings_ComponentUpdates_No" Content="No"/>
+                                        <ComboBoxItem x:Uid="Settings_ComponentUpdates_Yes" Content="Yes"/>
                                     </ComboBox>
                                 </StackPanel>
                             </Grid>

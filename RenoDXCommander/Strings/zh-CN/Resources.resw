@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="App_Subtitle.Text" xml:space="preserve"><value>简化 PC 游戏管理</value></data>
+  <data name="Toolbar_NewModsButton.Content" xml:space="preserve"><value>新模组可用</value></data>
+  <data name="Toolbar_NewModsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Wiki 中已新增 RenoDX 模组</value></data>
+  <data name="Toolbar_FaqButton.Content" xml:space="preserve"><value>快速开始</value></data>
+  <data name="Toolbar_FaqButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>快速开始指南</value></data>
+  <data name="Toolbar_RefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="Toolbar_RefreshButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>重新扫描游戏库并获取最新模组信息</value></data>
+  <data name="Toolbar_ShadersAddonsButton.Content" xml:space="preserve"><value>着色器/插件</value></data>
+  <data name="Toolbar_ShadersAddonsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>管理全局着色器和 ReShade 插件</value></data>
+  <data name="Toolbar_ChooseShadersItem.Text" xml:space="preserve"><value>全局着色器</value></data>
+  <data name="Toolbar_ReShadeAddonsItem.Text" xml:space="preserve"><value>ReShade 插件</value></data>
+  <data name="Toolbar_UpdateButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>更新组件</value></data>
+  <data name="Toolbar_LinksButton.Content" xml:space="preserve"><value>链接</value></data>
+  <data name="Toolbar_LinksButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>常用链接与资源</value></data>
+  <data name="Toolbar_RenoDXWikiItem.Text" xml:space="preserve"><value>RenoDX Wiki</value></data>
+  <data name="Toolbar_LumaWikiItem.Text" xml:space="preserve"><value>Luma Wiki</value></data>
+  <data name="Toolbar_RhiGitHubItem.Text" xml:space="preserve"><value>RHI GitHub</value></data>
+  <data name="Toolbar_ReLimiterGitHubItem.Text" xml:space="preserve"><value>ReLimiter GitHub</value></data>
+  <data name="Toolbar_SupportButton.Content" xml:space="preserve"><value>帮助</value></data>
+  <data name="Toolbar_SupportButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>支持与帮助资源</value></data>
+  <data name="Toolbar_DiscordItem.Text" xml:space="preserve"><value>Discord</value></data>
+  <data name="Toolbar_GuideItem.Text" xml:space="preserve"><value>指南</value></data>
+  <data name="Toolbar_KofiItem.Text" xml:space="preserve"><value>Ko-fi</value></data>
+  <data name="Toolbar_AboutItem.Text" xml:space="preserve"><value>关于</value></data>
+  <data name="Toolbar_SettingsButton.Content" xml:space="preserve"><value>设置</value></data>
+  <data name="Toolbar_SettingsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>打开设置</value></data>
+  <data name="Loading_Title.Text" xml:space="preserve"><value>正在加载...</value></data>
+  <data name="Sidebar_SearchBox.PlaceholderText" xml:space="preserve"><value>筛选游戏...</value></data>
+  <data name="Sidebar_SaveFilterButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>将当前搜索保存为自定义筛选器</value></data>
+  <data name="Sidebar_AddGameButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>手动添加游戏</value></data>
+  <data name="Sidebar_FilterDetected.Content" xml:space="preserve"><value>全部游戏</value></data>
+  <data name="Sidebar_FilterInstalled.Content" xml:space="preserve"><value>已安装</value></data>
+  <data name="Sidebar_FilterFavourites.Content" xml:space="preserve"><value>收藏</value></data>
+  <data name="Sidebar_FilterHidden.Content" xml:space="preserve"><value>已隐藏</value></data>
+  <data name="Sidebar_FilterUnreal.Content" xml:space="preserve"><value>Unreal</value></data>
+  <data name="Sidebar_FilterUnity.Content" xml:space="preserve"><value>Unity</value></data>
+  <data name="Sidebar_FilterOther.Content" xml:space="preserve"><value>其他</value></data>
+  <data name="Settings_BackButton.Content" xml:space="preserve"><value>&#8592; 返回游戏</value></data>
+  <data name="Settings_Title.Text" xml:space="preserve"><value>设置</value></data>
+  <data name="Settings_Language_Title.Text" xml:space="preserve"><value>语言</value></data>
+  <data name="Settings_Language_Description.Text" xml:space="preserve"><value>选择界面语言。后续可通过新增资源文件扩展更多语言。</value></data>
+  <data name="Settings_Language_Label.Text" xml:space="preserve"><value>界面语言</value></data>
+  <data name="Settings_Language_Auto.Content" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Settings_Language_English.Content" xml:space="preserve"><value>English (United States)</value></data>
+  <data name="Settings_Language_SimplifiedChinese.Content" xml:space="preserve"><value>简体中文</value></data>
+  <data name="Settings_Language_RestartNote.Text" xml:space="preserve"><value>语言更改将在重启 RHI 后生效。</value></data>
+  <data name="Settings_ComponentUpdates_Title.Text" xml:space="preserve"><value>组件更新</value></data>
+  <data name="Settings_ComponentUpdates_CheckHeader.Text" xml:space="preserve"><value>检查更新</value></data>
+  <data name="Settings_ComponentUpdates_CheckDescription.Text" xml:space="preserve"><value>获取最新清单数据，并检查所有组件的可用更新。此操作会跳过 4 小时冷却时间。</value></data>
+  <data name="Settings_ComponentUpdates_CheckButton.Content" xml:space="preserve"><value>检查更新</value></data>
+  <data name="Settings_ComponentUpdates_CheckButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>检查所有组件和应用是否有可用更新</value></data>
+  <data name="Settings_ComponentUpdates_AutoHeader.Text" xml:space="preserve"><value>自动更新</value></data>
+  <data name="Settings_ComponentUpdates_AutoDescription.Text" xml:space="preserve"><value>启用后，RHI 会在每次检查更新后自动在后台安装组件更新。若发现更新时游戏正在运行，会在游戏关闭后自动重试。此设置不适用于应用自身更新。</value></data>
+  <data name="Settings_ComponentUpdates_No.Content" xml:space="preserve"><value>否</value></data>
+  <data name="Settings_ComponentUpdates_Yes.Content" xml:space="preserve"><value>是</value></data>
+</root>
