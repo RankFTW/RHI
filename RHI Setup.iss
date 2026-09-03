@@ -85,55 +85,6 @@ begin
   end;
 end;
 
-procedure SetRhiLanguage(const LanguageCode: String);
-var
-  SettingsDir, SettingsFile, Content: String;
-  InputLines, OutputLines: TArrayOfString;
-  KeyPos, ColonPos, QuoteStart, QuoteEnd, RelativePos, I: Integer;
-begin
-  SettingsDir := ExpandConstant('{localappdata}\RHI');
-  SettingsFile := SettingsDir + '\settings.json';
-  if not DirExists(SettingsDir) then
-    ForceDirectories(SettingsDir);
-
-  Content := '';
-  if LoadStringsFromFile(SettingsFile, InputLines) then
-  begin
-    for I := 0 to GetArrayLength(InputLines) - 1 do
-    begin
-      if I > 0 then
-        Content := Content + #13#10;
-      Content := Content + InputLines[I];
-    end;
-  end
-  else
-    Content := '{}';
-
-  // settings.json is produced by System.Text.Json and UiLanguage values contain no escapes.
-  KeyPos := Pos('"UiLanguage"', Content);
-  if KeyPos > 0 then
-  begin
-    RelativePos := Pos(':', Copy(Content, KeyPos, MaxInt));
-    ColonPos := KeyPos + RelativePos - 1;
-    RelativePos := Pos('"', Copy(Content, ColonPos + 1, MaxInt));
-    QuoteStart := ColonPos + RelativePos;
-    RelativePos := Pos('"', Copy(Content, QuoteStart + 1, MaxInt));
-    QuoteEnd := QuoteStart + RelativePos;
-    Delete(Content, QuoteStart, QuoteEnd - QuoteStart + 1);
-    Insert(LanguageCode, Content, QuoteStart);
-  end
-  else if Content = '' then
-    Content := '{"UiLanguage":"' + LanguageCode + '"}'
-  else if Trim(Content) = '{}' then
-    Content := '{"UiLanguage":"' + LanguageCode + '"}'
-  else
-    Insert('"UiLanguage":"' + LanguageCode + '",', Content, Pos('{', Content) + 1);
-
-  SetArrayLength(OutputLines, 1);
-  OutputLines[0] := Content;
-  SaveStringsToUTF8File(SettingsFile, OutputLines, False);
-end;
-
 function InitializeSetup(): Boolean;
 var
   SignalDir, SignalPath: String;
@@ -173,8 +124,6 @@ begin
       LanguageCode := 'zh-CN'
     else
       LanguageCode := 'en-US';
-
-    SetRhiLanguage(LanguageCode);
 
     // Store a machine-level default so the choice also works when Setup is
     // elevated under a different account than the person who launched it.
