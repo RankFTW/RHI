@@ -165,18 +165,21 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   LanguageFileLines: TArrayOfString;
+  LanguageCode: String;
 begin
   if CurStep = ssPostInstall then
   begin
     if ActiveLanguage = 'chinesesimplified' then
-      SetRhiLanguage('zh-CN')
+      LanguageCode := 'zh-CN'
     else
-      SetRhiLanguage('en-US');
+      LanguageCode := 'en-US';
+
+    SetRhiLanguage(LanguageCode);
 
     // Store a machine-level default so the choice also works when Setup is
     // elevated under a different account than the person who launched it.
     SetArrayLength(LanguageFileLines, 1);
-    LanguageFileLines[0] := ActiveLanguage;
+    LanguageFileLines[0] := LanguageCode;
     SaveStringsToUTF8File(ExpandConstant('{app}\ui-language.txt'), LanguageFileLines, False);
   end;
 end;
