@@ -293,6 +293,12 @@ public partial class DetailPanelBuilder
                     Tag(rrOk   ? $"✓ DLSS RR {rrvSf}" : "✗ DLSS RR", rrOk);
                     Tag(fgOk   ? $"✓ DLSS FG {fgvSf}" : "✗ DLSS FG", fgOk);
                     Tag(nrSfOk ? $"✓ NR DLL {nrvSf}"  : "✗ NR DLL",  nrSfOk);
+
+                    // ASI Loader status
+                    var ualName = _window.ViewModel.GetUalInstalledAs(gameName, store);
+                    bool ualOk  = !string.IsNullOrEmpty(ualName)
+                               && File.Exists(Path.Combine(installPath, ualName));
+                    Tag(ualOk ? $"✓ ASI Loader ({ualName})" : "✗ ASI Loader", ualOk);
                 }
                     break;
                 case NrMethodFeeder:
