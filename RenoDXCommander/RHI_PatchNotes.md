@@ -11,6 +11,15 @@
 ### Changes
 
 - RenoDX renamed to RenoDX HDR in the detail view component list.
+- Version number now shown next to MFG Ada Unlock, DLSS5 Feeder, and DX11 Bridge in the addon panel (same as DLSS5 Tool).
+- ASI Loader status now appears in the ShortFuse Neural Rendering status line alongside ReShade and DLSS versions.
+
+### Bug Fixes
+
+- Fixed ShortFuse DLSS Tool addon (renodx-dlss.addon64) being removed as stale on every launch and Refresh for games where it was installed via the Neural Rendering section.
+- Fixed Reshade64.asi being renamed back to dxgi.dll on every launch and Refresh for games with ShortFuse installed.
+- Fixed clicking Remove on ShortFuse not reverting Reshade64.asi back to the original DLL name or removing the auto-installed ASI Loader.
+- Fixed Nvidia Profile Overrides section showing stale DLSS versions after removing a Neural Rendering method — now refreshes immediately without needing a manual Refresh.
 
 ### Manifest Updates
 
