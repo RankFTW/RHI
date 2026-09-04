@@ -848,6 +848,16 @@ public class AddonPackService : IAddonPackService
                         continue; // NR section manages this — leave it alone
                 }
 
+                // Don't remove renodx-dlss (ShortFuse) addon if the NR section owns it
+                // (detected by presence of nvngx_dlssnr.dll or its sentinel — ShortFuse co-deploys NR dll)
+                if (fileName.Equals("renodx-dlss.addon64", StringComparison.OrdinalIgnoreCase)
+                    || fileName.Equals("renodx-dlss.addon32", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"))
+                        || File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original")))
+                        continue; // ShortFuse NR section manages this — leave it alone
+                }
+
                 try
                 {
                     File.Delete(file);

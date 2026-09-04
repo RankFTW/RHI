@@ -2,6 +2,7 @@
 
 using System.Collections.Concurrent;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 
@@ -133,11 +134,17 @@ public partial class MainViewModel
                 && !_manifestDllOverrideOptOuts.Contains(card.GameName)) continue;
 
             // ── RS reconciliation ──────────────────────────────────────────────
+            // Skip when ShortFuse is installed — it intentionally renames ReShade to
+            // Reshade64.asi; reconciling back to dxgi.dll would break the FrameGen setup.
+            bool _sfInstalled = !string.IsNullOrEmpty(card.InstallPath)
+                && App.Services.GetRequiredService<Renodx5AddonService>().IsSfInstalledIn(card.InstallPath);
+
             // Resolve the correct default ReShade filename for this game's API.
             // DX9 games should use d3d9.dll, OpenGL should use opengl32.dll, etc.
             // Only rename if the current filename doesn't match the API-correct default.
             var rsDefaultName = ResolveAutoReShadeFilename(card.DetectedApis) ?? AuxInstallService.RsNormalName;
-            if (card.RsRecord != null
+            if (!_sfInstalled
+                && card.RsRecord != null
                 && !string.IsNullOrEmpty(card.RsRecord.InstalledAs)
                 && !card.RsRecord.InstalledAs.Equals(rsDefaultName, StringComparison.OrdinalIgnoreCase))
             {
