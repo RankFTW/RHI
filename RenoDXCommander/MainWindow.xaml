@@ -728,7 +728,7 @@
                                         <ColumnDefinition Width="36"/>
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="DetailRdxLabel" x:FieldModifier="internal" Grid.Column="0" Text="RenoDX" FontSize="12"
+                                    <TextBlock x:Name="DetailRdxLabel" x:FieldModifier="internal" Grid.Column="0" Text="RenoDX HDR" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                     <TextBlock x:Name="DetailRdxStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
                                                VerticalAlignment="Center" HorizontalTextAlignment="Center"
