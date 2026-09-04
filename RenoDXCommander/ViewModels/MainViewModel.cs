@@ -43,6 +43,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IDlssStreamlineService _dlssStreamlineService;
     private readonly DlssPresetService _dlssPresetService;
     private readonly DofFixService _dofFixService;
+    private readonly UltimateAsiLoaderService _ualService;
     private readonly AutoUpdateService _autoUpdateService;
     private readonly CustomReShadeHashService _customReShadeHashService;
     private readonly SeenWikiModsService _seenWikiModsService;
@@ -56,6 +57,7 @@ public partial class MainViewModel : ObservableObject
     private Task? _shaderPackReadyTask;
     public IShaderPackService ShaderPackServiceInstance => _shaderPackService;
     public IAddonPackService AddonPackServiceInstance => _addonPackService;
+    public UltimateAsiLoaderService UalServiceInstance => _ualService;
     public SettingsViewModel Settings => _settingsViewModel;
     /// <summary>True when the user has selected the Nightly ReShade build channel.</summary>
     public bool IsReShadeNightly => string.Equals(_settingsViewModel.ReShadeChannel, "Nightly", StringComparison.OrdinalIgnoreCase);
@@ -602,6 +604,7 @@ public partial class MainViewModel : ObservableObject
         _dlssStreamlineService = dlssStreamlineService;
         _dlssPresetService = dlssPresetService;
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
+        _ualService    = App.Services.GetRequiredService<UltimateAsiLoaderService>();
         _autoUpdateService = App.Services.GetRequiredService<AutoUpdateService>();
         _autoUpdateService.SetViewModel(this);
         _customReShadeHashService = App.Services.GetRequiredService<CustomReShadeHashService>();

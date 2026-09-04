@@ -108,6 +108,7 @@ public partial class App : Application
         services.AddSingleton<IDlssStreamlineService, DlssStreamlineService>();
         services.AddSingleton<DlssPresetService>();
         services.AddSingleton<DofFixService>();
+        services.AddSingleton<UltimateAsiLoaderService>();
         services.AddSingleton<AutoUpdateService>();
         services.AddSingleton<DlssEnablerService>();
         services.AddSingleton<Renodx5AddonService>();

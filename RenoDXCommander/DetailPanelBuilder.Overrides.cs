@@ -1128,5 +1128,7 @@ public partial class DetailPanelBuilder
         BuildNvidiaProfileSection(card, capturedName);
 
         ctx.DxvkToggle = BuildDxvkAndManagementSection(card, capturedName, gameName, ctx) ?? ctx.DxvkToggle;
+
+        BuildExtrasSection(card);
     }
 }

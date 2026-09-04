@@ -485,6 +485,29 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── Ultimate ASI Loader ───────────────────────────────────────────────────
+
+    public string? GetUalInstalledAs(string gameName, string store)
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.UalInstalledAs.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.UalInstalledAs.TryGetValue(gameName, out var vLegacy) && !string.IsNullOrEmpty(vLegacy)) return vLegacy;
+        return null;
+    }
+
+    public void SetUalInstalledAs(string gameName, string? dllName, string store)
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(dllName))
+        {
+            _gameNameService.UalInstalledAs.Remove(key);
+            _gameNameService.UalInstalledAs.Remove(gameName);
+        }
+        else
+            _gameNameService.UalInstalledAs[key] = dllName;
+        SaveNameMappings();
+    }
+
     // ── DLL Naming Override ───────────────────────────────────────────────────────
 
     /// <summary>Per-game DLL naming overrides — delegated to DllOverrideService.</summary>

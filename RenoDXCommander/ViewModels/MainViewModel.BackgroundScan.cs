@@ -124,6 +124,19 @@ public partial class MainViewModel
                 try { await _dofFixService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DOF Fix staging task failed — {ex.Message}"); }
             });
+            var ualTask = Task.Run(async () => {
+                try
+                {
+                    await _ualService.CheckForUpdateAsync();
+                    if (_ualService.HasUpdate)
+                    {
+                        await _ualService.EnsureStagingAsync(is32Bit: false);
+                        await _ualService.EnsureStagingAsync(is32Bit: true);
+                        await _ualService.AutoUpdateInstalledGamesAsync(_allCards);
+                    }
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] UAL task failed — {ex.Message}"); }
+            });
 
             // Await detection first — this never needs network
             var freshGames = await detectTask;

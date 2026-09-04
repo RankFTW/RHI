@@ -517,6 +517,7 @@ public partial class DetailPanelBuilder
         "NeuralRendering" => _window.NeuralRenderingContainer,
         "NvidiaProfile"   => _window.NvidiaProfileContainer,
         "Management"      => _window.ManagementContainer,
+        "Extras"          => _window.ExtrasContainer,
         _                 => throw new ArgumentException($"Unknown section key: {key}"),
     };
 
@@ -714,6 +715,7 @@ public partial class DetailPanelBuilder
             else if (border == _window.NeuralRenderingContainer)    keyOrder.Add("NeuralRendering");
             else if (border == _window.NvidiaProfileContainer)      keyOrder.Add("NvidiaProfile");
             else if (border == _window.ManagementContainer)         keyOrder.Add("Management");
+            else if (border == _window.ExtrasContainer)             keyOrder.Add("Extras");
         }
         if (keyOrder.Count > 0)
         {

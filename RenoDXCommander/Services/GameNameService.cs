@@ -108,6 +108,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game Streamline version override. Key = "GameName|Store", Value = version string. Absent = use default.</summary>
     private Dictionary<string, string> _osStreamlineVersion = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game Ultimate ASI Loader installed DLL name. Key = "GameName|Store", Value = dll filename. Absent = not installed.</summary>
+    private Dictionary<string, string> _ualInstalledAs = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -199,6 +202,8 @@ public class GameNameService : IGameNameService
 
     /// <summary>Per-game Streamline version override. Key = "GameName|Store", Value = version string. Absent = use default.</summary>
     public Dictionary<string, string> OsStreamlineVersion => _osStreamlineVersion;
+    /// <summary>Per-game Ultimate ASI Loader installed DLL name. Composite-keyed "GameName|Store".</summary>
+    public Dictionary<string, string> UalInstalledAs => _ualInstalledAs;
 
     public GameNameService(
         IGameDetectionService gameDetectionService,
@@ -548,6 +553,10 @@ public class GameNameService : IGameNameService
         _osStreamlineVersion = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in osStreamlineVersionDict) _osStreamlineVersion[kv.Key] = kv.Value;
 
+        var ualInstalledAsDict = Load<Dictionary<string, string>>("UalInstalledAs", new(StringComparer.OrdinalIgnoreCase));
+        _ualInstalledAs = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in ualInstalledAsDict) _ualInstalledAs[kv.Key] = kv.Value;
+
         if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
             setViewLayout((ViewLayout)vlInt);
         else if (s.TryGetValue("GridLayout", out var glVal))  // backward compat
@@ -642,6 +651,7 @@ public class GameNameService : IGameNameService
                 s["OsFsrFgSwapchain"] = JsonSerializer.Serialize(_osFsrFgSwapchain.ToList());
                 s["OsUpscalerPlugin"] = JsonSerializer.Serialize(_osUpscalerPlugin.ToList());
                 if (_osStreamlineVersion.Count > 0) s["OsStreamlineVersion"] = JsonSerializer.Serialize(_osStreamlineVersion);
+                if (_ualInstalledAs.Count > 0) s["UalInstalledAs"] = JsonSerializer.Serialize(_ualInstalledAs);
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
                 s["FilterMode"]          = filterMode;
                 s["CustomFilters"]       = JsonSerializer.Serialize(customFilters);
@@ -773,6 +783,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeHashSet(_osFsrFgSwapchain, oldName, newName);
         MigrateCompositeHashSet(_osUpscalerPlugin, oldName, newName);
         MigrateCompositeDict(_osStreamlineVersion, oldName, newName);
+        MigrateCompositeDict(_ualInstalledAs, oldName, newName);
 
         // Migrate name-only HashSets (shared across stores)
         MigrateHashSet(_wikiExclusions, oldName, newName);

@@ -157,6 +157,8 @@ public interface IGameNameService
 
     /// <summary>Per-game Streamline version override. Key = "GameName|Store", Value = version string. Absent = use default.</summary>
     Dictionary<string, string> OsStreamlineVersion { get; }
+    /// <summary>Per-game UAL installed DLL name. Composite-keyed "GameName|Store".</summary>
+    Dictionary<string, string> UalInstalledAs { get; }
 
     // ── Load / Save ───────────────────────────────────────────────────────────
 

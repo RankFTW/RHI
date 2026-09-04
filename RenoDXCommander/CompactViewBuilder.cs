@@ -125,6 +125,7 @@ public class CompactViewBuilder
         var neuralRenderingContainer = _window.NeuralRenderingContainer;
         var nvidiaProfileContainer = _window.NvidiaProfileContainer;
         var managementContainer = _window.ManagementContainer;
+        var extrasContainer = _window.ExtrasContainer;
 
         foreach (var child in detailPanel.Children)
         {
@@ -135,9 +136,10 @@ public class CompactViewBuilder
                 // Page 1: Game Overrides + Neural Rendering
                 element.Visibility = pageIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
             }
-            else if (element == nvidiaProfileContainer || element == managementContainer)
+            else if (element == nvidiaProfileContainer || element == managementContainer
+                  || element == extrasContainer)
             {
-                // Page 2: Nvidia Profile Overrides + Management
+                // Page 2: Nvidia Profile Overrides + Management + Extras
                 element.Visibility = pageIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
             }
             else

@@ -105,7 +105,7 @@ public partial class SettingsViewModel : ObservableObject
     /// Absent or incomplete = use default order.
     /// </summary>
     public static readonly IReadOnlyList<string> DefaultSectionOrder = new[]
-        { "Components", "GameOverrides", "NeuralRendering", "NvidiaProfile", "Management" };
+        { "Components", "GameOverrides", "NeuralRendering", "NvidiaProfile", "Management", "Extras" };
 
     public List<string> DetailSectionOrder { get; set; } = new(DefaultSectionOrder);
 

@@ -1179,6 +1179,13 @@
                                 Padding="14,12" Visibility="Collapsed">
                             <StackPanel x:Name="ManagementPanel" x:FieldModifier="internal" Spacing="6"/>
                         </Border>
+                        <!-- ── Extras section ── -->
+                        <Border x:Name="ExtrasContainer" x:FieldModifier="internal"
+                                Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
+                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                                Padding="14,12" Visibility="Collapsed">
+                            <StackPanel x:Name="ExtrasPanel" x:FieldModifier="internal" Spacing="6"/>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 

@@ -637,6 +637,8 @@ public sealed partial class MainWindow : Window
                     NvidiaProfileContainer.Visibility = Visibility.Collapsed;
                     ManagementPanel.Children.Clear();
                     ManagementContainer.Visibility = Visibility.Collapsed;
+                    ExtrasPanel.Children.Clear();
+                    ExtrasContainer.Visibility = Visibility.Collapsed;
                     break;
                 case ViewLayout.Compact:
                     // Hide detail panel content when no game is selected
@@ -649,6 +651,8 @@ public sealed partial class MainWindow : Window
                     NvidiaProfileContainer.Visibility = Visibility.Collapsed;
                     ManagementPanel.Children.Clear();
                     ManagementContainer.Visibility = Visibility.Collapsed;
+                    ExtrasPanel.Children.Clear();
+                    ExtrasContainer.Visibility = Visibility.Collapsed;
                     break;
             }
         }
