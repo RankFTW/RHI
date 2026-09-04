@@ -169,6 +169,13 @@ public class AddonPackService : IAddonPackService
             var v = rdx5Service.SfStagedVersion;
             return string.IsNullOrEmpty(v) ? null : $"v{v}";
         }
+        // Generic fallback: version stored in versions.json after first download (covers releaseApiUrl addons)
+        var pack = _packs.FirstOrDefault(e => e.SectionId.Equals(sectionId, StringComparison.OrdinalIgnoreCase));
+        if (pack != null)
+        {
+            var v = LoadAddonVersion(pack.PackageName);
+            return string.IsNullOrEmpty(v) ? null : $"v{v}";
+        }
         return null;
     }
 
