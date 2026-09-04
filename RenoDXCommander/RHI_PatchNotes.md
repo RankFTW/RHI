@@ -17,8 +17,6 @@
 ### Bug Fixes
 
 - Fixed ShortFuse DLSS Tool addon (renodx-dlss.addon64) being removed as stale on every launch and Refresh for games where it was installed via the Neural Rendering section.
-- Fixed Reshade64.asi being renamed back to dxgi.dll on every launch and Refresh for games with ShortFuse installed.
-- Fixed clicking Remove on ShortFuse not reverting Reshade64.asi back to the original DLL name or removing the auto-installed ASI Loader.
 - Fixed Nvidia Profile Overrides section showing stale DLSS versions after removing a Neural Rendering method — now refreshes immediately without needing a manual Refresh.
 
 ### Manifest Updates
