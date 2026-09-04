@@ -672,6 +672,27 @@ public partial class MainViewModel
             SetUalInstalledAs(gameName, null, store);
             _crashReporter.Log($"[SfAutoConfig.Revert] Removed UAL ('{ualInstalled}') for '{gameName}'");
         }
+
+        // ── Remove [INSTALL] keys from reshade.ini ────────────────────────────
+        var iniPath = System.IO.Path.Combine(installPath, "reshade.ini");
+        if (System.IO.File.Exists(iniPath))
+        {
+            try
+            {
+                var ini = AuxInstallService.ParseIni(System.IO.File.ReadAllLines(iniPath));
+                if (ini.TryGetValue("INSTALL", out var installSection))
+                {
+                    installSection.Remove("HookStreamline");
+                    installSection.Remove("HookDirectX");
+                    // Remove the section entirely if now empty
+                    if (installSection.Count == 0)
+                        ini.Remove("INSTALL");
+                    AuxInstallService.WriteIni(iniPath, ini);
+                    _crashReporter.Log($"[SfAutoConfig.Revert] Removed [INSTALL] keys from reshade.ini for '{gameName}'");
+                }
+            }
+            catch (Exception ex) { _crashReporter.Log($"[SfAutoConfig.Revert] reshade.ini cleanup failed — {ex.Message}"); }
+        }
     }
 
     /// <summary>Per-game DLL naming overrides — delegated to DllOverrideService.</summary>
