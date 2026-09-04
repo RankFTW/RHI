@@ -379,6 +379,7 @@ public partial class DetailPanelBuilder
         var btnRow = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 8, 0, 0) };
         btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // cog (ShortFuse only)
 
         var installBtn = new Button
         {
@@ -399,6 +400,76 @@ public partial class DetailPanelBuilder
             Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+        };
+
+        // ShortFuse-only cog button
+        var sfCogBtn = new Button
+        {
+            Width = 34, Height = 34,
+            Padding = new Thickness(0),
+            CornerRadius = new CornerRadius(8),
+            BorderThickness = new Thickness(1),
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Visibility = effectiveMethod == NrMethodShortFuse ? Visibility.Visible : Visibility.Collapsed,
+        };
+        ToolTipService.SetToolTip(sfCogBtn, "ShortFuse settings — auto-configure ReShade for FrameGen");
+        sfCogBtn.Click += async (s, e) =>
+        {
+            bool currentEnabled = _window.ViewModel.GetSfAutoConfigEnabled(gameName, store);
+            bool newEnabled = currentEnabled;
+
+            var toggleRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+            var togLabel = new TextBlock
+            {
+                Text = "Auto-configure ReShade for FrameGen",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var tog = new ToggleSwitch
+            {
+                IsOn = currentEnabled,
+                OnContent = "On",
+                OffContent = "Off",
+                VerticalAlignment = VerticalAlignment.Center,
+                MinWidth = 0,
+            };
+            toggleRow.Children.Add(togLabel);
+            toggleRow.Children.Add(tog);
+
+            var desc = new TextBlock
+            {
+                Text = "When On, installing ShortFuse will automatically:\n" +
+                       "• Rename ReShade to Reshade64.asi\n" +
+                       "• Install ASI Loader (winmm → version → dinput8)\n" +
+                       "• Write HookStreamline=1 and HookDirectX=1 to reshade.ini\n\n" +
+                       "These steps are needed for FrameGen to work correctly after ReShade.",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 8, 0, 0),
+            };
+
+            var content = new StackPanel { Spacing = 4 };
+            content.Children.Add(toggleRow);
+            content.Children.Add(desc);
+
+            tog.Toggled += (ts, te) => newEnabled = tog.IsOn;
+
+            var dlg = new ContentDialog
+            {
+                Title = "ShortFuse Settings",
+                Content = content,
+                PrimaryButtonText = "Save",
+                CloseButtonText = "Cancel",
+                XamlRoot = _window.Content.XamlRoot,
+            };
+            var result = await dlg.ShowAsync();
+            if (result == ContentDialogResult.Primary && newEnabled != currentEnabled)
+                _window.ViewModel.SetSfAutoConfigEnabled(gameName, newEnabled, store);
         };
 
         void UpdateInstallBtnAppearance()
@@ -447,6 +518,9 @@ public partial class DetailPanelBuilder
 
             // Remove button visibility
             removeBtn.Visibility = anyInstalled ? Visibility.Visible : Visibility.Collapsed;
+
+            // ShortFuse cog — only visible when ShortFuse is selected
+            sfCogBtn.Visibility = selKey == NrMethodShortFuse ? Visibility.Visible : Visibility.Collapsed;
         }
 
         UpdateInstallBtnAppearance();
@@ -680,8 +754,10 @@ public partial class DetailPanelBuilder
 
         Grid.SetColumn(installBtn, 0);
         Grid.SetColumn(removeBtn,  1);
+        Grid.SetColumn(sfCogBtn,   2);
         btnRow.Children.Add(installBtn);
         btnRow.Children.Add(removeBtn);
+        btnRow.Children.Add(sfCogBtn);
         nrBody.Children.Add(btnRow);
 
         // ── How to use links ──────────────────────────────────────────────────
@@ -924,6 +1000,111 @@ public partial class DetailPanelBuilder
             card.ApplyDlssDetection(newDetection);
             card.RefreshDlssVersions(dlssSvc);
         });
+
+        // Apply auto-config (rename ReShade, install UAL, write reshade.ini [INSTALL] keys)
+        if (_window.ViewModel.GetSfAutoConfigEnabled(card.GameName, card.Source ?? ""))
+        {
+            _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Configuring ReShade...");
+            await _window.ViewModel.ApplySfAutoConfigAsync(card).ConfigureAwait(false);
+        }
+    }
+
+    private async Task ApplySfAutoConfigAsync(GameCardViewModel card)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+        var installPath = card.InstallPath;
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+
+        // ── Step 1: Rename ReShade DLL to Reshade64.asi ───────────────────────
+        const string asiName = "Reshade64.asi";
+        var rsRecord = card.RsRecord;
+        if (rsRecord != null && !string.IsNullOrEmpty(rsRecord.InstalledAs)
+            && !rsRecord.InstalledAs.Equals(asiName, StringComparison.OrdinalIgnoreCase))
+        {
+            var currentPath = Path.Combine(installPath, rsRecord.InstalledAs);
+            var asiPath     = Path.Combine(installPath, asiName);
+            try
+            {
+                if (File.Exists(currentPath))
+                {
+                    if (File.Exists(asiPath)) File.Delete(asiPath);
+                    File.Move(currentPath, asiPath);
+                    rsRecord.InstalledAs = asiName;
+                    card.RsRecord.InstalledAs = asiName;
+                    _auxInstallService.SaveAuxRecord(rsRecord);
+                    CrashReporter.Log($"[SfAutoConfig] Renamed ReShade to '{asiName}' for '{gameName}'");
+                }
+            }
+            catch (Exception ex) { CrashReporter.Log($"[SfAutoConfig] ReShade rename failed — {ex.Message}"); }
+        }
+
+        // ── Step 2: Auto-install ASI Loader (winmm → version → dinput8) ───────
+        var ualSvc = App.Services.GetRequiredService<UltimateAsiLoaderService>();
+        bool ualAlreadyInstalled = !string.IsNullOrEmpty(
+            _window.ViewModel.GetUalInstalledAs(gameName, store));
+
+        if (!ualAlreadyInstalled)
+        {
+            // Pick the first available name from the preference order
+            string[] preferenceOrder = { "winmm.dll", "version.dll", "dinput8.dll" };
+            string? chosenName = null;
+            foreach (var candidate in preferenceOrder)
+            {
+                var candidatePath = Path.Combine(installPath, candidate);
+                // Skip if already occupied by a non-RHI file
+                bool takenByOther = File.Exists(candidatePath)
+                    && !string.Equals(rsRecord?.InstalledAs, candidate, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(card.OsInstalledFile, candidate, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(card.DcInstalledFile, candidate, StringComparison.OrdinalIgnoreCase);
+                if (!takenByOther) { chosenName = candidate; break; }
+            }
+
+            if (chosenName != null)
+            {
+                try
+                {
+                    var (success, hookedOriginal) = await ualSvc.InstallAsync(card, chosenName).ConfigureAwait(false);
+                    if (success)
+                    {
+                        _window.ViewModel.SetUalInstalledAs(gameName, chosenName, store);
+                        CrashReporter.Log($"[SfAutoConfig] Installed UAL as '{chosenName}' for '{gameName}'" +
+                            (hookedOriginal != null ? $" (chained '{hookedOriginal}')" : ""));
+                    }
+                }
+                catch (Exception ex) { CrashReporter.Log($"[SfAutoConfig] UAL install failed — {ex.Message}"); }
+            }
+            else
+            {
+                CrashReporter.Log($"[SfAutoConfig] No suitable UAL name available for '{gameName}' — all candidates taken");
+            }
+        }
+        else
+        {
+            CrashReporter.Log($"[SfAutoConfig] UAL already installed for '{gameName}' — skipping");
+        }
+
+        // ── Step 3: Write [INSTALL] HookStreamline=1 + HookDirectX=1 ─────────
+        if (_window.ViewModel.GetKeepRsIniUpdated(gameName, store))
+        {
+            var iniPath = Path.Combine(installPath, "reshade.ini");
+            if (File.Exists(iniPath))
+            {
+                try
+                {
+                    var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                    if (!ini.ContainsKey("INSTALL"))
+                        ini["INSTALL"] = new AuxInstallService.OrderedDict();
+                    ini["INSTALL"]["HookStreamline"] = "1";
+                    ini["INSTALL"]["HookDirectX"]    = "1";
+                    AuxInstallService.WriteIni(iniPath, ini);
+                    CrashReporter.Log($"[SfAutoConfig] Wrote [INSTALL] keys to reshade.ini for '{gameName}'");
+                }
+                catch (Exception ex) { CrashReporter.Log($"[SfAutoConfig] reshade.ini write failed — {ex.Message}"); }
+            }
+        }
+
+        await Task.CompletedTask;
     }
 
     private async Task InstallFeederAddonAsync(

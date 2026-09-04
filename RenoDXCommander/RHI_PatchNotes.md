@@ -6,6 +6,7 @@
 - Detail view sections (Components, Game Overrides, Neural Rendering, Nvidia Profile Overrides, Management) are now collapsible. Click the section heading to toggle it open or closed. Collapsed state persists across restarts.
 - Detail view sections can be reordered by dragging the ≡ handle on the left of each section header. Order persists across restarts.
 - New Extras section in detail view. Contains Ultimate ASI Loader — install the UAL proxy DLL into any game folder to enable .asi plugin loading. Choose from the full list of supported DLL names (bitness-filtered, with Recommended badges and conflict warnings). Keeps itself up to date automatically. Hooked chaining handled automatically when the chosen DLL name is already in use by a game file.
+- ShortFuse DLSS Tool now auto-configures ReShade for FrameGen on install: renames ReShade to Reshade64.asi, installs ASI Loader automatically (winmm → version → dinput8 priority), and writes HookStreamline=1 and HookDirectX=1 to reshade.ini. Controlled via the ⚙ cog next to the Neural Rendering install button — enabled by default, can be turned off per-game.
 
 ### Changes
 

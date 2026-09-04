@@ -159,6 +159,8 @@ public interface IGameNameService
     Dictionary<string, string> OsStreamlineVersion { get; }
     /// <summary>Per-game UAL installed DLL name. Composite-keyed "GameName|Store".</summary>
     Dictionary<string, string> UalInstalledAs { get; }
+    /// <summary>Games where ShortFuse auto-config is disabled. Absent = enabled.</summary>
+    HashSet<string> SfAutoConfigDisabled { get; }
 
     // ── Load / Save ───────────────────────────────────────────────────────────
 
