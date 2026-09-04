@@ -625,7 +625,54 @@ public partial class MainViewModel
         }
     }
 
-    // ── DLL Naming Override ───────────────────────────────────────────────────────
+    /// <summary>
+    /// Reverts the ShortFuse auto-config applied during install:
+    /// renames Reshade64.asi back to the API-correct default DLL name, and
+    /// uninstalls ASI Loader if RHI auto-installed it.
+    /// Called from the Neural Rendering Remove button for the ShortFuse method.
+    /// </summary>
+    public void RevertSfAutoConfig(GameCardViewModel card)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+        var installPath = card.InstallPath;
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+
+        // ── Revert ReShade rename ─────────────────────────────────────────────
+        const string asiName = "Reshade64.asi";
+        var rsRecord = card.RsRecord;
+        if (rsRecord != null
+            && rsRecord.InstalledAs.Equals(asiName, StringComparison.OrdinalIgnoreCase))
+        {
+            var defaultName = ResolveAutoReShadeFilename(card.DetectedApis)
+                           ?? AuxInstallService.RsNormalName;
+            var asiPath     = System.IO.Path.Combine(installPath, asiName);
+            var defaultPath = System.IO.Path.Combine(installPath, defaultName);
+            try
+            {
+                if (System.IO.File.Exists(asiPath))
+                {
+                    if (System.IO.File.Exists(defaultPath)) System.IO.File.Delete(defaultPath);
+                    System.IO.File.Move(asiPath, defaultPath);
+                    rsRecord.InstalledAs      = defaultName;
+                    card.RsRecord.InstalledAs = defaultName;
+                    _auxInstaller.SaveAuxRecord(rsRecord);
+                    _crashReporter.Log($"[SfAutoConfig.Revert] Renamed '{asiName}' → '{defaultName}' for '{gameName}'");
+                }
+            }
+            catch (Exception ex) { _crashReporter.Log($"[SfAutoConfig.Revert] ReShade rename failed — {ex.Message}"); }
+        }
+
+        // ── Remove UAL if RHI installed it ────────────────────────────────────
+        var ualInstalled = GetUalInstalledAs(gameName, store);
+        if (!string.IsNullOrEmpty(ualInstalled))
+        {
+            var ualSvc = App.Services.GetRequiredService<UltimateAsiLoaderService>();
+            ualSvc.Uninstall(card);
+            SetUalInstalledAs(gameName, null, store);
+            _crashReporter.Log($"[SfAutoConfig.Revert] Removed UAL ('{ualInstalled}') for '{gameName}'");
+        }
+    }
 
     /// <summary>Per-game DLL naming overrides — delegated to DllOverrideService.</summary>
     private Dictionary<string, DllOverrideConfig> _dllOverrides => _dllOverrideService.GetAllOverrides();

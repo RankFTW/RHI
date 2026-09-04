@@ -646,6 +646,9 @@ public partial class DetailPanelBuilder
                         {
                             var det = _dlssStreamlineService.Detect(installPath);
                             rdx5Svc.UninstallSf(installPath, det.HasAny ? det : null);
+
+                            // Revert ShortFuse auto-config (rename Reshade64.asi back, remove UAL)
+                            _window.ViewModel.RevertSfAutoConfig(card);
                             break;
                         }
 
