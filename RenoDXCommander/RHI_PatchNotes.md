@@ -7,6 +7,10 @@
 - Detail view sections can be reordered by dragging the ≡ handle on the left of each section header. Order persists across restarts.
 - New Extras section in detail view. Contains Ultimate ASI Loader — install the UAL proxy DLL into any game folder to enable .asi plugin loading. Choose from the full list of supported DLL names (bitness-filtered, with Recommended badges and conflict warnings). Keeps itself up to date automatically. Hooked chaining handled automatically when the chosen DLL name is already in use by a game file.
 
+### Changes
+
+- RenoDX renamed to RenoDX HDR in the detail view component list.
+
 ### Manifest Updates
 
 - Baldur's Gate 3 forced to 64-bit detection.
