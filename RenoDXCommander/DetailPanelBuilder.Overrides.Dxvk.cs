@@ -277,6 +277,7 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         };
         var mgmtHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        mgmtHeaderRow.Children.Add(MakeDragHandle(_window.ManagementContainer));
         mgmtHeaderRow.Children.Add(mgmtArrow);
         mgmtHeaderRow.Children.Add(mgmtTitle);
         _window.ManagementPanel.Children.Add(mgmtHeaderRow);

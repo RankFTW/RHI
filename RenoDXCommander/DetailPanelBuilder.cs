@@ -306,7 +306,7 @@ public partial class DetailPanelBuilder
         _window.DetailLumaToggle.Visibility = Visibility.Collapsed;
         _window.DetailLumaInfoText.Visibility = Visibility.Collapsed;
 
-        // ── Wire Components section collapse ──────────────────────────────────
+        // ── Wire Components section collapse + drag handle ────────────────────
         {
             const string sectionKey = "Components";
             var settings    = _window.ViewModel.Settings;
@@ -330,6 +330,15 @@ public partial class DetailPanelBuilder
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             _window.DetailComponentsHeader.PointerEntered += (s, e) => cursorProp?.SetValue(_window.DetailComponentsHeader, handCursor);
             _window.DetailComponentsHeader.PointerExited  += (s, e) => cursorProp?.SetValue(_window.DetailComponentsHeader, arrowCursor);
+
+            // Insert/replace drag handle as first child (tagged "DragHandle" for identification)
+            var dragHandle = MakeDragHandle(_window.DetailComponentSection);
+            dragHandle.Tag = "DragHandle";
+            if (_window.DetailComponentsHeader.Children.Count > 0
+                && _window.DetailComponentsHeader.Children[0] is TextBlock tb
+                && tb.Tag is string t && t == "DragHandle")
+                _window.DetailComponentsHeader.Children.RemoveAt(0);
+            _window.DetailComponentsHeader.Children.Insert(0, dragHandle);
         }
 
         // Populate component rows
@@ -491,6 +500,226 @@ public partial class DetailPanelBuilder
         window.DetailGraphicsApiBadgePanel.Visibility =
             window.DetailGraphicsApiBadgePanel.Children.Count > 0
             ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // ── OverridesHeaderRow event handler refs — stored so we can unsubscribe on rebuild ──
+    private Microsoft.UI.Xaml.Input.PointerEventHandler? _ovHeaderPressedHandler;
+    private Microsoft.UI.Xaml.Input.PointerEventHandler? _ovHeaderEnteredHandler;
+    private Microsoft.UI.Xaml.Input.PointerEventHandler? _ovHeaderExitedHandler;
+
+    // ── Section order / drag-reorder ─────────────────────────────────────────
+
+    /// <summary>Maps section key → its container Border in DetailPanel.</summary>
+    private Border GetSectionContainer(string key) => key switch
+    {
+        "Components"      => _window.DetailComponentSection,
+        "GameOverrides"   => _window.OverridesContainer,
+        "NeuralRendering" => _window.NeuralRenderingContainer,
+        "NvidiaProfile"   => _window.NvidiaProfileContainer,
+        "Management"      => _window.ManagementContainer,
+        _                 => throw new ArgumentException($"Unknown section key: {key}"),
+    };
+
+    /// <summary>
+    /// Reorders the 5 section Borders within DetailPanel.Children to match
+    /// SettingsViewModel.DetailSectionOrder. Call after all sections are populated+visible.
+    /// The 2 header Grids at [0] and [1] are left in place.
+    /// </summary>
+    internal void ApplySectionOrder()
+    {
+        var order = _window.ViewModel.Settings.DetailSectionOrder;
+        var panel = _window.DetailPanel;
+
+        var desired = order
+            .Select(key => { try { return GetSectionContainer(key); } catch { return null; } })
+            .Where(b => b != null).Cast<Border>().ToList();
+
+        // Snapshot visibility
+        var visibilities = new Dictionary<UIElement, Visibility>();
+        for (int i = 2; i < panel.Children.Count; i++)
+            if (panel.Children[i] is UIElement el) visibilities[el] = el.Visibility;
+
+        int insertAt = 2;
+        foreach (var border in desired)
+        {
+            var currentIndex = panel.Children.IndexOf(border);
+            if (currentIndex < 0) continue;
+            if (currentIndex == insertAt) { insertAt++; continue; }
+            panel.Children.RemoveAt(currentIndex);
+            panel.Children.Insert(insertAt, border);
+            insertAt++;
+        }
+
+        // Restore visibility
+        for (int i = 2; i < panel.Children.Count; i++)
+            if (panel.Children[i] is UIElement el && visibilities.TryGetValue(el, out var vis))
+                el.Visibility = vis;
+    }
+
+    // Drag state
+    private Border?  _dragBorder;
+    private uint     _dragPointerId;
+    private double   _dragStartY;
+    private int      _dragStartIdx;
+    private int      _dragCurrentIdx;
+    private double   _dragCardHeight;
+    private bool     _dragging;
+
+    private const double SectionCardHeight = 120.0;  // fallback only
+
+    /// <summary>
+    /// Creates a drag handle (≡) TextBlock for a section header.
+    /// Live reorder: the section moves in real time as you drag.
+    /// Index is computed from cumulative Y delta (no TransformToVisual queries mid-drag).
+    /// Single Remove+Insert per threshold crossing keeps layout stable.
+    /// Order is persisted on PointerReleased.
+    /// </summary>
+    internal TextBlock MakeDragHandle(Border container)
+    {
+        var handle = new TextBlock
+        {
+            Text              = "≡",
+            FontSize          = 14,
+            Foreground        = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin            = new Thickness(0, 0, 8, 0),
+            ManipulationMode  = Microsoft.UI.Xaml.Input.ManipulationModes.None,
+        };
+
+        var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+        var cursorProp  = typeof(UIElement).GetProperty("ProtectedCursor",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        handle.PointerEntered += (s, e) =>
+        {
+            if (!_dragging) handle.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
+            cursorProp?.SetValue(handle, handCursor);
+        };
+        handle.PointerExited += (s, e) =>
+        {
+            if (!_dragging) handle.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
+            cursorProp?.SetValue(handle, arrowCursor);
+        };
+
+        handle.PointerPressed += (s, e) =>
+        {
+            var panel = _window.DetailPanel;
+            var idx   = panel.Children.IndexOf(container);
+            if (idx < 2) return;
+
+            _dragBorder      = container;
+            _dragPointerId   = e.Pointer.PointerId;
+            _dragStartY      = e.GetCurrentPoint(_window.DetailPanel).Position.Y;
+            _dragStartIdx    = idx;
+            _dragCurrentIdx  = idx;
+            _dragging        = true;
+            container.Opacity = 0.55;
+
+            // Use actual average section height for threshold — measure the dragged section itself
+            // as a proxy. Falls back to SectionCardHeight constant if layout hasn't run yet.
+            _dragCardHeight = container.ActualHeight > 20 ? container.ActualHeight + 16 : SectionCardHeight;
+
+            _window.DetailPanel.CapturePointer(e.Pointer);
+            _window.DetailPanel.PointerMoved        += DetailPanel_PointerMoved;
+            _window.DetailPanel.PointerReleased     += DetailPanel_PointerReleased;
+            _window.DetailPanel.PointerCaptureLost  += DetailPanel_PointerCaptureLost;
+
+            e.Handled = true;
+        };
+
+        // PointerMoved/Released/CaptureLost are handled on DetailPanel (see above)
+
+        return handle;
+    }
+
+    private void DetailPanel_PointerMoved(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (!_dragging || _dragBorder == null || e.Pointer.PointerId != _dragPointerId) return;
+
+        var pt     = e.GetCurrentPoint(_window.DetailPanel).Position;
+        var deltaY = pt.Y - _dragStartY;           // always relative to original press point
+        var panel  = _window.DetailPanel;
+
+        // Compute target index from total accumulated delta — each slot requires a full
+        // SectionCardHeight of travel from the original start, so thresholds are evenly spaced
+        // and don't compound with each move.
+        int offset    = (int)(deltaY / _dragCardHeight);  // truncate, not round
+        int targetIdx = Math.Clamp(_dragStartIdx + offset, 2, panel.Children.Count - 1);
+
+        if (targetIdx != _dragCurrentIdx)
+        {
+            var currentPos = panel.Children.IndexOf(_dragBorder);
+            if (currentPos >= 2)
+            {
+                var vis = new Dictionary<UIElement, Visibility>();
+                for (int i = 2; i < panel.Children.Count; i++)
+                    if (panel.Children[i] is UIElement el) vis[el] = el.Visibility;
+
+                var captured = _dragBorder;
+                int to = targetIdx;
+                panel.Children.RemoveAt(currentPos);
+                _window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        panel.Children.Insert(to, captured);
+                        for (int i = 2; i < panel.Children.Count; i++)
+                            if (panel.Children[i] is UIElement el && vis.TryGetValue(el, out var v))
+                                el.Visibility = v;
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[DragHandle] Insert failed: {ex.Message}"); }
+                });
+
+                _dragCurrentIdx = targetIdx;
+                // _dragStartY intentionally NOT updated — delta is always from original press
+            }
+        }
+        e.Handled = true;
+    }
+
+    private void DragEnd(bool save)
+    {
+        if (!_dragging) return;
+        _dragging = false;
+        var panel = _window.DetailPanel;
+        panel.PointerMoved        -= DetailPanel_PointerMoved;
+        panel.PointerReleased     -= DetailPanel_PointerReleased;
+        panel.PointerCaptureLost  -= DetailPanel_PointerCaptureLost;
+        if (_dragBorder != null) _dragBorder.Opacity = 1.0;
+        _dragBorder = null;
+        if (save) _window.DispatcherQueue.TryEnqueue(SaveSectionOrder);
+    }
+
+    private void DetailPanel_PointerReleased(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (e.Pointer.PointerId != _dragPointerId) return;
+        _window.DetailPanel.ReleasePointerCapture(e.Pointer);
+        DragEnd(save: true);
+        e.Handled = true;
+    }
+
+    private void DetailPanel_PointerCaptureLost(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        => DragEnd(save: true);
+
+    private void SaveSectionOrder()
+    {
+        var panel    = _window.DetailPanel;
+        var keyOrder = new List<string>();
+        for (int i = 2; i < panel.Children.Count; i++)
+        {
+            var border = panel.Children[i] as Border;
+            if      (border == _window.DetailComponentSection)     keyOrder.Add("Components");
+            else if (border == _window.OverridesContainer)          keyOrder.Add("GameOverrides");
+            else if (border == _window.NeuralRenderingContainer)    keyOrder.Add("NeuralRendering");
+            else if (border == _window.NvidiaProfileContainer)      keyOrder.Add("NvidiaProfile");
+            else if (border == _window.ManagementContainer)         keyOrder.Add("Management");
+        }
+        if (keyOrder.Count > 0)
+        {
+            _window.ViewModel.Settings.DetailSectionOrder = keyOrder;
+            _window.ViewModel.SaveSettingsPublic();
+        }
     }
 
     // ── Components section header event handlers (wired per-card in PopulateDetailPanel) ──

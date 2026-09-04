@@ -64,18 +64,32 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
+        _window.OverridesHeaderRow.Children.Add(MakeDragHandle(_window.OverridesContainer));
         _window.OverridesHeaderRow.Children.Add(ovArrow);
         _window.OverridesHeaderRow.Children.Add(ovTitle);
         _window.OverridesPanel.Visibility = ovCollapsed ? Visibility.Collapsed : Visibility.Visible;
 
-        _window.OverridesHeaderRow.PointerEntered += (s, e) => ovTitle.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
-        _window.OverridesHeaderRow.PointerExited  += (s, e) => ovTitle.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
-        var ovHandCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
-        var ovArrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
-        var ovCursorProp  = typeof(UIElement).GetProperty("ProtectedCursor", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        _window.OverridesHeaderRow.PointerEntered += (s, e) => ovCursorProp?.SetValue(_window.OverridesHeaderRow, ovHandCursor);
-        _window.OverridesHeaderRow.PointerExited  += (s, e) => ovCursorProp?.SetValue(_window.OverridesHeaderRow, ovArrowCursor);
-        _window.OverridesHeaderRow.PointerPressed += (s, e) =>
+        // Unsubscribe previous handlers before adding new ones (OverridesHeaderRow is a
+        // persistent XAML element — handlers stack up across rebuilds without this)
+        if (_ovHeaderPressedHandler != null) _window.OverridesHeaderRow.PointerPressed -= _ovHeaderPressedHandler;
+        if (_ovHeaderEnteredHandler != null) _window.OverridesHeaderRow.PointerEntered -= _ovHeaderEnteredHandler;
+        if (_ovHeaderExitedHandler  != null) _window.OverridesHeaderRow.PointerExited  -= _ovHeaderExitedHandler;
+
+        _ovHeaderEnteredHandler = (s, e) =>
+        {
+            ovTitle.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
+            var handCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+            typeof(UIElement).GetProperty("ProtectedCursor", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                ?.SetValue(_window.OverridesHeaderRow, handCursor);
+        };
+        _ovHeaderExitedHandler = (s, e) =>
+        {
+            ovTitle.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
+            var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+            typeof(UIElement).GetProperty("ProtectedCursor", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                ?.SetValue(_window.OverridesHeaderRow, arrowCursor);
+        };
+        _ovHeaderPressedHandler = (s, e) =>
         {
             bool nowCollapsed = _window.OverridesPanel.Visibility == Visibility.Visible;
             _window.OverridesPanel.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
@@ -84,6 +98,10 @@ public partial class DetailPanelBuilder
             else              ovSettings.CollapsedDetailSections.Remove(overridesSectionKey);
             _window.ViewModel.SaveSettingsPublic();
         };
+
+        _window.OverridesHeaderRow.PointerEntered += _ovHeaderEnteredHandler;
+        _window.OverridesHeaderRow.PointerExited  += _ovHeaderExitedHandler;
+        _window.OverridesHeaderRow.PointerPressed += _ovHeaderPressedHandler;
 
         // ── Game name + Wiki name ────────────────────────────────────────────────
         var detectedBox = new TextBox

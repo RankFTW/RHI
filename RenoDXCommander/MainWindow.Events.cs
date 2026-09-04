@@ -367,6 +367,7 @@ public sealed partial class MainWindow
                     OverridesContainer.Visibility = Visibility.Visible;
                     NvidiaProfileContainer.Visibility = Visibility.Visible;
                     ManagementContainer.Visibility = Visibility.Visible;
+                    _detailPanelBuilder.ApplySectionOrder();
                 }
                 break;
             case ViewLayout.Compact:

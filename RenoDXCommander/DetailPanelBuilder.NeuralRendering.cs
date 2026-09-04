@@ -113,6 +113,7 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         };
         var nrHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        nrHeaderRow.Children.Add(MakeDragHandle(_window.NeuralRenderingContainer));
         nrHeaderRow.Children.Add(nrArrow);
         nrHeaderRow.Children.Add(nrTitle);
         _window.NeuralRenderingPanel.Children.Add(nrHeaderRow);

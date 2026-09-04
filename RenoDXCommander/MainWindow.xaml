@@ -583,7 +583,7 @@
 
 
                         <!-- ── Component status table ── -->
-                        <Border x:Name="DetailComponentSection" Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
+                        <Border x:Name="DetailComponentSection" x:FieldModifier="internal" Background="{StaticResource SurfaceComponentTableBrush}" CornerRadius="12"
                                 BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" Padding="16,14">
                             <StackPanel Spacing="10">
                                 <Grid ColumnSpacing="8">

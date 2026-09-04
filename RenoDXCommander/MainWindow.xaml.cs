@@ -196,7 +196,7 @@ public sealed partial class MainWindow : Window
         ViewModel.ConfirmForeignDxgiOverwrite = _dialogService.ShowForeignDxgiConfirmDialogAsync;
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
         ViewModel.RequestOverridesPanelRebuild = card =>
-            DispatcherQueue.TryEnqueue(() => BuildOverridesPanel(card));
+            DispatcherQueue.TryEnqueue(() => { BuildOverridesPanel(card); _detailPanelBuilder.ApplySectionOrder(); });
         ViewModel.RequestCardRebuild = card =>
             DispatcherQueue.TryEnqueue(() =>
             {
@@ -606,6 +606,7 @@ public sealed partial class MainWindow : Window
                                     NeuralRenderingContainer.Visibility = Visibility.Visible;
                                     NvidiaProfileContainer.Visibility = Visibility.Visible;
                                     ManagementContainer.Visibility = Visibility.Visible;
+                                    _detailPanelBuilder.ApplySectionOrder();
                                 }
                                 else if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
                                 {

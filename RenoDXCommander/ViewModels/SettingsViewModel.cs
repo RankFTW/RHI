@@ -98,6 +98,17 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public HashSet<string> CollapsedDetailSections { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+    // ── Detail panel section order ────────────────────────────────────────────
+    /// <summary>
+    /// Ordered list of section keys for the detail panel.
+    /// Default order: Components, GameOverrides, NeuralRendering, NvidiaProfile, Management.
+    /// Absent or incomplete = use default order.
+    /// </summary>
+    public static readonly IReadOnlyList<string> DefaultSectionOrder = new[]
+        { "Components", "GameOverrides", "NeuralRendering", "NvidiaProfile", "Management" };
+
+    public List<string> DetailSectionOrder { get; set; } = new(DefaultSectionOrder);
+
     // ── DLSS/Streamline Defaults ──────────────────────────────────────────────
     [ObservableProperty] private string _defaultDlssVersion = "";
     [ObservableProperty] private string _defaultDlssdVersion = "";
@@ -358,6 +369,25 @@ public partial class SettingsViewModel : ObservableObject
             }
             catch { CollapsedDetailSections = new(StringComparer.OrdinalIgnoreCase); }
         }
+
+        // Detail panel section order
+        if (s.TryGetValue("DetailSectionOrder", out var dsoVal))
+        {
+            try
+            {
+                var loaded = System.Text.Json.JsonSerializer.Deserialize<List<string>>(dsoVal);
+                // Merge: keep loaded order for known keys, append any missing ones at end
+                if (loaded != null)
+                {
+                    var known = new HashSet<string>(DefaultSectionOrder, StringComparer.OrdinalIgnoreCase);
+                    var merged = loaded.Where(k => known.Contains(k)).ToList();
+                    foreach (var def in DefaultSectionOrder)
+                        if (!merged.Contains(def, StringComparer.OrdinalIgnoreCase)) merged.Add(def);
+                    DetailSectionOrder = merged;
+                }
+            }
+            catch { DetailSectionOrder = new(DefaultSectionOrder); }
+        }
     }
 
     /// <summary>
@@ -458,6 +488,12 @@ public partial class SettingsViewModel : ObservableObject
             s["CollapsedDetailSections"] = System.Text.Json.JsonSerializer.Serialize(CollapsedDetailSections.ToList());
         else
             s.Remove("CollapsedDetailSections");
+
+        // Detail panel section order — only save when different from default
+        if (!DetailSectionOrder.SequenceEqual(DefaultSectionOrder, StringComparer.OrdinalIgnoreCase))
+            s["DetailSectionOrder"] = System.Text.Json.JsonSerializer.Serialize(DetailSectionOrder);
+        else
+            s.Remove("DetailSectionOrder");
     }
 
     public void LoadThemeAndDensity()

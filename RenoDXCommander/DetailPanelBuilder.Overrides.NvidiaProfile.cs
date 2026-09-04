@@ -45,6 +45,7 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
         };
         var nvHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        nvHeaderRow.Children.Add(MakeDragHandle(_window.NvidiaProfileContainer));
         nvHeaderRow.Children.Add(nvArrow);
         nvHeaderRow.Children.Add(nvTitle);
         _window.NvidiaProfilePanel.Children.Add(nvHeaderRow);

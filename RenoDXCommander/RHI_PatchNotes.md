@@ -1,10 +1,10 @@
-## v2.5.9
 
 ## v2.6.0
 
 ### New
 
 - Detail view sections (Components, Game Overrides, Neural Rendering, Nvidia Profile Overrides, Management) are now collapsible. Click the section heading to toggle it open or closed. Collapsed state persists across restarts.
+- Detail view sections can be reordered by dragging the ≡ handle on the left of each section header. Order persists across restarts.
 
 ### Manifest Updates
 
