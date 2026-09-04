@@ -22,6 +22,7 @@
 ### Manifest Updates
 
 - Baldur's Gate 3 forced to 64-bit detection.
+- Hogwarts Legacy linked to Marat's UE-Extended addon.
 
 ---
 

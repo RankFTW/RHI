@@ -509,6 +509,7 @@
   "engineHintOverrides": {
     "Avowed": "Unreal Engine 5.3.2",
     "ACE COMBAT™7: SKIES UNKNOWN": "Unreal Engine 4.27.2",
+    "Hogwarts Legacy": "Unreal Engine 4.27",
     "METAL GEAR SOLID 4: Guns of the Patriots - Master Collection Version": "MGS4 Engine",
     "Outlast": "Unreal (Legacy)",
     "Beast of Reincarnation": "Unreal Engine 5.4.4",
@@ -797,6 +798,7 @@
   },
   "snapshotOverrides": {
     "ACE COMBAT™7: SKIES UNKNOWN": "https://marat569.github.io/renodx/renodx-ue-extended.addon64",
+    "Hogwarts Legacy": "https://marat569.github.io/renodx/renodx-ue-extended.addon64",
     "Assassin\u0027s Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
     "Cities: Skylines": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
     "CODE VEIN II": "https://marat569.github.io/renodx/renodx-codevein2.addon64",
