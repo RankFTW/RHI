@@ -751,12 +751,18 @@ public partial class DetailPanelBuilder
                     installBtn.IsEnabled = true;
                     UpdateInstallBtnAppearance();
                     RefreshStatus();
-                    // Rebuild full overrides panel so shader mode combo reflects new state
+                    // Rebuild full overrides panel so DLSS versions + shader mode reflect new state
                     var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                         c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
                         (string.IsNullOrEmpty(store) || c.Source == store));
                     if (targetCard != null)
+                    {
+                        // Re-detect DLSS so Nvidia Profile section shows up-to-date versions
+                        var freshDetection = _dlssStreamlineService.Detect(targetCard.InstallPath ?? "");
+                        targetCard.ApplyDlssDetection(freshDetection);
+                        targetCard.RefreshDlssVersions(_dlssStreamlineService);
                         BuildOverridesPanel(targetCard);
+                    }
                 });
             }
         };
