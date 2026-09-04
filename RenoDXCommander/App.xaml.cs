@@ -127,7 +127,7 @@ public partial class App : Application
         Services = services.BuildServiceProvider();
     }
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         // ── One-time migration from legacy AppData folders ───────
         MigrateLegacyAppData();
@@ -137,7 +137,9 @@ public partial class App : Application
         {
             try
             {
-                var installerLanguagePath = Path.Combine(AppContext.BaseDirectory, "ui-language.txt");
+                var installerLanguagePath = Path.Combine(
+                    Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory,
+                    "ui-language.txt");
                 if (File.Exists(installerLanguagePath))
                     uiLanguage = File.ReadAllText(installerLanguagePath).Trim();
             }
@@ -146,7 +148,8 @@ public partial class App : Application
                 CrashReporter.Log($"[App.OnLaunched] Failed to read installer language — {ex.Message}");
             }
         }
-        UiLanguage.Apply(uiLanguage);
+        var localizerReady = await LocalizationService.InitializeAsync(uiLanguage);
+        CrashReporter.Log($"[App.OnLaunched] UI language '{UiLanguage.Resolve(uiLanguage)}' initialized (ready={localizerReady})");
 
         // Single-instance check: if another instance is already running,
         // forward the addon file path and exit immediately.

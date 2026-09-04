@@ -30,6 +30,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Strings\**\*.resw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="Assets\manifest.json" />
     <!-- Exclude backup files from XAML compilation -->
     <None Remove="original\**" />
@@ -169,5 +176,6 @@
     <PackageReference Include="CommunityToolkit.Labs.WinUI.Controls.MarkdownTextBlock" Version="0.1.251217-build.2433" />
     <PackageReference Include="NvAPIWrapper.Net" Version="0.8.1.101" />
     <PackageReference Include="SharpCompress" Version="0.37.2" />
+    <PackageReference Include="WinUI3Localizer" Version="2.3.0" />
   </ItemGroup>
 </Project>

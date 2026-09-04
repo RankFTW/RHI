@@ -110,6 +110,11 @@ begin
     WaitCount := WaitCount + 1;
   end;
 
+  // The app treats this file as a shutdown command on every launch.
+  // Remove it after waiting so the freshly installed app does not exit immediately.
+  if FileExists(SignalPath) then
+    DeleteFile(SignalPath);
+
   // If still running, Inno's default CloseApplications will handle it
 end;
 
@@ -117,9 +122,14 @@ procedure CurStepChanged(CurStep: TSetupStep);
 var
   LanguageFileLines: TArrayOfString;
   LanguageCode: String;
+  ShutdownSignalPath: String;
 begin
   if CurStep = ssPostInstall then
   begin
+    ShutdownSignalPath := ExpandConstant('{localappdata}\RHI\rhi_shutdown_requested');
+    if FileExists(ShutdownSignalPath) then
+      DeleteFile(ShutdownSignalPath);
+
     if ActiveLanguage = 'chinesesimplified' then
       LanguageCode := 'zh-CN'
     else

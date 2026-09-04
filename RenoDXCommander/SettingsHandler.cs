@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
+using WinUI3Localizer;
 
 namespace RenoDXCommander;
 
@@ -53,7 +54,7 @@ public class SettingsHandler
         _uiLanguageComboInitializing = false;
     }
 
-    public void UiLanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    public async void UiLanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_uiLanguageComboInitializing) return;
 
@@ -61,8 +62,15 @@ public class SettingsHandler
         if (string.IsNullOrWhiteSpace(selected)) return;
 
         ViewModel.Settings.UiLanguage = UiLanguage.Normalize(selected);
-        UiLanguage.Apply(ViewModel.Settings.UiLanguage);
         ViewModel.SaveSettingsPublic();
+        try
+        {
+            await Localizer.Get().SetLanguage(UiLanguage.Resolve(ViewModel.Settings.UiLanguage));
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.WriteCrashReport("SettingsHandler.UiLanguageCombo_SelectionChanged", ex);
+        }
     }
 
     public void SettingsButton_Click(object sender, RoutedEventArgs e)

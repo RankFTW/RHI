@@ -1,4 +1,4 @@
-using Microsoft.Windows.ApplicationModel.Resources;
+using WinUI3Localizer;
 
 namespace RenoDXCommander.Services;
 
@@ -28,24 +28,55 @@ public static class UiLanguage
         };
     }
 
-    public static void Apply(string? language)
+    public static string Resolve(string? language)
     {
         var normalized = Normalize(language);
-        Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride =
-            normalized == Auto ? string.Empty : normalized;
+        if (normalized != Auto)
+            return normalized;
+
+        var uiCulture = System.Globalization.CultureInfo.CurrentUICulture;
+        if (string.Equals(uiCulture.TwoLetterISOLanguageName, "zh", StringComparison.OrdinalIgnoreCase) &&
+            (string.Equals(uiCulture.Name, "zh-CN", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uiCulture.Name, "zh-Hans", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uiCulture.Name, "zh-Hans-CN", StringComparison.OrdinalIgnoreCase)))
+        {
+            return SimplifiedChinese;
+        }
+
+        return English;
     }
 }
 
 public static class LocalizationService
 {
-    private static ResourceLoader? _resourceLoader;
+    public static string StringsFolderPath { get; private set; } =
+        System.IO.Path.Combine(GetExecutableDirectory(), "Strings");
+
+    private static string GetExecutableDirectory() =>
+        System.IO.Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+
+    public static async Task<bool> InitializeAsync(string? language)
+    {
+        try
+        {
+            _ = await new LocalizerBuilder()
+                .AddStringResourcesFolderForLanguageDictionaries(StringsFolderPath, ignoreExceptions: true)
+                .SetOptions(options => options.DefaultLanguage = UiLanguage.Resolve(language))
+                .Build();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.WriteCrashReport("LocalizationService.InitializeAsync", ex);
+            return false;
+        }
+    }
 
     public static string GetString(string key, string fallback = "")
     {
         try
         {
-            _resourceLoader ??= new ResourceLoader();
-            var value = _resourceLoader.GetString(key);
+            var value = Localizer.Get().GetLocalizedString(key);
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
         catch

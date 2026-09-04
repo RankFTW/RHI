@@ -45,7 +45,7 @@
   <data name="Settings_Language_Auto.Content" xml:space="preserve"><value>Follow system</value></data>
   <data name="Settings_Language_English.Content" xml:space="preserve"><value>English (United States)</value></data>
   <data name="Settings_Language_SimplifiedChinese.Content" xml:space="preserve"><value>Simplified Chinese</value></data>
-  <data name="Settings_Language_RestartNote.Text" xml:space="preserve"><value>Language changes take effect after restarting RHI.</value></data>
+  <data name="Settings_Language_RestartNote.Text" xml:space="preserve"><value>Language changes apply immediately.</value></data>
   <data name="Settings_ComponentUpdates_Title.Text" xml:space="preserve"><value>Component Updates</value></data>
   <data name="Settings_ComponentUpdates_CheckHeader.Text" xml:space="preserve"><value>Check For Updates</value></data>
   <data name="Settings_ComponentUpdates_CheckDescription.Text" xml:space="preserve"><value>Fetches the latest manifest data and checks all components for available updates. Bypasses the 4-hour cooldown.</value></data>
