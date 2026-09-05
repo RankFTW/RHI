@@ -127,11 +127,19 @@ public partial class DetailPanelBuilder
             var selected = versionCombo.SelectedItem as string;
             if (string.IsNullOrEmpty(selected)) return;
 
-            // If it's the (Default) item, treat as "Default" (restore original)
-            if (selected.EndsWith(" (Default)"))
-                await onVersionSelected("Default");
-            else
-                await onVersionSelected(selected);
+            versionCombo.IsEnabled = false;
+            try
+            {
+                // If it's the (Default) item, treat as "Default" (restore original)
+                if (selected.EndsWith(" (Default)"))
+                    await onVersionSelected("Default");
+                else
+                    await onVersionSelected(selected);
+            }
+            finally
+            {
+                versionCombo.IsEnabled = isPresent && !driverOverrideActive;
+            }
         };
         versionInit = false;
 

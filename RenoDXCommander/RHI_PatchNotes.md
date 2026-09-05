@@ -6,6 +6,12 @@
 - Fixed toggling the DLL naming overrides switch hanging the UI — file rename operations are now done off the UI thread.
 - Fixed a potential crash when dragging detail view sections quickly.
 - Improved reliability of addon update detection.
+- Fixed games using the D3D12 Agility SDK (e.g. Onimusha: Way of the Sword) being detected as DX11 — the D3D12Core.dll check now runs before the PE import scan.
+
+### Manifest Updates
+
+- Onimusha: Way of the Sword and PRAGMATA forced to DX12 detection.
+- RoboCop: Rogue City — Unfinished Business Engine.ini config path corrected.
 
 ---
 
