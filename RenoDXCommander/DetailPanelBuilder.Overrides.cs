@@ -393,11 +393,14 @@ public partial class DetailPanelBuilder
         UpdateDcDropdownItems();
         UpdateRsDropdownItems();
 
-        dllOverrideToggle.Toggled += (s, ev) =>
+        dllOverrideToggle.Toggled += async (s, ev) =>
         {
             rsNameBox.IsEnabled = dllOverrideToggle.IsOn;
             dcNameBox.IsEnabled = dllOverrideToggle.IsOn;
             osNameBox.IsEnabled = dllOverrideToggle.IsOn;
+
+            // Disable toggle during file operations to prevent re-entrancy
+            dllOverrideToggle.IsEnabled = false;
 
             // Use card directly to avoid multi-store lookup picking the wrong card
             var targetCard = card;
@@ -483,67 +486,73 @@ public partial class DetailPanelBuilder
                     }
                 }
 
-                _window.ViewModel.EnableDllOverride(targetCard, rsName, dcName);
+                // File I/O off the UI thread
+                await Task.Run(() => _window.ViewModel.EnableDllOverride(targetCard, rsName, dcName));
             }
             else
             {
                 // Turning unified override OFF
                 CrashReporter.Log($"[DetailPanelBuilder] DLL override toggle OFF for '{capturedName}' — OsInstalledFile='{targetCard.OsInstalledFile}', IsOsInstalled={targetCard.IsOsInstalled}");
-                // ── Step 1: Revert OptiScaler DLL FIRST so dxgi.dll is free before RS tries to reclaim it ──
-                var osCfg = _dllOverrideService.GetDllOverride(capturedName)?.OsFileName;
-                CrashReporter.Log($"[DetailPanelBuilder] Toggle OFF — osCfg='{osCfg}'");
-                if (!string.IsNullOrEmpty(osCfg) && targetCard.IsOsInstalled
-                    && !string.IsNullOrEmpty(targetCard.OsInstalledFile)
-                    && !string.IsNullOrEmpty(targetCard.InstallPath))
+
+                // All file I/O off the UI thread
+                DllDisableResult result = default;
+                await Task.Run(() =>
                 {
-                    var defaultOsName = OptiScalerService.DefaultDllName; // "dxgi.dll"
-                    var osOldPath = System.IO.Path.Combine(targetCard.InstallPath, targetCard.OsInstalledFile);
-                    var osNewPath = System.IO.Path.Combine(targetCard.InstallPath, defaultOsName);
-                    try
+                    // ── Step 1: Revert OptiScaler DLL FIRST so dxgi.dll is free before RS tries to reclaim it ──
+                    var osCfg = _dllOverrideService.GetDllOverride(capturedName)?.OsFileName;
+                    CrashReporter.Log($"[DetailPanelBuilder] Toggle OFF — osCfg='{osCfg}'");
+                    if (!string.IsNullOrEmpty(osCfg) && targetCard.IsOsInstalled
+                        && !string.IsNullOrEmpty(targetCard.OsInstalledFile)
+                        && !string.IsNullOrEmpty(targetCard.InstallPath))
                     {
-                        if (!osOldPath.Equals(osNewPath, StringComparison.OrdinalIgnoreCase)
-                            && System.IO.File.Exists(osOldPath))
+                        var defaultOsName = OptiScalerService.DefaultDllName; // "dxgi.dll"
+                        var osOldPath = System.IO.Path.Combine(targetCard.InstallPath, targetCard.OsInstalledFile);
+                        var osNewPath = System.IO.Path.Combine(targetCard.InstallPath, defaultOsName);
+                        try
                         {
-                            // If dxgi.dll is occupied by ReShade (RS is at its default name),
-                            // move RS out of the way first using the coexist name (ReShade64.dll)
-                            if (System.IO.File.Exists(osNewPath)
-                                && targetCard.RsRecord != null
-                                && System.IO.Path.GetFileName(osNewPath).Equals(targetCard.RsRecord.InstalledAs, StringComparison.OrdinalIgnoreCase))
+                            if (!osOldPath.Equals(osNewPath, StringComparison.OrdinalIgnoreCase)
+                                && System.IO.File.Exists(osOldPath))
                             {
-                                var rsCoexistPath = System.IO.Path.Combine(targetCard.InstallPath, Services.OptiScalerService.ReShadeCoexistName);
-                                if (!System.IO.File.Exists(rsCoexistPath))
+                                // If dxgi.dll is occupied by ReShade (RS is at its default name),
+                                // move RS out of the way first using the coexist name (ReShade64.dll)
+                                if (System.IO.File.Exists(osNewPath)
+                                    && targetCard.RsRecord != null
+                                    && System.IO.Path.GetFileName(osNewPath).Equals(targetCard.RsRecord.InstalledAs, StringComparison.OrdinalIgnoreCase))
                                 {
-                                    System.IO.File.Move(osNewPath, rsCoexistPath);
-                                    targetCard.RsRecord.InstalledAs = Services.OptiScalerService.ReShadeCoexistName;
-                                    targetCard.RsInstalledFile = Services.OptiScalerService.ReShadeCoexistName;
-                                    var rsRec = _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, Services.AuxInstallService.TypeReShade)
-                                             ?? _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, Services.AuxInstallService.TypeReShadeNormal);
-                                    if (rsRec != null) { rsRec.InstalledAs = Services.OptiScalerService.ReShadeCoexistName; _auxInstallService.SaveAuxRecord(rsRec); }
-                                    CrashReporter.Log($"[DetailPanelBuilder] Moved ReShade '{System.IO.Path.GetFileName(osNewPath)}' → '{Services.OptiScalerService.ReShadeCoexistName}' to free up '{defaultOsName}' for OptiScaler revert");
+                                    var rsCoexistPath = System.IO.Path.Combine(targetCard.InstallPath, Services.OptiScalerService.ReShadeCoexistName);
+                                    if (!System.IO.File.Exists(rsCoexistPath))
+                                    {
+                                        System.IO.File.Move(osNewPath, rsCoexistPath);
+                                        targetCard.RsRecord.InstalledAs = Services.OptiScalerService.ReShadeCoexistName;
+                                        targetCard.RsInstalledFile = Services.OptiScalerService.ReShadeCoexistName;
+                                        var rsRec = _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, Services.AuxInstallService.TypeReShade)
+                                                 ?? _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, Services.AuxInstallService.TypeReShadeNormal);
+                                        if (rsRec != null) { rsRec.InstalledAs = Services.OptiScalerService.ReShadeCoexistName; _auxInstallService.SaveAuxRecord(rsRec); }
+                                        CrashReporter.Log($"[DetailPanelBuilder] Moved ReShade '{System.IO.Path.GetFileName(osNewPath)}' → '{Services.OptiScalerService.ReShadeCoexistName}' to free up '{defaultOsName}' for OptiScaler revert");
+                                    }
+                                }
+                                if (!System.IO.File.Exists(osNewPath))
+                                {
+                                    System.IO.File.Move(osOldPath, osNewPath);
+                                    targetCard.OsInstalledFile = defaultOsName;
+                                    var osRecord = _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, "OptiScaler");
+                                    if (osRecord != null) { osRecord.InstalledAs = defaultOsName; _auxInstallService.SaveAuxRecord(osRecord); }
+                                    CrashReporter.Log($"[DetailPanelBuilder] Reverted OptiScaler DLL '{osCfg}' → '{defaultOsName}' for '{capturedName}'");
                                 }
                             }
-                            if (!System.IO.File.Exists(osNewPath))
-                            {
-                                System.IO.File.Move(osOldPath, osNewPath);
-                                targetCard.OsInstalledFile = defaultOsName;
-                                var osRecord = _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, "OptiScaler");
-                                if (osRecord != null) { osRecord.InstalledAs = defaultOsName; _auxInstallService.SaveAuxRecord(osRecord); }
-                                CrashReporter.Log($"[DetailPanelBuilder] Reverted OptiScaler DLL '{osCfg}' → '{defaultOsName}' for '{capturedName}'");
-                            }
                         }
+                        catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] Failed to revert OptiScaler DLL for '{capturedName}' — {ex.Message}"); }
                     }
-                    catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] Failed to revert OptiScaler DLL for '{capturedName}' — {ex.Message}"); }
-                }
-                _dllOverrideService.SetOsDllOverride(capturedName, "");
+                    _dllOverrideService.SetOsDllOverride(capturedName, "");
 
-                // ── Step 2: Revert RS and DC ──
-                var result = _window.ViewModel.DisableDllOverride(targetCard);
+                    // ── Step 2: Revert RS and DC ──
+                    result = _window.ViewModel.DisableDllOverride(targetCard);
+                });
 
-                // Disable and clear both dropdowns
+                // Back on UI thread — update dropdowns and tooltips
                 rsNameBox.SelectedIndex = -1;
                 dcNameBox.SelectedIndex = -1;
 
-                // Set tooltips for partial revert failures
                 if (!result.RsReverted)
                 {
                     ToolTipService.SetToolTip(dllOverrideToggle,
@@ -556,11 +565,12 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    // Both reverted successfully — reset tooltip to default
                     ToolTipService.SetToolTip(dllOverrideToggle,
                         "Override the filenames ReShade is installed as. When enabled, existing RS files are renamed to the custom filenames.");
                 }
             }
+
+            dllOverrideToggle.IsEnabled = true;
         };
 
         // ── Auto-save: DC name box on dropdown selection (with foreign DLL check) ──
