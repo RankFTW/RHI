@@ -536,13 +536,13 @@
     "System Shock": "%USERPROFILE%\\Saved Games\\Nightdive Studios\\SystemShock\\Saved\\Config\\WindowsNoEditor",
     "Terminator: Resistance": "%LOCALAPPDATA%\\Terminator\\Saved\\Config\\WindowsNoEditor",
     "Terminator\u2122: Resistance": "%LOCALAPPDATA%\\Terminator\\Saved\\Config\\WindowsNoEditor",
+    "RoboCop: Rogue City - Unfinished Business": "RoboCopUnfinishedBusiness",
     "The Sinking City 2": "TSC2"
   },
   "graphicsApiOverrides": {
     "Anno 117 - Pax Romana": "DX12",
     "ACE COMBAT™7: SKIES UNKNOWN": "DX11",
     "Clair Obscur: Expedition 33": "DX12",
-    "Onimusha: Way of the Sword": "DX12",
     "PRAGMATA": "DX12",
     "Crimson Desert": "DX12",
     "Resident Evil 4": "DX12",
@@ -1074,7 +1074,6 @@
       "notesUrl": "https://theultraplace.com/games/quarantinezone/",
       "notesUrlLabel": "Ultra\u002B"
     },
-    "RoboCop: Rogue City": {
       "notes": "\u2139\uFE0F Native HDR can be enabled using Ultra\u002B.",
       "notesUrl": "https://theultraplace.com/games/robocop/",
       "notesUrlLabel": "Ultra\u002B"
