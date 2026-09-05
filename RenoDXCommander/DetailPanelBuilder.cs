@@ -664,7 +664,9 @@ public partial class DetailPanelBuilder
                 {
                     try
                     {
-                        panel.Children.Insert(to, captured);
+                        // Clamp again at insert time — Children.Count changed by RemoveAt
+                        int safeIdx = Math.Clamp(to, 2, Math.Max(2, panel.Children.Count));
+                        panel.Children.Insert(safeIdx, captured);
                         for (int i = 2; i < panel.Children.Count; i++)
                             if (panel.Children[i] is UIElement el && vis.TryGetValue(el, out var v))
                                 el.Visibility = v;
