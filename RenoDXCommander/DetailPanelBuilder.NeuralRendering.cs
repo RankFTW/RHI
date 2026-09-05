@@ -41,18 +41,44 @@ public partial class DetailPanelBuilder
         var addonSvc    = _window.ViewModel.AddonPackServiceInstance;
         var dlssSvc     = _dlssStreamlineService;
 
-        // ── Detect current install state ──────────────────────────────────────
-        bool dlss5Installed     = rdx5Svc.IsInstalledIn(installPath);
-        bool sfInstalled        = rdx5Svc.IsSfInstalledIn(installPath);
-        bool nrDllPresent       = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
-        bool nrDllOwnedByRhi    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original"));
-        string? nrDllVersion    = null;
-        if (nrDllPresent)
-            nrDllVersion = DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll")));
+        // ── Detect current install state (off the UI thread — all File.Exists calls) ──
+        _ = Task.Run(() =>
+        {
+            bool dlss5Installed  = rdx5Svc.IsInstalledIn(installPath);
+            bool sfInstalled     = rdx5Svc.IsSfInstalledIn(installPath);
+            bool nrDllPresent    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
+            bool nrDllOwnedByRhi = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original"));
+            string? nrDllVersion = null;
+            if (nrDllPresent)
+                nrDllVersion = DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll")));
+            bool bridgePresent = File.Exists(Path.Combine(installPath, BridgeDeployFile));
+            bool feederPresent = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
 
-        bool bridgePresent = File.Exists(Path.Combine(installPath, BridgeDeployFile));
-        bool feederPresent = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+            _window.DispatcherQueue?.TryEnqueue(() =>
+                BuildNeuralRenderingSectionWithData(card, dlss5Installed, sfInstalled,
+                    nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent));
+        });
+    }
 
+    private void BuildNeuralRenderingSectionWithData(
+        GameCardViewModel card,
+        bool dlss5Installed, bool sfInstalled,
+        bool nrDllPresent, bool nrDllOwnedByRhi, string? nrDllVersion,
+        bool bridgePresent, bool feederPresent)
+    {
+        // Guard: if the user navigated away before the background scan finished, bail out
+        if (_window.ViewModel.SelectedGame != card) return;
+
+        // Re-clear the panel in case another card was selected while we were scanning
+        _window.NeuralRenderingPanel.Children.Clear();
+
+        var installPath = card.InstallPath!;
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+
+        var rdx5Svc     = App.Services.GetRequiredService<Renodx5AddonService>();
+        var addonSvc    = _window.ViewModel.AddonPackServiceInstance;
+        var dlssSvc     = _dlssStreamlineService;
         bool hasDlss  = card.HasAnyDlssStreamline;
         bool isDx12   = card.GraphicsApi == GraphicsApiType.DirectX12;
         bool isDx11   = card.GraphicsApi == GraphicsApiType.DirectX11;
