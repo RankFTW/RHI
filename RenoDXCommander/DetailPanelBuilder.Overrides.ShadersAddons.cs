@@ -267,25 +267,45 @@ public partial class DetailPanelBuilder
             ? Path.GetFileName(currentLaunchExe)
             : (_window.ViewModel.Manifest?.LaunchExeOverrides?.TryGetValue(ctx.CapturedName, out var manifestExe) == true && !string.IsNullOrEmpty(manifestExe)
                 ? Path.GetFileName(manifestExe)
-                : (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath)
-                    ? Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly)
-                        .Where(e => !_exeExclusions.Contains(Path.GetFileNameWithoutExtension(e)))
-                        .OrderByDescending(e => new FileInfo(e).Length)
-                        .Select(Path.GetFileName)
-                        .FirstOrDefault()
-                    : null));
+                : null); // exe scan deferred — label updates asynchronously
 
         var headerText = string.IsNullOrEmpty(effectiveExe)
             ? "Launch executable"
             : $"Launch executable  —  {effectiveExe}";
-        launchExeHeaderPanel.Children.Add(new TextBlock
+        var exeHeaderText = new TextBlock
         {
             Text = headerText,
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             TextWrapping = TextWrapping.NoWrap,
             TextTrimming = TextTrimming.CharacterEllipsis,
-        });
+        };
+        launchExeHeaderPanel.Children.Add(exeHeaderText);
+
+        // Async exe scan — updates the label without blocking the UI thread
+        if (effectiveExe == null)
+        {
+            _ = Task.Run(() =>
+            {
+                string? scannedExe = null;
+                try
+                {
+                    if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
+                        scannedExe = Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly)
+                            .Where(e => !_exeExclusions.Contains(Path.GetFileNameWithoutExtension(e)))
+                            .OrderByDescending(e => new FileInfo(e).Length)
+                            .Select(Path.GetFileName)
+                            .FirstOrDefault();
+                }
+                catch { }
+                if (scannedExe != null)
+                    _window.DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        if (_window.ViewModel.SelectedGame == card)
+                            exeHeaderText.Text = $"Launch executable  —  {scannedExe}";
+                    });
+            });
+        }
         // Invisible spacer matching the "Shaders" / "Addons" sub-label height
         launchExeHeaderPanel.Children.Add(new TextBlock
         {
