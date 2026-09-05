@@ -37,6 +37,18 @@ static class Program
 
 class DropOverlayForm : Form
 {
+    private const int WS_EX_TOOLWINDOW = 0x00000080;
+
+    protected override CreateParams CreateParams
+    {
+        get
+        {
+            var createParams = base.CreateParams;
+            createParams.ExStyle |= WS_EX_TOOLWINDOW;
+            return createParams;
+        }
+    }
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr FindWindow(string? cls, string title);
 
