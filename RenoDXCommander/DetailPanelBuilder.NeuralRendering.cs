@@ -226,20 +226,37 @@ public partial class DetailPanelBuilder
 
         void RefreshStatus()
         {
+            // Gather all file I/O on a background thread, then update UI
+            _ = Task.Run(() =>
+            {
+                bool d5i    = rdx5Svc.IsInstalledIn(installPath);
+                bool sfi    = rdx5Svc.IsSfInstalledIn(installPath);
+                bool nri    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
+                bool bri    = File.Exists(Path.Combine(installPath, BridgeDeployFile));
+                bool fei    = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+                bool rsi    = card.IsRsInstalled;
+                bool dlssi  = File.Exists(Path.Combine(installPath, "nvngx_dlss.dll"));
+                bool dlssdi = File.Exists(Path.Combine(installPath, "nvngx_dlssd.dll"));
+                bool dlssgi = File.Exists(Path.Combine(installPath, "nvngx_dlssg.dll"));
+                string? nrv    = nri    ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll"))) : null;
+                string? dlssv  = dlssi  ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlss.dll")))   : null;
+                string? dlssdv = dlssdi ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssd.dll")))  : null;
+                string? dlssgv = dlssgi ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssg.dll")))  : null;
+
+                _window.DispatcherQueue?.TryEnqueue(() =>
+                {
+                    if (_window.ViewModel.SelectedGame != card) return;
+                    RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv);
+                });
+            });
+        }
+
+        void RefreshStatusWithData(
+            bool d5i, bool sfi, bool nri, bool bri, bool fei, bool rsi,
+            bool dlssi, bool dlssdi, bool dlssgi,
+            string? nrv, string? dlssv, string? dlssdv, string? dlssgv)
+        {
             statusPanel.Children.Clear();
-            bool d5i  = rdx5Svc.IsInstalledIn(installPath);
-            bool sfi  = rdx5Svc.IsSfInstalledIn(installPath);
-            bool nri  = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
-            bool bri  = File.Exists(Path.Combine(installPath, BridgeDeployFile));
-            bool fei  = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
-            bool rsi  = card.IsRsInstalled;
-            bool dlssi  = File.Exists(Path.Combine(installPath, "nvngx_dlss.dll"));
-            bool dlssdi = File.Exists(Path.Combine(installPath, "nvngx_dlssd.dll"));
-            bool dlssgi = File.Exists(Path.Combine(installPath, "nvngx_dlssg.dll"));
-            string? nrv   = nri   ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll"))) : null;
-            string? dlssv = dlssi ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlss.dll"))) : null;
-            string? dlssdv = dlssdi ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssd.dll"))) : null;
-            string? dlssgv = dlssgi ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssg.dll"))) : null;
 
             void Tag(string text, bool ok)
             {
