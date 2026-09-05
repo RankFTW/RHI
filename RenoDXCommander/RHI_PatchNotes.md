@@ -5,6 +5,7 @@
 
 - Fixed toggling the DLL naming overrides switch hanging the UI — file rename operations are now done off the UI thread.
 - Fixed a potential crash when dragging detail view sections quickly.
+- Improved reliability of addon update detection.
 
 ---
 
