@@ -387,10 +387,13 @@ public partial class MainViewModel
             foreach (var dir in Directory.GetDirectories(installPath))
             {
                 if (File.Exists(Path.Combine(dir, "D3D12Core.dll")))
+                {
+                    _crashReporter.Log($"[DetectGraphicsApi] D3D12Core.dll found in '{dir}' → DX12 for '{installPath}'");
                     return GraphicsApiType.DirectX12;
+                }
             }
         }
-        catch { }
+        catch (Exception ex) { _crashReporter.Log($"[DetectGraphicsApi] D3D12Core pre-scan failed for '{installPath}' — {ex.Message}"); }
 
         // Unity: boot.config is the most reliable source (PE imports are misleading)
         var unityResult = GraphicsApiDetector.DetectUnityFromBootConfig(installPath);
@@ -558,6 +561,17 @@ public partial class MainViewModel
         // ── Game-level cache: skip filesystem scanning if cached ──────────
         if (_gameApiCache.TryGetValue(installPath, out var cached))
             return cached.All;
+
+        // Check for D3D12Core.dll (Agility SDK) — definitive DX12 signal
+        try
+        {
+            foreach (var dir in Directory.GetDirectories(installPath))
+            {
+                if (File.Exists(Path.Combine(dir, "D3D12Core.dll")))
+                    return new HashSet<GraphicsApiType> { GraphicsApiType.DirectX12 };
+            }
+        }
+        catch { }
 
         // Scan all exes in the install directory
         ScanAllExesInDir(installPath, result);
