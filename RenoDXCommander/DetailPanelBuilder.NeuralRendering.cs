@@ -42,8 +42,11 @@ public partial class DetailPanelBuilder
         var dlssSvc     = _dlssStreamlineService;
 
         // ── Detect current install state (off the UI thread — all File.Exists calls) ──
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
+            await _panelScanSemaphore.WaitAsync();
+            try
+            {
             bool dlss5Installed  = rdx5Svc.IsInstalledIn(installPath);
             bool sfInstalled     = rdx5Svc.IsSfInstalledIn(installPath);
             bool nrDllPresent    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
@@ -57,6 +60,8 @@ public partial class DetailPanelBuilder
             _window.DispatcherQueue?.TryEnqueue(() =>
                 BuildNeuralRenderingSectionWithData(card, dlss5Installed, sfInstalled,
                     nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent));
+            }
+            finally { _panelScanSemaphore.Release(); }
         });
     }
 
@@ -227,8 +232,11 @@ public partial class DetailPanelBuilder
         void RefreshStatus()
         {
             // Gather all file I/O on a background thread, then update UI
-            _ = Task.Run(() =>
+            _ = Task.Run(async () =>
             {
+                await _panelScanSemaphore.WaitAsync();
+                try
+                {
                 bool d5i    = rdx5Svc.IsInstalledIn(installPath);
                 bool sfi    = rdx5Svc.IsSfInstalledIn(installPath);
                 bool nri    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
@@ -248,6 +256,8 @@ public partial class DetailPanelBuilder
                     if (_window.ViewModel.SelectedGame != card) return;
                     RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv);
                 });
+                }
+                finally { _panelScanSemaphore.Release(); }
             });
         }
 

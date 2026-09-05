@@ -762,6 +762,10 @@ public partial class DetailPanelBuilder
 
     // ── Section-collapse helper ──────────────────────────────────────────────
 
+    // Limits concurrent background scans to prevent thread pool saturation
+    // when rapidly clicking through games.
+    private static readonly SemaphoreSlim _panelScanSemaphore = new SemaphoreSlim(4, 4);
+
     /// <summary>
     /// Builds a collapsible section: a clickable header row (arrow + title) and a body
     /// StackPanel whose visibility is toggled on click.
