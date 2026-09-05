@@ -1067,7 +1067,13 @@ public class AddonPackService : IAddonPackService
     {
         try
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, releaseApiUrl);
+            // /releases/latest only returns full releases, missing pre-releases.
+            // Rewrite to /releases?per_page=1 which returns the newest release regardless of type.
+            var effectiveUrl = releaseApiUrl;
+            if (effectiveUrl.EndsWith("/releases/latest", StringComparison.OrdinalIgnoreCase))
+                effectiveUrl = effectiveUrl[..^"/latest".Length] + "?per_page=1";
+
+            var req = new HttpRequestMessage(HttpMethod.Get, effectiveUrl);
             req.Headers.Add("User-Agent", "RHI");
             req.Headers.Add("Accept", "application/vnd.github+json");
             var token = DevUnlockService.GitHubApiToken;
@@ -1076,7 +1082,7 @@ public class AddonPackService : IAddonPackService
             var resp = await _http.SendAsync(req).ConfigureAwait(false);
             if (!resp.IsSuccessStatusCode)
             {
-                CrashReporter.Log($"[AddonPackService.ResolveDownloadUrlFromApiAsync] HTTP {(int)resp.StatusCode} for {releaseApiUrl}");
+                CrashReporter.Log($"[AddonPackService.ResolveDownloadUrlFromApiAsync] HTTP {(int)resp.StatusCode} for {effectiveUrl}");
                 return (null, null);
             }
 

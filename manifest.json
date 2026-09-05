@@ -1360,7 +1360,7 @@
     "dlss5-feed": {
       "packageName": "DLSS5 Feeder",
       "description": "Enables DLSS 5 Neural Rendering in games with no native DLSS (DX11, DX12, Vulkan, OpenGL, 32-bit). Feeds a synthetic DLSS contract from ReShade depth and motion vectors. Requires motion vector shaders \u2014 see How To Use.",
-      "releaseApiUrl": "https://api.github.com/repos/jlrouzies-fr/DLSS5-Feeder/releases?per_page=1",
+      "releaseApiUrl": "https://api.github.com/repos/jlrouzies-fr/DLSS5-Feeder/releases/latest",
       "repositoryUrl": "https://github.com/jlrouzies-fr/DLSS5-Feeder"
     },
     "mfgunlock": {
