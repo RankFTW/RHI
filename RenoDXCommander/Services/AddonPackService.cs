@@ -1084,13 +1084,18 @@ public class AddonPackService : IAddonPackService
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             var root = doc.RootElement;
 
+            // Handle both /releases/latest (object) and /releases list (array)
+            System.Text.Json.JsonElement releaseEl = root.ValueKind == System.Text.Json.JsonValueKind.Array
+                ? root.EnumerateArray().FirstOrDefault()
+                : root;
+
             // Extract version tag
             string? tag = null;
-            if (root.TryGetProperty("tag_name", out var tagEl))
+            if (releaseEl.TryGetProperty("tag_name", out var tagEl))
                 tag = tagEl.GetString();
 
             // Find best asset: prefer .addon64, then .addon32, then .zip
-            if (!root.TryGetProperty("assets", out var assetsEl)) return (null, tag);
+            if (!releaseEl.TryGetProperty("assets", out var assetsEl)) return (null, tag);
 
             string? addon64 = null, addon32 = null, zip = null;
             foreach (var asset in assetsEl.EnumerateArray())
