@@ -379,6 +379,19 @@ public partial class MainViewModel
         if (_gameApiCache.TryGetValue(installPath, out var cached))
             return cached.Primary;
 
+        // Check for D3D12Core.dll (Agility SDK) before PE scanning — this is a definitive
+        // DX12 signal even when the PE imports only show d3d11.dll (e.g. RE Engine games
+        // that load D3D12 dynamically via LoadLibrary).
+        try
+        {
+            foreach (var dir in Directory.GetDirectories(installPath))
+            {
+                if (File.Exists(Path.Combine(dir, "D3D12Core.dll")))
+                    return GraphicsApiType.DirectX12;
+            }
+        }
+        catch { }
+
         // Unity: boot.config is the most reliable source (PE imports are misleading)
         var unityResult = GraphicsApiDetector.DetectUnityFromBootConfig(installPath);
         if (unityResult != GraphicsApiType.Unknown)
