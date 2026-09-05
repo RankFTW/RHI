@@ -387,10 +387,7 @@ public partial class MainViewModel
             foreach (var dir in Directory.GetDirectories(installPath))
             {
                 if (File.Exists(Path.Combine(dir, "D3D12Core.dll")))
-                {
-                    _crashReporter.Log($"[DetectGraphicsApi] D3D12Core.dll found in '{dir}' → DX12 for '{installPath}'");
                     return GraphicsApiType.DirectX12;
-                }
             }
         }
         catch (Exception ex) { _crashReporter.Log($"[DetectGraphicsApi] D3D12Core pre-scan failed for '{installPath}' — {ex.Message}"); }
