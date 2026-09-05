@@ -100,7 +100,7 @@ public partial class DetailPanelBuilder
                 storedMethod = NrMethodShortFuse;
             else if (dlss5Installed && bridgePresent)
                 storedMethod = NrMethodDlss5ToolBridge;
-            else if (dlss5Installed || (nrDllPresent && nrDllOwnedByRhi))
+            else if (dlss5Installed)
                 storedMethod = NrMethodDlss5Tool;
             else if (feederPresent)
                 storedMethod = NrMethodFeeder;
@@ -111,7 +111,7 @@ public partial class DetailPanelBuilder
             is32Bit              ? NrMethodFeeder :
             !hasDlss             ? NrMethodFeeder :
             (isDx11 || isVulkan) ? NrMethodDlss5ToolBridge :
-                                NrMethodDlss5Tool);
+                                   NrMethodShortFuse);
 
         // ── Build method combo items (show all, disable inapplicable) ─────────
         var methodItems = new[]
@@ -1227,7 +1227,7 @@ public partial class DetailPanelBuilder
         // Deploy newest nvngx_dlss.dll — required by Feeder beside the game exe (install root, not detected plugin path)
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying DLSS SR...");
         var cachedDlss = await _dlssStreamlineService.EnsureNewestDlssCachedAsync().ConfigureAwait(false);
-        if (cachedDlss != null)
+        if (cachedDlss != null && new FileInfo(cachedDlss).Length > 0)
         {
             await Task.Run(() =>
             {

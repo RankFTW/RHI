@@ -170,32 +170,32 @@ public sealed partial class MainWindow
         content.Children.Add(copyLogBtn);
 
         // ── Overlay Key ───────────────────────────────────────────────────────
-        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
-        content.Children.Add(new TextBlock
-        {
-            Text = "Overlay Key",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            Margin = new Thickness(0, 4, 0, 0),
-        });
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 6) });
 
-        // Read current key from reshade.ini (game folder)
+        // ── Overlay Key + Screenshot Key — side by side ───────────────────────
+        // Read current keys from reshade.ini (game folder)
         var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-        string currentHotkey = ViewModel.Settings.OverlayHotkey; // fallback to global
+        string currentHotkey = ViewModel.Settings.OverlayHotkey;
+        string currentScreenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
         if (File.Exists(iniPath))
         {
             try
             {
                 var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-                if (ini.TryGetValue("INPUT", out var inputSection)
-                    && inputSection.TryGetValue("KeyOverlay", out var ko)
-                    && !string.IsNullOrWhiteSpace(ko))
-                    currentHotkey = ko;
+                if (ini.TryGetValue("INPUT", out var inputSection))
+                {
+                    if (inputSection.TryGetValue("KeyOverlay", out var ko) && !string.IsNullOrWhiteSpace(ko))
+                        currentHotkey = ko;
+                    if (inputSection.TryGetValue("KeyScreenshot", out var ks2) && !string.IsNullOrWhiteSpace(ks2))
+                        currentScreenshotHotkey = ks2;
+                }
             }
             catch { /* use fallback */ }
         }
 
         var hotkeyString = currentHotkey;
+        var screenshotHotkeyString = currentScreenshotHotkey;
+
         var hotkeyBox = new TextBox
         {
             Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString),
@@ -205,12 +205,11 @@ public sealed partial class MainWindow
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(hotkeyBox, "Click here then press your desired key. Written to all reshade*.ini files for this game.");
-
-        hotkeyBox.GotFocus += (s, ev) => hotkeyBox.Text = "Press a key...";
-        hotkeyBox.KeyDown += (s, ev) =>
+        hotkeyBox.GotFocus  += (s, ev) => hotkeyBox.Text = "Press a key...";
+        hotkeyBox.KeyDown   += (s, ev) =>
         {
             var vk = (int)ev.Key;
-            if (vk == 0 || vk == 16 || vk == 17 || vk == 18) return; // ignore modifiers alone
+            if (vk == 0 || vk == 16 || vk == 17 || vk == 18) return;
             bool shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
             bool ctrl  = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
             bool alt   = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
@@ -218,25 +217,14 @@ public sealed partial class MainWindow
             hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString);
             ev.Handled = true;
         };
-        hotkeyBox.LostFocus += (s, ev) =>
-        {
-            if (hotkeyBox.Text == "Press a key...")
-                hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString);
-        };
+        hotkeyBox.LostFocus += (s, ev) => { if (hotkeyBox.Text == "Press a key...") hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString); };
 
-        var applyKeyBtn = new Button
-        {
-            Content = "Apply",
-            FontSize = 12,
-            Padding = new Thickness(16, 7, 16, 7),
-            HorizontalAlignment = HorizontalAlignment.Right,
-        };
+        var applyKeyBtn = new Button { Content = "Apply", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
         applyKeyBtn.Click += (s, ev) =>
         {
             if (string.IsNullOrEmpty(card.InstallPath)) return;
             try
             {
-                // Write to all reshade*.ini files in the game folder
                 var iniFiles = Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
                     .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
                              && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
@@ -249,42 +237,6 @@ public sealed partial class MainWindow
             catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
         };
 
-        var keyGrid = new Grid { ColumnSpacing = 8 };
-        keyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        keyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        keyGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        keyGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        hotkeyBox.HorizontalAlignment = HorizontalAlignment.Stretch;
-        Grid.SetColumn(hotkeyBox, 0); Grid.SetRow(hotkeyBox, 0);
-        Grid.SetColumn(applyKeyBtn, 1); Grid.SetRow(applyKeyBtn, 0);
-        keyGrid.Children.Add(hotkeyBox);
-        keyGrid.Children.Add(applyKeyBtn);
-        content.Children.Add(keyGrid);
-
-        // ── Screenshot Key ────────────────────────────────────────────────────
-        content.Children.Add(new TextBlock
-        {
-            Text = "Screenshot Key",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            Margin = new Thickness(0, 6, 0, 0),
-        });
-
-        string currentScreenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-        if (File.Exists(iniPath))
-        {
-            try
-            {
-                var ini2 = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-                if (ini2.TryGetValue("INPUT", out var inputSection2)
-                    && inputSection2.TryGetValue("KeyScreenshot", out var ks2)
-                    && !string.IsNullOrWhiteSpace(ks2))
-                    currentScreenshotHotkey = ks2;
-            }
-            catch { /* use fallback */ }
-        }
-
-        var screenshotHotkeyString = currentScreenshotHotkey;
         var screenshotHotkeyBox = new TextBox
         {
             Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString),
@@ -294,9 +246,8 @@ public sealed partial class MainWindow
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(screenshotHotkeyBox, "Click here then press your desired key. Written to all reshade*.ini files for this game.");
-
-        screenshotHotkeyBox.GotFocus += (s, ev) => screenshotHotkeyBox.Text = "Press a key...";
-        screenshotHotkeyBox.KeyDown += (s, ev) =>
+        screenshotHotkeyBox.GotFocus  += (s, ev) => screenshotHotkeyBox.Text = "Press a key...";
+        screenshotHotkeyBox.KeyDown   += (s, ev) =>
         {
             var vk2 = (int)ev.Key;
             if (vk2 == 0 || vk2 == 16 || vk2 == 17 || vk2 == 18) return;
@@ -307,19 +258,9 @@ public sealed partial class MainWindow
             screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString);
             ev.Handled = true;
         };
-        screenshotHotkeyBox.LostFocus += (s, ev) =>
-        {
-            if (screenshotHotkeyBox.Text == "Press a key...")
-                screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString);
-        };
+        screenshotHotkeyBox.LostFocus += (s, ev) => { if (screenshotHotkeyBox.Text == "Press a key...") screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString); };
 
-        var applyScreenshotKeyBtn = new Button
-        {
-            Content = "Apply",
-            FontSize = 12,
-            Padding = new Thickness(16, 7, 16, 7),
-            HorizontalAlignment = HorizontalAlignment.Right,
-        };
+        var applyScreenshotKeyBtn = new Button { Content = "Apply", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
         applyScreenshotKeyBtn.Click += (s, ev) =>
         {
             if (string.IsNullOrEmpty(card.InstallPath)) return;
@@ -337,16 +278,32 @@ public sealed partial class MainWindow
             catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
         };
 
-        var screenshotKeyGrid = new Grid { ColumnSpacing = 8 };
-        screenshotKeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        screenshotKeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        screenshotHotkeyBox.HorizontalAlignment = HorizontalAlignment.Stretch;
-        Grid.SetColumn(screenshotHotkeyBox, 0);
-        Grid.SetColumn(applyScreenshotKeyBtn, 1);
-        screenshotKeyGrid.Children.Add(screenshotHotkeyBox);
-        screenshotKeyGrid.Children.Add(applyScreenshotKeyBtn);
+        // Side-by-side layout: [Overlay label+box+btn] | [gap] | [Screenshot label+box+btn]
+        var hotkeysGrid = new Grid { ColumnSpacing = 16 };
+        hotkeysGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        hotkeysGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        content.Children.Add(screenshotKeyGrid);
+        var overlayCol = new StackPanel { Spacing = 4 };
+        overlayCol.Children.Add(new TextBlock { Text = "Overlay Key", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        var overlayRow = new Grid { ColumnSpacing = 8 };
+        overlayRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        overlayRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(hotkeyBox, 0); Grid.SetColumn(applyKeyBtn, 1);
+        overlayRow.Children.Add(hotkeyBox); overlayRow.Children.Add(applyKeyBtn);
+        overlayCol.Children.Add(overlayRow);
+
+        var screenshotCol = new StackPanel { Spacing = 4 };
+        screenshotCol.Children.Add(new TextBlock { Text = "Screenshot Key", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        var screenshotRow = new Grid { ColumnSpacing = 8 };
+        screenshotRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        screenshotRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(screenshotHotkeyBox, 0); Grid.SetColumn(applyScreenshotKeyBtn, 1);
+        screenshotRow.Children.Add(screenshotHotkeyBox); screenshotRow.Children.Add(applyScreenshotKeyBtn);
+        screenshotCol.Children.Add(screenshotRow);
+
+        Grid.SetColumn(overlayCol, 0); Grid.SetColumn(screenshotCol, 1);
+        hotkeysGrid.Children.Add(overlayCol); hotkeysGrid.Children.Add(screenshotCol);
+        content.Children.Add(hotkeysGrid);
 
         // ── Keep ReShade.ini Updated ──────────────────────────────────────────
         content.Children.Add(new Border
@@ -1120,7 +1077,7 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        dialog.Resources["ContentDialogMaxWidth"] = 800.0;
+        dialog.Resources["ContentDialogMaxWidth"] = 560.0;
         await DialogService.ShowSafeAsync(dialog);
         _detailPanelBuilder?.UpdateDetailComponentRows(card);
     }

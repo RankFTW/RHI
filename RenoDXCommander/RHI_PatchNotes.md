@@ -1,12 +1,19 @@
 
 ## v2.6.1
 
+### Changes
+
+- Neural Rendering auto-select now defaults to ShortFuse (was DLSS5 Tool) for DX12 games with native DLSS.
+- ReShade Settings cog: Overlay Key and Screenshot Key fields are now side by side.
+
 ### Bug Fixes
 
-- Fixed toggling the DLL naming overrides switch hanging the UI — file rename operations are now done off the UI thread.
-- Fixed a potential crash when dragging detail view sections quickly.
-- Improved reliability of addon update detection.
-- Fixed games using the D3D12 Agility SDK (e.g. Onimusha: Way of the Sword) being detected as DX11 — the D3D12Core.dll check now runs before the PE import scan.
+- Fixed UI hang when rapidly clicking through the game list — all synchronous NVAPI driver profile reads (DLSS presets, driver overrides, VSync/ReBAR/Smooth Motion) are now fetched off the UI thread.
+- Fixed UI hang when rapidly changing DLSS/Streamline version dropdowns.
+- Fixed toggling the DLL naming overrides switch hanging the UI.
+- Fixed games using the D3D12 Agility SDK (e.g. Onimusha: Way of the Sword) being detected as DX11.
+- Fixed Neural Rendering method incorrectly defaulting to DLSS5 Tool for games that have a backed-up NR DLL but nothing actively installed.
+- Fixed DLSS5 Feeder deploying a 0-byte nvngx_dlss.dll when the cached file was unavailable.
 
 ### Manifest Updates
 
