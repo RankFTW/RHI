@@ -1,4 +1,13 @@
 
+## v2.6.1
+
+### Bug Fixes
+
+- Fixed toggling the DLL naming overrides switch hanging the UI — file rename operations are now done off the UI thread.
+- Fixed a potential crash when dragging detail view sections quickly.
+
+---
+
 ## v2.6.0
 
 ### New
