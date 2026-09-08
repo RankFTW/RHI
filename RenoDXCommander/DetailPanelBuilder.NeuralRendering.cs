@@ -1,6 +1,7 @@
 // DetailPanelBuilder.NeuralRendering.cs — Self-contained Neural Rendering section.
 // Shown between Game Overrides and NVIDIA Profile Overrides.
-// Handles DLSS5 Tool, DLSS5 Tool + DX11 Bridge, DLSS Tool (ShortFuse), and DLSS5 Feeder.
+// Handles DLSS5 Tool, DLSS5 Tool + DX11 Bridge, DLSS Tool (ShortFuse), DLSS5 Feeder,
+// and DLSS5 ReShade AIO.
 // All files are deployed automatically — no addon picker required.
 
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,7 @@ public partial class DetailPanelBuilder
     private const string NrMethodDlss5ToolBridge  = "DLSS5ToolBridge";
     private const string NrMethodShortFuse         = "ShortFuse";
     private const string NrMethodFeeder            = "Feeder";
+    private const string NrMethodDlss5Aio          = "DLSS5AIO";
 
     public void BuildNeuralRenderingSection(GameCardViewModel card)
     {
@@ -58,11 +60,12 @@ public partial class DetailPanelBuilder
                 nrDllVersion = DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll")));
             bool bridgePresent = File.Exists(Path.Combine(installPath, BridgeDeployFile));
             bool feederPresent = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+            bool aioPresent = Dlss5AioService.IsInstalled(installPath, card.Is32Bit);
 
             _window.DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
                 BuildNeuralRenderingSectionWithData(card, dlss5Installed, sfInstalled,
-                    nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent);
+                    nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent, aioPresent);
             });
             }
             finally { _panelScanSemaphore.Release(); }
@@ -73,7 +76,7 @@ public partial class DetailPanelBuilder
         GameCardViewModel card,
         bool dlss5Installed, bool sfInstalled,
         bool nrDllPresent, bool nrDllOwnedByRhi, string? nrDllVersion,
-        bool bridgePresent, bool feederPresent)
+        bool bridgePresent, bool feederPresent, bool aioPresent)
     {
         // Guard: if the user navigated away before the background scan finished, bail out
         if (_window.ViewModel.SelectedGame != card) return;
@@ -86,6 +89,7 @@ public partial class DetailPanelBuilder
         var store       = card.Source ?? "";
 
         var rdx5Svc     = App.Services.GetRequiredService<Renodx5AddonService>();
+        var aioSvc      = App.Services.GetRequiredService<Dlss5AioService>();
         var addonSvc    = _window.ViewModel.AddonPackServiceInstance;
         var dlssSvc     = _dlssStreamlineService;
         bool hasDlss  = card.HasAnyDlssStreamline;
@@ -100,7 +104,9 @@ public partial class DetailPanelBuilder
         if (storedMethod == null)
         {
             // Infer from what's on disk
-            if (sfInstalled)
+            if (aioPresent)
+                storedMethod = NrMethodDlss5Aio;
+            else if (sfInstalled)
                 storedMethod = NrMethodShortFuse;
             else if (dlss5Installed && bridgePresent)
                 storedMethod = NrMethodDlss5ToolBridge;
@@ -124,6 +130,7 @@ public partial class DetailPanelBuilder
             new { Name = "DLSS5 Tool + DX11 Bridge",  Key = NrMethodDlss5ToolBridge, Enabled = hasDlss && (isDx11 || isVulkan) && !is32Bit },
             new { Name = "DLSS Tool (ShortFuse)",      Key = NrMethodShortFuse,       Enabled = !is32Bit },
             new { Name = "DLSS5 Feeder",               Key = NrMethodFeeder,          Enabled = true },
+            new { Name = "DLSS5 ReShade AIO",          Key = NrMethodDlss5Aio,        Enabled = true },
         };
 
         // ── Header ────────────────────────────────────────────────────────────
@@ -202,7 +209,8 @@ public partial class DetailPanelBuilder
             "DLSS5 Tool: for DX12 native-DLSS games.\n" +
             "DLSS5 Tool + DX11 Bridge: for DX11/Vulkan native-DLSS games.\n" +
             "DLSS Tool (ShortFuse): alternative full-stack install for native-DLSS games.\n" +
-            "DLSS5 Feeder: for games with no native DLSS (DX11, DX12, Vulkan, 32-bit).");
+            "DLSS5 Feeder: for games with no native DLSS (DX11, DX12, Vulkan, 32-bit).\n" +
+            "DLSS5 ReShade AIO: standalone NR + DLSS/DLAA + Frame Generation at Present, including a 32-bit host wrapper.");
         methodStack.Children.Add(methodCombo);
         Grid.SetColumn(methodStack, 0);
         row1.Children.Add(methodStack);
@@ -248,6 +256,7 @@ public partial class DetailPanelBuilder
                 bool nri    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
                 bool bri    = File.Exists(Path.Combine(installPath, BridgeDeployFile));
                 bool fei    = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+                bool aii    = Dlss5AioService.IsInstalled(installPath, card.Is32Bit);
                 bool rsi    = card.IsRsInstalled;
                 bool dlssi  = File.Exists(Path.Combine(installPath, "nvngx_dlss.dll"));
                 bool dlssdi = File.Exists(Path.Combine(installPath, "nvngx_dlssd.dll"));
@@ -260,7 +269,7 @@ public partial class DetailPanelBuilder
                 _window.DispatcherQueue?.TryEnqueue(() =>
                 {
                     if (_window.ViewModel.SelectedGame != card) return;
-                    RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv);
+                    RefreshStatusWithData(d5i, sfi, nri, bri, fei, aii, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv);
                 });
                 }
                 finally { _panelScanSemaphore.Release(); }
@@ -268,7 +277,7 @@ public partial class DetailPanelBuilder
         }
 
         void RefreshStatusWithData(
-            bool d5i, bool sfi, bool nri, bool bri, bool fei, bool rsi,
+            bool d5i, bool sfi, bool nri, bool bri, bool fei, bool aii, bool rsi,
             bool dlssi, bool dlssdi, bool dlssgi,
             string? nrv, string? dlssv, string? dlssdv, string? dlssgv)
         {
@@ -373,6 +382,24 @@ public partial class DetailPanelBuilder
                     Tag(feedFxPresent    ? "✓ Feed.fx"    : "✗ Feed.fx",    feedFxPresent);
                     Tag(lumeniteFxPresent ? "✓ LumeniteFX" : "✗ LumeniteFX", lumeniteFxPresent);
                     break;
+                case NrMethodDlss5Aio:
+                {
+                    Tag(aii ? "✓ DLSS5 ReShade AIO" : "✗ DLSS5 ReShade AIO", aii);
+                    var runtimeRoot = card.Is32Bit ? Path.Combine(installPath, "host64") : installPath;
+                    var sr = Path.Combine(runtimeRoot, "nvngx_dlss.dll");
+                    var fg = Path.Combine(runtimeRoot, "nvngx_dlssg.dll");
+                    var nr = Path.Combine(runtimeRoot, "nvngx_dlssnr.dll");
+                    bool srOk = File.Exists(sr), fgOk = File.Exists(fg), nrOk = File.Exists(nr);
+                    Tag(srOk ? $"✓ DLSS SR {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(sr))}" : "✗ DLSS SR", srOk);
+                    Tag(fgOk ? $"✓ DLSS FG {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(fg))}" : "✗ DLSS FG", fgOk);
+                    Tag(nrOk ? $"✓ NR DLL {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(nr))}" : "✗ NR DLL", nrOk);
+                    if (card.Is32Bit)
+                    {
+                        var hostRs = Path.Combine(runtimeRoot, "dxgi.dll");
+                        Tag(File.Exists(hostRs) ? "✓ x64 Host" : "✗ x64 Host", File.Exists(hostRs));
+                    }
+                    break;
+                }
                 default:
                     Tag("Not installed", false);
                     break;
@@ -434,6 +461,13 @@ public partial class DetailPanelBuilder
                         : "For games with no native DLSS (DX11, DX12, Vulkan, OpenGL). Feeds a synthetic DLSS contract from ReShade depth and motion vectors. Deploys the Feeder addon, DLSS5 Tool (neural consumer), NR DLL, DLSS SR DLL, and required shaders.";
                     descLink.Content = "Feeder setup guide →";
                     descLink.NavigateUri = new Uri("https://github.com/jlrouzies-fr/DLSS5-Feeder");
+                    break;
+                case NrMethodDlss5Aio:
+                    descText.Text = is32Bit
+                        ? "Standalone Present-time NR, DLSS/DLAA, and NVIDIA Frame Generation for 32-bit games. RHI installs the x86 addon and automatically builds the required 64-bit host environment. Native game DLSS support is not required."
+                        : "Standalone Present-time NR, DLSS/DLAA, and NVIDIA Frame Generation for 64-bit DX9–12 and Vulkan games. Native game DLSS support is not required.";
+                    descLink.Content = "DLSS5 ReShade AIO setup and troubleshooting →";
+                    descLink.NavigateUri = new Uri(Dlss5AioService.RepositoryUrl);
                     break;
             }
         }
@@ -548,15 +582,17 @@ public partial class DetailPanelBuilder
                 NrMethodDlss5ToolBridge => rdx5Svc.IsInstalledIn(installPath) || File.Exists(Path.Combine(installPath, BridgeDeployFile)),
                 NrMethodShortFuse       => rdx5Svc.IsSfInstalledIn(installPath),
                 NrMethodFeeder          => File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64)),
+                NrMethodDlss5Aio        => Dlss5AioService.IsInstalled(installPath, card.Is32Bit),
                 _                       => false,
             };
 
             bool isFeeder = selKey == NrMethodFeeder;
+            bool isAio = selKey == NrMethodDlss5Aio;
 
             // Install button appearance
-            if (isFeeder)
+            if (isFeeder || isAio)
             {
-                installBtn.Content = "Install Feeder Addon";
+                installBtn.Content = isAio ? "Install DLSS5 AIO" : "Install Feeder Addon";
                 installBtn.Background  = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
                 installBtn.Foreground  = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
                 installBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
@@ -621,6 +657,7 @@ public partial class DetailPanelBuilder
                 NrMethodDlss5ToolBridge => rdx5Svc.IsInstalledIn(installPath) || File.Exists(Path.Combine(installPath, BridgeDeployFile)),
                 NrMethodShortFuse       => rdx5Svc.IsSfInstalledIn(installPath),
                 NrMethodFeeder          => File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64)),
+                NrMethodDlss5Aio        => Dlss5AioService.IsInstalled(installPath, card.Is32Bit),
                 _                       => false,
             };
 
@@ -678,6 +715,10 @@ public partial class DetailPanelBuilder
                                 RemoveFeederShaders(installPath, gameName, store, card);
                                 break;
                             }
+
+                            case NrMethodDlss5Aio:
+                                aioSvc.Uninstall(installPath);
+                                break;
                         }
                         CrashReporter.Log($"[NeuralRendering.MethodSwitch] Removed '{previousKey}', switching to '{selKey}' for '{gameName}'");
                     });
@@ -742,10 +783,14 @@ public partial class DetailPanelBuilder
                     case NrMethodFeeder:
                         await InstallFeederAddonAsync(card, installBtn, addonSvc);
                         break;
+
+                    case NrMethodDlss5Aio:
+                        await InstallDlss5AioAsync(card, installBtn, aioSvc);
+                        break;
                 }
 
                 // If Cost Scaler preference is On, deploy it now (NR DLL is freshly placed)
-                if (_window.ViewModel.GetNrCostScalerEnabled(gameName, store))
+                if (selKey != NrMethodDlss5Aio && _window.ViewModel.GetNrCostScalerEnabled(gameName, store))
                 {
                     var csSvc = App.Services.GetRequiredService<DlssNrCostScalerService>();
                     if (csSvc.IsStagingReady)
@@ -759,7 +804,9 @@ public partial class DetailPanelBuilder
                 // that conflict with the NR section. Remove them from the global set so they don't
                 // get re-deployed on every refresh.
                 var globalAddons = _window.ViewModel.Settings.EnabledGlobalAddons;
-                var conflicting  = new[] { "DLSS5 Tool", "DLSS Tool (ShortFuse)" };
+                var conflicting = selKey == NrMethodDlss5Aio
+                    ? new[] { "DLSS5 Tool", "DLSS Tool (ShortFuse)", BridgePackageName, FeederPackageName }
+                    : new[] { "DLSS5 Tool", "DLSS Tool (ShortFuse)" };
                 bool removedAny  = false;
                 foreach (var c in conflicting)
                     if (globalAddons.RemoveAll(a => a.Equals(c, StringComparison.OrdinalIgnoreCase)) > 0)
@@ -767,7 +814,7 @@ public partial class DetailPanelBuilder
                 if (removedAny)
                 {
                     _window.ViewModel.SaveSettingsPublic();
-                    CrashReporter.Log($"[NeuralRendering.Install] Removed conflicting global addons (DLSS5 Tool / ShortFuse) for '{gameName}'");
+                    CrashReporter.Log($"[NeuralRendering.Install] Removed conflicting global neural addons for '{gameName}'");
                 }
 
                 // Re-deploy addons for this game so stale NR addon files are removed immediately
@@ -861,6 +908,10 @@ public partial class DetailPanelBuilder
                             RemoveFeederShaders(installPath, gameName, store, card);
                             break;
                         }
+
+                        case NrMethodDlss5Aio:
+                            aioSvc.Uninstall(installPath);
+                            break;
                     }
 
                     _window.ViewModel.SetNrMethodOverride(gameName, null, store);
@@ -905,9 +956,10 @@ public partial class DetailPanelBuilder
         // ── NR Cost Scaler preference toggle ─────────────────────────────────
         var costScalerSvc = App.Services.GetRequiredService<DlssNrCostScalerService>();
         bool costScalerPref = _window.ViewModel.GetNrCostScalerEnabled(gameName, store);
-        bool nrMethodInstalled = dlss5Installed || sfInstalled || feederPresent || bridgePresent;
+        bool nrMethodInstalled = dlss5Installed || sfInstalled || feederPresent || bridgePresent || aioPresent;
+        bool costScalerSupported = effectiveMethod != NrMethodDlss5Aio;
         // Toggle is disabled when NR is already installed (must be set before install) or staging not ready
-        bool costScalerToggleEnabled = costScalerSvc.IsStagingReady && !nrMethodInstalled;
+        bool costScalerToggleEnabled = costScalerSupported && costScalerSvc.IsStagingReady && !nrMethodInstalled;
 
         var costScalerRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10,
             Margin = new Thickness(0, 4, 0, 0) };
@@ -930,7 +982,9 @@ public partial class DetailPanelBuilder
             IsEnabled = costScalerToggleEnabled,
             Opacity = costScalerToggleEnabled ? 1.0 : 0.45,
         };
-        if (!costScalerSvc.IsStagingReady)
+        if (!costScalerSupported)
+            ToolTipService.SetToolTip(costScalerToggle, "DLSS5 ReShade AIO has its own Pipeline Source Resolution Override; NR Cost Scaler is not used.");
+        else if (!costScalerSvc.IsStagingReady)
             ToolTipService.SetToolTip(costScalerToggle, "Cost Scaler not yet staged — will be available after first launch");
         else if (nrMethodInstalled)
             ToolTipService.SetToolTip(costScalerToggle, "Remove the installed NR method first, then toggle Cost Scaler On before reinstalling");
@@ -968,10 +1022,37 @@ public partial class DetailPanelBuilder
         linksRow.Children.Add(MakeLink("DX11 Bridge →", "https://github.com/NIGos/dlss5-bridge"));
         linksRow.Children.Add(MakeLink("ShortFuse →",   "https://discord.com/channels/1408098019194310818/1543975158937821315"));
         linksRow.Children.Add(MakeLink("Feeder →",      "https://github.com/jlrouzies-fr/DLSS5-Feeder"));
+        linksRow.Children.Add(MakeLink("DLSS5 AIO →",   Dlss5AioService.RepositoryUrl));
         nrBody.Children.Add(linksRow);
     }
 
     // ── Install helpers ───────────────────────────────────────────────────────
+
+    private async Task InstallDlss5AioAsync(
+        GameCardViewModel card,
+        Button statusBtn,
+        Dlss5AioService aioSvc)
+    {
+        var progress = new Progress<string>(message =>
+            _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = message));
+        await aioSvc.InstallAsync(card.InstallPath!, card.Is32Bit, progress).ConfigureAwait(false);
+
+        // Native x64 installs expose the runtimes to RHI's normal detection.
+        // The x86 wrapper keeps them in host64 by design, so it is represented by
+        // the AIO-specific status tags instead.
+        if (!card.Is32Bit)
+        {
+            var detection = _dlssStreamlineService.Detect(card.InstallPath!);
+            _dlssStreamlineService.RecordDlssFound(card.GameName);
+            _dlssStreamlineService.RecordTrustedPath(card.GameName, detection);
+            _window.DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.DlssDetection = detection;
+                card.ApplyDlssDetection(detection);
+                card.RefreshDlssVersions(_dlssStreamlineService);
+            });
+        }
+    }
 
     private async Task InstallDlss5ToolAsync(
         GameCardViewModel card,

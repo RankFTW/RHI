@@ -35,6 +35,7 @@ RHI replaces the ReShade installer entirely.
 
 ### DLSS 5 and Neural Rendering
 
+- **DLSS5 ReShade AIO** — standalone Present-time Neural Rendering, DLSS/DLAA, and NVIDIA Frame Generation for games without native DLSS support. RHI selects the correct 32/64-bit release, installs its shaders and NVIDIA runtimes, and builds the required `host64` wrapper environment for 32-bit games automatically.
 - **DLSS5 Feeder** — full pipeline install in one click: deploys feeder addon, DLSS5 consumer, `nvngx_dlss.dll`, `nvngx_dlssnr.dll`, pre-configured `ReShadePreset.ini`, and required shader packs. Auto-selects the right method for your game (32-bit, DX11, DX12).
 - **ShortFuse DLSS Tool** — alternative neural rendering implementation for DX12 games.
 - **DX11 Bridge variant** — DLSS5 Tool + bridge for games that need DX11 compatibility.

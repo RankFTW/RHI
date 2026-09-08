@@ -114,6 +114,7 @@ public partial class App : Application
         services.AddSingleton<AutoUpdateService>();
         services.AddSingleton<DlssEnablerService>();
         services.AddSingleton<Renodx5AddonService>();
+        services.AddSingleton<Dlss5AioService>();
         services.AddSingleton<CustomReShadeHashService>();
         services.AddSingleton<SeenWikiModsService>();
         services.AddSingleton<SeenUltraPlusModsService>();
