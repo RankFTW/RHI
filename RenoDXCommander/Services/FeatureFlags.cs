@@ -35,6 +35,5 @@ public static class FeatureFlags
         => DevUnlockService.IsUnlocked || _manifestFlags?.NexusMods == true;
 
     /// <summary>Resolution auto-toggle feature (Settings card + per-game toggle).</summary>
-    public static bool ResolutionControl
-        => DevUnlockService.IsUnlocked || _manifestFlags?.ResolutionControl == true;
+    public static bool ResolutionControl => true;
 }

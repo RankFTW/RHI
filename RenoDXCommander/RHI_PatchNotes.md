@@ -1,4 +1,23 @@
 
+## v2.6.9 <sup>*nice*</sup>
+
+### New
+
+- **Resolution & Colour Control** — automatically switch your desktop resolution when a game launches and restore it on exit. Set your target resolution and enable per-game or globally from the new Resolution & Colour Control card in Settings. Also includes Output Colour Settings to set display colour depth and dynamic range per-monitor without touching NVIDIA Control Panel.
+
+### Bug Fixes
+
+- Fixed a crash when clicking "Apply Peak Nits to All" or "Apply to All Games" in Settings when a game's install folder no longer exists on disk.
+- Fixed Admin Mode not being recognised on certain configurations — RHI now uses a practical write-access check to detect administrator privileges, which correctly handles accounts running with full admin rights even when the standard token elevation check returns false.
+- Fixed the Neural Rendering section showing ReShade as not installed immediately after installing it — navigating away and back was required to update the status. The status bar now always reflects the current install state.
+- Fixed RE Framework showing a stale build number on the card when the framework had been updated — the displayed version now syncs to the actual installed build on the next update check.
+
+### Manifest Updates
+
+- Onimusha: Way of the Sword: added ultrawide fix link.
+
+---
+
 ## v2.6.8
 
 ### Bug Fixes
@@ -6,7 +25,6 @@
 - Fixed the NVIDIA Profile Overrides section not applying preset and render scale changes — a stale background scan callback was overwriting the panel after a user change, discarding the new values.
 - Fixed the driver settings section (VSync, ReBAR, Smooth Motion, etc.) not appearing after a Refresh.
 - Fixed DLSS presets and render scale showing Default/Off instead of the actual driver values — reads now go directly to the live driver state instead of a stale in-memory cache.
-- Fixed a crash when clicking "Apply Peak Nits to All" or "Apply to All Games" in Settings when a game's install folder no longer exists on disk.
 
 ### Manifest Updates
 

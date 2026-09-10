@@ -1321,6 +1321,58 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
     }
 
+    private bool _colorDisplayComboInit;
+
+    private void ColorDisplayCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_colorDisplayComboInit) return;
+        if (sender is not ComboBox combo) return;
+        if (combo.SelectedItem is not NvColorService.NvDisplay display) return;
+
+        // Read current colour settings for the selected display
+        _colorDisplayComboInit = true;
+        var colorData = NvColorService.GetColorData(display.DisplayId);
+        if (colorData != null)
+        {
+            string[] depthItems = { "8 bpc", "10 bpc", "12 bpc" };
+            string[] rangeItems = { "Full", "Limited" };
+            var depthLabel = NvColorService.BpcToLabel(colorData.Bpc);
+            var rangeLabel = NvColorService.DynamicRangeToLabel(colorData.DynamicRange);
+            int di = Array.IndexOf(depthItems, depthLabel);
+            int ri = Array.IndexOf(rangeItems, rangeLabel);
+            ColorDepthCombo.SelectedIndex = di >= 0 ? di : 1;  // default 10 bpc
+            ColorRangeCombo.SelectedIndex = ri >= 0 ? ri : 0;  // default Full
+        }
+        _colorDisplayComboInit = false;
+    }
+
+    private async void ColorApplyBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (ColorDisplayCombo.SelectedItem is not NvColorService.NvDisplay display) return;
+
+        var depthLabel = (ColorDepthCombo.SelectedItem as ComboBoxItem)?.Content as string
+                      ?? ColorDepthCombo.SelectedItem as string ?? "10 bpc";
+        var rangeLabel = (ColorRangeCombo.SelectedItem as ComboBoxItem)?.Content as string
+                      ?? ColorRangeCombo.SelectedItem as string ?? "Full";
+
+        byte bpc = NvColorService.LabelToBpc(depthLabel);
+        byte dr  = NvColorService.LabelToDynamicRange(rangeLabel);
+
+        bool ok = await Task.Run(() => NvColorService.SetColorData(display.DisplayId, bpc, dr));
+
+        var dialog = new ContentDialog
+        {
+            Title   = "Output Colour Settings",
+            Content = ok
+                ? $"Applied to {display.Name}: {depthLabel}, {rangeLabel}."
+                : $"Failed to apply colour settings to {display.Name}. Check that RHI is running as administrator.",
+            CloseButtonText = "OK",
+            XamlRoot        = Content.XamlRoot,
+            RequestedTheme  = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
     private async void ResSelectMonitors_Click(object sender, RoutedEventArgs e)
     {
         var displays = HdrToggleService.GetAllDisplays();

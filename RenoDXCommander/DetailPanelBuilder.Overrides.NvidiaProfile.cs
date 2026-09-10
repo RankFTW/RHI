@@ -16,6 +16,12 @@ public partial class DetailPanelBuilder
         // Nvidia Profile Overrides — separate section below Overrides
         // DLSS / Streamline / ReBAR + future additions
         // ══════════════════════════════════════════════════════════════════════
+
+        // Cancel any in-flight background scans from a previous build of this section
+        // (e.g. triggered when the user changes a preset combo mid-scan).
+        _panelScanCts.Cancel();
+        _panelScanCts = new CancellationTokenSource();
+
         _window.NvidiaProfilePanel.Children.Clear();
 
         // ── Collapsible header ────────────────────────────────────────────────

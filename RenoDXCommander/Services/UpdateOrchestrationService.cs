@@ -638,6 +638,32 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                             }
                         });
                     }
+                    else
+                    {
+                        // Up to date — sync card display version from the live GitHub tag
+                        // so the card shows the actual installed build even if the tracking
+                        // record is stale (e.g. REF updated outside RHI).
+                        var latestTag = await _refService.GetLatestVersionAsync().ConfigureAwait(false);
+                        if (latestTag != null)
+                        {
+                            if (!string.Equals(latestTag, firstVersion, StringComparison.OrdinalIgnoreCase))
+                                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF tracking record stale ({firstVersion} → {latestTag}), syncing display version");
+                            // Always persist so Refresh also shows the correct version
+                            _refService.SyncInstalledVersion(latestTag);
+                            dispatcherQueue?.TryEnqueue(() =>
+                            {
+                                foreach (var card in refInstalled)
+                                {
+                                    if (card.RefRecord != null &&
+                                        !string.Equals(card.RefRecord.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        card.RefRecord.InstalledVersion = latestTag;
+                                        card.RefInstalledVersion = latestTag;
+                                    }
+                                }
+                            });
+                        }
+                    }
                 }
             }
         }

@@ -24,13 +24,27 @@ public static class VulkanLayerService
     // ── Admin detection ───────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Returns true if the current process is running with administrator privileges.
+    /// Returns true if the current process is running with administrator privileges,
+    /// or has effective write access to system resources even without an elevated token.
     /// </summary>
     public static bool IsRunningAsAdmin()
     {
         using var identity = WindowsIdentity.GetCurrent();
         var principal = new WindowsPrincipal(identity);
-        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        if (principal.IsInRole(WindowsBuiltInRole.Administrator))
+            return true;
+
+        // Fallback: try to open an HKLM key for write — succeeds when running as
+        // a true admin account even without UAC elevation (e.g. built-in Administrator).
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System", writable: true);
+            if (key != null) return true;
+        }
+        catch { }
+
+        return false;
     }
 
     // ── Layer status ──────────────────────────────────────────────────────────────

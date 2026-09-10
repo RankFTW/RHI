@@ -269,6 +269,9 @@ public partial class DetailPanelBuilder
                 _window.DispatcherQueue?.TryEnqueue(() =>
                 {
                     if (_window.ViewModel.SelectedGame != card) return;
+                    // Read IsRsInstalled on the UI thread so it reflects the latest card state
+                    // (install may have completed between the background scan start and now)
+                    bool rsi = card.IsRsInstalled;
                     RefreshStatusWithData(d5i, sfi, nri, bri, fei, aii, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv);
                 });
                 }

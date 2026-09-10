@@ -151,6 +151,32 @@ public partial class DlssPresetService
         }
 
         CrashReporter.Log($"[DlssPresetService.ExportProfiles] Exported {result.Count} profiles with custom settings");
+
+        // Export display colour settings (Output Colour Depth + Dynamic Range)
+        try
+        {
+            var displays = NvColorService.GetDisplays();
+            if (displays.Count > 0)
+            {
+                var colorExport = new Dictionary<string, object>();
+                foreach (var display in displays)
+                {
+                    var colorData = NvColorService.GetColorData(display.DisplayId);
+                    if (colorData != null)
+                        colorExport[display.Name] = new { displayId = display.DisplayId, bpc = colorData.Bpc, dynamicRange = colorData.DynamicRange };
+                }
+                if (colorExport.Count > 0)
+                {
+                    result["__displayColor__"] = colorExport;
+                    CrashReporter.Log($"[DlssPresetService.ExportProfiles] Exported colour data for {colorExport.Count} display(s)");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.ExportProfiles] Display colour export failed: {ex.Message}");
+        }
+
         return result;
     }
 
@@ -308,6 +334,41 @@ public partial class DlssPresetService
             _session.Save();
 
         CrashReporter.Log($"[DlssPresetService.ImportProfiles] Imported {importedCount} profiles");
+
+        // Restore display colour settings
+        try
+        {
+            if (data.TryGetValue("__displayColor__", out var colorObj)
+                && colorObj is System.Text.Json.JsonElement colorElem
+                && colorElem.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                foreach (var colorKvp in colorElem.EnumerateObject())
+                {
+                    try
+                    {
+                        if (colorKvp.Value.TryGetProperty("bpc", out var bpcElem)
+                            && colorKvp.Value.TryGetProperty("dynamicRange", out var drElem)
+                            && colorKvp.Value.TryGetProperty("displayId", out var idElem))
+                        {
+                            byte bpc = (byte)bpcElem.GetInt32();
+                            byte dr  = (byte)drElem.GetInt32();
+                            uint id  = idElem.GetUInt32();
+                            bool ok  = NvColorService.SetColorData(id, bpc, dr);
+                            CrashReporter.Log($"[DlssPresetService.ImportProfiles] Colour restore '{colorKvp.Name}' bpc={bpc} dr={dr} → {(ok ? "OK" : "FAIL")}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[DlssPresetService.ImportProfiles] Colour restore failed for '{colorKvp.Name}': {ex.Message}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.ImportProfiles] Display colour import failed: {ex.Message}");
+        }
+
         return importedCount;
     }
 

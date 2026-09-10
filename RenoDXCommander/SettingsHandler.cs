@@ -180,6 +180,23 @@ public class SettingsHandler
             }
             if (_window.ResolutionTargetCombo.SelectedIndex < 0 && resolutions.Count > 0)
                 _window.ResolutionTargetCombo.SelectedIndex = 0;
+
+            // Populate colour display combo — enumerate NVIDIA displays
+            var nvDisplays = NvColorService.GetDisplays();
+            if (nvDisplays.Count > 0)
+            {
+                _window.ColorDisplayCombo.ItemsSource    = nvDisplays;
+                _window.ColorDisplayCombo.DisplayMemberPath = "Name";
+                _window.ColorDisplayCombo.SelectedIndex  = 0; // triggers SelectionChanged → reads current values
+            }
+            else
+            {
+                // No NVIDIA displays found — hide the colour controls
+                _window.ColorDisplayCombo.Visibility  = Microsoft.UI.Xaml.Visibility.Collapsed;
+                _window.ColorDepthCombo.IsEnabled     = false;
+                _window.ColorRangeCombo.IsEnabled     = false;
+                _window.ColorApplyBtn.IsEnabled       = false;
+            }
         }
 
         // Populate DLSS defaults summary
@@ -570,8 +587,11 @@ public class SettingsHandler
     public void InitAdminModeCombo(ComboBox combo)
     {
         _adminComboInit = true;
-        bool taskExists = IsAdminTaskRegistered();
-        combo.SelectedIndex = taskExists ? 1 : 0; // 0=Off, 1=On
+        // When UAC is disabled or the task exists, show as On
+        bool isOn = IsUacDisabled() || IsAdminTaskRegistered();
+        combo.SelectedIndex = isOn ? 1 : 0;
+        // Grey out when UAC is off — no task needed, state can't be changed
+        if (IsUacDisabled()) combo.IsEnabled = false;
         _adminComboInit = false;
     }
 
@@ -582,6 +602,23 @@ public class SettingsHandler
 
         bool enable = combo.SelectedIndex == 1;
         CrashReporter.Log($"[SettingsHandler.AdminModeCombo] Admin mode = {(enable ? "On" : "Off")}");
+
+        // When UAC is disabled, all processes already run as admin — no task needed.
+        if (IsUacDisabled())
+        {
+            await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Admin Mode",
+                Content = "UAC is disabled on this system — RHI always runs as administrator.",
+                CloseButtonText = "OK",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            });
+            _adminComboInit = true;
+            combo.SelectedIndex = 1; // keep showing On
+            _adminComboInit = false;
+            return;
+        }
 
         try
         {
@@ -618,6 +655,22 @@ public class SettingsHandler
         {
             var result = RunSchtasks($"/Query /TN \"{AdminTaskName}\" /FO LIST");
             return result.ExitCode == 0;
+        }
+        catch { return false; }
+    }
+
+    /// <summary>
+    /// Returns true when UAC is disabled system-wide (EnableLUA=0).
+    /// When UAC is off, all processes already run with full admin rights,
+    /// so the scheduled task elevation path is unnecessary.
+    /// </summary>
+    private static bool IsUacDisabled()
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System");
+            return key?.GetValue("EnableLUA") is int val && val == 0;
         }
         catch { return false; }
     }

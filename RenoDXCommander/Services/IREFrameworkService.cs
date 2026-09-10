@@ -21,6 +21,7 @@ public interface IREFrameworkService
 
     /// <summary>Checks GitHub nightly releases for a newer version than the installed one.</summary>
     Task<bool> CheckForUpdateAsync(string installedVersion);
+    void SyncInstalledVersion(string version);
 
     /// <summary>Returns the latest release tag from the nightly API (cached per session).</summary>
     Task<string?> GetLatestVersionAsync();

@@ -1487,74 +1487,120 @@
                                 Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="12">
-                                <TextBlock Text="Resolution Control" FontSize="15" FontWeight="Bold"
+                                <TextBlock Text="Resolution &amp; Colour Control" FontSize="15" FontWeight="Bold"
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <Grid ColumnSpacing="0" RowSpacing="8">
+                                <Grid ColumnSpacing="0" RowSpacing="0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="25"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
 
-                                    <!-- Left: description -->
-                                    <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
-                                        <TextBlock Text="Target Resolution" FontSize="14" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Desktop resolution to switch to before a game launches. Restored on game exit."/>
+                                    <!-- Left: Target Resolution + Auto-Toggle stacked -->
+                                    <StackPanel Grid.Column="0" Spacing="12">
+                                        <!-- Target Resolution -->
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Target Resolution" FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                       Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                       Text="Desktop resolution to switch to before a game launches. Restored on game exit."/>
+                                            <ComboBox x:Name="ResolutionTargetCombo" x:FieldModifier="internal"
+                                                      FontSize="12" HorizontalAlignment="Stretch"
+                                                      ToolTipService.ToolTip="Select the target desktop resolution."
+                                                      SelectionChanged="ResolutionTargetCombo_SelectionChanged"/>
+                                        </StackPanel>
+
+                                        <!-- Resolution Auto-Toggle -->
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Resolution Auto-Toggle" FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                       Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                       Text="When On, switches to the target resolution on game launch and restores it on exit."/>
+                                            <Grid ColumnSpacing="6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Resolution Auto-Toggle" FontSize="12"
+                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="ResAutoToggleCombo" x:FieldModifier="internal"
+                                                          FontSize="12" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                                          SelectionChanged="ResAutoToggleCombo_SelectionChanged">
+                                                    <ComboBoxItem Content="Off"/>
+                                                    <ComboBoxItem Content="On"/>
+                                                </ComboBox>
+                                                <Button Grid.Column="2" Content="⚙" Click="ResSelectMonitors_Click"
+                                                        Background="{StaticResource SurfaceOverlayBrush}"
+                                                        Foreground="{StaticResource ChipTextBrush}"
+                                                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                        CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
+                                                        FontSize="12" VerticalAlignment="Center"
+                                                        ToolTipService.ToolTip="Select which monitors to change resolution on."/>
+                                            </Grid>
+                                        </StackPanel>
                                     </StackPanel>
 
                                     <!-- Divider -->
-                                    <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Width="1"
+                                    <Border Grid.Column="1" Width="1"
                                             Background="{StaticResource BorderDefaultBrush}"
                                             VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
-                                    <!-- Right: Auto-Toggle On/Off + cog -->
-                                    <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
-                                        <TextBlock Text="Resolution Auto-Toggle" FontSize="14" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11"
-                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="When On, switches to the target resolution on game launch and restores it on exit."/>
+                                    <!-- Right: Output Colour Settings -->
+                                    <StackPanel Grid.Column="2" Spacing="12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Output Colour Settings" FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                       Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                       Text="Set display colour depth and dynamic range without opening NVIDIA Control Panel."/>
+                                        </StackPanel>
+
+                                        <!-- Display selector -->
+                                        <ComboBox x:Name="ColorDisplayCombo" x:FieldModifier="internal"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="Select which display to configure."
+                                                  SelectionChanged="ColorDisplayCombo_SelectionChanged"/>
+
+                                        <!-- Colour Depth + Dynamic Range + Apply -->
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Spacing="4">
+                                                <TextBlock Text="Colour Depth" FontSize="11"
+                                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                <ComboBox x:Name="ColorDepthCombo" x:FieldModifier="internal"
+                                                          FontSize="12" HorizontalAlignment="Stretch">
+                                                    <ComboBoxItem Content="8 bpc"/>
+                                                    <ComboBoxItem Content="10 bpc"/>
+                                                    <ComboBoxItem Content="12 bpc"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Spacing="4">
+                                                <TextBlock Text="Dynamic Range" FontSize="11"
+                                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                <ComboBox x:Name="ColorRangeCombo" x:FieldModifier="internal"
+                                                          FontSize="12" HorizontalAlignment="Stretch">
+                                                    <ComboBoxItem Content="Full"/>
+                                                    <ComboBoxItem Content="Limited"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Content="Apply"
+                                                    x:Name="ColorApplyBtn" x:FieldModifier="internal"
+                                                    Click="ColorApplyBtn_Click"
+                                                    Background="{StaticResource AccentTealBrush}"
+                                                    Foreground="White"
+                                                    BorderThickness="0" CornerRadius="6"
+                                                    Padding="12,6" MinWidth="0" MinHeight="0"
+                                                    FontSize="12" VerticalAlignment="Bottom"/>
+                                        </Grid>
                                     </StackPanel>
-
-                                    <!-- Row 1 Left: Resolution picker ComboBox -->
-                                    <ComboBox Grid.Row="1" Grid.Column="0"
-                                              x:Name="ResolutionTargetCombo" x:FieldModifier="internal"
-                                              FontSize="12" HorizontalAlignment="Stretch"
-                                              ToolTipService.ToolTip="Select the target desktop resolution. Populated from your monitor's supported modes."
-                                              SelectionChanged="ResolutionTargetCombo_SelectionChanged"/>
-
-                                    <!-- Row 1 Right: Auto-Toggle combo + cog -->
-                                    <Grid Grid.Row="1" Grid.Column="2" ColumnSpacing="6" VerticalAlignment="Center">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Resolution Auto-Toggle" FontSize="12"
-                                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                                   VerticalAlignment="Center"/>
-                                        <ComboBox Grid.Column="1" x:Name="ResAutoToggleCombo" x:FieldModifier="internal"
-                                                  FontSize="12" HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                                                  ToolTipService.ToolTip="When On, switches desktop resolution on game launch and restores on exit."
-                                                  SelectionChanged="ResAutoToggleCombo_SelectionChanged">
-                                            <ComboBoxItem Content="Off"/>
-                                            <ComboBoxItem Content="On"/>
-                                        </ComboBox>
-                                        <Button Grid.Column="2" Content="⚙" Click="ResSelectMonitors_Click"
-                                                Background="{StaticResource SurfaceOverlayBrush}"
-                                                Foreground="{StaticResource ChipTextBrush}"
-                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,4" MinWidth="0" MinHeight="0"
-                                                FontSize="12" VerticalAlignment="Center"
-                                                ToolTipService.ToolTip="Select which monitors to change resolution on. Empty = primary display only."/>
-                                    </Grid>
                                 </Grid>
                             </StackPanel>
                         </Border>

@@ -408,6 +408,38 @@ public class REFrameworkService : IREFrameworkService
 
     public List<REFrameworkInstalledRecord> GetRecords() => LoadRecords();
 
+    /// <summary>
+    /// Updates the InstalledVersion on all non-PD-Upscaler records to the given version
+    /// and persists to disk. Called after a version check confirms a newer tag is live
+    /// so that subsequent Refreshes show the correct build number.
+    /// </summary>
+    public void SyncInstalledVersion(string version)
+    {
+        try
+        {
+            var records = LoadRecords();
+            bool changed = false;
+            foreach (var r in records)
+            {
+                if (!string.Equals(r.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(r.InstalledVersion, version, StringComparison.OrdinalIgnoreCase))
+                {
+                    r.InstalledVersion = version;
+                    changed = true;
+                }
+            }
+            if (changed)
+            {
+                SaveRecords(records);
+                CrashReporter.Log($"[REFrameworkService.SyncInstalledVersion] Updated all records to {version}");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[REFrameworkService.SyncInstalledVersion] Failed — {ex.Message}");
+        }
+    }
+
     private List<REFrameworkInstalledRecord> LoadRecords()
     {
         try
