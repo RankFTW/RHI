@@ -243,14 +243,22 @@ public partial class DetailPanelBuilder
                 catch (OperationCanceledException) { return; }
                 try
                 {
-                bool d5i    = rdx5Svc.IsInstalledIn(installPath);
+                var host64Dir = Path.Combine(installPath, "host64");
+                // For 32-bit games: DLSS5 Tool lives in host64\, not game addon folder
+                bool d5i    = card.Is32Bit
+                    ? File.Exists(Path.Combine(host64Dir, "renodx-dlss5.addon64"))
+                    : rdx5Svc.IsInstalledIn(installPath);
+                // For 32-bit games: NR DLL also lives in host64\
+                bool nri    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"))
+                           || (card.Is32Bit && File.Exists(Path.Combine(host64Dir, "nvngx_dlssnr.dll")));
                 bool sfi    = rdx5Svc.IsSfInstalledIn(installPath);
-                bool nri    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
                 bool bri    = File.Exists(Path.Combine(installPath, BridgeDeployFile));
                 bool fei    = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
                 bool dlssi  = File.Exists(Path.Combine(installPath, "nvngx_dlss.dll"));
                 bool dlssdi = File.Exists(Path.Combine(installPath, "nvngx_dlssd.dll"));
                 bool dlssgi = File.Exists(Path.Combine(installPath, "nvngx_dlssg.dll"));
+                // host64 exe presence (32-bit only)
+                bool hostExeOk = !card.Is32Bit || File.Exists(Path.Combine(host64Dir, "dlss5-feed-host64.exe"));
                 string? nrv    = nri    ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll"))) : null;
                 string? dlssv  = dlssi  ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlss.dll")))   : null;
                 string? dlssdv = dlssdi ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssd.dll")))  : null;
@@ -259,10 +267,8 @@ public partial class DetailPanelBuilder
                 _window.DispatcherQueue?.TryEnqueue(() =>
                 {
                     if (_window.ViewModel.SelectedGame != card) return;
-                    // Read IsRsInstalled on the UI thread so it reflects the latest card state
-                    // (install may have completed between the background scan start and now)
                     bool rsi = card.IsRsInstalled;
-                    RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv);
+                    RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv, hostExeOk);
                 });
                 }
                 finally { _panelScanSemaphore.Release(); }
@@ -272,7 +278,8 @@ public partial class DetailPanelBuilder
         void RefreshStatusWithData(
             bool d5i, bool sfi, bool nri, bool bri, bool fei, bool rsi,
             bool dlssi, bool dlssdi, bool dlssgi,
-            string? nrv, string? dlssv, string? dlssdv, string? dlssgv)
+            string? nrv, string? dlssv, string? dlssdv, string? dlssgv,
+            bool hostExeOk = true)
         {
             statusPanel.Children.Clear();
 
@@ -364,7 +371,16 @@ public partial class DetailPanelBuilder
                     break;
                 case NrMethodFeeder:
                     Tag(fei   ? "✓ Feeder Addon"            : "✗ Feeder Addon",  fei);
-                    Tag(d5i   ? "✓ DLSS5 Tool"              : "✗ DLSS5 Tool",    d5i);
+                    // For 32-bit games DLSS5 Tool lives in host64\ — label accordingly
+                    if (card.Is32Bit)
+                    {
+                        Tag(d5i   ? "✓ DLSS5 Tool (host64)"   : "✗ DLSS5 Tool (host64)", d5i);
+                        Tag(hostExeOk ? "✓ host64.exe"         : "✗ host64.exe",           hostExeOk);
+                    }
+                    else
+                    {
+                        Tag(d5i   ? "✓ DLSS5 Tool"             : "✗ DLSS5 Tool",    d5i);
+                    }
                     Tag(dlssi ? $"✓ DLSS SR {dlssv}"        : "✗ DLSS SR",       dlssi);
                     Tag(nri   ? $"✓ NR DLL {nrv}"           : "✗ NR DLL",        nri);
                     var shadersDir = Path.Combine(installPath, ShaderPackService.GameReShadeShaders, "Shaders");
