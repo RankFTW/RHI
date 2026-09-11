@@ -1350,7 +1350,11 @@ public partial class DetailPanelBuilder
 
         var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
             p.PackageName.Equals(FeederPackageName, StringComparison.OrdinalIgnoreCase));
-        if (entry != null && !addonSvc.IsDownloaded(FeederPackageName))
+        // For 32-bit games we also need host64\dlss5-feed-host64.exe from the same zip.
+        // Force a re-download if the exe wasn't staged yet (e.g. addon was downloaded before
+        // the host64 extraction code was added).
+        bool needsHostExe = card.Is32Bit && FindStagedAddon(FeederPackageName, ".exe") == null;
+        if (entry != null && (!addonSvc.IsDownloaded(FeederPackageName) || needsHostExe))
             await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
 
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying Feeder...");
