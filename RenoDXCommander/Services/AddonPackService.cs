@@ -1019,7 +1019,19 @@ public class AddonPackService : IAddonPackService
 
                 if (!ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase) &&
                     !ext.Equals(".addon64", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Also extract the Feeder host64 exe (needed for 32-bit game support)
+                    if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase)
+                        && key.Contains("host64", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var exeDestPath = Path.Combine(StagingDir, safeName + "_host64.exe");
+                        using var exeStream = archiveEntry.OpenEntryStream();
+                        using var exeFile = File.Create(exeDestPath);
+                        await exeStream.CopyToAsync(exeFile);
+                        CrashReporter.Log($"[AddonPackService.DownloadAndExtractZipAsync] Extracted host64 exe '{fileName}' → '{exeDestPath}'");
+                    }
                     continue;
+                }
 
                 var destPath = Path.Combine(StagingDir, safeName + ext);
                 using var entryStream = archiveEntry.OpenEntryStream();
