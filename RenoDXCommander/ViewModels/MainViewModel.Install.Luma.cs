@@ -974,6 +974,19 @@ public partial class MainViewModel
         if (card?.LumaRecord == null) return;
         try
         {
+            // If Feeder is also installed on this game, don't remove dgVoodoo2 — Feeder still needs it.
+            // Remove D3D9.dll from the tracked file list so LumaService.Uninstall doesn't clean it up.
+            if (card.LumaRecord.InstalledFiles.Contains("D3D9.dll", StringComparer.OrdinalIgnoreCase))
+            {
+                bool feederInstalled = File.Exists(Path.Combine(card.InstallPath ?? "", "dlss5-feed.addon32"))
+                                    || File.Exists(Path.Combine(card.InstallPath ?? "", "dlss5-feed.addon64"));
+                if (feederInstalled)
+                {
+                    card.LumaRecord.InstalledFiles.RemoveAll(f => f.Equals("D3D9.dll", StringComparison.OrdinalIgnoreCase)
+                                                                || f.Equals("dgVoodoo.conf", StringComparison.OrdinalIgnoreCase));
+                    _crashReporter.Log($"[UninstallLuma] Feeder still installed — preserving dgVoodoo2 files for '{card.GameName}'");
+                }
+            }
             _lumaService.Uninstall(card.LumaRecord);
             card.LumaRecord = null;
             card.LumaStatus = GameStatus.NotInstalled;

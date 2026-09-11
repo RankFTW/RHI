@@ -705,7 +705,11 @@ public partial class DetailPanelBuilder
                                 // Remove host64\ and dgVoodoo2 on method switch too
                                 var h64 = Path.Combine(installPath, "host64");
                                 if (Directory.Exists(h64)) try { Directory.Delete(h64, recursive: true); } catch { }
-                                App.Services.GetRequiredService<DgVoodooService>().RemoveFromGame(installPath);
+                                // Only remove dgVoodoo2 if Luma isn't also installed (Luma needs D3D9.dll too)
+                                if (card.LumaStatus != GameStatus.Installed)
+                                    App.Services.GetRequiredService<DgVoodooService>().RemoveFromGame(installPath);
+                                else
+                                    CrashReporter.Log($"[NeuralRendering] Luma still installed — preserving dgVoodoo2 for '{gameName}'");
                                 break;
                             }
                         }
@@ -899,7 +903,11 @@ public partial class DetailPanelBuilder
                             }
 
                             // Remove dgVoodoo2 if it was deployed by RHI (sentinel present)
-                            App.Services.GetRequiredService<DgVoodooService>().RemoveFromGame(installPath);
+                            // Only remove if Luma isn't also installed (Luma needs D3D9.dll too)
+                            if (card.LumaStatus != GameStatus.Installed)
+                                App.Services.GetRequiredService<DgVoodooService>().RemoveFromGame(installPath);
+                            else
+                                CrashReporter.Log($"[NeuralRendering] Luma still installed — preserving dgVoodoo2 for '{gameName}'");
                             break;
                         }
                     }
