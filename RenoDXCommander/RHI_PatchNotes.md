@@ -3,15 +3,14 @@
 
 ### New
 
-- **dgVoodoo2 auto-deployment for DX9 Luma games** — Luma mods for Borderlands 2, Borderlands: The Pre-Sequel, Medal of Honor: Airborne, The Witcher 2, and Vanquish now automatically download and deploy dgVoodoo2 alongside the Luma install. These games use DX9 and require a DX9→DX11 translation layer for Luma to work. RHI handles the download, configuration, and cleanup — it's still one-click. ReShade is also correctly installed as `dxgi.dll` for these games so it hooks dgVoodoo2's DX11 output.
-- **DLSS5 Feeder DX9/32-bit support** — for DX9 games using the Feeder Neural Rendering method (Borderlands 2, The Witcher 2, etc.), RHI now automatically deploys dgVoodoo2 and sets up the required `host64\` folder. The 32-bit path routes the DLSS work through a 64-bit helper process — RHI deploys `dlss5-feed-host64.exe`, a 64-bit ReShade, the neural consumer addon, and the NR/DLSS runtimes into `host64\` automatically. The Neural Rendering checklist now shows a `dgVoodoo2` status item for DX9 games.
-- **OptiScaler DLSS NR variant** — new third option in the OptiScaler version picker alongside Stable and Nightly. DLSS NR uses the [wilsjo2 Neural Rendering fork](https://github.com/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass) which adds DLSS 5 Neural Rendering support with multi-pass NR, pre/post-SR placement, and working scale controls. When installed, `nvngx.dll_dlssnr.dll` (the NR forwarder) and `nvngx_dlssnr.dll` (the NR runtime) are deployed to the game folder automatically. All existing Nightly features — Streamline, DLSS Enabler, FG settings, Engine.ini tweaks, presets — are available in DLSS NR too.
-- **Neural Rendering Settings cog section** — when using the DLSS NR variant, the OptiScaler cog shows a dedicated Neural Rendering Settings section with: NR Runtime (choose between 310.8.2 for RTX 50 and ShortFuse 310.8.SF-v2 for RTX 20/30/40), NR Enabled, Run Before SR, Passes (1/2/3), Working Scale, and Apply to Finished Picture. Changing the NR Runtime immediately swaps `nvngx_dlssnr.dll` in the game folder. All NR settings write directly to `OptiScaler.ini`.
+- **OptiScaler DLSS NR variant** — new third option in the OptiScaler version picker alongside Stable and Nightly. Uses a community fork with DLSS 5 Neural Rendering built in — supporting multi-pass NR, pre/post-upscaler placement, and working scale to control the performance cost. All the same features as Nightly (Streamline, FG settings, presets, etc.) are available. The cog gains a Neural Rendering Settings section to tune everything without touching config files.
+- **DLSS5 Feeder on 32-bit DX9 games** — the DLSS5 Feeder method in Neural Rendering now fully supports 32-bit DX9 games (Borderlands 2, The Witcher 2, and much more). RHI sets up the required 64-bit helper process automatically, including all the files it needs to run alongside the 32-bit game.
+- **Luma support for DX9 games** — Borderlands 2, Borderlands: The Pre-Sequel, The Witcher 2, Medal of Honor: Airborne, and Vanquish now work with Luma. RHI automatically handles the DX9 compatibility layer (dgVoodoo2) alongside the Luma install — no manual setup required. Still one click.
 
 ### Bug Fixes
 
-- Fixed ReBAR Size Limit writing and reading incorrect values — setting a size in RHI now correctly reflects in NVPI, and values set in NVPI are correctly read back by RHI.
-- Fixed Output Colour Settings applying to the wrong monitor — changing colour depth or dynamic range on one display could affect a different display on multi-monitor setups where Windows display numbering didn't match the internal display order.
+- Fixed ReBAR Size Limit writing and reading incorrect values — values set in RHI now show correctly in NVPI, and values set in NVPI are correctly read back by RHI.
+- Fixed Output Colour Settings applying to the wrong monitor on multi-monitor setups.
 
 ---
 
