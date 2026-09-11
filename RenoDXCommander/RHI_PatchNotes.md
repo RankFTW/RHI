@@ -31,6 +31,7 @@
 - Fixed the Neural Rendering section showing ReShade as not installed immediately after installing it — you had to navigate away and back to see the correct status.
 - Fixed RE Framework showing a stale build number on the card after an update — the version now syncs correctly on the next update check.
 - Fixed NVIDIA Profile Overrides showing Default/Off on every launch until a manual Refresh — caused by a startup timing issue where profile reads would fail silently before NVAPI finished initialising.
+- Fixed Output Colour Settings applying to the wrong monitor — changing colour depth or dynamic range on one display could affect a different display on multi-monitor setups where GDI display order didn't match the Windows CCD path order.
 
 ### Manifest Updates
 

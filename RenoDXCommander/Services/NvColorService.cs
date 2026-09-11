@@ -186,16 +186,14 @@ public static class NvColorService
 
         if (nvDisplays.Count == 0) return result;
 
-        // Get friendly names from CCD (same enumeration order as GDI)
-        // HdrToggleService.GetAllDisplays() uses DisplayConfigGetTargetDeviceName
-        // which returns proper EDID monitor names e.g. "MPG 341QR X36".
-        var ccdDisplays = HdrToggleService.GetAllDisplays();
+        // Get friendly names keyed by GDI device name so we match exactly,
+        // not by index position (which is fragile when GDI and CCD orderings differ).
+        var gdiNameMap = HdrToggleService.GetGdiNameMap();
 
-        for (int i = 0; i < nvDisplays.Count; i++)
+        foreach (var (gdiName, displayId) in nvDisplays)
         {
-            // Match by index — both enumerate active displays in the same order
-            string name = i < ccdDisplays.Count ? ccdDisplays[i].Name : nvDisplays[i].GdiName;
-            result.Add(new NvDisplay(nvDisplays[i].DisplayId, name));
+            string name = gdiNameMap.TryGetValue(gdiName, out var friendly) ? friendly : gdiName;
+            result.Add(new NvDisplay(displayId, name));
         }
 
         return result;

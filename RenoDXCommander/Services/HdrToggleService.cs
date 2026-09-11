@@ -95,6 +95,16 @@ public static class HdrToggleService
         public uint value; // bit 0 = enableAdvancedColor
     }
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct DISPLAYCONFIG_SOURCE_DEVICE_NAME
+    {
+        public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string GdiDeviceName; // e.g. "\\.\DISPLAY1"
+    }
+
+    private const uint DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME = 1;
+
     [DllImport("user32.dll")]
     private static extern int GetDisplayConfigBufferSizes(uint flags, out uint numPathArrayElements, out uint numModeInfoArrayElements);
 
@@ -105,6 +115,9 @@ public static class HdrToggleService
 
     [DllImport("user32.dll")]
     private static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO requestPacket);
+
+    [DllImport("user32.dll")]
+    private static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DEVICE_NAME requestPacket);
 
     [DllImport("user32.dll")]
     private static extern int DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setPacket);
@@ -223,6 +236,61 @@ public static class HdrToggleService
     }
 
     /// <summary>Returns all active display targets (adapterId + targetId + friendly name + HDR supported).</summary>
+    /// <summary>
+    /// Returns a dictionary mapping GDI device name (e.g. "\\.\DISPLAY1") → EDID friendly name.
+    /// Used by NvColorService to reliably match NVAPI display IDs to friendly names without
+    /// relying on fragile index-position matching.
+    /// </summary>
+    public static Dictionary<string, string> GetGdiNameMap()
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        int err = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out uint pathCount, out uint modeCount);
+        if (err != 0) return result;
+
+        var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
+        var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
+        err = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+        if (err != 0) return result;
+
+        var seen = new HashSet<uint>();
+        for (int i = 0; i < pathCount; i++)
+        {
+            var sourceId    = paths[i].sourceInfo.id;
+            var adapterId   = paths[i].sourceInfo.adapterId;
+            var targetId    = paths[i].targetInfo.id;
+            if (!seen.Add(targetId)) continue;
+
+            // Get GDI source device name (\\.\DISPLAY1 etc.)
+            var srcName = new DISPLAYCONFIG_SOURCE_DEVICE_NAME();
+            srcName.header.type      = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+            srcName.header.size      = (uint)Marshal.SizeOf<DISPLAYCONFIG_SOURCE_DEVICE_NAME>();
+            srcName.header.adapterId = adapterId;
+            srcName.header.id        = sourceId;
+            if (DisplayConfigGetDeviceInfo(ref srcName) != 0) continue;
+
+            var gdiName = srcName.GdiDeviceName?.TrimEnd('\0').Trim() ?? "";
+            if (string.IsNullOrEmpty(gdiName)) continue;
+
+            // Get EDID friendly name for this target
+            var nameInfo = new DISPLAYCONFIG_TARGET_DEVICE_NAME();
+            nameInfo.header.type      = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+            nameInfo.header.size      = (uint)Marshal.SizeOf<DISPLAYCONFIG_TARGET_DEVICE_NAME>();
+            nameInfo.header.adapterId = paths[i].targetInfo.adapterId;
+            nameInfo.header.id        = targetId;
+            string friendlyName = gdiName; // fallback to GDI name
+            if (DisplayConfigGetTargetDeviceName(ref nameInfo) == 0)
+            {
+                var trimmed = nameInfo.monitorFriendlyDeviceName?.TrimEnd('\0').Trim() ?? "";
+                if (!string.IsNullOrEmpty(trimmed)) friendlyName = trimmed;
+            }
+
+            result[gdiName] = friendlyName;
+        }
+
+        return result;
+    }
+
     public static List<DisplayTarget> GetAllDisplays()
     {
         var result = new List<DisplayTarget>();
