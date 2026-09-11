@@ -374,6 +374,13 @@ public partial class DetailPanelBuilder
                         Directory.GetFiles(shadersDir, "lumenite_Kernel.fx", SearchOption.AllDirectories).Length > 0;
                     Tag(feedFxPresent    ? "✓ Feed.fx"    : "✗ Feed.fx",    feedFxPresent);
                     Tag(lumeniteFxPresent ? "✓ LumeniteFX" : "✗ LumeniteFX", lumeniteFxPresent);
+                    // dgVoodoo2 required for DX9 games (D3D9→DX11 translation layer)
+                    bool isDx9Feeder = card.DetectedApis.Contains(GraphicsApiType.DirectX9);
+                    if (isDx9Feeder)
+                    {
+                        bool dgVoodooOk = App.Services.GetRequiredService<DgVoodooService>().IsDeployed(installPath);
+                        Tag(dgVoodooOk ? "✓ dgVoodoo2" : "✗ dgVoodoo2", dgVoodooOk);
+                    }
                     break;
                 default:
                     Tag("Not installed", false);
@@ -679,6 +686,10 @@ public partial class DetailPanelBuilder
                                 }
                                 rdx5Svc.RemoveNrDll(installPath);
                                 RemoveFeederShaders(installPath, gameName, store, card);
+                                // Remove host64\ and dgVoodoo2 on method switch too
+                                var h64 = Path.Combine(installPath, "host64");
+                                if (Directory.Exists(h64)) try { Directory.Delete(h64, recursive: true); } catch { }
+                                App.Services.GetRequiredService<DgVoodooService>().RemoveFromGame(installPath);
                                 break;
                             }
                         }
@@ -862,6 +873,17 @@ public partial class DetailPanelBuilder
 
                             // Remove only DLSS5Feeder + LumeniteFX shader files — never wipe the whole folder
                             RemoveFeederShaders(installPath, gameName, store, card);
+
+                            // Remove host64\ folder (entirely RHI-managed — no game files in it)
+                            var host64Dir = Path.Combine(installPath, "host64");
+                            if (Directory.Exists(host64Dir))
+                            {
+                                try { Directory.Delete(host64Dir, recursive: true); CrashReporter.Log($"[NeuralRendering] Removed host64\\ from '{installPath}'"); }
+                                catch (Exception h64Ex) { CrashReporter.Log($"[NeuralRendering] host64\\ removal failed — {h64Ex.Message}"); }
+                            }
+
+                            // Remove dgVoodoo2 if it was deployed by RHI (sentinel present)
+                            App.Services.GetRequiredService<DgVoodooService>().RemoveFromGame(installPath);
                             break;
                         }
                     }
@@ -1564,6 +1586,101 @@ public partial class DetailPanelBuilder
         catch (Exception ex)
         {
             CrashReporter.Log($"[NeuralRendering] Shader deploy failed — {ex.Message}");
+        }
+
+        // ── DX9 games: deploy dgVoodoo2 (D3D9→DX11 translation) + host64\ folder ──
+        bool isDx9 = card.DetectedApis.Contains(GraphicsApiType.DirectX9);
+        if (isDx9)
+        {
+            var manifest = _window.ViewModel.Manifest;
+            bool needsDgVoodoo = manifest?.LumaRequiresDgVoodoo?.Contains(card.GameName, StringComparer.OrdinalIgnoreCase) == true;
+            if (needsDgVoodoo && manifest?.DgVoodooVersions?.Count > 0)
+            {
+                _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying dgVoodoo2...");
+                try
+                {
+                    var dgSvc = App.Services.GetRequiredService<DgVoodooService>();
+                    var versionEntry = manifest.DgVoodooVersions.First();
+                    await dgSvc.EnsureStagedAsync(versionEntry.Key, versionEntry.Value).ConfigureAwait(false);
+                    dgSvc.DeployToGame(installPath, versionEntry.Key);
+                    CrashReporter.Log($"[NeuralRendering] dgVoodoo2 v{versionEntry.Key} deployed for Feeder on '{card.GameName}'");
+                }
+                catch (Exception dgEx)
+                {
+                    CrashReporter.Log($"[NeuralRendering] dgVoodoo2 deploy failed — {dgEx.Message}");
+                }
+            }
+
+            // host64\ folder — required for 32-bit games
+            // Contains: dlss5-feed-host64.exe, 64-bit ReShade dxgi.dll,
+            //           renodx-dlss5.addon64, nvngx_dlssnr.dll, nvngx_dlss.dll
+            if (card.Is32Bit)
+            {
+                _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Setting up host64\\...");
+                await Task.Run(async () =>
+                {
+                    try
+                    {
+                        var host64Dir = Path.Combine(installPath, "host64");
+                        Directory.CreateDirectory(host64Dir);
+
+                        // dlss5-feed-host64.exe
+                        var stagedHostExe = FindStagedAddon(FeederPackageName, ".exe");
+                        if (stagedHostExe != null && File.Exists(stagedHostExe))
+                        {
+                            File.Copy(stagedHostExe, Path.Combine(host64Dir, "dlss5-feed-host64.exe"), overwrite: true);
+                            CrashReporter.Log($"[NeuralRendering] Deployed dlss5-feed-host64.exe to host64\\");
+                        }
+                        else
+                        {
+                            CrashReporter.Log("[NeuralRendering] dlss5-feed-host64.exe not found in staging — host64\\ will be incomplete");
+                        }
+
+                        // 64-bit ReShade as dxgi.dll (host64 runs as a 64-bit process and needs its own ReShade)
+                        var rs64Path = Path.Combine(AuxInstallService.RsStagingDir, AuxInstallService.RsStaged64);
+                        if (File.Exists(rs64Path))
+                        {
+                            File.Copy(rs64Path, Path.Combine(host64Dir, "dxgi.dll"), overwrite: true);
+                            CrashReporter.Log($"[NeuralRendering] Deployed 64-bit ReShade to host64\\dxgi.dll");
+                        }
+
+                        // renodx-dlss5.addon64 (neural consumer for the host process)
+                        var rdx5SvcH = App.Services.GetRequiredService<Renodx5AddonService>();
+                        await rdx5SvcH.EnsureStagingAsync().ConfigureAwait(false);
+                        if (rdx5SvcH.IsStagingReady)
+                        {
+                            File.Copy(rdx5SvcH.StagedFilePath, Path.Combine(host64Dir, "renodx-dlss5.addon64"), overwrite: true);
+                            CrashReporter.Log($"[NeuralRendering] Deployed renodx-dlss5.addon64 to host64\\");
+                        }
+
+                        // nvngx_dlssnr.dll (NR runtime — same one as game folder)
+                        var cachedNr = await _dlssStreamlineService.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                        if (cachedNr != null)
+                        {
+                            DeployNrDllSentinel(host64Dir, cachedNr);
+                            CrashReporter.Log($"[NeuralRendering] Deployed nvngx_dlssnr.dll to host64\\");
+                        }
+
+                        // nvngx_dlss.dll (DLSS SR runtime)
+                        var cachedDlssH = await _dlssStreamlineService.EnsureNewestDlssCachedAsync().ConfigureAwait(false);
+                        if (cachedDlssH != null)
+                        {
+                            var dlssHost = Path.Combine(host64Dir, "nvngx_dlss.dll");
+                            var dlssHostSentinel = dlssHost + ".original";
+                            if (!File.Exists(dlssHostSentinel))
+                                File.WriteAllBytes(dlssHostSentinel, Array.Empty<byte>());
+                            File.Copy(cachedDlssH, dlssHost, overwrite: true);
+                            CrashReporter.Log($"[NeuralRendering] Deployed nvngx_dlss.dll to host64\\");
+                        }
+
+                        CrashReporter.Log($"[NeuralRendering] host64\\ setup complete for '{card.GameName}'");
+                    }
+                    catch (Exception host64Ex)
+                    {
+                        CrashReporter.Log($"[NeuralRendering] host64\\ setup failed — {host64Ex.Message}");
+                    }
+                }).ConfigureAwait(false);
+            }
         }
 
         // Rebuild panel one final time now that shaders are deployed — status will show ✓ Feed.fx / ✓ LumeniteFX
