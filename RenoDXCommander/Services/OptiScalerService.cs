@@ -49,6 +49,9 @@ public partial class OptiScalerService : IOptiScalerService
         yield return Path.Combine(dir, "OptiScaler_nightly.nvidia.ini");
         yield return Path.Combine(dir, "OptiScaler_nightly.amd-dlss.ini");
         yield return Path.Combine(dir, "OptiScaler_nightly.amd-nodlss.ini");
+        yield return Path.Combine(dir, "OptiScaler_dlssnr.nvidia.ini");
+        yield return Path.Combine(dir, "OptiScaler_dlssnr.amd-dlss.ini");
+        yield return Path.Combine(dir, "OptiScaler_dlssnr.amd-nodlss.ini");
     }
 
     /// <summary>
@@ -56,7 +59,11 @@ public partial class OptiScalerService : IOptiScalerService
     /// </summary>
     public static string GetUserIniPath(string gpuType, bool dlssInputs, string variant = "Stable")
     {
-        var suffix = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase) ? "_nightly" : "";
+        var suffix = variant switch {
+            "Nightly" => "_nightly",
+            "DlssNr"  => "_dlssnr",
+            _         => ""
+        };
         var fileName = gpuType.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase)
             ? $"OptiScaler{suffix}.nvidia.ini"
             : dlssInputs
@@ -234,6 +241,45 @@ public partial class OptiScalerService : IOptiScalerService
         get
         {
             try { return File.Exists(NightlyVersionFilePath) ? File.ReadAllText(NightlyVersionFilePath).Trim() : null; }
+            catch { return null; }
+        }
+    }
+
+    // ── DLSS NR variant ───────────────────────────────────────────────────────
+
+    private static readonly string DlssNrStagingDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "optiscaler-dlssnr");
+    private static readonly string DlssNrVersionFilePath = Path.Combine(DlssNrStagingDir, "version.txt");
+
+    /// <summary>GitHub releases list URL for the DLSS NR OptiScaler fork.</summary>
+    private const string DlssNrReleasesApi =
+        "https://api.github.com/repos/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases";
+
+    /// <summary>The NR forwarder DLL that must be deployed alongside OptiScaler.dll for the DlssNr variant.</summary>
+    public const string DlssNrForwarderName = "nvngx.dll_dlssnr.dll";
+
+    /// <inheritdoc />
+    public bool IsStagingReadyDlssNr =>
+        Directory.Exists(DlssNrStagingDir)
+        && File.Exists(DlssNrVersionFilePath)
+        && File.Exists(Path.Combine(DlssNrStagingDir, "OptiScaler.dll"));
+
+    private bool _hasUpdateDlssNr;
+
+    /// <inheritdoc />
+    public bool HasUpdateDlssNr
+    {
+        get => _hasUpdateDlssNr;
+        private set => _hasUpdateDlssNr = value;
+    }
+
+    /// <inheritdoc />
+    public string? StagedVersionDlssNr
+    {
+        get
+        {
+            try { return File.Exists(DlssNrVersionFilePath) ? File.ReadAllText(DlssNrVersionFilePath).Trim() : null; }
             catch { return null; }
         }
     }

@@ -1173,10 +1173,41 @@ $session.Save()
         if (!_isSupported || _session == null) return 0;
         try
         {
-            var baseProfile = _session.BaseProfile;
-            var setting = baseProfile.GetSetting(REBAR_SIZE_LIMIT_ID);
-            if (setting.CurrentValue is byte[] bytes && bytes.Length >= 8)
-                return BitConverter.ToUInt64(bytes, 0);
+            var sessionH = GetHandlePtr(_session.Handle);
+            var baseH = GetHandlePtr(_session.BaseProfile.Handle);
+            if (sessionH != IntPtr.Zero && baseH != IntPtr.Zero)
+            {
+                EnsureNativeFunctions();
+                if (_nativeGetSettingPtr != null)
+                {
+                    const int STRUCT_SIZE = 12320;
+                    var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
+                    try
+                    {
+                        unsafe { new Span<byte>((void*)ptr, STRUCT_SIZE).Clear(); }
+                        Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16));
+                        uint extraParam = 0;
+                        int result = _nativeGetSettingPtr(sessionH, baseH, REBAR_SIZE_LIMIT_ID, ptr, ref extraParam);
+                        if (result == 0)
+                        {
+                            var settingType = Marshal.ReadInt32(ptr, 4104);
+                            if (settingType == 4) // QWORD — value directly at 8220
+                                return (ulong)Marshal.ReadInt64(ptr, 8220);
+                            if (settingType == 1) // BINARY — length at 8216, data at 8220
+                            {
+                                var binLen = Marshal.ReadInt32(ptr, 8216);
+                                if (binLen >= 8) return (ulong)Marshal.ReadInt64(ptr, 8220);
+                            }
+                            if (settingType == 0) // DWORD
+                            {
+                                var dword = (uint)Marshal.ReadInt32(ptr, 8220);
+                                if (dword != 0) return dword;
+                            }
+                        }
+                    }
+                    finally { Marshal.FreeHGlobal(ptr); }
+                }
+            }
             return 0;
         }
         catch { return 0; }
@@ -1187,22 +1218,12 @@ $session.Save()
     {
         if (!_isSupported || _session == null) return false;
 
-        // Try raw NVAPI binary write first (same approach as NVPI)
         var sessionH = GetHandlePtr(_session.Handle);
         var baseH = GetHandlePtr(_session.BaseProfile.Handle);
-        if (sessionH != IntPtr.Zero && baseH != IntPtr.Zero)
-        {
-            var data = BitConverter.GetBytes(sizeBytes);
-            if (SetBinarySettingRawNvApi(sessionH, baseH, REBAR_SIZE_LIMIT_ID, data))
-            {
-                CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Set 0x{sizeBytes:X16} via raw binary NVAPI");
-                return true;
-            }
-        }
+        if (sessionH == IntPtr.Zero || baseH == IntPtr.Zero) return false;
 
-        // Fallback to PS helper
-        CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Raw write failed, trying PS helper...");
-        return SetReBarSizeLimitViaPs(null, sizeBytes, useBaseProfile: true);
+        CrashReporter.Log($"[DlssPresetService.SetGlobalReBarSizeLimit] Writing 0x{sizeBytes:X16} via QWORD raw NVAPI");
+        return SetQwordSettingRawNvApi(sessionH, baseH, REBAR_SIZE_LIMIT_ID, sizeBytes);
     }
 
     // ── RTX HDR settings ──────────────────────────────────────────────────────

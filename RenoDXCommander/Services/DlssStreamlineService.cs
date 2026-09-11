@@ -764,6 +764,29 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         return File.Exists(cachedDll) ? cachedDll : null;
     }
 
+    /// <summary>
+    /// Returns the cached path for a specific DLSS NR DLL version (e.g. "310.8.2"), downloading if needed.
+    /// Returns null if the version is not in the manifest or download fails.
+    /// </summary>
+    public async Task<string?> EnsureSpecificDlssnrCachedAsync(string version)
+    {
+        var entry = FindDlssnrEntry(version);
+        if (entry == null)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.EnsureSpecificDlssnrCachedAsync] Version '{version}' not found in manifest");
+            return null;
+        }
+
+        var cachedDir = Path.Combine(DlssnrCacheDir, version);
+        var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
+
+        if (File.Exists(cachedDll))
+            return cachedDll;
+
+        await DownloadAndCacheAsync(entry.Url, cachedDir, DlssnrDllName).ConfigureAwait(false);
+        return File.Exists(cachedDll) ? cachedDll : null;
+    }
+
     /// <inheritdoc />
     public async Task<string?> EnsureNewestStreamlineCachedAsync()
     {

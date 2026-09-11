@@ -191,10 +191,7 @@ public partial class DlssPresetService
             string exprBlock = mode == 2
                 ? "$base.SetSetting([uint32]0x00C09D09, [uint32]0)"
                 : "try { $base.DeleteSetting([uint32]0x00C09D09) } catch {}";
-            string sizeLimitBlock = mode == 2
-                ? @"[byte[]]$sizeBytes = @(0x00,0x00,0x00,0x40,0x00,0x00,0x00,0x00)
-$base.SetSetting([uint32]0x000F00FF, $sizeBytes)"  // 1GB default
-                : "try { $base.DeleteSetting([uint32]0x000F00FF) } catch {}";
+            string sizeLimitBlock = "# size limit written by C# after session reload";
 
             string scriptBody = $@"
 Add-Type -Path '{nvApiPath.Replace("'", "''")}'
@@ -211,12 +208,13 @@ $session.Save()
             {
                 FileName  = "powershell.exe",
                 Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow  = true,
+                Verb = "runas",
+                UseShellExecute = true,
+                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
             };
-            var process = System.Diagnostics.Process.Start(psi);
-            if (process == null) return false;
-            process.WaitForExit(10000);
+            System.Diagnostics.Process.Start(psi);
+            // Pause to let the elevated PS complete — base profile writes are fast
+            System.Threading.Thread.Sleep(3000);
             try { File.Delete(scriptPath); } catch { }
             // Reload session
             try
@@ -276,15 +274,19 @@ $session.Save()
                             {
                                 // Check setting type: offset 4104 (0=DWORD, 1=BINARY)
                                 var settingType = Marshal.ReadInt32(ptr, 4104);
-                                if (settingType == 1) // BINARY
+                                if (settingType == 1) // BINARY — length at 8216, data at 8220
                                 {
-                                    // Binary data at offset 8220, length at offset 8216
                                     var binLen = Marshal.ReadInt32(ptr, 8216);
                                     if (binLen >= 8)
                                     {
                                         var val = (ulong)Marshal.ReadInt64(ptr, 8220);
                                         return val;
                                     }
+                                }
+                                else if (settingType == 4) // QWORD — 64-bit integer directly at 8220
+                                {
+                                    var val = (ulong)Marshal.ReadInt64(ptr, 8220);
+                                    return val;
                                 }
                                 else // DWORD
                                 {
@@ -364,14 +366,24 @@ foreach ($p in $session.Profiles) {{
 if ($null -eq $profile) {{ exit 1 }}";
             }
 
+            var doneFile = scriptPath + ".done";
+            if (File.Exists(doneFile)) try { File.Delete(doneFile); } catch { }
+
             var script = $@"
 Add-Type -Path '{nvApiPath.Replace("'", "''")}'
 [NvAPIWrapper.NVIDIA]::Initialize()
 $session = [NvAPIWrapper.DRS.DriverSettingsSession]::CreateAndLoad()
 {profileBlock}
 [byte[]]$bytes = @(0x{hexBytes})
-$profile.SetSetting([uint32]0x000F00FF, $bytes)
-$session.Save()
+try {{
+    $profile.SetSetting([uint32]0x000F00FF, $bytes)
+    $session.Save()
+    [System.IO.File]::WriteAllText('{doneFile.Replace("\\", "\\\\")}', '0')
+    exit 0
+}} catch {{
+    [System.IO.File]::WriteAllText('{doneFile.Replace("\\", "\\\\")}', '2')
+    exit 2
+}}
 ";
             File.WriteAllText(scriptPath, script);
 
@@ -379,12 +391,25 @@ $session.Save()
             {
                 FileName = "powershell.exe",
                 Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
+                Verb = "runas",
+                UseShellExecute = true,
+                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
             };
-            var process = System.Diagnostics.Process.Start(psi);
-            if (process == null) return false;
-            process.WaitForExit(10000);
+            System.Diagnostics.Process.Start(psi);
+
+            // Poll for sentinel file — runas returns a ShellExecute wrapper handle, not the PS process
+            // so WaitForExit() returns immediately. The sentinel written by the script tells us when done.
+            var deadline = DateTime.UtcNow.AddSeconds(12);
+            while (!File.Exists(doneFile) && DateTime.UtcNow < deadline)
+                System.Threading.Thread.Sleep(100);
+
+            int exitCode = 2;
+            if (File.Exists(doneFile))
+            {
+                var content = File.ReadAllText(doneFile).Trim();
+                exitCode = content == "0" ? 0 : 2;
+                try { File.Delete(doneFile); } catch { }
+            }
             try { File.Delete(scriptPath); } catch { }
 
             // Reload session
@@ -401,8 +426,8 @@ $session.Save()
             if (profileName != null)
                 _rebarSizeLimitCache[profileName] = sizeBytes;
 
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitViaPs] Set 0x{sizeBytes:X16} via PS helper (profile='{profileName ?? "BaseProfile"}', exitCode={process.ExitCode})");
-            return process.ExitCode == 0;
+            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimitViaPs] Set 0x{sizeBytes:X16} via PS helper (profile='{profileName ?? "BaseProfile"}', exitCode={exitCode})");
+            return exitCode == 0;
         }
         catch (Exception ex)
         {
@@ -443,11 +468,10 @@ $session.Save()
                 var existingSize = GetReBarSizeLimit(gameName, installPath);
                 if (existingSize == 0)
                 {
-                    // Use raw binary write (NvAPIWrapper's SetSetting(uint, byte[]) is broken for BINARY)
-                    var sessionH = GetHandlePtr(_session.Handle);
-                    var profileH = GetHandlePtr(profile.Handle);
-                    if (sessionH != IntPtr.Zero && profileH != IntPtr.Zero)
-                        SetBinarySettingRawNvApi(sessionH, profileH, REBAR_SIZE_LIMIT_ID, BitConverter.GetBytes(0x0000000040000000UL));
+                    var sH2 = GetHandlePtr(_session.Handle);
+                    var pH2 = GetHandlePtr(profile.Handle);
+                    if (sH2 != IntPtr.Zero && pH2 != IntPtr.Zero)
+                        SetQwordSettingRawNvApi(sH2, pH2, REBAR_SIZE_LIMIT_ID, 0x0000000040000000UL);
                 }
             }
             else
@@ -549,10 +573,10 @@ if ($null -ne $profile) {{
                     var freshProfile = FindProfile(gameName, installPath);
                     if (freshProfile != null)
                     {
-                        var sH = GetHandlePtr(_session.Handle);
-                        var pH = GetHandlePtr(freshProfile.Handle);
-                        if (sH != IntPtr.Zero && pH != IntPtr.Zero)
-                            SetBinarySettingRawNvApi(sH, pH, REBAR_SIZE_LIMIT_ID, BitConverter.GetBytes(0x0000000040000000UL));
+                        var sH3 = GetHandlePtr(_session.Handle);
+                        var pH3 = GetHandlePtr(freshProfile.Handle);
+                        if (sH3 != IntPtr.Zero && pH3 != IntPtr.Zero)
+                            SetQwordSettingRawNvApi(sH3, pH3, REBAR_SIZE_LIMIT_ID, 0x0000000040000000UL);
                     }
                 }
             }
@@ -594,32 +618,19 @@ if ($null -ne $profile) {{
             if (profile == null) return false;
         }
 
-        // Use raw NVAPI binary write (same approach as NVPI) — works on all systems
+        // ReBAR Size Limit is stored as QWORD (type 4 / DRS_DWORD64) by the driver.
+        // NvAPIWrapper encodes it as Binary (type 1) which writes garbage — use raw NVAPI QWORD write.
+        CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Writing 0x{sizeBytes:X16} for '{gameName}' via QWORD raw NVAPI");
         var sessionH = GetHandlePtr(_session.Handle);
         var profileH = GetHandlePtr(profile.Handle);
         if (sessionH == IntPtr.Zero || profileH == IntPtr.Zero)
         {
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Failed to get native handles for '{gameName}'");
+            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Failed to get handles for '{gameName}'");
             return false;
         }
-
-        var data = BitConverter.GetBytes(sizeBytes); // 8 bytes, little-endian
-        var success = SetBinarySettingRawNvApi(sessionH, profileH, REBAR_SIZE_LIMIT_ID, data);
-        if (success)
-        {
-            _rebarSizeLimitCache[gameName] = sizeBytes;
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Set 0x{sizeBytes:X16} for '{gameName}' via raw binary NVAPI");
-        }
-        else
-        {
-            // Fallback to PS helper (legacy path for edge cases)
-            CrashReporter.Log($"[DlssPresetService.SetReBarSizeLimit] Raw binary write failed for '{gameName}', trying PS helper...");
-            success = SetReBarSizeLimitViaPs(profile.Name, sizeBytes, useBaseProfile: false);
-            if (success) _rebarSizeLimitCache[gameName] = sizeBytes;
-        }
+        var success = SetQwordSettingRawNvApi(sessionH, profileH, REBAR_SIZE_LIMIT_ID, sizeBytes);
+        if (success) _rebarSizeLimitCache[gameName] = sizeBytes;
         return success;
     }
-
-    // (SetReBarSizeLimitElevated removed — all writes go through SetReBarSizeLimitViaPs directly)
 
 }

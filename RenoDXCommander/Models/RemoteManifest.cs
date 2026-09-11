@@ -84,6 +84,20 @@ public class RemoteManifest
     public List<string>? LumaDefaultGames { get; set; }
 
     /// <summary>
+    /// Games that require dgVoodoo2 for Luma installation (DX9 games needing a DX11 translation layer).
+    /// When a game is in this list, RHI deploys D3D9.dll + dgVoodoo.conf alongside Luma.
+    /// </summary>
+    [JsonPropertyName("lumaRequiresDgVoodoo")]
+    public List<string>? LumaRequiresDgVoodoo { get; set; }
+
+    /// <summary>
+    /// dgVoodoo2 version → download URL mapping. First entry = default version to use.
+    /// Keyed by version string (e.g. "2.87.3").
+    /// </summary>
+    [JsonPropertyName("dgVoodooVersions")]
+    public Dictionary<string, string>? DgVoodooVersions { get; set; }
+
+    /// <summary>
     /// Custom notes for games in Luma mode (shown in the info dialog when Luma is active).
     /// Supplements or replaces wiki-provided LumaMod notes.
     /// </summary>

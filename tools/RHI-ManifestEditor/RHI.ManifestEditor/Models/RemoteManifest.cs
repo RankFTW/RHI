@@ -79,6 +79,12 @@ public class RemoteManifest
     [JsonPropertyName("lumaDefaultGames")]
     public List<string>? LumaDefaultGames { get; set; }
 
+    [JsonPropertyName("lumaRequiresDgVoodoo")]
+    public List<string>? LumaRequiresDgVoodoo { get; set; }
+
+    [JsonPropertyName("dgVoodooVersions")]
+    public Dictionary<string, string>? DgVoodooVersions { get; set; }
+
     // ── Install Behaviour ─────────────────────────────────────────────────────
     [JsonPropertyName("installWarnings")]
     public Dictionary<string, Dictionary<string, string>>? InstallWarnings { get; set; }

@@ -18,4 +18,11 @@ public class OsPreset
     public bool?   DisableFlipMetering    { get; set; }
     public string? HudFix                 { get; set; }  // "true", "false", "auto"
     public float?  FramerateLimit         { get; set; }  // fps value, 0 = Off
+    // ── DLSS NR preset fields ─────────────────────────────────────────────────
+    public string? NrRuntime              { get; set; }  // e.g. "310.8.2", "310.8.SF-v2"
+    public string? NrEnabled              { get; set; }  // "true", "false", "auto"
+    public string? NrRunBeforeSr          { get; set; }  // "true", "false", "auto"
+    public string? NrPasses               { get; set; }  // "1", "2", "3", "auto"
+    public string? NrWorkingScale         { get; set; }  // "0.5", "0.75", "1.0", "1.5", "auto"
+    public string? NrFinishedPicture      { get; set; }  // "true", "false", "auto"
 }

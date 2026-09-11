@@ -206,7 +206,7 @@ public partial class MainViewModel
 
     // ── OptiScaler Variant Override ───────────────────────────────────────────
 
-    /// <summary>Returns the OptiScaler variant for a game. "Stable" or "Nightly". Defaults to "Stable".</summary>
+    /// <summary>Returns the OptiScaler variant for a game. "Stable", "Nightly", or "DlssNr". Defaults to "Stable".</summary>
     public string GetOsVariant(string gameName, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();
@@ -227,11 +227,34 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── NR Runtime ────────────────────────────────────────────────────────────
+
+    /// <summary>Returns the NR runtime version for a game. Empty string = use newest from manifest.</summary>
+    public string GetOsNrRuntime(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsNrRuntime.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.OsNrRuntime.TryGetValue(gameName, out var vL) && !string.IsNullOrEmpty(vL)) return vL;
+        return ""; // absent = use newest from manifest
+    }
+
+    /// <summary>Sets the NR runtime version for a game. Null or empty clears the override (use newest).</summary>
+    public void SetOsNrRuntime(string gameName, string? version, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(version))
+        {
+            _gameNameService.OsNrRuntime.Remove(key);
+            _gameNameService.OsNrRuntime.Remove(gameName);
+        }
+        else
+            _gameNameService.OsNrRuntime[key] = version;
+        SaveNameMappings();
+    }
+
     // ── Deploy Streamline ─────────────────────────────────────────────────────
 
-    // ── Neural Rendering Method ───────────────────────────────────────────────
-
-    /// <summary>Returns the persisted NR method for a game. Null = not set (auto-detect from game state).</summary>
+    // ── Neural Rendering Method ───────────────────────────────────────────────    /// <summary>Returns the persisted NR method for a game. Null = not set (auto-detect from game state).</summary>
     public string? GetNrMethodOverride(string gameName, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();

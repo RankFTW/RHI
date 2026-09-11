@@ -73,6 +73,24 @@ public interface IOptiScalerService
     /// <summary>Removes the nightly staging folder contents.</summary>
     void ClearNightlyStaging();
 
+    /// <summary>Whether the DLSS NR staging folder contains a valid OptiScaler DLSS NR release.</summary>
+    bool IsStagingReadyDlssNr { get; }
+
+    /// <summary>Whether a newer OptiScaler DLSS NR release is available on GitHub.</summary>
+    bool HasUpdateDlssNr { get; }
+
+    /// <summary>The currently staged DLSS NR version (e.g. "0.7.7"), or null.</summary>
+    string? StagedVersionDlssNr { get; }
+
+    /// <summary>Downloads and extracts the latest OptiScaler DLSS NR release to the DLSS NR staging folder.</summary>
+    Task EnsureDlssNrStagingAsync(IProgress<(string message, double percent)>? progress = null);
+
+    /// <summary>Checks the DLSS NR GitHub releases API for a newer version. Sets <see cref="HasUpdateDlssNr"/>.</summary>
+    Task CheckForDlssNrUpdateAsync();
+
+    /// <summary>Removes the DLSS NR staging folder contents.</summary>
+    void ClearDlssNrStaging();
+
     // ── DLSS DLL staging ──────────────────────────────────────────────────────
 
     /// <summary>

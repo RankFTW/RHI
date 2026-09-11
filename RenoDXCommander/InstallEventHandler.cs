@@ -270,7 +270,7 @@ public class InstallEventHandler
             _dlssStreamlineService.RecordDlssFound(card.GameName);
 
             // ── Post-install: Deploy Streamline and DLSS Enabler if pre-enabled ──
-            if (osVariant == "Nightly" && !string.IsNullOrEmpty(card.InstallPath))
+            if ((osVariant == "Nightly" || osVariant == "DlssNr") && !string.IsNullOrEmpty(card.InstallPath))
             {
                 if (ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? ""))
                 {

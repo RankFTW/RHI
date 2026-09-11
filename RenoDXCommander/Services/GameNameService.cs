@@ -51,8 +51,11 @@ public class GameNameService : IGameNameService
     private Dictionary<string, string> _dxvkVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, int> _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable" or "Nightly".</summary>
+    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable", "Nightly", or "DlssNr".</summary>
     private Dictionary<string, string> _osVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value = e.g. "310.8.2" or "310.8.SF-v2". Absent = default (310.8.2).</summary>
+    private Dictionary<string, string> _osNrRuntime = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Per-game Neural Rendering method override. Key = "GameName|Store", Value = "DLSS5Tool", "DLSS5ToolBridge", "ShortFuse", or "Feeder". Absent = auto-detect.</summary>
     private Dictionary<string, string> _nrMethodOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -165,8 +168,10 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> DxvkVariantOverrides => _dxvkVariantOverrides;
     /// <summary>Per-game Lilium HDR DXVK preset index. 0=Safest (default), 5=Experimental. Absent = 0.</summary>
     public Dictionary<string, int> LiliumPresetOverrides => _liliumPresetOverrides;
-    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable" or "Nightly".</summary>
+    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable", "Nightly", or "DlssNr".</summary>
     public Dictionary<string, string> OsVariantOverrides => _osVariantOverrides;
+    /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value e.g. "310.8.2". Absent = default.</summary>
+    public Dictionary<string, string> OsNrRuntime => _osNrRuntime;
     /// <summary>Per-game Neural Rendering method override. Key = "GameName|Store", Value = "DLSS5Tool", "DLSS5ToolBridge", "ShortFuse", or "Feeder". Absent = auto-detect.</summary>
     public Dictionary<string, string> NrMethodOverrides => _nrMethodOverrides;
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
@@ -480,6 +485,11 @@ public class GameNameService : IGameNameService
         _osVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in osVariantOvDict) _osVariantOverrides[kv.Key] = kv.Value;
 
+        var osNrRuntimeDict = Load<Dictionary<string, string>>("OsNrRuntime",
+            new(StringComparer.OrdinalIgnoreCase));
+        _osNrRuntime = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osNrRuntimeDict) _osNrRuntime[kv.Key] = kv.Value;
+
         var nrMethodOvDict = Load<Dictionary<string, string>>("NrMethodOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _nrMethodOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -704,6 +714,7 @@ public class GameNameService : IGameNameService
                 s["OsFsrFgSwapchain"] = JsonSerializer.Serialize(_osFsrFgSwapchain.ToList());
                 s["OsUpscalerPlugin"] = JsonSerializer.Serialize(_osUpscalerPlugin.ToList());
                 if (_osStreamlineVersion.Count > 0) s["OsStreamlineVersion"] = JsonSerializer.Serialize(_osStreamlineVersion);
+                if (_osNrRuntime.Count > 0) s["OsNrRuntime"] = JsonSerializer.Serialize(_osNrRuntime);
                 if (_ualInstalledAs.Count > 0) s["UalInstalledAs"] = JsonSerializer.Serialize(_ualInstalledAs);
                 if (_deInstalledAs.Count > 0) s["DeInstalledAs"] = JsonSerializer.Serialize(_deInstalledAs);
                 else s.Remove("DeInstalledAs");
@@ -850,6 +861,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeHashSet(_osFsrFgSwapchain, oldName, newName);
         MigrateCompositeHashSet(_osUpscalerPlugin, oldName, newName);
         MigrateCompositeDict(_osStreamlineVersion, oldName, newName);
+        MigrateCompositeDict(_osNrRuntime, oldName, newName);
         MigrateCompositeDict(_ualInstalledAs, oldName, newName);
         MigrateCompositeDict(_deInstalledAs, oldName, newName);
         MigrateCompositeHashSet(_sfAutoConfigDisabled, oldName, newName);

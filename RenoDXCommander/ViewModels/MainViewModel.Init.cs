@@ -328,6 +328,14 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
             });
+            var osDlssNrTask = Task.Run(async () => {
+                try
+                {
+                    if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "DlssNr"))
+                        await _optiScalerService.EnsureDlssNrStagingAsync();
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler DLSS NR staging task failed — {ex.Message}"); }
+            });
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
@@ -644,8 +652,7 @@ public partial class MainViewModel
                 try
                 {
                     // Wait for ReShade staging, OptiScaler staging, DLSS staging, and DXVK staging to finish in parallel
-                    await Task.WhenAll(rsTask, normalRsTask, osTask, dlssTask, dxvkTask);
-                }
+                    await Task.WhenAll(rsTask, normalRsTask, osTask, dlssTask, dxvkTask);                }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Deferred ReShade sync failed — {ex.Message}"); }
 
                 // Wait for shader packs to be downloaded/extracted

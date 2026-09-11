@@ -2014,11 +2014,11 @@ public sealed partial class MainWindow
         fpsLimitCombo.SelectedItem = currentFpsStr;
 
         AddRow(unifiedGrid, 0, "OptiScaler Version",
-            new ComboBox { ItemsSource = new[] { "Stable", "Nightly" }, SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? ""), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch },
+            new ComboBox { ItemsSource = new[] { "Stable", "Nightly", "DLSS NR" }, SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? "") == "DlssNr" ? "DLSS NR" : ViewModel.GetOsVariant(card.GameName, card.Source ?? ""), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch },
             "Framerate Limit", fpsLimitCombo);
         // Grab the variant combo we just added
         var variantCombo = (ComboBox)unifiedGrid.Children.Cast<UIElement>().Where(c => c is ComboBox).First();
-        ToolTipService.SetToolTip(variantCombo, "Stable uses the official OptiScaler release. Nightly uses the latest daily build.");
+        ToolTipService.SetToolTip(variantCombo, "Stable: official release. Nightly: daily build. DLSS NR: Neural Rendering fork with multi-pass NR support.");
 
         fpsLimitCombo.SelectionChanged += (s, ev) =>
         {
@@ -2110,7 +2110,9 @@ public sealed partial class MainWindow
         variantCombo.SelectionChanged += (s, ev) =>
         {
             var selected = variantCombo.SelectedItem as string ?? "Stable";
-            ViewModel.SetOsVariant(card.GameName, selected == "Stable" ? null : selected, card.Source ?? "");
+            // Map display name to internal value
+            var internalValue = selected switch { "DLSS NR" => "DlssNr", "Stable" => null, _ => selected };
+            ViewModel.SetOsVariant(card.GameName, internalValue, card.Source ?? "");
             if (card.IsOsInstalled && !string.IsNullOrEmpty(card.InstallPath))
             {
                 try { _optiScalerService.Uninstall(card); card.NotifyAll(); }
@@ -2126,6 +2128,7 @@ public sealed partial class MainWindow
         };
 
         bool isNightly = ViewModel.GetOsVariant(card.GameName, card.Source ?? "") == "Nightly";
+        bool isDlssNr  = ViewModel.GetOsVariant(card.GameName, card.Source ?? "") == "DlssNr";
 
         // These are declared at method scope so the presets closures (built later, outside the
         // nightly block) can capture them. They are only non-null when isNightly == true.
@@ -2144,8 +2147,16 @@ public sealed partial class MainWindow
         (string Item1, string Item2)[]? srPresetMap   = null;
         (string Item1, string Item2)[]? rrPresetMap   = null;
         (string Item1, float Item2)[]?  renderScaleMap = null;
+        // NR combo variables — only non-null when isDlssNr == true
+        ComboBox? nrRuntimeCombo      = null;
+        ComboBox? nrEnabledCombo      = null;
+        ComboBox? nrRunBeforeSrCombo  = null;
+        ComboBox? nrPassesCombo       = null;
+        ComboBox? nrWorkingScaleCombo = null;
+        ComboBox? nrFinishedPicCombo  = null;
+        (string Item1, string Item2)[]? nrScaleMap = null;
 
-        if (isNightly)
+        if (isNightly || isDlssNr)
         {
             // ── INI value converters ───────────────────────────────────────
             FgInputToIni  = (string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
@@ -2464,6 +2475,146 @@ public sealed partial class MainWindow
                     if (!string.IsNullOrEmpty(card.InstallPath)) { var k = new (string, string, string)[] { ("SystemSettings", "r.AntiAliasingMethod", "4"), ("SystemSettings", "r.TemporalAA.Upscaler", "1") }; try { if (on) AuxInstallService.ApplyEngineIniCustomKeys(card.InstallPath, k, card.EngineIniProjectOverride, card.GameName, card.Source); else AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, k.Select(x => x.Item2), card.EngineIniProjectOverride, card.GameName, card.Source); } catch { } }
                 };
             }
+
+            // ── DLSS NR Settings section (DlssNr variant only) ────────────
+            if (isDlssNr)
+            {
+                content.Children.Add(MakeSeparator());
+                content.Children.Add(new TextBlock { Text = "Neural Rendering Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                var nrGrid = MakeSettingsGrid();
+
+                // Helper: read a key from the [DlssNr] section of OptiScaler.ini
+                string ReadNrIni(string key)
+                {
+                    if (string.IsNullOrEmpty(card.InstallPath)) return "auto";
+                    var iniP = Path.Combine(card.InstallPath, OptiScalerService.IniFileName);
+                    if (!File.Exists(iniP)) return "auto";
+                    bool inNr = false;
+                    foreach (var l in File.ReadAllLines(iniP))
+                    {
+                        var t = l.Trim();
+                        if (t.StartsWith("[")) inNr = t.Equals("[DlssNr]", StringComparison.OrdinalIgnoreCase);
+                        else if (inNr && !t.StartsWith(";") &&
+                            (t.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase) ||
+                             t.StartsWith(key + " =", StringComparison.OrdinalIgnoreCase)))
+                            return t.Split('=', 2)[1].Trim();
+                    }
+                    return "auto";
+                }
+
+                // Row 0: NR Runtime | NR Enabled
+                var dlssStreamlineSvc2 = App.Services.GetRequiredService<IDlssStreamlineService>();
+                var nrVersions = dlssStreamlineSvc2.DlssnrVersions.ToList();
+                var currentNrRuntime = ViewModel.GetOsNrRuntime(card.GameName, card.Source ?? "");
+                // Default to newest (first manifest entry) when no override is set
+                if (string.IsNullOrEmpty(currentNrRuntime) && nrVersions.Count > 0)
+                    currentNrRuntime = nrVersions[0];
+                if (!string.IsNullOrEmpty(currentNrRuntime) && !nrVersions.Contains(currentNrRuntime))
+                    nrVersions.Insert(0, currentNrRuntime);
+                nrRuntimeCombo = new ComboBox { ItemsSource = nrVersions, SelectedItem = currentNrRuntime };
+                ToolTipService.SetToolTip(nrRuntimeCombo, "NR runtime: 310.8.2 = original NVIDIA (RTX 50). 310.8.SF-v2 = ShortFuse cross-gen (RTX 20/30/40).");
+
+                var nrEnabledRaw = ReadNrIni("Enabled");
+                nrEnabledCombo = new ComboBox { ItemsSource = new[] { "Default", "On", "Off" },
+                    SelectedItem = nrEnabledRaw.Equals("true", StringComparison.OrdinalIgnoreCase) ? "On"
+                                 : nrEnabledRaw.Equals("false", StringComparison.OrdinalIgnoreCase) ? "Off"
+                                 : "Default" };
+                ToolTipService.SetToolTip(nrEnabledCombo, "Enable DLSS Neural Rendering. Requires nvngx_dlssnr.dll + nvngx.dll_dlssnr.dll in game folder.");
+                AddRow(nrGrid, 0, "NR Runtime", nrRuntimeCombo!, "NR Enabled", nrEnabledCombo!);
+
+                // Row 1: Run Before SR | Passes
+                var nrRunBeforeRaw = ReadNrIni("RunBeforeSR");
+                nrRunBeforeSrCombo = new ComboBox { ItemsSource = new[] { "Default", "On", "Off" },
+                    SelectedItem = nrRunBeforeRaw.Equals("true", StringComparison.OrdinalIgnoreCase) ? "On"
+                                 : nrRunBeforeRaw.Equals("false", StringComparison.OrdinalIgnoreCase) ? "Off"
+                                 : "Default" };
+                ToolTipService.SetToolTip(nrRunBeforeSrCombo, "Run NR before Super Resolution. On = before upscaling; Off = after upscaling.");
+
+                var nrPassesRaw = ReadNrIni("Passes");
+                nrPassesCombo = new ComboBox { ItemsSource = new[] { "Default", "1", "2", "3" },
+                    SelectedItem = nrPassesRaw is "1" or "2" or "3" ? nrPassesRaw : "Default" };
+                ToolTipService.SetToolTip(nrPassesCombo, "Number of NR model passes. Each extra pass costs ~2x the model time but increases quality.");
+                AddRow(nrGrid, 1, "Run Before SR", nrRunBeforeSrCombo!, "Passes", nrPassesCombo!);
+
+                // Row 2: Working Scale | Finished Picture
+                var nrScaleRaw = ReadNrIni("WorkingScale");
+                nrScaleMap = new[] { ("Default", "auto"), ("0.5x (half)", "0.5"), ("0.75x", "0.75"), ("1.0x (full)", "1.0"), ("1.5x (supersample)", "1.5") };
+                var nrScaleSelected = nrScaleMap.FirstOrDefault(p => p.Item2 == nrScaleRaw).Item1 ?? "Default";
+                nrWorkingScaleCombo = new ComboBox { ItemsSource = nrScaleMap.Select(p => p.Item1).ToArray(), SelectedItem = nrScaleSelected };
+                ToolTipService.SetToolTip(nrWorkingScaleCombo, "Model work resolution as a fraction of frame size. Lower = faster; above 1.0 supersamples the model.");
+
+                var nrFinishedRaw = ReadNrIni("FinishedPicture");
+                nrFinishedPicCombo = new ComboBox { ItemsSource = new[] { "Default", "On" },
+                    SelectedItem = nrFinishedRaw.Equals("true", StringComparison.OrdinalIgnoreCase) ? "On" : "Default" };
+                ToolTipService.SetToolTip(nrFinishedPicCombo, "Apply NR to the finished picture (after all game lighting and effects). Helps with green noise. DX12 native only.");
+                AddRow(nrGrid, 2, "Working Scale", nrWorkingScaleCombo!, "Apply to Finished Picture", nrFinishedPicCombo!);
+
+                content.Children.Add(nrGrid);
+
+                // ── NR Runtime swap ────────────────────────────────────────
+                nrRuntimeCombo!.SelectionChanged += (s, ev) =>
+                {
+                    if (nrRuntimeCombo.SelectedItem is not string selectedVer || string.IsNullOrEmpty(selectedVer)) return;
+                    ViewModel.SetOsNrRuntime(card.GameName, selectedVer, card.Source ?? "");
+                    // Immediately swap the nvngx_dlssnr.dll in the game folder if installed
+                    if (card.IsOsInstalled && !string.IsNullOrEmpty(card.InstallPath))
+                    {
+                        var dlssNrSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
+                        var gameNrPath = Path.Combine(card.InstallPath, "nvngx_dlssnr.dll");
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var cachedDll = await dlssNrSvc.EnsureSpecificDlssnrCachedAsync(selectedVer).ConfigureAwait(false);
+                                if (cachedDll != null)
+                                {
+                                    // Use SentinelBackup to preserve the existing sentinel state,
+                                    // then overwrite with the new version
+                                    AuxInstallService.SentinelBackup(gameNrPath);
+                                    File.Copy(cachedDll, gameNrPath, overwrite: true);
+                                    CrashReporter.Log($"[OsCog] Swapped nvngx_dlssnr.dll to {selectedVer} in '{card.InstallPath}'");
+                                }
+                                else
+                                {
+                                    CrashReporter.Log($"[OsCog] nvngx_dlssnr.dll {selectedVer} not available — swap skipped");
+                                }
+                            }
+                            catch (Exception ex) { CrashReporter.Log($"[OsCog] NR runtime swap failed — {ex.Message}"); }
+                        });
+                    }
+                };
+
+                // ── NR INI value handlers ──────────────────────────────────
+                nrEnabledCombo!.SelectionChanged += (s, ev) =>
+                {
+                    if (nrEnabledCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                    var v = sel == "On" ? "true" : sel == "Off" ? "false" : "auto";
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "Enabled", v);
+                };
+                nrRunBeforeSrCombo!.SelectionChanged += (s, ev) =>
+                {
+                    if (nrRunBeforeSrCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                    var v = sel == "On" ? "true" : sel == "Off" ? "false" : "auto";
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "RunBeforeSR", v);
+                };
+                nrPassesCombo!.SelectionChanged += (s, ev) =>
+                {
+                    if (nrPassesCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                    var v = sel == "Default" ? "auto" : sel;
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "Passes", v);
+                };
+                nrWorkingScaleCombo!.SelectionChanged += (s, ev) =>
+                {
+                    if (nrWorkingScaleCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                    var v = nrScaleMap.FirstOrDefault(p => p.Item1 == sel).Item2 ?? "auto";
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "WorkingScale", v);
+                };
+                nrFinishedPicCombo!.SelectionChanged += (s, ev) =>
+                {
+                    if (nrFinishedPicCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "FinishedPicture", sel == "On" ? "true" : "false");
+                };
+            }
         }
 
         content.Children.Add(MakeSeparator());
@@ -2474,7 +2625,7 @@ public sealed partial class MainWindow
         var bottomBorder = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
         bottomBorder.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush) });
 
-        if (isNightly)
+        if (isNightly || isDlssNr)
         {
             var presetsLabel = new TextBlock { Text = "Presets", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
             bottomBorder.Children.Add(presetsLabel);
@@ -2568,6 +2719,14 @@ public sealed partial class MainWindow
                         if (fpsSel == "Off") capturedFps = 0f;
                         else { var m = vrrPresetsOs.FirstOrDefault(p => p.Label == fpsSel); if (m.Label != null) capturedFps = m.Fps; }
                     }
+                    // NR fields (only non-null when isDlssNr)
+                    string? capturedNrRuntime     = nrRuntimeCombo?.SelectedItem as string;
+                    string? capturedNrEnabled     = nrEnabledCombo?.SelectedItem is string ne ? (ne == "On" ? "true" : ne == "Off" ? "false" : "auto") : null;
+                    string? capturedNrRunBeforeSr = nrRunBeforeSrCombo?.SelectedItem is string rb ? (rb == "On" ? "true" : rb == "Off" ? "false" : "auto") : null;
+                    string? capturedNrPasses      = nrPassesCombo?.SelectedItem is string np && np != "Default" ? np : nrPassesCombo != null ? "auto" : null;
+                    string? capturedNrWorkingScale = nrWorkingScaleCombo?.SelectedItem is string nws
+                        ? (nrScaleMap?.FirstOrDefault(p2 => p2.Item1 == nws).Item2 ?? "auto") : null;
+                    string? capturedNrFinishedPic  = nrFinishedPicCombo?.SelectedItem is string nfp ? (nfp == "On" ? "true" : "false") : null;
 
                     if (presets[i] == null) presets[i] = new Models.OsPreset();
                     var p = presets[i]!;
@@ -2583,6 +2742,12 @@ public sealed partial class MainWindow
                     p.DisableFlipMetering = capturedFlip;
                     p.HudFix              = capturedHudFix;
                     p.FramerateLimit      = capturedFps;
+                    p.NrRuntime           = capturedNrRuntime;
+                    p.NrEnabled           = capturedNrEnabled;
+                    p.NrRunBeforeSr       = capturedNrRunBeforeSr;
+                    p.NrPasses            = capturedNrPasses;
+                    p.NrWorkingScale      = capturedNrWorkingScale;
+                    p.NrFinishedPicture   = capturedNrFinishedPic;
 
                     OsPresetService.Save(presets);
                     applyBtn.IsEnabled = true;
@@ -2685,6 +2850,33 @@ public sealed partial class MainWindow
                             else
                                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Framerate", "FramerateLimit",
                                     p.FramerateLimit.Value.ToString("0.000000", System.Globalization.CultureInfo.InvariantCulture));
+                        }
+
+                        // NR INI values (DlssNr variant only)
+                        if (p.NrEnabled        != null) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "Enabled",        p.NrEnabled);
+                        if (p.NrRunBeforeSr    != null) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "RunBeforeSR",     p.NrRunBeforeSr);
+                        if (p.NrPasses         != null) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "Passes",          p.NrPasses);
+                        if (p.NrWorkingScale   != null) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "WorkingScale",    p.NrWorkingScale);
+                        if (p.NrFinishedPicture != null) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DlssNr", "FinishedPicture", p.NrFinishedPicture);
+                    }
+
+                    // NR runtime swap (outside InstallPath guard — needs async)
+                    if (p.NrRuntime != null)
+                    {
+                        ViewModel.SetOsNrRuntime(card.GameName, p.NrRuntime, card.Source ?? "");
+                        if (card.IsOsInstalled && !string.IsNullOrEmpty(card.InstallPath))
+                        {
+                            var dlssNrSvc2 = App.Services.GetRequiredService<IDlssStreamlineService>();
+                            var gameNrPath2 = Path.Combine(card.InstallPath, "nvngx_dlssnr.dll");
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    var cachedDll2 = await dlssNrSvc2.EnsureSpecificDlssnrCachedAsync(p.NrRuntime).ConfigureAwait(false);
+                                    if (cachedDll2 != null) { AuxInstallService.SentinelBackup(gameNrPath2); File.Copy(cachedDll2, gameNrPath2, overwrite: true); }
+                                }
+                                catch (Exception ex) { CrashReporter.Log($"[OsPreset.Apply] NR runtime swap failed — {ex.Message}"); }
+                            });
                         }
                     }
 

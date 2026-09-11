@@ -757,6 +757,16 @@
     "Watch_Dogs\u00AE 2",
     "White Knuckle"
   ],
+  "lumaRequiresDgVoodoo": [
+    "Borderlands 2",
+    "Borderlands: The Pre-Sequel",
+    "Medal of Honor: Airborne",
+    "The Witcher 2: Assassins of Kings Enhanced Edition",
+    "Vanquish"
+  ],
+  "dgVoodooVersions": {
+    "2.87.3": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.3/dgVoodoo2_87_3.zip"
+  },
   "_comment_install_behaviour": "=== INSTALL BEHAVIOUR ===\nControls what happens when the user clicks Install for a component.\ninstallWarnings shows a blocking confirm dialog before proceeding (keys: reshade, renodx, relimiter, dc, optiscaler, luma, reframework, dxvk).\nforceExternalOnly redirects the install button to an external URL instead of downloading.\nsnapshotOverrides injects or overrides the addon download URL when wiki scraping fails.\ndllNameOverrides forces specific proxy DLL filenames (e.g. winmm.dll instead of dxgi.dll).\ngacSymlinkGames routes XNA Framework games through a GAC symlink install (requires admin).\nlaunchExeOverrides sets the relative exe path used when clicking Launch and for NVIDIA profile matching.\nrenodxIniOverrides injects keys into [renodx] reshade.ini section on install/update.\nlegacyReShadeVersions auto-assigns a locked ReShade version channel to specific games.",
   "installWarnings": {
     "Grand Theft Auto V Enhanced": {
@@ -841,8 +851,24 @@
       "reshade": "dxgi.dll",
       "dc": ""
     },
+    "Borderlands 2": {
+      "reshade": "dxgi.dll",
+      "dc": ""
+    },
     "Borderlands: The Pre-Sequel": {
-      "reshade": "d3d9.dll",
+      "reshade": "dxgi.dll",
+      "dc": ""
+    },
+    "Medal of Honor: Airborne": {
+      "reshade": "dxgi.dll",
+      "dc": ""
+    },
+    "The Witcher 2: Assassins of Kings Enhanced Edition": {
+      "reshade": "dxgi.dll",
+      "dc": ""
+    },
+    "Vanquish": {
+      "reshade": "dxgi.dll",
       "dc": ""
     },
     "Neverness To Everness": {

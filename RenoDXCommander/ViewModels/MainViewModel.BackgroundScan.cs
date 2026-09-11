@@ -103,6 +103,14 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
             });
+            var osDlssNrTask = Task.Run(async () => {
+                try
+                {
+                    if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "DlssNr"))
+                        await _optiScalerService.EnsureDlssNrStagingAsync();
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler DLSS NR staging task failed — {ex.Message}"); }
+            });
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS staging task failed — {ex.Message}"); }
@@ -186,6 +194,7 @@ public partial class MainViewModel
             }
             try { await rtx40MfgTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] RTX40MFG staging await failed — {ex.Message}"); }
             try { await dlssg2030Task; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Dlssg2030 staging await failed — {ex.Message}"); }
+            try { await osDlssNrTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler DLSS NR staging await failed — {ex.Message}"); }
 
             // Apply manifest-driven shader pack and addon pack overrides
             (_shaderPackService as ShaderPackService)?.ApplyManifestOverrides(_manifest);

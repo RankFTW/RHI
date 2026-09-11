@@ -32,6 +32,9 @@ copy /y "%SRC%\Assets\icons\*.png" "%OUT%\Assets\icons\" >nul
 copy /y "%SRC%\OptiScaler_nightly.nvidia.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler_nightly.amd-dlss.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler_nightly.amd-nodlss.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler_dlssnr.nvidia.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler_dlssnr.amd-dlss.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler_dlssnr.amd-nodlss.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler.nvidia.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler.amd-dlss.ini" "%OUT%\" >nul
 copy /y "%SRC%\OptiScaler.amd-nodlss.ini" "%OUT%\" >nul

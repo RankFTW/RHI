@@ -789,11 +789,25 @@ public class LumaService : ILumaService
         {
             // Skip ReShade DLLs — RHI now manages ReShade independently for Luma games.
             // Old records may have dxgi.dll etc. tracked from before this change.
+            // Exception: D3D9.dll deployed by dgVoodoo2 goes through the sentinel pattern
+            // and must be processed (not skipped) — detect by presence of our sentinel file.
             var fileName = Path.GetFileName(relPath);
-            if (fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+            if (fileName.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase))
+            {
+                // If RHI deployed this via dgVoodoo (sentinel exists), fall through to normal
+                // file handling so SentinelRestore can clean it up correctly.
+                var d3d9FullPath = Path.Combine(record.InstallPath, relPath);
+                var sentinelPath = d3d9FullPath + ".original";
+                if (!File.Exists(sentinelPath))
+                {
+                    CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed ReShade DLL '{relPath}' (no sentinel)");
+                    continue;
+                }
+                // Sentinel present — fall through to handle via SentinelRestore below
+            }
+            else if (fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
                 || fileName.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
                 || fileName.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
-                || fileName.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
                 || fileName.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
                 || fileName.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
             {
@@ -813,6 +827,8 @@ public class LumaService : ILumaService
                 if (File.Exists(fullPath))
                 {
                     File.Delete(fullPath);
+                    // Restore game-original if a sentinel exists (e.g. dgVoodoo D3D9.dll)
+                    AuxInstallService.SentinelRestore(fullPath);
                 }
                 else if (addonDeployPath != record.InstallPath)
                 {

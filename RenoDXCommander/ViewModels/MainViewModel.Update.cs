@@ -945,8 +945,9 @@ public partial class MainViewModel
         var osCards = _allCards.Where(c => c.OsStatus == GameStatus.UpdateAvailable && !c.IsHidden && !c.ExcludeFromUpdateAllOs).ToList();
         if (osCards.Count == 0) return;
 
-        var stableCards = osCards.Where(c => GetOsVariant(c.GameName, c.Source ?? "") != "Nightly").ToList();
+        var stableCards  = osCards.Where(c => GetOsVariant(c.GameName, c.Source ?? "") == "Stable" || GetOsVariant(c.GameName, c.Source ?? "") == "").ToList();
         var nightlyCards = osCards.Where(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly").ToList();
+        var dlssNrCards  = osCards.Where(c => GetOsVariant(c.GameName, c.Source ?? "") == "DlssNr").ToList();
 
         // Ensure stable staging if any stable cards need updating
         if (stableCards.Count > 0 && !_optiScalerService.IsStagingReady)
@@ -960,6 +961,13 @@ public partial class MainViewModel
         {
             try { await _optiScalerService.EnsureNightlyStagingAsync(); }
             catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Nightly staging failed — {ex.Message}"); return; }
+        }
+
+        // Ensure DLSS NR staging if any DlssNr cards need updating
+        if (dlssNrCards.Count > 0 && !_optiScalerService.IsStagingReadyDlssNr)
+        {
+            try { await _optiScalerService.EnsureDlssNrStagingAsync(); }
+            catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] DLSS NR staging failed — {ex.Message}"); return; }
         }
 
         foreach (var card in osCards)
@@ -1197,12 +1205,24 @@ public partial class MainViewModel
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS nightly update result: {_optiScalerService.HasUpdateNightly}");
             }
 
+            // Also check DLSS NR if any installed game uses it
+            bool anyDlssNr = cards.Any(c => c.OsStatus == GameStatus.Installed && GetOsVariant(c.GameName, c.Source ?? "") == "DlssNr");
+            if (anyDlssNr)
+            {
+                await _optiScalerService.CheckForDlssNrUpdateAsync().ConfigureAwait(false);
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS DLSS NR update result: {_optiScalerService.HasUpdateDlssNr}");
+            }
+
             DispatcherQueue?.TryEnqueue(() =>
             {
                 foreach (var card in cards.Where(c => c.OsStatus == GameStatus.Installed))
                 {
                     var osVariant = GetOsVariant(card.GameName, card.Source ?? "");
-                    bool osHasUpdate = osVariant == "Nightly" ? _optiScalerService.HasUpdateNightly : _optiScalerService.HasUpdate;
+                    bool osHasUpdate = osVariant switch {
+                        "Nightly" => _optiScalerService.HasUpdateNightly,
+                        "DlssNr"  => _optiScalerService.HasUpdateDlssNr,
+                        _         => _optiScalerService.HasUpdate
+                    };
                     if (osHasUpdate) card.OsStatus = GameStatus.UpdateAvailable;
                 }
 

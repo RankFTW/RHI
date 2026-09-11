@@ -1,8 +1,15 @@
 
 ## v2.7.0
 
+### New
+
+- **dgVoodoo2 auto-deployment for DX9 Luma games** — Luma mods for Borderlands 2, Borderlands: The Pre-Sequel, Medal of Honor: Airborne, The Witcher 2, and Vanquish now automatically download and deploy dgVoodoo2 alongside the Luma install. These games use DX9 and require a DX9→DX11 translation layer for Luma to work. RHI handles the download, configuration, and cleanup — it's still one-click. ReShade is also correctly installed as `dxgi.dll` for these games so it hooks dgVoodoo2's DX11 output.
+- **OptiScaler DLSS NR variant** — new third option in the OptiScaler version picker alongside Stable and Nightly. DLSS NR uses the [wilsjo2 Neural Rendering fork](https://github.com/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass) which adds DLSS 5 Neural Rendering support with multi-pass NR, pre/post-SR placement, and working scale controls. When installed, `nvngx.dll_dlssnr.dll` (the NR forwarder) and `nvngx_dlssnr.dll` (the NR runtime) are deployed to the game folder automatically. All existing Nightly features — Streamline, DLSS Enabler, FG settings, Engine.ini tweaks, presets — are available in DLSS NR too.
+- **Neural Rendering Settings cog section** — when using the DLSS NR variant, the OptiScaler cog shows a dedicated Neural Rendering Settings section with: NR Runtime (choose between 310.8.2 for RTX 50 and ShortFuse 310.8.SF-v2 for RTX 20/30/40), NR Enabled, Run Before SR, Passes (1/2/3), Working Scale, and Apply to Finished Picture. Changing the NR Runtime immediately swaps `nvngx_dlssnr.dll` in the game folder. All NR settings write directly to `OptiScaler.ini`.
+
 ### Bug Fixes
 
+- Fixed ReBAR Size Limit writing and reading incorrect values — setting a size in RHI now correctly reflects in NVPI, and values set in NVPI are correctly read back by RHI.
 - Fixed Output Colour Settings applying to the wrong monitor — changing colour depth or dynamic range on one display could affect a different display on multi-monitor setups where Windows display numbering didn't match the internal display order.
 
 ---

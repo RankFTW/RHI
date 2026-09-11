@@ -1,6 +1,7 @@
 // MainViewModel.Install.Luma.cs -- ReShade install/uninstall, RE Framework, and Luma commands.
 
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 
@@ -866,6 +867,32 @@ public partial class MainViewModel
             // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
             card.LumaActionMessage = "Installing ReShade...";
             await InstallReShadeAsync(card);
+
+            // ── dgVoodoo2 (DX9→DX11 translation layer — required for some legacy games) ────
+            // Must be deployed AFTER ReShade so we can confirm dxgi.dll is claimed by ReShade.
+            if (_manifest?.LumaRequiresDgVoodoo?.Contains(card.GameName, StringComparer.OrdinalIgnoreCase) == true
+                && _manifest.DgVoodooVersions?.Count > 0)
+            {
+                try
+                {
+                    card.LumaActionMessage = "Installing dgVoodoo2...";
+                    var dgVoodooSvc = App.Services.GetRequiredService<DgVoodooService>();
+                    var versionEntry = _manifest.DgVoodooVersions.First();
+                    await dgVoodooSvc.EnsureStagedAsync(versionEntry.Key, versionEntry.Value).ConfigureAwait(false);
+                    var deployed = dgVoodooSvc.DeployToGame(card.InstallPath, versionEntry.Key);
+                    // Add deployed files to the tracking record so uninstall cleans them up
+                    foreach (var f in deployed)
+                        if (!record.InstalledFiles.Contains(f, StringComparer.OrdinalIgnoreCase))
+                            record.InstalledFiles.Add(f);
+                    // Re-save the record with updated file list
+                    _lumaService.SaveLumaRecord(record);
+                    _crashReporter.Log($"[InstallLumaAsync] dgVoodoo2 v{versionEntry.Key} deployed for '{card.GameName}'");
+                }
+                catch (Exception dgEx)
+                {
+                    _crashReporter.Log($"[InstallLumaAsync] dgVoodoo2 deploy failed for '{card.GameName}' — {dgEx.Message}");
+                }
+            }
 
             // ── Generic Luma post-install actions ─────────────────────────────────
             if (card.LumaMod?.IsGenericLuma == true)

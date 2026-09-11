@@ -1060,4 +1060,252 @@ public partial class OptiScalerService
             CrashReporter.Log($"[OptiScalerService.ClearNightlyStaging] Failed — {ex.Message}");
         }
     }
+
+    // ── DLSS NR variant staging ───────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public async Task EnsureDlssNrStagingAsync(IProgress<(string message, double percent)>? progress = null)
+    {
+        try
+        {
+            if (IsStagingReadyDlssNr && !HasUpdateDlssNr)
+            {
+                CrashReporter.Log("[OptiScalerService.EnsureDlssNrStagingAsync] Staging already valid — skipping");
+                progress?.Report(("OptiScaler DLSS NR staging ready", 100));
+                return;
+            }
+
+            progress?.Report(("Checking OptiScaler DLSS NR release...", 5));
+            string? json;
+            try { json = await _etagCache.GetWithETagAsync(_http, DlssNrReleasesApi).ConfigureAwait(false); }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] API request failed — {ex.Message}");
+                return;
+            }
+            if (json == null)
+            {
+                CrashReporter.Log("[OptiScalerService.EnsureDlssNrStagingAsync] API returned null");
+                return;
+            }
+
+            string? tagName = null, assetName = null, downloadUrl = null;
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                // Releases list — take first (newest)
+                JsonElement firstRelease;
+                if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
+                    firstRelease = root[0];
+                else if (root.ValueKind == JsonValueKind.Object)
+                    firstRelease = root; // single release object
+                else
+                {
+                    CrashReporter.Log("[OptiScalerService.EnsureDlssNrStagingAsync] No releases found");
+                    return;
+                }
+
+                if (firstRelease.TryGetProperty("tag_name", out var tagEl))
+                {
+                    var raw = tagEl.GetString() ?? "";
+                    // Strip leading "v" — "v0.7.7" → "0.7.7"
+                    tagName = raw.TrimStart('v');
+                }
+
+                if (firstRelease.TryGetProperty("assets", out var assets))
+                    foreach (var asset in assets.EnumerateArray())
+                    {
+                        var name = asset.GetProperty("name").GetString() ?? "";
+                        if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                        {
+                            assetName = name;
+                            downloadUrl = asset.GetProperty("browser_download_url").GetString();
+                            break;
+                        }
+                    }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Parse failed — {ex.Message}");
+                return;
+            }
+
+            if (assetName == null || downloadUrl == null)
+            {
+                CrashReporter.Log("[OptiScalerService.EnsureDlssNrStagingAsync] No .zip asset found");
+                return;
+            }
+
+            var cachedVersion = StagedVersionDlssNr;
+            if (cachedVersion != null && string.Equals(cachedVersion, tagName, StringComparison.Ordinal) && IsStagingReadyDlssNr)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Already up to date ({tagName})");
+                progress?.Report(("OptiScaler DLSS NR up to date", 100));
+                return;
+            }
+
+            progress?.Report(($"Downloading OptiScaler DLSS NR ({assetName})...", 10));
+            CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Downloading {assetName} from {downloadUrl}");
+
+            Directory.CreateDirectory(DlssNrStagingDir);
+            var tempArchive = Path.Combine(DlssNrStagingDir, assetName + ".tmp");
+
+            try
+            {
+                var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                if (!dlResp.IsSuccessStatusCode)
+                {
+                    CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Download failed ({dlResp.StatusCode})");
+                    return;
+                }
+
+                var total = dlResp.Content.Headers.ContentLength ?? -1L;
+                long downloaded = 0;
+                var buf = new byte[1024 * 1024];
+
+                using (var net = await dlResp.Content.ReadAsStreamAsync())
+                using (var file = new FileStream(tempArchive, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
+                {
+                    int read;
+                    while ((read = await net.ReadAsync(buf)) > 0)
+                    {
+                        await file.WriteAsync(buf.AsMemory(0, read));
+                        downloaded += read;
+                        if (total > 0)
+                        {
+                            var pct = 10 + (double)downloaded / total * 60;
+                            progress?.Report(($"Downloading OptiScaler DLSS NR... {downloaded / 1024} KB / {total / 1024} KB", pct));
+                        }
+                    }
+                }
+
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Downloaded {downloaded} bytes");
+            }
+            catch (Exception ex)
+            {
+                if (File.Exists(tempArchive)) try { File.Delete(tempArchive); } catch { }
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Download exception — {ex.Message}");
+                return;
+            }
+
+            progress?.Report(("Extracting OptiScaler DLSS NR...", 75));
+            try
+            {
+                var tempExtractDir = Path.Combine(Path.GetTempPath(), $"RHI_optiscaler_dlssnr_{Guid.NewGuid():N}");
+                Directory.CreateDirectory(tempExtractDir);
+
+                try
+                {
+                    // DLSS NR releases are .zip — use ZipFile, no 7-Zip needed
+                    System.IO.Compression.ZipFile.ExtractToDirectory(tempArchive, tempExtractDir, overwriteFiles: true);
+
+                    var dllCandidates = Directory.GetFiles(tempExtractDir, "OptiScaler.dll", SearchOption.AllDirectories);
+                    if (dllCandidates.Length == 0)
+                    {
+                        CrashReporter.Log("[OptiScalerService.EnsureDlssNrStagingAsync] OptiScaler.dll not found in extracted archive");
+                        return;
+                    }
+
+                    var sourceDir = Path.GetDirectoryName(dllCandidates[0])!;
+
+                    // Clear existing staging files before copying fresh
+                    foreach (var existingFile in Directory.GetFiles(DlssNrStagingDir))
+                    {
+                        try { File.Delete(existingFile); } catch { }
+                    }
+                    // Clear existing staging subdirs
+                    foreach (var existingDir in Directory.GetDirectories(DlssNrStagingDir))
+                    {
+                        try { Directory.Delete(existingDir, recursive: true); } catch { }
+                    }
+
+                    foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+                    {
+                        var relativePath = Path.GetRelativePath(sourceDir, file);
+                        var destPath = Path.Combine(DlssNrStagingDir, relativePath);
+                        Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                        File.Copy(file, destPath, overwrite: true);
+                    }
+
+                    CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Extracted to DLSS NR staging from {sourceDir}");
+                }
+                finally
+                {
+                    try { Directory.Delete(tempExtractDir, recursive: true); } catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Failed to clean up temp dir — {ex.Message}"); }
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Extraction failed — {ex.Message}");
+                return;
+            }
+            finally
+            {
+                if (File.Exists(tempArchive)) try { File.Delete(tempArchive); } catch { }
+            }
+
+            try
+            {
+                File.WriteAllText(DlssNrVersionFilePath, tagName ?? "unknown");
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Version tag written: {tagName}");
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Failed to write version file — {ex.Message}");
+            }
+
+            HasUpdateDlssNr = false;
+            progress?.Report(("OptiScaler DLSS NR staging ready", 100));
+            CrashReporter.Log("[OptiScalerService.EnsureDlssNrStagingAsync] Staging complete");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Unexpected error — {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task CheckForDlssNrUpdateAsync()
+    {
+        try
+        {
+            string? json;
+            try { json = await _etagCache.GetWithETagAsync(_http, DlssNrReleasesApi).ConfigureAwait(false); }
+            catch { return; }
+            if (json == null) return;
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            string? remoteTag = null;
+            if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
+                remoteTag = root[0].TryGetProperty("tag_name", out var t) ? t.GetString()?.TrimStart('v') : null;
+            else if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("tag_name", out var t2))
+                remoteTag = t2.GetString()?.TrimStart('v');
+
+            HasUpdateDlssNr = !string.Equals(StagedVersionDlssNr, remoteTag, StringComparison.Ordinal);
+            CrashReporter.Log($"[OptiScalerService.CheckForDlssNrUpdateAsync] Local={StagedVersionDlssNr}, Remote={remoteTag}, HasUpdate={HasUpdateDlssNr}");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.CheckForDlssNrUpdateAsync] Failed — {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc />
+    public void ClearDlssNrStaging()
+    {
+        try
+        {
+            if (Directory.Exists(DlssNrStagingDir))
+                Directory.Delete(DlssNrStagingDir, true);
+            CrashReporter.Log("[OptiScalerService.ClearDlssNrStaging] DLSS NR staging folder cleared");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.ClearDlssNrStaging] Failed — {ex.Message}");
+        }
+    }
 }

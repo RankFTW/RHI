@@ -98,8 +98,10 @@ public interface IGameNameService
     /// <summary>Per-game Lilium HDR DXVK preset index. 0=Safest (default), 5=Experimental. Absent = 0.</summary>
     Dictionary<string, int> LiliumPresetOverrides { get; }
 
-    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable" or "Nightly".</summary>
+    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable", "Nightly", or "DlssNr".</summary>
     Dictionary<string, string> OsVariantOverrides { get; }
+    /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value e.g. "310.8.2". Absent = default.</summary>
+    Dictionary<string, string> OsNrRuntime { get; }
 
     /// <summary>Per-game Neural Rendering method override. Key = "GameName|Store", Value = "DLSS5Tool", "DLSS5ToolBridge", "ShortFuse", or "Feeder". Absent = auto-detect.</summary>
     Dictionary<string, string> NrMethodOverrides { get; }

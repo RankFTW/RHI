@@ -14,7 +14,11 @@ public partial class OptiScalerService
     /// </summary>
     public static string GetBundledIniPath(string gpuType, bool dlssInputs, string variant = "Stable")
     {
-        var suffix = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase) ? "_nightly" : "";
+        var suffix = variant switch {
+            "Nightly" => "_nightly",
+            "DlssNr"  => "_dlssnr",
+            _         => ""
+        };
         var fileName = gpuType.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase)
             ? $"OptiScaler{suffix}.nvidia.ini"
             : dlssInputs
@@ -44,25 +48,31 @@ public partial class OptiScalerService
             progress?.Report(("Preparing OptiScaler install...", 5));
 
             // ── 2. Resolve effective staging dir based on variant ────────────
-            var effectiveStagingDir = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase)
-                ? NightlyStagingDir : StagingDir;
             bool isNightly = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase);
+            bool isDlssNr  = variant.Equals("DlssNr",  StringComparison.OrdinalIgnoreCase);
+            var effectiveStagingDir = isDlssNr ? DlssNrStagingDir
+                : isNightly ? NightlyStagingDir
+                : StagingDir;
 
             // ── 3. If updating, force re-download staging to get the latest version ──
-            if (isNightly ? HasUpdateNightly : HasUpdate)
+            bool hasUpdate = isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate;
+            if (hasUpdate)
             {
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] Update available ({variant}) — clearing staging for fresh download");
-                if (isNightly) ClearNightlyStaging(); else ClearStaging();
+                if (isDlssNr) ClearDlssNrStaging();
+                else if (isNightly) ClearNightlyStaging();
+                else ClearStaging();
             }
 
             // ── 4. Validate staging ──────────────────────────────────────────
-            bool stagingReady = isNightly ? IsStagingReadyNightly : IsStagingReady;
+            bool stagingReady = isDlssNr ? IsStagingReadyDlssNr : isNightly ? IsStagingReadyNightly : IsStagingReady;
             if (!stagingReady)
             {
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] {variant} staging not ready — attempting download");
-                if (isNightly) await EnsureNightlyStagingAsync(progress);
+                if (isDlssNr) await EnsureDlssNrStagingAsync(progress);
+                else if (isNightly) await EnsureNightlyStagingAsync(progress);
                 else await EnsureStagingAsync(progress);
-                stagingReady = isNightly ? IsStagingReadyNightly : IsStagingReady;
+                stagingReady = isDlssNr ? IsStagingReadyDlssNr : isNightly ? IsStagingReadyNightly : IsStagingReady;
                 if (!stagingReady)
                 {
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] {variant} staging still not ready after download attempt — aborting");
@@ -173,10 +183,16 @@ public partial class OptiScalerService
                 if (fileName.Equals("version.txt", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Skip installer scripts, READMEs, and license files — not needed in game folder
+                // Skip non-game files: scripts, docs, executables, licence files
                 if (fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)
                     || fileName.EndsWith(".sh", StringComparison.OrdinalIgnoreCase)
-                    || fileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+                    || fileName.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)
+                    || fileName.Equals("LICENSE", StringComparison.OrdinalIgnoreCase)
+                    || fileName.StartsWith("!!", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 string destPath;
@@ -211,6 +227,10 @@ public partial class OptiScalerService
 
                 // Skip Licenses folder — not needed in game folder
                 if (dirName.Equals("Licenses", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (dirName.Equals("redist", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (dirName.Equals("docs", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var destSubDir = Path.Combine(card.InstallPath, dirName);
@@ -310,6 +330,36 @@ public partial class OptiScalerService
                 }
             }
 
+            // ── 5b. DlssNr variant: deploy forwarder + nvngx_dlssnr.dll ─────
+            // The forwarder (nvngx.dll_dlssnr.dll) is already deployed by the
+            // main staging loop above (it lives in the archive root alongside OptiScaler.dll).
+            // Here we additionally deploy the nvngx_dlssnr.dll runtime from our cached DLSS manifest.
+            if (isDlssNr)
+            {
+                progress?.Report(("Deploying DLSS NR runtime...", 72));
+                try
+                {
+                    var dlssStreamlineSvc = _dlssStreamlineServiceLazy.Value;
+                    // Always use the newest available NR runtime from the manifest
+                    var cachedNrDll = await dlssStreamlineSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                    if (cachedNrDll != null)
+                    {
+                        var gameNrPath = Path.Combine(card.InstallPath, "nvngx_dlssnr.dll");
+                        BackupOriginalIfExists(gameNrPath);
+                        File.Copy(cachedNrDll, gameNrPath, overwrite: true);
+                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed nvngx_dlssnr.dll to game folder");
+                    }
+                    else
+                    {
+                        CrashReporter.Log($"[OptiScalerService.InstallAsync] nvngx_dlssnr.dll not available from manifest — skipping NR runtime deploy");
+                    }
+                }
+                catch (Exception nrEx)
+                {
+                    CrashReporter.Log($"[OptiScalerService.InstallAsync] NR runtime deploy failed — {nrEx.Message}");
+                }
+            }
+
             progress?.Report(("Saving install record...", 80));
 
             // ── 6. Create/update AuxInstalledRecord ──────────────────────────
@@ -358,9 +408,11 @@ public partial class OptiScalerService
 
             // ── 8. Update card VM properties ─────────────────────────────────
             card.OsInstalledFile = effectiveDllName;
-            card.OsInstalledVersion = isNightly ? StagedVersionNightly : StagedVersion;
+            card.OsInstalledVersion = isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
             card.OsStatus = GameStatus.Installed;
-            if (isNightly) HasUpdateNightly = false; else HasUpdate = false;
+            if (isDlssNr) HasUpdateDlssNr = false;
+            else if (isNightly) HasUpdateNightly = false;
+            else HasUpdate = false;
 
             // ── 9. DXVK coexistence — move conflicting DXVK DLL to plugins folder ──
             try
@@ -429,8 +481,8 @@ public partial class OptiScalerService
             // Use the variant-appropriate staging dir if available
             var record0 = _auxInstaller.FindRecord(card.GameName, gameDir, AddonType);
             var installedVariant = record0?.OsVariant ?? "Stable";
-            var effectiveStagingDir = installedVariant == "Nightly" && IsStagingReadyNightly
-                ? NightlyStagingDir
+            var effectiveStagingDir = (installedVariant == "DlssNr"  && IsStagingReadyDlssNr)  ? DlssNrStagingDir
+                : (installedVariant == "Nightly" && IsStagingReadyNightly) ? NightlyStagingDir
                 : (IsStagingReady ? StagingDir : null);
 
             var stagingFiles = effectiveStagingDir != null
@@ -450,6 +502,17 @@ public partial class OptiScalerService
                     continue; // handled separately below (renamed on deploy)
                 if (fileName.Equals(IniFileName, StringComparison.OrdinalIgnoreCase))
                     continue; // handled separately below
+                // Skip non-game files (same filter as install/update loops)
+                if (fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".sh", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)
+                    || fileName.Equals("LICENSE", StringComparison.OrdinalIgnoreCase)
+                    || fileName.StartsWith("!!", StringComparison.OrdinalIgnoreCase))
+                    continue;
                 deployedFileNames.Add(fileName);
             }
 
@@ -541,6 +604,22 @@ public partial class OptiScalerService
                 RestoreOriginalIfExists(gameDlssgPath);
             }
 
+            // ── 2e. DlssNr variant: delete nvngx_dlssnr.dll + forwarder, restore originals ──
+            // nvngx_dlssnr.dll was backed up via SentinelBackup on install, so
+            // SentinelRestore handles the three cases automatically:
+            //   0-byte sentinel → RHI placed it, delete both
+            //   non-zero sentinel → game had its own copy, restore it
+            //   no sentinel → leave it alone (e.g. deployed by another tool)
+            // nvngx.dll_dlssnr.dll (the forwarder) is in the staging folder so it's
+            // already covered by the deployedFileNames loop below.
+            var gameNrPath = Path.Combine(gameDir, "nvngx_dlssnr.dll");
+            if (File.Exists(gameNrPath) || File.Exists(gameNrPath + ".original"))
+            {
+                if (File.Exists(gameNrPath)) File.Delete(gameNrPath);
+                CrashReporter.Log("[OptiScalerService.Uninstall] Deleted nvngx_dlssnr.dll");
+                RestoreOriginalIfExists(gameNrPath);
+            }
+
             // ── 3. Delete all other deployed files ───────────────────────────
             foreach (var fileName in deployedFileNames)
             {
@@ -558,6 +637,8 @@ public partial class OptiScalerService
             {
                 var dirName = Path.GetFileName(stagingSubDir);
                 if (dirName.Equals("Licenses", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (dirName.Equals("docs", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var gameSubDir = Path.Combine(gameDir, dirName);
@@ -746,23 +827,29 @@ public partial class OptiScalerService
             var record = _auxInstaller.FindRecord(card.GameName, card.InstallPath, AddonType);
             var variant = record?.OsVariant ?? "Stable";
             bool isNightly = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase);
-            var effectiveStagingDir = isNightly ? NightlyStagingDir : StagingDir;
+            bool isDlssNr  = variant.Equals("DlssNr",  StringComparison.OrdinalIgnoreCase);
+            var effectiveStagingDir = isDlssNr ? DlssNrStagingDir
+                : isNightly ? NightlyStagingDir
+                : StagingDir;
 
             // ── 1. Force re-download staging to get the latest version ────
-            bool hasUpdate = isNightly ? HasUpdateNightly : HasUpdate;
+            bool hasUpdate = isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate;
             if (hasUpdate)
             {
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] Update available ({variant}) — clearing staging for fresh download");
-                if (isNightly) ClearNightlyStaging(); else ClearStaging();
+                if (isDlssNr) ClearDlssNrStaging();
+                else if (isNightly) ClearNightlyStaging();
+                else ClearStaging();
             }
 
-            bool stagingReady = isNightly ? IsStagingReadyNightly : IsStagingReady;
+            bool stagingReady = isDlssNr ? IsStagingReadyDlssNr : isNightly ? IsStagingReadyNightly : IsStagingReady;
             if (!stagingReady)
             {
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] {variant} staging not ready — downloading");
-                if (isNightly) await EnsureNightlyStagingAsync(progress);
+                if (isDlssNr) await EnsureDlssNrStagingAsync(progress);
+                else if (isNightly) await EnsureNightlyStagingAsync(progress);
                 else await EnsureStagingAsync(progress);
-                stagingReady = isNightly ? IsStagingReadyNightly : IsStagingReady;
+                stagingReady = isDlssNr ? IsStagingReadyDlssNr : isNightly ? IsStagingReadyNightly : IsStagingReady;
                 if (!stagingReady)
                 {
                     CrashReporter.Log($"[OptiScalerService.UpdateAsync] {variant} staging still not ready after download attempt — aborting");
@@ -820,6 +907,8 @@ public partial class OptiScalerService
             {
                 var dirName = Path.GetFileName(stagingSubDirPath);
                 if (dirName.Equals("Licenses", StringComparison.OrdinalIgnoreCase)) continue;
+                if (dirName.Equals("redist",   StringComparison.OrdinalIgnoreCase)) continue;
+                if (dirName.Equals("docs",     StringComparison.OrdinalIgnoreCase)) continue;
                 var gameSubDir = Path.Combine(gameDir, dirName);
                 if (Directory.Exists(gameSubDir))
                 {
@@ -838,10 +927,16 @@ public partial class OptiScalerService
                 if (fileName.Equals("version.txt", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Skip installer scripts, READMEs, and license files — not needed in game folder
+                // Skip non-game files: scripts, docs, executables, licence files
                 if (fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)
                     || fileName.EndsWith(".sh", StringComparison.OrdinalIgnoreCase)
-                    || fileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+                    || fileName.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                    || fileName.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)
+                    || fileName.Equals("LICENSE", StringComparison.OrdinalIgnoreCase)
+                    || fileName.StartsWith("!!", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 if (fileName.Equals(IniFileName, StringComparison.OrdinalIgnoreCase))
@@ -867,6 +962,10 @@ public partial class OptiScalerService
 
                 // Skip Licenses folder — not needed in game folder
                 if (dirName.Equals("Licenses", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (dirName.Equals("redist", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (dirName.Equals("docs", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var destSubDir = Path.Combine(gameDir, dirName);
@@ -955,6 +1054,27 @@ public partial class OptiScalerService
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated {DlssgDllFileName} in game folder");
             }
 
+            // ── 4e. DlssNr variant: re-deploy nvngx_dlssnr.dll (always newest from manifest) ──
+            if (isDlssNr)
+            {
+                try
+                {
+                    var dlssStreamlineSvc = _dlssStreamlineServiceLazy.Value;
+                    var cachedNrDll = await dlssStreamlineSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                    if (cachedNrDll != null)
+                    {
+                        var gameNrPath = Path.Combine(gameDir, "nvngx_dlssnr.dll");
+                        // On update the file is already ours — overwrite directly without backup
+                        File.Copy(cachedNrDll, gameNrPath, overwrite: true);
+                        CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated nvngx_dlssnr.dll in game folder");
+                    }
+                }
+                catch (Exception nrEx)
+                {
+                    CrashReporter.Log($"[OptiScalerService.UpdateAsync] NR runtime update failed — {nrEx.Message}");
+                }
+            }
+
             progress?.Report(("Updating tracking record...", 80));
 
             // ── 5. Update tracking record with new version ───────────────────
@@ -968,9 +1088,11 @@ public partial class OptiScalerService
             }
 
             // ── 6. Update card VM properties ─────────────────────────────────
-            card.OsInstalledVersion = isNightly ? StagedVersionNightly : StagedVersion;
+            card.OsInstalledVersion = isDlssNr ? StagedVersionDlssNr : isNightly ? StagedVersionNightly : StagedVersion;
             card.OsStatus = GameStatus.Installed;
-            if (isNightly) HasUpdateNightly = false; else HasUpdate = false;
+            if (isDlssNr) HasUpdateDlssNr = false;
+            else if (isNightly) HasUpdateNightly = false;
+            else HasUpdate = false;
 
             progress?.Report(("OptiScaler updated!", 100));
             CrashReporter.Log($"[OptiScalerService.UpdateAsync] Update complete for {card.GameName}");
@@ -995,6 +1117,9 @@ public partial class OptiScalerService
             ("NVIDIA", true,  "Nightly"),
             ("AMD",    true,  "Nightly"),
             ("AMD",    false, "Nightly"),
+            ("NVIDIA", true,  "DlssNr"),
+            ("AMD",    true,  "DlssNr"),
+            ("AMD",    false, "DlssNr"),
         };
         foreach (var (gpu, dlss, variant) in configs)
         {
