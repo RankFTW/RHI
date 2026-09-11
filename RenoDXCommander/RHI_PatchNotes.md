@@ -9,6 +9,7 @@
 
 ### Bug Fixes
 
+- Fixed games with manifest install path overrides (e.g. The Witcher 2) showing the wrong install path and missing mod status on first launch — the correct subfolder is now applied immediately from the cached manifest rather than waiting for a Refresh.
 - Fixed ReBAR Size Limit writing and reading incorrect values — values set in RHI now show correctly in NVPI, and values set in NVPI are correctly read back by RHI.
 - Fixed Output Colour Settings applying to the wrong monitor on multi-monitor setups.
 

@@ -773,12 +773,6 @@
     "Grand Theft Auto V Enhanced": {
       "reshade": "⚠ ReShade in GTA V Enhanced may produce an \"Unable to save configuration\" error due to an incompatibility with DirectStorage.\n\nFix: install ASI Loader first, then drop DirectStorageFix.asi into the game folder.\n\nDownload DirectStorageFix: https://www.gta5-mods.com/scripts/directstoragefix\n\nAlternatively, use ReShade 5.9.2 or older."
     },
-    "Borderlands 2": {
-      "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
-    },
-    "Borderlands: The Pre-Sequel": {
-      "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
-    },
     "FINAL FANTASY VII REMAKE INTERGRADE": {
       "luma": "\u26A0 This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game \u2192 Properties \u2192 Launch Options \u2192 type: -dx11"
     },
