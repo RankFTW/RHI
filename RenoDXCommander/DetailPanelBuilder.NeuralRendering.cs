@@ -1374,9 +1374,11 @@ public partial class DetailPanelBuilder
         await rdx5Svc.DeployNrDllIfAbsentAsync(installPath).ConfigureAwait(false);
 
         // Deploy DLSS5 Tool as neural consumer (Feeder needs renodx-dlss5.addon64 alongside it)
+        // For 32-bit games the neural consumer runs in host64\ — it must NOT be in the game folder
+        // (32-bit ReShade cannot load .addon64 files).
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying DLSS5 Tool...");
         await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
-        if (rdx5Svc.IsStagingReady)
+        if (rdx5Svc.IsStagingReady && !card.Is32Bit)
         {
             await Task.Run(() =>
             {
@@ -1387,6 +1389,10 @@ public partial class DetailPanelBuilder
                 // tracked by AddonPackService to prevent the stale-cleanup pass from removing them.
                 CrashReporter.Log($"[NeuralRendering] Deployed renodx-dlss5.addon64 (Feeder consumer) to '{deployDir}'");
             }).ConfigureAwait(false);
+        }
+        else if (card.Is32Bit)
+        {
+            CrashReporter.Log($"[NeuralRendering] 32-bit game — skipping renodx-dlss5.addon64 in game folder (neural consumer goes in host64\\ instead)");
         }
 
         // Deploy newest nvngx_dlss.dll — required by Feeder beside the game exe (install root, not detected plugin path)
