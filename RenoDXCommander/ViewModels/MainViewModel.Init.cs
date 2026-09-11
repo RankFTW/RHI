@@ -775,7 +775,6 @@ public partial class MainViewModel
         new(StringComparer.OrdinalIgnoreCase)
     {
         ["Cyberpunk 2077"] = @"bin\x64",
-        ["The Witcher 2: Assassins of Kings Enhanced Edition"] = @"bin",
     };
 
     /// <summary>

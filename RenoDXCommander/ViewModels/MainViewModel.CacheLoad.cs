@@ -423,6 +423,13 @@ public partial class MainViewModel
         DlssPresetService.ApplyManifestPresets(cachedManifest);
         FeatureFlags.ApplyManifest(cachedManifest?.FeatureFlags);
 
+        // Apply install path overrides from cached manifest so Phase 1 uses the correct subfolder
+        // (e.g. Witcher 2 → bin\, Cyberpunk → bin\x64). Without this, games added to the manifest
+        // after the cache was written would show the wrong path until a Refresh.
+        if (cachedManifest?.InstallPathOverrides != null)
+            foreach (var (key, value) in cachedManifest.InstallPathOverrides)
+                _installPathOverrides.TryAdd(key, value);
+
         // 8. Load installed records and aux records from disk (fast local reads)
         var records    = _installer.LoadAll();
         var auxRecords = _auxInstaller.LoadAll();
