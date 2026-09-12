@@ -88,27 +88,9 @@ public partial class ShaderPackService
         }
         try
         {
-        // ── GhRelease packs: skip the API call if already cached and extracted ──
-        // The API call is only needed to discover the latest version/URL.
-        // If we already have a stored version with extracted files, we're up to date.
-        if (pack.Kind == SourceKind.GhRelease)
-        {
-            var storedEarly = LoadStoredVersion(pack.Id);
-            if (!string.IsNullOrEmpty(storedEarly) && storedEarly != "unknown")
-            {
-                // Check if cache zip exists for this pack
-                var cacheFiles = Directory.Exists(DownloadPaths.Shaders)
-                    ? Directory.GetFiles(DownloadPaths.Shaders, $"shaders_{pack.Id}.*")
-                        .Where(f => !f.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)).ToArray()
-                    : Array.Empty<string>();
-                var earlyCache = cacheFiles.FirstOrDefault();
-                if (earlyCache != null && PackHasExtractedFiles(pack.Id, earlyCache))
-                {
-                    CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Up to date ({storedEarly})");
-                    return;
-                }
-            }
-        }
+        // ── Note: GhRelease packs always call the API to check for newer versions ──
+        // The ETag cache ensures this is a cheap 304 Not Modified when nothing has changed.
+        // DO NOT add an early-exit here based on stored version — it breaks update detection.
 
         string? downloadUrl;
         string versionToken;

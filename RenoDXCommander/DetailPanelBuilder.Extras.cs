@@ -464,7 +464,7 @@ public partial class DetailPanelBuilder
         else if (!staged)
         {
             btnLabel   = "⬇  Install MFG Ada Unlock";
-            btnEnabled = false; // not staged yet — will be available after first addon picker use
+            btnEnabled = true; // will download on demand when clicked
         }
         else
         {
@@ -490,22 +490,40 @@ public partial class DetailPanelBuilder
             ToolTipService.SetToolTip(installBtn, "Install ReShade first — MFG Ada Unlock requires it");
         else if (rtx40Conflict)
             ToolTipService.SetToolTip(installBtn, "RTX 40 MFG Unlock (ASI version) is already installed and conflicts. Remove it first.");
-        else if (!staged)
-            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock not yet downloaded — open the addon picker first to download it");
 
-        installBtn.Click += (s, e) =>
+        installBtn.Click += async (s, e) =>
         {
-            if (string.IsNullOrEmpty(installPath) || !File.Exists(stagedPath)) return;
+            if (string.IsNullOrEmpty(installPath)) return;
+            installBtn.IsEnabled = false;
+            installBtn.Content   = "Downloading...";
             try
             {
+                // Download on demand if not yet staged
+                if (!File.Exists(stagedPath))
+                {
+                    var addonSvc = _window.ViewModel.AddonPackServiceInstance;
+                    var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
+                        p.PackageName.Equals("MFG Ada Unlock", StringComparison.OrdinalIgnoreCase));
+                    if (entry != null)
+                        await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
+                }
+
+                if (!File.Exists(stagedPath))
+                {
+                    CrashReporter.Log("[BuildMfgAdaUnlockRow] Staged file still not found after download attempt");
+                    _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = "Download failed");
+                    return;
+                }
+
                 var dest = Path.Combine(installPath, DeployFileName);
                 File.Copy(stagedPath, dest, overwrite: true);
                 CrashReporter.Log($"[BuildMfgAdaUnlockRow] Installed '{DeployFileName}' to '{installPath}'");
-                RequestExtrasRebuild(card);
+                _window.DispatcherQueue?.TryEnqueue(() => RequestExtrasRebuild(card));
             }
             catch (Exception ex)
             {
                 CrashReporter.Log($"[BuildMfgAdaUnlockRow] Install failed — {ex.Message}");
+                _window.DispatcherQueue?.TryEnqueue(() => { installBtn.IsEnabled = true; installBtn.Content = btnLabel; });
             }
         };
         Grid.SetColumn(installBtn, 3);

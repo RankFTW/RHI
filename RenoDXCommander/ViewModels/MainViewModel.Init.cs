@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 
@@ -375,6 +376,16 @@ public partial class MainViewModel
             var dofFixTask = Task.Run(async () => {
                 try { await _dofFixService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DOF Fix staging task failed — {ex.Message}"); }
+            });
+            // Fire-and-forget: fetch available NR addon versions for the version picker.
+            // Uses a 1-hour cooldown so it's a no-op on most launches. Not awaited — doesn't block cards.
+            _ = Task.Run(async () => {
+                try
+                {
+                    var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
+                    await rdx5Svc.FetchAndCacheAvailableVersionsAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] NR addon versions fetch failed — {ex.Message}"); }
             });
 
             // 3. Await detection first — this never needs network

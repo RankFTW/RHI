@@ -277,6 +277,31 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── NR Addon Version ──────────────────────────────────────────────────────
+
+    /// <summary>Returns the persisted NR addon version for a game. Empty string = use latest.</summary>
+    public string GetNrAddonVersion(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.NrAddonVersion.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.NrAddonVersion.TryGetValue(gameName, out var vL) && !string.IsNullOrEmpty(vL)) return vL;
+        return ""; // absent = use latest
+    }
+
+    /// <summary>Sets the persisted NR addon version for a game. Null or empty clears the override (use latest).</summary>
+    public void SetNrAddonVersion(string gameName, string? version, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(version))
+        {
+            _gameNameService.NrAddonVersion.Remove(key);
+            _gameNameService.NrAddonVersion.Remove(gameName);
+        }
+        else
+            _gameNameService.NrAddonVersion[key] = version;
+        SaveNameMappings();
+    }
+
     // ── Deploy Streamline (original) ──────────────────────────────────────────
 
     /// <summary>Returns whether Deploy Streamline is enabled for a game.</summary>

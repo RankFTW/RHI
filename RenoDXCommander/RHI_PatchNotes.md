@@ -1,15 +1,18 @@
-
 ## v2.7.0
 
 ### New
 
-- **OptiScaler DLSS NR variant** — new third option in the OptiScaler version picker alongside Stable and Nightly. Uses a community fork with DLSS 5 Neural Rendering built in — supporting multi-pass NR, pre/post-upscaler placement, and working scale to control the performance cost. All the same features as Nightly (Streamline, FG settings, presets, etc.) are available. The cog gains a Neural Rendering Settings section to tune everything without touching config files.
-- **DLSS5 Feeder on 32-bit DX9 games** — the DLSS5 Feeder method in Neural Rendering now fully supports 32-bit DX9 games (Borderlands 2, The Witcher 2, and much more). RHI sets up the required 64-bit helper process automatically, including all the files it needs to run alongside the 32-bit game.
-- **Luma support for DX9 games** — Borderlands 2, Borderlands: The Pre-Sequel, The Witcher 2, Medal of Honor: Airborne, and Vanquish now work with Luma. RHI automatically handles the DX9 compatibility layer (dgVoodoo2) alongside the Luma install — no manual setup required. Still one click.
+- **OptiScaler DLSS NR variant** — new third option in the OptiScaler version picker alongside Stable and Nightly. Uses a community fork with DLSS 5 Neural Rendering built in. Same features as Nightly (Streamline, FG settings, presets, etc.) plus a new Neural Rendering Settings section in the cog to tune NR behaviour without touching config files. Switch between variants in the OptiScaler cog in the Extras section.
+- **DLSS5 Feeder on 32-bit DX9 games** — the DLSS5 Feeder method in Neural Rendering now fully supports 32-bit DX9 games (Borderlands 2, The Witcher 2, and much more). RHI handles all the setup automatically — still one click.
+- **Luma support for DX9 games** — Borderlands 2, Borderlands: The Pre-Sequel, The Witcher 2, Medal of Honor: Airborne, and Vanquish now work with Luma. RHI automatically handles the DX9 compatibility layer alongside the Luma install. Still one click.
+- **Neural Rendering addon version picker** — the Neural Rendering section now has an Addon Version dropdown. You can pin a game to a specific version of DLSS5 Tool or DLSS Tool (ShortFuse) before installing — useful if a newer release causes issues with a particular game. Defaults to Latest and auto-updates as normal. The picker greys out when Neural Rendering is already installed; uninstall first to switch.
+- **ReShade HDR Metadata** — new addon in the picker. Writes HDR metadata into the swapchain alongside ReShade, fixing washed-out or badly tone-mapped HDR output on TVs and monitors that rely on it to calibrate their HDR pipeline. Works with any DX11/DX12 game running ReShade. No configuration needed.
 
 ### Bug Fixes
 
-- Fixed games with manifest install path overrides (e.g. The Witcher 2) showing the wrong install path and missing mod status on first launch — the correct subfolder is now applied immediately from the cached manifest rather than waiting for a Refresh.
+- Fixed Lilium HDR Shaders (and other shader packs) not picking up new releases — updates were silently skipped if the pack was already on disk, even when a newer version was available.
+- Fixed MFG Ada Unlock install button being permanently greyed out on fresh installs — it now downloads on demand when you click Install.
+- Fixed games with manifest install path overrides (e.g. The Witcher 2) showing the wrong install path and missing mod status on first launch.
 - Fixed ReBAR Size Limit writing and reading incorrect values — values set in RHI now show correctly in NVPI, and values set in NVPI are correctly read back by RHI.
 - Fixed Output Colour Settings applying to the wrong monitor on multi-monitor setups.
 

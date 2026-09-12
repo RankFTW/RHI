@@ -106,6 +106,9 @@ public interface IGameNameService
     /// <summary>Per-game Neural Rendering method override. Key = "GameName|Store", Value = "DLSS5Tool", "DLSS5ToolBridge", "ShortFuse", or "Feeder". Absent = auto-detect.</summary>
     Dictionary<string, string> NrMethodOverrides { get; }
 
+    /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
+    Dictionary<string, string> NrAddonVersion { get; }
+
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     Dictionary<string, string> HdrToggleOverrides { get; }
 

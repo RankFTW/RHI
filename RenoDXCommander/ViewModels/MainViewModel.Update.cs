@@ -1271,6 +1271,8 @@ public partial class MainViewModel
                 bool rdx5HasUpdate = await rdx5Service.CheckForUpdateAsync().ConfigureAwait(false);
                 if (rdx5HasUpdate)
                     await rdx5Service.EnsureStagingAsync().ConfigureAwait(false);
+                // Also refresh the available versions cache (used by the NR section addon version picker)
+                await rdx5Service.FetchAndCacheAvailableVersionsAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {

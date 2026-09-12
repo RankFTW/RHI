@@ -174,8 +174,9 @@ public partial class DetailPanelBuilder
             _window.ViewModel.SaveSettingsPublic();
         };
 
-        // ── Row 1: Method combo + NR version combo ────────────────────────────
+        // ── Row 1: Method combo + Addon Version combo + NR DLL version combo ──
         var row1 = new Grid { ColumnSpacing = 8 };
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
@@ -207,6 +208,64 @@ public partial class DetailPanelBuilder
         Grid.SetColumn(methodStack, 0);
         row1.Children.Add(methodStack);
 
+        // Addon version combo (DLSS5 Tool, Bridge, ShortFuse — not Feeder)
+        var addonVersionStack = new StackPanel { Spacing = 2 };
+        addonVersionStack.Children.Add(new TextBlock { Text = "Addon Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush) });
+
+        var addonVersionCombo = new ComboBox
+        {
+            FontSize = 11,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            CornerRadius = new CornerRadius(6),
+        };
+
+        // Helper: populate addonVersionCombo for the given addonType ("dlss5tool" or "dlsstool")
+        void PopulateAddonVersionCombo(string addonType)
+        {
+            bool addonComboInit = true;
+            addonVersionCombo.Items.Clear();
+            addonVersionCombo.Items.Add("Latest");
+            foreach (var v in rdx5Svc.GetAvailableVersions(addonType))
+                addonVersionCombo.Items.Add(v);
+
+            // Pre-select persisted version
+            var stored = _window.ViewModel.GetNrAddonVersion(gameName, store);
+            int selIdx = 0;
+            if (!string.IsNullOrEmpty(stored))
+            {
+                for (int i = 1; i < addonVersionCombo.Items.Count; i++)
+                {
+                    if (string.Equals(addonVersionCombo.Items[i] as string, stored, StringComparison.OrdinalIgnoreCase))
+                    { selIdx = i; break; }
+                }
+            }
+            addonVersionCombo.SelectedIndex = selIdx;
+            addonComboInit = false;
+
+            // Wire SelectionChanged after setting initial value
+            addonVersionCombo.SelectionChanged -= AddonVersionCombo_SelectionChanged;
+            addonVersionCombo.SelectionChanged += AddonVersionCombo_SelectionChanged;
+
+            void AddonVersionCombo_SelectionChanged(object s2, SelectionChangedEventArgs ev2)
+            {
+                if (addonComboInit) return;
+                var sel = addonVersionCombo.SelectedItem as string;
+                // "" clears override (= Latest); specific version persists
+                _window.ViewModel.SetNrAddonVersion(gameName,
+                    string.IsNullOrEmpty(sel) || sel == "Latest" ? null : sel, store);
+            }
+        }
+
+        // Determine initial addonType from effectiveMethod
+        var initialAddonType = effectiveMethod == NrMethodShortFuse ? "dlsstool" : "dlss5tool";
+        PopulateAddonVersionCombo(initialAddonType);
+
+        ToolTipService.SetToolTip(addonVersionCombo,
+            "Addon version to install. 'Latest' always installs the newest available and auto-updates.");
+        addonVersionStack.Children.Add(addonVersionCombo);
+        Grid.SetColumn(addonVersionStack, 1);
+        row1.Children.Add(addonVersionStack);
+
         // NR version combo (only shown for DLSS5 Tool / Bridge methods)
         var nrVersionStack = new StackPanel { Spacing = 2 };
         nrVersionStack.Children.Add(new TextBlock { Text = "NR DLL Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush) });
@@ -224,7 +283,7 @@ public partial class DetailPanelBuilder
         nrVersionCombo.SelectedIndex = 0;
         ToolTipService.SetToolTip(nrVersionCombo, "NR DLL version to deploy. 'Latest' always uses the newest available.");
         nrVersionStack.Children.Add(nrVersionCombo);
-        Grid.SetColumn(nrVersionStack, 1);
+        Grid.SetColumn(nrVersionStack, 2);
         row1.Children.Add(nrVersionStack);
 
         nrBody.Children.Add(row1);
@@ -607,6 +666,16 @@ public partial class DetailPanelBuilder
             nrVersionStack.Opacity   = nrVersionRelevant ? 1.0 : 0.4;
             nrVersionCombo.IsEnabled = nrVersionRelevant;
 
+            // Addon version combo relevant for DLSS5 Tool, Bridge, ShortFuse (not Feeder)
+            // Greyed out when already installed — version cannot be changed without uninstalling first
+            bool addonVersionRelevant = selKey != NrMethodFeeder;
+            bool addonVersionEditable = addonVersionRelevant && !anyInstalled;
+            addonVersionStack.Opacity   = addonVersionRelevant ? (anyInstalled ? 0.4 : 1.0) : 0.4;
+            addonVersionCombo.IsEnabled = addonVersionEditable;
+            ToolTipService.SetToolTip(addonVersionStack, anyInstalled && addonVersionRelevant
+                ? "Uninstall Neural Rendering first to change the addon version."
+                : null);
+
             // Remove button visibility
             removeBtn.Visibility = anyInstalled ? Visibility.Visible : Visibility.Collapsed;
 
@@ -633,11 +702,16 @@ public partial class DetailPanelBuilder
             {
                 // Same method — just persist and refresh UI
                 _window.ViewModel.SetNrMethodOverride(gameName, selKey, store);
+                // Repopulate addon version combo in case it wasn't populated yet
+                PopulateAddonVersionCombo(selKey == NrMethodShortFuse ? "dlsstool" : "dlss5tool");
                 UpdateInstallBtnAppearance();
                 UpdateDescription(selKey);
                 RefreshStatus();
                 return;
             }
+
+            // Repopulate addon version combo for the new method's addon type
+            PopulateAddonVersionCombo(selKey == NrMethodShortFuse ? "dlsstool" : "dlss5tool");
 
             // Different method selected — uninstall whatever is currently installed
             var previousKey = effectiveMethod;
@@ -761,16 +835,16 @@ public partial class DetailPanelBuilder
                 switch (selKey)
                 {
                     case NrMethodDlss5Tool:
-                        await InstallDlss5ToolAsync(card, installBtn, nrVersionCombo, rdx5Svc, dlssSvc, addonSvc);
+                        await InstallDlss5ToolAsync(card, installBtn, addonVersionCombo, nrVersionCombo, rdx5Svc, dlssSvc, addonSvc);
                         break;
 
                     case NrMethodDlss5ToolBridge:
-                        await InstallDlss5ToolAsync(card, installBtn, nrVersionCombo, rdx5Svc, dlssSvc, addonSvc);
+                        await InstallDlss5ToolAsync(card, installBtn, addonVersionCombo, nrVersionCombo, rdx5Svc, dlssSvc, addonSvc);
                         await InstallBridgeAddonAsync(card, installBtn, addonSvc);
                         break;
 
                     case NrMethodShortFuse:
-                        await InstallShortFuseAsync(card, installBtn, rdx5Svc, dlssSvc);
+                        await InstallShortFuseAsync(card, installBtn, addonVersionCombo, rdx5Svc, dlssSvc);
                         break;
 
                     case NrMethodFeeder:
@@ -1039,25 +1113,61 @@ public partial class DetailPanelBuilder
     private async Task InstallDlss5ToolAsync(
         GameCardViewModel card,
         Button statusBtn,
+        ComboBox addonVersionCombo,
         ComboBox nrVersionCombo,
         Renodx5AddonService rdx5Svc,
         IDlssStreamlineService dlssSvc,
         IAddonPackService addonSvc)
     {
         var installPath = card.InstallPath!;
-        _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Staging DLSS5 Tool...");
-        await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
 
-        if (!rdx5Svc.IsStagingReady)
-            throw new InvalidOperationException("DLSS5 Tool staging not ready");
+        // Resolve requested addon version
+        var requestedVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
+            () => addonVersionCombo.SelectedItem as string).ConfigureAwait(false);
+        bool useLatest = string.IsNullOrEmpty(requestedVersion) || requestedVersion == "Latest";
+
+        string addonSourcePath;
+        if (useLatest)
+        {
+            // Use the flat staging file (latest) — same as before
+            _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Staging DLSS5 Tool...");
+            await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
+            if (!rdx5Svc.IsStagingReady)
+                throw new InvalidOperationException("DLSS5 Tool staging not ready");
+            addonSourcePath = rdx5Svc.StagedFilePath;
+            // Persist "Latest" (clears any pinned version)
+            _window.ViewModel.SetNrAddonVersion(gameName, null, store);
+        }
+        else
+        {
+            // Ensure the specific version is staged
+            _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = $"Staging DLSS5 Tool v{requestedVersion}...");
+            var staged = await rdx5Svc.EnsureVersionStagedAsync("dlss5tool", requestedVersion!).ConfigureAwait(false);
+            if (!staged)
+            {
+                CrashReporter.Log($"[NeuralRendering] Could not stage DLSS5 Tool v{requestedVersion} — falling back to latest");
+                await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
+                if (!rdx5Svc.IsStagingReady)
+                    throw new InvalidOperationException("DLSS5 Tool staging not ready");
+                addonSourcePath = rdx5Svc.StagedFilePath;
+                _window.ViewModel.SetNrAddonVersion(gameName, null, store);
+            }
+            else
+            {
+                addonSourcePath = rdx5Svc.GetVersionedStagedFilePath("dlss5tool", requestedVersion!)!;
+                _window.ViewModel.SetNrAddonVersion(gameName, requestedVersion, store);
+            }
+        }
 
         // Deploy the addon
         await Task.Run(() =>
         {
             var deployDir = ModInstallService.GetAddonDeployPath(installPath);
             Directory.CreateDirectory(deployDir);
-            File.Copy(rdx5Svc.StagedFilePath, Path.Combine(deployDir, "renodx-dlss5.addon64"), overwrite: true);
-            CrashReporter.Log($"[NeuralRendering] Deployed renodx-dlss5.addon64 to '{deployDir}'");
+            File.Copy(addonSourcePath, Path.Combine(deployDir, "renodx-dlss5.addon64"), overwrite: true);
+            CrashReporter.Log($"[NeuralRendering] Deployed renodx-dlss5.addon64 (v{(useLatest ? "latest" : requestedVersion)}) to '{deployDir}'");
             // Note: intentionally NOT calling TrackAddonDeployment — NR-managed files are not
             // tracked by AddonPackService to prevent the stale-cleanup pass from removing them.
         }).ConfigureAwait(false);
@@ -1230,19 +1340,70 @@ public partial class DetailPanelBuilder
     private async Task InstallShortFuseAsync(
         GameCardViewModel card,
         Button statusBtn,
+        ComboBox addonVersionCombo,
         Renodx5AddonService rdx5Svc,
         IDlssStreamlineService dlssSvc)
     {
         var installPath = card.InstallPath!;
-        _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Staging ShortFuse...");
-        await rdx5Svc.EnsureSfStagingAsync().ConfigureAwait(false);
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
 
-        if (!rdx5Svc.IsSfStagingReady)
-            throw new InvalidOperationException("ShortFuse staging not ready");
+        // Resolve requested addon version
+        var requestedVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
+            () => addonVersionCombo.SelectedItem as string).ConfigureAwait(false);
+        bool useLatest = string.IsNullOrEmpty(requestedVersion) || requestedVersion == "Latest";
+
+        string sfSourcePath;
+        if (useLatest)
+        {
+            _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Staging ShortFuse...");
+            await rdx5Svc.EnsureSfStagingAsync().ConfigureAwait(false);
+            if (!rdx5Svc.IsSfStagingReady)
+                throw new InvalidOperationException("ShortFuse staging not ready");
+            sfSourcePath = rdx5Svc.SfStagedFilePath;
+            _window.ViewModel.SetNrAddonVersion(gameName, null, store);
+        }
+        else
+        {
+            _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = $"Staging ShortFuse v{requestedVersion}...");
+            var staged = await rdx5Svc.EnsureVersionStagedAsync("dlsstool", requestedVersion!).ConfigureAwait(false);
+            if (!staged)
+            {
+                CrashReporter.Log($"[NeuralRendering] Could not stage ShortFuse v{requestedVersion} — falling back to latest");
+                await rdx5Svc.EnsureSfStagingAsync().ConfigureAwait(false);
+                if (!rdx5Svc.IsSfStagingReady)
+                    throw new InvalidOperationException("ShortFuse staging not ready");
+                sfSourcePath = rdx5Svc.SfStagedFilePath;
+                _window.ViewModel.SetNrAddonVersion(gameName, null, store);
+            }
+            else
+            {
+                sfSourcePath = rdx5Svc.GetVersionedStagedFilePath("dlsstool", requestedVersion!)!;
+                _window.ViewModel.SetNrAddonVersion(gameName, requestedVersion, store);
+            }
+        }
 
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Installing DLSS stack...");
+
+        // Deploy the SF addon from the resolved source path
+        try
+        {
+            var deployDir = ModInstallService.GetAddonDeployPath(installPath);
+            Directory.CreateDirectory(deployDir);
+            await Task.Run(() =>
+            {
+                File.Copy(sfSourcePath, Path.Combine(deployDir, "renodx-dlss.addon64"), overwrite: true);
+                CrashReporter.Log($"[NeuralRendering] Deployed renodx-dlss.addon64 (v{(useLatest ? "latest" : requestedVersion)}) to '{deployDir}'");
+                // Remove DLSS5 Tool addon if present (mutual exclusivity)
+                var dlss5InDeploy = Path.Combine(deployDir, "renodx-dlss5.addon64");
+                if (File.Exists(dlss5InDeploy)) { File.Delete(dlss5InDeploy); CrashReporter.Log("[NeuralRendering] Removed renodx-dlss5.addon64 (mutual exclusivity)"); }
+            }).ConfigureAwait(false);
+        }
+        catch (Exception ex) { CrashReporter.Log($"[NeuralRendering] SF addon deploy failed — {ex.Message}"); }
+
+        // Co-deploy DLSS/Streamline DLLs using sentinel .original pattern
         var detection = dlssSvc.Detect(installPath);
-        await rdx5Svc.InstallSfAsync(installPath, detection.HasAny ? detection : null).ConfigureAwait(false);
+        await rdx5Svc.InstallSfDllsOnlyAsync(installPath, detection.HasAny ? detection : null).ConfigureAwait(false);
 
         // Update DLSS detection cache
         var newDetection = dlssSvc.Detect(installPath);

@@ -1402,6 +1402,13 @@
     "renodx-dlssfix": {
       "description": "Makes ReShade draw on native game frames instead of generated frames. Also hides DLSS upscaling from ReShade."
     },
+    "reshade-hdr-metadata": {
+      "packageName": "ReShade HDR Metadata",
+      "description": "Writes HDR metadata (MaxCLL, MaxFALL, MinCLL) into the DXGI swapchain so Windows and TVs correctly understand the HDR signal from ReShade-managed games. Fixes washed-out colour on displays that rely on metadata for tone mapping. Works with any DX11/DX12 game running ReShade.",
+      "downloadUrl32": "https://github.com/EndlesslyFlowering/ReShade-HDR-Metadata/releases/download/2025.08.18/reshade-hdr-metadata.addon32",
+      "downloadUrl64": "https://github.com/EndlesslyFlowering/ReShade-HDR-Metadata/releases/download/2025.08.18/reshade-hdr-metadata.addon64",
+      "repositoryUrl": "https://github.com/EndlesslyFlowering/ReShade-HDR-Metadata"
+    },
     "dlss5-dx11-bridge": {
       "packageName": "DLSS5 DX11 Bridge",
       "description": "Enables DLSS 5 Neural Rendering in DX11 and Vulkan games that already have native DLSS. Mirrors the game\u2019s DLSS onto a private DX12 session for the NR addon to hook.",
