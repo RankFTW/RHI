@@ -40,4 +40,19 @@ public interface IPcgwService
     /// requests a higher version. Call after each manifest fetch.
     /// </summary>
     void CheckManifestCacheVersion(RenoDXCommander.Models.RemoteManifest? manifest);
+
+    /// <summary>Loads the PCGW API info cache from disk.</summary>
+    Task LoadApiCacheAsync();
+
+    /// <summary>
+    /// Returns the cached API info for a game, or null if not yet scraped.
+    /// </summary>
+    PcgwApiInfo? GetCachedApiInfo(string gameName);
+
+    /// <summary>
+    /// Fetches and scrapes the PCGW wiki page for a game to extract API support info.
+    /// Only fetches if the wiki URL is already resolved — never triggers a new URL lookup.
+    /// Caches results in memory and disk.
+    /// </summary>
+    Task<PcgwApiInfo?> FetchApiInfoAsync(string gameName, string wikiUrl);
 }

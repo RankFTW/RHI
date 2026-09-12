@@ -2663,6 +2663,11 @@
                                             BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Padding="12,6" FontSize="12"
                                             ToolTipService.ToolTip="Creates a zip archive of all logs and copies it to clipboard — paste directly into Discord"/>
+                                    <Button x:Name="ExportGameDataBtn" x:FieldModifier="internal" Content="Export Game Data" Click="ExportGameData_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,6" FontSize="12"
+                                            ToolTipService.ToolTip="Gathers game library data (APIs, exe paths, engine info) and copies a JSON file to clipboard — paste into Discord to share with the RHI community database"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

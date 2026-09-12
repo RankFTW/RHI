@@ -39,7 +39,7 @@ public partial class MainViewModel
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] NexusModsService init failed — {ex.Message}"); }
             });
             var pcgwCacheTask = Task.Run(async () => {
-                try { await _pcgwService.LoadCacheAsync(); }
+                try { await _pcgwService.LoadCacheAsync(); await _pcgwService.LoadApiCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
             var uwFixInitTask = Task.Run(async () => {
@@ -441,6 +441,31 @@ public partial class MainViewModel
 
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();
+
+                // Fire-and-forget: scrape PCGW API info for games that have a URL but no cached info yet.
+                // Runs after BuildCards so _allCards is fully populated.
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        int scraped = 0;
+                        foreach (var card in _allCards)
+                        {
+                            if (string.IsNullOrEmpty(card.PcgwUrl)) continue;
+                            if (_pcgwService.GetCachedApiInfo(card.GameName) != null) continue;
+                            await _pcgwService.FetchApiInfoAsync(card.GameName, card.PcgwUrl).ConfigureAwait(false);
+                            scraped++;
+                            // Gentle rate limit — avoid hammering PCGW
+                            await Task.Delay(300).ConfigureAwait(false);
+                        }
+                        if (scraped > 0)
+                            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Scraped PCGW API info for {scraped} game(s)");
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PCGW API scrape task failed — {ex.Message}");
+                    }
+                });
             });
 
             // Update status text with final counts

@@ -1,5 +1,9 @@
 ## v2.7.1
 
+### New
+
+- **Export Game Data** — new button in Settings next to Copy Logs. Gathers your game library data (graphics API, exe paths, engine, store IDs) and copies a JSON file to clipboard. Paste into Discord to share with the community — submissions get merged into a community database that will help RHI detect APIs and paths correctly for more games over time.
+
 ### Manifest Updates
 
 - Re-enabled PCGamingWiki AppID lookup (`appid.php`) which was disabled in August 2026 due to a server migration outage. It is now confirmed working again. Existing URL cache will be cleared on next launch to allow fresh lookups via the faster AppID method.

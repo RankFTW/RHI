@@ -789,6 +789,164 @@ public class SettingsHandler
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(DownloadPaths.Root) { UseShellExecute = true });
     }
 
+    // ── Export Game Data ──────────────────────────────────────────────────────
+
+    public async void ExportGameData_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var btn = sender as Button;
+            if (btn != null) btn.IsEnabled = false;
+
+            string json = await Task.Run(() => BuildGameDataJson()).ConfigureAwait(false);
+
+            // Write to temp file and put on clipboard as a zip (same pattern as Copy Logs)
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            var jsonPath  = Path.Combine(Path.GetTempPath(), $"RHI_GameData_{timestamp}.json");
+            File.WriteAllText(jsonPath, json, System.Text.Encoding.UTF8);
+
+            // Zip it
+            var zipPath = Path.Combine(Path.GetTempPath(), $"RHI_GameData_{timestamp}.zip");
+            if (File.Exists(zipPath)) File.Delete(zipPath);
+            using (var archive = System.IO.Compression.ZipFile.Open(zipPath, System.IO.Compression.ZipArchiveMode.Create))
+            {
+                var entry = archive.CreateEntry("rhi_game_data.json");
+                using var entryStream = entry.Open();
+                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+                entryStream.Write(bytes, 0, bytes.Length);
+            }
+
+            try { File.Delete(jsonPath); } catch { }
+
+            var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(zipPath);
+            var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dp.SetStorageItems(new[] { storageFile });
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+
+            CrashReporter.Log($"[SettingsHandler.ExportGameData_Click] Game data exported: {zipPath}");
+
+            if (sender is FrameworkElement fe && fe.XamlRoot != null)
+            {
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "Game Data Copied",
+                    Content = $"Data for {ViewModel.AllCards.Count} games has been gathered and copied to your clipboard. Paste directly into Discord to share.",
+                    CloseButtonText = "OK",
+                    XamlRoot = fe.XamlRoot,
+                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[SettingsHandler.ExportGameData_Click] Failed: {ex.Message}");
+        }
+        finally
+        {
+            if (sender is Button b) b.IsEnabled = true;
+        }
+    }
+
+    private string BuildGameDataJson()
+    {
+        var pcgwSvc = App.Services.GetRequiredService<IPcgwService>();
+        var gnSvc   = App.Services.GetRequiredService<IGameNameService>();
+        var cards   = ViewModel.AllCards;
+        var rhi     = CrashReporter.AppVersion;
+
+        var games = new System.Collections.Generic.List<object>();
+
+        foreach (var card in cards)
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) continue;
+            var installPath = card.InstallPath;
+
+            // ── Exe path ─────────────────────────────────────────────────────
+            // User override is an absolute path — make it relative to install root
+            string? exeRelative = null;
+            if (gnSvc.LaunchExeOverrides.TryGetValue(card.GameName, out var userExe)
+                && !string.IsNullOrEmpty(userExe)
+                && userExe.StartsWith(installPath, StringComparison.OrdinalIgnoreCase))
+            {
+                exeRelative = userExe.Substring(installPath.Length).TrimStart('\\', '/');
+            }
+            else if (ViewModel.Manifest?.LaunchExeOverrides?.TryGetValue(card.GameName, out var manifestExe) == true
+                     && !string.IsNullOrEmpty(manifestExe))
+            {
+                exeRelative = manifestExe; // already relative
+            }
+
+            // ── Install subpath (relative portion after the game root) ───────
+            // The install path itself IS the subpath we care about — strip the
+            // store root prefix to get the relative subfolder if possible.
+            // For the db we just record the folder name (last segment of path).
+            string? installSubpath = null;
+            if (!string.IsNullOrEmpty(installPath))
+            {
+                var folderName = Path.GetFileName(installPath.TrimEnd('\\', '/'));
+                installSubpath = string.IsNullOrEmpty(folderName) ? null : folderName;
+            }
+
+            // ── APIs — merge PE scan with PCGW scrape ────────────────────────
+            var detectedApis = card.DetectedApis ?? new System.Collections.Generic.HashSet<Models.GraphicsApiType>();
+            var primaryApi   = card.GraphicsApi.ToString().Replace("DirectX", "DX");
+
+            // PCGW can fill in APIs the PE scan missed (e.g. DX12 not in exe imports)
+            var pcgwInfo = pcgwSvc.GetCachedApiInfo(card.GameName);
+            var allApis  = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var a in detectedApis)
+                allApis.Add(a.ToString().Replace("DirectX", "DX"));
+            if (pcgwInfo != null)
+            {
+                if (pcgwInfo.HasDirectX9)  allApis.Add("DX9");
+                if (pcgwInfo.HasDirectX10) allApis.Add("DX10");
+                if (pcgwInfo.HasDirectX11) allApis.Add("DX11");
+                if (pcgwInfo.HasDirectX12) allApis.Add("DX12");
+                if (pcgwInfo.HasVulkan)    allApis.Add("Vulkan");
+                if (pcgwInfo.HasOpenGL)    allApis.Add("OpenGL");
+            }
+
+            // If PCGW says DX12 but PE scan only found DX11, promote primary to DX12
+            if (primaryApi == "DX11" && allApis.Contains("DX12"))
+                primaryApi = "DX12";
+
+            // ── Store-specific IDs ────────────────────────────────────────────
+            var dg = card.DetectedGame;
+            int? steamAppId = dg?.SteamAppId;
+            string? xboxAumid = dg?.XboxAumid;
+            string? epicAppName = dg?.EpicAppName;
+
+            games.Add(new
+            {
+                name          = card.GameName,
+                store         = card.Source,
+                install_subpath = installSubpath,
+                exe_relative  = exeRelative,
+                api           = primaryApi,
+                all_apis      = allApis.OrderBy(x => x).ToList(),
+                bitness       = card.Is32Bit ? 32 : 64,
+                engine        = string.IsNullOrEmpty(card.EngineHint) ? null : card.EngineHint,
+                steam_appid   = steamAppId,
+                xbox_aumid    = xboxAumid,
+                epic_app_name = epicAppName,
+                pcgw_url      = card.PcgwUrl,
+                api_source    = pcgwInfo != null ? "pcgw+pe" : "pe",
+            });
+        }
+
+        var export = new
+        {
+            version     = "1",
+            rhi_version = rhi,
+            exported_at = DateTime.UtcNow.ToString("o"),
+            game_count  = games.Count,
+            games,
+        };
+
+        return System.Text.Json.JsonSerializer.Serialize(export,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    }
+
     public async void CopyLogsArchive_Click(object sender, RoutedEventArgs e)
     {
         try

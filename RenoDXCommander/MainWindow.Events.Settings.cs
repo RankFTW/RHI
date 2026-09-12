@@ -49,6 +49,9 @@ public sealed partial class MainWindow
     private void CopyLogsArchive_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.CopyLogsArchive_Click(sender, e);
 
+    private void ExportGameData_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.ExportGameData_Click(sender, e);
+
     private void PurgeCachedFiles_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.PurgeCachedFiles_Click(sender, e);
 

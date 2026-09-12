@@ -389,4 +389,181 @@ public class PcgwService : IPcgwService
             CrashReporter.Log($"[PcgwService.SaveUrlCache] Write failed — {ex.Message}");
         }
     }
+
+    // ── PCGW API info scraping ────────────────────────────────────────────────
+
+    private static readonly string ApiCachePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "pcgw_api_cache.json");
+
+    /// <summary>Normalized game name → scraped API info. Loaded/saved to pcgw_api_cache.json.</summary>
+    private Dictionary<string, PcgwApiInfo> _apiInfoCache = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Returns the cached API info for a game, or null if not yet scraped.
+    /// </summary>
+    public PcgwApiInfo? GetCachedApiInfo(string gameName)
+    {
+        var normalized = _gameDetection.NormalizeName(gameName);
+        return _apiInfoCache.TryGetValue(normalized, out var info) ? info : null;
+    }
+
+    /// <summary>
+    /// Loads the API info cache from disk. Called alongside LoadCacheAsync.
+    /// </summary>
+    public async Task LoadApiCacheAsync()
+    {
+        try
+        {
+            if (!File.Exists(ApiCachePath)) return;
+            var json = await File.ReadAllTextAsync(ApiCachePath).ConfigureAwait(false);
+            var loaded = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, PcgwApiInfo>>(json);
+            if (loaded != null)
+                _apiInfoCache = new Dictionary<string, PcgwApiInfo>(loaded, StringComparer.Ordinal);
+            CrashReporter.Log($"[PcgwService.LoadApiCacheAsync] Loaded {_apiInfoCache.Count} cached API entries");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[PcgwService.LoadApiCacheAsync] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Fetches and scrapes the PCGW wiki page for a game to extract its graphics API support.
+    /// Only called when the wiki URL is already resolved (no new URL lookup triggered).
+    /// Caches result in memory + disk. Returns null if the page can't be fetched or parsed.
+    /// </summary>
+    public async Task<PcgwApiInfo?> FetchApiInfoAsync(string gameName, string wikiUrl)
+    {
+        if (_pcgwDown) return null;
+
+        var normalized = _gameDetection.NormalizeName(gameName);
+
+        // Return cached result if we already have it
+        if (_apiInfoCache.TryGetValue(normalized, out var cached))
+            return cached;
+
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_pcgwCts.Token);
+            cts.CancelAfter(TimeSpan.FromSeconds(8));
+
+            var response = await _http.GetAsync(wikiUrl, cts.Token).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] HTTP {(int)response.StatusCode} for '{gameName}'");
+                return null;
+            }
+
+            var html = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+            var info = ParseApiSection(html);
+
+            if (info != null)
+            {
+                _apiInfoCache[normalized] = info;
+                SaveApiCacheToDisk();
+                CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] '{gameName}': " +
+                    $"DX9={info.HasDirectX9} DX10={info.HasDirectX10} DX11={info.HasDirectX11} " +
+                    $"DX12={info.HasDirectX12} Vulkan={info.HasVulkan} OGL={info.HasOpenGL}");
+            }
+
+            return info;
+        }
+        catch (OperationCanceledException)
+        {
+            CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Timeout for '{gameName}'");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Failed for '{gameName}' — {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Parses the "API / Technical specs" section from PCGW page HTML.
+    /// Looks for the text block containing "Direct3D", "Vulkan", "OpenGL" etc.
+    /// The section renders as a plain-text table in the HTML body.
+    /// </summary>
+    private static PcgwApiInfo? ParseApiSection(string html)
+    {
+        try
+        {
+            // PCGW renders the API section as plain text in a table. The pattern is:
+            // "API\nTechnical specs\nSupported\nNotes\nDirect3D\n9\n..." etc.
+            // We look for "Direct3D" in the text and grab version numbers after it.
+            // The section ends when we hit the next major section header (Executable, Middleware, etc.)
+            var info = new PcgwApiInfo();
+
+            // Strip tags for plain-text analysis
+            var plain = System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", "\n");
+            // Collapse whitespace
+            plain = System.Text.RegularExpressions.Regex.Replace(plain, @"\s+", " ");
+
+            // Find the API section — look for "Direct3D" or "Vulkan" or "OpenGL" near "Technical specs"
+            // The section reliably contains "Technical specs" followed by API names + version numbers
+            int apiIdx = plain.IndexOf("Technical specs", StringComparison.OrdinalIgnoreCase);
+            if (apiIdx < 0) return null;
+
+            // Take a window of text after "Technical specs" up to the next major section
+            int windowEnd = plain.IndexOf("Executable", apiIdx, StringComparison.OrdinalIgnoreCase);
+            if (windowEnd < 0) windowEnd = Math.Min(apiIdx + 1500, plain.Length);
+            var window = plain.Substring(apiIdx, windowEnd - apiIdx);
+
+            // Direct3D versions — look for "Direct3D" then digits after it
+            var d3dMatch = System.Text.RegularExpressions.Regex.Match(
+                window, @"Direct3D\s*([\d\s,/]+)",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (d3dMatch.Success)
+            {
+                var versions = d3dMatch.Groups[1].Value;
+                if (System.Text.RegularExpressions.Regex.IsMatch(versions, @"\b9\b"))  info.HasDirectX9  = true;
+                if (System.Text.RegularExpressions.Regex.IsMatch(versions, @"\b10\b")) info.HasDirectX10 = true;
+                if (System.Text.RegularExpressions.Regex.IsMatch(versions, @"\b11\b")) info.HasDirectX11 = true;
+                if (System.Text.RegularExpressions.Regex.IsMatch(versions, @"\b12\b")) info.HasDirectX12 = true;
+            }
+
+            // Vulkan
+            if (System.Text.RegularExpressions.Regex.IsMatch(window, @"\bVulkan\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                info.HasVulkan = true;
+
+            // OpenGL
+            if (System.Text.RegularExpressions.Regex.IsMatch(window, @"\bOpenGL\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                info.HasOpenGL = true;
+
+            // Metal
+            if (System.Text.RegularExpressions.Regex.IsMatch(window, @"\bMetal\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                info.HasMetal = true;
+
+            // Only return if we found at least one API — avoids caching empty results for parse failures
+            bool anyFound = info.HasDirectX9 || info.HasDirectX10 || info.HasDirectX11 ||
+                            info.HasDirectX12 || info.HasVulkan || info.HasOpenGL || info.HasMetal;
+            return anyFound ? info : null;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[PcgwService.ParseApiSection] Parse failed — {ex.Message}");
+            return null;
+        }
+    }
+
+    private void SaveApiCacheToDisk()
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(ApiCachePath)!;
+            Directory.CreateDirectory(dir);
+            var json = System.Text.Json.JsonSerializer.Serialize(_apiInfoCache,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
+            FileHelper.WriteAllTextWithRetry(ApiCachePath, json, "PcgwService.SaveApiCache");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[PcgwService.SaveApiCache] Write failed — {ex.Message}");
+        }
+    }
 }

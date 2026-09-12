@@ -222,7 +222,7 @@ public partial class MainViewModel
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] NexusModsService init failed — {ex.Message}"); }
             });
             var pcgwCacheTask = Task.Run(async () => {
-                try { await _pcgwService.LoadCacheAsync(); }
+                try { await _pcgwService.LoadCacheAsync(); await _pcgwService.LoadApiCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
             var uwFixInitTask = Task.Run(async () => {
