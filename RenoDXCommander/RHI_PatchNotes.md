@@ -1,3 +1,11 @@
+## v2.7.1
+
+### Manifest Updates
+
+- Re-enabled PCGamingWiki AppID lookup (`appid.php`) which was disabled in August 2026 due to a server migration outage. It is now confirmed working again. Existing URL cache will be cleared on next launch to allow fresh lookups via the faster AppID method.
+
+---
+
 ## v2.7.0
 
 ### New

@@ -1261,8 +1261,8 @@
     "Kingdoms of Amalur: Reckoning\u2122": "https://www.nexusmods.com/games/kingdomsofamalurreckoning",
     "Reckoning": "https://www.nexusmods.com/games/kingdomsofamalurreckoning"
   },
-  "pcgwUseAppId": false,
-  "pcgwUrlCacheVersion": 3,
+  "pcgwUseAppId": true,
+  "pcgwUrlCacheVersion": 4,
   "pcgwUrlOverrides": {
     "AFOP": "https://www.pcgamingwiki.com/wiki/Avatar:_Frontiers_of_Pandora",
     "Alan Wake 2": "https://www.pcgamingwiki.com/wiki/Alan_Wake_2",
