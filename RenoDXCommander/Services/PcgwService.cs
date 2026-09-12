@@ -396,6 +396,12 @@ public class PcgwService : IPcgwService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "pcgw_api_cache.json");
 
+    /// <summary>Bump when ParseApiSection logic changes to force a full rescrape.</summary>
+    private const int ApiCacheVersion = 4;
+    private static readonly string ApiCacheVersionPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "pcgw_api_cache_v.txt");
+
     /// <summary>Normalized game name → scraped API info. Loaded/saved to pcgw_api_cache.json.</summary>
     private Dictionary<string, PcgwApiInfo> _apiInfoCache = new(StringComparer.Ordinal);
 
@@ -415,6 +421,17 @@ public class PcgwService : IPcgwService
     {
         try
         {
+            // Wipe if parser version changed
+            int storedVer = 0;
+            if (File.Exists(ApiCacheVersionPath)) int.TryParse(File.ReadAllText(ApiCacheVersionPath).Trim(), out storedVer);
+            if (storedVer < ApiCacheVersion)
+            {
+                if (File.Exists(ApiCachePath)) File.Delete(ApiCachePath);
+                File.WriteAllText(ApiCacheVersionPath, ApiCacheVersion.ToString());
+                CrashReporter.Log($"[PcgwService.LoadApiCacheAsync] API cache wiped (v{storedVer}→v{ApiCacheVersion})");
+                return;
+            }
+
             if (!File.Exists(ApiCachePath)) return;
             var json = await File.ReadAllTextAsync(ApiCachePath).ConfigureAwait(false);
             var loaded = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, PcgwApiInfo>>(json);
@@ -451,7 +468,14 @@ public class PcgwService : IPcgwService
             var response = await _http.GetAsync(wikiUrl, cts.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
-                CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] HTTP {(int)response.StatusCode} for '{gameName}'");
+                if ((int)response.StatusCode == 429)
+                {
+                    CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Rate limited — flushing {_apiInfoCache.Count} entries");
+                    _pcgwDown = true;
+                    SaveApiCacheToDisk();
+                }
+                else
+                    CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] HTTP {(int)response.StatusCode} for '{gameName}'");
                 return null;
             }
 
@@ -465,6 +489,12 @@ public class PcgwService : IPcgwService
                 CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] '{gameName}': " +
                     $"DX9={info.HasDirectX9} DX10={info.HasDirectX10} DX11={info.HasDirectX11} " +
                     $"DX12={info.HasDirectX12} Vulkan={info.HasVulkan} OGL={info.HasOpenGL}");
+            }
+            else
+            {
+                // Cache negative so we don't re-scrape this game next session
+                _apiInfoCache[normalized] = new PcgwApiInfo();
+                SaveApiCacheToDisk();
             }
 
             return info;
@@ -490,65 +520,94 @@ public class PcgwService : IPcgwService
     {
         try
         {
-            // PCGW renders the API section as plain text in a table. The pattern is:
-            // "API\nTechnical specs\nSupported\nNotes\nDirect3D\n9\n..." etc.
-            // We look for "Direct3D" in the text and grab version numbers after it.
-            // The section ends when we hit the next major section header (Executable, Middleware, etc.)
             var info = new PcgwApiInfo();
 
-            // Strip tags for plain-text analysis
-            var plain = System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", "\n");
-            // Collapse whitespace
-            plain = System.Text.RegularExpressions.Regex.Replace(plain, @"\s+", " ");
+            var doc = new HtmlAgilityPack.HtmlDocument();
+            doc.LoadHtml(html);
 
-            // Find the API section — look for "Direct3D" or "Vulkan" or "OpenGL" near "Technical specs"
-            // The section reliably contains "Technical specs" followed by API names + version numbers
-            int apiIdx = plain.IndexOf("Technical specs", StringComparison.OrdinalIgnoreCase);
-            if (apiIdx < 0) return null;
-
-            // Take a window of text after "Technical specs" up to the next major section
-            int windowEnd = plain.IndexOf("Executable", apiIdx, StringComparison.OrdinalIgnoreCase);
-            if (windowEnd < 0) windowEnd = Math.Min(apiIdx + 1500, plain.Length);
-            var window = plain.Substring(apiIdx, windowEnd - apiIdx);
-
-            // Direct3D versions — look for "Direct3D" then digits after it
-            var d3dMatch = System.Text.RegularExpressions.Regex.Match(
-                window, @"Direct3D\s*([\d\s,/]+)",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            if (d3dMatch.Success)
+            // Find the API table by its id or by header text
+            var apiTable = doc.DocumentNode.SelectSingleNode("//table[@id='table-api']");
+            if (apiTable == null)
             {
-                var versions = d3dMatch.Groups[1].Value;
-                if (System.Text.RegularExpressions.Regex.IsMatch(versions, @"\b9\b"))  info.HasDirectX9  = true;
-                if (System.Text.RegularExpressions.Regex.IsMatch(versions, @"\b10\b")) info.HasDirectX10 = true;
-                if (System.Text.RegularExpressions.Regex.IsMatch(versions, @"\b11\b")) info.HasDirectX11 = true;
-                if (System.Text.RegularExpressions.Regex.IsMatch(versions, @"\b12\b")) info.HasDirectX12 = true;
+                var tables = doc.DocumentNode.SelectNodes("//table");
+                if (tables != null)
+                    foreach (var t in tables)
+                        if (t.InnerText.IndexOf("Technical specs", StringComparison.OrdinalIgnoreCase) >= 0)
+                        { apiTable = t; break; }
             }
 
-            // Vulkan
-            if (System.Text.RegularExpressions.Regex.IsMatch(window, @"\bVulkan\b",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                info.HasVulkan = true;
+            if (apiTable != null)
+            {
+                // Each data row: <th scope="row"><abbr title="platform">APIName</abbr></th>
+                //                <td>version</td> <td>notes</td>
+                // abbr title contains "Windows" if the API is available on Windows
+                var rows = apiTable.SelectNodes(".//tr[th[@scope='row']]");
+                if (rows != null)
+                {
+                    foreach (var row in rows)
+                    {
+                        var th  = row.SelectSingleNode("th[@scope='row']");
+                        var tds = row.SelectNodes("td");
+                        if (th == null || tds == null || tds.Count < 1) continue;
 
-            // OpenGL
-            if (System.Text.RegularExpressions.Regex.IsMatch(window, @"\bOpenGL\b",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                info.HasOpenGL = true;
+                        // If abbr title exists and doesn't mention Windows, skip this row
+                        var abbr = th.SelectSingleNode("abbr");
+                        if (abbr != null)
+                        {
+                            var title = abbr.GetAttributeValue("title", "");
+                            if (!string.IsNullOrEmpty(title) &&
+                                title.IndexOf("Windows", StringComparison.OrdinalIgnoreCase) < 0)
+                                continue;
+                        }
 
-            // Metal
-            if (System.Text.RegularExpressions.Regex.IsMatch(window, @"\bMetal\b",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                info.HasMetal = true;
+                        var apiName = HtmlAgilityPack.HtmlEntity.DeEntitize(th.InnerText).Trim();
+                        var version = HtmlAgilityPack.HtmlEntity.DeEntitize(tds[0].InnerText).Trim();
 
-            // Only return if we found at least one API — avoids caching empty results for parse failures
-            bool anyFound = info.HasDirectX9 || info.HasDirectX10 || info.HasDirectX11 ||
-                            info.HasDirectX12 || info.HasVulkan || info.HasOpenGL || info.HasMetal;
-            return anyFound ? info : null;
+                        bool isDirect3D = apiName.StartsWith("Direct3D", StringComparison.OrdinalIgnoreCase)
+                                       || apiName.StartsWith("DirectX",  StringComparison.OrdinalIgnoreCase);
+                        if (!isDirect3D) continue; // only care about Direct3D
+
+                        if (System.Text.RegularExpressions.Regex.IsMatch(version, @"\b11\b")) info.HasDirectX11 = true;
+                        if (System.Text.RegularExpressions.Regex.IsMatch(version, @"\b12\b")) info.HasDirectX12 = true;
+                    }
+                }
+            }
+            else
+            {
+                // Plain-text fallback
+                var plain = System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", "\n");
+                plain = System.Text.RegularExpressions.Regex.Replace(plain, @"\s+", " ");
+                int apiIdx = plain.IndexOf("Technical specs", StringComparison.OrdinalIgnoreCase);
+                if (apiIdx < 0) return null;
+                int windowEnd = plain.IndexOf("Executable", apiIdx, StringComparison.OrdinalIgnoreCase);
+                if (windowEnd < 0) windowEnd = Math.Min(apiIdx + 1500, plain.Length);
+                var window = plain.Substring(apiIdx, windowEnd - apiIdx);
+                var d3dMatch = System.Text.RegularExpressions.Regex.Match(window, @"Direct3D\s*([\d\s,/]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (d3dMatch.Success)
+                {
+                    var v = d3dMatch.Groups[1].Value;
+                    if (System.Text.RegularExpressions.Regex.IsMatch(v, @"\b11\b")) info.HasDirectX11 = true;
+                    if (System.Text.RegularExpressions.Regex.IsMatch(v, @"\b12\b")) info.HasDirectX12 = true;
+                }
+            }
+
+            return (info.HasDirectX11 || info.HasDirectX12) ? info : null;
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[PcgwService.ParseApiSection] Parse failed — {ex.Message}");
             return null;
         }
+    }
+
+    private static bool IsPlatformExcluded(string text)
+    {
+        var n = text.ToLowerInvariant();
+        if (n.Contains("os x") || n.Contains("macos") || n.Contains("mac os")) return true;
+        if (System.Text.RegularExpressions.Regex.IsMatch(n, @"\blinux\b.*\bonly\b")) return true;
+        if (System.Text.RegularExpressions.Regex.IsMatch(n, @"\bonly\b.*\blinux\b")) return true;
+        if (n.Contains("linux default") || n.Contains("linux only")) return true;
+        return false;
     }
 
     private void SaveApiCacheToDisk()
@@ -558,7 +617,7 @@ public class PcgwService : IPcgwService
             var dir = Path.GetDirectoryName(ApiCachePath)!;
             Directory.CreateDirectory(dir);
             var json = System.Text.Json.JsonSerializer.Serialize(_apiInfoCache,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             FileHelper.WriteAllTextWithRetry(ApiCachePath, json, "PcgwService.SaveApiCache");
         }
         catch (Exception ex)

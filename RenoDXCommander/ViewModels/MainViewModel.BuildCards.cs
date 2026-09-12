@@ -773,6 +773,28 @@ public partial class MainViewModel
             if (!string.IsNullOrEmpty(installPath))
                 CacheGameApi(installPath, newCard.GraphicsApi, newCard.DetectedApis);
 
+            // PCGW upgrade: if PE scan gave DX11 (or Unknown) but PCGW confirms DX12,
+            // promote the primary API — only when no user/manifest override exists
+            if (!hasUserApiOverride && _manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true)
+            {
+                var pcgwInfo = _pcgwService.GetCachedApiInfo(game.Name);
+                if (pcgwInfo != null && pcgwInfo.HasDirectX12
+                    && (newCard.GraphicsApi == GraphicsApiType.DirectX11
+                        || newCard.GraphicsApi == GraphicsApiType.Unknown))
+                {
+                    newCard.GraphicsApi = GraphicsApiType.DirectX12;
+                    newCard.DetectedApis.Add(GraphicsApiType.DirectX12);
+                    // For non-UE games: remove DX11 from DetectedApis (it was a false PE scan artefact)
+                    // For UE games: keep DX11 so Luma eligibility is preserved (UE supports -dx11 launch arg)
+                    bool isUnreal = engine == EngineType.Unreal
+                        || (newCard.EngineHint?.Contains("Unreal", StringComparison.OrdinalIgnoreCase) == true);
+                    if (!isUnreal)
+                        newCard.DetectedApis.Remove(GraphicsApiType.DirectX11);
+                    if (!string.IsNullOrEmpty(installPath))
+                        CacheGameApi(installPath, newCard.GraphicsApi, newCard.DetectedApis);
+                }
+            }
+
             // For Vulkan games, RS is installed when reshade.ini exists in the game folder.
             if (newCard.RequiresVulkanInstall)
             {

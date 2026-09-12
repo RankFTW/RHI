@@ -4,6 +4,10 @@
 
 - **Export Game Data** — new button in Settings next to Copy Logs. Gathers your game library data (graphics API, exe paths, engine, store IDs) and copies a JSON file to clipboard. Paste into Discord to share with the community — submissions get merged into a community database that will help RHI detect APIs and paths correctly for more games over time.
 
+### Changes
+
+- **PCGW API detection** — RHI now quietly scrapes PCGamingWiki in the background to verify DirectX versions. Games that PE scanning can't read (Xbox/Game Pass titles, access-denied paths) now show the correct DX11/DX12 badge where PCGW has the data. Halo Infinite, Resonance, and similar Xbox titles that previously showed no API now correctly show DX12.
+
 ### Manifest Updates
 
 - Re-enabled PCGamingWiki AppID lookup (`appid.php`) which was disabled in August 2026 due to a server migration outage. It is now confirmed working again. Existing URL cache will be cleared on next launch to allow fresh lookups via the faster AppID method.

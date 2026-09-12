@@ -806,6 +806,23 @@ public partial class MainViewModel
                 newCard.GraphicsApi = graphicsApi;
             }
 
+            // PCGW upgrade: promote DX11→DX12 when PCGW confirms DX12 (no override)
+            if (!clHasUserApiOverride && _manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true)
+            {
+                var pcgwInfo = _pcgwService.GetCachedApiInfo(game.Name);
+                if (pcgwInfo != null && pcgwInfo.HasDirectX12
+                    && (newCard.GraphicsApi == GraphicsApiType.DirectX11
+                        || newCard.GraphicsApi == GraphicsApiType.Unknown))
+                {
+                    newCard.GraphicsApi = GraphicsApiType.DirectX12;
+                    newCard.DetectedApis.Add(GraphicsApiType.DirectX12);
+                    bool isUnreal = engine == EngineType.Unreal
+                        || (newCard.EngineHint?.Contains("Unreal", StringComparison.OrdinalIgnoreCase) == true);
+                    if (!isUnreal)
+                        newCard.DetectedApis.Remove(GraphicsApiType.DirectX11);
+                }
+            }
+
             // Luma matching (in-memory only, no filesystem)
             var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
