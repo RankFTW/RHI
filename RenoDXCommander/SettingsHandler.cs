@@ -1195,11 +1195,11 @@ public class SettingsHandler
             .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
-        _currentScreenshotHotkeyString = HotkeyManager.BuildHotkeyString(vk, shift, ctrl, alt);
+        _currentScreenshotHotkeyString = HotkeyManager.BuildScreenshotHotkeyString(vk, shift, ctrl, alt);
 
         if (sender is TextBox hotkeyBox)
         {
-            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(vk, shift, ctrl, alt);
+            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(_currentScreenshotHotkeyString);
         }
 
         e.Handled = true;

@@ -427,4 +427,36 @@ public class CoreLogicTests
         Assert.Equal("1", ini["renodx"]["ForceBorderless"]);
         Assert.True(ini.ContainsKey("GENERAL"));
     }
+
+    [Fact]
+    public void ScreenshotHotkey_BackspaceClearsAndNormalKeysRemainUnchanged()
+    {
+        Assert.Equal("0,0,0,0", HotkeyManager.BuildScreenshotHotkeyString(8, true, true, true));
+        Assert.Equal("None", HotkeyManager.FormatHotkeyDisplay("0,0,0,0"));
+        Assert.Equal("75,1,1,0", HotkeyManager.BuildScreenshotHotkeyString(75, true, true, false));
+        Assert.Equal("44,0,0,0", HotkeyManager.BuildScreenshotHotkeyString(44, false, false, false));
+    }
+
+    [Fact]
+    public void DisabledScreenshotHotkey_RoundTripsThroughIniAndSettingsDictionary()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            AuxInstallService.ApplyScreenshotHotkey(tempFile, "0,0,0,0");
+            var ini = AuxInstallService.ParseIni(File.ReadAllLines(tempFile));
+            Assert.Equal("0,0,0,0", ini["INPUT"]["KeyScreenshot"]);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+
+        var saved = new Dictionary<string, string>();
+        var settings = new SettingsViewModel { ScreenshotHotkey = "0,0,0,0" };
+        settings.SaveSettingsToDict(saved);
+        var restored = new SettingsViewModel();
+        restored.LoadSettingsFromDict(saved);
+        Assert.Equal("0,0,0,0", restored.ScreenshotHotkey);
+    }
 }

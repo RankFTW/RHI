@@ -1396,6 +1396,7 @@
                                                  Background="{StaticResource SurfaceInputBrush}"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                 ToolTipService.ToolTip="Press a key to assign it, or Backspace to clear it."
                                                  PreviewKeyDown="ScreenshotHotkeyBox_PreviewKeyDown"/>
                                         <Button Grid.Column="1" Content="↺" Click="ResetScreenshotHotkey_Click"
                                                 ToolTipService.ToolTip="Reset to Print Screen"
