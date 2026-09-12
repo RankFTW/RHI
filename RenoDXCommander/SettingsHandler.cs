@@ -321,6 +321,47 @@ public class SettingsHandler
             _window.NexusModsCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
             RefreshNexusStatus();
         }
+
+        // Initialize RenoDX Data Source card (dev-only)
+        if (DevUnlockService.IsUnlocked)
+        {
+            _window.RenoDxDbSourceCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+            InitRenoDxDbSourceCombo();
+        }
+    }
+
+    /// <summary>
+    /// Populates and wires the RenoDX data source combo. Dev-only.
+    /// </summary>
+    private void InitRenoDxDbSourceCombo()
+    {
+        var combo = _window.RenoDxDbSourceCombo;
+
+        // Map the current persisted value to the correct ComboBoxItem by Tag
+        var currentSource = ViewModel.Settings.RenoDxDbSource;
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            if (combo.Items[i] is Microsoft.UI.Xaml.Controls.ComboBoxItem item
+                && string.Equals(item.Tag as string, currentSource, StringComparison.OrdinalIgnoreCase))
+            {
+                combo.SelectedIndex = i;
+                break;
+            }
+        }
+        if (combo.SelectedIndex < 0) combo.SelectedIndex = 0; // Default: Wiki Only
+
+        combo.SelectionChanged -= RenoDxDbSourceCombo_SelectionChanged;
+        combo.SelectionChanged += RenoDxDbSourceCombo_SelectionChanged;
+    }
+
+    private void RenoDxDbSourceCombo_SelectionChanged(object sender, Microsoft.UI.Xaml.Controls.SelectionChangedEventArgs e)
+    {
+        if (_window.RenoDxDbSourceCombo.SelectedItem is Microsoft.UI.Xaml.Controls.ComboBoxItem item
+            && item.Tag is string tag)
+        {
+            ViewModel.Settings.RenoDxDbSource = tag;
+            ViewModel.SaveSettingsPublic();
+        }
     }
 
     /// <summary>

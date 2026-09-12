@@ -35,6 +35,7 @@
 ### Maintenance
 
 - RHI now tracks every DLL it deploys into game folders using a sentinel file. If the game already had a file at that location, the original is backed up and restored on uninstall. If there was nothing there, a 0-byte marker is written so RHI knows to clean up cleanly. This prevents game-original DLLs from being lost after uninstall, and fixes orphaned leftover files. Covers OptiScaler, DLSS version swaps, RE Framework, and Luma.
+- Added internal RenoDX database service that fetches mod and UE-Extended configuration data from the RHI repository. Includes a dev-only "RenoDX Data Source" setting (Wiki Only / DB Only / Hybrid) for testing and validation ahead of a full transition away from wiki scraping.
 
 ### Bug Fixes
 

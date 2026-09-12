@@ -1719,6 +1719,38 @@
                         </Border>
 
                         <!-- ══════════════════════════════════════════════════════════
+                             CARD 2d: RENODX DATA SOURCE (dev-only — hidden by DevUnlockService)
+                             ══════════════════════════════════════════════════════════ -->
+                        <Border x:Name="RenoDxDbSourceCard" x:FieldModifier="internal"
+                                Visibility="Collapsed"
+                                Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="RenoDX Data Source" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                           Text="Controls where RHI fetches mod and UE-Extended configuration data. Hybrid uses the RHI database first and falls back to the wiki for games not yet in the database. Changing this setting triggers an immediate refresh."/>
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Source" FontSize="13"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="RenoDxDbSourceCombo" x:FieldModifier="internal"
+                                              Grid.Column="1" FontSize="12"
+                                              HorizontalAlignment="Left" MinWidth="160">
+                                        <ComboBoxItem Content="Wiki Only" Tag="WikiOnly"/>
+                                        <ComboBoxItem Content="DB Only" Tag="DbOnly"/>
+                                        <ComboBoxItem Content="Hybrid" Tag="Hybrid"/>
+                                    </ComboBox>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ══════════════════════════════════════════════════════════
                              CARD 3: DLSS & STREAMLINE
                              ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"

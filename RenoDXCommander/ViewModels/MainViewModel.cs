@@ -440,6 +440,82 @@ public partial class MainViewModel : ObservableObject
 
     private List<GameMod> _allMods = new();
     private Dictionary<string, string> _genericNotes = new(StringComparer.OrdinalIgnoreCase);
+    // ── RenoDX DB ─────────────────────────────────────────────────────────────
+    private readonly IRenoDXDbService _renoDxDbService;
+    /// <summary>Named mods from the last DB fetch. Empty when source is WikiOnly.</summary>
+    private List<GameMod> _dbMods = new();
+    /// <summary>UE-Extended entries from the last DB fetch. Empty when source is WikiOnly.</summary>
+    private Dictionary<string, RenoDXDbUnrealEntry> _dbUnrealEntries =
+        new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// Returns the effective UE-Extended db entry for a game, or null when source is WikiOnly
+    /// or the game isn't in the db.
+    /// </summary>
+    public RenoDXDbUnrealEntry? GetDbUnrealEntry(string gameName) =>
+        _dbUnrealEntries.TryGetValue(gameName, out var e) ? e : null;
+
+    /// <summary>
+    /// Merges wiki and DB mod lists according to the current RenoDxDbSource setting.
+    /// Must be called after both _allMods (wiki) and _dbMods (db) are populated.
+    ///
+    /// WikiOnly  — _allMods stays as-is; _dbUnrealEntries cleared
+    /// DbOnly    — _allMods replaced by db mods; _dbUnrealEntries populated
+    /// Hybrid    — db entries override wiki entries by name; db-only entries appended
+    /// </summary>
+    private void MergeDbSources()
+    {
+        var source = _settingsViewModel.RenoDxDbSource;
+
+        if (string.Equals(source, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+        {
+            // Nothing to do — _allMods already holds wiki data, clear db state
+            _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase);
+            _crashReporter.Log("[MergeDbSources] Source=WikiOnly — using wiki mods only");
+            return;
+        }
+
+        if (string.Equals(source, "DbOnly", StringComparison.OrdinalIgnoreCase))
+        {
+            _allMods = new List<GameMod>(_dbMods);
+            _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db");
+            // Feed db comments into genericNotes for the info dialog
+            foreach (var (name, entry) in _dbUnrealEntries)
+                if (!string.IsNullOrEmpty(entry.Comments))
+                    _genericNotes[name] = entry.Comments;
+            return;
+        }
+
+        // Hybrid — db entries win on name collision; db-only entries are appended
+        if (string.Equals(source, "Hybrid", StringComparison.OrdinalIgnoreCase))
+        {
+            var merged = new List<GameMod>(_allMods);
+            var wikiByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < merged.Count; i++)
+                wikiByName[merged[i].Name] = i;
+
+            int overridden = 0, added = 0;
+            foreach (var dbMod in _dbMods)
+            {
+                if (wikiByName.TryGetValue(dbMod.Name, out int idx))
+                {
+                    merged[idx] = dbMod; // db wins
+                    overridden++;
+                }
+                else
+                {
+                    merged.Add(dbMod);
+                    added++;
+                }
+            }
+            _allMods = merged;
+            _crashReporter.Log($"[MergeDbSources] Source=Hybrid — {overridden} overridden, {added} added from db, total {_allMods.Count}");
+
+            // Feed db comments into genericNotes
+            foreach (var (name, entry) in _dbUnrealEntries)
+                if (!string.IsNullOrEmpty(entry.Comments))
+                    _genericNotes[name] = entry.Comments;
+        }
+    }
     private List<GameCardViewModel> _allCards = new();
     public IReadOnlyList<GameCardViewModel> AllCards => _allCards;
     private List<DetectedGame> _manualGames = new();
@@ -570,7 +646,8 @@ public partial class MainViewModel : ObservableObject
         GitHubETagCache etagCache,
         SeenWikiModsService seenWikiModsService,
         SeenUltraPlusModsService seenUltraPlusModsService,
-        SeenLumaModsService seenLumaModsService)
+        SeenLumaModsService seenLumaModsService,
+        IRenoDXDbService renoDxDbService)
     {
         _http = http;
         _installer = installer;
@@ -618,6 +695,7 @@ public partial class MainViewModel : ObservableObject
         _seenUltraPlusModsService = seenUltraPlusModsService;
         _seenLumaModsService = seenLumaModsService;
         _etagCache = etagCache;
+        _renoDxDbService = renoDxDbService;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();
         // Wire up DllOverrideService changes to trigger save
@@ -647,6 +725,13 @@ public partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(IsGlobalShaderButtonEnabled));
                 if (_hasInitialized && !_isLoadingSettings)
                     DeployAllShaders();
+            }
+            // Force a full refresh when the RenoDX data source is changed so the new
+            // source takes effect immediately without requiring a manual refresh.
+            if (e.PropertyName == nameof(SettingsViewModel.RenoDxDbSource) && _hasInitialized)
+            {
+                _crashReporter.Log($"[MainViewModel] RenoDxDbSource changed to '{_settingsViewModel.RenoDxDbSource}' — triggering refresh");
+                _ = RefreshAsync();
             }
         };
         // Subscribe to installer events — on install we'll perform a full refresh

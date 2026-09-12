@@ -361,7 +361,15 @@ public partial class AuxInstallService
     /// If the [renodx] section already exists with the correct keys, no changes are made.
     /// Other sections in the file are preserved untouched.
     /// </summary>
-    public static void ApplyRenoDxNativeHdrSettings(string gameDir, bool usesSdrPath = false)
+    /// <param name="gameDir">Game install directory.</param>
+    /// <param name="usesSdrPath">When true writes Set_Path=1 (SDR upgrade); false writes Set_Path=0 (HDR).</param>
+    /// <param name="upgradeOverride">
+    /// Optional db-driven upgrade: (key, value) pair to force-write into the [renodx] section,
+    /// overwriting any existing value. e.g. ("Upgrade_B8G8R8A8_TYPELESS", "1").
+    /// Used when the RenoDX db specifies Method="upgrade" for this game.
+    /// </param>
+    public static void ApplyRenoDxNativeHdrSettings(string gameDir, bool usesSdrPath = false,
+        (string Key, string Value)? upgradeOverride = null)
     {
         var iniFilePath = Path.Combine(gameDir, "reshade.ini");
         if (!File.Exists(iniFilePath)) return;
@@ -396,14 +404,17 @@ public partial class AuxInstallService
                 ["Upgrade_UseSCRGB"] = "",
             };
 
+            bool changed = false;
+
             if (!ini.TryGetValue(section, out var existingKeys))
             {
-                ini[section] = new OrderedDict(requiredKeys);
+                existingKeys = new OrderedDict(requiredKeys);
+                ini[section] = existingKeys;
+                changed = true;
             }
             else
             {
                 // Only add keys that are missing — never overwrite user-modified values
-                bool changed = false;
                 foreach (var (key, value) in requiredKeys)
                 {
                     if (!existingKeys.ContainsKey(key))
@@ -412,8 +423,24 @@ public partial class AuxInstallService
                         changed = true;
                     }
                 }
-                if (!changed) return; // All keys already present — no write needed
             }
+
+            // Force-write the db-specified upgrade key, overwriting any stale existing value.
+            // This is the only key we authoratively set — all others respect user modifications.
+            if (upgradeOverride.HasValue
+                && !string.IsNullOrEmpty(upgradeOverride.Value.Key)
+                && !string.IsNullOrEmpty(upgradeOverride.Value.Value))
+            {
+                var (ovKey, ovVal) = upgradeOverride.Value;
+                if (!existingKeys.TryGetValue(ovKey, out var existing) || existing != ovVal)
+                {
+                    existingKeys[ovKey] = ovVal;
+                    changed = true;
+                    CrashReporter.Log($"[AuxInstallService.ApplyRenoDxNativeHdrSettings] DB upgrade override: {ovKey}={ovVal} for '{gameDir}'");
+                }
+            }
+
+            if (!changed) return; // All keys already present and correct — no write needed
 
             WriteIni(iniFilePath, ini);
             CrashReporter.Log($"[AuxInstallService.ApplyRenoDxNativeHdrSettings] Applied [renodx] section to '{iniFilePath}'");

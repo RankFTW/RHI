@@ -75,6 +75,9 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>Target resolution key in "WxH@Hz" format. Empty = no override.</summary>
     [ObservableProperty] private string _resolutionTarget = "";
     [ObservableProperty] private List<uint> _resTargetDisplays = new();
+    // ── RenoDX Database source (dev-only) ─────────────────────────────────────
+    /// <summary>Controls which data source feeds mod info. Values: "WikiOnly", "DbOnly", "Hybrid".</summary>
+    [ObservableProperty] private string _renoDxDbSource = "WikiOnly";
     [ObservableProperty] private bool _dropHelperEnabled = true;
     [ObservableProperty] private bool _closeToTray;
     [ObservableProperty] private bool _recentGamesMenu;
@@ -331,6 +334,7 @@ public partial class SettingsViewModel : ObservableObject
             try { ResTargetDisplays = System.Text.Json.JsonSerializer.Deserialize<List<uint>>(rtdVal) ?? new(); }
             catch { ResTargetDisplays = new(); }
         }
+        if (s.TryGetValue("RenoDxDbSource", out var rddsVal)) RenoDxDbSource = rddsVal ?? "WikiOnly";
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
@@ -462,6 +466,8 @@ public partial class SettingsViewModel : ObservableObject
         s["ResolutionAutoToggle"] = ResolutionAutoToggle ? "true" : "false";
         if (!string.IsNullOrEmpty(ResolutionTarget)) s["ResolutionTarget"] = ResolutionTarget;
         if (ResTargetDisplays.Count > 0) s["ResTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(ResTargetDisplays);
+        if (RenoDxDbSource != "WikiOnly") s["RenoDxDbSource"] = RenoDxDbSource;
+        else s.Remove("RenoDxDbSource"); // "WikiOnly" is the default — don't persist it
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
         else s["DropHelperEnabled"] = "true";
         s["CloseToTray"] = CloseToTray ? "true" : "false";

@@ -56,6 +56,10 @@ public partial class MainViewModel
             var lumaTask        = _lumaService.FetchCompletedModsAsync();
             var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
             var manifestTask    = _manifestService.FetchAsync();
+            // DB fetch — only when dev-unlocked and source is not WikiOnly
+            var dbTask = (DevUnlockService.IsUnlocked && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+                ? _renoDxDbService.FetchAllAsync()
+                : Task.FromResult<(List<GameMod>, Dictionary<string, RenoDXDbUnrealEntry>)>((new(), new(StringComparer.OrdinalIgnoreCase)));
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -217,6 +221,20 @@ public partial class MainViewModel
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
             _allMods      = wikiResult.Mods ?? new();
             _genericNotes = wikiResult.GenericNotes ?? new();
+            // Extract DB results and merge with wiki according to source setting
+            try
+            {
+                var (dbMods, dbUnreal) = await dbTask;
+                _dbMods = dbMods;
+                _dbUnrealEntries = dbUnreal;
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries");
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch failed — {ex.Message}");
+                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase);
+            }
+            MergeDbSources();
             try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
             try { _lumaGenericEntries = lumaUeTask.IsCompletedSuccessfully ? await lumaUeTask : new(StringComparer.OrdinalIgnoreCase); }

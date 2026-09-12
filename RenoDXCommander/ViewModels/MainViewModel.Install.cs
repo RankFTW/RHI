@@ -864,12 +864,36 @@ public partial class MainViewModel
             }
 
             // Apply [renodx] Native HDR settings for UE-Extended games
-            // UE4: Set_Path=1 (SDR upgrade path) — UE4 games don't have native HDR pipelines
-            // UE5: Set_Path=0 (native HDR path) — upgrade the game's existing HDR output
+            // Priority: DB entry (Method field) > manifest ueExtendedCompatibility > UE4/UE5 detection
             if (card.UseUeExtended)
             {
                 bool isUe4 = card.EngineHint?.Contains("Unreal Engine 4") == true;
-                AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath, usesSdrPath: isUe4);
+
+                // DB-driven configuration — only when dev-unlocked and source is not WikiOnly
+                var dbEntry = (DevUnlockService.IsUnlocked
+                    && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+                    ? GetDbUnrealEntry(card.GameName)
+                    : null;
+
+                if (dbEntry != null)
+                {
+                    // DB Method takes priority over engine-hint detection
+                    (string Key, string Value)? upgradeOverride = null;
+                    if (dbEntry.UpgradeIniKey != null && dbEntry.UpgradeIniValue != null)
+                        upgradeOverride = (dbEntry.UpgradeIniKey, dbEntry.UpgradeIniValue);
+
+                    AuxInstallService.ApplyRenoDxNativeHdrSettings(
+                        card.InstallPath,
+                        usesSdrPath: dbEntry.UsesSdrPath,
+                        upgradeOverride: upgradeOverride);
+
+                    _crashReporter.Log($"[MainViewModel.InstallModAsync] DB UEE config for '{card.GameName}': Method={dbEntry.Method}, SdrPath={dbEntry.UsesSdrPath}, UpgradeKey={dbEntry.UpgradeIniKey ?? "none"}");
+                }
+                else
+                {
+                    // Fallback: engine-hint detection (UE4 → SDR, UE5 → HDR)
+                    AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath, usesSdrPath: isUe4);
+                }
             }
 
             // Pre-populate [renodx] key placeholders for generic UE/Unity addons (addon fills values on first launch)
@@ -884,11 +908,22 @@ public partial class MainViewModel
                 AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides, forceOverwrite: true);
 
             // Deploy Engine.ini HDR settings for UE-Extended games
-            // Priority: ueExtendedCompatibility entry > UE4 detection > default (deploy for UE5)
+            // Priority: DB entry > manifest ueExtendedCompatibility > UE4/UE5 detection
             bool isUe4Game = card.EngineHint?.Contains("Unreal Engine 4") == true;
             var compatEntry = _manifestUeExtendedCompat.TryGetValue(card.GameName, out var ce) ? ce : null;
-            bool deployHdr = compatEntry?.Hdr ?? !isUe4Game;  // compat overrides; else UE4=false, UE5=true
-            bool deployLut = compatEntry?.Lut ?? true;         // compat overrides; else always true
+
+            // Resolve db entry once more (already looked up above, re-use for Engine.ini decision)
+            var dbEntryForEngineIni = (DevUnlockService.IsUnlocked
+                && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+                ? GetDbUnrealEntry(card.GameName)
+                : null;
+
+            bool deployHdr;
+            bool deployLut = compatEntry?.Lut ?? true; // compat overrides; else always true
+            if (dbEntryForEngineIni != null)
+                deployHdr = dbEntryForEngineIni.DeployEngineIniHdr; // DB Method="ini" → true, others → false
+            else
+                deployHdr = compatEntry?.Hdr ?? !isUe4Game;         // compat overrides; else UE4=false, UE5=true
 
             // Custom Engine.ini file overrides the standard HDR keys entirely — applied regardless of deployHdr
             string? engineIniFilename = null;
