@@ -8,7 +8,7 @@ RHI detects your entire game library across every major store and handles ReShad
 
 ## Download
 
-**[Latest release](https://github.com/RankFTW/RenoDXChecker/releases/latest)** · **[Discord](https://discord.gg/yourserver)**
+**[Latest release](https://github.com/RankFTW/RenoDXChecker/releases/latest)** · **[Discord](https://discord.gg/ultraplace)**
 
 ---
 
