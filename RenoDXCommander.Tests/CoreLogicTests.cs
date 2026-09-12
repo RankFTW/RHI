@@ -427,4 +427,48 @@ public class CoreLogicTests
         Assert.Equal("1", ini["renodx"]["ForceBorderless"]);
         Assert.True(ini.ContainsKey("GENERAL"));
     }
+
+    [Fact]
+    public void ApplyScreenshotSettings_BlankPath_PreservesPathAndAppliesOtherSettings()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(tempFile, "[SCREENSHOT]\nSavePath=C:\\Existing\n[INPUT]\nKeyOverlay=36,0,0,0\nKeyScreenshot=44,0,0,0\n[OVERLAY]\nVariableListUseTabs=1\n");
+
+            SettingsHandler.ApplyScreenshotSettingsToIni(
+                tempFile, null, "45,1,0,0", "46,0,0,0", useTabs: false);
+
+            var ini = AuxInstallService.ParseIni(File.ReadAllLines(tempFile));
+            Assert.Equal(@"C:\Existing", ini["SCREENSHOT"]["SavePath"]);
+            Assert.Equal("45,1,0,0", ini["INPUT"]["KeyOverlay"]);
+            Assert.Equal("46,0,0,0", ini["INPUT"]["KeyScreenshot"]);
+            Assert.Equal("0", ini["OVERLAY"]["VariableListUseTabs"]);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void ApplyScreenshotSettings_NonBlankPath_ReplacesPath()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(tempFile, "[SCREENSHOT]\nSavePath=C:\\Existing\n");
+
+            SettingsHandler.ApplyScreenshotSettingsToIni(
+                tempFile, @"D:\Screenshots", null, "44,0,0,0", useTabs: true);
+
+            var ini = AuxInstallService.ParseIni(File.ReadAllLines(tempFile));
+            Assert.Equal(@"D:\Screenshots", ini["SCREENSHOT"]["SavePath"]);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
 }

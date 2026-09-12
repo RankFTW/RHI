@@ -473,11 +473,6 @@ public class SettingsHandler
 
         ViewModel.SaveSettingsPublic();
 
-        if (string.IsNullOrEmpty(screenshotPath))
-        {
-            return;
-        }
-
         // Iterate all game cards and apply screenshot path + hotkeys to eligible games
         int updatedCount = 0;
         foreach (var card in ViewModel.AllCards)
@@ -498,19 +493,16 @@ public class SettingsHandler
 
             try
             {
-                var savePath = perGame
-                    ? BuildSavePath(screenshotPath, card.GameName)
-                    : screenshotPath;
+                var savePath = string.IsNullOrEmpty(screenshotPath)
+                    ? null
+                    : perGame ? BuildSavePath(screenshotPath, card.GameName) : screenshotPath;
+                var overlayHotkey = AuxInstallService.IsRdr2(card.GameName)
+                    ? null
+                    : _currentHotkeyString;
 
                 foreach (var iniFile in iniFiles)
-                {
-                    AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
-                    // Always apply hotkeys when user explicitly clicks Apply to All
-                    if (!AuxInstallService.IsRdr2(card.GameName))
-                        AuxInstallService.ApplyOverlayHotkey(iniFile, _currentHotkeyString);
-                    AuxInstallService.ApplyScreenshotHotkey(iniFile, _currentScreenshotHotkeyString);
-                    AuxInstallService.ApplyVariableListUseTabs(iniFile, ViewModel.Settings.RsVariableListUseTabs);
-                }
+                    ApplyScreenshotSettingsToIni(iniFile, savePath, overlayHotkey,
+                        _currentScreenshotHotkeyString, ViewModel.Settings.RsVariableListUseTabs);
                 updatedCount++;
             }
             catch (Exception ex)
@@ -520,15 +512,33 @@ public class SettingsHandler
         }
 
         // Show confirmation dialog
+        var appliedSettings = string.IsNullOrEmpty(screenshotPath)
+            ? "ReShade hotkeys and effect list style"
+            : "Screenshot path, ReShade hotkeys, and effect list style";
         var dialog = new ContentDialog
         {
             Title = "Screenshots & Hotkeys",
-            Content = $"Screenshot path, ReShade hotkeys, and effect list style applied to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Content = $"{appliedSettings} applied to {updatedCount} game{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
         await DialogService.ShowSafeAsync(dialog);
+    }
+
+    internal static void ApplyScreenshotSettingsToIni(
+        string iniFilePath,
+        string? savePath,
+        string? overlayHotkey,
+        string screenshotHotkey,
+        bool useTabs)
+    {
+        if (!string.IsNullOrWhiteSpace(savePath))
+            AuxInstallService.ApplyScreenshotPath(iniFilePath, savePath);
+        if (overlayHotkey != null)
+            AuxInstallService.ApplyOverlayHotkey(iniFilePath, overlayHotkey);
+        AuxInstallService.ApplyScreenshotHotkey(iniFilePath, screenshotHotkey);
+        AuxInstallService.ApplyVariableListUseTabs(iniFilePath, useTabs);
     }
 
     /// <summary>
