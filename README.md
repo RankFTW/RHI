@@ -10,6 +10,8 @@ RHI detects your entire game library across every major store and handles ReShad
 
 **[Latest release](https://github.com/RankFTW/RenoDXChecker/releases/latest)** · **[Discord](https://discord.gg/yourserver)**
 
+**Bazzite / Linux:** see [Linux installation and downloads](docs/LINUX.md#run). Linux releases provide a ready-to-run `RHI-linux-x64.tar.gz` with an optional application-menu installer. For a source checkout, run `./run-linux.sh`; the first run builds the app automatically.
+
 ---
 
 ## What It Does

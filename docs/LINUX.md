@@ -4,13 +4,19 @@ This repository now includes a native Linux desktop application for managing Win
 
 ## Run
 
-From this checkout:
+For a ready-to-run build, download **RHI-linux-x64.tar.gz** from [a Linux release](https://github.com/TwoToneEddy/RHI/releases), extract it into a permanent folder, and run `./run-linux.sh` there. Run `./install.sh` in that folder to add an application-menu entry. The package includes .NET; no SDK, compilation, or root access is needed. Keep the accompanying files together. See [release installation and updates](LINUX-RELEASE.md).
+
+To build from source on Bazzite:
 
 ```bash
+git clone --branch linux_port https://github.com/TwoToneEddy/RHI.git
+cd RHI
 ./run-linux.sh
 ```
 
-The prepared standalone build is `artifacts/linux-x64/RHI.Linux`. The portable package is `artifacts/RHI-linux-x64.tar.gz`; extract the whole archive and run `./RHI.Linux` inside it. Keep the accompanying files together.
+The first run downloads a user-local .NET SDK if needed, restores packages, runs tests, and builds the app. Allow several minutes and an internet connection. Later runs launch the existing build. After pulling source updates, run `./scripts/build-linux.sh` to rebuild.
+
+The standalone build is `artifacts/linux-x64/RHI.Linux`. The portable package and checksum are `artifacts/RHI-linux-x64.tar.gz` and `artifacts/RHI-linux-x64.tar.gz.sha256`.
 
 To add a KDE application-menu entry:
 
@@ -86,7 +92,29 @@ The original Windows solution requires its Windows build environment; use `RHI.L
 
 The command `./run-linux.sh --prepare APPID --ue-hdr --nightly` can prepare a matching UE Extended Steam game directly; omit `--ue-hdr` for other named mods. Without `--nightly`, preparation uses the game's saved ReShade channel (Nightly for new entries). This command writes game files. Use `--save-launch-options APPID` after exiting Steam to persist the required DLL overrides.
 
-### Black screen with an accessible ReShade overlay
+## Creating Linux releases
+
+The **Linux build and release** GitHub Actions workflow runs the tests, publishes a self-contained x64 app, checks the extracted package and menu installer, and uploads a downloadable build artifact on pushes and pull requests to `linux_port`, `main`, and `master`. It also supports **Run workflow** once the workflow exists on the repository's default branch.
+
+To prepare a release, commit the changes and push a unique Linux tag pointing at the version you want to ship, for example:
+
+```bash
+git tag -a linux-v0.1.0 -m 'Linux preview 0.1.0'
+git push origin linux-v0.1.0
+```
+
+When that tag's build and package checks pass, the workflow creates a **draft prerelease** with the archive, SHA-256 checksum, and installation instructions attached. Open **Releases** on GitHub, review the draft, and publish it. Linux tags are separate from Windows version tags. GitHub Actions must be enabled and permitted to write repository contents for the release job.
+
+You can also prepare and verify the same files locally, then attach them to a release yourself:
+
+```bash
+./scripts/build-linux.sh
+./scripts/check-linux-package.sh
+```
+
+Only the application is bundled; ReShade, RenoDX, and shader packs are downloaded when users install them. `BUILD-INFO.txt` in the archive records the source commit and SDK. The Linux release remains a preview with the support boundaries described above.
+
+## Black screen with an accessible ReShade overlay
 
 On the tested GE-Proton11-6 setup, stable ReShade 6.8.0 caused a black screen in Mortal Shell II even with RenoDX disabled. ReShade nightly from September 12, 2026 restored the menu background. With RenoDX UE Extended and the native HDR recipe re-enabled, the user also confirmed normal gameplay without cursor trails or a black background. Its newer VKD3D interface hooks include an upstream compatibility fix absent from 6.8.0. Select **Nightly** in RHI and install/update ReShade before changing game graphics settings.
 

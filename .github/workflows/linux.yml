@@ -1,0 +1,65 @@
+name: Linux build and release
+
+on:
+  push:
+    branches: [linux_port, main, master]
+    tags: ['linux-v*']
+  pull_request:
+    branches: [linux_port, main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.425'
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-6 libice6 libsm6 libfontconfig1 p7zip-full python3
+      - name: Build and launch from a fresh checkout
+        run: ./run-linux.sh --help
+      - name: Check standalone package
+        run: ./scripts/check-linux-package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RHI-linux-x64
+          path: |
+            artifacts/RHI-linux-x64.tar.gz
+            artifacts/RHI-linux-x64.tar.gz.sha256
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/linux-v')
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: RHI-linux-x64
+          path: artifacts
+      - name: Create draft Linux prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            artifacts/RHI-linux-x64.tar.gz artifacts/RHI-linux-x64.tar.gz.sha256 \
+            --verify-tag --draft --prerelease \
+            --title "RHI Linux ${RELEASE_TAG#linux-}" \
+            --notes-file docs/LINUX-RELEASE.md
