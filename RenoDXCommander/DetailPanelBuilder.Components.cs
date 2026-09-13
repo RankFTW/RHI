@@ -511,6 +511,11 @@ public partial class DetailPanelBuilder
         // No mod message
         _window.DetailNoModMsg.Visibility = card.NoModVisibility;
 
+        UpdateDetailProgressRows(card);
+    }
+
+    public void UpdateDetailProgressRows(GameCardViewModel card)
+    {
         // Progress bars
         _window.DetailRefProgress.Visibility = card.RefRowVisibility == Visibility.Visible ? card.RefProgressVisibility : Visibility.Collapsed;
         _window.DetailRefProgress.Value = card.RefProgress;
@@ -559,6 +564,18 @@ public partial class DetailPanelBuilder
     public void DetailCard_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (_currentDetailCard == null) return;
+        if (e.PropertyName is { } name
+            && name is not ("ActionMessage" or "MessageVisibility")
+            && (name.EndsWith("Progress") || name.EndsWith("ActionMessage") || name.EndsWith("MessageVisibility")))
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                if (_currentDetailCard == null) return;
+                UpdateDetailProgressRows(_currentDetailCard);
+                UpdateOsFeedback(_currentDetailCard);
+            });
+            return;
+        }
         _dispatcherQueue.TryEnqueue(() =>
         {
             if (_currentDetailCard == null) return;
