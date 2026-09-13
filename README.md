@@ -144,6 +144,8 @@ Drag and drop any game's `.exe` onto the window to add it manually if it's not a
 
 ## Requirements
 
+**Bazzite / Linux:** a native Proton-aware build is available in this checkout, with the Windows-style component table, installed/applied indicators, and guided setup. Run `./run-linux.sh`, or build with `./scripts/build-linux.sh`. See the [Linux screenshot](screenshots/linux_game_view.png) and [Linux setup, supported features, and testing](docs/LINUX.md). The requirements below apply to the Windows application.
+
 - Windows 10 / 11
 - [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
 - NVIDIA GPU recommended for driver profile features (ReShade and RenoDX work on all GPUs)
