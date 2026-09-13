@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+    <Compile Include="../RenoDXCommander/Models/GameMod.cs" Link="Shared/GameMod.cs" />
+    <Compile Include="../RenoDXCommander/Models/GraphicsApiType.cs" Link="Shared/GraphicsApiType.cs" />
+    <Compile Include="../RenoDXCommander/Services/GraphicsApiDetector.cs" Link="Shared/GraphicsApiDetector.cs" />
+    <Compile Include="../RenoDXCommander/Services/PeHeaderService.cs" Link="Shared/PeHeaderService.cs" />
+    <Compile Include="../RenoDXCommander/Services/IPeHeaderService.cs" Link="Shared/IPeHeaderService.cs" />
+    <Compile Include="../RenoDXCommander/Services/WikiService.cs" Link="Shared/WikiService.cs" />
+    <Compile Include="../RenoDXCommander/Services/IWikiService.cs" Link="Shared/IWikiService.cs" />
+    <Content Include="../manifest.json" Link="manifest.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

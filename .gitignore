@@ -30,3 +30,6 @@ docs/v2.3.3-test-checklist.md
 docs/handover-*.md
 docs/RenoDXdb*.json
 OptiScaler-DLSSNR-v*/
+RHI.Linux*/bin/
+RHI.Linux*/obj/
+artifacts/
