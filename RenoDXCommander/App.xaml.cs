@@ -66,7 +66,8 @@ public partial class App : Application
         // Services — all singletons
         services.AddSingleton<IModInstallService, ModInstallService>();
         services.AddSingleton<IAuxInstallService, AuxInstallService>();
-        services.AddSingleton<IWikiService, WikiService>();
+        services.AddSingleton<IWikiService>(sp => new WikiService(
+            sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<IGameDetectionService>().NormalizeName));
         services.AddSingleton<IManifestService, ManifestService>();
         services.AddSingleton<IGameLibraryService, GameLibraryService>();
         services.AddSingleton<IReShadeUpdateService, ReShadeUpdateService>();

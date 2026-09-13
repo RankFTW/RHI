@@ -6,12 +6,12 @@ namespace RenoDXCommander.Services;
 public class WikiService : IWikiService
 {
     private readonly HttpClient _http;
-    private readonly IGameDetectionService _gameDetection;
+    private readonly Func<string, string> _normalizeName;
 
-    public WikiService(HttpClient http, IGameDetectionService gameDetection)
+    public WikiService(HttpClient http, Func<string, string> normalizeName)
     {
         _http = http;
-        _gameDetection = gameDetection;
+        _normalizeName = normalizeName;
     }
 
     private const string WikiUrl = "https://github.com/clshortfuse/renodx/wiki/Mods";
@@ -29,6 +29,12 @@ public class WikiService : IWikiService
     {
         progress?.Report("Fetching wiki...");
         var html = await _http.GetStringAsync(WikiUrl).ConfigureAwait(false);
+        return ParseHtml(html, progress);
+    }
+
+    public (List<GameMod> Mods, Dictionary<string, string> GenericNotes)
+        ParseHtml(string html, IProgress<string>? progress = null)
+    {
         var doc  = new HtmlDocument();
         doc.LoadHtml(html);
 
@@ -99,7 +105,7 @@ public class WikiService : IWikiService
             {
                 var bytes = System.Text.Encoding.UTF8.GetBytes(m.Name);
                 var hex = string.Join(" ", bytes.Select(b => b.ToString("X2")));
-                var norm = _gameDetection.NormalizeName(m.Name);
+                var norm = _normalizeName(m.Name);
                 CrashReporter.Log($"[WikiService.FetchAllAsync] Mod raw: '{m.Name}' hex=[{hex}] norm='{norm}'");
             }
             // Also log a known game that should match — search for 'Lies of P' or similar
@@ -108,7 +114,7 @@ public class WikiService : IWikiService
             {
                 var bytes = System.Text.Encoding.UTF8.GetBytes(liesOfP.Name);
                 var hex = string.Join(" ", bytes.Select(b => b.ToString("X2")));
-                var norm = _gameDetection.NormalizeName(liesOfP.Name);
+                var norm = _normalizeName(liesOfP.Name);
                 CrashReporter.Log($"[WikiService.FetchAllAsync] Mod 'Lies' raw: '{liesOfP.Name}' hex=[{hex}] norm='{norm}'");
             }
             else
@@ -116,7 +122,7 @@ public class WikiService : IWikiService
                 CrashReporter.Log("[WikiService.FetchAllAsync] Mod 'Lies': NOT FOUND in parsed mods");
             }
             // Full normalized dump for match diagnostics
-            var allNorms = mods.Select(m => _gameDetection.NormalizeName(m.Name)).OrderBy(n => n).ToList();
+            var allNorms = mods.Select(m => _normalizeName(m.Name)).OrderBy(n => n).ToList();
             CrashReporter.Log($"[WikiService.FetchAllAsync] Normalized names ({allNorms.Count}): [{string.Join(", ", allNorms)}]");
         }
 
