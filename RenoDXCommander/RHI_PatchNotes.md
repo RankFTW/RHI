@@ -1,7 +1,5 @@
 ## v2.7.2
 
-## v2.7.2
-
 ### Bug Fixes
 
 - Fixed UI freezing when navigating between games — RHI was doing filesystem I/O (directory scans for the AppData button) on the UI thread on every card selection. This is now pre-computed in the background at startup and cached per game.
