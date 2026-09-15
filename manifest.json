@@ -1368,7 +1368,7 @@
       "category": "Extra"
     },
     "UltraReShade": {
-      "displayName": "Ultra ReShade by Ultra+",
+      "displayName": "UltraShade by Ultra+",
       "kind": "DirectUrl",
       "url": "https://gitlab.com/ultra-plus/ultrashade/-/archive/master/ultrashade-master.zip",
       "description": "\"Poor man's DLSS5\" — single-shader post-processing with bloom, contrast balancing, haze/dehaze, and saturation. Mimics the look of DLSS5 without requiring it. Highly tunable, works well for virtual photography.",
