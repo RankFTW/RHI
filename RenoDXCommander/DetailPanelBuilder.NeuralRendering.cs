@@ -120,9 +120,9 @@ public partial class DetailPanelBuilder
         // ── Build method combo items (show all, disable inapplicable) ─────────
         var methodItems = new[]
         {
-            new { Name = "DLSS5 Tool",                Key = NrMethodDlss5Tool,       Enabled = hasDlss && !is32Bit },
-            new { Name = "DLSS5 Tool + DX11 Bridge",  Key = NrMethodDlss5ToolBridge, Enabled = hasDlss && (isDx11 || isVulkan) && !is32Bit },
             new { Name = "DLSS Tool (ShortFuse)",      Key = NrMethodShortFuse,       Enabled = !is32Bit },
+            new { Name = "DLSS5 Tool",                 Key = NrMethodDlss5Tool,       Enabled = hasDlss && !is32Bit },
+            new { Name = "DLSS5 Tool + DX11 Bridge",   Key = NrMethodDlss5ToolBridge, Enabled = hasDlss && (isDx11 || isVulkan) && !is32Bit },
             new { Name = "DLSS5 Feeder",               Key = NrMethodFeeder,          Enabled = true },
         };
 
