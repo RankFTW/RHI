@@ -1,0 +1,40 @@
+<Window x:Class="RenoDXdbEditor.TokenWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GitHub Token" Height="230" Width="500"
+        Background="#1A1A2E" FontFamily="Segoe UI" FontSize="13"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="GitHub Personal Access Token"
+                   Foreground="#BBBBFF" FontSize="14" FontWeight="SemiBold"/>
+        <TextBlock Grid.Row="1" Margin="0,6,0,10"
+                   Foreground="#888899" FontSize="11" TextWrapping="Wrap"
+                   Text="Required for Push. Create one at github.com/settings/tokens (repo scope). Stored as github_token.txt next to the exe."/>
+
+        <TextBox x:Name="TokenBox" Grid.Row="2"
+                 Background="#252540" Foreground="#E0E0F0"
+                 BorderBrush="#444466" BorderThickness="1"
+                 Padding="8,6" FontFamily="Consolas" FontSize="12"
+                 TextWrapping="NoWrap"/>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="Save" Width="80" Height="30"
+                    Background="#2255AA" Foreground="White"
+                    BorderBrush="#3366CC" BorderThickness="1"
+                    Click="Save_Click"/>
+            <Button Content="Cancel" Width="80" Height="30" Margin="8,0,0,0"
+                    Background="#333355" Foreground="#E0E0F0"
+                    BorderBrush="#555577" BorderThickness="1"
+                    Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

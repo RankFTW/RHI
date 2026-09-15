@@ -5,17 +5,33 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using Microsoft.Win32;
 
 namespace RenoDXdbEditor;
 
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
-    private ObservableCollection<GameMod> _allMods = new();
-    private ICollectionView? _modsView;
+    // ── State ─────────────────────────────────────────────────────────────────
+
+    private DbType _activeDb = DbType.NamedMods;
+    private bool   _isUnrealMode;
+
+    // Named-mods data
+    private ObservableCollection<GameMod>      _allMods    = new();
+    private ICollectionView?                   _modsView;
+
+    // Unreal data
+    private ObservableCollection<UnrealEntry>  _allUnreal  = new();
+    private ICollectionView?                   _unrealView;
+
     private string? _currentFilePath;
-    private bool _isUpdatingFields;
-    private bool _isDirty;
+    private bool    _isDirty;
+    private string  _githubToken = "";
+
+    // Sync results (cached so selector cards stay accurate after sync)
+    private string? _namedModsRemoteContent;
+    private string? _unrealRemoteContent;
 
     // ── Bindable properties ───────────────────────────────────────────────────
 
@@ -43,7 +59,274 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         DataContext = this;
-        ClearEditor();
+        LoadTokenFromDisk();
+        // Defer auto-sync until after window is shown and controls are ready
+        Loaded += (_, _) => _ = SyncBothAsync(isStartup: true);
+    }
+
+    // ── Sync logic ────────────────────────────────────────────────────────────
+
+    private async Task SyncBothAsync(bool isStartup)
+    {
+        SetSyncStatus("Syncing from GitHub…", "#FFCC44");
+
+        var namedTask  = DbSyncService.FetchAsync(DbType.NamedMods, _githubToken);
+        var unrealTask = DbSyncService.FetchAsync(DbType.Unreal,    _githubToken);
+        await Task.WhenAll(namedTask, unrealTask);
+
+        var named  = namedTask.Result;
+        var unreal = unrealTask.Result;
+
+        // Cache remote content for use when opening from selector
+        _namedModsRemoteContent = named.Success  ? named.RemoteContent  : null;
+        _unrealRemoteContent    = unreal.Success ? unreal.RemoteContent : null;
+
+        // Save to local if first sync (no local file yet) or if identical (no diff)
+        if (named.Success)
+        {
+            if (!File.Exists(DbSyncService.LocalCachePath(DbType.NamedMods)) || !named.HasDiff)
+                await DbSyncService.SaveLocalAsync(DbType.NamedMods, named.RemoteContent!);
+        }
+        if (unreal.Success)
+        {
+            if (!File.Exists(DbSyncService.LocalCachePath(DbType.Unreal)) || !unreal.HasDiff)
+                await DbSyncService.SaveLocalAsync(DbType.Unreal, unreal.RemoteContent!);
+        }
+
+        // Update selector cards
+        Dispatcher.Invoke(() => UpdateSelectorCards(named, unreal));
+
+        // If diff detected and not startup, prompt immediately
+        if (!isStartup)
+        {
+            if (named.Success && named.HasDiff)
+                Dispatcher.Invoke(() => HandleDiff(DbType.NamedMods, named));
+            if (unreal.Success && unreal.HasDiff)
+                Dispatcher.Invoke(() => HandleDiff(DbType.Unreal, unreal));
+        }
+
+        if (!named.Success && !unreal.Success)
+            SetSyncStatus($"Sync failed — {named.Error ?? unreal.Error}", "#EE5555");
+        else if (!named.Success || !unreal.Success)
+            SetSyncStatus("Sync partially failed — using local copies where available", "#FFCC44");
+        else
+            SetSyncStatus($"Synced at {DateTime.Now:HH:mm:ss}", "#55CC77");
+    }
+
+    private void SetSyncStatus(string text, string hex)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            SyncStatusLabel.Text      = text;
+            SyncStatusLabel.Foreground = new SolidColorBrush(
+                (Color)ColorConverter.ConvertFromString(hex));
+        });
+    }
+
+    private void UpdateSelectorCards(SyncResult named, SyncResult unreal)
+    {
+        if (named.Success)
+        {
+            NamedModsStatusLabel.Text       = named.HasDiff
+                ? "⚠ Remote differs from local — open to review"
+                : "✓ Up to date";
+            NamedModsStatusLabel.Foreground = named.HasDiff
+                ? new SolidColorBrush(Colors.Orange)
+                : new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
+        }
+        else
+        {
+            NamedModsStatusLabel.Text       = $"✗ Fetch failed — {named.Error}";
+            NamedModsStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0x55, 0x55));
+        }
+
+        if (unreal.Success)
+        {
+            UnrealStatusLabel.Text       = unreal.HasDiff
+                ? "⚠ Remote differs from local — open to review"
+                : "✓ Up to date";
+            UnrealStatusLabel.Foreground = unreal.HasDiff
+                ? new SolidColorBrush(Colors.Orange)
+                : new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
+        }
+        else
+        {
+            UnrealStatusLabel.Text       = $"✗ Fetch failed — {unreal.Error}";
+            UnrealStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0x55, 0x55));
+        }
+    }
+
+    private void HandleDiff(DbType db, SyncResult result)
+    {
+        if (result.RemoteContent == null) return;
+        var fileName = Path.GetFileName(DbSyncService.LocalCachePath(db));
+        var diff = new DiffWindow(fileName, result.LocalContent, result.RemoteContent)
+        {
+            Owner = this
+        };
+        diff.ShowDialog();
+        if (diff.UserChoseOverwrite)
+        {
+            _ = DbSyncService.SaveLocalAsync(db, result.RemoteContent);
+            // If this DB is currently open, reload it
+            if (_currentFilePath != null &&
+                Path.GetFileName(_currentFilePath).Equals(fileName, StringComparison.OrdinalIgnoreCase))
+            {
+                LoadFile(_currentFilePath);
+                StatusBar.Text = "Reloaded from updated local cache.";
+            }
+        }
+    }
+
+    // ── Sync toolbar button ───────────────────────────────────────────────────
+
+    private void Sync_Click(object sender, RoutedEventArgs e)
+    {
+        _ = SyncBothAsync(isStartup: false);
+    }
+
+    // ── Push ──────────────────────────────────────────────────────────────────
+
+    private async void Push_Click(object sender, RoutedEventArgs e)
+    {
+        if (!HasFile || _currentFilePath == null) return;
+        if (string.IsNullOrWhiteSpace(_githubToken))
+        {
+            MessageBox.Show("No GitHub token set.\n\nClick 🔑 Token to configure one.",
+                "Token Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        if (_isDirty)
+        {
+            var save = MessageBox.Show("You have unsaved changes. Save before pushing?",
+                "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            if (save == MessageBoxResult.Cancel) return;
+            if (save == MessageBoxResult.Yes) SaveToPath(_currentFilePath);
+        }
+
+        var dbName = Path.GetFileName(_currentFilePath);
+        var msg = $"Update {dbName} via RenoDXdb-Editor";
+        var content = await File.ReadAllTextAsync(_currentFilePath);
+
+        StatusBar.Text = "Pushing to GitHub…";
+        PushBtn.IsEnabled = false;
+        try
+        {
+            var (success, error) = await DbSyncService.PushAsync(_activeDb, content, _githubToken, msg);
+            StatusBar.Text = success
+                ? $"✓ Pushed successfully at {DateTime.Now:HH:mm:ss}"
+                : $"✗ Push failed: {error}";
+            if (!success)
+                MessageBox.Show($"Push failed:\n{error}", "Push Failed",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            PushBtn.IsEnabled = HasFile;
+        }
+    }
+
+    // ── Token ─────────────────────────────────────────────────────────────────
+
+    private void Token_Click(object sender, RoutedEventArgs e)
+    {
+        var win = new TokenWindow(_githubToken) { Owner = this };
+        if (win.ShowDialog() == true)
+        {
+            _githubToken = win.Token;
+            SaveTokenToDisk();
+        }
+    }
+
+    private void LoadTokenFromDisk()
+    {
+        var path = TokenPath();
+        if (File.Exists(path))
+            _githubToken = File.ReadAllText(path).Trim();
+    }
+
+    private void SaveTokenToDisk()
+    {
+        File.WriteAllText(TokenPath(), _githubToken);
+    }
+
+    private static string TokenPath()
+    {
+        var dir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+        return Path.Combine(dir, "github_token.txt");
+    }
+
+    // ── Selector ──────────────────────────────────────────────────────────────
+
+    private void OpenNamedMods_Click(object sender, RoutedEventArgs e)
+    {
+        _activeDb = DbType.NamedMods;
+        var local = DbSyncService.LocalCachePath(DbType.NamedMods);
+
+        // If remote differed, show diff before opening
+        if (_namedModsRemoteContent != null)
+        {
+            var localContent = File.Exists(local) ? File.ReadAllText(local) : null;
+            static string? Norm(string? s) => s?.Replace("\r\n", "\n").TrimEnd();
+            if (Norm(localContent) != Norm(_namedModsRemoteContent))
+            {
+                var diff = new DiffWindow(Path.GetFileName(local), localContent, _namedModsRemoteContent)
+                { Owner = this };
+                diff.ShowDialog();
+                if (diff.UserChoseOverwrite)
+                    _ = DbSyncService.SaveLocalAsync(DbType.NamedMods, _namedModsRemoteContent);
+            }
+        }
+
+        if (File.Exists(local))
+            LoadFile(local, DbType.NamedMods);
+        else
+            MessageBox.Show("No local cache available.\nCheck your internet connection and try Sync.",
+                "File Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private void OpenUnreal_Click(object sender, RoutedEventArgs e)
+    {
+        _activeDb = DbType.Unreal;
+        var local = DbSyncService.LocalCachePath(DbType.Unreal);
+
+        if (_unrealRemoteContent != null)
+        {
+            var localContent = File.Exists(local) ? File.ReadAllText(local) : null;
+            var normR = _unrealRemoteContent.Replace("\r\n", "\n").TrimEnd();
+            var normL = localContent?.Replace("\r\n", "\n").TrimEnd();
+            if (normL != normR)
+            {
+                var diff = new DiffWindow(Path.GetFileName(local), localContent, _unrealRemoteContent)
+                { Owner = this };
+                diff.ShowDialog();
+                if (diff.UserChoseOverwrite)
+                    _ = DbSyncService.SaveLocalAsync(DbType.Unreal, _unrealRemoteContent);
+            }
+        }
+
+        if (File.Exists(local))
+            LoadFile(local, DbType.Unreal);
+        else
+            MessageBox.Show("No local cache available.\nCheck your internet connection and try Sync.",
+                "File Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private void BackToSelector_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isDirty && !ConfirmDiscard()) return;
+        ShowSelector();
+    }
+
+    private void ShowSelector()
+    {
+        SelectorPanel.Visibility = Visibility.Visible;
+        EditorPanel.Visibility   = Visibility.Collapsed;
+        HasFile = false;
+        HasSelection = false;
+        _currentFilePath = null;
+        _isDirty = false;
+        StatusBar.Text = "Select a database above to get started";
     }
 
     // ── File operations ───────────────────────────────────────────────────────
@@ -51,39 +334,69 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OpenFile_Click(object sender, RoutedEventArgs e)
     {
         if (_isDirty && !ConfirmDiscard()) return;
-
         var dlg = new OpenFileDialog
         {
             Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
-            Title = "Open RenoDXdb JSON",
+            Title  = "Open RenoDXdb JSON",
         };
         if (dlg.ShowDialog() != true) return;
 
-        LoadFile(dlg.FileName);
+        // Infer DB type from filename
+        var fn = Path.GetFileName(dlg.FileName);
+        var db = fn.Contains("unreal", StringComparison.OrdinalIgnoreCase)
+            ? DbType.Unreal
+            : DbType.NamedMods;
+        LoadFile(dlg.FileName, db);
     }
 
-    private void LoadFile(string path)
+    private void LoadFile(string path, DbType? dbOverride = null)
     {
         try
         {
             var json = File.ReadAllText(path);
-            var mods = JsonSerializer.Deserialize<List<GameMod>>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                ?? new List<GameMod>();
+            var db   = dbOverride ?? _activeDb;
+            _activeDb = db;
 
-            _allMods = new ObservableCollection<GameMod>(
-                mods.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase));
+            if (db == DbType.Unreal)
+            {
+                var entries = JsonSerializer.Deserialize<List<UnrealEntry>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                    ?? new List<UnrealEntry>();
 
-            _modsView = CollectionViewSource.GetDefaultView(_allMods);
-            _modsView.Filter = FilterMod;
-            GameList.ItemsSource = _modsView;
+                _allUnreal = new ObservableCollection<UnrealEntry>(
+                    entries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase));
+                _unrealView = CollectionViewSource.GetDefaultView(_allUnreal);
+                _unrealView.Filter = FilterEntry;
+                GameList.ItemsSource = _unrealView;
+                _isUnrealMode = true;
+            }
+            else
+            {
+                var mods = JsonSerializer.Deserialize<List<GameMod>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                    ?? new List<GameMod>();
+
+                _allMods = new ObservableCollection<GameMod>(
+                    mods.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase));
+                _modsView = CollectionViewSource.GetDefaultView(_allMods);
+                _modsView.Filter = FilterEntry;
+                GameList.ItemsSource = _modsView;
+                _isUnrealMode = false;
+            }
+
+            // Show the right fields
+            NamedModsFields.Visibility = _isUnrealMode ? Visibility.Collapsed : Visibility.Visible;
+            UnrealFields.Visibility    = _isUnrealMode ? Visibility.Visible   : Visibility.Collapsed;
+            EditorTitle.Text = _isUnrealMode ? "Unreal Game Details" : "Game Details";
 
             _currentFilePath = path;
-            _isDirty = false;
-            HasFile = true;
+            _isDirty         = false;
+            HasFile          = true;
+            SelectorPanel.Visibility = Visibility.Collapsed;
+            EditorPanel.Visibility   = Visibility.Visible;
+            ClearEditor();
             UpdateStatusBar();
             UpdateCount();
-            ClearEditor();
         }
         catch (Exception ex)
         {
@@ -102,8 +415,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var dlg = new SaveFileDialog
         {
-            Filter = "JSON files (*.json)|*.json",
-            Title = "Save RenoDXdb JSON",
+            Filter   = "JSON files (*.json)|*.json",
+            Title    = "Save RenoDXdb JSON",
             FileName = Path.GetFileName(_currentFilePath) ?? "RenoDXdb.json",
         };
         if (dlg.ShowDialog() != true) return;
@@ -120,7 +433,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 WriteIndented = true,
                 Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             };
-            var json = JsonSerializer.Serialize(_allMods.ToList(), opts);
+            string json;
+            if (_isUnrealMode)
+                json = JsonSerializer.Serialize(_allUnreal.ToList(), opts);
+            else
+                json = JsonSerializer.Serialize(_allMods.ToList(), opts);
+
             File.WriteAllText(path, json);
             _isDirty = false;
             StatusBar.Text = $"Saved → {path}";
@@ -132,35 +450,53 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    // ── Game list operations ──────────────────────────────────────────────────
+    // ── Entry list operations ─────────────────────────────────────────────────
 
-    private void NewGame_Click(object sender, RoutedEventArgs e)
+    private void NewEntry_Click(object sender, RoutedEventArgs e)
     {
-        var mod = new GameMod { Name = "New Game", Status = "Done" };
-        InsertAlphabetically(mod);
-        GameList.SelectedItem = mod;
-        GameList.ScrollIntoView(mod);
-        NameBox.Focus();
-        NameBox.SelectAll();
+        if (_isUnrealMode)
+        {
+            var entry = new UnrealEntry { Name = "New Game", Status = "WIP" };
+            InsertUnrealAlpha(entry);
+            GameList.SelectedItem = entry;
+            GameList.ScrollIntoView(entry);
+        }
+        else
+        {
+            var mod = new GameMod { Name = "New Game", Status = "Done" };
+            InsertModAlpha(mod);
+            GameList.SelectedItem = mod;
+            GameList.ScrollIntoView(mod);
+        }
+        UNameBox.Focus(); UNameBox.SelectAll();
+        NameBox.Focus();  NameBox.SelectAll();
         _isDirty = true;
     }
 
-    private void DeleteGame_Click(object sender, RoutedEventArgs e)
+    private void DeleteEntry_Click(object sender, RoutedEventArgs e)
     {
-        if (GameList.SelectedItem is not GameMod mod) return;
-        if (MessageBox.Show($"Delete \"{mod.Name}\"?", "Confirm Delete",
-            MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-
-        _allMods.Remove(mod);
+        if (_isUnrealMode)
+        {
+            if (GameList.SelectedItem is not UnrealEntry entry) return;
+            if (MessageBox.Show($"Delete \"{entry.Name}\"?", "Confirm Delete",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            _allUnreal.Remove(entry);
+        }
+        else
+        {
+            if (GameList.SelectedItem is not GameMod mod) return;
+            if (MessageBox.Show($"Delete \"{mod.Name}\"?", "Confirm Delete",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            _allMods.Remove(mod);
+        }
         ClearEditor();
         HasSelection = false;
         _isDirty = true;
         UpdateCount();
     }
 
-    private void InsertAlphabetically(GameMod mod)
+    private void InsertModAlpha(GameMod mod)
     {
-        // Find insertion point
         int i = 0;
         while (i < _allMods.Count &&
                string.Compare(_allMods[i].Name, mod.Name, StringComparison.OrdinalIgnoreCase) < 0)
@@ -169,14 +505,29 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UpdateCount();
     }
 
+    private void InsertUnrealAlpha(UnrealEntry entry)
+    {
+        int i = 0;
+        while (i < _allUnreal.Count &&
+               string.Compare(_allUnreal[i].Name, entry.Name, StringComparison.OrdinalIgnoreCase) < 0)
+            i++;
+        _allUnreal.Insert(i, entry);
+        UpdateCount();
+    }
+
     // ── Selection & editor ────────────────────────────────────────────────────
 
     private void GameList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (GameList.SelectedItem is GameMod mod)
+        if (_isUnrealMode && GameList.SelectedItem is UnrealEntry ue)
         {
             HasSelection = true;
-            PopulateEditor(mod);
+            PopulateUnrealEditor(ue);
+        }
+        else if (!_isUnrealMode && GameList.SelectedItem is GameMod mod)
+        {
+            HasSelection = true;
+            PopulateModEditor(mod);
         }
         else
         {
@@ -185,97 +536,253 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void PopulateEditor(GameMod mod)
+    private void PopulateModEditor(GameMod mod)
     {
-        _isUpdatingFields = true;
-        NameBox.Text = mod.Name;
+        NameBox.Text          = mod.Name;
         StatusCombo.SelectedIndex = mod.Status == "WIP" ? 1 : 0;
-        AuthorBox.Text = mod.Author;
-        SnapshotUrlBox.Text = mod.SnapshotUrl ?? "";
+        AuthorBox.Text        = mod.Author;
+        SnapshotUrlBox.Text   = mod.SnapshotUrl  ?? "";
         SnapshotUrl32Box.Text = mod.SnapshotUrl32 ?? "";
-        NexusUrlBox.Text = mod.NexusUrl ?? "";
-        DiscordUrlBox.Text = mod.DiscordUrl ?? "";
-        DiscussionUrlBox.Text = mod.DiscussionUrl ?? "";
-        NotesBox.Text = mod.Notes ?? "";
+        NexusUrlBox.Text      = mod.NexusUrl      ?? "";
+        DiscordUrlBox.Text    = mod.DiscordUrl     ?? "";
+        DiscussionUrlBox.Text = mod.DiscussionUrl  ?? "";
+        NotesBox.Text         = mod.Notes          ?? "";
         StatusLabel.Text = "";
-        _isUpdatingFields = false;
+    }
+
+    private void PopulateUnrealEditor(UnrealEntry entry)
+    {
+        UNameBox.Text = entry.Name;
+        UStatusCombo.SelectedIndex = entry.Status == "Done" ? 0 : 1;
+
+        // Method combo — match by Content or (none)
+        UMethodCombo.SelectedIndex = entry.Method switch
+        {
+            "native"  => 1,
+            "ini"     => 2,
+            "upgrade" => 3,
+            _         => 0,   // (none)
+        };
+
+        // Upgrades
+        BuildUpgradeRows(entry.ParseUpgrades());
+
+        UCommentsBox.Text = entry.Comments ?? "";
+        StatusLabel.Text  = "";
     }
 
     private void ClearEditor()
     {
-        _isUpdatingFields = true;
-        NameBox.Text = "";
+        // Named mods
+        NameBox.Text          = "";
         StatusCombo.SelectedIndex = 0;
-        AuthorBox.Text = "";
-        SnapshotUrlBox.Text = "";
+        AuthorBox.Text        = "";
+        SnapshotUrlBox.Text   = "";
         SnapshotUrl32Box.Text = "";
-        NexusUrlBox.Text = "";
-        DiscordUrlBox.Text = "";
+        NexusUrlBox.Text      = "";
+        DiscordUrlBox.Text    = "";
         DiscussionUrlBox.Text = "";
-        NotesBox.Text = "";
-        StatusLabel.Text = "";
-        _isUpdatingFields = false;
+        NotesBox.Text         = "";
+        // Unreal
+        UNameBox.Text = "";
+        UStatusCombo.SelectedIndex  = 0;
+        UMethodCombo.SelectedIndex  = 0;
+        UpgradesPanel.Children.Clear();
+        UCommentsBox.Text = "";
+        StatusLabel.Text  = "";
     }
 
-    private void Field_Changed(object sender, RoutedEventArgs e)
-    {
-        // No-op — changes applied on Apply button
-    }
+    private void Field_Changed(object sender, RoutedEventArgs e) { /* applied on button */ }
 
     private void ApplyChanges_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isUnrealMode)   ApplyUnrealChanges();
+        else                 ApplyModChanges();
+    }
+
+    private void ApplyModChanges()
     {
         if (GameList.SelectedItem is not GameMod mod) return;
 
         var newName = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(newName))
         {
-            StatusLabel.Foreground = System.Windows.Media.Brushes.Tomato;
-            StatusLabel.Text = "⚠ Game name is required.";
+            ShowStatus("⚠ Game name is required.", isError: true);
             return;
         }
 
-        var nameChanged = !string.Equals(mod.Name, newName, StringComparison.Ordinal);
-
-        mod.Name = newName;
-        mod.Status = (StatusCombo.SelectedItem as ComboBoxItem)?.Content as string ?? "Done";
-        mod.Author = AuthorBox.Text.Trim();
-        mod.SnapshotUrl = NullIfEmpty(SnapshotUrlBox.Text);
+        bool nameChanged = !string.Equals(mod.Name, newName, StringComparison.Ordinal);
+        mod.Name         = newName;
+        mod.Status       = (StatusCombo.SelectedItem as ComboBoxItem)?.Content as string ?? "Done";
+        mod.Author       = AuthorBox.Text.Trim();
+        mod.SnapshotUrl  = NullIfEmpty(SnapshotUrlBox.Text);
         mod.SnapshotUrl32 = NullIfEmpty(SnapshotUrl32Box.Text);
-        mod.NexusUrl = NullIfEmpty(NexusUrlBox.Text);
-        mod.DiscordUrl = NullIfEmpty(DiscordUrlBox.Text);
+        mod.NexusUrl     = NullIfEmpty(NexusUrlBox.Text);
+        mod.DiscordUrl   = NullIfEmpty(DiscordUrlBox.Text);
         mod.DiscussionUrl = NullIfEmpty(DiscussionUrlBox.Text);
-        mod.Notes = NullIfEmpty(NotesBox.Text);
+        mod.Notes        = NullIfEmpty(NotesBox.Text);
 
-        // Re-sort if name changed
         if (nameChanged)
         {
             _allMods.Remove(mod);
-            InsertAlphabetically(mod);
+            InsertModAlpha(mod);
             GameList.SelectedItem = mod;
             GameList.ScrollIntoView(mod);
         }
 
         _isDirty = true;
-        StatusLabel.Foreground = System.Windows.Media.Brushes.LightGreen;
-        StatusLabel.Text = "✓ Changes applied.";
+        ShowStatus("✓ Changes applied.");
         UpdateStatusBar();
+    }
+
+    private void ApplyUnrealChanges()
+    {
+        if (GameList.SelectedItem is not UnrealEntry entry) return;
+
+        var newName = UNameBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            ShowStatus("⚠ Game name is required.", isError: true);
+            return;
+        }
+
+        bool nameChanged = !string.Equals(entry.Name, newName, StringComparison.Ordinal);
+        entry.Name   = newName;
+        entry.Status = (UStatusCombo.SelectedItem as ComboBoxItem)?.Content as string ?? "WIP";
+
+        // Method: ComboBoxItem tag or content
+        var methodItem = UMethodCombo.SelectedItem as ComboBoxItem;
+        var methodVal  = (methodItem?.Tag as string ?? methodItem?.Content as string ?? "").Trim();
+        entry.Method   = string.IsNullOrEmpty(methodVal) ? null : methodVal;
+
+        // Upgrades: collect rows
+        entry.Upgrades = CollectUpgrades();
+
+        entry.Comments = NullIfEmpty(UCommentsBox.Text);
+
+        if (nameChanged)
+        {
+            _allUnreal.Remove(entry);
+            InsertUnrealAlpha(entry);
+            GameList.SelectedItem = entry;
+            GameList.ScrollIntoView(entry);
+        }
+
+        _isDirty = true;
+        ShowStatus("✓ Changes applied.");
+        UpdateStatusBar();
+    }
+
+    // ── Upgrades two-column UI ────────────────────────────────────────────────
+
+    private void BuildUpgradeRows(List<(string Format, string Size)> pairs)
+    {
+        UpgradesPanel.Children.Clear();
+
+        if (pairs.Count == 0)
+            AddUpgradeRowWithValues("", "");  // always show at least one blank row
+        else
+            foreach (var (fmt, sz) in pairs)
+                AddUpgradeRowWithValues(fmt, sz);
+    }
+
+    private void AddUpgradeRow_Click(object sender, RoutedEventArgs e)
+    {
+        AddUpgradeRowWithValues("", "");
+    }
+
+    private void AddUpgradeRowWithValues(string format, string size)
+    {
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+
+        // Format combo
+        var fmtCombo = new ComboBox { Margin = new Thickness(0) };
+        fmtCombo.Items.Add(new ComboBoxItem { Content = "(none)", Tag = "" });
+        foreach (var v in UnrealEntry.FormatValues)
+            fmtCombo.Items.Add(new ComboBoxItem { Content = v, Tag = v });
+        SelectComboByTag(fmtCombo, format);
+        Grid.SetColumn(fmtCombo, 0);
+
+        // Size combo
+        var sizeCombo = new ComboBox { Margin = new Thickness(0) };
+        sizeCombo.Items.Add(new ComboBoxItem { Content = "(none)", Tag = "" });
+        foreach (var v in UnrealEntry.SizeValues)
+            sizeCombo.Items.Add(new ComboBoxItem { Content = v, Tag = v });
+        SelectComboByTag(sizeCombo, size);
+        Grid.SetColumn(sizeCombo, 2);
+
+        // Remove button
+        var removeBtn = new Button
+        {
+            Content    = "✕",
+            Padding    = new Thickness(0),
+            Width      = 28,
+            Height     = 28,
+            ToolTip    = "Remove this upgrade row",
+            Style      = (Style)FindResource("DangerButton"),
+        };
+        removeBtn.Click += (_, _) => UpgradesPanel.Children.Remove(grid);
+        Grid.SetColumn(removeBtn, 3);
+
+        grid.Children.Add(fmtCombo);
+        grid.Children.Add(sizeCombo);
+        grid.Children.Add(removeBtn);
+        UpgradesPanel.Children.Add(grid);
+    }
+
+    private static void SelectComboByTag(ComboBox combo, string tag)
+    {
+        foreach (ComboBoxItem item in combo.Items)
+        {
+            if (string.Equals(item.Tag as string, tag, StringComparison.OrdinalIgnoreCase)
+             || string.Equals(item.Content as string, tag, StringComparison.OrdinalIgnoreCase))
+            {
+                combo.SelectedItem = item;
+                return;
+            }
+        }
+        combo.SelectedIndex = 0; // (none)
+    }
+
+    private string? CollectUpgrades()
+    {
+        var pairs = new List<(string Format, string Size)>();
+        foreach (Grid row in UpgradesPanel.Children.OfType<Grid>())
+        {
+            var cols = row.Children.OfType<ComboBox>().ToList();
+            if (cols.Count < 2) continue;
+            var fmt  = (cols[0].SelectedItem as ComboBoxItem)?.Tag  as string ?? "";
+            var size = (cols[1].SelectedItem as ComboBoxItem)?.Tag  as string
+                    ?? (cols[1].SelectedItem as ComboBoxItem)?.Content as string ?? "";
+            pairs.Add((fmt, size));
+        }
+        return UnrealEntry.SerialiseUpgrades(pairs);
     }
 
     // ── Search ────────────────────────────────────────────────────────────────
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        _modsView?.Refresh();
+        (_isUnrealMode ? _unrealView : _modsView)?.Refresh();
         UpdateCount();
     }
 
-    private bool FilterMod(object obj)
+    private bool FilterEntry(object obj)
     {
-        if (obj is not GameMod mod) return false;
         var q = SearchBox.Text.Trim();
         if (string.IsNullOrEmpty(q)) return true;
-        return mod.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
-            || mod.Author.Contains(q, StringComparison.OrdinalIgnoreCase);
+        return obj switch
+        {
+            GameMod m    => m.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
+                         || m.Author.Contains(q, StringComparison.OrdinalIgnoreCase),
+            UnrealEntry u => u.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
+                         || (u.Comments?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false),
+            _            => false,
+        };
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -283,16 +790,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private static string? NullIfEmpty(string s)
         => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
+    private void ShowStatus(string msg, bool isError = false)
+    {
+        StatusLabel.Foreground = isError
+            ? new SolidColorBrush(Colors.Tomato)
+            : new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
+        StatusLabel.Text = msg;
+    }
+
     private void UpdateStatusBar()
     {
         if (_currentFilePath == null) { StatusBar.Text = "No file open"; return; }
-        StatusBar.Text = $"{_currentFilePath}  ({_allMods.Count} games){(_isDirty ? "  •  Unsaved changes" : "")}";
+        int count = _isUnrealMode ? _allUnreal.Count : _allMods.Count;
+        StatusBar.Text = $"{_currentFilePath}  ({count} entries){(_isDirty ? "  •  Unsaved changes" : "")}";
     }
 
     private void UpdateCount()
     {
-        var visible = _modsView?.Cast<object>().Count() ?? 0;
-        CountLabel.Text = $"{visible} / {_allMods.Count}";
+        var view    = _isUnrealMode ? _unrealView : _modsView;
+        int visible = view?.Cast<object>().Count() ?? 0;
+        int total   = _isUnrealMode ? _allUnreal.Count : _allMods.Count;
+        CountLabel.Text = $"{visible} / {total}";
     }
 
     private bool ConfirmDiscard()
@@ -302,15 +820,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
     }
 
-    protected override void OnClosing(CancelEventArgs e)
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
-        if (_isDirty)
-        {
-            var result = MessageBox.Show("Save changes before closing?", "Unsaved Changes",
-                MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
-            if (result == MessageBoxResult.Yes) SaveFile_Click(this, new RoutedEventArgs());
-            else if (result == MessageBoxResult.Cancel) { e.Cancel = true; return; }
-        }
+        if (_isDirty && !ConfirmDiscard()) e.Cancel = true;
         base.OnClosing(e);
     }
 }

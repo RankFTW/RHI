@@ -1,30 +1,34 @@
 <Window x:Class="RenoDXdbEditor.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="RenoDXdb Editor" Height="700" Width="1100" MinWidth="800" MinHeight="500"
+        Title="RenoDXdb Editor" Height="740" Width="1160" MinWidth="860" MinHeight="540"
         Background="#1A1A2E" FontFamily="Segoe UI" FontSize="13">
 
     <Window.Resources>
+        <!-- Base TextBox -->
         <Style TargetType="TextBox">
-            <Setter Property="Background" Value="#252540"/>
-            <Setter Property="Foreground" Value="#E0E0F0"/>
-            <Setter Property="BorderBrush" Value="#444466"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="CaretBrush" Value="#E0E0F0"/>
-            <Setter Property="SelectionBrush" Value="#5555AA"/>
+            <Setter Property="Background"       Value="#252540"/>
+            <Setter Property="Foreground"       Value="#E0E0F0"/>
+            <Setter Property="BorderBrush"      Value="#444466"/>
+            <Setter Property="BorderThickness"  Value="1"/>
+            <Setter Property="Padding"          Value="6,4"/>
+            <Setter Property="CaretBrush"       Value="#E0E0F0"/>
+            <Setter Property="SelectionBrush"   Value="#5555AA"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
+        <!-- Label -->
         <Style TargetType="Label">
             <Setter Property="Foreground" Value="#AAAACC"/>
-            <Setter Property="Padding" Value="0,4,0,2"/>
+            <Setter Property="Padding"    Value="0,6,0,2"/>
         </Style>
+        <!-- Base Button -->
         <Style TargetType="Button">
-            <Setter Property="Background" Value="#333355"/>
-            <Setter Property="Foreground" Value="#E0E0F0"/>
-            <Setter Property="BorderBrush" Value="#555577"/>
+            <Setter Property="Background"      Value="#333355"/>
+            <Setter Property="Foreground"      Value="#E0E0F0"/>
+            <Setter Property="BorderBrush"     Value="#555577"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,5"/>
-            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding"         Value="12,5"/>
+            <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -41,13 +45,17 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Background" Value="#222244"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Accent (blue) -->
         <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="#2255AA"/>
+            <Setter Property="Background"  Value="#2255AA"/>
             <Setter Property="BorderBrush" Value="#3366CC"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -65,13 +73,42 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Background" Value="#114488"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Green (push) -->
+        <Style x:Key="GreenButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background"  Value="#226633"/>
+            <Setter Property="BorderBrush" Value="#338844"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#337744"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Danger (red) -->
         <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="#882222"/>
+            <Setter Property="Background"  Value="#882222"/>
             <Setter Property="BorderBrush" Value="#AA3333"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -86,17 +123,21 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#AA3333"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- ComboBox -->
         <Style TargetType="ComboBox">
-            <Setter Property="Background" Value="#252540"/>
-            <Setter Property="Foreground" Value="#E0E0F0"/>
-            <Setter Property="BorderBrush" Value="#444466"/>
+            <Setter Property="Background"      Value="#252540"/>
+            <Setter Property="Foreground"      Value="#E0E0F0"/>
+            <Setter Property="BorderBrush"     Value="#444466"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Padding"         Value="6,4"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
@@ -135,7 +176,7 @@
         <Style TargetType="ComboBoxItem">
             <Setter Property="Background" Value="#252540"/>
             <Setter Property="Foreground" Value="#E0E0F0"/>
-            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="Padding"    Value="8,5"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#333366"/>
@@ -146,10 +187,11 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <!-- ListBox -->
         <Style TargetType="ListBox">
-            <Setter Property="Background" Value="#14142A"/>
+            <Setter Property="Background"  Value="#14142A"/>
             <Setter Property="BorderBrush" Value="#333355"/>
-            <Setter Property="Foreground" Value="#E0E0F0"/>
+            <Setter Property="Foreground"  Value="#E0E0F0"/>
         </Style>
         <Style TargetType="ListBoxItem">
             <Setter Property="Padding" Value="8,5"/>
@@ -168,113 +210,307 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>   <!-- 0: toolbar -->
+            <RowDefinition Height="*"/>      <!-- 1: content (selector OR editor) -->
+            <RowDefinition Height="Auto"/>   <!-- 2: status bar -->
         </Grid.RowDefinitions>
 
-        <!-- Top toolbar -->
-        <Border Grid.Row="0" Background="#14142A" BorderBrush="#333355" BorderThickness="0,0,0,1" Padding="10,8">
-            <StackPanel Orientation="Horizontal">
-                <Button Content="Open JSON" Click="OpenFile_Click" Padding="12,5"/>
-                <Button Content="Save" Click="SaveFile_Click" Style="{StaticResource AccentButton}" Padding="12,5" IsEnabled="{Binding HasFile}" Margin="8,0,0,0"/>
-                <Button Content="Save As" Click="SaveFileAs_Click" Padding="12,5" IsEnabled="{Binding HasFile}" Margin="8,0,0,0"/>
-                <Separator Width="1" Background="#444466" Margin="12,0"/>
-                <Button Content="+ New Game" Click="NewGame_Click" Style="{StaticResource AccentButton}" IsEnabled="{Binding HasFile}"/>
-                <Button Content="Delete" Click="DeleteGame_Click" Style="{StaticResource DangerButton}" IsEnabled="{Binding HasSelection}" Margin="8,0,0,0"/>
-                <Separator Width="1" Background="#444466" Margin="12,0"/>
+        <!-- ══════════════════════════════════════════════════════════════════
+             ROW 0 — Toolbar
+             ══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="#14142A" BorderBrush="#333355"
+                BorderThickness="0,0,0,1" Padding="10,7">
+            <WrapPanel Orientation="Horizontal">
+
+                <!-- Always visible: Open, Save, Save As -->
+                <Button Content="Open JSON" Click="OpenFile_Click" Padding="11,5"/>
+                <Button x:Name="SaveBtn" Content="Save" Style="{StaticResource AccentButton}"
+                        Padding="11,5" IsEnabled="{Binding HasFile}" Margin="6,0,0,0"
+                        Click="SaveFile_Click"/>
+                <Button x:Name="SaveAsBtn" Content="Save As" Padding="11,5"
+                        IsEnabled="{Binding HasFile}" Margin="6,0,0,0"
+                        Click="SaveFileAs_Click"/>
+
+                <Separator Width="1" Background="#444466" Margin="10,0"/>
+
+                <!-- Sync controls -->
+                <Button x:Name="SyncBtn" Content="↻ Sync" Padding="11,5"
+                        Click="Sync_Click" ToolTip="Download latest from GitHub and check for changes"/>
+                <Button x:Name="PushBtn" Content="↑ Push" Style="{StaticResource GreenButton}"
+                        Padding="11,5" Margin="6,0,0,0" IsEnabled="{Binding HasFile}"
+                        Click="Push_Click" ToolTip="Commit and push current file to rhi-repo on GitHub"/>
+                <Button x:Name="TokenBtn" Content="🔑 Token" Padding="11,5" Margin="6,0,0,0"
+                        Click="Token_Click" ToolTip="Set GitHub personal access token"/>
+
+                <Separator Width="1" Background="#444466" Margin="10,0"/>
+
+                <!-- Back to selector -->
+                <Button x:Name="BackBtn" Content="◀ Change DB" Padding="11,5"
+                        IsEnabled="{Binding HasFile}" Click="BackToSelector_Click"
+                        ToolTip="Return to DB selector"/>
+
+                <Separator Width="1" Background="#444466" Margin="10,0"/>
+
+                <!-- Edit operations -->
+                <Button x:Name="NewBtn" Content="+ New" Style="{StaticResource AccentButton}"
+                        Padding="11,5" IsEnabled="{Binding HasFile}" Click="NewEntry_Click"/>
+                <Button x:Name="DeleteBtn" Content="Delete" Style="{StaticResource DangerButton}"
+                        Padding="11,5" Margin="6,0,0,0" IsEnabled="{Binding HasSelection}"
+                        Click="DeleteEntry_Click"/>
+
+                <Separator Width="1" Background="#444466" Margin="10,0"/>
+
                 <!-- Search -->
-                <TextBox x:Name="SearchBox" Width="200" TextChanged="SearchBox_TextChanged"
-                         Background="#252540" Foreground="#E0E0F0" BorderBrush="#444466"
-                         ToolTip="Filter games"/>
+                <TextBox x:Name="SearchBox" Width="190" TextChanged="SearchBox_TextChanged"
+                         ToolTip="Filter by name / author"/>
                 <TextBlock Text="🔍" VerticalAlignment="Center" Foreground="#AAAACC" Margin="4,0,0,0"/>
-                <!-- Count -->
-                <TextBlock x:Name="CountLabel" VerticalAlignment="Center" Foreground="#AAAACC" Margin="12,0,0,0"/>
-            </StackPanel>
+                <TextBlock x:Name="CountLabel" VerticalAlignment="Center"
+                           Foreground="#AAAACC" Margin="10,0,0,0" FontSize="11"/>
+            </WrapPanel>
         </Border>
 
-        <!-- Main split -->
+        <!-- ══════════════════════════════════════════════════════════════════
+             ROW 1 — Content area (three panels, only one visible at a time)
+             ══════════════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="280" MinWidth="180"/>
-                <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
 
-            <!-- Left: game list -->
-            <ListBox x:Name="GameList" Grid.Column="0"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                     SelectionChanged="GameList_SelectionChanged"
-                     BorderThickness="0,0,1,0" BorderBrush="#333355"
-                     DisplayMemberPath="DisplayName"/>
+            <!-- ── PANEL A: DB Selector ─────────────────────────────────── -->
+            <Grid x:Name="SelectorPanel" Visibility="Visible">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Margin="0,40,0,40" Width="520">
 
-            <!-- Splitter -->
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                          Background="#333355" Cursor="SizeWE"/>
+                        <TextBlock Text="RenoDXdb Editor" FontSize="26" FontWeight="Bold"
+                                   Foreground="#8888FF" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Select a database to open and edit"
+                                   Foreground="#AAAACC" FontSize="13" HorizontalAlignment="Center"
+                                   Margin="0,6,0,32"/>
 
-            <!-- Right: editor -->
-            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="20,16,20,16">
-                <StackPanel x:Name="EditorPanel" IsEnabled="{Binding HasSelection}" Width="Auto">
+                        <!-- Sync status -->
+                        <Border x:Name="SyncStatusBorder" Background="#1E1E38"
+                                BorderBrush="#333355" BorderThickness="1"
+                                CornerRadius="6" Padding="14,10" Margin="0,0,0,24">
+                            <StackPanel>
+                                <TextBlock x:Name="SyncStatusLabel"
+                                           Text="Syncing from GitHub..."
+                                           Foreground="#AAAACC" FontSize="12"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
 
-                    <TextBlock Text="Game Details" FontSize="16" FontWeight="Bold"
-                               Foreground="#8888FF" Margin="0,0,0,16"/>
+                        <!-- DB choice cards -->
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                    <!-- Name -->
-                    <Label Content="Game Name *"/>
-                    <TextBox x:Name="NameBox" TextChanged="Field_Changed"/>
+                            <!-- Named Mods card -->
+                            <Button Grid.Column="0" Click="OpenNamedMods_Click"
+                                    Padding="0" BorderThickness="0" Background="Transparent">
+                                <Border Background="#1E1E3A" BorderBrush="#444488"
+                                        BorderThickness="1" CornerRadius="8" Padding="20,18">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#6677CC"/>
+                                                    <Setter Property="Background"  Value="#25255A"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <TextBlock Text="📦 Named Mods" FontSize="16" FontWeight="SemiBold"
+                                                   Foreground="#BBBBFF"/>
+                                        <TextBlock Text="RenoDXdb.json" Foreground="#6666AA"
+                                                   FontSize="11" Margin="0,4,0,8"/>
+                                        <TextBlock Text="RenoDX addon mods — name, author, snapshot URLs, Nexus, Discord links."
+                                                   Foreground="#AAAACC" FontSize="11"
+                                                   TextWrapping="Wrap"/>
+                                        <Border x:Name="NamedModsStatus" Margin="0,12,0,0"
+                                                Background="#252540" CornerRadius="4" Padding="8,4">
+                                            <TextBlock x:Name="NamedModsStatusLabel"
+                                                       Text="Not synced" Foreground="#666688"
+                                                       FontSize="11"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Button>
 
-                    <!-- Status -->
-                    <Label Content="Status *" Margin="0,10,0,0"/>
-                    <ComboBox x:Name="StatusCombo" SelectionChanged="Field_Changed">
-                        <ComboBoxItem Content="Done"/>
-                        <ComboBoxItem Content="WIP"/>
-                    </ComboBox>
+                            <!-- Unreal card -->
+                            <Button Grid.Column="2" Click="OpenUnreal_Click"
+                                    Padding="0" BorderThickness="0" Background="Transparent">
+                                <Border Background="#1E2E2E" BorderBrush="#448844"
+                                        BorderThickness="1" CornerRadius="8" Padding="20,18">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#66AA66"/>
+                                                    <Setter Property="Background"  Value="#253A25"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <TextBlock Text="🎮 Unreal Games" FontSize="16" FontWeight="SemiBold"
+                                                   Foreground="#AAFFAA"/>
+                                        <TextBlock Text="RenoDXdb-unreal.json" Foreground="#558855"
+                                                   FontSize="11" Margin="0,4,0,8"/>
+                                        <TextBlock Text="UE-Extended game entries — HDR method, Engine.ini upgrade format and size."
+                                                   Foreground="#AAAACC" FontSize="11"
+                                                   TextWrapping="Wrap"/>
+                                        <Border x:Name="UnrealStatus" Margin="0,12,0,0"
+                                                Background="#1A2A1A" CornerRadius="4" Padding="8,4">
+                                            <TextBlock x:Name="UnrealStatusLabel"
+                                                       Text="Not synced" Foreground="#446644"
+                                                       FontSize="11"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Button>
+                        </Grid>
 
-                    <!-- Author -->
-                    <Label Content="Author *" Margin="0,10,0,0"/>
-                    <TextBox x:Name="AuthorBox" TextChanged="Field_Changed"/>
+                        <!-- Or open local -->
+                        <TextBlock Text="or open a local file with Open JSON ↑"
+                                   Foreground="#555577" FontSize="11"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
 
-                    <!-- Snapshot URL 64 -->
-                    <Label Content="Snapshot URL (64-bit .addon64)" Margin="0,10,0,0"/>
-                    <TextBox x:Name="SnapshotUrlBox" TextChanged="Field_Changed"/>
+            <!-- ── PANEL B: Editor (list + right panel) ─────────────────── -->
+            <Grid x:Name="EditorPanel" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="280" MinWidth="180"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- Snapshot URL 32 -->
-                    <Label Content="Snapshot URL (32-bit .addon32)" Margin="0,10,0,0"/>
-                    <TextBox x:Name="SnapshotUrl32Box" TextChanged="Field_Changed"/>
+                <!-- Game list -->
+                <ListBox x:Name="GameList" Grid.Column="0"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         SelectionChanged="GameList_SelectionChanged"
+                         BorderThickness="0,0,1,0" BorderBrush="#333355"
+                         DisplayMemberPath="DisplayName"/>
 
-                    <!-- Nexus URL -->
-                    <Label Content="Nexus / GameBanana URL" Margin="0,10,0,0"/>
-                    <TextBox x:Name="NexusUrlBox" TextChanged="Field_Changed"/>
+                <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                              Background="#333355" Cursor="SizeWE"/>
 
-                    <!-- Discord URL -->
-                    <Label Content="Discord URL" Margin="0,10,0,0"/>
-                    <TextBox x:Name="DiscordUrlBox" TextChanged="Field_Changed"/>
+                <!-- Right: scrollable editor area -->
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="20,14,20,14">
+                    <StackPanel x:Name="RightPanel" IsEnabled="{Binding HasSelection}">
 
-                    <!-- Discussion URL -->
-                    <Label Content="Discussion URL (GitHub Discussions)" Margin="0,10,0,0"/>
-                    <TextBox x:Name="DiscussionUrlBox" TextChanged="Field_Changed"/>
+                        <!-- DB header -->
+                        <TextBlock x:Name="EditorTitle" Text="Game Details"
+                                   FontSize="16" FontWeight="Bold"
+                                   Foreground="#8888FF" Margin="0,0,0,14"/>
 
-                    <!-- Notes -->
-                    <Label Content="Notes" Margin="0,10,0,0"/>
-                    <TextBox x:Name="NotesBox" TextChanged="Field_Changed"
-                             TextWrapping="Wrap" AcceptsReturn="True" Height="80"
-                             VerticalScrollBarVisibility="Auto"/>
+                        <!-- ── Named Mods fields ────────────────────────── -->
+                        <StackPanel x:Name="NamedModsFields">
+                            <Label Content="Game Name *"/>
+                            <TextBox x:Name="NameBox" TextChanged="Field_Changed"/>
 
-                    <!-- Save button -->
-                    <Button Content="Apply Changes" Click="ApplyChanges_Click"
-                            Style="{StaticResource AccentButton}"
-                            Margin="0,20,0,0" HorizontalAlignment="Left"
-                            Padding="16,7"/>
+                            <Label Content="Status *" Margin="0,8,0,0"/>
+                            <ComboBox x:Name="StatusCombo" SelectionChanged="Field_Changed">
+                                <ComboBoxItem Content="Done"/>
+                                <ComboBoxItem Content="WIP"/>
+                            </ComboBox>
 
-                    <TextBlock x:Name="StatusLabel" Foreground="#55CC77"
-                               Margin="0,8,0,0" FontSize="11"/>
-                </StackPanel>
-            </ScrollViewer>
+                            <Label Content="Author *" Margin="0,8,0,0"/>
+                            <TextBox x:Name="AuthorBox" TextChanged="Field_Changed"/>
+
+                            <Label Content="Snapshot URL (64-bit .addon64)" Margin="0,8,0,0"/>
+                            <TextBox x:Name="SnapshotUrlBox" TextChanged="Field_Changed"/>
+
+                            <Label Content="Snapshot URL (32-bit .addon32)" Margin="0,8,0,0"/>
+                            <TextBox x:Name="SnapshotUrl32Box" TextChanged="Field_Changed"/>
+
+                            <Label Content="Nexus / GameBanana URL" Margin="0,8,0,0"/>
+                            <TextBox x:Name="NexusUrlBox" TextChanged="Field_Changed"/>
+
+                            <Label Content="Discord URL" Margin="0,8,0,0"/>
+                            <TextBox x:Name="DiscordUrlBox" TextChanged="Field_Changed"/>
+
+                            <Label Content="Discussion URL (GitHub Discussions)" Margin="0,8,0,0"/>
+                            <TextBox x:Name="DiscussionUrlBox" TextChanged="Field_Changed"/>
+
+                            <Label Content="Notes" Margin="0,8,0,0"/>
+                            <TextBox x:Name="NotesBox" TextChanged="Field_Changed"
+                                     TextWrapping="Wrap" AcceptsReturn="True" Height="80"
+                                     VerticalScrollBarVisibility="Auto"/>
+                        </StackPanel>
+
+                        <!-- ── Unreal fields ────────────────────────────── -->
+                        <StackPanel x:Name="UnrealFields" Visibility="Collapsed">
+                            <Label Content="Game Name *"/>
+                            <TextBox x:Name="UNameBox" TextChanged="Field_Changed"/>
+
+                            <Label Content="Status *" Margin="0,8,0,0"/>
+                            <ComboBox x:Name="UStatusCombo" SelectionChanged="Field_Changed">
+                                <ComboBoxItem Content="Done"/>
+                                <ComboBoxItem Content="WIP"/>
+                            </ComboBox>
+
+                            <Label Content="Method" Margin="0,8,0,0"/>
+                            <ComboBox x:Name="UMethodCombo" SelectionChanged="Field_Changed">
+                                <ComboBoxItem Content="(none)" Tag=""/>
+                                <ComboBoxItem Content="native"/>
+                                <ComboBoxItem Content="ini"/>
+                                <ComboBoxItem Content="upgrade"/>
+                            </ComboBox>
+
+                            <!-- Upgrades two-column grid -->
+                            <Label Content="Upgrades" Margin="0,8,0,0"/>
+                            <TextBlock Text="Each row is one upgrade: pick a format token and a size token. Leave both blank to add no upgrade."
+                                       Foreground="#666688" FontSize="11" TextWrapping="Wrap"
+                                       Margin="0,0,0,6"/>
+
+                            <!-- Column headers -->
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="36"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Format" Foreground="#8888AA" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="Size" Foreground="#8888AA" FontSize="11"/>
+                            </Grid>
+
+                            <StackPanel x:Name="UpgradesPanel"/>
+
+                            <Button Content="+ Add Upgrade Row" HorizontalAlignment="Left"
+                                    Margin="0,8,0,0" Padding="10,4"
+                                    Click="AddUpgradeRow_Click"/>
+
+                            <Label Content="Comments" Margin="0,8,0,0"/>
+                            <TextBox x:Name="UCommentsBox" TextChanged="Field_Changed"
+                                     TextWrapping="Wrap" AcceptsReturn="True" Height="72"
+                                     VerticalScrollBarVisibility="Auto"/>
+                        </StackPanel>
+
+                        <!-- Apply + status -->
+                        <Button Content="Apply Changes" Click="ApplyChanges_Click"
+                                Style="{StaticResource AccentButton}"
+                                Margin="0,18,0,0" HorizontalAlignment="Left"
+                                Padding="16,7"/>
+                        <TextBlock x:Name="StatusLabel" Foreground="#55CC77"
+                                   Margin="0,8,0,0" FontSize="11"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Grid>
 
-        <!-- Status bar -->
-        <Border Grid.Row="2" Background="#0F0F1E" BorderBrush="#333355" BorderThickness="0,1,0,0" Padding="10,4">
-            <TextBlock x:Name="StatusBar" Foreground="#8888AA" FontSize="11" Text="No file open — click Open JSON to get started"/>
+        <!-- ══════════════════════════════════════════════════════════════════
+             ROW 2 — Status bar
+             ══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="#0F0F1E" BorderBrush="#333355"
+                BorderThickness="0,1,0,0" Padding="10,4">
+            <TextBlock x:Name="StatusBar" Foreground="#8888AA" FontSize="11"
+                       Text="Select a database above to get started"/>
         </Border>
     </Grid>
 </Window>
