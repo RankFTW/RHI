@@ -870,8 +870,7 @@ public partial class MainViewModel
                 bool isUe4 = card.EngineHint?.Contains("Unreal Engine 4") == true;
 
                 // DB-driven configuration — only when dev-unlocked and source is not WikiOnly
-                var dbEntry = (DevUnlockService.IsUnlocked
-                    && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+                var dbEntry = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                     ? GetDbUnrealEntry(card.GameName)
                     : null;
 
@@ -913,8 +912,7 @@ public partial class MainViewModel
             var compatEntry = _manifestUeExtendedCompat.TryGetValue(card.GameName, out var ce) ? ce : null;
 
             // Resolve db entry once more (already looked up above, re-use for Engine.ini decision)
-            var dbEntryForEngineIni = (DevUnlockService.IsUnlocked
-                && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+            var dbEntryForEngineIni = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? GetDbUnrealEntry(card.GameName)
                 : null;
 

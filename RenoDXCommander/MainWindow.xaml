@@ -1726,7 +1726,7 @@
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11"
                                            Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Controls where RHI fetches mod and UE-Extended configuration data. Hybrid uses the RHI database first and falls back to the wiki for games not yet in the database. Changing this setting triggers an immediate refresh."/>
+                                           Text="Controls where RHI fetches mod data. RHI Database uses the community-maintained RHI database (recommended). RenoDX Wiki falls back to the RenoDX wiki scraper. Changing this setting triggers an immediate refresh."/>
                                 <Grid ColumnSpacing="12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
@@ -1738,9 +1738,8 @@
                                     <ComboBox x:Name="RenoDxDbSourceCombo" x:FieldModifier="internal"
                                               Grid.Column="1" FontSize="12"
                                               HorizontalAlignment="Left" MinWidth="160">
-                                        <ComboBoxItem Content="Wiki Only" Tag="WikiOnly"/>
-                                        <ComboBoxItem Content="DB Only" Tag="DbOnly"/>
-                                        <ComboBoxItem Content="Hybrid" Tag="Hybrid"/>
+                                        <ComboBoxItem Content="RHI Database" Tag="DbOnly"/>
+                                        <ComboBoxItem Content="RenoDX Wiki" Tag="WikiOnly"/>
                                     </ComboBox>
                                 </Grid>
                             </StackPanel>

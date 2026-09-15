@@ -322,16 +322,13 @@ public class SettingsHandler
             RefreshNexusStatus();
         }
 
-        // Initialize RenoDX Data Source card (dev-only)
-        if (DevUnlockService.IsUnlocked)
-        {
-            _window.RenoDxDbSourceCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-            InitRenoDxDbSourceCombo();
-        }
+        // RenoDX Data Source card — always visible now that RHI Database is the default
+        _window.RenoDxDbSourceCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+        InitRenoDxDbSourceCombo();
     }
 
     /// <summary>
-    /// Populates and wires the RenoDX data source combo. Dev-only.
+    /// Populates and wires the RenoDX data source combo.
     /// </summary>
     private void InitRenoDxDbSourceCombo()
     {

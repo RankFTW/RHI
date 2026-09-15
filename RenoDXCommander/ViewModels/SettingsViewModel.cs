@@ -77,7 +77,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private List<uint> _resTargetDisplays = new();
     // ── RenoDX Database source (dev-only) ─────────────────────────────────────
     /// <summary>Controls which data source feeds mod info. Values: "WikiOnly", "DbOnly", "Hybrid".</summary>
-    [ObservableProperty] private string _renoDxDbSource = "WikiOnly";
+    [ObservableProperty] private string _renoDxDbSource = "DbOnly";
     [ObservableProperty] private bool _dropHelperEnabled = true;
     [ObservableProperty] private bool _closeToTray;
     [ObservableProperty] private bool _recentGamesMenu;
@@ -334,7 +334,19 @@ public partial class SettingsViewModel : ObservableObject
             try { ResTargetDisplays = System.Text.Json.JsonSerializer.Deserialize<List<uint>>(rtdVal) ?? new(); }
             catch { ResTargetDisplays = new(); }
         }
-        if (s.TryGetValue("RenoDxDbSource", out var rddsVal)) RenoDxDbSource = rddsVal ?? "WikiOnly";
+        if (s.TryGetValue("RenoDxDbSource", out var rddsVal)) RenoDxDbSource = rddsVal ?? "DbOnly";
+
+        // One-time migration (v2.7.2): force all existing users onto RHI Database.
+        // "WikiOnly" was the old default; users who never changed it have no persisted key
+        // (absent = already migrates cleanly to new default "DbOnly").
+        // Users who explicitly selected Wiki Only get migrated too — they can switch back.
+        if (!s.ContainsKey("DbSourceMigrated"))
+        {
+            if (string.Equals(RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+                RenoDxDbSource = "DbOnly";
+            s["DbSourceMigrated"] = "1";
+            // SaveSettingsFile will persist the marker and the new source on the next save
+        }
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
@@ -466,8 +478,9 @@ public partial class SettingsViewModel : ObservableObject
         s["ResolutionAutoToggle"] = ResolutionAutoToggle ? "true" : "false";
         if (!string.IsNullOrEmpty(ResolutionTarget)) s["ResolutionTarget"] = ResolutionTarget;
         if (ResTargetDisplays.Count > 0) s["ResTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(ResTargetDisplays);
-        if (RenoDxDbSource != "WikiOnly") s["RenoDxDbSource"] = RenoDxDbSource;
-        else s.Remove("RenoDxDbSource"); // "WikiOnly" is the default — don't persist it
+        if (RenoDxDbSource != "DbOnly") s["RenoDxDbSource"] = RenoDxDbSource;
+        else s.Remove("RenoDxDbSource"); // "DbOnly" is the new default — don't persist it
+        s["DbSourceMigrated"] = "1"; // persists the one-time migration marker
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
         else s["DropHelperEnabled"] = "true";
         s["CloseToTray"] = CloseToTray ? "true" : "false";

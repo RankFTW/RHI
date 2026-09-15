@@ -1,5 +1,9 @@
 ## v2.7.2
 
+### New
+
+- **RHI Database is now the default mod data source** — RHI now uses its own community database instead of scraping the RenoDX wiki. The database is easier to maintain, more reliable, and gives RHI full control over the data without depending on third-party infrastructure. There is also a security benefit: the RenoDX wiki is publicly editable, and with RenoDX's growing userbase and by extension RHI's there is a real risk that someone could upload a malicious file disguised as a legitimate HDR mod — RHI would have no way to prevent it from being delivered to users. The RHI database is controlled and reviewed before any changes go live. Big thanks to Scrungus for the work transferring all wiki mods and details across to the new database. You can still switch back to the RenoDX Wiki scraper in Settings if needed.
+
 ### Bug Fixes
 
 - Fixed UI freezing when navigating between games — RHI was doing filesystem I/O (directory scans for the AppData button) on the UI thread on every card selection. This is now pre-computed in the background at startup and cached per game.

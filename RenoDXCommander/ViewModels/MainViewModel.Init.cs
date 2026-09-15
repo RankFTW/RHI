@@ -294,7 +294,7 @@ public partial class MainViewModel
             // changes are picked up immediately, matching manifest/wiki behaviour.
             if (forceRescan)
                 _renoDxDbService.InvalidateCache();
-            var dbTask = (DevUnlockService.IsUnlocked && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+            var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? _renoDxDbService.FetchAllAsync()
                 : Task.FromResult<(List<GameMod>, Dictionary<string, RenoDXDbUnrealEntry>)>((new(), new(StringComparer.OrdinalIgnoreCase)));
             var detectTask   = DetectAllGamesDedupedAsync();

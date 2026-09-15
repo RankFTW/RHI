@@ -458,17 +458,15 @@ public partial class MainViewModel : ObservableObject
     /// Merges wiki and DB mod lists according to the current RenoDxDbSource setting.
     /// Must be called after both _allMods (wiki) and _dbMods (db) are populated.
     ///
-    /// WikiOnly  — _allMods stays as-is; _dbUnrealEntries cleared
-    /// DbOnly    — _allMods replaced by db mods; _dbUnrealEntries populated
-    /// Hybrid    — db entries override wiki entries by name; db-only entries appended
+    /// DbOnly   — _allMods replaced by db mods (default)
+    /// WikiOnly — _allMods stays as wiki-sourced (fallback option)
     /// </summary>
     private void MergeDbSources()
     {
         var source = _settingsViewModel.RenoDxDbSource;
 
         // Always feed DB unreal Comments into _genericNotes regardless of source mode —
-        // they supplement wiki content, not replace it, so they should show in the info
-        // dialog even in WikiOnly mode.
+        // they supplement wiki content, not replace it, so they show in info dialogs in both modes.
         foreach (var (name, entry) in _dbUnrealEntries)
             if (!string.IsNullOrEmpty(entry.Comments))
                 _genericNotes[name] = entry.Comments;
@@ -480,38 +478,9 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        if (string.Equals(source, "DbOnly", StringComparison.OrdinalIgnoreCase))
-        {
-            _allMods = new List<GameMod>(_dbMods);
-            _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db");
-            return;
-        }
-
-        // Hybrid — db entries win on name collision; db-only entries are appended
-        if (string.Equals(source, "Hybrid", StringComparison.OrdinalIgnoreCase))
-        {
-            var merged = new List<GameMod>(_allMods);
-            var wikiByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < merged.Count; i++)
-                wikiByName[merged[i].Name] = i;
-
-            int overridden = 0, added = 0;
-            foreach (var dbMod in _dbMods)
-            {
-                if (wikiByName.TryGetValue(dbMod.Name, out int idx))
-                {
-                    merged[idx] = dbMod; // db wins
-                    overridden++;
-                }
-                else
-                {
-                    merged.Add(dbMod);
-                    added++;
-                }
-            }
-            _allMods = merged;
-            _crashReporter.Log($"[MergeDbSources] Source=Hybrid — {overridden} overridden, {added} added from db, total {_allMods.Count}");
-        }
+        // DbOnly (default) — replace wiki mods with DB mods
+        _allMods = new List<GameMod>(_dbMods);
+        _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db");
     }
     private List<GameCardViewModel> _allCards = new();
     public IReadOnlyList<GameCardViewModel> AllCards => _allCards;
