@@ -1,3 +1,13 @@
+## v2.7.3
+
+### Bug Fixes
+
+- Fixed UI becoming unresponsive for ~5 seconds when clicking Install ReShade — shader pack exclusion data was being read on the UI thread while background pack checks could hold the settings lock concurrently. Exclusions are now built on a background thread.
+
+### Manifest Updates
+
+- Added "Banishers: Ghosts of New Eden - The Wanderer Set DLC" to blacklist — was being incorrectly detected as a game.
+
 ## v2.7.2
 
 ### New
