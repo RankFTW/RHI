@@ -124,12 +124,12 @@ public partial class AuxInstallService
         progress?.Report(("ReShade installed!", 100));
 
         // ── Shader deployment ─────────────────────────────────────────────────────
-        // Always deploy shaders locally to the game folder.
-        // Uses Sync (prune + deploy) so switching shader selections properly
-        // removes files from the previous selection.
-        var exclAux = selectedPackIds?
-            .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                StringComparer.OrdinalIgnoreCase);
+        // Build exclusions off the calling thread to avoid blocking the UI thread
+        // on _settingsLock if a background shader pack check holds it concurrently.
+        var exclAux = selectedPackIds == null ? null
+            : await Task.Run(() => selectedPackIds
+                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                    StringComparer.OrdinalIgnoreCase)).ConfigureAwait(false);
         _shaderPackService.SyncGameFolder(installPath, selectedPackIds, exclAux);
 
         var record = new AuxInstalledRecord
