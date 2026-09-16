@@ -172,7 +172,11 @@ public partial class MainViewModel
             card.RsActionMessage = $"❌ ReShade Failed: {ex.Message}";
             _crashReporter.WriteCrashReport("InstallReShadeAsync", ex, note: $"Game: {card.GameName}");
         }
-        finally { card.RsIsInstalling = false; }
+        finally
+        {
+            if (DispatchUiAction != null) DispatchUiAction(() => card.RsIsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false);
+        }
     }
 
     /// <summary>
@@ -191,7 +195,8 @@ public partial class MainViewModel
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
                 var selVk1 = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-                var exclVk1 = selVk1?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+                var exclVk1 = selVk1 == null ? null : await Task.Run(() =>
+                    selVk1.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase));
                 _shaderPackService.SyncGameFolder(card.InstallPath, selVk1, exclVk1);
 
                 var vulkanVersion = AuxInstallService.ReadInstalledVersion(
@@ -215,7 +220,11 @@ public partial class MainViewModel
                 card.RsActionMessage = $"❌ Vulkan ReShade Failed: {ex.Message}";
                 _crashReporter.WriteCrashReport("InstallReShadeVulkanAsync", ex, note: $"Game: {card.GameName}");
             }
-            finally { card.RsIsInstalling = false; }
+            finally
+            {
+                if (DispatchUiAction != null) DispatchUiAction(() => card.RsIsInstalling = false);
+                else DispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false);
+            }
             return;
         }
 
@@ -260,7 +269,8 @@ public partial class MainViewModel
 
             // 5c. Deploy shaders locally to the game folder
             var selVk2 = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-            var exclVk2 = selVk2?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+            var exclVk2 = selVk2 == null ? null : await Task.Run(() =>
+                selVk2.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase));
             _shaderPackService.SyncGameFolder(card.InstallPath, selVk2, exclVk2);
 
             // 6. Mark warning as shown for this session
@@ -288,7 +298,11 @@ public partial class MainViewModel
             card.RsActionMessage = $"❌ Vulkan ReShade Failed: {ex.Message}";
             _crashReporter.WriteCrashReport("InstallReShadeVulkanAsync", ex, note: $"Game: {card.GameName}");
         }
-        finally { card.RsIsInstalling = false; }
+        finally
+        {
+            if (DispatchUiAction != null) DispatchUiAction(() => card.RsIsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false);
+        }
     }
 
     /// <summary>
@@ -335,7 +349,8 @@ public partial class MainViewModel
 
             // Deploy shaders to the game folder
             var selGac = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-            var exclGac = selGac?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+            var exclGac = selGac == null ? null : await Task.Run(() =>
+                selGac.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase));
             _shaderPackService.SyncGameFolder(card.InstallPath, selGac, exclGac);
 
             // Read version from the staged DLL in the game folder
@@ -359,7 +374,11 @@ public partial class MainViewModel
             card.RsActionMessage = $"❌ GAC ReShade Failed: {ex.Message}";
             _crashReporter.WriteCrashReport("InstallReShadeGacAsync", ex, note: $"Game: {card.GameName}");
         }
-        finally { card.RsIsInstalling = false; }
+        finally
+        {
+            if (DispatchUiAction != null) DispatchUiAction(() => card.RsIsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false);
+        }
     }
 
     [RelayCommand]
@@ -403,7 +422,14 @@ public partial class MainViewModel
             if (isGacGame && !string.IsNullOrEmpty(card.InstallPath))
             {
                 var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-                if (File.Exists(iniPath)) File.Delete(iniPath);
+                try
+                {
+                    if (File.Exists(iniPath)) File.Delete(iniPath);
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[UninstallGacReShade] Failed to delete reshade.ini — {ex.Message}");
+                }
             }
 
             if (card.RsRecord != null)
@@ -433,8 +459,15 @@ public partial class MainViewModel
         {
             // 1. Delete reshade.ini from the game folder
             var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-            if (File.Exists(iniPath))
-                File.Delete(iniPath);
+            try
+            {
+                if (File.Exists(iniPath))
+                    File.Delete(iniPath);
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[ResetReShadeArtifacts] Failed to delete reshade.ini — {ex.Message}");
+            }
 
             // 2. Delete the Vulkan footprint file
             VulkanFootprintService.Delete(card.InstallPath);
@@ -503,7 +536,11 @@ public partial class MainViewModel
             card.RefActionMessage = $"❌ RE Framework Failed: {ex.Message}";
             _crashReporter.WriteCrashReport("InstallREFrameworkAsync", ex, note: $"Game: {card.GameName}");
         }
-        finally { card.RefIsInstalling = false; }
+        finally
+        {
+            if (DispatchUiAction != null) DispatchUiAction(() => card.RefIsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.RefIsInstalling = false);
+        }
     }
 
     [RelayCommand]
@@ -945,22 +982,29 @@ public partial class MainViewModel
                     card.Source);
             }
 
-            card.LumaRecord = record;
-            card.LumaStatus = GameStatus.Installed;
-            card.LumaActionMessage = "Luma installed!";
-            card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+            // Marshal card property mutations to the UI thread after ConfigureAwait(false) paths
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.LumaRecord = record;
+                card.LumaStatus = GameStatus.Installed;
+                card.LumaActionMessage = "Luma installed!";
+                card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+            });
 
             await ApplyLumaPostInstallAsync(card, record);
         }
         catch (Exception ex)
         {
-            card.LumaActionMessage = $"❌ Install failed: {ex.Message}";
+            DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = $"❌ Install failed: {ex.Message}");
             _crashReporter.WriteCrashReport("InstallLuma", ex, note: $"Game: {card.GameName}");
         }
         finally
         {
-            card.IsLumaInstalling = false;
-            card.NotifyAll();
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.IsLumaInstalling = false;
+                card.NotifyAll();
+            });
         }
     }
 
@@ -975,7 +1019,7 @@ public partial class MainViewModel
         // Deploy RHI's newest DLSS version (Luma bundles its own — RHI manages it instead)
         try
         {
-            card.LumaActionMessage = "Updating DLSS...";
+            DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Updating DLSS...");
             var newestDlssPath = await _dlssStreamlineService.EnsureNewestDlssCachedAsync();
             if (newestDlssPath != null && File.Exists(newestDlssPath))
             {
@@ -1002,7 +1046,7 @@ public partial class MainViewModel
         // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
         // When dgVoodoo2 is being deployed: force ReShade to dxgi.dll so it hooks dgVoodoo's
         // DX11 output rather than competing with dgVoodoo2 for the d3d9.dll slot.
-        card.LumaActionMessage = "Installing ReShade...";
+        DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Installing ReShade...");
         await InstallReShadeInternalAsync(card, needsDgVoodoo ? "dxgi.dll" : null);
 
         // ── dgVoodoo2 (DX9→DX11 translation layer — required for some legacy games) ────
@@ -1013,7 +1057,7 @@ public partial class MainViewModel
         {
             try
             {
-                card.LumaActionMessage = "Installing dgVoodoo2...";
+                DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Installing dgVoodoo2...");
                 var dgVoodooSvc = App.Services.GetRequiredService<DgVoodooService>();
 
                 // Prefer the version recommended by the wiki for this specific mod.

@@ -558,10 +558,13 @@ public partial class MainViewModel
                         .Select(card =>
                         {
                             var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-                            var exclusions = effectiveSelection?
-                                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                                    StringComparer.OrdinalIgnoreCase);
-                            return Task.Run(() => _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions));
+                            return Task.Run(() =>
+                            {
+                                var exclusions = effectiveSelection?
+                                    .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                                        StringComparer.OrdinalIgnoreCase);
+                                _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions);
+                            });
                         });
                     await Task.WhenAll(syncTasks);
                 }
@@ -647,95 +650,106 @@ public partial class MainViewModel
 
         var cardsToAdd = new List<GameCardViewModel>();
 
+        // Collect update actions — we'll batch them on the UI thread to avoid cross-thread PropertyChanged
+        var updateActions = new List<Action>();
+
         // For each fresh card: update existing or mark as new
         foreach (var fresh in freshCards)
         {
             var freshKey = GameKey.FromCard(fresh.GameName, fresh.Source).ToKey();
             if (existingByKey.TryGetValue(freshKey, out var existing))
             {
-                // Update mutable properties in-place so WinUI bindings fire
-                // Preserve UpdateAvailable status if the fresh scan shows Installed
-                // (the update check already determined an update exists — don't lose it)
-                existing.Status             = (existing.Status == GameStatus.UpdateAvailable && fresh.Status == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.Status;
-                existing.RsStatus           = (existing.RsStatus == GameStatus.UpdateAvailable && fresh.RsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.RsStatus;
-                existing.UlStatus           = (existing.UlStatus == GameStatus.UpdateAvailable && fresh.UlStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.UlStatus;
-                existing.DcStatus           = (existing.DcStatus == GameStatus.UpdateAvailable && fresh.DcStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.DcStatus;
-                existing.OsStatus           = (existing.OsStatus == GameStatus.UpdateAvailable && fresh.OsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.OsStatus;
-                existing.RefStatus          = (existing.RefStatus == GameStatus.UpdateAvailable && fresh.RefStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.RefStatus;
-                existing.LumaStatus         = (existing.LumaStatus == GameStatus.UpdateAvailable && fresh.LumaStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.LumaStatus;
-                existing.Mod                = fresh.Mod;
-                existing.InstalledRecord    = fresh.InstalledRecord;
-                existing.RsRecord           = fresh.RsRecord;
-                existing.NexusModsUrl       = fresh.NexusModsUrl;
-                existing.PcgwUrl            = fresh.PcgwUrl;
-                existing.UwFixUrl        = fresh.UwFixUrl;
-                existing.UwFixSource     = fresh.UwFixSource;
-                existing.UltraPlusUrl    = fresh.UltraPlusUrl;
-                existing.EngineHint         = fresh.EngineHint;
-                existing.GraphicsApi        = fresh.GraphicsApi;
-                existing.Is32Bit            = fresh.Is32Bit;
-                existing.WikiStatus         = fresh.WikiStatus;
-                existing.Maintainer         = fresh.Maintainer;
-                existing.InstallPath        = fresh.InstallPath;
-                existing.Source             = fresh.Source;
-                existing.IsGenericMod       = fresh.IsGenericMod;
-                existing.IsExternalOnly     = fresh.IsExternalOnly;
-                existing.ExternalUrl        = fresh.ExternalUrl;
-                existing.ExternalLabel      = fresh.ExternalLabel;
-                existing.NexusUrl           = fresh.NexusUrl;
-                existing.DiscordUrl         = fresh.DiscordUrl;
-                existing.NameUrl            = fresh.NameUrl;
-                existing.Notes              = fresh.Notes;
-                existing.NotesUrl           = fresh.NotesUrl;
-                existing.NotesUrlLabel      = fresh.NotesUrlLabel;
-                existing.UseUeExtended      = fresh.UseUeExtended;
-                existing.IsRtxHdrEnabled    = fresh.IsRtxHdrEnabled;
-                existing.InstalledAddonFileName = fresh.InstalledAddonFileName;
-                existing.RdxInstalledVersion    = fresh.RdxInstalledVersion;
-                existing.RsInstalledFile        = fresh.RsInstalledFile;
-                existing.RsInstalledVersion     = fresh.RsInstalledVersion;
-                existing.DetectedGame           = fresh.DetectedGame;
-                existing.DetectedApis           = fresh.DetectedApis;
-                existing.IsDualApiGame          = fresh.IsDualApiGame;
-                existing.LumaMod                = fresh.LumaMod;
-                existing.IsLumaMode             = false;
-                existing.LumaRecord             = fresh.LumaRecord;
-                existing.LumaNotes              = fresh.LumaNotes;
-                existing.LumaNotesUrl           = fresh.LumaNotesUrl;
-                existing.LumaNotesUrlLabel      = fresh.LumaNotesUrlLabel;
-                existing.LumaHdrSupported       = fresh.LumaHdrSupported;
-                existing.LumaDlssFsrSupported   = fresh.LumaDlssFsrSupported;
-                existing.IsNativeHdrGame        = fresh.IsNativeHdrGame;
-                existing.IsManifestUeExtended   = fresh.IsManifestUeExtended;
-                existing.LumaRenodxCompatible   = fresh.LumaMod != null;
-                existing.EngineIniProjectOverride = fresh.EngineIniProjectOverride;
-                existing.GameConfigRootPath      = fresh.GameConfigRootPath;
-                existing.DllOverrideEnabled      = fresh.DllOverrideEnabled;
-                existing.ExcludeFromUpdateAllReShade = fresh.ExcludeFromUpdateAllReShade;
-                existing.ExcludeFromUpdateAllRenoDx  = fresh.ExcludeFromUpdateAllRenoDx;
-                existing.ExcludeFromUpdateAllUl      = fresh.ExcludeFromUpdateAllUl;
-                existing.ExcludeFromUpdateAllDc      = fresh.ExcludeFromUpdateAllDc;
-                existing.UseNormalReShade        = fresh.UseNormalReShade;
-                existing.ShaderModeOverride      = fresh.ShaderModeOverride;
-                existing.UlInstalledFile         = fresh.UlInstalledFile;
-                existing.UlInstalledVersion      = fresh.UlInstalledVersion;
-                existing.DcInstalledFile         = fresh.DcInstalledFile;
-                existing.DcInstalledVersion      = fresh.DcInstalledVersion;
-                existing.OsInstalledFile         = fresh.OsInstalledFile;
-                existing.OsInstalledVersion      = fresh.OsInstalledVersion;
-                existing.RefRecord               = fresh.RefRecord;
-                existing.RefInstalledVersion     = fresh.RefInstalledVersion;
+                // Capture for closure
+                var e = existing;
+                var f = fresh;
 
-                // ── DXVK fields ──────────────────────────────────────────
-                existing.DxvkStatus              = fresh.DxvkStatus;
-                existing.DxvkInstalledVersion    = fresh.DxvkInstalledVersion;
-                existing.DxvkRecord              = fresh.DxvkRecord;
-                existing.DxvkEnabled             = fresh.DxvkEnabled;
-                existing.ExcludeFromUpdateAllDxvk = fresh.ExcludeFromUpdateAllDxvk;
+                // Queue the property updates to run on UI thread
+                updateActions.Add(() =>
+                {
+                    // Update mutable properties in-place so WinUI bindings fire
+                    // Preserve UpdateAvailable status if the fresh scan shows Installed
+                    // (the update check already determined an update exists — don't lose it)
+                    e.Status             = (e.Status == GameStatus.UpdateAvailable && f.Status == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.Status;
+                    e.RsStatus           = (e.RsStatus == GameStatus.UpdateAvailable && f.RsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.RsStatus;
+                    e.UlStatus           = (e.UlStatus == GameStatus.UpdateAvailable && f.UlStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.UlStatus;
+                    e.DcStatus           = (e.DcStatus == GameStatus.UpdateAvailable && f.DcStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.DcStatus;
+                    e.OsStatus           = (e.OsStatus == GameStatus.UpdateAvailable && f.OsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.OsStatus;
+                    e.RefStatus          = (e.RefStatus == GameStatus.UpdateAvailable && f.RefStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.RefStatus;
+                    e.LumaStatus         = (e.LumaStatus == GameStatus.UpdateAvailable && f.LumaStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.LumaStatus;
+                    e.Mod                = f.Mod;
+                    e.InstalledRecord    = f.InstalledRecord;
+                    e.RsRecord           = f.RsRecord;
+                    e.NexusModsUrl       = f.NexusModsUrl;
+                    e.PcgwUrl            = f.PcgwUrl;
+                    e.UwFixUrl        = f.UwFixUrl;
+                    e.UwFixSource     = f.UwFixSource;
+                    e.UltraPlusUrl    = f.UltraPlusUrl;
+                    e.EngineHint         = f.EngineHint;
+                    e.GraphicsApi        = f.GraphicsApi;
+                    e.Is32Bit            = f.Is32Bit;
+                    e.WikiStatus         = f.WikiStatus;
+                    e.Maintainer         = f.Maintainer;
+                    e.InstallPath        = f.InstallPath;
+                    e.Source             = f.Source;
+                    e.IsGenericMod       = f.IsGenericMod;
+                    e.IsExternalOnly     = f.IsExternalOnly;
+                    e.ExternalUrl        = f.ExternalUrl;
+                    e.ExternalLabel      = f.ExternalLabel;
+                    e.NexusUrl           = f.NexusUrl;
+                    e.DiscordUrl         = f.DiscordUrl;
+                    e.NameUrl            = f.NameUrl;
+                    e.Notes              = f.Notes;
+                    e.NotesUrl           = f.NotesUrl;
+                    e.NotesUrlLabel      = f.NotesUrlLabel;
+                    e.UseUeExtended      = f.UseUeExtended;
+                    e.IsRtxHdrEnabled    = f.IsRtxHdrEnabled;
+                    e.InstalledAddonFileName = f.InstalledAddonFileName;
+                    e.RdxInstalledVersion    = f.RdxInstalledVersion;
+                    e.RsInstalledFile        = f.RsInstalledFile;
+                    e.RsInstalledVersion     = f.RsInstalledVersion;
+                    e.DetectedGame           = f.DetectedGame;
+                    e.DetectedApis           = f.DetectedApis;
+                    e.IsDualApiGame          = f.IsDualApiGame;
+                    e.LumaMod                = f.LumaMod;
+                    e.IsLumaMode             = false;
+                    e.LumaRecord             = f.LumaRecord;
+                    e.LumaNotes              = f.LumaNotes;
+                    e.LumaNotesUrl           = f.LumaNotesUrl;
+                    e.LumaNotesUrlLabel      = f.LumaNotesUrlLabel;
+                    e.LumaHdrSupported       = f.LumaHdrSupported;
+                    e.LumaDlssFsrSupported   = f.LumaDlssFsrSupported;
+                    e.IsNativeHdrGame        = f.IsNativeHdrGame;
+                    e.IsManifestUeExtended   = f.IsManifestUeExtended;
+                    e.LumaRenodxCompatible   = f.LumaMod != null;
+                    e.EngineIniProjectOverride = f.EngineIniProjectOverride;
+                    e.GameConfigRootPath      = f.GameConfigRootPath;
+                    e.DllOverrideEnabled      = f.DllOverrideEnabled;
+                    e.ExcludeFromUpdateAllReShade = f.ExcludeFromUpdateAllReShade;
+                    e.ExcludeFromUpdateAllRenoDx  = f.ExcludeFromUpdateAllRenoDx;
+                    e.ExcludeFromUpdateAllUl      = f.ExcludeFromUpdateAllUl;
+                    e.ExcludeFromUpdateAllDc      = f.ExcludeFromUpdateAllDc;
+                    e.UseNormalReShade        = f.UseNormalReShade;
+                    e.ShaderModeOverride      = f.ShaderModeOverride;
+                    e.UlInstalledFile         = f.UlInstalledFile;
+                    e.UlInstalledVersion      = f.UlInstalledVersion;
+                    e.DcInstalledFile         = f.DcInstalledFile;
+                    e.DcInstalledVersion      = f.DcInstalledVersion;
+                    e.OsInstalledFile         = f.OsInstalledFile;
+                    e.OsInstalledVersion      = f.OsInstalledVersion;
+                    e.RefRecord               = f.RefRecord;
+                    e.RefInstalledVersion     = f.RefInstalledVersion;
 
-                // ── DLSS / Streamline fields ─────────────────────────────
-                if (fresh.DlssDetection != null)
-                    existing.ApplyDlssDetection(fresh.DlssDetection);
+                    // ── DXVK fields ──────────────────────────────────────────
+                    e.DxvkStatus              = f.DxvkStatus;
+                    e.DxvkInstalledVersion    = f.DxvkInstalledVersion;
+                    e.DxvkRecord              = f.DxvkRecord;
+                    e.DxvkEnabled             = f.DxvkEnabled;
+                    e.ExcludeFromUpdateAllDxvk = f.ExcludeFromUpdateAllDxvk;
+
+                    // ── DLSS / Streamline fields ─────────────────────────────
+                    if (f.DlssDetection != null)
+                        e.ApplyDlssDetection(f.DlssDetection);
+                });
             }
             else
             {
@@ -749,17 +763,23 @@ public partial class MainViewModel
             .Where(c => !freshKeys.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey()) && !c.IsManuallyAdded)
             .ToList();
 
-        foreach (var stale in cardsToRemove)
-            _allCards.Remove(stale);
-
-        // Add new games
-        _allCards.AddRange(cardsToAdd);
-
         _crashReporter.Log($"[MergeCards] Updated {freshCards.Count - cardsToAdd.Count} existing, added {cardsToAdd.Count} new, removed {cardsToRemove.Count} stale");
 
-        // Preserve SelectedGame: if still in list keep it, if removed select first card
+        // Execute all mutations on the UI thread to prevent cross-thread PropertyChanged issues
         DispatcherQueue?.TryEnqueue(() =>
         {
+            // Apply all property updates
+            foreach (var action in updateActions)
+                action();
+
+            // Remove stale cards
+            foreach (var stale in cardsToRemove)
+                _allCards.Remove(stale);
+
+            // Add new games
+            _allCards.AddRange(cardsToAdd);
+
+            // Preserve SelectedGame: if still in list keep it, if removed select first card
             if (SelectedGame != null && !_allCards.Contains(SelectedGame))
                 SelectedGame = _allCards.Count > 0 ? _allCards[0] : null;
 

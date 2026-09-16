@@ -54,6 +54,14 @@ public sealed partial class MainWindow
     {
         _crashReporter.Log("[MainWindow.CheckForUpdatesButton_Click] User clicked Check For Updates");
 
+        // Acquire the dialog gate before showing — use WaitDialogGateAsync so we don't skip
+        // if another dialog is briefly open (e.g. MOTD)
+        if (!await DialogService.WaitDialogGateAsync(5))
+        {
+            _crashReporter.Log("[CheckForUpdatesButton_Click] Could not acquire dialog gate");
+            return;
+        }
+
         // Show progress dialog
         var progressPanel = new StackPanel { Spacing = 8 };
         var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
@@ -70,7 +78,10 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        _ = DialogService.ShowSafeAsync(progressDialog);
+
+        // Fire-and-forget the ShowAsync — we'll Hide() it when done
+        // (ShowAsync returns when the dialog is dismissed; we dismiss it via Hide())
+        _ = progressDialog.ShowAsync();
 
         try
         {
@@ -87,13 +98,15 @@ public sealed partial class MainWindow
             // Check app update
             DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking app version...");
             await _dialogService.CheckForAppUpdateAsync();
-
-            progressDialog.Hide();
         }
         catch (Exception ex)
         {
             _crashReporter.Log($"[CheckForUpdatesButton_Click] Error: {ex.Message}");
+        }
+        finally
+        {
             progressDialog.Hide();
+            DialogService.ReleaseDialogGate();
         }
     }
 
@@ -734,13 +747,19 @@ public sealed partial class MainWindow
             await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
 
         // Reset Nexus baseline when user clicks the update button — they're acknowledging the update
+        // NOTE: This runs on the UI thread (LaunchUriAsync returns on the original context).
+        // The ConfigureAwait(false) above is only for the Nexus API call — after that we're back
+        // on the UI thread via the await chain. But to be explicit and safe, wrap UI mutations.
         if (card.Status == GameStatus.UpdateAvailable && card.IsExternalOnly)
         {
-            var nexusService = App.Services.GetRequiredService<INexusUpdateService>();
-            nexusService.ResetBaseline(card.GameName);
-            card.Status = GameStatus.Installed;
-            card.NotifyAll();
-            ViewModel.NotifyUpdateButtonChanged();
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                var nexusService = App.Services.GetRequiredService<INexusUpdateService>();
+                nexusService.ResetBaseline(card.GameName);
+                card.Status = GameStatus.Installed;
+                card.NotifyAll();
+                ViewModel.NotifyUpdateButtonChanged();
+            });
         }
     }
 

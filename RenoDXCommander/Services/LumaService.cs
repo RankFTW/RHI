@@ -578,8 +578,8 @@ public class LumaService : ILumaService
         {
             try
             {
-                var headReq = new HttpRequestMessage(HttpMethod.Head, mod.DownloadUrl);
-                var headResp = await _http.SendAsync(headReq);
+                using var headReq = new HttpRequestMessage(HttpMethod.Head, mod.DownloadUrl);
+                using var headResp = await _http.SendAsync(headReq);
                 if (headResp.IsSuccessStatusCode)
                 {
                     var remoteSize = headResp.Content.Headers.ContentLength;
@@ -601,39 +601,47 @@ public class LumaService : ILumaService
         if (needsDownload)
         {
         progress?.Report(("Downloading Luma mod...", 0));
-        HttpResponseMessage response;
+        HttpResponseMessage? response = null;
         try
         {
             response = await _http.GetAsync(mod.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
+
+            var total = response.Content.Headers.ContentLength ?? -1L;
+            var buffer = new byte[1024 * 1024]; // 1 MB
+            long downloaded = 0;
+
+            var tempPath = cachePath + ".tmp";
+            using (var netStream = await response.Content.ReadAsStreamAsync())
+            using (var cacheFile = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
+            {
+                int read;
+                while ((read = await netStream.ReadAsync(buffer)) > 0)
+                {
+                    await cacheFile.WriteAsync(buffer.AsMemory(0, read));
+                    downloaded += read;
+                    if (total > 0)
+                        progress?.Report(($"Downloading... {downloaded / 1024} KB",
+                                          (double)downloaded / total * 100));
+                }
+                cacheFile.Flush();
+            }
+
+            if (File.Exists(cachePath)) File.Delete(cachePath);
+            File.Move(tempPath, cachePath);
+        }
+        catch (HttpRequestException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             throw new HttpRequestException($"Failed to download Luma mod: {ex.Message}");
         }
-
-        var total = response.Content.Headers.ContentLength ?? -1L;
-        var buffer = new byte[1024 * 1024]; // 1 MB
-        long downloaded = 0;
-
-        var tempPath = cachePath + ".tmp";
-        using (var netStream = await response.Content.ReadAsStreamAsync())
-        using (var cacheFile = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
+        finally
         {
-            int read;
-            while ((read = await netStream.ReadAsync(buffer)) > 0)
-            {
-                await cacheFile.WriteAsync(buffer.AsMemory(0, read));
-                downloaded += read;
-                if (total > 0)
-                    progress?.Report(($"Downloading... {downloaded / 1024} KB",
-                                      (double)downloaded / total * 100));
-            }
-            cacheFile.Flush();
+            response?.Dispose();
         }
-
-        if (File.Exists(cachePath)) File.Delete(cachePath);
-        File.Move(tempPath, cachePath);
         } // end if (needsDownload)
 
         // Extract zip to game folder, tracking all extracted file names
@@ -714,9 +722,9 @@ public class LumaService : ILumaService
         progress?.Report(("Deploying shaders...", 95));
         try
         {
-            var exclLuma1 = selectedShaderPacks?
-                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                    StringComparer.OrdinalIgnoreCase);
+            var exclLuma1 = selectedShaderPacks == null ? null : await Task.Run(() =>
+                selectedShaderPacks.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                    StringComparer.OrdinalIgnoreCase));
             _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks, exclLuma1);
 
             // Track deployed shader files for clean uninstall
@@ -1292,9 +1300,9 @@ public class LumaService : ILumaService
         // ── 4. Deploy shaders ──
         try
         {
-            var exclLuma2 = selectedShaderPacks?
-                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                    StringComparer.OrdinalIgnoreCase);
+            var exclLuma2 = selectedShaderPacks == null ? null : await Task.Run(() =>
+                selectedShaderPacks.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                    StringComparer.OrdinalIgnoreCase));
             _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks, exclLuma2);
             var rsDir = Path.Combine(gameInstallPath, ShaderPackService.GameReShadeShaders);
             if (Directory.Exists(rsDir))

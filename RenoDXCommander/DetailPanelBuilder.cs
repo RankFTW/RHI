@@ -330,12 +330,6 @@ public partial class DetailPanelBuilder
             _window.DetailComponentsHeader.PointerExited  -= ComponentsHeader_PointerExited;
             _window.DetailComponentsHeader.PointerExited  += ComponentsHeader_PointerExited;
 
-            var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
-            var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
-            var cursorProp  = DetailPanelBuilder.CursorProp;
-            _window.DetailComponentsHeader.PointerEntered += (s, e) => cursorProp?.SetValue(_window.DetailComponentsHeader, handCursor);
-            _window.DetailComponentsHeader.PointerExited  += (s, e) => cursorProp?.SetValue(_window.DetailComponentsHeader, arrowCursor);
-
             // Insert/replace drag handle as first child (tagged "DragHandle" for identification)
             var dragHandle = MakeDragHandle(_window.DetailComponentSection);
             dragHandle.Tag = "DragHandle";

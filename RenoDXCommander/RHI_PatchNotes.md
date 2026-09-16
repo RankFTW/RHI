@@ -2,12 +2,32 @@
 
 ### Bug Fixes
 
-- Fixed UI becoming unresponsive for ~5 seconds when clicking Install ReShade — shader pack exclusion data was being read on the UI thread while background pack checks could hold the settings lock concurrently. Exclusions are now built on a background thread.
+- Fixed the UI becoming permanently unresponsive (hard freeze) that could happen at any point during normal use — clicking games, opening dropdowns, installing components, or just navigating. The root cause was a deadlock between shader pack settings reads (synchronous) and background shader pack downloads (asynchronous) competing for the same lock. Present since v2.4.0.
+- Fixed drag-drop addon download errors hanging for 10 seconds before silently disappearing — error dialogs now show immediately.
+- Fixed connecting to Nexus Mods via SSO freezing the app.
+- Fixed the background scan occasionally freezing the app while refreshing the game list.
+- Fixed installing RenoDX, ReShade, Luma, RE Framework, or emulator addons leaving a spinning progress indicator stuck on screen after the operation completed.
+- Fixed Luma install progress status ("Updating DLSS...", "Installing ReShade...", "Installing dgVoodoo2...") not updating during install.
+- Fixed Check For Updates hanging if another dialog was open at the same moment.
+- Fixed progress dialogs for Profile Import, Profile Reset, and Full Refresh occasionally not closing properly, leaving the app unable to open any further dialogs.
+- Fixed Mass DLSS Deploy and Restore All dialogs occasionally leaving the app unable to open further dialogs.
+- Fixed Update All (RenoDX, ReShade, RE Framework, DOF Fix) leaving games stuck with a spinning progress indicator after completing.
+- Fixed drag-dropping a Luma archive with multiple subfolders hanging the UI while waiting for you to pick a folder.
+- Fixed `--launch` command-line argument occasionally deadlocking on startup.
+
+### Maintenance
+
+- Fixed a gradual memory and socket leak — HTTP response objects across multiple services were not being properly disposed.
+- Fixed startup slowdown caused by PCGamingWiki URL lookups blocking background threads during parallel game detection. PCGW URLs now resolve from cache only during startup; any games not yet in the cache pick up their link on the next background refresh.
+- Fixed a gradual memory leak where event handlers accumulated on the Components section header on every panel rebuild.
+- Fixed a rare race condition in DLSS skip cache that could cause incorrect scan counts when multiple games were scanned simultaneously.
+- Fixed dgVoodoo2 uninstall and ReShade artifact cleanup silently aborting if a file was locked by another process.
 
 ### Manifest Updates
 
 - Added "Banishers: Ghosts of New Eden - The Wanderer Set DLC" to blacklist — was being incorrectly detected as a game.
 - Removed Elden Ring and Elden Ring: Nightreign from `forceExternalOnly` — both mods are now in the RHI database with direct download links, so the Nexus redirect is no longer needed.
+
 ## v2.7.2
 
 ### New

@@ -56,22 +56,18 @@ public static class ShaderPopupHelper
 
         var selected = new HashSet<string>(currentSelection ?? [], StringComparer.OrdinalIgnoreCase);
 
-        // Pre-compute pack cache state and exclusions on a background thread so the UI thread
-        // never blocks on _settingsLock.Wait() while a shader pack download is in progress.
-        var packCacheState = await Task.Run(() =>
+        // Pre-compute pack cache state and exclusions using async methods to avoid
+        // blocking on _settingsLock while a shader pack download is in progress.
+        var packCacheState = new Dictionary<string, (bool IsCached, HashSet<string> Exclusions)>(
+            StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, _, _) in shaderPackService.AvailablePacks)
         {
-            var result = new Dictionary<string, (bool IsCached, HashSet<string> Exclusions)>(
-                StringComparer.OrdinalIgnoreCase);
-            foreach (var (id, _, _) in shaderPackService.AvailablePacks)
-            {
-                var cached = shaderPackService.IsPackCached(id);
-                var excl   = cached
-                    ? shaderPackService.GetExcludedFiles(id)
-                    : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                result[id] = (cached, excl);
-            }
-            return result;
-        });
+            var cached = await shaderPackService.IsPackCachedAsync(id);
+            var excl   = cached
+                ? await shaderPackService.GetExcludedFilesAsync(id)
+                : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            packCacheState[id] = (cached, excl);
+        }
 
         // Build the include map once — used for dependency auto-select
         Dictionary<string, HashSet<string>> includeMap;

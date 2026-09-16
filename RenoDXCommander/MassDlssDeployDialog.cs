@@ -464,7 +464,8 @@ public class MassDlssDeployDialog
             card.NotifyAll();
         }
 
-        // Close progress dialog by dismissing it
+        // Close progress dialog — release gate explicitly before Hide
+        if (!deployGateReleased) { deployGateReleased = true; DialogService.ReleaseDialogGate(); }
         progressDialog.Hide();
 
         // Restore auto-create flag
@@ -576,6 +577,8 @@ public class MassDlssDeployDialog
             if (presetReset) presetsResetCount++;
         }
 
+        // Close progress dialog — release gate explicitly before Hide
+        if (!restoreGateReleased) { restoreGateReleased = true; DialogService.ReleaseDialogGate(); }
         progressDialog.Hide();
 
         var reportText = new System.Text.StringBuilder();

@@ -23,6 +23,13 @@ public interface IPcgwService
     Task<string?> ResolveUrlAsync(string gameName, int? steamAppId, string installPath, RemoteManifest? manifest);
 
     /// <summary>
+    /// Synchronous cache-only URL resolution. Returns the cached URL if available,
+    /// or null if a network lookup is required. Use this inside Parallel.ForEach
+    /// to avoid thread pool starvation from blocking async calls.
+    /// </summary>
+    string? TryResolveUrlFromCache(string gameName, RemoteManifest? manifest);
+
+    /// <summary>
     /// Forces an immediate write of the AppID cache to disk.
     /// Call during app shutdown to ensure pending debounced writes are flushed.
     /// </summary>

@@ -193,6 +193,36 @@ public class PcgwService : IPcgwService
     }
 
     /// <summary>
+    /// Synchronous cache-only URL resolution. Returns the cached URL if available,
+    /// or null if a network lookup would be required. Use this inside Parallel.ForEach
+    /// to avoid thread pool starvation from blocking async calls.
+    /// </summary>
+    public string? TryResolveUrlFromCache(string gameName, RemoteManifest? manifest)
+    {
+        // 1. Manifest pcgwUrlOverrides (highest priority).
+        if (manifest?.PcgwUrlOverrides != null
+            && manifest.PcgwUrlOverrides.TryGetValue(gameName, out var overrideUrl)
+            && !string.IsNullOrEmpty(overrideUrl))
+        {
+            return overrideUrl;
+        }
+
+        var normalized = _gameDetection.NormalizeName(gameName);
+
+        // 2. Cached wiki URL — avoids HTTP calls every session.
+        if (!string.IsNullOrEmpty(normalized) && _urlCache.TryGetValue(normalized, out var cachedUrl))
+            return cachedUrl;
+
+        // 3. Check for cached negative result — game is known to have no PCGW page.
+        if (!string.IsNullOrEmpty(normalized) && _appIdCache.TryGetValue(normalized, out var cachedId) && cachedId == -1)
+            return null;
+
+        // Return null to indicate a network lookup is needed.
+        // Caller should schedule ResolveUrlAsync for post-loop resolution.
+        return null;
+    }
+
+    /// <summary>
     /// Constructs the PCGW appid.php redirect URL for a given Steam AppID.
     /// Exposed as static for testability (Property 6).
     /// </summary>

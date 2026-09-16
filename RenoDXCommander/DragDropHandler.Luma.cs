@@ -138,18 +138,22 @@ public partial class DragDropHandler
             async Task<string?> FolderPicker(List<string> folders)
             {
                 var tcs = new TaskCompletionSource<string?>();
-                _window.DispatcherQueue.TryEnqueue(async () =>
+                // Capture combo reference for result extraction
+                Microsoft.UI.Xaml.Controls.ComboBox? combo = null;
+                Microsoft.UI.Xaml.Controls.ContentDialog? dialog = null;
+
+                _window.DispatcherQueue.TryEnqueue(() =>
                 {
                     try
                     {
-                        var combo = new Microsoft.UI.Xaml.Controls.ComboBox
+                        combo = new Microsoft.UI.Xaml.Controls.ComboBox
                         {
                             ItemsSource = folders,
                             SelectedIndex = 0,
                             FontSize = 12,
                             HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
                         };
-                        var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                        dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
                         {
                             Title = "Select Folder",
                             Content = new Microsoft.UI.Xaml.Controls.StackPanel
@@ -171,17 +175,37 @@ public partial class DragDropHandler
                             XamlRoot = _window.Content.XamlRoot,
                             RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
                         };
-                        var dialogResult = await DialogService.ShowSafeAsync(dialog);
-                        tcs.SetResult(dialogResult == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary
-                            ? combo.SelectedItem as string : null);
+
+                        // Show dialog and handle result in continuation on UI thread
+                        _ = ShowFolderPickerDialogAsync(dialog, combo, tcs);
                     }
                     catch (Exception ex)
                     {
-                        _crashReporter.Log($"[DragDropHandler.FolderPicker] Dialog error — {ex.Message}");
-                        tcs.SetResult(null);
+                        _crashReporter.Log($"[DragDropHandler.FolderPicker] Dialog setup error — {ex.Message}");
+                        tcs.TrySetResult(null);
                     }
                 });
                 return await tcs.Task;
+            }
+
+            // Helper to show the folder picker dialog — runs entirely on UI thread
+            async Task ShowFolderPickerDialogAsync(
+                Microsoft.UI.Xaml.Controls.ContentDialog dialog,
+                Microsoft.UI.Xaml.Controls.ComboBox combo,
+                TaskCompletionSource<string?> tcs)
+            {
+                try
+                {
+                    var dialogResult = await DialogService.ShowSafeAsync(dialog);
+                    // We're still on UI thread after await — safe to access combo.SelectedItem
+                    tcs.TrySetResult(dialogResult == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary
+                        ? combo.SelectedItem as string : null);
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[DragDropHandler.FolderPicker] Dialog error — {ex.Message}");
+                    tcs.TrySetResult(null);
+                }
             }
 
             var record = await _lumaService.InstallFromArchiveAsync(

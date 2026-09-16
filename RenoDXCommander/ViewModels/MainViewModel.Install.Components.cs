@@ -240,7 +240,8 @@ public partial class MainViewModel
         }
         finally
         {
-            card.IsInstalling = false;
+            if (DispatchUiAction != null) DispatchUiAction(() => card.IsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.IsInstalling = false);
         }
     }
 
@@ -448,7 +449,7 @@ public partial class MainViewModel
         var tempPath = GetUlCachePath(is32Bit) + ".tmp";
 
         progress?.Report(("Downloading...", 0));
-        var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         resp.EnsureSuccessStatusCode();
 
         var total = resp.Content.Headers.ContentLength ?? -1L;
@@ -662,7 +663,7 @@ public partial class MainViewModel
         var tempPath = GetDcCachePath(is32Bit) + ".tmp";
 
         progress?.Report(("Downloading...", 0));
-        var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         resp.EnsureSuccessStatusCode();
 
         var total = resp.Content.Headers.ContentLength ?? -1L;
@@ -924,7 +925,7 @@ public partial class MainViewModel
         if (_latestUlReleaseBody != null) return;
         try
         {
-            var response = await _http.GetAsync(UlChangelogUrl).ConfigureAwait(false);
+            using var response = await _http.GetAsync(UlChangelogUrl).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
                 _crashReporter.Log($"[EnsureUlReleaseBodyAsync] HTTP {(int)response.StatusCode} fetching CHANGELOG.md");
@@ -952,7 +953,7 @@ public partial class MainViewModel
     {
         try
         {
-            var response = await _http.GetAsync(DcChangelogUrl).ConfigureAwait(false);
+            using var response = await _http.GetAsync(DcChangelogUrl).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
                 _crashReporter.Log($"[EnsureDcReleaseBodyAsync] HTTP {(int)response.StatusCode} fetching CHANGELOG.md");

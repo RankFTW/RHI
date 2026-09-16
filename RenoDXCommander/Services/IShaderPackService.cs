@@ -40,6 +40,11 @@ public interface IShaderPackService
     /// </summary>
     bool IsPackCached(string packId);
 
+    /// <summary>
+    /// Returns true if the given pack's files are already cached locally (async-safe version).
+    /// </summary>
+    Task<bool> IsPackCachedAsync(string packId);
+
     void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null,
         Dictionary<string, HashSet<string>>? fileExclusions = null);
 
@@ -76,12 +81,24 @@ public interface IShaderPackService
     /// <summary>Gets the set of shader filenames explicitly excluded by the user for this pack.</summary>
     HashSet<string> GetExcludedFiles(string packId);
 
+    /// <summary>Gets the set of shader filenames explicitly excluded by the user for this pack (async-safe version).</summary>
+    Task<HashSet<string>> GetExcludedFilesAsync(string packId);
+
     /// <summary>Saves the excluded files for a pack.</summary>
     void SetExcludedFiles(string packId, IEnumerable<string> excluded);
+
+    /// <summary>Saves the excluded files for a pack (async-safe version).</summary>
+    Task SetExcludedFilesAsync(string packId, IEnumerable<string> excluded);
 
     /// <summary>
     /// Scans the pack's staging subfolder and records all found files in settings.json.
     /// Used after importing shader files from an archive.
     /// </summary>
     void RecordExtractedFilesFromDir(string packId);
+
+    /// <summary>
+    /// Scans the pack's staging subfolder and records all found files in settings.json (async-safe version).
+    /// Used after importing shader files from an archive.
+    /// </summary>
+    Task RecordExtractedFilesFromDirAsync(string packId);
 }

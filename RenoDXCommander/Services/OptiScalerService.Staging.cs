@@ -96,7 +96,7 @@ public partial class OptiScalerService
 
             try
             {
-                var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                using var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 if (!dlResp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.EnsureStagingAsync] Download failed ({dlResp.StatusCode})");
@@ -479,7 +479,7 @@ public partial class OptiScalerService
             Directory.CreateDirectory(OptiPatcherStagingDir);
             try
             {
-                var dlResp = await _http.GetAsync(downloadUrl);
+                using var dlResp = await _http.GetAsync(downloadUrl);
                 if (!dlResp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Download failed ({dlResp.StatusCode})");
@@ -659,9 +659,9 @@ public partial class OptiScalerService
             string manifestJson;
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, DlssManifestUrl);
+                using var req = new HttpRequestMessage(HttpMethod.Get, DlssManifestUrl);
                 req.Headers.Add("User-Agent", "RHI");
-                var resp = await _http.SendAsync(req);
+                using var resp = await _http.SendAsync(req);
                 if (!resp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.CheckDlssUpdateAsync] Manifest fetch returned {resp.StatusCode}");
@@ -879,7 +879,7 @@ public partial class OptiScalerService
 
             try
             {
-                var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                using var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 if (!dlResp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Download failed ({dlResp.StatusCode})");
@@ -1154,7 +1154,7 @@ public partial class OptiScalerService
 
             try
             {
-                var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                using var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 if (!dlResp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Download failed ({dlResp.StatusCode})");

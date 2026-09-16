@@ -1322,12 +1322,13 @@ public partial class MainViewModel
             }
             catch (Exception ex) { _crashReporter.Log($"[BuildCards] NexusModsUrl resolve failed for '{game.Name}' — {ex.Message}"); }
 
+            // Use synchronous cache-only check inside parallel loop to avoid thread pool starvation.
+            // Cards needing network lookup will be resolved post-loop.
             try
             {
-                newCard.PcgwUrl = _pcgwService.ResolveUrlAsync(game.Name, game.SteamAppId, installPath, _manifest)
-                    .GetAwaiter().GetResult();
+                newCard.PcgwUrl = _pcgwService.TryResolveUrlFromCache(game.Name, _manifest);
             }
-            catch (Exception ex) { _crashReporter.Log($"[BuildCards] PcgwUrl resolve failed for '{game.Name}' — {ex.Message}"); }
+            catch (Exception ex) { _crashReporter.Log($"[BuildCards] PcgwUrl cache check failed for '{game.Name}' — {ex.Message}"); }
 
             try
             {

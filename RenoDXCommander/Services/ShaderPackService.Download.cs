@@ -73,6 +73,24 @@ public partial class ShaderPackService
         return PackHasExtractedFilesSync(pack.Id, cachePath);
     }
 
+    /// <summary>
+    /// Returns true if the given pack's files are already cached locally (async-safe).
+    /// </summary>
+    public async Task<bool> IsPackCachedAsync(string packId)
+    {
+        var pack = _packs.FirstOrDefault(p => p.Id.Equals(packId, StringComparison.OrdinalIgnoreCase));
+        if (pack == null) return false;
+
+        // Check if the cache zip exists and files are extracted
+        var cacheFiles = Directory.Exists(DownloadPaths.Shaders)
+            ? Directory.GetFiles(DownloadPaths.Shaders, $"shaders_{pack.Id}.*")
+            : Array.Empty<string>();
+        var cachePath = cacheFiles.FirstOrDefault(f => !f.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase));
+        if (cachePath == null) return false;
+
+        return await PackHasExtractedFilesAsync(pack.Id, cachePath).ConfigureAwait(false);
+    }
+
     // ── Per-pack download + extract ───────────────────────────────────────────────
 
     private async Task EnsurePackAsync(
@@ -571,6 +589,26 @@ public partial class ShaderPackService
         finally { _settingsLock.Release(); }
     }
 
+    /// <summary>Gets the set of shader filenames explicitly excluded by the user for this pack (async-safe).</summary>
+    public async Task<HashSet<string>> GetExcludedFilesAsync(string packId)
+    {
+        await _settingsLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var d = ReadSettings();
+            if (!d.TryGetValue(ExcludedFilesKey(packId), out var json) || string.IsNullOrEmpty(json))
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var list = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+            return new HashSet<string>(list, StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ShaderPackService.GetExcludedFilesAsync] Failed for '{packId}' — {ex.Message}");
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+        finally { _settingsLock.Release(); }
+    }
+
     public void SetExcludedFiles(string packId, IEnumerable<string> excluded)
     {
         _settingsLock.Wait();
@@ -588,6 +626,28 @@ public partial class ShaderPackService
         catch (Exception ex)
         {
             CrashReporter.Log($"[ShaderPackService.SetExcludedFiles] Failed for '{packId}' — {ex.Message}");
+        }
+        finally { _settingsLock.Release(); }
+    }
+
+    /// <summary>Saves the excluded files for a pack (async-safe).</summary>
+    public async Task SetExcludedFilesAsync(string packId, IEnumerable<string> excluded)
+    {
+        await _settingsLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var d = new Dictionary<string, string>(ReadSettings());
+            var list = excluded.ToList();
+            if (list.Count > 0)
+                d[ExcludedFilesKey(packId)] = JsonSerializer.Serialize(list);
+            else
+                d.Remove(ExcludedFilesKey(packId));
+            WriteSettings(d);
+            CrashReporter.Log($"[ShaderPackService.SetExcludedFilesAsync] Saved {list.Count} exclusion(s) for '{packId}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ShaderPackService.SetExcludedFilesAsync] Failed for '{packId}' — {ex.Message}");
         }
         finally { _settingsLock.Release(); }
     }
@@ -627,6 +687,45 @@ public partial class ShaderPackService
             // No version token — leave any existing version as-is
             WriteSettings(d);
             CrashReporter.Log($"[ShaderPackService.RecordExtractedFilesFromDir] Recorded {files.Count} file(s) for pack '{packId}'");
+        }
+        finally { _settingsLock.Release(); }
+    }
+
+    /// <summary>
+    /// Scans the pack's staging subfolder and records all found files in settings.json (async-safe).
+    /// Used after importing shader files from an archive.
+    /// </summary>
+    public async Task RecordExtractedFilesFromDirAsync(string packId)
+    {
+        var packShadersDir = Path.Combine(ShadersDir, packId);
+        var packTexturesDir = Path.Combine(TexturesDir, packId);
+        var files = new List<string>();
+
+        if (Directory.Exists(packShadersDir))
+        {
+            foreach (var file in Directory.EnumerateFiles(packShadersDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(packShadersDir, file);
+                files.Add(Path.Combine("Shaders", packId, rel));
+            }
+        }
+        if (Directory.Exists(packTexturesDir))
+        {
+            foreach (var file in Directory.EnumerateFiles(packTexturesDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(packTexturesDir, file);
+                files.Add(Path.Combine("Textures", packId, rel));
+            }
+        }
+
+        await _settingsLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var d = new Dictionary<string, string>(ReadSettings());
+            d[FileListKey(packId)] = JsonSerializer.Serialize(files);
+            // No version token — leave any existing version as-is
+            WriteSettings(d);
+            CrashReporter.Log($"[ShaderPackService.RecordExtractedFilesFromDirAsync] Recorded {files.Count} file(s) for pack '{packId}'");
         }
         finally { _settingsLock.Release(); }
     }

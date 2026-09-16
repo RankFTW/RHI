@@ -46,8 +46,8 @@ public class DgVoodooService
             // Check if already cached via Content-Length comparison
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Head, url);
-                var resp = await _http.SendAsync(req).ConfigureAwait(false);
+                using var req = new HttpRequestMessage(HttpMethod.Head, url);
+                using var resp = await _http.SendAsync(req).ConfigureAwait(false);
                 if (resp.IsSuccessStatusCode)
                 {
                     var remoteSize = resp.Content.Headers.ContentLength;
@@ -69,7 +69,7 @@ public class DgVoodooService
         var tempPath = zipPath + ".tmp";
         try
         {
-            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             var buf = new byte[1024 * 1024];
             using (var net = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
@@ -171,7 +171,14 @@ public class DgVoodooService
         var d3d9Path = Path.Combine(installPath, D3D9Dll);
         if (File.Exists(d3d9Path) || File.Exists(d3d9Path + ".original"))
         {
-            if (File.Exists(d3d9Path)) File.Delete(d3d9Path);
+            try
+            {
+                if (File.Exists(d3d9Path)) File.Delete(d3d9Path);
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Failed to delete {D3D9Dll} — {ex.Message}");
+            }
             AuxInstallService.SentinelRestore(d3d9Path);
             CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Removed/restored {D3D9Dll} in '{installPath}'");
         }
@@ -179,8 +186,15 @@ public class DgVoodooService
         var confPath = Path.Combine(installPath, ConfFile);
         if (File.Exists(confPath))
         {
-            File.Delete(confPath);
-            CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Deleted {ConfFile} in '{installPath}'");
+            try
+            {
+                File.Delete(confPath);
+                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Deleted {ConfFile} in '{installPath}'");
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Failed to delete {ConfFile} — {ex.Message}");
+            }
         }
     }
 

@@ -974,7 +974,7 @@ public class AddonPackService : IAddonPackService
         var tempPath = destPath + ".tmp";
         try
         {
-            var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
             if (!resp.IsSuccessStatusCode)
             {
                 CrashReporter.Log($"[AddonPackService.DownloadFileAsync] HTTP {resp.StatusCode} for {url}");
@@ -1104,13 +1104,13 @@ public class AddonPackService : IAddonPackService
             if (effectiveUrl.EndsWith("/releases/latest", StringComparison.OrdinalIgnoreCase))
                 effectiveUrl = effectiveUrl[..^"/latest".Length] + "?per_page=1";
 
-            var req = new HttpRequestMessage(HttpMethod.Get, effectiveUrl);
+            using var req = new HttpRequestMessage(HttpMethod.Get, effectiveUrl);
             req.Headers.Add("User-Agent", "RHI");
             req.Headers.Add("Accept", "application/vnd.github+json");
             var token = DevUnlockService.GitHubApiToken;
             if (!string.IsNullOrEmpty(token))
                 req.Headers.Add("Authorization", $"Bearer {token}");
-            var resp = await _http.SendAsync(req).ConfigureAwait(false);
+            using var resp = await _http.SendAsync(req).ConfigureAwait(false);
             if (!resp.IsSuccessStatusCode)
             {
                 CrashReporter.Log($"[AddonPackService.ResolveDownloadUrlFromApiAsync] HTTP {(int)resp.StatusCode} for {effectiveUrl}");
@@ -1211,9 +1211,9 @@ public class AddonPackService : IAddonPackService
             }
 
             // Fall back to HEAD request for ETag/Last-Modified/Content-Length
-            var req = new HttpRequestMessage(HttpMethod.Head, url);
+            using var req = new HttpRequestMessage(HttpMethod.Head, url);
             req.Headers.Add("User-Agent", "RHI");
-            var resp = await _http.SendAsync(req);
+            using var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode) return "unknown";
             // Prefer Content-Length (most reliable for binary files)
             var contentLength = resp.Content.Headers.ContentLength;

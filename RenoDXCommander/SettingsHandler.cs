@@ -2195,35 +2195,42 @@ public class SettingsHandler
         }
         catch (OperationCanceledException) { }
 
-        _window.DispatcherQueue?.TryEnqueue(async () =>
+        // Validate the key on a background thread, then marshal ALL UI updates to the dispatcher
+        _ = Task.Run(async () =>
         {
-            _window.NexusConnectBtn.IsEnabled = true;
-
-            if (string.IsNullOrEmpty(receivedKey))
+            NexusUserInfo? info = null;
+            if (!string.IsNullOrEmpty(receivedKey))
             {
-                _window.NexusStatusText.Text = "Authorisation timed out or was cancelled.";
-                _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
-                return;
+                try { info = await nexusDl.ValidateApiKeyAsync(receivedKey); }
+                catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Validate failed — {ex.Message}"); }
             }
 
-            _window.NexusStatusText.Text = "Validating...";
-            _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
-
-            var info = await nexusDl.ValidateApiKeyAsync(receivedKey).ConfigureAwait(false);
-            if (info == null)
+            _window.DispatcherQueue?.TryEnqueue(() =>
             {
-                _window.NexusStatusText.Text = "Received key was invalid. Please try again.";
-                _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
-                return;
-            }
+                _window.NexusConnectBtn.IsEnabled = true;
 
-            ViewModel.Settings.NexusApiKey    = receivedKey;
-            ViewModel.Settings.NexusIsPremium = info.IsPremium;
-            ViewModel.Settings.NexusUsername  = info.Name;
-            ViewModel.SaveSettingsPublic();
+                if (string.IsNullOrEmpty(receivedKey))
+                {
+                    _window.NexusStatusText.Text = "Authorisation timed out or was cancelled.";
+                    _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
+                    return;
+                }
 
-            RefreshNexusStatus();
-            CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Connected via SSO as {info.Name} (Premium={info.IsPremium})");
+                if (info == null)
+                {
+                    _window.NexusStatusText.Text = "Received key was invalid. Please try again.";
+                    _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
+                    return;
+                }
+
+                ViewModel.Settings.NexusApiKey    = receivedKey;
+                ViewModel.Settings.NexusIsPremium = info.IsPremium;
+                ViewModel.Settings.NexusUsername  = info.Name;
+                ViewModel.SaveSettingsPublic();
+
+                RefreshNexusStatus();
+                CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Connected via SSO as {info.Name} (Premium={info.IsPremium})");
+            });
         });
     }
 

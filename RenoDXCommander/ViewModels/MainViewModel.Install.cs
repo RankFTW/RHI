@@ -978,15 +978,18 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            card.ActionMessage = $"❌ Failed: {ex.Message}";
+            DispatcherQueue?.TryEnqueue(() => card.ActionMessage = $"❌ Failed: {ex.Message}");
             _crashReporter.WriteCrashReport("InstallModAsync", ex, note: $"Game: {card.GameName}, Path: {card.InstallPath}");
         }
         finally
         {
-            card.IsInstalling = false;
-            // Restore original URL if we swapped to 32-bit for the install
-            if (swappedTo32 && card.Mod != null && originalSnapshotUrl != null)
-                card.Mod.SnapshotUrl = originalSnapshotUrl;
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.IsInstalling = false;
+                // Restore original URL if we swapped to 32-bit for the install
+                if (swappedTo32 && card.Mod != null && originalSnapshotUrl != null)
+                    card.Mod.SnapshotUrl = originalSnapshotUrl;
+            });
         }
     }
 

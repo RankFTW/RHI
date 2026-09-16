@@ -445,6 +445,11 @@ public class AutoUpdateService
     /// Marshals an async operation onto the given DispatcherQueue and awaits its completion.
     /// This ensures card property changes (ObservableProperty setters) fire PropertyChanged
     /// on the UI thread, preventing cross-thread WinUI exceptions.
+    ///
+    /// Note: While TryEnqueue(async lambda) is generally unsafe because it returns immediately,
+    /// this pattern is safe because: (1) the TaskCompletionSource ensures the caller awaits full
+    /// completion, and (2) WinUI's SynchronizationContext ensures async continuations resume on
+    /// the UI thread. Do NOT add ConfigureAwait(false) to any awaits in the work delegate.
     /// </summary>
     private static Task DispatchAsync(Microsoft.UI.Dispatching.DispatcherQueue dispatcher, Func<Task> work)
     {

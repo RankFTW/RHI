@@ -73,10 +73,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
-                {
-                    card.ActionMessage   = p.msg;
-                    card.InstallProgress = p.pct;
-                });
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        card.ActionMessage   = p.msg;
+                        card.InstallProgress = p.pct;
+                    }));
                 var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName, card.Source).ConfigureAwait(false);
 
                 // Preserve per-game Engine.ini toggle state from the previous record
@@ -144,9 +145,12 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             }
             finally
             {
-                card.IsInstalling = false;
-                if (swappedTo32 && card.Mod != null && originalSnapshotUrl != null)
-                    card.Mod.SnapshotUrl = originalSnapshotUrl;
+                dispatcherQueue?.TryEnqueue(() =>
+                {
+                    card.IsInstalling = false;
+                    if (swappedTo32 && card.Mod != null && originalSnapshotUrl != null)
+                        card.Mod.SnapshotUrl = originalSnapshotUrl;
+                });
             }
         }
 
@@ -202,10 +206,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
-                {
-                    card.RsActionMessage = p.msg;
-                    card.RsProgress      = p.pct;
-                });
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        card.RsActionMessage = p.msg;
+                        card.RsProgress      = p.pct;
+                    }));
                 var rsOverride = card.DllOverrideEnabled
                     ? dllOverrideService.GetDllOverride(card.GameName)?.ReShadeFileName
                     : (manifestDllResolver?.Invoke(card.GameName)?.ReShade is { Length: > 0 } mRs
@@ -243,7 +248,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 card.RsActionMessage = $"❌ Failed: {ex.Message}";
                 _crashReporter.WriteCrashReport("UpdateAllReShade", ex, note: $"Game: {card.GameName}");
             }
-            finally { card.RsIsInstalling = false; }
+            finally { dispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false); }
         }
 
         // ── Vulkan games (global layer DLL) ───────────────────────────────────
@@ -399,7 +404,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     vCard.RsActionMessage = $"❌ Failed: {ex.Message}";
                     _crashReporter.WriteCrashReport("UpdateAllReShade.Vulkan", ex, note: $"Game: {vCard.GameName}");
                 }
-                finally { vCard.RsIsInstalling = false; }
+                finally { dispatcherQueue?.TryEnqueue(() => vCard.RsIsInstalling = false); }
             }
         }
 
@@ -444,10 +449,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
-                {
-                    card.RefActionMessage = p.msg;
-                    card.RefProgress = p.pct;
-                });
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        card.RefActionMessage = p.msg;
+                        card.RefProgress = p.pct;
+                    }));
                 var record = await _refService.InstallAsync(card.GameName, card.InstallPath, progress, card.Source).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
@@ -464,7 +470,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 card.RefActionMessage = $"❌ Failed: {ex.Message}";
                 _crashReporter.WriteCrashReport("UpdateAllREFramework", ex, note: $"Game: {card.GameName}");
             }
-            finally { card.RefIsInstalling = false; }
+            finally { dispatcherQueue?.TryEnqueue(() => card.RefIsInstalling = false); }
         }
 
         dispatcherQueue?.TryEnqueue(() => notifyUpdateState());
@@ -488,10 +494,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
-                {
-                    card.DofFixActionMessage = p.msg;
-                    card.DofFixProgress = p.pct;
-                });
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        card.DofFixActionMessage = p.msg;
+                        card.DofFixProgress = p.pct;
+                    }));
                 var success = await dofFixService.InstallAsync(card.InstallPath, progress).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
@@ -514,7 +521,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 card.DofFixActionMessage = $"❌ Failed: {ex.Message}";
                 _crashReporter.WriteCrashReport("UpdateAllDofFix", ex, note: $"Game: {card.GameName}");
             }
-            finally { card.DofFixIsInstalling = false; }
+            finally { dispatcherQueue?.TryEnqueue(() => card.DofFixIsInstalling = false); }
         }
 
         dispatcherQueue?.TryEnqueue(() => notifyUpdateState());

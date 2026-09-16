@@ -677,7 +677,7 @@ public partial class MainViewModel
             var tempPath = GetDcCachePath(is32Bit) + ".precache.tmp";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
-            var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
+            using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
             if (!resp.IsSuccessStatusCode) return;
 
             using (var net = await resp.Content.ReadAsStreamAsync())
@@ -755,7 +755,7 @@ public partial class MainViewModel
             var tempPath = GetUlCachePath(is32Bit) + ".precache.tmp";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
-            var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
+            using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
             if (!resp.IsSuccessStatusCode) return;
 
             using (var net = await resp.Content.ReadAsStreamAsync())

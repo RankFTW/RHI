@@ -1156,11 +1156,16 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
+        
+        // Use explicit gate pattern to ensure proper gate release even if operation completes quickly
+        bool refreshGateReleased = false;
+        progressDialog.Closed += (_, _) => { if (!refreshGateReleased) { refreshGateReleased = true; DialogService.ReleaseDialogGate(); } };
         _ = DialogService.ShowSafeAsync(progressDialog);
 
         var uiProgress = new Progress<string>(msg => DispatcherQueue?.TryEnqueue(() => progressText.Text = msg));
         await ViewModel.FullRefreshAsync(uiProgress);
 
+        refreshGateReleased = true;
         progressDialog.Hide();
         RestoreScrollAndSelection(selectedName);
     }

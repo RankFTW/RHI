@@ -267,14 +267,16 @@ public sealed partial class MainWindow : Window
         {
             var name = App._pendingLaunchGame;
             App._pendingLaunchGame = null;
-            DispatcherQueue.TryEnqueue(async () =>
+            // Use a DispatcherTimer to wait for cards to be built (avoids TryEnqueue + async + Task.Delay deadlock risk)
+            var launchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            launchTimer.Tick += (_, _) =>
             {
-                // Wait for cards to be built
-                await Task.Delay(2000);
+                launchTimer.Stop();
                 var card = ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
                 if (card != null) LaunchGame(card);
-            });
+            };
+            launchTimer.Start();
         }
 
         // Installer shutdown signal — allows the Inno Setup installer to request
