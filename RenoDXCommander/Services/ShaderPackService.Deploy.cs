@@ -163,7 +163,7 @@ public partial class ShaderPackService
     /// </summary>
     public bool IsManagedByRdxc(string gameDir)
     {
-        var marker = Path.Combine(gameDir, GameReShadeShaders, ManagedMarkerFile);
+        var marker = Path.Combine(gameDir, GameReShadeShaders, ManagedMarkerFileName);
         return File.Exists(marker);
     }
 
@@ -176,7 +176,7 @@ public partial class ShaderPackService
         try
         {
             var rsDir = Path.Combine(gameDir, GameReShadeShaders);
-            var marker = Path.Combine(rsDir, ManagedMarkerFile);
+            var marker = Path.Combine(rsDir, ManagedMarkerFileName);
             Directory.CreateDirectory(rsDir);
             File.WriteAllText(marker, ManagedMarkerContent);
         }

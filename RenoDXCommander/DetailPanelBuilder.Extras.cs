@@ -20,6 +20,7 @@ public partial class DetailPanelBuilder
 {
     public void BuildExtrasSection(GameCardViewModel card)
     {
+        var __exSw = System.Diagnostics.Stopwatch.StartNew();
         _window.ExtrasPanel.Children.Clear();
         _window.ExtrasContainer.Visibility = Visibility.Visible;
 
@@ -71,30 +72,44 @@ public partial class DetailPanelBuilder
         };
 
         // ── Ultimate ASI Loader row ───────────────────────────────────────────
+        var __t0 = __exSw.ElapsedMilliseconds;
         BuildUalRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] UalRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── MFG Unlocks separator ─────────────────────────────────────────────
         exBody.Children.Add(MakeExtrasSeparator("MFG Unlocks"));
 
         // ── RTX 40 MFG Unlock row ─────────────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
         BuildRtx40MfgRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] Rtx40MfgRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── MFG Ada Unlock row ────────────────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
         BuildMfgAdaUnlockRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] MfgAdaRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── 20/30 FG Unlock row ───────────────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
         BuildDlssg2030Row(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] Dlssg2030Row: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── Other separator ───────────────────────────────────────────────────
         exBody.Children.Add(MakeExtrasSeparator("Other"));
 
         // ── OptiScaler row ────────────────────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
         BuildOsRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] OsRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── DLSS Enabler (standalone) row ─────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
         BuildDlssEnablerRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] DlssEnablerRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         UpdateOsFeedback(card);
+        __exSw.Stop();
+        CrashReporter.Log($"[BuildExtrasSection] Total: {__exSw.ElapsedMilliseconds}ms '{card.GameName}'");
     }
 
     

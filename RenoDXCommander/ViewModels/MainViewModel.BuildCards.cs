@@ -1354,6 +1354,44 @@ public partial class MainViewModel
 
         cards.AddRange(cardBag);
 
+        // ── Post-loop PCGW URL resolution for cache misses ────────────────────
+        // TryResolveUrlFromCache returns null for any game not yet in the local cache.
+        // Resolve those in the background so the cache warms up for this and future sessions.
+        // Cards are updated in-place when their URL comes back.
+        var pcgwMissCards = cards
+            .Where(c => c.PcgwUrl == null && !string.IsNullOrEmpty(c.InstallPath))
+            .ToList();
+        if (pcgwMissCards.Count > 0)
+        {
+            _ = Task.Run(async () =>
+            {
+                _crashReporter.Log($"[BuildCards] PCGW post-loop resolving {pcgwMissCards.Count} cache miss(es)");
+                foreach (var card in pcgwMissCards)
+                {
+                    try
+                    {
+                        var url = await _pcgwService.ResolveUrlAsync(
+                            card.GameName,
+                            card.DetectedGame?.SteamAppId,
+                            card.InstallPath,
+                            _manifest).ConfigureAwait(false);
+                        if (url != null)
+                        {
+                            card.PcgwUrl = url;
+                            _crashReporter.Log($"[BuildCards] PCGW resolved post-loop: '{card.GameName}' → {url}");
+                            // If this card is currently selected, trigger a panel rebuild so the PCGW button appears
+                            if (SelectedGame == card)
+                                DispatcherQueue?.TryEnqueue(() => RequestCardRebuild?.Invoke(card));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[BuildCards] PCGW post-loop failed for '{card.GameName}' — {ex.Message}");
+                    }
+                }
+            });
+        }
+
         // ── Sync RTX HDR state from driver ────────────────────────────────────
         // IsRtxHdrEnabled is initially set from the persisted _rtxHdrGames HashSet.
         // After building, reconcile with the actual driver profile so changes made

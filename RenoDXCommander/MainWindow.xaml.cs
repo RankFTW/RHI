@@ -591,14 +591,18 @@ public sealed partial class MainWindow : Window
                             {
                                 if (ViewModel.CurrentViewLayout == ViewLayout.Detail)
                                 {
+                                    _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel start: '{target.GameName}'");
                                     PopulateDetailPanel(target);
+                                    _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel done, BuildOverridesPanel start: '{target.GameName}'");
                                     DetailPanel.Visibility = Visibility.Visible;
                                     BuildOverridesPanel(target);
+                                    _crashReporter?.Log($"[SelectionDebounce] BuildOverridesPanel done: '{target.GameName}'");
                                     if (OverridesContainer.Visibility != Visibility.Visible)        OverridesContainer.Visibility = Visibility.Visible;
                                     if (NeuralRenderingContainer.Visibility != Visibility.Visible)  NeuralRenderingContainer.Visibility = Visibility.Visible;
                                     if (NvidiaProfileContainer.Visibility != Visibility.Visible)    NvidiaProfileContainer.Visibility = Visibility.Visible;
                                     if (ManagementContainer.Visibility != Visibility.Visible)       ManagementContainer.Visibility = Visibility.Visible;
                                     _detailPanelBuilder.ApplySectionOrder();
+                                    _crashReporter?.Log($"[SelectionDebounce] ApplySectionOrder done: '{target.GameName}'");
                                 }
                                 else if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
                                 {

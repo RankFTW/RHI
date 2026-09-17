@@ -1,27 +1,24 @@
 ## v2.7.3
 
+## v2.7.3-beta
+
+**Beta note:** This build includes verbose diagnostic logging to help track down a UI freeze that occurs intermittently during normal use. The freeze is fully reproducible but its root cause hasn't been isolated yet — every major UI rendering operation now logs timing and semaphore state to the session log. If the app freezes, close it and share the session log from `%LocalAppData%\RHI\Logs\`. This logging will be removed before the final release.
+
 ### Bug Fixes
 
-- Fixed the UI becoming permanently unresponsive (hard freeze) that could happen at any point during normal use — clicking games, opening dropdowns, installing components, or just navigating. The root cause was a deadlock between shader pack settings reads (synchronous) and background shader pack downloads (asynchronous) competing for the same lock. Present since v2.4.0.
-- Fixed drag-drop addon download errors hanging for 10 seconds before silently disappearing — error dialogs now show immediately.
-- Fixed connecting to Nexus Mods via SSO freezing the app.
-- Fixed the background scan occasionally freezing the app while refreshing the game list.
-- Fixed installing RenoDX, ReShade, Luma, RE Framework, or emulator addons leaving a spinning progress indicator stuck on screen after the operation completed.
-- Fixed Luma install progress status ("Updating DLSS...", "Installing ReShade...", "Installing dgVoodoo2...") not updating during install.
-- Fixed Check For Updates hanging if another dialog was open at the same moment.
-- Fixed progress dialogs for Profile Import, Profile Reset, and Full Refresh occasionally not closing properly, leaving the app unable to open any further dialogs.
-- Fixed Mass DLSS Deploy and Restore All dialogs occasionally leaving the app unable to open further dialogs.
-- Fixed Update All (RenoDX, ReShade, RE Framework, DOF Fix) leaving games stuck with a spinning progress indicator after completing.
-- Fixed drag-dropping a Luma archive with multiple subfolders hanging the UI while waiting for you to pick a folder.
-- Fixed `--launch` command-line argument occasionally deadlocking on startup.
-
-### Maintenance
-
-- Fixed a gradual memory and socket leak — HTTP response objects across multiple services were not being properly disposed.
-- Fixed startup slowdown caused by PCGamingWiki URL lookups blocking background threads during parallel game detection. PCGW URLs now resolve from cache only during startup; any games not yet in the cache pick up their link on the next background refresh.
-- Fixed a gradual memory leak where event handlers accumulated on the Components section header on every panel rebuild.
-- Fixed a rare race condition in DLSS skip cache that could cause incorrect scan counts when multiple games were scanned simultaneously.
-- Fixed dgVoodoo2 uninstall and ReShade artifact cleanup silently aborting if a file was locked by another process.
+- Fixed multiple UI freeze and deadlock issues (present since v2.4.0) — the root cause was a lock contention issue between shader pack settings reads and background shader pack downloads. Additional threading issues were also fixed covering Nexus SSO, drag-drop error dialogs, progress dialogs, Update All, Luma installs, background scan, and the `--launch` argument.
+- Fixed PCGamingWiki links not appearing on game cards — links were only resolved from cache during startup but the cache was never being populated, so no game ever got a PCGW link. Links now resolve in the background after startup and appear without needing a Refresh.
+- Fixed Luma uninstall deleting the `reshade-shaders` folder when ReShade was still installed. The folder is now preserved and the global shader selection is redeployed into it.
+- Fixed Luma uninstall leaving `reshade-shaders-original` behind — the managed folder marker is now preserved so the shader service correctly identifies and reuses the existing folder rather than renaming it.
+- Fixed Luma uninstall leaving `reshade.ini` in a Luma-configured state — a fresh RHI-managed `reshade.ini` is now deployed with hotkeys, screenshot path, and peak nits restored.
+- Fixed Luma uninstall leaving `nvngx_dlss.dll` behind — it is now correctly removed (or the game's original restored) based on whether RHI placed it.
+- Fixed Neural Rendering section not building — `BuildNvidiaProfileSection` was cancelling a shared cancellation token that the Neural Rendering background scan had already captured, causing every NR scan to abort immediately before it could run.
+- Fixed the render scale custom value input box retaining keyboard focus after pressing Enter.
+- Fixed a gradual memory and connection leak that built up over a long session.
+- Fixed app startup being slower than necessary due to PCGamingWiki lookups blocking game detection — startup is now faster and PCGW links appear in the background.
+- Fixed a memory leak where the same event handlers accumulated every time a game card was opened.
+- Fixed occasional incorrect DLSS scan counts when multiple games were being scanned at the same time.
+- Fixed dgVoodoo2 removal and ReShade cleanup silently stopping partway through if a file was locked by another process.
 
 ### Manifest Updates
 

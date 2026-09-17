@@ -42,11 +42,13 @@ public partial class DetailPanelBuilder
         var dlssSvc     = _dlssStreamlineService;
 
         // ── Detect current install state (off the UI thread — all File.Exists calls) ──
+        var scanToken = _panelScanCts.Token;  // capture BEFORE Task.Run — CTS may be replaced by the time lambda executes
         _ = Task.Run(async () =>
         {
-            var scanToken = _panelScanCts.Token;
+            CrashReporter.Log($"[BuildNeuralRenderingSection] Waiting for semaphore: '{card.GameName}'");
             try { await _panelScanSemaphore.WaitAsync(scanToken).ConfigureAwait(false); }
-            catch (OperationCanceledException) { return; }
+            catch (OperationCanceledException) { CrashReporter.Log($"[BuildNeuralRenderingSection] Semaphore cancelled: '{card.GameName}'"); return; }
+            CrashReporter.Log($"[BuildNeuralRenderingSection] Semaphore acquired, scanning files: '{card.GameName}'");
             try
             {
             bool dlss5Installed  = rdx5Svc.IsInstalledIn(installPath);
@@ -61,8 +63,14 @@ public partial class DetailPanelBuilder
 
             _window.DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
+                var __sw = System.Diagnostics.Stopwatch.StartNew();
                 BuildNeuralRenderingSectionWithData(card, dlss5Installed, sfInstalled,
                     nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent);
+                __sw.Stop();
+                if (__sw.ElapsedMilliseconds > 30)
+                    CrashReporter.Log($"[BuildNeuralRenderingSectionWithData] SLOW: '{card.GameName}' took {__sw.ElapsedMilliseconds}ms on UI thread");
+                else
+                    CrashReporter.Log($"[BuildNeuralRenderingSectionWithData] done: '{card.GameName}' in {__sw.ElapsedMilliseconds}ms");
             });
             }
             finally { _panelScanSemaphore.Release(); }
@@ -295,11 +303,12 @@ public partial class DetailPanelBuilder
         void RefreshStatus()
         {
             // Gather all file I/O on a background thread, then update UI
+            var scanToken = _panelScanCts.Token;  // capture BEFORE Task.Run
             _ = Task.Run(async () =>
             {
-                var scanToken = _panelScanCts.Token;
                 try { await _panelScanSemaphore.WaitAsync(scanToken).ConfigureAwait(false); }
-                catch (OperationCanceledException) { return; }
+                catch (OperationCanceledException) { CrashReporter.Log($"[NeuralRendering.RefreshStatus] Semaphore cancelled: '{card.GameName}'"); return; }
+                CrashReporter.Log($"[NeuralRendering.RefreshStatus] Semaphore acquired, scanning: '{card.GameName}'");
                 try
                 {
                 var host64Dir = Path.Combine(installPath, "host64");
@@ -327,6 +336,7 @@ public partial class DetailPanelBuilder
                 {
                     if (_window.ViewModel.SelectedGame != card) return;
                     bool rsi = card.IsRsInstalled;
+                    CrashReporter.Log($"[NeuralRendering.RefreshStatus] Updating status for '{card.GameName}'");
                     RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv, hostExeOk);
                 });
                 }

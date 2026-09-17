@@ -1155,16 +1155,21 @@ public partial class DetailPanelBuilder
         };
 
         BuildRsChannelSection(ctx);
+        CrashReporter.Log($"[BuildOverridesPanel] RsChannel done: '{card.GameName}'");
         BuildShadersAddonsSection(ctx);
+        CrashReporter.Log($"[BuildOverridesPanel] ShadersAddons done: '{card.GameName}'");
 
         // Sync mutable state back from context
         capturedName = ctx.CapturedName;
 
         BuildNeuralRenderingSection(card);
+        CrashReporter.Log($"[BuildOverridesPanel] NeuralRendering done: '{card.GameName}'");
         BuildNvidiaProfileSection(card, capturedName);
+        CrashReporter.Log($"[BuildOverridesPanel] NvidiaProfile done: '{card.GameName}'");
 
         ctx.DxvkToggle = BuildDxvkAndManagementSection(card, capturedName, gameName, ctx) ?? ctx.DxvkToggle;
+        CrashReporter.Log($"[BuildOverridesPanel] Dxvk+Management done: '{card.GameName}'");
 
         BuildExtrasSection(card);
-    }
+        CrashReporter.Log($"[BuildOverridesPanel] Extras done: '{card.GameName}'");    }
 }

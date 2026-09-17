@@ -17,11 +17,6 @@ public partial class DetailPanelBuilder
         // DLSS / Streamline / ReBAR + future additions
         // ══════════════════════════════════════════════════════════════════════
 
-        // Cancel any in-flight background scans from a previous build of this section
-        // (e.g. triggered when the user changes a preset combo mid-scan).
-        _panelScanCts.Cancel();
-        _panelScanCts = new CancellationTokenSource();
-
         _window.NvidiaProfilePanel.Children.Clear();
 
         // ── Collapsible header ────────────────────────────────────────────────
@@ -106,10 +101,10 @@ public partial class DetailPanelBuilder
                 || _window.ViewModel.SelectedGame?.Source != gameSource)
                 return;
 
-            // Try to acquire non-blocking. If the slot is taken (a previous scan is still running
-            // its NVAPI reads), skip the live update — cached values are already showing.
+            CrashReporter.Log($"[BuildNvidiaProfileSection] Waiting for semaphore: '{gameName}'");
             try { await _panelScanSemaphore.WaitAsync(scanToken).ConfigureAwait(false); }
-            catch (OperationCanceledException) { return; }
+            catch (OperationCanceledException) { CrashReporter.Log($"[BuildNvidiaProfileSection] Semaphore cancelled: '{gameName}'"); return; }
+            CrashReporter.Log($"[BuildNvidiaProfileSection] Semaphore acquired, reading NVAPI: '{gameName}'");
             DlssProfileData? dlssData = null;
             try
             {
@@ -132,6 +127,7 @@ public partial class DetailPanelBuilder
             }
             finally
             {
+                CrashReporter.Log($"[BuildNvidiaProfileSection] Semaphore releasing: '{gameName}'");
                 _panelScanSemaphore.Release();
             }
 
@@ -146,12 +142,16 @@ public partial class DetailPanelBuilder
                     || current.Source != gameSource)
                     return;
 
+                var sw = System.Diagnostics.Stopwatch.StartNew();
                 // Build into a throwaway container first, then swap atomically.
                 var tempBody = new StackPanel { Spacing = dlssContainer.Spacing };
                 BuildNvidiaProfileBody(capturedCard, capturedName, tempBody, dlssData,
                     hasDlss, hasDlssd, hasDlssg, hasStreamline, hasDlssnr);
                 dlssContainer.Children.Clear();
                 dlssContainer.Children.Add(tempBody);
+                sw.Stop();
+                if (sw.ElapsedMilliseconds > 50)
+                    CrashReporter.Log($"[BuildNvidiaProfileBody] SLOW: '{gameName}' took {sw.ElapsedMilliseconds}ms on UI thread");
             });
         });
     }

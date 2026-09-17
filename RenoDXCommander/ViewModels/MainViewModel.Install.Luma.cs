@@ -1180,16 +1180,85 @@ public partial class MainViewModel
             card.LumaStatus = GameStatus.NotInstalled;
             card.LumaActionMessage = "✖ Luma removed.";
 
+            // Clean up nvngx_dlss.dll deployed by ApplyLumaPostInstallAsync.
+            // It's not in InstalledFiles (deployed after record was saved), so handle it here.
+            // Use sentinel: 0-byte = RHI placed it (delete both), non-zero = restore original.
+            if (!string.IsNullOrEmpty(card.InstallPath))
+            {
+                var dlssPath = Path.Combine(card.InstallPath, "nvngx_dlss.dll");
+                var sentinelPath = dlssPath + ".original";
+                if (File.Exists(sentinelPath))
+                {
+                    var sentinelSize = new FileInfo(sentinelPath).Length;
+                    if (sentinelSize == 0)
+                    {
+                        try { File.Delete(dlssPath); } catch { }
+                        try { File.Delete(sentinelPath); } catch { }
+                        _crashReporter.Log($"[UninstallLuma] Removed RHI-deployed nvngx_dlss.dll from '{card.InstallPath}'");
+                    }
+                    else
+                    {
+                        AuxInstallService.SentinelRestore(dlssPath);
+                        _crashReporter.Log($"[UninstallLuma] Restored original nvngx_dlss.dll in '{card.InstallPath}'");
+                    }
+                }
+            }
+
             // If dgVoodoo2 was deployed (DX9 game), ReShade was forced to dxgi.dll.
             // Reinstall ReShade without the force override so it reverts to the
             // correct auto-detected filename (d3d9.dll for DX9 games).
+            // InstallReShadeInternalAsync also redeploys reshade.ini with all RHI settings.
             bool wasDgVoodooGame = wasDgVoodoo;
             if (wasDgVoodooGame && card.IsRsInstalled)
             {
                 card.LumaActionMessage = "Restoring ReShade...";
                 _ = InstallReShadeInternalAsync(card, forceFilename: null);
             }
+            else if (card.IsRsInstalled)
+            {
+                // Redeploy a clean reshade.ini — Luma's [Luma] section is gone,
+                // restore fresh RHI defaults (hotkeys, screenshot path, peak nits, etc.)
+                if (GetKeepRsIniUpdated(card.GameName, card.Source ?? ""))
+                {
+                    try
+                    {
+                        AuxInstallService.EnsureInisDir();
+                        AuxInstallService.MergeRsIni(
+                            card.InstallPath,
+                            BuildScreenshotSavePath(card.GameName),
+                            _settingsViewModel.OverlayHotkey,
+                            _settingsViewModel.ScreenshotHotkey,
+                            card.GameName);
+                        _crashReporter.Log($"[UninstallLuma] Redeployed fresh reshade.ini for '{card.GameName}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[UninstallLuma] reshade.ini redeploy failed for '{card.GameName}' — {ex.Message}");
+                    }
+                }
 
+                // Redeploy globally managed shaders — Luma uninstall deleted the files it
+                // tracked but left the reshade-shaders folder empty. SyncGameFolder restores
+                // the global shader selection and the .rdxc-managed marker.
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
+                        if (sel != null)
+                            await _shaderPackService.EnsurePacksAsync(sel);
+                        var excl = sel == null ? null : await Task.Run(() =>
+                            sel.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                                StringComparer.OrdinalIgnoreCase));
+                        _shaderPackService.SyncGameFolder(card.InstallPath, sel, excl);
+                        _crashReporter.Log($"[UninstallLuma] Redeployed shaders for '{card.GameName}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[UninstallLuma] Shader redeploy failed for '{card.GameName}' — {ex.Message}");
+                    }
+                });
+            }
             // ReShade is managed independently by RHI — do not touch RS status on Luma uninstall.
 
             // Remove launch args if they were auto-set by Luma install

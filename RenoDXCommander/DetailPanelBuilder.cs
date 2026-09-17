@@ -86,6 +86,7 @@ public partial class DetailPanelBuilder
 
     public void PopulateDetailPanel(GameCardViewModel card)
     {
+        var __sw = System.Diagnostics.Stopwatch.StartNew();
         // Set DxvkVariantPending so the Install button row shows when a variant is selected but not installed
         card.DxvkVariantPending = !card.DxvkEnabled
             && _window.ViewModel.GetDxvkVariantOverride(card.GameName, card.Source) != null;
@@ -342,6 +343,9 @@ public partial class DetailPanelBuilder
 
         // Populate component rows
         UpdateDetailComponentRows(card);
+        __sw.Stop();
+        if (__sw.ElapsedMilliseconds > 30)
+            CrashReporter.Log($"[PopulateDetailPanel] SLOW: '{card.GameName}' took {__sw.ElapsedMilliseconds}ms");
     }
 
     /// <summary>

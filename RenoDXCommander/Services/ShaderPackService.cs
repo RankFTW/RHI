@@ -41,7 +41,7 @@ public partial class ShaderPackService : IShaderPackService
 
     public const string GameReShadeShaders = "reshade-shaders";
     public const string GameReShadeOriginal = "reshade-shaders-original";
-    private const string ManagedMarkerFile = "Managed by RDXC.txt";
+    internal const string ManagedMarkerFileName = "Managed by RDXC.txt";
     private const string ManagedMarkerContent = "This folder is managed by RenoDXCommander. Do not edit manually.\n"
                                                   + "Deleting this file will cause RDXC to treat the folder as user-managed.";
 

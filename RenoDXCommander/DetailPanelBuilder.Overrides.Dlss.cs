@@ -265,6 +265,12 @@ public partial class DetailPanelBuilder
                     {
                         if (ke.Key == Windows.System.VirtualKey.Enter)
                         {
+                            ke.Handled = true;
+                            // Defocus the TextBox by briefly disabling it — WinUI 3 has no
+                            // direct "clear focus" API, and FocusManager.TryMoveFocus is
+                            // unreliable in imperative panel contexts.
+                            inputBox.IsEnabled = false;
+                            inputBox.IsEnabled = true;
                             if (uint.TryParse(inputBox.Text, out var val) && val >= 33 && val <= 100)
                             {
                                 onRenderScaleSelected(val);
@@ -277,6 +283,9 @@ public partial class DetailPanelBuilder
                         }
                         else if (ke.Key == Windows.System.VirtualKey.Escape)
                         {
+                            ke.Handled = true;
+                            inputBox.IsEnabled = false;
+                            inputBox.IsEnabled = true;
                             // Cancel — revert
                             onRenderScaleSelected(currentRenderScale);
                         }

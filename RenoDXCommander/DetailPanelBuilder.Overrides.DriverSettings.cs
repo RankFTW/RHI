@@ -73,8 +73,10 @@ public partial class DetailPanelBuilder
                 || _window.ViewModel.SelectedGame?.Source != gameSource)
                 return;
 
+            CrashReporter.Log($"[BuildDriverProfileSection] Waiting for semaphore: '{gameName}'");
             try { await _panelScanSemaphore.WaitAsync(scanToken).ConfigureAwait(false); }
-            catch (OperationCanceledException) { return; }
+            catch (OperationCanceledException) { CrashReporter.Log($"[BuildDriverProfileSection] Semaphore cancelled: '{gameName}'"); return; }
+            CrashReporter.Log($"[BuildDriverProfileSection] Semaphore acquired, reading NVAPI: '{gameName}'");
             DriverProfileData? data = null;
             try
             {
@@ -96,6 +98,7 @@ public partial class DetailPanelBuilder
             }
             finally
             {
+                CrashReporter.Log($"[BuildDriverProfileSection] Semaphore releasing: '{gameName}'");
                 _panelScanSemaphore.Release();
             }
 
@@ -110,11 +113,15 @@ public partial class DetailPanelBuilder
                     || currentCard.Source != gameSource)
                     return;
 
+                var sw = System.Diagnostics.Stopwatch.StartNew();
                 // Build into a throwaway container first, then swap atomically.
                 var tempDriver = new StackPanel();
                 BuildDriverProfileSectionWithData(targetCard, capturedName, svc, tempDriver, data);
                 driverContainer.Children.Clear();
                 driverContainer.Children.Add(tempDriver);
+                sw.Stop();
+                if (sw.ElapsedMilliseconds > 50)
+                    CrashReporter.Log($"[BuildDriverProfileSectionWithData] SLOW: '{gameName}' took {sw.ElapsedMilliseconds}ms on UI thread");
             });
         });
     }

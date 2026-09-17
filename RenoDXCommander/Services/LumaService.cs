@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Text.Json;
 using HtmlAgilityPack;
 using RenoDXCommander.Models;
+using RenoDXCommander;
 
 namespace RenoDXCommander.Services;
 
@@ -791,10 +792,23 @@ public class LumaService : ILumaService
         var addonDeployPath = ModInstallService.GetAddonDeployPath(record.InstallPath);
 
         // Remove the RDXC-managed reshade-shaders folder via ShaderPackService
-        // (must happen before individual file deletion removes the marker file)
+        // — but only when ReShade is NOT installed. If ReShade is present, the
+        // reshade-shaders folder belongs to it and must not be deleted; the
+        // CleanEmptyDirs pass below will remove any empty Luma subdirectories.
         try
         {
-            _shaderPackService.RemoveFromGameFolder(record.InstallPath);
+            bool reShadePresent = DllOverrideConstants.CommonDllNames
+                .Any(n => File.Exists(Path.Combine(record.InstallPath, n))
+                       && AuxInstallService.IsReShadeFile(Path.Combine(record.InstallPath, n)));
+            if (!reShadePresent)
+            {
+                _shaderPackService.RemoveFromGameFolder(record.InstallPath);
+                CrashReporter.Log($"[LumaService.Uninstall] Removed managed reshade-shaders (no ReShade present) from '{record.InstallPath}'");
+            }
+            else
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping reshade-shaders removal — ReShade still installed in '{record.InstallPath}'");
+            }
         }
         catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] ShaderPackService cleanup failed — {ex.Message}"); }
 
@@ -827,10 +841,25 @@ public class LumaService : ILumaService
                 CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed ReShade DLL '{relPath}'");
                 continue;
             }
-            // Skip nvngx_dlss.dll — managed by RHI separately
+            // Skip nvngx_dlss.dll — cleaned up by the ViewModel caller (UninstallLuma)
+            // since it was deployed post-record-save and is not in InstalledFiles
             if (fileName.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
             {
-                CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed DLSS DLL '{relPath}'");
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping nvngx_dlss.dll — handled by caller");
+                continue;
+            }
+            // Skip reshade.ini — RHI manages it independently; caller will redeploy a fresh one
+            if (fileName.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping reshade.ini — will be redeployed by caller");
+                continue;
+            }
+            // Skip the RHI shader pack marker — preserving it lets SyncGameFolder correctly
+            // identify the reshade-shaders folder as RHI-managed and redeploy rather than rename
+            if (fileName.Equals(ShaderPackService.ManagedMarkerFileName, StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping shader pack marker — preserving managed state");
                 continue;
             }
 
