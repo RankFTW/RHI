@@ -24,6 +24,7 @@
 
 - Added "Banishers: Ghosts of New Eden - The Wanderer Set DLC" to blacklist — was being incorrectly detected as a game.
 - Removed Elden Ring and Elden Ring: Nightreign from `forceExternalOnly` — both mods are now in the RHI database with direct download links, so the Nexus redirect is no longer needed.
+- Added engine hint for Insurgency: Sandstorm (Unreal Engine 4.27.2).
 
 ## v2.7.2
 
