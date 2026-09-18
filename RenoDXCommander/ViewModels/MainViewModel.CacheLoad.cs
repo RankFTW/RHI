@@ -949,7 +949,15 @@ public partial class MainViewModel
                         case "OS":   if (newCard.OsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllOs) newCard.OsStatus = GameStatus.UpdateAvailable; break;
                         case "REF":  if (!newCard.ExcludeFromUpdateAllRef) newCard.RefStatus = GameStatus.UpdateAvailable; break;
                         case "DXVK": if (newCard.DxvkStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDxvk) newCard.DxvkStatus = GameStatus.UpdateAvailable; break;
-                        case "LUMA": newCard.LumaStatus = GameStatus.UpdateAvailable; break;
+                        case "LUMA":
+                            // Only restore Luma update indicator when NexusFileId is set
+                            // (premium install). Browser installs have no reliable baseline —
+                            // updatedAt-based detection fires false positives on page edits.
+                            if (newCard.LumaRecord?.NexusFileId != null)
+                                newCard.LumaStatus = GameStatus.UpdateAvailable;
+                            else
+                                _nexusUpdateService.ResetBaseline(newCard.GameName);
+                            break;
                     }
                 }
             }

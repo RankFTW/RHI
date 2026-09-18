@@ -1130,8 +1130,9 @@ public partial class MainViewModel
                 var lumaModsToCheck = cards
                     .Where(c => c.LumaStatus == GameStatus.Installed
                              && !c.IsHidden
-                             && c.LumaNexusUrl != null)
-                    .Select(c => (c.GameName, c.LumaNexusUrl!, (string?)null))
+                             && c.LumaNexusUrl != null
+                             && c.LumaRecord?.NexusFileId != null)  // only premium installs have a reliable baseline
+                    .Select(c => (c.GameName, c.LumaNexusUrl!, c.LumaRecord!.NexusFileId!.Value.ToString()))
                     .ToList();
 
                 if (lumaModsToCheck.Count > 0)
@@ -1434,8 +1435,9 @@ public partial class MainViewModel
             var lumaModsToCheck = cards
                 .Where(c => c.LumaStatus == GameStatus.Installed
                          && !c.IsHidden
-                         && c.LumaNexusUrl != null)
-                .Select(c => (c.GameName, c.LumaNexusUrl!, (string?)null))
+                         && c.LumaNexusUrl != null
+                         && c.LumaRecord?.NexusFileId != null)  // only premium installs have a reliable baseline
+                .Select(c => (c.GameName, c.LumaNexusUrl!, c.LumaRecord!.NexusFileId!.Value.ToString()))
                 .ToList();
 
             if (lumaModsToCheck.Count > 0)

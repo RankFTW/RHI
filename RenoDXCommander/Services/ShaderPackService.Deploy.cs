@@ -375,7 +375,14 @@ public partial class ShaderPackService
             // so custom shader files from a previous custom-mode deployment would
             // linger.  A clean remove + fresh deploy handles the transition cleanly.
             RemoveFromGameFolder(gameDir);
-            DeployPacksIfAbsent(selectedPackIds, rsShaders, rsTextures, fileExclusions);
+            bool hasCustomPacks = selectedPackIds.Any(id => id.Equals(CustomFilePackId, StringComparison.OrdinalIgnoreCase)
+                                                         || id.StartsWith(CustomFilePackId + "_", StringComparison.OrdinalIgnoreCase));
+            var normalPacks = selectedPackIds.Where(id => !id.Equals(CustomFilePackId, StringComparison.OrdinalIgnoreCase)
+                                                       && !id.StartsWith(CustomFilePackId + "_", StringComparison.OrdinalIgnoreCase)).ToList();
+            if (normalPacks.Count > 0)
+                DeployPacksIfAbsent(normalPacks, rsShaders, rsTextures, fileExclusions);
+            if (hasCustomPacks)
+                DeployCustomFilesIfAbsent(rsShaders, rsTextures, fileExclusions);
             WriteMarker(gameDir);
         }
         else
@@ -402,7 +409,14 @@ public partial class ShaderPackService
             // Now claim the (freshly absent or never-existed) folder with the marker.
             WriteMarker(gameDir);
 
-            DeployPacksIfAbsent(selectedPackIds, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"), fileExclusions);
+            var normalPacksNew = selectedPackIds.Where(id => !id.Equals(CustomFilePackId, StringComparison.OrdinalIgnoreCase)
+                                                           && !id.StartsWith(CustomFilePackId + "_", StringComparison.OrdinalIgnoreCase)).ToList();
+            bool hasCustomPacksNew = selectedPackIds.Any(id => id.Equals(CustomFilePackId, StringComparison.OrdinalIgnoreCase)
+                                                            || id.StartsWith(CustomFilePackId + "_", StringComparison.OrdinalIgnoreCase));
+            if (normalPacksNew.Count > 0)
+                DeployPacksIfAbsent(normalPacksNew, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"), fileExclusions);
+            if (hasCustomPacksNew)
+                DeployCustomFilesIfAbsent(Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"), fileExclusions);
             WriteMarker(gameDir);
         }
     }
@@ -522,5 +536,56 @@ public partial class ShaderPackService
                 File.Copy(file, destFile, overwrite: false);
             }
         }
+    }
+}
+
+public partial class ShaderPackService
+{
+    /// <summary>
+    /// Copies individual files from the Custom/Shaders and Custom/Textures folders
+    /// to the game's reshade-shaders folder, respecting per-file exclusions.
+    /// Called when CustomFilePackId is in the selection alongside normal packs.
+    /// </summary>
+    private void DeployCustomFilesIfAbsent(
+        string destShadersDir,
+        string destTexturesDir,
+        Dictionary<string, HashSet<string>>? fileExclusions)
+    {
+        // Collect excluded leaf names from the single key AND all per-folder keys
+        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (fileExclusions != null)
+        {
+            if (fileExclusions.TryGetValue(CustomFilePackId, out var baseExcl))
+                excluded.UnionWith(baseExcl);
+            foreach (var kv in fileExclusions)
+                if (kv.Key.StartsWith(CustomFilePackId + "_", StringComparison.OrdinalIgnoreCase))
+                    excluded.UnionWith(kv.Value);
+        }
+
+        void CopyDir(string srcDir, string destDir)
+        {
+            if (!Directory.Exists(srcDir)) return;
+            Directory.CreateDirectory(destDir);
+            foreach (var srcFile in Directory.EnumerateFiles(srcDir, "*", SearchOption.AllDirectories))
+            {
+                var leafName = Path.GetFileName(srcFile);
+                if (excluded.Contains(leafName)) continue;
+                var rel      = Path.GetRelativePath(srcDir, srcFile);
+                var destFile = Path.Combine(destDir, rel);
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+                    if (!File.Exists(destFile) || IsFileStale(srcFile, destFile))
+                        File.Copy(srcFile, destFile, overwrite: true);
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[ShaderPackService.DeployCustomFilesIfAbsent] Failed to copy '{leafName}' — {ex.Message}");
+                }
+            }
+        }
+
+        CopyDir(CustomShadersDir, destShadersDir);
+        CopyDir(CustomTexturesDir, destTexturesDir);
     }
 }

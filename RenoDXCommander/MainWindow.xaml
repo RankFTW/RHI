@@ -464,6 +464,7 @@
                                             VerticalAlignment="Center" Visibility="Collapsed">
                                         <TextBlock x:Name="DetailInstalledFile" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
                                     </Border>
+                                    <TextBlock x:Name="DetailModStatusIcon" x:FieldModifier="internal" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed"/>
                                     <Border x:Name="DetailGenericBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
                                             Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                             VerticalAlignment="Center" Visibility="Collapsed">

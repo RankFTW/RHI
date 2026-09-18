@@ -4,6 +4,11 @@
 
 **Beta note:** This build includes verbose diagnostic logging to help track down a UI freeze that occurs intermittently during normal use. The freeze is fully reproducible but its root cause hasn't been isolated yet — every major UI rendering operation now logs timing and semaphore state to the session log. If the app freezes, close it and share the session log from `%LocalAppData%\RHI\Logs\`. This logging will be removed before the final release.
 
+### New
+
+- UE-Extended games now show a status indicator next to the addon badge — ✓ (green) for mods marked complete in the RHI database, 🔨 for mods still in progress.
+- Custom shaders can now be selected individually in the global shader picker. Any `.fx`, texture, or LUT files you've placed in `%LocalAppData%\RHI\reshade\Custom\Shaders\` and `\Textures\` appear as a "Custom Shaders" section in the picker between Recommended and Extra packs. Individual files can be expanded and ticked/unticked, and they deploy alongside normal shader packs. The existing "Custom" mode in the per-game shader combo continues to work as before (deploys the whole Custom folder).
+
 ### Bug Fixes
 
 - Fixed multiple UI freeze and deadlock issues (present since v2.4.0) — the root cause was a lock contention issue between shader pack settings reads and background shader pack downloads. Additional threading issues were also fixed covering Nexus SSO, drag-drop error dialogs, progress dialogs, Update All, Luma installs, background scan, and the `--launch` argument.
@@ -19,6 +24,8 @@
 - Fixed a memory leak where the same event handlers accumulated every time a game card was opened.
 - Fixed occasional incorrect DLSS scan counts when multiple games were being scanned at the same time.
 - Fixed dgVoodoo2 removal and ReShade cleanup silently stopping partway through if a file was locked by another process.
+- Fixed ReShade being uninstalled after a Game Pass game updates — when a game updates on Game Pass, Windows replaces the install folder with a new versioned path and deletes the old one, leaving RHI unable to find the ReShade DLL. RHI now detects this and automatically reinstalls ReShade at the new path on the next launch.
+- Fixed Luma mods on Nexus showing "Update Available" repeatedly — the update check was comparing the mod's last-edited timestamp on Nexus, which changes on any page edit (not just new file releases). Update detection for Luma mods now only fires when RHI can compare actual file IDs, which requires a Nexus premium account. Browser install users no longer get false update indicators.
 
 ### Manifest Updates
 

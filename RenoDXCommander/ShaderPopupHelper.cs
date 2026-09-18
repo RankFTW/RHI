@@ -185,10 +185,206 @@ public static class ShaderPopupHelper
         // ── Group packs by category ───────────────────────────────────────────
         var groups = packs
             .GroupBy(p => p.Category)
-            .OrderBy(g => g.Key);
+            .OrderBy(g => g.Key)
+            .ToList();
+
+        // Pre-fetch custom files and exclusions so we can inject the section synchronously
+        var customFiles    = ShaderPackService.GetCustomPackFiles();
+        var customId       = ShaderPackService.CustomFilePackId;
+        var customExcl     = customFiles.Count > 0
+            ? await shaderPackService.GetExcludedFilesAsync(customId)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // customSelected is used for per-folder initial state — check if any custom folder ID is selected
+        var customSelected = selected.Any(s => s.StartsWith(customId + "_", StringComparison.OrdinalIgnoreCase) || s.Equals(customId, StringComparison.OrdinalIgnoreCase));
+        bool customSectionBuilt = false;
+
+        void BuildCustomShaderSection()
+        {
+            if (customSectionBuilt || customFiles.Count == 0) return;
+            customSectionBuilt = true;
+
+            // ── "Custom Shaders" plain section header (no checkbox, no expand) ──
+            panel.Children.Add(new TextBlock
+            {
+                Text       = "Custom Shaders",
+                FontSize   = 14,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                Margin     = new Thickness(0, checkBoxes.Count > 0 ? 10 : 4, 0, 4),
+            });
+            // No category header tracking needed — section header is decorative only
+
+            // ── Group files by first-level subfolder (or "General" for root files) ──
+            // Files look like "Shaders\VHS\HandHeld.fx" or "Textures\VHS\vhs_osd.png"
+            // or "Shaders\MyShader.fx" (root-level, no subfolder → "General")
+            var folderGroups = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var relPath in customFiles)
+            {
+                // Strip leading "Shaders\" or "Textures\" prefix, then get first segment
+                var withoutBase = relPath;
+                if (withoutBase.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    withoutBase = withoutBase[(("Shaders" + Path.DirectorySeparatorChar).Length)..];
+                else if (withoutBase.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    withoutBase = withoutBase[(("Textures" + Path.DirectorySeparatorChar).Length)..];
+
+                var segments = withoutBase.Split(Path.DirectorySeparatorChar, 2);
+                var folderName = segments.Length > 1 ? segments[0] : "General";
+                if (!folderGroups.ContainsKey(folderName))
+                    folderGroups[folderName] = new List<string>();
+                folderGroups[folderName].Add(relPath);
+            }
+
+            // ── Build one pack row per folder ──
+            foreach (var (folderName, folderFiles) in folderGroups.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                var folderId = $"{ShaderPackService.CustomFilePackId}_{folderName}";
+
+                // Per-folder sub-panel
+                var folderSubPanel = new StackPanel
+                {
+                    Orientation = Orientation.Vertical,
+                    Margin      = new Thickness(24, 0, 0, 0),
+                    Visibility  = Visibility.Collapsed,
+                };
+                var folderFileCbList = new List<(string File, CheckBox Box)>();
+                bool folderSelected = folderFiles.All(f => customSelected && !customExcl.Contains(Path.GetFileName(f)));
+
+                foreach (var relPath in folderFiles)
+                {
+                    var leafName = Path.GetFileName(relPath);
+                    var fileCb  = new CheckBox
+                    {
+                        Content   = new TextBlock
+                        {
+                            Text       = relPath,
+                            FontSize   = 12,
+                            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                        },
+                        Margin    = new Thickness(0, 1, 0, 1),
+                        IsChecked = customSelected && !customExcl.Contains(leafName),
+                    };
+                    folderFileCbList.Add((leafName, fileCb));
+                    folderSubPanel.Children.Add(fileCb);
+                }
+
+                fileSubPanels[folderId]  = folderSubPanel;
+                fileCheckBoxes[folderId] = folderFileCbList;
+
+                bool? folderInitialState;
+                var folderAnySelected = folderFileCbList.Any(f => f.Box.IsChecked == true);
+                var folderAllSelected = folderFileCbList.All(f => f.Box.IsChecked == true);
+                if (!folderAnySelected)
+                    folderInitialState = false;
+                else if (!folderAllSelected)
+                    folderInitialState = null;
+                else
+                    folderInitialState = true;
+
+                var folderPackCb = new CheckBox
+                {
+                    IsThreeState = folderFileCbList.Count > 0,
+                    IsChecked    = folderInitialState,
+                    Margin       = new Thickness(0, 2, 0, 2),
+                };
+
+                var folderNameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+                folderNameRow.Children.Add(new TextBlock
+                {
+                    Text              = folderName,
+                    FontSize          = 13,
+                    Foreground        = Brush(ResourceKeys.TextPrimaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+                folderNameRow.Children.Add(new TextBlock
+                {
+                    Text              = "✓",
+                    FontSize          = 13,
+                    Foreground        = Brush(ResourceKeys.AccentGreenBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+
+                var folderExpandBtn = new Button
+                {
+                    Content           = "▶",
+                    FontSize          = 10,
+                    Padding           = new Thickness(4, 0, 4, 0),
+                    Margin            = new Thickness(4, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Background        = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                    BorderThickness   = new Thickness(0),
+                };
+                var capturedFolderSubPanel = folderSubPanel;
+                var capturedExpandBtn = folderExpandBtn;
+                folderExpandBtn.Click += (s, ev) =>
+                {
+                    bool nowExpanded = capturedFolderSubPanel.Visibility == Visibility.Collapsed;
+                    capturedFolderSubPanel.Visibility = nowExpanded ? Visibility.Visible : Visibility.Collapsed;
+                    capturedExpandBtn.Content = nowExpanded ? "▼" : "▶";
+                };
+                folderNameRow.Children.Add(folderExpandBtn);
+                expandButtons[folderId] = folderExpandBtn;
+
+                var folderInnerPanel = new StackPanel { Spacing = 0, MaxWidth = 490 };
+                folderInnerPanel.Children.Add(folderNameRow);
+                folderPackCb.Content = folderInnerPanel;
+
+                bool folderCbInitializing = false;
+                var capturedFolderFileCbList = folderFileCbList;
+                var capturedFolderPackCb = folderPackCb;
+
+                folderPackCb.Checked += (s, ev) =>
+                {
+                    if (profileLoading || folderCbInitializing) return;
+                    folderCbInitializing = true;
+                    foreach (var (_, fcb) in capturedFolderFileCbList) fcb.IsChecked = true;
+                    folderCbInitializing = false;
+                };
+                folderPackCb.Unchecked += (s, ev) =>
+                {
+                    if (profileLoading || folderCbInitializing) return;
+                    folderCbInitializing = true;
+                    foreach (var (_, fcb) in capturedFolderFileCbList) fcb.IsChecked = false;
+                    folderCbInitializing = false;
+                };
+
+                foreach (var (_, fileCb) in capturedFolderFileCbList)
+                {
+                    fileCb.Checked += (s, ev) =>
+                    {
+                        if (profileLoading || folderCbInitializing) return;
+                        folderCbInitializing = true;
+                        bool allC = capturedFolderFileCbList.All(f => f.Box.IsChecked == true);
+                        bool anyC = capturedFolderFileCbList.Any(f => f.Box.IsChecked == true);
+                        capturedFolderPackCb.IsChecked = allC ? true : anyC ? null : false;
+                        folderCbInitializing = false;
+                    };
+                    fileCb.Unchecked += (s, ev) =>
+                    {
+                        if (profileLoading || folderCbInitializing) return;
+                        folderCbInitializing = true;
+                        bool allC = capturedFolderFileCbList.All(f => f.Box.IsChecked == true);
+                        bool anyC = capturedFolderFileCbList.Any(f => f.Box.IsChecked == true);
+                        capturedFolderPackCb.IsChecked = allC ? true : anyC ? null : false;
+                        folderCbInitializing = false;
+                    };
+                }
+
+                // Register with the shared checkBoxes/packRows using folderId so the confirm
+                // loop can collect excluded files per folder
+                checkBoxes.Add((folderId, folderPackCb));
+                packRows.Add((folderId, folderName, folderPackCb, folderSubPanel));
+
+                panel.Children.Add(folderPackCb);
+                panel.Children.Add(folderSubPanel);
+            }
+        }
 
         foreach (var group in groups)
         {
+            // Inject Custom Shaders before the Extra group
+            if (group.Key == ShaderPackService.PackCategory.Extra)
+                BuildCustomShaderSection();
+
             var headerText = group.Key switch
             {
                 ShaderPackService.PackCategory.Essential   => "Essential",
@@ -412,6 +608,9 @@ public static class ShaderPopupHelper
                 }
             }
         }
+
+        // If no Extra group existed (all packs are Essential/Recommended), inject Custom at the end
+        BuildCustomShaderSection();
 
         var packScrollViewer = new ScrollViewer
         {

@@ -60,6 +60,11 @@ public partial class ShaderPackService
     /// </summary>
     public bool IsPackCached(string packId)
     {
+        // Virtual custom files pack — cached when the Custom folder has files
+        if (packId.Equals(CustomFilePackId, StringComparison.OrdinalIgnoreCase)
+            || packId.StartsWith(CustomFilePackId + "_", StringComparison.OrdinalIgnoreCase))
+            return CustomPackHasFiles();
+
         var pack = _packs.FirstOrDefault(p => p.Id.Equals(packId, StringComparison.OrdinalIgnoreCase));
         if (pack == null) return false;
 
@@ -78,6 +83,11 @@ public partial class ShaderPackService
     /// </summary>
     public async Task<bool> IsPackCachedAsync(string packId)
     {
+        // Virtual custom files pack — no async needed, just check folder
+        if (packId.Equals(CustomFilePackId, StringComparison.OrdinalIgnoreCase)
+            || packId.StartsWith(CustomFilePackId + "_", StringComparison.OrdinalIgnoreCase))
+            return CustomPackHasFiles();
+
         var pack = _packs.FirstOrDefault(p => p.Id.Equals(packId, StringComparison.OrdinalIgnoreCase));
         if (pack == null) return false;
 

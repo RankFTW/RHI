@@ -544,6 +544,10 @@ public partial class MainViewModel
                 else
                 {
                     _crashReporter.Log($"[BuildCards] RS path reconciliation: '{game.Name}' path changed '{oldRsPath}' → '{installPath}', ReShade not found at either path");
+                    // For WindowsApps games: the old folder is deleted by Windows on update so
+                    // the DLL can never be copied across. Mark for auto-reinstall after build.
+                    if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase))
+                        _pendingRsReinstall.Add(GameKey.FromCard(game.Name, game.Source).ToKey());
                 }
 
                 rsRec.InstallPath = installPath;
@@ -552,7 +556,10 @@ public partial class MainViewModel
 
             // Verify DB records against disk — if the file no longer exists the record is stale.
             // This handles the case where the user manually deleted files without using RDXC.
-            if (rsRec != null && !File.Exists(Path.Combine(rsRec.InstallPath, rsRec.InstalledAs)))
+            // Exception: WindowsApps games pending auto-reinstall — keep the record so the card
+            // still shows as installed and the reinstall can proceed.
+            if (rsRec != null && !File.Exists(Path.Combine(rsRec.InstallPath, rsRec.InstalledAs))
+                && !_pendingRsReinstall.Contains(GameKey.FromCard(game.Name, game.Source).ToKey()))
             {
                 _auxInstaller.RemoveRecord(rsRec);
                 rsRec = null;

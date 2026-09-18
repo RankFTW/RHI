@@ -605,6 +605,37 @@ public partial class MainViewModel
             GraphicsApiDetector.SaveCache();
             SaveGameApiCache();
 
+            // Auto-reinstall ReShade for WindowsApps games whose path changed during this build.
+            // The old WindowsApps folder is deleted by Windows on game update so the DLL
+            // can't be copied across — reinstall it fresh at the new path instead.
+            if (_pendingRsReinstall.Count > 0)
+            {
+                var toReinstall = _allCards
+                    .Where(c => _pendingRsReinstall.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey())
+                             && !string.IsNullOrEmpty(c.InstallPath))
+                    .ToList();
+                _pendingRsReinstall.Clear();
+                if (toReinstall.Count > 0)
+                {
+                    _crashReporter.Log($"[MainViewModel.InitializeAsync] Auto-reinstalling ReShade for {toReinstall.Count} WindowsApps game(s) after path update");
+                    _ = Task.Run(async () =>
+                    {
+                        foreach (var card in toReinstall)
+                        {
+                            try
+                            {
+                                _crashReporter.Log($"[MainViewModel.InitializeAsync] Auto-reinstalling ReShade for '{card.GameName}' at new path '{card.InstallPath}'");
+                                await InstallReShadeInternalAsync(card, forceFilename: null);
+                            }
+                            catch (Exception ex)
+                            {
+                                _crashReporter.Log($"[MainViewModel.InitializeAsync] Auto-reinstall failed for '{card.GameName}' — {ex.Message}");
+                            }
+                        }
+                    });
+                }
+            }
+
             // Apply manifest DLL name overrides to any existing installs whose filenames don't match
             ApplyManifestDllRenames();
 

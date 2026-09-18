@@ -220,6 +220,34 @@ public partial class DetailPanelBuilder
             _window.DetailSepModPlatform.Visibility = Visibility.Collapsed;
         }
 
+        // Mod status icon — green ✓ for Done, 🔨 for WIP (from db unreal entry)
+        var dbEntry = _window.ViewModel.GetDbUnrealEntry(card.GameName);
+        if (dbEntry != null)
+        {
+            if (string.Equals(dbEntry.Status, "Done", StringComparison.OrdinalIgnoreCase))
+            {
+                _window.DetailModStatusIcon.Text = "✓";
+                _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);
+                _window.DetailModStatusIcon.Visibility = Visibility.Visible;
+                ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod complete");
+            }
+            else if (string.Equals(dbEntry.Status, "WIP", StringComparison.OrdinalIgnoreCase))
+            {
+                _window.DetailModStatusIcon.Text = "🔨";
+                _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
+                _window.DetailModStatusIcon.Visibility = Visibility.Visible;
+                ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod in progress");
+            }
+            else
+            {
+                _window.DetailModStatusIcon.Visibility = Visibility.Collapsed;
+            }
+        }
+        else
+        {
+            _window.DetailModStatusIcon.Visibility = Visibility.Collapsed;
+        }
+
         // Utility buttons — set Tag for event handlers
         _window.DetailFavBtn.Tag = card;
         _window.DetailFavIcon.Text = "Favourite";

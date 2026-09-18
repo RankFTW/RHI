@@ -35,9 +35,35 @@ public partial class ShaderPackService : IShaderPackService
 
     // User-defined custom shaders — placed by the user, never auto-downloaded
     public const string CustomShaderSentinel = "__custom__";
+    /// <summary>Virtual pack ID for individual custom shader file selection in the picker.</summary>
+    public const string CustomFilePackId = "__custom_files__";
     public static readonly string CustomDir = Path.Combine(AuxInstallService.RsStagingDir, "Custom");
     public static readonly string CustomShadersDir = Path.Combine(CustomDir, "Shaders");
     public static readonly string CustomTexturesDir = Path.Combine(CustomDir, "Textures");
+
+    /// <summary>
+    /// Returns all shader and texture files from the Custom folder as relative paths
+    /// suitable for display in the picker (e.g. "Shaders/MyShader.fx", "Textures/LUT.png").
+    /// Returns an empty list if the Custom folder doesn't exist or is empty.
+    /// </summary>
+    public static IReadOnlyList<string> GetCustomPackFiles()
+    {
+        var files = new List<string>();
+        try
+        {
+            if (Directory.Exists(CustomShadersDir))
+                foreach (var f in Directory.EnumerateFiles(CustomShadersDir, "*", SearchOption.AllDirectories))
+                    files.Add(Path.Combine("Shaders", Path.GetRelativePath(CustomShadersDir, f)));
+            if (Directory.Exists(CustomTexturesDir))
+                foreach (var f in Directory.EnumerateFiles(CustomTexturesDir, "*", SearchOption.AllDirectories))
+                    files.Add(Path.Combine("Textures", Path.GetRelativePath(CustomTexturesDir, f)));
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.GetCustomPackFiles] Failed — {ex.Message}"); }
+        return files;
+    }
+
+    /// <summary>Returns true when the Custom shader folder contains at least one file.</summary>
+    public static bool CustomPackHasFiles() => GetCustomPackFiles().Count > 0;
 
     public const string GameReShadeShaders = "reshade-shaders";
     public const string GameReShadeOriginal = "reshade-shaders-original";
@@ -53,9 +79,10 @@ public partial class ShaderPackService : IShaderPackService
     /// UI grouping for the shader picker dialog.
     /// Essential — always deployed, shown at the top.
     /// Recommended — suggested packs shown in the second group.
+    /// Custom — user-placed files, shown between Recommended and Extra.
     /// Extra — everything else.
     /// </summary>
-    public enum PackCategory { Essential, Recommended, Extra }
+    public enum PackCategory { Essential, Recommended, Custom, Extra }
 
     /// <summary>
     /// Shader files that fail to compile and should never be extracted or deployed.
