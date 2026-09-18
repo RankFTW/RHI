@@ -302,6 +302,30 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    /// <summary>Returns the persisted NR pack version (Feeder or Bridge) for a game. Empty string = use latest.</summary>
+    public string GetNrPackVersion(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.NrPackVersion.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.NrPackVersion.TryGetValue(gameName, out var vL) && !string.IsNullOrEmpty(vL)) return vL;
+        return "";
+    }
+
+    /// <summary>Sets the persisted NR pack version (Feeder or Bridge) for a game. Null or empty clears the override (use latest).</summary>
+    public void SetNrPackVersion(string gameName, string? version, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(version))
+        {
+            _gameNameService.NrPackVersion.Remove(key);
+            _gameNameService.NrPackVersion.Remove(gameName);
+        }
+        else
+            _gameNameService.NrPackVersion[key] = version;
+        CrashReporter.Log($"[MainViewModel.SetNrPackVersion] {gameName}|{store} = '{version ?? "(cleared)"}', dict count={_gameNameService.NrPackVersion.Count}");
+        SaveNameMappings();
+    }
+
     // ── Deploy Streamline (original) ──────────────────────────────────────────
 
     /// <summary>Returns whether Deploy Streamline is enabled for a game.</summary>

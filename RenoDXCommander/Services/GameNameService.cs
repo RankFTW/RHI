@@ -63,6 +63,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1" / "0.55". Absent = use latest.</summary>
     private Dictionary<string, string> _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game NR pack version override (Feeder or Bridge). Key = "GameName|Store", Value = version tag e.g. "v1.16.0-beta.4". Absent = use latest.</summary>
+    private Dictionary<string, string> _nrPackVersion = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game HDR auto-toggle overrides. Key = game name, Value = "On" or "Off". Absent = use global default.</summary>
     private Dictionary<string, string> _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
 
@@ -179,6 +182,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> NrMethodOverrides => _nrMethodOverrides;
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
     public Dictionary<string, string> NrAddonVersion => _nrAddonVersion;
+    /// <summary>Per-game NR pack (Feeder/Bridge) version override. Key = "GameName|Store", Value = version tag. Absent = use latest.</summary>
+    public Dictionary<string, string> NrPackVersion => _nrPackVersion;
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     public Dictionary<string, string> HdrToggleOverrides => _hdrToggleOverrides;
     /// <summary>Per-game Resolution auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
@@ -505,6 +510,11 @@ public class GameNameService : IGameNameService
         _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in nrAddonVersionDict) _nrAddonVersion[kv.Key] = kv.Value;
 
+        var nrPackVersionDict = Load<Dictionary<string, string>>("NrPackVersion",
+            new(StringComparer.OrdinalIgnoreCase));
+        _nrPackVersion = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in nrPackVersionDict) _nrPackVersion[kv.Key] = kv.Value;
+
         var liliumPresetOvDict = Load<Dictionary<string, int>>("LiliumPresetOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -706,6 +716,8 @@ public class GameNameService : IGameNameService
                 s["NrMethodOverrides"] = JsonSerializer.Serialize(_nrMethodOverrides);
                 if (_nrAddonVersion.Count > 0) s["NrAddonVersion"] = JsonSerializer.Serialize(_nrAddonVersion);
                 else s.Remove("NrAddonVersion");
+                if (_nrPackVersion.Count > 0) s["NrPackVersion"] = JsonSerializer.Serialize(_nrPackVersion);
+                else s.Remove("NrPackVersion");
                 s["HdrToggleOverrides"] = JsonSerializer.Serialize(_hdrToggleOverrides);
                 s["ResToggleOverrides"] = JsonSerializer.Serialize(_resToggleOverrides);
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
@@ -905,6 +917,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         MigrateCompositeDict(_nrMethodOverrides, oldName, newName);
         MigrateCompositeDict(_nrAddonVersion, oldName, newName);
+        MigrateCompositeDict(_nrPackVersion, oldName, newName);
         // These four are name-only (not per-store) — use name-only migration
         MigrateDict(_hdrToggleOverrides, oldName, newName);
         MigrateDict(_resToggleOverrides, oldName, newName);

@@ -183,12 +183,16 @@ public partial class DetailPanelBuilder
         };
 
         // ── Row 1: Method combo + Addon Version combo + NR DLL version combo ──
+        // ── Row 1: Method / [Pack Version] / DLSS5 Tool Version / NR DLL Version ──
+        // 3 columns for DLSS5Tool/ShortFuse; 4 columns for Feeder/Bridge (adds pack version col)
+        bool isFeederOrBridge = effectiveMethod == NrMethodFeeder || effectiveMethod == NrMethodDlss5ToolBridge;
         var row1 = new Grid { ColumnSpacing = 8 };
-        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Method
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Pack version (Feeder/Bridge only)
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // DLSS5 Tool / SF version
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // NR DLL version
 
-        // Method combo
+        // Method combo (col 0)
         var methodStack = new StackPanel { Spacing = 2 };
         methodStack.Children.Add(new TextBlock { Text = "Method", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush) });
 
@@ -216,9 +220,88 @@ public partial class DetailPanelBuilder
         Grid.SetColumn(methodStack, 0);
         row1.Children.Add(methodStack);
 
-        // Addon version combo (DLSS5 Tool, Bridge, ShortFuse — not Feeder)
+        // Pack version combo (col 1) — Feeder version or Bridge version, always "Latest" (managed by AddonPackService)
+        var packVersionLabel = new TextBlock { FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush) };
+        packVersionLabel.Text = effectiveMethod == NrMethodFeeder ? "Feeder Version" : "Bridge Version";
+        var packVersionStack = new StackPanel { Spacing = 2, Visibility = isFeederOrBridge ? Visibility.Visible : Visibility.Collapsed };
+        packVersionStack.Children.Add(packVersionLabel);
+        var packVersionCombo = new ComboBox
+        {
+            FontSize = 11,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            CornerRadius = new CornerRadius(6),
+        };
+        // Pack version combo — populate from staged version list, wire persistence
+        bool packComboInitializing = true;
+        SelectionChangedEventHandler? packVersionHandler = null;
+
+        void PopulatePackVersionCombo(string methodKey)
+        {
+            packComboInitializing = true;
+
+            // Unsubscribe the previous handler (if any) before repopulating
+            if (packVersionHandler != null)
+            {
+                packVersionCombo.SelectionChanged -= packVersionHandler;
+                packVersionHandler = null;
+            }
+
+            packVersionCombo.Items.Clear();
+            packVersionCombo.Items.Add("Latest");
+            var packAddonType = methodKey == NrMethodFeeder ? Renodx5AddonService.FeederSubDir : Renodx5AddonService.BridgeSubDir;
+            var versions = rdx5Svc.GetAvailableVersions(packAddonType);
+            foreach (var v in versions)
+                packVersionCombo.Items.Add(v);
+
+            var storedPack = _window.ViewModel.GetNrPackVersion(gameName, store);
+            int packSelIdx = 0;
+            if (!string.IsNullOrEmpty(storedPack))
+            {
+                for (int i = 1; i < packVersionCombo.Items.Count; i++)
+                {
+                    if (string.Equals(packVersionCombo.Items[i] as string, storedPack, StringComparison.OrdinalIgnoreCase))
+                    { packSelIdx = i; break; }
+                }
+                // Version list may be empty (fetch not yet completed) — insert the stored version so it shows correctly
+                if (packSelIdx == 0 && versions.Count == 0)
+                {
+                    packVersionCombo.Items.Add(storedPack);
+                    packSelIdx = 1;
+                }
+            }
+            packVersionCombo.SelectedIndex = packSelIdx;
+            packVersionCombo.IsEnabled = true;
+            packVersionCombo.Opacity = 1.0;
+            packComboInitializing = false;
+
+            packVersionHandler = (s2, ev2) =>
+            {
+                if (packComboInitializing) return;
+                var sel = packVersionCombo.SelectedItem as string;
+                _window.ViewModel.SetNrPackVersion(gameName,
+                    string.IsNullOrEmpty(sel) || sel == "Latest" ? null : sel, store);
+            };
+            packVersionCombo.SelectionChanged += packVersionHandler;
+        }
+
+        if (isFeederOrBridge)
+            PopulatePackVersionCombo(effectiveMethod);
+
+        ToolTipService.SetToolTip(packVersionStack,
+            effectiveMethod == NrMethodFeeder
+                ? "Version of dlss5-feed.addon64 to install."
+                : "Version of dlss5-bridge.addon64 to install.");
+        packVersionStack.Children.Add(packVersionCombo);        Grid.SetColumn(packVersionStack, 1);
+        row1.Children.Add(packVersionStack);
+
+        // DLSS5 Tool / SF version combo (col 2)
+        var addonVersionLabel = new TextBlock { FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush) };
+        addonVersionLabel.Text = effectiveMethod == NrMethodShortFuse ? "SF Version"
+                                : effectiveMethod == NrMethodFeeder    ? "DLSS5 Tool Version"
+                                : effectiveMethod == NrMethodDlss5ToolBridge ? "DLSS5 Tool Version"
+                                : "DLSS5 Tool Version";
         var addonVersionStack = new StackPanel { Spacing = 2 };
-        addonVersionStack.Children.Add(new TextBlock { Text = "Addon Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush) });
+        addonVersionStack.Children.Add(addonVersionLabel);
 
         var addonVersionCombo = new ComboBox
         {
@@ -258,7 +341,6 @@ public partial class DetailPanelBuilder
             {
                 if (addonComboInit) return;
                 var sel = addonVersionCombo.SelectedItem as string;
-                // "" clears override (= Latest); specific version persists
                 _window.ViewModel.SetNrAddonVersion(gameName,
                     string.IsNullOrEmpty(sel) || sel == "Latest" ? null : sel, store);
             }
@@ -269,12 +351,14 @@ public partial class DetailPanelBuilder
         PopulateAddonVersionCombo(initialAddonType);
 
         ToolTipService.SetToolTip(addonVersionCombo,
-            "Addon version to install. 'Latest' always installs the newest available and auto-updates.");
+            effectiveMethod == NrMethodFeeder
+                ? "Version of renodx-dlss5.addon64 deployed as the neural consumer. The Feeder addon itself always uses the latest version."
+                : "Addon version to install. 'Latest' always installs the newest available and auto-updates.");
         addonVersionStack.Children.Add(addonVersionCombo);
-        Grid.SetColumn(addonVersionStack, 1);
+        Grid.SetColumn(addonVersionStack, 2);
         row1.Children.Add(addonVersionStack);
 
-        // NR version combo (only shown for DLSS5 Tool / Bridge methods)
+        // NR version combo (col 3)
         var nrVersionStack = new StackPanel { Spacing = 2 };
         nrVersionStack.Children.Add(new TextBlock { Text = "NR DLL Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush) });
 
@@ -291,7 +375,7 @@ public partial class DetailPanelBuilder
         nrVersionCombo.SelectedIndex = 0;
         ToolTipService.SetToolTip(nrVersionCombo, "NR DLL version to deploy. 'Latest' always uses the newest available.");
         nrVersionStack.Children.Add(nrVersionCombo);
-        Grid.SetColumn(nrVersionStack, 2);
+        Grid.SetColumn(nrVersionStack, 3);
         row1.Children.Add(nrVersionStack);
 
         nrBody.Children.Add(row1);
@@ -671,15 +755,31 @@ public partial class DetailPanelBuilder
                 installBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
             }
 
-            // NR version combo only relevant for DLSS5 Tool / Bridge (not ShortFuse/Feeder)
-            bool nrVersionRelevant = selKey == NrMethodDlss5Tool || selKey == NrMethodDlss5ToolBridge;
-            nrVersionStack.Opacity   = nrVersionRelevant ? 1.0 : 0.4;
-            nrVersionCombo.IsEnabled = nrVersionRelevant;
+            // NR version combo only relevant for DLSS5 Tool / Bridge / Feeder (not ShortFuse)
+            // Greyed when already installed — can't change without uninstalling
+            bool nrVersionRelevant = selKey == NrMethodDlss5Tool || selKey == NrMethodDlss5ToolBridge || selKey == NrMethodFeeder;
+            nrVersionStack.Opacity   = (!nrVersionRelevant || anyInstalled) ? 0.4 : 1.0;
+            nrVersionCombo.IsEnabled = nrVersionRelevant && !anyInstalled;
+
+            // Pack version column (Feeder/Bridge only)
+            bool showPackVersion = selKey == NrMethodFeeder || selKey == NrMethodDlss5ToolBridge;
+            packVersionStack.Visibility = showPackVersion ? Visibility.Visible : Visibility.Collapsed;
+            packVersionLabel.Text = selKey == NrMethodFeeder ? "Feeder Version" : "Bridge Version";
+            if (showPackVersion)
+            {
+                PopulatePackVersionCombo(selKey);
+                ToolTipService.SetToolTip(packVersionStack,
+                    selKey == NrMethodFeeder
+                        ? "Version of dlss5-feed.addon64 to install."
+                        : "Version of dlss5-bridge.addon64 to install.");
+            }
+
+            // DLSS5 Tool / SF version label
+            addonVersionLabel.Text = selKey == NrMethodShortFuse ? "SF Version" : "DLSS5 Tool Version";
 
             // Addon version combo relevant for all methods (controls renodx-dlss5.addon64 version)
             // For Feeder: controls the neural consumer (renodx-dlss5.addon64) — feeder addon itself always latest
             // Greyed out when already installed — version cannot be changed without uninstalling first
-            bool addonVersionRelevant = true;
             bool addonVersionEditable = !anyInstalled;
             addonVersionStack.Opacity   = anyInstalled ? 0.4 : 1.0;
             addonVersionCombo.IsEnabled = addonVersionEditable;
@@ -688,6 +788,10 @@ public partial class DetailPanelBuilder
                 : selKey == NrMethodFeeder
                     ? "Version of renodx-dlss5.addon64 deployed as the neural consumer. The Feeder addon itself always uses the latest version."
                     : null);
+
+            // Pack version also greyed when installed
+            packVersionStack.Opacity   = anyInstalled ? 0.4 : 1.0;
+            packVersionCombo.IsEnabled = !anyInstalled && showPackVersion;
 
             // Remove button visibility
             removeBtn.Visibility = anyInstalled ? Visibility.Visible : Visibility.Collapsed;
@@ -726,88 +830,88 @@ public partial class DetailPanelBuilder
             // Repopulate addon version combo for the new method's addon type
             PopulateAddonVersionCombo(selKey == NrMethodShortFuse ? "dlsstool" : "dlss5tool");
 
-            // Different method selected — uninstall whatever is currently installed
+            // Different method selected — check installed state off the UI thread (File.Exists on
+            // WindowsApps paths can block), then uninstall if needed
             var previousKey = effectiveMethod;
-            bool anyInstalled = previousKey switch
-            {
-                NrMethodDlss5Tool       => rdx5Svc.IsInstalledIn(installPath),
-                NrMethodDlss5ToolBridge => rdx5Svc.IsInstalledIn(installPath) || File.Exists(Path.Combine(installPath, BridgeDeployFile)),
-                NrMethodShortFuse       => rdx5Svc.IsSfInstalledIn(installPath),
-                NrMethodFeeder          => File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64)),
-                _                       => false,
-            };
+            methodCombo.IsEnabled  = false;
+            installBtn.IsEnabled   = false;
+            removeBtn.IsEnabled    = false;
+            installBtn.Content     = "Removing...";
 
-            if (anyInstalled)
+            try
             {
-                methodCombo.IsEnabled  = false;
-                installBtn.IsEnabled   = false;
-                removeBtn.IsEnabled    = false;
-                installBtn.Content     = "Removing...";
-
-                try
+                await Task.Run(() =>
                 {
-                    await Task.Run(() =>
+                    bool anyInstalled = previousKey switch
                     {
-                        // Uninstall Cost Scaler first (restores _real → nvngx_dlssnr.dll before NR cleanup)
-                        var csSvcSwitch = App.Services.GetRequiredService<DlssNrCostScalerService>();
-                        csSvcSwitch.Uninstall(installPath);
-                        _window.ViewModel.SetNrCostScalerEnabled(gameName, false, store);
+                        NrMethodDlss5Tool       => rdx5Svc.IsInstalledIn(installPath),
+                        NrMethodDlss5ToolBridge => rdx5Svc.IsInstalledIn(installPath) || File.Exists(Path.Combine(installPath, BridgeDeployFile)),
+                        NrMethodShortFuse       => rdx5Svc.IsSfInstalledIn(installPath),
+                        NrMethodFeeder          => File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64)),
+                        _                       => false,
+                    };
 
-                        switch (previousKey)
+                    if (!anyInstalled) return;
+
+                    // Uninstall Cost Scaler first (restores _real → nvngx_dlssnr.dll before NR cleanup)
+                    var csSvcSwitch = App.Services.GetRequiredService<DlssNrCostScalerService>();
+                    csSvcSwitch.Uninstall(installPath);
+                    _window.ViewModel.SetNrCostScalerEnabled(gameName, false, store);
+
+                    switch (previousKey)
+                    {
+                        case NrMethodDlss5Tool:
+                            rdx5Svc.Uninstall(installPath);
+                            RestoreDlssDllsWithSentinel(card, _dlssStreamlineService);
+                            break;
+
+                        case NrMethodDlss5ToolBridge:
+                            rdx5Svc.Uninstall(installPath);
+                            RemoveAddonFile(installPath, BridgeDeployFile, "NeuralRendering.MethodSwitch.Bridge");
+                            RestoreDlssDllsWithSentinel(card, _dlssStreamlineService);
+                            break;
+
+                        case NrMethodShortFuse:
                         {
-                            case NrMethodDlss5Tool:
-                                rdx5Svc.Uninstall(installPath);
-                                RestoreDlssDllsWithSentinel(card, _dlssStreamlineService);
-                                break;
-
-                            case NrMethodDlss5ToolBridge:
-                                rdx5Svc.Uninstall(installPath);
-                                RemoveAddonFile(installPath, BridgeDeployFile, "NeuralRendering.MethodSwitch.Bridge");
-                                RestoreDlssDllsWithSentinel(card, _dlssStreamlineService);
-                                break;
-
-                            case NrMethodShortFuse:
-                            {
-                                var det = _dlssStreamlineService.Detect(installPath);
-                                rdx5Svc.UninstallSf(installPath, det.HasAny ? det : null);
-                                _window.ViewModel.RevertSfAutoConfig(card);
-                                break;
-                            }
-
-                            case NrMethodFeeder:
-                            {
-                                var file = card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64;
-                                RemoveAddonFile(installPath, file, "NeuralRendering.MethodSwitch.Feeder");
-                                rdx5Svc.Uninstall(installPath);
-                                var dlssDest     = Path.Combine(installPath, "nvngx_dlss.dll");
-                                var dlssSentinel = dlssDest + ".original";
-                                if (File.Exists(dlssSentinel))
-                                {
-                                    var info = new FileInfo(dlssSentinel);
-                                    if (info.Length == 0) { try { File.Delete(dlssDest); File.Delete(dlssSentinel); } catch { } }
-                                    else { try { File.Copy(dlssSentinel, dlssDest, overwrite: true); File.Delete(dlssSentinel); } catch { } }
-                                }
-                                rdx5Svc.RemoveNrDll(installPath, "Feeder");
-                                RemoveFeederShaders(installPath, gameName, store, card);
-                                // Remove host64\ and dgVoodoo2 on method switch too
-                                var h64 = Path.Combine(installPath, "host64");
-                                if (Directory.Exists(h64)) try { Directory.Delete(h64, recursive: true); } catch { }
-                                // Only remove dgVoodoo2 if Luma isn't also installed (Luma needs D3D9.dll too)
-                                if (card.LumaStatus != GameStatus.Installed)
-                                    App.Services.GetRequiredService<DgVoodooService>().RemoveFromGame(installPath);
-                                else
-                                    CrashReporter.Log($"[NeuralRendering] Luma still installed — preserving dgVoodoo2 for '{gameName}'");
-                                Models.RhiInstallManifest.RemoveComponent(installPath, "Feeder");
-                                break;
-                            }
+                            var det = _dlssStreamlineService.Detect(installPath);
+                            rdx5Svc.UninstallSf(installPath, det.HasAny ? det : null);
+                            _window.ViewModel.RevertSfAutoConfig(card);
+                            break;
                         }
-                        CrashReporter.Log($"[NeuralRendering.MethodSwitch] Removed '{previousKey}', switching to '{selKey}' for '{gameName}'");
-                    });
-                }
-                catch (Exception ex)
-                {
-                    CrashReporter.Log($"[NeuralRendering.MethodSwitch] Remove failed — {ex.Message}");
-                }
+
+                        case NrMethodFeeder:
+                        {
+                            var file = card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64;
+                            RemoveAddonFile(installPath, file, "NeuralRendering.MethodSwitch.Feeder");
+                            rdx5Svc.Uninstall(installPath);
+                            var dlssDest     = Path.Combine(installPath, "nvngx_dlss.dll");
+                            var dlssSentinel = dlssDest + ".original";
+                            if (File.Exists(dlssSentinel))
+                            {
+                                var info = new FileInfo(dlssSentinel);
+                                if (info.Length == 0) { try { File.Delete(dlssDest); File.Delete(dlssSentinel); } catch { } }
+                                else { try { File.Copy(dlssSentinel, dlssDest, overwrite: true); File.Delete(dlssSentinel); } catch { } }
+                            }
+                            rdx5Svc.RemoveNrDll(installPath, "Feeder");
+                            RemoveFeederShaders(installPath, gameName, store, card);
+                            // Remove host64\ and dgVoodoo2 on method switch too
+                            var h64 = Path.Combine(installPath, "host64");
+                            if (Directory.Exists(h64)) try { Directory.Delete(h64, recursive: true); } catch { }
+                            // Only remove dgVoodoo2 if Luma isn't also installed (Luma needs D3D9.dll too)
+                            if (card.LumaStatus != GameStatus.Installed)
+                                App.Services.GetRequiredService<DgVoodooService>().RemoveFromGame(installPath);
+                            else
+                                CrashReporter.Log($"[NeuralRendering] Luma still installed — preserving dgVoodoo2 for '{gameName}'");
+                            Models.RhiInstallManifest.RemoveComponent(installPath, "Feeder");
+                            break;
+                        }
+                    }
+                    CrashReporter.Log($"[NeuralRendering.MethodSwitch] Removed '{previousKey}', switching to '{selKey}' for '{gameName}'");
+                });
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[NeuralRendering.MethodSwitch] Remove failed — {ex.Message}");
             }
 
             _window.ViewModel.SetNrMethodOverride(gameName, selKey, store);
@@ -873,7 +977,7 @@ public partial class DetailPanelBuilder
 
                     case NrMethodDlss5ToolBridge:
                         await InstallDlss5ToolAsync(card, installBtn, addonVersionCombo, nrVersionCombo, rdx5Svc, dlssSvc, addonSvc);
-                        await InstallBridgeAddonAsync(card, installBtn, addonSvc);
+                        await InstallBridgeAddonAsync(card, installBtn, addonSvc, packVersionCombo);
                         // Append bridge file to the Dlss5Tool component record
                         {
                             var bFiles = Models.RhiInstallManifest.GetComponentFiles(installPath, "Dlss5Tool").ToList();
@@ -888,7 +992,7 @@ public partial class DetailPanelBuilder
                         break;
 
                     case NrMethodFeeder:
-                        await InstallFeederAddonAsync(card, installBtn, addonSvc, addonVersionCombo);
+                        await InstallFeederAddonAsync(card, installBtn, addonSvc, addonVersionCombo, packVersionCombo);
                         break;
                 }
 
@@ -1404,34 +1508,67 @@ public partial class DetailPanelBuilder
     private async Task InstallBridgeAddonAsync(
         GameCardViewModel card,
         Button statusBtn,
-        IAddonPackService addonSvc)
+        IAddonPackService addonSvc,
+        ComboBox? packVersionCombo = null)
     {
         var installPath = card.InstallPath!;
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+        var rdx5Svc     = App.Services.GetRequiredService<Renodx5AddonService>();
+
+        // Resolve requested Bridge version
+        string? requestedBridgeVersion = null;
+        if (packVersionCombo != null)
+        {
+            requestedBridgeVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
+                () => packVersionCombo.SelectedItem as string).ConfigureAwait(false);
+        }
+        bool useLatestBridge = string.IsNullOrEmpty(requestedBridgeVersion) || requestedBridgeVersion == "Latest";
+
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Downloading DX11 Bridge...");
 
-        // Ensure staged — always re-download Bridge to get latest version
-        // (stale cached file may be from the old dead URL dlss5-dx11-bridge.addon64)
-        var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
-            p.PackageName.Equals(BridgePackageName, StringComparison.OrdinalIgnoreCase));
-        if (entry != null)
+        // Resolve Bridge staged path — versioned or latest via AddonPackService
+        string? bridgeSourcePath = null;
+        if (!useLatestBridge && requestedBridgeVersion != null)
         {
-            addonSvc.RemoveAddon(BridgePackageName); // clear stale cached version
-            await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
+            var staged = await rdx5Svc.EnsureVersionStagedAsync(Renodx5AddonService.BridgeSubDir, requestedBridgeVersion).ConfigureAwait(false);
+            if (staged)
+            {
+                bridgeSourcePath = rdx5Svc.GetVersionedStagedFilePath(Renodx5AddonService.BridgeSubDir, requestedBridgeVersion);
+                _window.ViewModel.SetNrPackVersion(gameName, requestedBridgeVersion, store);
+                CrashReporter.Log($"[NeuralRendering] Using Bridge v{requestedBridgeVersion} from versioned staging");
+            }
+            else
+            {
+                CrashReporter.Log($"[NeuralRendering] Could not stage Bridge v{requestedBridgeVersion} — falling back to latest");
+            }
+        }
+
+        if (bridgeSourcePath == null)
+        {
+            // Fall back to AddonPackService (always latest) — also force re-download to clear stale cache
+            var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
+                p.PackageName.Equals(BridgePackageName, StringComparison.OrdinalIgnoreCase));
+            if (entry != null)
+            {
+                addonSvc.RemoveAddon(BridgePackageName);
+                await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
+            }
+            bridgeSourcePath = FindStagedAddon(BridgePackageName, ".addon64");
+            _window.ViewModel.SetNrPackVersion(gameName, null, store);
         }
 
         // Deploy — Bridge goes in the game root (next to ReShade / exe), not reshade-addons
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying DX11 Bridge...");
         await Task.Run(() =>
         {
-            // Find staged file
-            string? stagedPath = FindStagedAddon(BridgePackageName, ".addon64");
-            if (stagedPath == null || !File.Exists(stagedPath))
+            if (bridgeSourcePath == null || !File.Exists(bridgeSourcePath))
             {
                 CrashReporter.Log($"[NeuralRendering] Bridge staging file not found");
                 return;
             }
             var dest = Path.Combine(installPath, BridgeDeployFile);
-            File.Copy(stagedPath, dest, overwrite: true);
+            File.Copy(bridgeSourcePath, dest, overwrite: true);
             CrashReporter.Log($"[NeuralRendering] Deployed {BridgeDeployFile} to '{installPath}'");
         }).ConfigureAwait(false);
     }
@@ -1628,11 +1765,22 @@ public partial class DetailPanelBuilder
         GameCardViewModel card,
         Button statusBtn,
         IAddonPackService addonSvc,
-        ComboBox? addonVersionCombo = null)
+        ComboBox? addonVersionCombo = null,
+        ComboBox? packVersionCombo = null)
     {
         var installPath = card.InstallPath!;
         var gameName    = card.GameName;
         var store       = card.Source ?? "";
+        var rdx5Svc     = App.Services.GetRequiredService<Renodx5AddonService>();
+
+        // Resolve requested Feeder version (the feed addon itself)
+        string? requestedFeederVersion = null;
+        if (packVersionCombo != null)
+        {
+            requestedFeederVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
+                () => packVersionCombo.SelectedItem as string).ConfigureAwait(false);
+        }
+        bool useLatestFeeder = string.IsNullOrEmpty(requestedFeederVersion) || requestedFeederVersion == "Latest";
 
         // Resolve requested DLSS5 Tool version (neural consumer) — Latest or pinned
         string? requestedVersion = null;
@@ -1645,33 +1793,51 @@ public partial class DetailPanelBuilder
 
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Downloading Feeder...");
 
-        var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
-            p.PackageName.Equals(FeederPackageName, StringComparison.OrdinalIgnoreCase));
-        // For 32-bit games we also need host64\dlss5-feed-host64.exe from the same zip.
-        // Force a re-download if the exe wasn't staged yet (e.g. addon was downloaded before
-        // the host64 extraction code was added).
-        bool needsHostExe = card.Is32Bit && FindStagedAddon(FeederPackageName, ".exe") == null;
-        if (entry != null && (!addonSvc.IsDownloaded(FeederPackageName) || needsHostExe))
-            await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
+        // Resolve Feeder staged path — versioned or latest via AddonPackService
+        string? feederSourcePath = null;
+        if (!useLatestFeeder && requestedFeederVersion != null)
+        {
+            var staged = await rdx5Svc.EnsureVersionStagedAsync(Renodx5AddonService.FeederSubDir, requestedFeederVersion).ConfigureAwait(false);
+            if (staged)
+            {
+                feederSourcePath = rdx5Svc.GetVersionedStagedFilePath(Renodx5AddonService.FeederSubDir, requestedFeederVersion);
+                _window.ViewModel.SetNrPackVersion(gameName, requestedFeederVersion, store);
+                CrashReporter.Log($"[NeuralRendering] Using Feeder v{requestedFeederVersion} from versioned staging — persisted pack version");
+            }
+            else
+            {
+                CrashReporter.Log($"[NeuralRendering] Could not stage Feeder v{requestedFeederVersion} — falling back to latest");
+            }
+        }
+
+        if (feederSourcePath == null)
+        {
+            // Fall back to AddonPackService (always latest)
+            var entry = addonSvc.AvailablePacks.FirstOrDefault(p =>
+                p.PackageName.Equals(FeederPackageName, StringComparison.OrdinalIgnoreCase));
+            bool needsHostExe = card.Is32Bit && FindStagedAddon(FeederPackageName, ".exe") == null;
+            if (entry != null && (!addonSvc.IsDownloaded(FeederPackageName) || needsHostExe))
+                await addonSvc.DownloadAddonAsync(entry).ConfigureAwait(false);
+            var bitnessExt = card.Is32Bit ? ".addon32" : ".addon64";
+            feederSourcePath = FindStagedAddon(FeederPackageName, bitnessExt);
+            _window.ViewModel.SetNrPackVersion(gameName, null, store); // clear version pin — using latest
+        }
 
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying Feeder...");
         await Task.Run(() =>
         {
-            var bitnessExt = card.Is32Bit ? ".addon32" : ".addon64";
-            string? stagedPath = FindStagedAddon(FeederPackageName, bitnessExt);
-            if (stagedPath == null || !File.Exists(stagedPath))
+            if (feederSourcePath == null || !File.Exists(feederSourcePath))
             {
                 CrashReporter.Log($"[NeuralRendering] Feeder staging file not found");
                 return;
             }
             var destName = card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64;
             var dest = Path.Combine(installPath, destName);
-            File.Copy(stagedPath, dest, overwrite: true);
+            File.Copy(feederSourcePath, dest, overwrite: true);
             CrashReporter.Log($"[NeuralRendering] Deployed {destName} to '{installPath}'");
         }).ConfigureAwait(false);
 
         // Also deploy NR dll alongside the feeder
-        var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
         await rdx5Svc.DeployNrDllIfAbsentAsync(installPath, "Feeder").ConfigureAwait(false);
 
         // Deploy DLSS5 Tool as neural consumer (Feeder needs renodx-dlss5.addon64 alongside it)

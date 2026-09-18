@@ -682,6 +682,14 @@ public class Renodx5AddonService
 
     private const string Dlss5ToolSubDir = "dlss5tool";
     private const string DlssToolSubDir  = "dlsstool";
+    public const string FeederSubDir     = "feeder";
+    public const string BridgeSubDir     = "bridge";
+
+    private const string FeederStagedFileName = "dlss5-feed.addon64";
+    private const string BridgeStagedFileName = "dlss5-bridge.addon64";
+
+    private static readonly string FeederApiUrl = "https://api.github.com/repos/jlrouzies-fr/DLSS5-Feeder/releases?per_page=30";
+    private static readonly string BridgeApiUrl = "https://api.github.com/repos/NIGos/dlss5-bridge/releases?per_page=30";
 
     /// <summary>
     /// Path to the available_versions.json cache (list of all released versions for each addon).
@@ -692,6 +700,8 @@ public class Renodx5AddonService
     // ── In-memory cache populated at startup ─────────────────────────────────
     private List<(string Version, string DownloadUrl)> _dlss5ToolVersions = new();
     private List<(string Version, string DownloadUrl)> _dlssToolVersions  = new();
+    private List<(string Version, string DownloadUrl)> _feederVersions    = new();
+    private List<(string Version, string DownloadUrl)> _bridgeVersions    = new();
 
     /// <summary>
     /// Returns all available versions for the given addon type ("dlss5tool" or "dlsstool"),
@@ -700,9 +710,11 @@ public class Renodx5AddonService
     /// </summary>
     public IReadOnlyList<string> GetAvailableVersions(string addonType)
     {
-        var list = addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase)
-            ? _dlss5ToolVersions
-            : _dlssToolVersions;
+        var list = addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase) ? _dlss5ToolVersions
+                 : addonType.Equals(DlssToolSubDir,  StringComparison.OrdinalIgnoreCase) ? _dlssToolVersions
+                 : addonType.Equals(FeederSubDir,    StringComparison.OrdinalIgnoreCase) ? _feederVersions
+                 : addonType.Equals(BridgeSubDir,    StringComparison.OrdinalIgnoreCase) ? _bridgeVersions
+                 : _dlss5ToolVersions;
         return list.Select(e => e.Version).ToList().AsReadOnly();
     }
 
@@ -804,18 +816,25 @@ public class Renodx5AddonService
             _dlss5ToolVersions = dlss5.OrderByDescending(e => e.Parsed).Select(e => (e.Version, e.DownloadUrl)).ToList();
             _dlssToolVersions  = dlssSf.OrderByDescending(e => e.Parsed).Select(e => (e.Version, e.DownloadUrl)).ToList();
 
+            // ── Fetch Feeder and Bridge versions from their own repos ─────────
+            _feederVersions = await FetchSimpleRepoVersionsAsync(FeederApiUrl, FeederStagedFileName).ConfigureAwait(false);
+            _bridgeVersions = await FetchSimpleRepoVersionsAsync(BridgeApiUrl, BridgeStagedFileName).ConfigureAwait(false);
+
             // Persist cache
             Directory.CreateDirectory(_stagingDir);
             var cacheObj = new
             {
                 dlss5tool = _dlss5ToolVersions.Select(e => new { version = e.Version, url = e.DownloadUrl }),
                 dlsstool  = _dlssToolVersions.Select(e => new { version = e.Version, url = e.DownloadUrl }),
+                feeder    = _feederVersions.Select(e => new { version = e.Version, url = e.DownloadUrl }),
+                bridge    = _bridgeVersions.Select(e => new { version = e.Version, url = e.DownloadUrl }),
             };
             await File.WriteAllTextAsync(AvailableVersionsFilePath,
                 JsonSerializer.Serialize(cacheObj, new JsonSerializerOptions { WriteIndented = false })).ConfigureAwait(false);
 
             _crashReporter.Log($"[Renodx5AddonService.FetchAndCacheAvailableVersionsAsync] " +
-                $"Cached {_dlss5ToolVersions.Count} DLSS5 Tool versions, {_dlssToolVersions.Count} ShortFuse versions");
+                $"Cached {_dlss5ToolVersions.Count} DLSS5 Tool, {_dlssToolVersions.Count} ShortFuse, " +
+                $"{_feederVersions.Count} Feeder, {_bridgeVersions.Count} Bridge versions");
         }
         catch (Exception ex)
         {
@@ -849,6 +868,8 @@ public class Renodx5AddonService
 
             _dlss5ToolVersions = ParseList(doc.RootElement, "dlss5tool");
             _dlssToolVersions  = ParseList(doc.RootElement, "dlsstool");
+            _feederVersions    = ParseList(doc.RootElement, "feeder");
+            _bridgeVersions    = ParseList(doc.RootElement, "bridge");
         }
         catch (Exception ex)
         {
@@ -862,16 +883,86 @@ public class Renodx5AddonService
     /// </summary>
     public string? GetVersionedStagedFilePath(string addonType, string version)
     {
-        var subDir = addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase)
-            ? Dlss5ToolSubDir : DlssToolSubDir;
-        var fileName = addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase)
-            ? StagedFileName : SfStagedFileName;
+        var (subDir, fileName) = ResolveSubDirAndFileName(addonType);
         return Path.Combine(_stagingDir, subDir, version, fileName);
     }
+
+    private (string SubDir, string FileName) ResolveSubDirAndFileName(string addonType) =>
+        addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase) ? (Dlss5ToolSubDir, StagedFileName) :
+        addonType.Equals(DlssToolSubDir,  StringComparison.OrdinalIgnoreCase) ? (DlssToolSubDir,  SfStagedFileName) :
+        addonType.Equals(FeederSubDir,    StringComparison.OrdinalIgnoreCase) ? (FeederSubDir,    FeederStagedFileName) :
+        addonType.Equals(BridgeSubDir,    StringComparison.OrdinalIgnoreCase) ? (BridgeSubDir,    BridgeStagedFileName) :
+        (Dlss5ToolSubDir, StagedFileName);
+
+    private List<(string Version, string DownloadUrl)> GetVersionList(string addonType) =>
+        addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase) ? _dlss5ToolVersions :
+        addonType.Equals(DlssToolSubDir,  StringComparison.OrdinalIgnoreCase) ? _dlssToolVersions :
+        addonType.Equals(FeederSubDir,    StringComparison.OrdinalIgnoreCase) ? _feederVersions :
+        addonType.Equals(BridgeSubDir,    StringComparison.OrdinalIgnoreCase) ? _bridgeVersions :
+        _dlss5ToolVersions;
 
     /// <summary>True if the given version is already staged on disk.</summary>
     public bool IsVersionStaged(string addonType, string version) =>
         File.Exists(GetVersionedStagedFilePath(addonType, version));
+
+    /// <summary>
+    /// Fetches release versions from a simple GitHub repo (any tags, picks .addon64 asset).
+    /// Used for Feeder and Bridge which have their own repos separate from the rhi-repo.
+    /// </summary>
+    private async Task<List<(string Version, string DownloadUrl)>> FetchSimpleRepoVersionsAsync(
+        string apiUrl, string targetFileName)
+    {
+        var result = new List<(string Version, string DownloadUrl, System.Version Parsed)>();
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+            req.Headers.Add("User-Agent", "RHI");
+            req.Headers.Add("Accept", "application/vnd.github+json");
+            using var resp = await _http.SendAsync(req).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode)
+            {
+                _crashReporter.Log($"[Renodx5AddonService.FetchSimpleRepoVersionsAsync] {apiUrl} → {resp.StatusCode}");
+                return result.Select(e => (e.Version, e.DownloadUrl)).ToList();
+            }
+            var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var doc = JsonDocument.Parse(json);
+            foreach (var release in doc.RootElement.EnumerateArray())
+            {
+                var tag = release.TryGetProperty("tag_name", out var tEl) ? tEl.GetString() : null;
+                if (string.IsNullOrEmpty(tag)) continue;
+                if (release.TryGetProperty("draft", out var d) && d.GetBoolean()) continue;
+                string? downloadUrl = null;
+                if (release.TryGetProperty("assets", out var assets))
+                {
+                    foreach (var asset in assets.EnumerateArray())
+                    {
+                        var name = asset.TryGetProperty("name", out var nEl) ? nEl.GetString() : null;
+                        if (name == null) continue;
+                        // Match target filename (e.g. dlss5-feed.addon64 / dlss5-bridge.addon64)
+                        if (name.Equals(targetFileName, StringComparison.OrdinalIgnoreCase)
+                            || name.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (asset.TryGetProperty("browser_download_url", out var urlEl))
+                            {
+                                downloadUrl = urlEl.GetString();
+                                if (name.Equals(targetFileName, StringComparison.OrdinalIgnoreCase))
+                                    break; // exact match — stop looking
+                            }
+                        }
+                    }
+                }
+                if (string.IsNullOrEmpty(downloadUrl)) continue;
+                var versionStr = tag.TrimStart('v', 'V');
+                var parsed = System.Version.TryParse(versionStr, out var p) ? p : new System.Version(0, 0);
+                result.Add((tag, downloadUrl!, parsed));
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[Renodx5AddonService.FetchSimpleRepoVersionsAsync] Failed for {apiUrl} — {ex.Message}");
+        }
+        return result.OrderByDescending(e => e.Parsed).Select(e => (e.Version, e.DownloadUrl)).ToList();
+    }
 
     /// <summary>
     /// Ensures a specific version of the addon is staged in its versioned subfolder.
@@ -886,15 +977,13 @@ public class Renodx5AddonService
         }
 
         // Find download URL from in-memory cache
-        var list = addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase)
-            ? _dlss5ToolVersions : _dlssToolVersions;
+        var list = GetVersionList(addonType);
         var entry = list.FirstOrDefault(e => string.Equals(e.Version, version, StringComparison.OrdinalIgnoreCase));
         if (string.IsNullOrEmpty(entry.DownloadUrl))
         {
             _crashReporter.Log($"[Renodx5AddonService.EnsureVersionStagedAsync] No URL found for v{version} ({addonType}) — falling back to API");
-            // Try fetching fresh list
             await FetchAndCacheAvailableVersionsAsync(forceRefresh: true).ConfigureAwait(false);
-            list  = addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase) ? _dlss5ToolVersions : _dlssToolVersions;
+            list  = GetVersionList(addonType);
             entry = list.FirstOrDefault(e => string.Equals(e.Version, version, StringComparison.OrdinalIgnoreCase));
             if (string.IsNullOrEmpty(entry.DownloadUrl))
             {
@@ -905,10 +994,7 @@ public class Renodx5AddonService
 
         try
         {
-            var subDir = addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase)
-                ? Dlss5ToolSubDir : DlssToolSubDir;
-            var fileName = addonType.Equals(Dlss5ToolSubDir, StringComparison.OrdinalIgnoreCase)
-                ? StagedFileName : SfStagedFileName;
+            var (subDir, fileName) = ResolveSubDirAndFileName(addonType);
             var versionDir = Path.Combine(_stagingDir, subDir, version);
             Directory.CreateDirectory(versionDir);
             var destPath = Path.Combine(versionDir, fileName);

@@ -1,13 +1,14 @@
 ## v2.7.3
 
-## v2.7.3-beta
+## v2.7.3-beta2
 
 **Beta note:** This build includes verbose diagnostic logging to help track down a UI freeze that occurs intermittently during normal use. The freeze is fully reproducible but its root cause hasn't been isolated yet — every major UI rendering operation now logs timing and semaphore state to the session log. If the app freezes, close it and share the session log from `%LocalAppData%\RHI\Logs\`. This logging will be removed before the final release.
 
 ### New
 
 - UE-Extended games now show a status indicator next to the addon badge — ✓ (green) for mods marked complete in the RHI database, 🔨 for mods still in progress.
-- Custom shaders can now be selected individually in the global shader picker. Any `.fx`, texture, or LUT files you've placed in `%LocalAppData%\RHI\reshade\Custom\Shaders\` and `\Textures\` appear as a "Custom Shaders" section in the picker between Recommended and Extra packs. Individual files can be expanded and ticked/unticked, and they deploy alongside normal shader packs. The existing "Custom" mode in the per-game shader combo continues to work as before (deploys the whole Custom folder).
+- Custom shaders can now be selected individually in the global shader picker. Any `.fx`, texture, or LUT files you've placed in `%LocalAppData%\RHI\reshade\Custom\Shaders\` and `\Textures\` appear as a "Custom Shaders" section in the picker between Recommended and Extra packs, grouped by subfolder. Individual files can be expanded and ticked/unticked, and they deploy alongside normal shader packs. An "Open Custom Folder" button in the Profiles panel opens the folder directly. The existing "Custom" mode in the per-game shader combo continues to work as before (deploys the whole Custom folder).
+- Neural Rendering: Feeder and Bridge methods now have version selection. You can pin a specific version of `dlss5-feed.addon64` or `dlss5-bridge.addon64` from their respective GitHub release histories, or leave it on Latest to always get the newest. The existing DLSS5 Tool Version combo continues to control the neural consumer for all methods.
 
 ### Bug Fixes
 

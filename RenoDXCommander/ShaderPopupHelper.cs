@@ -1260,6 +1260,31 @@ public static class ShaderPopupHelper
 
             profilePanel.Children.Add(importBtn);
             profilePanel.Children.Add(importStatusLabel);
+
+            // ── Open Custom Folder button ──────────────────────────────────────
+            profilePanel.Children.Add(new Border { Height = 1, Background = Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 10) });
+            var openCustomBtn = new Button
+            {
+                Content             = "Open Custom Folder",
+                FontSize            = 12,
+                Padding             = new Thickness(8, 4, 8, 4),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            ToolTipService.SetToolTip(openCustomBtn, "Open your Custom shader folder — place .fx files in Shaders\\ and textures in Textures\\ to add them to the picker above.");
+            openCustomBtn.Click += async (s, ev) =>
+            {
+                try
+                {
+                    Directory.CreateDirectory(ShaderPackService.CustomShadersDir);
+                    Directory.CreateDirectory(ShaderPackService.CustomTexturesDir);
+                    await Windows.System.Launcher.LaunchFolderPathAsync(ShaderPackService.CustomDir);
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[ShaderPopupHelper] Failed to open Custom folder — {ex.Message}");
+                }
+            };
+            profilePanel.Children.Add(openCustomBtn);
         }
 
         // ── Two-column layout grid ─────────────────────────────────────────────
