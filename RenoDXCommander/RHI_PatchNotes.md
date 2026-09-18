@@ -6,33 +6,45 @@
 
 ### New
 
-- UE-Extended games now show a status indicator next to the addon badge — ✓ (green) for mods marked complete in the RHI database, 🔨 for mods still in progress.
-- Custom shaders can now be selected individually in the global shader picker. Any `.fx`, texture, or LUT files you've placed in `%LocalAppData%\RHI\reshade\Custom\Shaders\` and `\Textures\` appear as a "Custom Shaders" section in the picker between Recommended and Extra packs, grouped by subfolder. Individual files can be expanded and ticked/unticked, and they deploy alongside normal shader packs. An "Open Custom Folder" button in the Profiles panel opens the folder directly. The existing "Custom" mode in the per-game shader combo continues to work as before (deploys the whole Custom folder).
-- Neural Rendering: Feeder and Bridge methods now have version selection. You can pin a specific version of `dlss5-feed.addon64` or `dlss5-bridge.addon64` from their respective GitHub release histories, or leave it on Latest to always get the newest. The existing DLSS5 Tool Version combo continues to control the neural consumer for all methods.
+- UE-Extended games now show a status icon next to the addon name — a green ✓ for mods marked complete, and 🔨 for mods still in progress.
+- You can now select individual files from your Custom Shaders folder in the shader picker. Files from `%LocalAppData%\RHI\reshade\Custom\Shaders\` and `\Textures\` appear as a "Custom Shaders" section between Recommended and Extra packs, grouped by subfolder. Tick or untick individual files to control exactly what gets deployed. An "Open Custom Folder" button in the Profiles panel opens the folder directly.
+
+### Neural Rendering Improvements
+
+- Feeder and Bridge version selection — you can now pin a specific release version of the Feeder or Bridge addon instead of always using the latest. The dropdown shows the full release history (28+ versions including betas).
+- `DLSS5_Feed.fx` is now extracted directly from the Feeder download and kept up to date automatically. Previously it was fetched separately and broke when the file moved into the release archive.
+- Fixed Feeder installing the wrong dgVoodoo2 file on 64-bit DX9 games — it was always deploying the 32-bit version, which a 64-bit game can't load, so dgVoodoo2 was silently doing nothing and the shader failed to compile. Reinstall Feeder on any affected game to fix it.
+- Fixed global shaders not being removed from the game folder immediately when Feeder is installed — they were staying until a manual Refresh. They are now cleared as part of the install.
+- Fixed the Neural Rendering panel not appearing at all on some sessions.
 
 ### Bug Fixes
 
-- Fixed multiple UI freeze and deadlock issues (present since v2.4.0) — the root cause was a lock contention issue between shader pack settings reads and background shader pack downloads. Additional threading issues were also fixed covering Nexus SSO, drag-drop error dialogs, progress dialogs, Update All, Luma installs, background scan, and the `--launch` argument.
-- Fixed PCGamingWiki links not appearing on game cards — links were only resolved from cache during startup but the cache was never being populated, so no game ever got a PCGW link. Links now resolve in the background after startup and appear without needing a Refresh.
-- Fixed Luma uninstall deleting the `reshade-shaders` folder when ReShade was still installed. The folder is now preserved and the global shader selection is redeployed into it.
-- Fixed Luma uninstall leaving `reshade-shaders-original` behind — the managed folder marker is now preserved so the shader service correctly identifies and reuses the existing folder rather than renaming it.
-- Fixed Luma uninstall leaving `reshade.ini` in a Luma-configured state — a fresh RHI-managed `reshade.ini` is now deployed with hotkeys, screenshot path, and peak nits restored.
-- Fixed Luma uninstall leaving `nvngx_dlss.dll` behind — it is now correctly removed (or the game's original restored) based on whether RHI placed it.
-- Fixed Neural Rendering section not building — `BuildNvidiaProfileSection` was cancelling a shared cancellation token that the Neural Rendering background scan had already captured, causing every NR scan to abort immediately before it could run.
-- Fixed the render scale custom value input box retaining keyboard focus after pressing Enter.
-- Fixed a gradual memory and connection leak that built up over a long session.
-- Fixed app startup being slower than necessary due to PCGamingWiki lookups blocking game detection — startup is now faster and PCGW links appear in the background.
-- Fixed a memory leak where the same event handlers accumulated every time a game card was opened.
-- Fixed occasional incorrect DLSS scan counts when multiple games were being scanned at the same time.
-- Fixed dgVoodoo2 removal and ReShade cleanup silently stopping partway through if a file was locked by another process.
-- Fixed ReShade being uninstalled after a Game Pass game updates — when a game updates on Game Pass, Windows replaces the install folder with a new versioned path and deletes the old one, leaving RHI unable to find the ReShade DLL. RHI now detects this and automatically reinstalls ReShade at the new path on the next launch.
-- Fixed Luma mods on Nexus showing "Update Available" repeatedly — the update check was comparing the mod's last-edited timestamp on Nexus, which changes on any page edit (not just new file releases). Update detection for Luma mods now only fires when RHI can compare actual file IDs, which requires a Nexus premium account. Browser install users no longer get false update indicators.
+**Crashes and freezes**
+- Fixed intermittent UI freezes and unresponsive states affecting multiple operations — installs, Nexus sign-in, drag-drop, Update All, Luma installs, and app launch with `--launch` were all affected.
+- Fixed a slow memory and connection leak that built up over a long session.
+- Fixed a leak where event handlers accumulated every time a game card was opened.
+
+**Luma**
+- Fixed Luma uninstall removing the ReShade shader folder even when ReShade was still installed — the folder is now kept and the global shader selection is redeployed into it.
+- Fixed Luma uninstall leaving a leftover `reshade-shaders-original` folder behind.
+- Fixed Luma uninstall leaving `reshade.ini` in a Luma-configured state — a fresh one is now deployed with your hotkeys, screenshot path, and peak nits intact.
+- Fixed Luma uninstall leaving `nvngx_dlss.dll` behind — it is now correctly removed or the game's original copy restored.
+- Fixed Luma mods showing "Update Available" repeatedly on Nexus — this was a false positive caused by comparing edit timestamps rather than actual file releases. Update checks for Luma now only fire when real file version data is available.
+
+**Game Pass**
+- Fixed ReShade being lost after a Game Pass game updates — Windows replaces the install folder with a new versioned path on update, which left RHI unable to find the ReShade DLL. RHI now detects this automatically and reinstalls ReShade at the new path on the next launch.
+
+**Other**
+- Fixed PCGamingWiki links never appearing on game cards — the lookup was running but results were never being saved, so no game ever showed a PCGW link. Links now appear in the background after startup.
+- Fixed the render scale input box keeping keyboard focus after pressing Enter.
+- Fixed occasional incorrect DLSS scan counts when multiple games were scanned at the same time.
+- Fixed file cleanup silently stopping partway through if a file was locked by another process.
 
 ### Manifest Updates
 
 - Added "Banishers: Ghosts of New Eden - The Wanderer Set DLC" to blacklist — was being incorrectly detected as a game.
-- Removed Elden Ring and Elden Ring: Nightreign from `forceExternalOnly` — both mods are now in the RHI database with direct download links, so the Nexus redirect is no longer needed.
-- Added engine hint for Insurgency: Sandstorm (Unreal Engine 4.27.2).
+- Removed Elden Ring and Elden Ring: Nightreign from the external-only list — both mods now have direct download links in RHI.
+- Added engine hint for Insurgency: Sandstorm.
 
 ## v2.7.2
 

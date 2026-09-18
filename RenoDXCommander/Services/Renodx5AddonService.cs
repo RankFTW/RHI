@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 
 namespace RenoDXCommander.Services;
@@ -688,8 +689,8 @@ public class Renodx5AddonService
     private const string FeederStagedFileName = "dlss5-feed.addon64";
     private const string BridgeStagedFileName = "dlss5-bridge.addon64";
 
-    private static readonly string FeederApiUrl = "https://api.github.com/repos/jlrouzies-fr/DLSS5-Feeder/releases?per_page=30";
-    private static readonly string BridgeApiUrl = "https://api.github.com/repos/NIGos/dlss5-bridge/releases?per_page=30";
+    private static readonly string FeederApiUrl = "https://api.github.com/repos/jlrouzies-fr/DLSS5-Feeder/releases?per_page=100";
+    private static readonly string BridgeApiUrl = "https://api.github.com/repos/NIGos/dlss5-bridge/releases?per_page=100";
 
     /// <summary>
     /// Path to the available_versions.json cache (list of all released versions for each addon).
@@ -870,6 +871,17 @@ public class Renodx5AddonService
             _dlssToolVersions  = ParseList(doc.RootElement, "dlsstool");
             _feederVersions    = ParseList(doc.RootElement, "feeder");
             _bridgeVersions    = ParseList(doc.RootElement, "bridge");
+
+            // Self-healing: if feeder/bridge lists are suspiciously short (old per_page=30 cache),
+            // delete the cache file so the cooldown check in FetchAndCacheAvailableVersionsAsync
+            // sees no file and forces a fresh fetch.
+            if (_feederVersions.Count < 10 || _bridgeVersions.Count < 10)
+            {
+                _crashReporter.Log($"[Renodx5AddonService.LoadVersionsFromCache] Stale cache detected (feeder={_feederVersions.Count}, bridge={_bridgeVersions.Count}) — wiping for re-fetch");
+                _feederVersions.Clear();
+                _bridgeVersions.Clear();
+                try { File.Delete(AvailableVersionsFilePath); } catch { }
+            }
         }
         catch (Exception ex)
         {
@@ -912,7 +924,7 @@ public class Renodx5AddonService
     private async Task<List<(string Version, string DownloadUrl)>> FetchSimpleRepoVersionsAsync(
         string apiUrl, string targetFileName)
     {
-        var result = new List<(string Version, string DownloadUrl, System.Version Parsed)>();
+        var result = new List<(string Version, string DownloadUrl, System.Version Parsed, bool IsPreRelease)>();
         try
         {
             using var req = new HttpRequestMessage(HttpMethod.Get, apiUrl);
@@ -938,30 +950,44 @@ public class Renodx5AddonService
                     {
                         var name = asset.TryGetProperty("name", out var nEl) ? nEl.GetString() : null;
                         if (name == null) continue;
-                        // Match target filename (e.g. dlss5-feed.addon64 / dlss5-bridge.addon64)
-                        if (name.Equals(targetFileName, StringComparison.OrdinalIgnoreCase)
-                            || name.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase))
+                        // Match target filename (e.g. dlss5-feed.addon64) — exact match first
+                        if (name.Equals(targetFileName, StringComparison.OrdinalIgnoreCase))
                         {
                             if (asset.TryGetProperty("browser_download_url", out var urlEl))
                             {
                                 downloadUrl = urlEl.GetString();
-                                if (name.Equals(targetFileName, StringComparison.OrdinalIgnoreCase))
-                                    break; // exact match — stop looking
+                                break; // exact match — stop looking
                             }
+                        }
+                        // Accept .zip archives (newer releases bundle the addon inside a zip)
+                        if (downloadUrl == null && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (asset.TryGetProperty("browser_download_url", out var urlEl))
+                                downloadUrl = urlEl.GetString();
+                            // don't break — keep looking for an exact .addon64 match
+                        }
+                        // Also accept any loose .addon64 as fallback
+                        if (downloadUrl == null && name.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (asset.TryGetProperty("browser_download_url", out var urlEl))
+                                downloadUrl = urlEl.GetString();
                         }
                     }
                 }
                 if (string.IsNullOrEmpty(downloadUrl)) continue;
                 var versionStr = tag.TrimStart('v', 'V');
-                var parsed = System.Version.TryParse(versionStr, out var p) ? p : new System.Version(0, 0);
-                result.Add((tag, downloadUrl!, parsed));
+                // Strip semver pre-release suffix (e.g. "1.16.0-beta.4" → "1.16.0") before parsing
+                var versionCore = versionStr.Contains('-') ? versionStr.Substring(0, versionStr.IndexOf('-')) : versionStr;
+                var isPreRelease = versionStr.Contains('-');
+                var parsed = System.Version.TryParse(versionCore, out var p) ? p : new System.Version(0, 0);
+                result.Add((tag, downloadUrl!, parsed, isPreRelease));
             }
         }
         catch (Exception ex)
         {
             _crashReporter.Log($"[Renodx5AddonService.FetchSimpleRepoVersionsAsync] Failed for {apiUrl} — {ex.Message}");
         }
-        return result.OrderByDescending(e => e.Parsed).Select(e => (e.Version, e.DownloadUrl)).ToList();
+        return result.OrderByDescending(e => e.Parsed).ThenBy(e => e.IsPreRelease).Select(e => (e.Version, e.DownloadUrl)).ToList();
     }
 
     /// <summary>
@@ -1022,6 +1048,45 @@ public class Renodx5AddonService
                     using var es = zipEntry.Open();
                     using var os = File.Create(destPath);
                     await es.CopyToAsync(os).ConfigureAwait(false);
+
+                    // Also extract DLSS5_Feed.fx if present — it lives inside the Feeder zip
+                    var feedFxEntry = zip.Entries.FirstOrDefault(e =>
+                        string.Equals(e.Name, "DLSS5_Feed.fx", StringComparison.OrdinalIgnoreCase));
+                    if (feedFxEntry != null)
+                    {
+                        var feederShadersDir = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder");
+                        Directory.CreateDirectory(feederShadersDir);
+                        var fxDestPath = Path.Combine(feederShadersDir, "DLSS5_Feed.fx");
+                        using var fxStream = feedFxEntry.Open();
+                        using var fxOut = File.Create(fxDestPath);
+                        await fxStream.CopyToAsync(fxOut).ConfigureAwait(false);
+                        _crashReporter.Log($"[Renodx5AddonService.EnsureVersionStagedAsync] Extracted DLSS5_Feed.fx v{version} → '{fxDestPath}'");
+                        _ = Task.Run(() => App.Services.GetRequiredService<IShaderPackService>().RecordExtractedFilesFromDir("DLSS5Feeder"));
+                    }
+
+                    // Also extract host64\dlss5-feed-host64.exe — needed for 32-bit games
+                    var hostExeEntry = zip.Entries.FirstOrDefault(e =>
+                        e.Name.EndsWith("-host64.exe", StringComparison.OrdinalIgnoreCase)
+                        && e.FullName.Contains("host64", StringComparison.OrdinalIgnoreCase));
+                    if (hostExeEntry != null)
+                    {
+                        // Stage in versioned dir
+                        var hostExeVersioned = Path.Combine(versionDir, "dlss5-feed-host64.exe");
+                        using (var hexStreamV = hostExeEntry.Open())
+                        using (var hexOutV = File.Create(hostExeVersioned))
+                            await hexStreamV.CopyToAsync(hexOutV).ConfigureAwait(false);
+
+                        // Also write to the flat addon staging dir so FindStagedAddon("DLSS5 Feeder", ".exe") finds it
+                        var addonStagingDir = AddonPackService.GetStagingDir();
+                        if (!string.IsNullOrEmpty(addonStagingDir) && Directory.Exists(addonStagingDir))
+                        {
+                            var hostExeFlat = Path.Combine(addonStagingDir, "DLSS5 Feeder_host64.exe");
+                            using var hexStreamF = hostExeEntry.Open();
+                            using var hexOutF = File.Create(hostExeFlat);
+                            await hexStreamF.CopyToAsync(hexOutF).ConfigureAwait(false);
+                        }
+                        _crashReporter.Log($"[Renodx5AddonService.EnsureVersionStagedAsync] Extracted host64 exe v{version} → '{hostExeVersioned}'");
+                    }
                 }
                 File.Delete(tempZip);
             }

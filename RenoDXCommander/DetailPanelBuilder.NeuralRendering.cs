@@ -102,6 +102,7 @@ public partial class DetailPanelBuilder
         bool isVulkan = card.GraphicsApi == GraphicsApiType.Vulkan;
         bool isDx9    = card.GraphicsApi == GraphicsApiType.DirectX9;
         bool is32Bit  = card.Is32Bit;
+        bool isDx964bit = isDx9 && !is32Bit; // 64-bit DX9 — Feeder not needed, renodx-dlss handles these
 
         // ── Infer current method from installed state (migration) ─────────────
         string? storedMethod = _window.ViewModel.GetNrMethodOverride(gameName, store);
@@ -2061,6 +2062,9 @@ public partial class DetailPanelBuilder
                 {
                     _shaderPackService.SetExcludedFiles("LumeniteFX", lumeniteAllFiles);
                     _shaderPackService.SetExcludedFiles("DLSS5Feeder", feederAllFiles);
+                    // Now that exclusions are persisted, sync the game folder —
+                    // removes global shaders and deploys only the two Feeder files.
+                    _window.ViewModel.DeployShadersForCard(card.GameName);
                 });
 
                 var gameKey = Models.GameKey.From(card.GameName, card.Source ?? "").ToKey();
@@ -2095,7 +2099,7 @@ public partial class DetailPanelBuilder
                     var dgSvc = App.Services.GetRequiredService<DgVoodooService>();
                     var versionEntry = manifest.DgVoodooVersions.First();
                     await dgSvc.EnsureStagedAsync(versionEntry.Key, versionEntry.Value).ConfigureAwait(false);
-                    dgSvc.DeployToGame(installPath, versionEntry.Key);
+                    dgSvc.DeployToGame(installPath, versionEntry.Key, is64Bit: !card.Is32Bit);
                     CrashReporter.Log($"[NeuralRendering] dgVoodoo2 v{versionEntry.Key} deployed for Feeder on '{card.GameName}'");
                 }
                 catch (Exception dgEx)

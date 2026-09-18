@@ -1,6 +1,7 @@
 // ShaderPackService.Download.cs — Pack download, extraction, version resolution, and extracted-file tracking
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Threading;
 using SharpCompress.Archives;
 
 namespace RenoDXCommander.Services;
@@ -540,8 +541,24 @@ public partial class ShaderPackService
     private static void WriteSettings(Dictionary<string, string> d)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+        // Retry up to 3 times with short delays — settings.json can be momentarily locked
+        // by another process (e.g. back-to-back installs both writing exclusions at once).
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+                _settingsCache = d;
+                return;
+            }
+            catch (IOException) when (attempt < 2)
+            {
+                Thread.Sleep(50 * (attempt + 1)); // 50ms, 100ms
+            }
+        }
+        // Final attempt — let it throw if still locked
         File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
-        _settingsCache = d; // update cache with written state
+        _settingsCache = d;
     }
 
     private string VersionKey(string packId) => $"ShaderPack_{packId}_Version";

@@ -1372,13 +1372,6 @@
       "description": "Cube 3D LUT shader with dithering to reduce banding. Requires a .cube LUT file placed in the Textures folder.",
       "category": "Extra"
     },
-    "DLSS5Feeder": {
-      "displayName": "DLSS5 Feeder by jlrouzies-fr",
-      "kind": "DirectUrl",
-      "url": "https://github.com/jlrouzies-fr/DLSS5-Feeder/archive/refs/heads/main.zip",
-      "description": "Companion shader for the DLSS5 Feeder addon. Requires the DLSS5 Feeder addon and iMMERSE LaunchPad.",
-      "category": "Extra"
-    },
     "ReshadeMotionEstimation": {
       "displayName": "Reshade Motion Estimation by JakobPCoder",
       "kind": "DirectUrl",

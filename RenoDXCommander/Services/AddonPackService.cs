@@ -1046,6 +1046,20 @@ public class AddonPackService : IAddonPackService
                         await exeStream.CopyToAsync(exeFile);
                         CrashReporter.Log($"[AddonPackService.DownloadAndExtractZipAsync] Extracted host64 exe '{fileName}' → '{exeDestPath}'");
                     }
+                    // Also extract DLSS5_Feed.fx from Feeder zips into the DLSS5Feeder shader pack staging folder
+                    else if (fileName.Equals("DLSS5_Feed.fx", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var feederShadersDir = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder");
+                        Directory.CreateDirectory(feederShadersDir);
+                        var fxDestPath = Path.Combine(feederShadersDir, "DLSS5_Feed.fx");
+                        using var fxStream = archiveEntry.OpenEntryStream();
+                        using var fxFile = File.Create(fxDestPath);
+                        await fxStream.CopyToAsync(fxFile);
+                        CrashReporter.Log($"[AddonPackService.DownloadAndExtractZipAsync] Extracted DLSS5_Feed.fx → '{fxDestPath}'");
+                        // Register the file in the DLSS5Feeder pack so GetPackShaderFiles returns it
+                        // and EnsurePackAsync stops trying to re-download the pack.
+                        _ = Task.Run(() => App.Services.GetRequiredService<IShaderPackService>().RecordExtractedFilesFromDir("DLSS5Feeder"));
+                    }
                     continue;
                 }
 

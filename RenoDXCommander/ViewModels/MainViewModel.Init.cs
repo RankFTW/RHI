@@ -310,6 +310,25 @@ public partial class MainViewModel
             // One-time migration: move nightly DLLs from old shared folder to new nightly folder
             MigrateNightlyStagingFolder();
 
+            // One-time migration: wipe stale DLSS5Feeder shader staging folder.
+            // The DLSS5Feeder pack was previously downloaded from the repo zip (which no longer
+            // contains DLSS5_Feed.fx). The file is now extracted from the Feeder addon zip.
+            // Delete the old pack cache zip + extracted folder so the fresh file gets seeded
+            // on the next Feeder install/download.
+            try
+            {
+                var feederPackCacheZip = Path.Combine(DownloadPaths.Shaders, "shaders_DLSS5Feeder.zip");
+                var feederShadersDir   = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder");
+                if (File.Exists(feederPackCacheZip))
+                {
+                    try { File.Delete(feederPackCacheZip); } catch { }
+                    if (Directory.Exists(feederShadersDir))
+                        try { Directory.Delete(feederShadersDir, true); } catch { }
+                    _crashReporter.Log("[MainViewModel.InitializeAsync] Wiped stale DLSS5Feeder shader pack cache — will be re-seeded from addon zip on next Feeder install");
+                }
+            }
+            catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS5Feeder migration failed — {ex.Message}"); }
+
             // Cleanup: remove orphaned .original sentinel files from game folders where the
             // base filename no longer matches the installed OptiScaler DLL name. These were
             // left behind by earlier versions when DLL naming overrides renamed the DLL without
