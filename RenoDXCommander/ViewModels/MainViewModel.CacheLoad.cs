@@ -821,7 +821,21 @@ public partial class MainViewModel
                 newCard.GraphicsApi = graphicsApi;
             }
 
-            // PCGW upgrade: promote DX11→DX12 when PCGW confirms DX12 (no override)
+            // Unreal Legacy (UE1/2/3) games ran DX9. Cap DX11 shim back to DX9.
+            if (newCard.EngineHint == "Unreal (Legacy)"
+                && !clHasUserApiOverride
+                && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true)
+                && detectedApis.Contains(GraphicsApiType.DirectX9))
+            {
+                detectedApis.Remove(GraphicsApiType.DirectX11);
+                if (graphicsApi == GraphicsApiType.DirectX11)
+                    graphicsApi = GraphicsApiType.DirectX9;
+                newCard.DetectedApis = detectedApis;
+                newCard.GraphicsApi = graphicsApi;
+            }
+
+            // PCGW upgrade: promote DX11→DX12 when PCGW confirms DX12 (no override).
+            // Also: when PE scan returned Unknown, trust PCGW's highest-priority API.
             if (!clHasUserApiOverride && _manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true)
             {
                 var pcgwInfo = _pcgwService.GetCachedApiInfo(game.Name);
@@ -835,6 +849,22 @@ public partial class MainViewModel
                         || (newCard.EngineHint?.Contains("Unreal", StringComparison.OrdinalIgnoreCase) == true);
                     if (!isUnreal)
                         newCard.DetectedApis.Remove(GraphicsApiType.DirectX11);
+                }
+                else if (pcgwInfo != null && newCard.GraphicsApi == GraphicsApiType.Unknown)
+                {
+                    var pcgwApi =
+                        pcgwInfo.HasDirectX12 ? GraphicsApiType.DirectX12 :
+                        pcgwInfo.HasVulkan    ? GraphicsApiType.Vulkan    :
+                        pcgwInfo.HasDirectX11 ? GraphicsApiType.DirectX11 :
+                        pcgwInfo.HasDirectX10 ? GraphicsApiType.DirectX10 :
+                        pcgwInfo.HasDirectX9  ? GraphicsApiType.DirectX9  :
+                        pcgwInfo.HasOpenGL    ? GraphicsApiType.OpenGL    :
+                        GraphicsApiType.Unknown;
+                    if (pcgwApi != GraphicsApiType.Unknown)
+                    {
+                        newCard.GraphicsApi = pcgwApi;
+                        newCard.DetectedApis.Add(pcgwApi);
+                    }
                 }
 
                 // Apply scraped config file path to EngineIniProjectOverride for UE games —

@@ -166,7 +166,7 @@ public sealed partial class MainWindow
 
     // ── DXVK event handlers ──────────────────────────────────────────────────
 
-    private async void InstallDxvkButton_Click(object sender, RoutedEventArgs e)
+    internal async void InstallDxvkButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (card.DxvkIsInstalling) return;
@@ -178,7 +178,7 @@ public sealed partial class MainWindow
             await ViewModel.InstallDxvkAsync(card, Content.XamlRoot);
     }
 
-    private void UninstallDxvkButton_Click(object sender, RoutedEventArgs e)
+    internal void UninstallDxvkButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         ViewModel.UninstallDxvk(card);
@@ -190,7 +190,7 @@ public sealed partial class MainWindow
         ViewModel.CopyDxvkConf(card);
     }
 
-    private async void DxvkInfoButton_Click(object sender, RoutedEventArgs e)
+    internal async void DxvkInfoButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
 
@@ -278,7 +278,7 @@ public sealed partial class MainWindow
                 new Uri("https://github.com/Filoppi/Luma-Framework/releases"));
     }
 
-    private async void DetailDxvkStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    internal async void DetailDxvkStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         var card = ViewModel.SelectedGame;
         if (card == null || !card.IsDxvkInstalled) return;
@@ -452,7 +452,7 @@ public sealed partial class MainWindow
     private static readonly Microsoft.UI.Input.InputCursor _arrowCursor =
         Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
 
-    private void LinkText_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    internal void LinkText_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         if (sender is TextBlock tb && tb.TextDecorations == Windows.UI.Text.TextDecorations.Underline)
         {
@@ -461,7 +461,7 @@ public sealed partial class MainWindow
         }
     }
 
-    private void LinkText_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    internal void LinkText_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         if (sender is FrameworkElement fe)
         {

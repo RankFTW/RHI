@@ -427,7 +427,7 @@ public class PcgwService : IPcgwService
         "RHI", "pcgw_api_cache.json");
 
     /// <summary>Bump when ParseApiSection or ParseConfigFilesSection logic changes to force a full rescrape.</summary>
-    private const int ApiCacheVersion = 14;
+    private const int ApiCacheVersion = 15;
     private static readonly string ApiCacheVersionPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "pcgw_api_cache_v.txt");
@@ -606,8 +606,15 @@ public class PcgwService : IPcgwService
 
                         bool isDirect3D = apiName.StartsWith("Direct3D", StringComparison.OrdinalIgnoreCase)
                                        || apiName.StartsWith("DirectX",  StringComparison.OrdinalIgnoreCase);
-                        if (!isDirect3D) continue; // only care about Direct3D
+                        bool isVulkanRow = apiName.IndexOf("Vulkan", StringComparison.OrdinalIgnoreCase) >= 0;
+                        bool isOpenGLRow = apiName.IndexOf("OpenGL", StringComparison.OrdinalIgnoreCase) >= 0;
+                        if (!isDirect3D && !isVulkanRow && !isOpenGLRow) continue;
 
+                        if (isVulkanRow) { info.HasVulkan = true; continue; }
+                        if (isOpenGLRow) { info.HasOpenGL = true; continue; }
+
+                        if (System.Text.RegularExpressions.Regex.IsMatch(version, @"\b9\b"))  info.HasDirectX9  = true;
+                        if (System.Text.RegularExpressions.Regex.IsMatch(version, @"\b10\b")) info.HasDirectX10 = true;
                         if (System.Text.RegularExpressions.Regex.IsMatch(version, @"\b11\b")) info.HasDirectX11 = true;
                         if (System.Text.RegularExpressions.Regex.IsMatch(version, @"\b12\b")) info.HasDirectX12 = true;
                     }
@@ -627,12 +634,16 @@ public class PcgwService : IPcgwService
                 if (d3dMatch.Success)
                 {
                     var v = d3dMatch.Groups[1].Value;
+                    if (System.Text.RegularExpressions.Regex.IsMatch(v, @"\b9\b"))  info.HasDirectX9  = true;
+                    if (System.Text.RegularExpressions.Regex.IsMatch(v, @"\b10\b")) info.HasDirectX10 = true;
                     if (System.Text.RegularExpressions.Regex.IsMatch(v, @"\b11\b")) info.HasDirectX11 = true;
                     if (System.Text.RegularExpressions.Regex.IsMatch(v, @"\b12\b")) info.HasDirectX12 = true;
                 }
+                if (System.Text.RegularExpressions.Regex.IsMatch(window, @"\bVulkan\b",  System.Text.RegularExpressions.RegexOptions.IgnoreCase)) info.HasVulkan  = true;
+                if (System.Text.RegularExpressions.Regex.IsMatch(window, @"\bOpenGL\b",  System.Text.RegularExpressions.RegexOptions.IgnoreCase)) info.HasOpenGL  = true;
             }
 
-            return (info.HasDirectX11 || info.HasDirectX12) ? info : null;
+            return (info.HasDirectX9 || info.HasDirectX10 || info.HasDirectX11 || info.HasDirectX12 || info.HasVulkan || info.HasOpenGL) ? info : null;
         }
         catch (Exception ex)
         {

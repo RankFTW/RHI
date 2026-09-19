@@ -976,51 +976,6 @@
                                     </Button>
                                 </Grid>
 
-                                <!-- DXVK row -->
-                                <Grid x:Name="DetailDxvkRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="120"/>
-                                        <ColumnDefinition Width="80"/>
-                                        <ColumnDefinition Width="36"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="36"/>
-                                        <ColumnDefinition Width="36"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="DetailDxvkLabel" x:FieldModifier="internal" Grid.Column="0" Text="DXVK" FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="DetailDxvkStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
-                                               VerticalAlignment="Center" HorizontalTextAlignment="Center"
-                                               PointerPressed="DetailDxvkStatus_PointerPressed"
-                                               PointerEntered="LinkText_PointerEntered" PointerExited="LinkText_PointerExited"/>
-                                    <Button x:Name="DetailDxvkInfoBtn" x:FieldModifier="internal" Grid.Column="2"
-                                            Content="Info" FontSize="11" Padding="6,2,6,2"
-                                            Background="{StaticResource SurfaceOverlayBrush}"
-                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32"
-                                            Click="DxvkInfoButton_Click"/>
-                                    <Button x:Name="DetailDxvkInstallBtn" x:FieldModifier="internal" Grid.Column="3"
-                                            Click="InstallDxvkButton_Click"
-                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                            CornerRadius="8" FontSize="12" Height="32"/>
-                                    <Button x:Name="DetailDxvkConfBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="DxvkCogButton_Click"
-                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="DXVK Settings">
-                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
-                                    </Button>
-                                    <Button x:Name="DetailDxvkDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
-                                            Click="UninstallDxvkButton_Click"
-                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
-                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Remove DXVK" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
-                                    </Button>
-                                </Grid>
-
                                 <!-- No mod message -->
                                 <Border x:Name="DetailNoModMsg" x:FieldModifier="internal" Visibility="Collapsed"
                                         Background="{StaticResource AccentPurpleBgBrush}" CornerRadius="8" Padding="12,8"

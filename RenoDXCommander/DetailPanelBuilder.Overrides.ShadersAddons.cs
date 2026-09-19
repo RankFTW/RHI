@@ -548,15 +548,18 @@ public partial class DetailPanelBuilder
                     _window.ViewModel.SetUseNormalReShade(targetCard, false);
             }
 
-            // Reset DXVK toggles
-            if (ctx.DxvkToggle != null)
+            // Reset DXVK — uninstall if active, clear variant override and Lilium preset
             {
-                ctx.DxvkToggle.IsOn = false;
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                    c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
-                if (targetCard != null && targetCard.DxvkEnabled)
+                    c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase)
+                    && (string.IsNullOrEmpty(card.Source) || c.Source == card.Source));
+                if (targetCard != null && (targetCard.DxvkEnabled
+                    || targetCard.DxvkStatus == GameStatus.Installed
+                    || targetCard.DxvkStatus == GameStatus.UpdateAvailable))
                     _ = _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
             }
+            _window.ViewModel.SetDxvkVariantOverride(ctx.CapturedName, null, ctx.Card.Source);
+            _window.ViewModel.SetLiliumPreset(ctx.CapturedName, 0, ctx.Card.Source);
 
             // Reset DXVK update exclusion via the shared Update Inclusion system
             if (_window.ViewModel.IsUpdateAllExcludedDxvk(ctx.CapturedName, card.Source))

@@ -8,6 +8,7 @@
 
 - UE-Extended games now show a status icon next to the addon name — a green ✓ for mods marked complete, and 🔨 for mods still in progress.
 - You can now select individual files from your Custom Shaders folder in the shader picker. Files from `%LocalAppData%\RHI\reshade\Custom\Shaders\` and `\Textures\` appear as a "Custom Shaders" section between Recommended and Extra packs, grouped by subfolder. Tick or untick individual files to control exactly what gets deployed. An "Open Custom Folder" button in the Profiles panel opens the folder directly.
+- DXVK has moved to the Extras section, under a new "API Upgrades" sub-header. The install button is always available on eligible games (DX8/9/10). Variant selection (Lilium HDR by default, Development, Stable) and the Lilium preset are now in the DXVK cog alongside the existing DXVK present method settings.
 
 ### Neural Rendering Improvements
 
@@ -15,6 +16,7 @@
 - `DLSS5_Feed.fx` is now extracted directly from the Feeder download and kept up to date automatically. Previously it was fetched separately and broke when the file moved into the release archive.
 - Fixed Feeder installing the wrong dgVoodoo2 file on 64-bit DX9 games — it was always deploying the 32-bit version, which a 64-bit game can't load, so dgVoodoo2 was silently doing nothing and the shader failed to compile. Reinstall Feeder on any affected game to fix it.
 - Fixed global shaders not being removed from the game folder immediately when Feeder is installed — they were staying until a manual Refresh. They are now cleared as part of the install.
+- Fixed `DLSS5_Feed.fx` not being deployed to the game folder — a race condition between saving the shader selection and syncing the game folder meant the mode was still "Global" when the sync ran, causing it to wipe the file. Also fixed a separate case where the shader pack registration completed too late, leaving the file out of the deployment on the first install after a version change.
 - Fixed the Neural Rendering panel not appearing at all on some sessions.
 
 ### Bug Fixes

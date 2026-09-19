@@ -121,15 +121,16 @@ public partial class DetailPanelBuilder
 
         // ── Auto-select best method if nothing stored/inferred ────────────────
         string effectiveMethod = storedMethod ?? (
-            is32Bit              ? NrMethodFeeder :
-            !hasDlss             ? NrMethodFeeder :
-            (isDx11 || isVulkan) ? NrMethodDlss5ToolBridge :
-                                   NrMethodShortFuse);
+            is32Bit                                          ? NrMethodFeeder :
+            card.GraphicsApi == GraphicsApiType.OpenGL       ? NrMethodFeeder :
+            !hasDlss                                         ? NrMethodFeeder :
+            (isDx11 || isVulkan)                             ? NrMethodDlss5ToolBridge :
+                                                               NrMethodShortFuse);
 
         // ── Build method combo items (show all, disable inapplicable) ─────────
         var methodItems = new[]
         {
-            new { Name = "DLSS Tool (ShortFuse)",      Key = NrMethodShortFuse,       Enabled = !is32Bit },
+            new { Name = "DLSS Tool (ShortFuse)",      Key = NrMethodShortFuse,       Enabled = !is32Bit && card.GraphicsApi != GraphicsApiType.OpenGL },
             new { Name = "DLSS5 Tool",                 Key = NrMethodDlss5Tool,       Enabled = hasDlss && !is32Bit },
             new { Name = "DLSS5 Tool + DX11 Bridge",   Key = NrMethodDlss5ToolBridge, Enabled = hasDlss && (isDx11 || isVulkan) && !is32Bit },
             new { Name = "DLSS5 Feeder",               Key = NrMethodFeeder,          Enabled = true },
@@ -2062,9 +2063,6 @@ public partial class DetailPanelBuilder
                 {
                     _shaderPackService.SetExcludedFiles("LumeniteFX", lumeniteAllFiles);
                     _shaderPackService.SetExcludedFiles("DLSS5Feeder", feederAllFiles);
-                    // Now that exclusions are persisted, sync the game folder —
-                    // removes global shaders and deploys only the two Feeder files.
-                    _window.ViewModel.DeployShadersForCard(card.GameName);
                 });
 
                 var gameKey = Models.GameKey.From(card.GameName, card.Source ?? "").ToKey();
@@ -2077,6 +2075,11 @@ public partial class DetailPanelBuilder
                 _gameNameService.PerGameShaderSelection[gameKey] = current;
                 _window.ViewModel.SetPerGameShaderMode(card.GameName, "Select", card.Source ?? "");
                 card.ShaderModeOverride = "Select";
+                _window.ViewModel.SaveSettingsPublic();
+                // Shader mode and selection are now persisted — safe to sync the game folder.
+                // DeployShadersForCard reads ResolveShaderSelection which uses the shader mode,
+                // so it must run after SetPerGameShaderMode, not concurrently with it.
+                _window.ViewModel.DeployShadersForCard(card.GameName);
                 _window.ViewModel.SaveSettingsPublic();
             });
         }

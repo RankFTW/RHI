@@ -1061,7 +1061,7 @@ public class Renodx5AddonService
                         using var fxOut = File.Create(fxDestPath);
                         await fxStream.CopyToAsync(fxOut).ConfigureAwait(false);
                         _crashReporter.Log($"[Renodx5AddonService.EnsureVersionStagedAsync] Extracted DLSS5_Feed.fx v{version} → '{fxDestPath}'");
-                        _ = Task.Run(() => App.Services.GetRequiredService<IShaderPackService>().RecordExtractedFilesFromDir("DLSS5Feeder"));
+                        await Task.Run(() => App.Services.GetRequiredService<IShaderPackService>().RecordExtractedFilesFromDir("DLSS5Feeder")).ConfigureAwait(false);
                     }
 
                     // Also extract host64\dlss5-feed-host64.exe — needed for 32-bit games

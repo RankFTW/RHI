@@ -107,6 +107,15 @@ public partial class DetailPanelBuilder
         BuildDlssEnablerRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] DlssEnablerRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
+        // ── API Upgrades sub-header + DXVK row ────────────────────────────────
+        if (card.IsDxvkToggleVisible)
+        {
+            exBody.Children.Add(MakeExtrasSeparator("API Upgrades"));
+            __t0 = __exSw.ElapsedMilliseconds;
+            BuildDxvkRow(card, exBody);
+            CrashReporter.Log($"[BuildExtrasSection] DxvkRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+        }
+
         UpdateOsFeedback(card);
         __exSw.Stop();
         CrashReporter.Log($"[BuildExtrasSection] Total: {__exSw.ElapsedMilliseconds}ms '{card.GameName}'");
@@ -1962,5 +1971,145 @@ public partial class DetailPanelBuilder
 
         await DialogService.ShowSafeAsync(pickerDialog);
         return chosen;
+    }
+
+    private void BuildDxvkRow(GameCardViewModel card, StackPanel body)
+    {
+        // Col 0: label (120)  Col 1: status (80)  Col 2: Info (36)
+        // Col 3: install (*)  Col 4: cog (36)     Col 5: delete (36)
+        var row = new Grid { ColumnSpacing = 8 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+
+        bool isDisabled = !card.IsDxvkToggleEnabled;
+
+        // Col 0 — label
+        var label = new TextBlock
+        {
+            Text = "DXVK",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = isDisabled ? 0.35 : 1.0,
+            Tag = card,
+        };
+        if (card.DxvkToggleTooltip != null)
+            ToolTipService.SetToolTip(label, card.DxvkToggleTooltip);
+        Grid.SetColumn(label, 0);
+        row.Children.Add(label);
+
+        // Col 1 — status
+        var statusBlock = new TextBlock
+        {
+            Text = card.DxvkStatusText,
+            FontSize = 12,
+            Foreground = UIFactory.GetBrush(card.DxvkStatusColor),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center,
+            TextDecorations = card.IsDxvkInstalled
+                ? Windows.UI.Text.TextDecorations.Underline
+                : Windows.UI.Text.TextDecorations.None,
+            Opacity = isDisabled ? 0.35 : 1.0,
+        };
+        if (card.IsDxvkInstalled && !isDisabled)
+        {
+            ToolTipService.SetToolTip(statusBlock, "Click to open DXVK releases");
+            statusBlock.PointerPressed += (s, e) => _window.DetailDxvkStatus_PointerPressed(s, e);
+            statusBlock.PointerEntered += (s, e) => _window.LinkText_PointerEntered(s, e);
+            statusBlock.PointerExited  += (s, e) => _window.LinkText_PointerExited(s, e);
+        }
+        Grid.SetColumn(statusBlock, 1);
+        row.Children.Add(statusBlock);
+
+        // Col 2 — Info button
+        var infoBtn = new Button
+        {
+            Content = "Info",
+            FontSize = 11,
+            Padding = new Thickness(6, 2, 6, 2),
+            Width = 36,
+            Height = 32,
+            CornerRadius = new CornerRadius(8),
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
+            BorderThickness = new Thickness(1),
+            Tag = card,
+            Opacity = isDisabled ? 0.35 : 1.0,
+        };
+        infoBtn.Click += (s, e) => _window.DxvkInfoButton_Click(s, e);
+        Grid.SetColumn(infoBtn, 2);
+        row.Children.Add(infoBtn);
+
+        // Col 3 — Install button
+        var installBtn = new Button
+        {
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            CornerRadius = new CornerRadius(8),
+            FontSize = 12,
+            Background = UIFactory.GetBrush(card.DxvkBtnBackground),
+            Foreground = UIFactory.GetBrush(card.DxvkBtnForeground),
+            BorderBrush = UIFactory.GetBrush(card.DxvkBtnBorderBrush),
+            BorderThickness = new Thickness(1),
+            Tag = card,
+            IsEnabled = card.DxvkInstallEnabled && !isDisabled,
+            Opacity = isDisabled ? 0.35 : 1.0,
+            IsHitTestVisible = !isDisabled,
+        };
+        installBtn.Content = card.DxvkActionLabel;
+        installBtn.Click += (s, e) => _window.InstallDxvkButton_Click(s, e);
+        Grid.SetColumn(installBtn, 3);
+        row.Children.Add(installBtn);
+
+        // Col 4 — Cog button
+        var cogBtn = new Button
+        {
+            Width = 36,
+            Height = 32,
+            Padding = new Thickness(0),
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Tag = card,
+            IsEnabled = !isDisabled,
+            Opacity = isDisabled ? 0.35 : 1.0,
+        };
+        ToolTipService.SetToolTip(cogBtn, "DXVK Settings");
+        cogBtn.Click += (s, e) => _window.DxvkCogButton_Click(s, e);
+        Grid.SetColumn(cogBtn, 4);
+        row.Children.Add(cogBtn);
+
+        // Col 5 — Delete button
+        bool showDelete = card.DxvkDeleteVisibility == Visibility.Visible;
+        var deleteBtn = new Button
+        {
+            Width = 36,
+            Height = 32,
+            Padding = new Thickness(0),
+            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Tag = card,
+            Opacity = showDelete ? 1.0 : 0.0,
+            IsHitTestVisible = showDelete,
+        };
+        ToolTipService.SetToolTip(deleteBtn, "Remove DXVK");
+        deleteBtn.Click += (s, e) => _window.UninstallDxvkButton_Click(s, e);
+        Grid.SetColumn(deleteBtn, 5);
+        row.Children.Add(deleteBtn);
+
+        body.Children.Add(row);
     }
 }

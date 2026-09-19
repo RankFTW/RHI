@@ -358,31 +358,6 @@ public partial class DetailPanelBuilder
         bool showRdx = !isLumaMode || card.LumaRenodxCompatible;
         _window.DetailRdxRow.Visibility = showRdx ? Visibility.Visible : Visibility.Collapsed;
 
-        // DXVK row — visible only when DxvkEnabled is true
-        _window.DetailDxvkRow.Visibility = card.DxvkRowVisibility;
-        if (card.DxvkRowVisibility == Visibility.Visible)
-        {
-            _window.DetailDxvkStatus.Text = card.DxvkStatusText;
-            _window.DetailDxvkStatus.Foreground = UIFactory.GetBrush(card.DxvkStatusColor);
-            _window.DetailDxvkStatus.TextDecorations = card.IsDxvkInstalled
-                ? Windows.UI.Text.TextDecorations.Underline
-                : Windows.UI.Text.TextDecorations.None;
-            _window.DetailDxvkInstallBtn.Tag = card;
-            _window.DetailDxvkInstallBtn.Content = card.DxvkActionLabel;
-            _window.DetailDxvkInstallBtn.IsEnabled = card.DxvkInstallEnabled;
-            _window.DetailDxvkInstallBtn.Background = UIFactory.GetBrush(card.DxvkBtnBackground);
-            _window.DetailDxvkInstallBtn.Foreground = UIFactory.GetBrush(card.DxvkBtnForeground);
-            _window.DetailDxvkInstallBtn.BorderBrush = UIFactory.GetBrush(card.DxvkBtnBorderBrush);
-            _window.DetailDxvkInstallBtn.BorderThickness = new Thickness(1);
-            _window.DetailDxvkConfBtn.Tag = card;
-            _window.DetailDxvkConfBtn.IsEnabled = card.DxvkInstallEnabled;
-            _window.DetailDxvkConfBtn.Opacity = card.DxvkInstallEnabled ? 1 : 0.3;
-            _window.DetailDxvkInfoBtn.Tag = card;
-            _window.DetailDxvkDeleteBtn.Tag = card;
-            var dxvkShow = card.DxvkDeleteVisibility == Visibility.Visible;
-            _window.DetailDxvkDeleteBtn.Opacity = dxvkShow ? 1 : 0;
-            _window.DetailDxvkDeleteBtn.IsHitTestVisible = dxvkShow;
-        }
         bool rdxGreyed = !card.IsRtxHdrEnabled && (card.UseNormalReShade || (!card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade)
             || (card.Mod?.SnapshotUrl == null && !card.IsExternalOnly && string.IsNullOrEmpty(card.InstalledAddonFileName)));
         _window.DetailRdxRow.Opacity = 1.0;
@@ -542,13 +517,10 @@ public partial class DetailPanelBuilder
         _window.DetailDofFixMessage.Visibility = card.DofFixRowVisibility == Visibility.Visible ? card.DofFixMessageVisibility : Visibility.Collapsed;
         _window.DetailDofFixMessage.Text = card.DofFixActionMessage;
         _window.DetailDofFixMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DofFixActionMessage));
-        _window.DetailDxvkProgress.Visibility = card.DxvkRowVisibility == Visibility.Visible ? card.DxvkProgressVisibility : Visibility.Collapsed;
-        _window.DetailDxvkProgress.Value = card.DxvkProgress;
-        _window.DetailDxvkMessage.Visibility = card.DxvkRowVisibility == Visibility.Visible
-            ? (string.IsNullOrEmpty(card.DxvkActionMessage) ? Visibility.Collapsed : Visibility.Visible)
-            : Visibility.Collapsed;
-        _window.DetailDxvkMessage.Text = card.DxvkActionMessage;
-        _window.DetailDxvkMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DxvkActionMessage));
+        _window.DetailDxvkProgress.Visibility = Visibility.Collapsed;
+        _window.DetailDxvkProgress.Value = 0;
+        _window.DetailDxvkMessage.Visibility = Visibility.Collapsed;
+        _window.DetailDxvkMessage.Text = "";
         _window.DetailRdxProgress.Visibility = card.ProgressVisibility;
         _window.DetailRdxProgress.Value = card.InstallProgress;
         _window.DetailRdxMessage.Visibility = card.MessageVisibility;

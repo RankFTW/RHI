@@ -1058,7 +1058,8 @@ public class AddonPackService : IAddonPackService
                         CrashReporter.Log($"[AddonPackService.DownloadAndExtractZipAsync] Extracted DLSS5_Feed.fx → '{fxDestPath}'");
                         // Register the file in the DLSS5Feeder pack so GetPackShaderFiles returns it
                         // and EnsurePackAsync stops trying to re-download the pack.
-                        _ = Task.Run(() => App.Services.GetRequiredService<IShaderPackService>().RecordExtractedFilesFromDir("DLSS5Feeder"));
+                        // Must await — install continues immediately and calls GetPackShaderFiles.
+                        await Task.Run(() => App.Services.GetRequiredService<IShaderPackService>().RecordExtractedFilesFromDir("DLSS5Feeder")).ConfigureAwait(false);
                     }
                     continue;
                 }

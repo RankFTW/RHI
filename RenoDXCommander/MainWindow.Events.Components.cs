@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
@@ -2995,10 +2996,162 @@ public sealed partial class MainWindow
         osCogDialog = dialog;
         await DialogService.ShowSafeAsync(dialog);
     }
-    private async void DxvkCogButton_Click(object sender, RoutedEventArgs e)
+    internal async void DxvkCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         var content = new StackPanel { Spacing = 12 };
+        var gameName = card.GameName;
+        var store    = card.Source ?? "";
+
+        // ── Variant selector ──────────────────────────────────────────────────
+        var variantGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
+        variantGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        variantGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140, GridUnitType.Pixel) });
+        variantGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        variantGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        // Resolve current variant — Lilium HDR is default when no override is set
+        var currentOverride = ViewModel.GetDxvkVariantOverride(gameName, store);
+        string currentVariantDisplay;
+        if (currentOverride != null)
+        {
+            currentVariantDisplay = currentOverride switch
+            {
+                "Stable"    => "Stable",
+                "LiliumHdr" => "Lilium HDR",
+                _           => "Development",
+            };
+        }
+        else if (card.DxvkEnabled)
+        {
+            // Already installed — show effective global variant
+            currentVariantDisplay = ViewModel.ResolveDxvkVariant(gameName, store) switch
+            {
+                DxvkVariant.Stable    => "Stable",
+                DxvkVariant.LiliumHdr => "Lilium HDR",
+                _                     => "Development",
+            };
+        }
+        else
+        {
+            // Default: Lilium HDR
+            currentVariantDisplay = "Lilium HDR";
+        }
+
+        var variantLabel = new TextBlock
+        {
+            Text = "Variant",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        ToolTipService.SetToolTip(variantLabel, "Development: latest nightly build. Stable: last stable release. Lilium HDR: HDR-optimised variant (default).");
+        Grid.SetRow(variantLabel, 0); Grid.SetColumn(variantLabel, 0);
+        variantGrid.Children.Add(variantLabel);
+
+        var variantCombo = new ComboBox { FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch };
+        variantCombo.Items.Add("Lilium HDR");
+        variantCombo.Items.Add("Development");
+        variantCombo.Items.Add("Stable");
+        variantCombo.SelectedItem = currentVariantDisplay;
+        if (variantCombo.SelectedIndex < 0) variantCombo.SelectedIndex = 0;
+
+        Grid.SetRow(variantCombo, 0); Grid.SetColumn(variantCombo, 1);
+        variantGrid.Children.Add(variantCombo);
+
+        // ── Lilium HDR Preset row (row 1, shown when Lilium selected) ─────────
+        bool isLiliumSelected = (variantCombo.SelectedItem as string) == "Lilium HDR";
+        var isDx9Api = card.DxvkRecord?.InstalledDlls?.Any(d => d.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)) == true
+                       || card.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
+        var presetArray = isDx9Api ? DxvkService.LiliumD3d9Presets : DxvkService.LiliumD3d11Presets;
+        var presetNames = presetArray.Select(p => p.Name).ToList();
+        int currentPresetIdx = ViewModel.GetLiliumPreset(gameName, store);
+
+        var liliumPresetLabel = new TextBlock
+        {
+            Text = "Lilium Preset",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = isLiliumSelected ? Visibility.Visible : Visibility.Collapsed,
+        };
+        ToolTipService.SetToolTip(liliumPresetLabel,
+            "Safest = swap chain only (near 100% compatible).\nHigher tiers upgrade back buffers and render targets — better HDR but may cause visual issues.");
+        Grid.SetRow(liliumPresetLabel, 1); Grid.SetColumn(liliumPresetLabel, 0);
+        variantGrid.Children.Add(liliumPresetLabel);
+
+        var liliumPresetCombo = new ComboBox
+        {
+            FontSize = 11,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ItemsSource = presetNames,
+            SelectedIndex = currentPresetIdx >= 0 && currentPresetIdx < presetNames.Count ? currentPresetIdx : 0,
+            Visibility = isLiliumSelected ? Visibility.Visible : Visibility.Collapsed,
+        };
+        Grid.SetRow(liliumPresetCombo, 1); Grid.SetColumn(liliumPresetCombo, 1);
+        variantGrid.Children.Add(liliumPresetCombo);
+        content.Children.Add(variantGrid);
+
+        // Wire variant combo — show/hide Lilium preset, save override, set DxvkVariantPending
+        var variantComboInit = true;
+        variantCombo.SelectionChanged += async (s, ev) =>
+        {
+            if (variantComboInit) return;
+            var selected = variantCombo.SelectedItem as string;
+            bool liliumNow = selected == "Lilium HDR";
+            liliumPresetLabel.Visibility = liliumNow ? Visibility.Visible : Visibility.Collapsed;
+            liliumPresetCombo.Visibility = liliumNow ? Visibility.Visible : Visibility.Collapsed;
+
+            string? variantValue = selected switch
+            {
+                "Lilium HDR"  => "LiliumHdr",
+                "Development" => "Development",
+                "Stable"      => "Stable",
+                _             => "LiliumHdr",
+            };
+            ViewModel.SetDxvkVariantOverride(gameName, variantValue, store);
+
+            if (card.DxvkEnabled || card.DxvkStatus == GameStatus.Installed || card.DxvkStatus == GameStatus.UpdateAvailable)
+            {
+                // Already installed — uninstall first so user can install the new variant
+                await ViewModel.HandleDxvkToggleAsync(card, false, Content.XamlRoot);
+                card.DxvkVariantPending = true;
+            }
+            else
+            {
+                card.DxvkVariantPending = true;
+            }
+            card.NotifyAll();
+            PopulateDetailPanel(card);
+            BuildOverridesPanel(card);
+        };
+        variantComboInit = false;
+
+        // Wire Lilium preset combo
+        var liliumPresetInit = true;
+        liliumPresetCombo.SelectionChanged += (s, ev) =>
+        {
+            if (liliumPresetInit) return;
+            int idx = liliumPresetCombo.SelectedIndex;
+            if (idx < 0) return;
+            ViewModel.SetLiliumPreset(gameName, idx, store);
+            // Re-deploy dxvk.conf with new preset if DXVK is installed
+            if (!string.IsNullOrEmpty(card.InstallPath))
+            {
+                var confPath = System.IO.Path.Combine(card.InstallPath, "dxvk.conf");
+                var confContent = isDx9Api
+                    ? DxvkService.GetLiliumD3d9ConfContent(idx)
+                    : DxvkService.GetLiliumD3d11ConfContent(idx);
+                try { System.IO.File.WriteAllText(confPath, confContent); }
+                catch (Exception ex) { CrashReporter.Log($"[DxvkCog.LiliumPreset] Failed to write dxvk.conf — {ex.Message}"); }
+            }
+        };
+        liliumPresetInit = false;
+
+        // ── Separator ─────────────────────────────────────────────────────────
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 0) });
+
+        // ── Deploy dxvk.conf button ───────────────────────────────────────────
         var deployBtn = new Button
         {
             Content = "Deploy dxvk.conf",

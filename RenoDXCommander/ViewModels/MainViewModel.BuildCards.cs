@@ -774,6 +774,20 @@ public partial class MainViewModel
                     newCard.GraphicsApi = GraphicsApiType.DirectX12;
             }
 
+            // Unreal Legacy (UE1/2/3) games ran DX9. If PE scan picked up a DX11 shim
+            // (common in older UE titles that added partial DX11 support), cap back to DX9.
+            if (newCard.EngineHint == "Unreal (Legacy)"
+                && !hasUserApiOverride
+                && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true)
+                && newCard.DetectedApis.Contains(GraphicsApiType.DirectX9))
+            {
+                newCard.DetectedApis.Remove(GraphicsApiType.DirectX11);
+                if (newCard.GraphicsApi == GraphicsApiType.DirectX11)
+                    newCard.GraphicsApi = GraphicsApiType.DirectX9;
+                if (!string.IsNullOrEmpty(installPath))
+                    CacheGameApi(installPath, newCard.GraphicsApi, newCard.DetectedApis);
+            }
+
             newCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(newCard.DetectedApis);
 
             // Cache the API detection results for subsequent launches
@@ -781,7 +795,9 @@ public partial class MainViewModel
                 CacheGameApi(installPath, newCard.GraphicsApi, newCard.DetectedApis);
 
             // PCGW upgrade: if PE scan gave DX11 (or Unknown) but PCGW confirms DX12,
-            // promote the primary API — only when no user/manifest override exists
+            // promote the primary API — only when no user/manifest override exists.
+            // Also: when PE scan returned Unknown (e.g. Unity games that only import UnityPlayer.dll),
+            // trust PCGW for any API it reports — not just DX12.
             if (!hasUserApiOverride && _manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true)
             {
                 var pcgwInfo = _pcgwService.GetCachedApiInfo(game.Name);
@@ -799,6 +815,27 @@ public partial class MainViewModel
                         newCard.DetectedApis.Remove(GraphicsApiType.DirectX11);
                     if (!string.IsNullOrEmpty(installPath))
                         CacheGameApi(installPath, newCard.GraphicsApi, newCard.DetectedApis);
+                }
+                else if (pcgwInfo != null && newCard.GraphicsApi == GraphicsApiType.Unknown)
+                {
+                    // PE scan returned Unknown (e.g. Unity games that only import UnityPlayer.dll) —
+                    // use PCGW's highest-priority API as the primary, since it reflects actual runtime behaviour.
+                    var pcgwApi =
+                        pcgwInfo.HasDirectX12 ? GraphicsApiType.DirectX12 :
+                        pcgwInfo.HasVulkan    ? GraphicsApiType.Vulkan    :
+                        pcgwInfo.HasDirectX11 ? GraphicsApiType.DirectX11 :
+                        pcgwInfo.HasDirectX10 ? GraphicsApiType.DirectX10 :
+                        pcgwInfo.HasDirectX9  ? GraphicsApiType.DirectX9  :
+                        pcgwInfo.HasOpenGL    ? GraphicsApiType.OpenGL    :
+                        GraphicsApiType.Unknown;
+                    if (pcgwApi != GraphicsApiType.Unknown)
+                    {
+                        newCard.GraphicsApi = pcgwApi;
+                        newCard.DetectedApis.Add(pcgwApi);
+                        if (!string.IsNullOrEmpty(installPath))
+                            CacheGameApi(installPath, newCard.GraphicsApi, newCard.DetectedApis);
+                        _crashReporter.Log($"[BuildCards] '{game.Name}': PE scan returned Unknown, PCGW set API to {pcgwApi}");
+                    }
                 }
 
                 // Apply scraped config file path to EngineIniProjectOverride for UE games —

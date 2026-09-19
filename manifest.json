@@ -548,6 +548,8 @@
     "The Sinking City 2": "TSC2"
   },
   "graphicsApiOverrides": {
+    "Outlast": "DX9",
+    "Outlast 2": "DX9",
     "Anno 117 - Pax Romana": "DX12",
     "ACE COMBAT™7: SKIES UNKNOWN": "DX11",
     "Clair Obscur: Expedition 33": "DX12",

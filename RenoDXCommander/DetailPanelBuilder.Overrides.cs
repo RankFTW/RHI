@@ -30,7 +30,6 @@ public partial class DetailPanelBuilder
         public bool ShaderComboInitializing;
         public TextBlock UpdateSummaryText = null!;
         public bool ChannelComboInitializing;
-        public ToggleSwitch DxvkToggle = null!;
         public Button ResetOverridesBtn = null!;
         public Action? ResetAction; // stored separately so mgmt panel can call it directly (automation peer fails on collapsed buttons)
     }
@@ -1167,7 +1166,7 @@ public partial class DetailPanelBuilder
         BuildNvidiaProfileSection(card, capturedName);
         CrashReporter.Log($"[BuildOverridesPanel] NvidiaProfile done: '{card.GameName}'");
 
-        ctx.DxvkToggle = BuildDxvkAndManagementSection(card, capturedName, gameName, ctx) ?? ctx.DxvkToggle;
+        BuildManagementSection(card, capturedName, ctx);
         CrashReporter.Log($"[BuildOverridesPanel] Dxvk+Management done: '{card.GameName}'");
 
         BuildExtrasSection(card);
