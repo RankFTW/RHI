@@ -451,8 +451,14 @@ public partial class MainViewModel : ObservableObject
     /// Returns the effective UE-Extended db entry for a game, or null when source is WikiOnly
     /// or the game isn't in the db.
     /// </summary>
-    public RenoDXDbUnrealEntry? GetDbUnrealEntry(string gameName) =>
-        _dbUnrealEntries.TryGetValue(gameName, out var e) ? e : null;
+    public RenoDXDbUnrealEntry? GetDbUnrealEntry(string gameName)
+    {
+        if (_dbUnrealEntries.TryGetValue(gameName, out var e)) return e;
+        // Strip trademark symbols and retry — detected names may include ®, ™, © that the DB omits
+        var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
+        if (stripped != gameName && _dbUnrealEntries.TryGetValue(stripped, out e)) return e;
+        return null;
+    }
 
     /// <summary>
     /// Merges wiki and DB mod lists according to the current RenoDxDbSource setting.

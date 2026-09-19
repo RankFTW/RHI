@@ -147,6 +147,7 @@ internal static class NativeInterop
 
     internal const int GWLP_WNDPROC = -4;
     internal const int WM_GETMINMAXINFO = 0x0024;
+    internal const int WM_EXITSIZEMOVE  = 0x0232;  // fires once when resize/move drag ends
     internal const int MinWindowWidth = 900;
     internal const int MinWindowHeight = 800;
 

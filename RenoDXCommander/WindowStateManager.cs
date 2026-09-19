@@ -244,6 +244,13 @@ public class WindowStateManager
             return IntPtr.Zero;
         }
 
+        // Save window position/size when the user finishes a resize or move drag.
+        // This means the bounds are always up to date, surviving End Task or installer-triggered restarts.
+        if (msg == (uint)NativeInterop.WM_EXITSIZEMOVE && !_sizeLocked)
+        {
+            SaveWindowBounds();
+        }
+
         if (msg == NativeInterop.WM_DROPFILES)
         {
             HandleWin32Drop(wParam);

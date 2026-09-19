@@ -1,54 +1,62 @@
 ## v2.7.3
 
-## v2.7.3-beta2
-
-**Beta note:** This build includes verbose diagnostic logging to help track down a UI freeze that occurs intermittently during normal use. The freeze is fully reproducible but its root cause hasn't been isolated yet — every major UI rendering operation now logs timing and semaphore state to the session log. If the app freezes, close it and share the session log from `%LocalAppData%\RHI\Logs\`. This logging will be removed before the final release.
-
 ### New
 
 - UE-Extended games now show a status icon next to the addon name — a green ✓ for mods marked complete, and 🔨 for mods still in progress.
 - You can now select individual files from your Custom Shaders folder in the shader picker. Files from `%LocalAppData%\RHI\reshade\Custom\Shaders\` and `\Textures\` appear as a "Custom Shaders" section between Recommended and Extra packs, grouped by subfolder. Tick or untick individual files to control exactly what gets deployed. An "Open Custom Folder" button in the Profiles panel opens the folder directly.
-- DXVK has moved to the Extras section, under a new "API Upgrades" sub-header. The install button is always available on eligible games (DX8/9/10). Variant selection (Lilium HDR by default, Development, Stable) and the Lilium preset are now in the DXVK cog alongside the existing DXVK present method settings.
+- DXVK has moved to the Extras section, under a new "API Upgrades" sub-header. The install button is always available on eligible games (DX8/9/10). Variant selection (Lilium HDR by default, Development, Stable) and the Lilium preset are now in the DXVK cog alongside the existing present method settings.
 
-### Neural Rendering Improvements
+### Neural Rendering
 
 - Feeder and Bridge version selection — you can now pin a specific release version of the Feeder or Bridge addon instead of always using the latest. The dropdown shows the full release history (28+ versions including betas).
-- `DLSS5_Feed.fx` is now extracted directly from the Feeder download and kept up to date automatically. Previously it was fetched separately and broke when the file moved into the release archive.
-- Fixed Feeder installing the wrong dgVoodoo2 file on 64-bit DX9 games — it was always deploying the 32-bit version, which a 64-bit game can't load, so dgVoodoo2 was silently doing nothing and the shader failed to compile. Reinstall Feeder on any affected game to fix it.
-- Fixed global shaders not being removed from the game folder immediately when Feeder is installed — they were staying until a manual Refresh. They are now cleared as part of the install.
-- Fixed `DLSS5_Feed.fx` not being deployed to the game folder — a race condition between saving the shader selection and syncing the game folder meant the mode was still "Global" when the sync ran, causing it to wipe the file. Also fixed a separate case where the shader pack registration completed too late, leaving the file out of the deployment on the first install after a version change.
-- Fixed the Neural Rendering panel not appearing at all on some sessions.
+- ShortFuse (DLSS Tool) is now available on all 64-bit games except OpenGL — previously it only showed on games with native DLSS.
+- Fixed Feeder installing the wrong dgVoodoo2 file on 64-bit DX9 games — the 32-bit version was always used, so dgVoodoo2 did nothing and the shader failed to compile. Reinstall Feeder on any affected game to fix it.
+- Fixed global shaders not being removed from the game folder immediately when Feeder is installed.
+- Fixed `DLSS5_Feed.fx` not deploying to the game folder on install.
+- Fixed the Neural Rendering panel not building on some sessions.
+
+### Game Detection
+
+- Unity games now correctly report their API based on Unity's own configuration file, rather than PE import scanning (which reads the Unity player DLL and sees every API). This fixes games like Caves of Qud showing DX12 instead of their actual runtime API.
+- Games with a trademark symbol in their name (®, ™) now correctly match against RHI database entries — Borderlands® 4 and similar were not being found.
+- Unreal Legacy (UE1/2/3) games that have a DX11 compatibility shim in their imports now correctly show DX9 as their primary API.
+- PCGamingWiki API detection now reads DX9, DX10, Vulkan, and OpenGL in addition to DX11/DX12. Games where PE scanning returns no result will now use PCGW data as the source of truth.
 
 ### Bug Fixes
 
 **Crashes and freezes**
-- Fixed intermittent UI freezes and unresponsive states affecting multiple operations — installs, Nexus sign-in, drag-drop, Update All, Luma installs, and app launch with `--launch` were all affected.
+- Fixed intermittent UI freezes affecting installs, Nexus sign-in, drag-drop, Update All, Luma installs, and app launch with `--launch`.
 - Fixed a slow memory and connection leak that built up over a long session.
 - Fixed a leak where event handlers accumulated every time a game card was opened.
 
 **Luma**
-- Fixed Luma uninstall removing the ReShade shader folder even when ReShade was still installed — the folder is now kept and the global shader selection is redeployed into it.
-- Fixed Luma uninstall leaving a leftover `reshade-shaders-original` folder behind.
-- Fixed Luma uninstall leaving `reshade.ini` in a Luma-configured state — a fresh one is now deployed with your hotkeys, screenshot path, and peak nits intact.
-- Fixed Luma uninstall leaving `nvngx_dlss.dll` behind — it is now correctly removed or the game's original copy restored.
-- Fixed Luma mods showing "Update Available" repeatedly on Nexus — this was a false positive caused by comparing edit timestamps rather than actual file releases. Update checks for Luma now only fire when real file version data is available.
+- Fixed Luma uninstall removing the shader folder even when ReShade was still installed — shaders are now kept and redeployed.
+- Fixed Luma uninstall leaving a `reshade-shaders-original` folder behind.
+- Fixed Luma uninstall leaving `reshade.ini` in a Luma-configured state — a fresh copy is now deployed with your hotkeys and settings intact.
+- Fixed Luma uninstall leaving `nvngx_dlss.dll` behind.
+- Fixed Luma mods on Nexus showing "Update Available" repeatedly — this was a false positive from comparing page edit timestamps rather than actual file releases.
 
 **Game Pass**
-- Fixed ReShade being lost after a Game Pass game updates — Windows replaces the install folder with a new versioned path on update, which left RHI unable to find the ReShade DLL. RHI now detects this automatically and reinstalls ReShade at the new path on the next launch.
+- Fixed ReShade being lost after a Game Pass game updates — Windows replaces the install folder with a new versioned path on update. RHI now detects this and reinstalls ReShade automatically on the next launch.
 
 **Other**
-- Fixed PCGamingWiki links never appearing on game cards — the lookup was running but results were never being saved, so no game ever showed a PCGW link. Links now appear in the background after startup.
+- Fixed PCGamingWiki links never appearing on game cards.
 - Fixed the render scale input box keeping keyboard focus after pressing Enter.
 - Fixed occasional incorrect DLSS scan counts when multiple games were scanned at the same time.
 - Fixed file cleanup silently stopping partway through if a file was locked by another process.
+- Window position and size are now saved whenever you finish moving or resizing the window, not only on a clean close — so your layout is preserved even if RHI is force-closed or restarted by an update.
 
 ### Manifest Updates
 
 - Added "Banishers: Ghosts of New Eden - The Wanderer Set DLC" to blacklist — was being incorrectly detected as a game.
 - Removed Elden Ring and Elden Ring: Nightreign from the external-only list — both mods now have direct download links in RHI.
 - Added engine hint for Insurgency: Sandstorm.
-- Added DX9 API override for Outlast and Outlast 2 — both were showing DX11 due to a Unreal Legacy DX11 shim in the PE imports.
+- Added DX9 API override for Outlast and Outlast 2 — both were showing DX11 due to a Unreal Legacy PE import shim.
 - Updated engine hint for MGS4 and Peace Walker (Master Collection) to KojiPro Engine.
+
+### Diagnostic Logging
+
+This build includes enhanced session logging to help track down a UI freeze that occurs intermittently. Every major UI rendering operation logs timing and state to the session log. If the app freezes, close it and share the log from `%LocalAppData%\RHI\Logs\` — it will help narrow down the cause.
 
 ## v2.7.2
 
