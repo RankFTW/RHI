@@ -41,6 +41,25 @@ public partial class DialogService
         }
     }
 
+    /// <summary>
+    /// Checks for an app update and returns the result — null means up to date or check failed.
+    /// Used by the version button to show a "no update" dialog when appropriate.
+    /// </summary>
+    public async Task<UpdateInfo?> CheckForUpdateAndReturnAsync(bool betaOptIn)
+    {
+        try
+        {
+            while (_window.Content.XamlRoot == null)
+                await Task.Delay(200);
+            return await _updateService.CheckForUpdateAsync(betaOptIn);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DialogService.CheckForUpdateAndReturnAsync] Error — {ex.Message}");
+            return null;
+        }
+    }
+
     public async Task ShowUpdateDialogAsync(UpdateInfo updateInfo)
     {
         var dlg = new ContentDialog

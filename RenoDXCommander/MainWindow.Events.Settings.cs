@@ -23,7 +23,23 @@ public sealed partial class MainWindow
     {
         try
         {
-            await _dialogService.CheckForAppUpdateAsync();
+            var updateInfo = await _dialogService.CheckForUpdateAndReturnAsync(ViewModel.BetaOptIn);
+            if (updateInfo == null)
+            {
+                var dlg = new ContentDialog
+                {
+                    Title = "RHI is up to date",
+                    Content = $"You're running v{Services.CrashReporter.AppVersion} — no updates available.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                };
+                await DialogService.ShowSafeAsync(dlg);
+            }
+            else
+            {
+                await _dialogService.ShowUpdateDialogAsync(updateInfo);
+            }
         }
         catch (Exception ex)
         {

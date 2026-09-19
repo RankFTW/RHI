@@ -1,3 +1,9 @@
+## v2.7.4
+
+### Manifest Updates
+
+- Added engine hint for Mount & Blade II: Bannerlord (Daroya Engine).
+
 ## v2.7.3
 
 ### New
