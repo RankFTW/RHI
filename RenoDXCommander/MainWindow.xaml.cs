@@ -233,7 +233,7 @@ public sealed partial class MainWindow : Window
         // Apply initial visibility
         UpdatePageVisibility();
         // Show version in status bar
-        StatusBarVersionText.Text = $"v{Services.CrashReporter.AppVersion}";
+        StatusBarVersionText.Content = $"v{Services.CrashReporter.AppVersion}";
         // Always show the ✕ clear button on search box
         SearchBox.Loaded += (_, _) => VisualStateManager.GoToState(SearchBox, "ButtonVisible", false);
         ViewModel.InitializeAsync().SafeFireAndForget("MainWindow.Init");

@@ -3052,9 +3052,12 @@
                            Text="⚠ ReShade, OptiScaler, and DLSS/Streamline modifications may trigger anti-cheat in online/multiplayer games"/>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right"
                             VerticalAlignment="Center" Spacing="8">
-                    <TextBlock x:Name="StatusBarVersionText" x:FieldModifier="internal"
-                               FontSize="11" Foreground="{StaticResource TextDisabledBrush}"
-                               VerticalAlignment="Center"/>
+                    <Button x:Name="StatusBarVersionText" x:FieldModifier="internal"
+                            FontSize="11" Foreground="{StaticResource TextDisabledBrush}"
+                            Background="Transparent" BorderThickness="0"
+                            Padding="0,2" VerticalAlignment="Center"
+                            Click="StatusBarVersion_Click"
+                            ToolTipService.ToolTip="Check for app updates"/>
                     <Button Content="Patch Notes"
                             Click="PatchNotesLink_Click"
                             Background="Transparent" BorderThickness="0"

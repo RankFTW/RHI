@@ -45,6 +45,7 @@
 - Fixed occasional incorrect DLSS scan counts when multiple games were scanned at the same time.
 - Fixed file cleanup silently stopping partway through if a file was locked by another process.
 - Window position and size are now saved whenever you finish moving or resizing the window, not only on a clean close — so your layout is preserved even if RHI is force-closed or restarted by an update.
+- The version number in the status bar is now clickable and checks for app updates.
 
 ### Manifest Updates
 

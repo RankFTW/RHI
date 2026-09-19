@@ -19,6 +19,18 @@ public sealed partial class MainWindow
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.SettingsButton_Click(sender, e);
 
+    private async void StatusBarVersion_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await _dialogService.CheckForAppUpdateAsync();
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.StatusBarVersion_Click] Update check error — {ex.Message}");
+        }
+    }
+
     private async void PatchNotesLink_Click(object sender, RoutedEventArgs e)
     {
         try
