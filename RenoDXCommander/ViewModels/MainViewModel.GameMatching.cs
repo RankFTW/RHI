@@ -382,6 +382,16 @@ public partial class MainViewModel
             };
         }
 
+        // Unity: boot.config is the most reliable source — check before cache since cache
+        // may contain stale values from before Unity detection was added.
+        var unityEarlyResult = GraphicsApiDetector.DetectUnityFromBootConfig(installPath);
+        if (unityEarlyResult != GraphicsApiType.Unknown)
+        {
+            // Update the cache so subsequent hits return the correct value
+            CacheGameApi(installPath, unityEarlyResult, new System.Collections.Generic.HashSet<GraphicsApiType> { unityEarlyResult });
+            return unityEarlyResult;
+        }
+
         // ── Game-level cache: skip all filesystem scanning if cached ──────────
         if (_gameApiCache.TryGetValue(installPath, out var cached))
             return cached.Primary;
@@ -398,11 +408,6 @@ public partial class MainViewModel
             }
         }
         catch (Exception ex) { _crashReporter.Log($"[DetectGraphicsApi] D3D12Core pre-scan failed for '{installPath}' — {ex.Message}"); }
-
-        // Unity: boot.config is the most reliable source (PE imports are misleading)
-        var unityResult = GraphicsApiDetector.DetectUnityFromBootConfig(installPath);
-        if (unityResult != GraphicsApiType.Unknown)
-            return unityResult;
 
         // Track best detected API across all file-based checks.
         // We don't return OpenGL immediately because Unity and Unreal statically

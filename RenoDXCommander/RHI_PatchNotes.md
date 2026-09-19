@@ -47,6 +47,8 @@
 - Added "Banishers: Ghosts of New Eden - The Wanderer Set DLC" to blacklist — was being incorrectly detected as a game.
 - Removed Elden Ring and Elden Ring: Nightreign from the external-only list — both mods now have direct download links in RHI.
 - Added engine hint for Insurgency: Sandstorm.
+- Added DX9 API override for Outlast and Outlast 2 — both were showing DX11 due to a Unreal Legacy DX11 shim in the PE imports.
+- Updated engine hint for MGS4 and Peace Walker (Master Collection) to KojiPro Engine.
 
 ## v2.7.2
 
