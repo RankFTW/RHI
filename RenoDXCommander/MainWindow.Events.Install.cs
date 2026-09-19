@@ -1133,7 +1133,7 @@ public sealed partial class MainWindow
 
         // If Settings page is visible, refresh the global NVIDIA driver settings
         if (ViewModel.CurrentPage == AppPage.Settings)
-            _settingsHandler.RefreshGlobalNvidiaSettings();
+            await _settingsHandler.RefreshGlobalNvidiaSettingsAsync();
     }
 
     private async Task FullRefreshWithScrollRestore()

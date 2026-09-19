@@ -39,7 +39,7 @@ public class SettingsHandler
 
     private MainViewModel ViewModel => _window.ViewModel;
 
-    public void SettingsButton_Click(object sender, RoutedEventArgs e)
+    public async void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.NavigateToSettingsCommand.Execute(null);
         _window.GameViewPanel.Visibility = Visibility.Collapsed;
@@ -145,10 +145,6 @@ public class SettingsHandler
         }
         _window._dlssIndicatorInitializing = false;
 
-        // Initialize G-Sync Indicator combo
-        var presetSvcForGsync = App.Services.GetRequiredService<DlssPresetService>();
-        _window.GSyncIndicatorCombo.SelectedIndex = presetSvcForGsync.GetGSyncIndicator() ? 0 : 1; // 0=Enabled, 1=Disabled
-
         // Initialize DLSS/Streamline auto-update combos
         _window.AutoUpdateDlssCombo.SelectedIndex = ViewModel.Settings.AutoUpdateDlss ? 1 : 0;
         _window.AutoUpdateStreamlineCombo.SelectedIndex = ViewModel.Settings.AutoUpdateStreamline ? 1 : 0;
@@ -202,104 +198,14 @@ public class SettingsHandler
         // Populate DLSS defaults summary
         _window.RefreshDlssDefaultsSummary();
 
-        // Populate shader cache combos
+        // Populate NVAPI-dependent combos (shader cache, G-Sync, FPS limit, ReBAR, VSync, Power)
+        // Fetch all NVAPI values on a background thread with timeout to prevent UI freeze after GPU sleep/wake
         _window._shaderCacheComboInit = true;
         var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
         if (presetSvc.IsSupported)
         {
-            _window.ShaderCacheSizeCombo.ItemsSource = DlssPresetService.ShaderCacheSizeOptions.Select(o => o.Name).ToArray();
-            var cacheSize = presetSvc.GetShaderCacheSize();
-            var cacheIdx = Array.FindIndex(DlssPresetService.ShaderCacheSizeOptions, o => o.Value == cacheSize);
-            _window.ShaderCacheSizeCombo.SelectedIndex = cacheIdx >= 0 ? cacheIdx : 0;
-
-            _window.ShaderPrecompileCombo.ItemsSource = DlssPresetService.ShaderPrecompileOptions.Select(o => o.Name).ToArray();
-            var precompile = presetSvc.GetShaderPrecompile();
-            var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == precompile);
-            _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
-
-            // G-Sync Enable
-            _window.GSyncEnableCombo.ItemsSource = DlssPresetService.GSyncEnableOptions.Select(o => o.Name).ToArray();
-            var gsyncEnable = presetSvc.GetGlobalGSyncEnabled();
-            var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == gsyncEnable);
-            _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;
-
-            _window.GSyncModeCombo.ItemsSource = DlssPresetService.GSyncModeOptions.Select(o => o.Name).ToArray();
-            var gsync = presetSvc.GetGSyncMode();
-            var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
-            _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
-
-            // FPS Limit
-            var fpsItems = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
-            var fpsLimit = presetSvc.GetGlobalFpsLimit();
-            var fpsIdx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == fpsLimit);
-            if (fpsIdx < 0 && fpsLimit > 0)
-            {
-                // Custom value — insert before "Custom..." at the end
-                fpsItems.Insert(fpsItems.Count - 1, $"{fpsLimit} FPS (Custom)");
-                fpsIdx = fpsItems.Count - 2;
-            }
-            _window.FpsLimitCombo.ItemsSource = fpsItems.ToArray();
-            _window.FpsLimitCombo.SelectedIndex = fpsIdx >= 0 ? fpsIdx : 0;
-
-            _window.PreferredRefreshRateCombo.ItemsSource = DlssPresetService.PreferredRefreshRateOptions.Select(o => o.Name).ToArray();
-            var refreshRate = presetSvc.GetPreferredRefreshRate();
-            var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
-            _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0; // Default: App Setting
-
-            // DMFG Defaults (global base profile)
-            _window.DmfgFrameCountCombo.ItemsSource = DlssPresetService.DmfgFrameCountOptions.Select(o => o.Name).ToArray();
-            var dmfgCount = presetSvc.GetGlobalDmfgFrameCount();
-            var dmfgCountIdx = Array.FindIndex(DlssPresetService.DmfgFrameCountOptions, o => o.Value == dmfgCount);
-            _window.DmfgFrameCountCombo.SelectedIndex = dmfgCountIdx >= 0 ? dmfgCountIdx : 0;
-
-            var dmfgFpsItems = DlssPresetService.DmfgTargetFpsOptions.Select(o => o.Name).ToList();
-            var dmfgFps = presetSvc.GetGlobalDmfgTargetFps();
-            var dmfgFpsIdx = Array.FindIndex(DlssPresetService.DmfgTargetFpsOptions, o => o.Value == dmfgFps);
-            if (dmfgFpsIdx < 0 && dmfgFps > 0 && dmfgFps != 0x01000000)
-            {
-                // Custom value — insert before "Custom..." at the end
-                dmfgFpsItems.Insert(dmfgFpsItems.Count - 1, $"{dmfgFps} FPS (Custom)");
-                dmfgFpsIdx = dmfgFpsItems.Count - 2;
-            }
-            _window.DmfgTargetFpsCombo.ItemsSource = dmfgFpsItems.ToArray();
-            _window.DmfgTargetFpsCombo.SelectedIndex = dmfgFpsIdx >= 0 ? dmfgFpsIdx : 0;
-
-            // Global ReBAR
-            var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
-            _window.GlobalReBarEnableCombo.ItemsSource = new[] { "Auto (Default)", "Off", "On" };
-            var globalReBarMode = presetSvc.GetGlobalReBarEnableMode(); // 0=Off, 1=Auto, 2=On
-            _window.GlobalReBarEnableCombo.SelectedIndex = globalReBarMode == 0 ? 1 : globalReBarMode == 2 ? 2 : 0;
-            _window.GlobalReBarEnableCombo.IsEnabled = isAdminForReBar;
-            _window.GlobalReBarEnableCombo.Opacity = isAdminForReBar ? 1.0 : 0.4;
-
-            _window.GlobalReBarSizeCombo.ItemsSource = DlssPresetService.ReBarSizeLimits.Select(o => o.Name).ToArray();
-            var globalReBarSize = presetSvc.GetGlobalReBarSizeLimit();
-            var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
-            _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1; // Default: 1GB
-            bool reBarOn = globalReBarMode == 2; // Only On enables size setting; Auto and Off grey it
-            _window.GlobalReBarSizeCombo.IsEnabled = isAdminForReBar && reBarOn;
-            _window.GlobalReBarSizeCombo.Opacity = (isAdminForReBar && reBarOn) ? 1.0 : 0.4;
-
-            // Show admin warning if not elevated
-            _window.ReBarAdminWarning.Visibility = isAdminForReBar
-                ? Microsoft.UI.Xaml.Visibility.Collapsed
-                : Microsoft.UI.Xaml.Visibility.Visible;
-
-            // Global VSync
-            _window.GlobalVSyncCombo.ItemsSource = DlssPresetService.VSyncModeOptions.Select(o => o.Name).ToArray();
-            var globalVSync = presetSvc.GetGlobalVSyncMode();
-            var vsyncIdx = globalVSync.HasValue
-                ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == globalVSync.Value)
-                : 0; // Default: App Controlled
-            _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
-
-            // Global Power Mode
-            _window.GlobalPowerModeCombo.ItemsSource = DlssPresetService.PowerManagementOptions.Select(o => o.Name).ToArray();
-            var globalPower = presetSvc.GetGlobalPowerMode();
-            var powerIdx = globalPower.HasValue
-                ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == globalPower.Value)
-                : 0; // Default: Optimal Performance
-            _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
+            var snapshot = await presetSvc.FetchNvApiSettingsAsync(timeoutMs: 5000);
+            PopulateNvApiCombosFromSnapshot(presetSvc, snapshot);
         }
         _window._shaderCacheComboInit = false;
 
@@ -325,6 +231,108 @@ public class SettingsHandler
         // RenoDX Data Source card — always visible now that RHI Database is the default
         _window.RenoDxDbSourceCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
         InitRenoDxDbSourceCombo();
+    }
+
+    /// <summary>
+    /// Populates all NVAPI-dependent combos from a pre-fetched snapshot.
+    /// This runs on the UI thread after the background fetch completes.
+    /// </summary>
+    private void PopulateNvApiCombosFromSnapshot(DlssPresetService presetSvc, NvApiSettingsSnapshot snapshot)
+    {
+        // Shader Cache Size
+        _window.ShaderCacheSizeCombo.ItemsSource = DlssPresetService.ShaderCacheSizeOptions.Select(o => o.Name).ToArray();
+        var cacheIdx = Array.FindIndex(DlssPresetService.ShaderCacheSizeOptions, o => o.Value == snapshot.ShaderCacheSize);
+        _window.ShaderCacheSizeCombo.SelectedIndex = cacheIdx >= 0 ? cacheIdx : 0;
+
+        // Shader Precompile
+        _window.ShaderPrecompileCombo.ItemsSource = DlssPresetService.ShaderPrecompileOptions.Select(o => o.Name).ToArray();
+        var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == snapshot.ShaderPrecompile);
+        _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
+
+        // G-Sync Indicator (uses snapshot value now)
+        _window.GSyncIndicatorCombo.SelectedIndex = snapshot.GSyncIndicator == true ? 0 : 1; // 0=Enabled, 1=Disabled
+
+        // G-Sync Enable
+        _window.GSyncEnableCombo.ItemsSource = DlssPresetService.GSyncEnableOptions.Select(o => o.Name).ToArray();
+        var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == snapshot.GSyncEnabled);
+        _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;
+
+        // G-Sync Mode
+        _window.GSyncModeCombo.ItemsSource = DlssPresetService.GSyncModeOptions.Select(o => o.Name).ToArray();
+        var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == snapshot.GSyncMode);
+        _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
+
+        // FPS Limit
+        var fpsItems = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
+        var fpsLimit = snapshot.FpsLimit ?? 0;
+        var fpsIdx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == fpsLimit);
+        if (fpsIdx < 0 && fpsLimit > 0)
+        {
+            // Custom value — insert before "Custom..." at the end
+            fpsItems.Insert(fpsItems.Count - 1, $"{fpsLimit} FPS (Custom)");
+            fpsIdx = fpsItems.Count - 2;
+        }
+        _window.FpsLimitCombo.ItemsSource = fpsItems.ToArray();
+        _window.FpsLimitCombo.SelectedIndex = fpsIdx >= 0 ? fpsIdx : 0;
+
+        // Preferred Refresh Rate
+        _window.PreferredRefreshRateCombo.ItemsSource = DlssPresetService.PreferredRefreshRateOptions.Select(o => o.Name).ToArray();
+        var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == snapshot.PreferredRefreshRate);
+        _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0; // Default: App Setting
+
+        // DMFG Frame Count
+        _window.DmfgFrameCountCombo.ItemsSource = DlssPresetService.DmfgFrameCountOptions.Select(o => o.Name).ToArray();
+        var dmfgCountIdx = Array.FindIndex(DlssPresetService.DmfgFrameCountOptions, o => o.Value == snapshot.DmfgFrameCount);
+        _window.DmfgFrameCountCombo.SelectedIndex = dmfgCountIdx >= 0 ? dmfgCountIdx : 0;
+
+        // DMFG Target FPS
+        var dmfgFpsItems = DlssPresetService.DmfgTargetFpsOptions.Select(o => o.Name).ToList();
+        var dmfgFps = snapshot.DmfgTargetFps ?? 0;
+        var dmfgFpsIdx = Array.FindIndex(DlssPresetService.DmfgTargetFpsOptions, o => o.Value == dmfgFps);
+        if (dmfgFpsIdx < 0 && dmfgFps > 0 && dmfgFps != 0x01000000)
+        {
+            // Custom value — insert before "Custom..." at the end
+            dmfgFpsItems.Insert(dmfgFpsItems.Count - 1, $"{dmfgFps} FPS (Custom)");
+            dmfgFpsIdx = dmfgFpsItems.Count - 2;
+        }
+        _window.DmfgTargetFpsCombo.ItemsSource = dmfgFpsItems.ToArray();
+        _window.DmfgTargetFpsCombo.SelectedIndex = dmfgFpsIdx >= 0 ? dmfgFpsIdx : 0;
+
+        // Global ReBAR Enable
+        var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
+        _window.GlobalReBarEnableCombo.ItemsSource = new[] { "Auto (Default)", "Off", "On" };
+        var globalReBarMode = snapshot.ReBarEnableMode ?? 1; // 0=Off, 1=Auto, 2=On
+        _window.GlobalReBarEnableCombo.SelectedIndex = globalReBarMode == 0 ? 1 : globalReBarMode == 2 ? 2 : 0;
+        _window.GlobalReBarEnableCombo.IsEnabled = isAdminForReBar;
+        _window.GlobalReBarEnableCombo.Opacity = isAdminForReBar ? 1.0 : 0.4;
+
+        // Global ReBAR Size
+        _window.GlobalReBarSizeCombo.ItemsSource = DlssPresetService.ReBarSizeLimits.Select(o => o.Name).ToArray();
+        var globalReBarSize = snapshot.ReBarSizeLimit ?? 0x40000000;
+        var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
+        _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1; // Default: 1GB
+        bool reBarOn = globalReBarMode == 2; // Only On enables size setting; Auto and Off grey it
+        _window.GlobalReBarSizeCombo.IsEnabled = isAdminForReBar && reBarOn;
+        _window.GlobalReBarSizeCombo.Opacity = (isAdminForReBar && reBarOn) ? 1.0 : 0.4;
+
+        // ReBAR admin warning
+        _window.ReBarAdminWarning.Visibility = isAdminForReBar
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        // Global VSync
+        _window.GlobalVSyncCombo.ItemsSource = DlssPresetService.VSyncModeOptions.Select(o => o.Name).ToArray();
+        var vsyncIdx = snapshot.VSyncMode.HasValue
+            ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == snapshot.VSyncMode.Value)
+            : 0; // Default: App Controlled
+        _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
+
+        // Global Power Mode
+        _window.GlobalPowerModeCombo.ItemsSource = DlssPresetService.PowerManagementOptions.Select(o => o.Name).ToArray();
+        var powerIdx = snapshot.PowerMode.HasValue
+            ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == snapshot.PowerMode.Value)
+            : 0; // Default: Optimal Performance
+        _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
     }
 
     /// <summary>
@@ -365,66 +373,14 @@ public class SettingsHandler
     /// Re-reads global NVIDIA settings from the driver and refreshes the Settings page combos.
     /// Called after Reset All to reflect the cleared values.
     /// </summary>
-    public void RefreshGlobalNvidiaSettings()
+    public async Task RefreshGlobalNvidiaSettingsAsync()
     {
         var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
         if (!presetSvc.IsSupported) return;
 
         _window._shaderCacheComboInit = true;
-
-        var cacheSize = presetSvc.GetShaderCacheSize();
-        var cacheIdx = Array.FindIndex(DlssPresetService.ShaderCacheSizeOptions, o => o.Value == cacheSize);
-        _window.ShaderCacheSizeCombo.SelectedIndex = cacheIdx >= 0 ? cacheIdx : 0;
-
-        var precompile = presetSvc.GetShaderPrecompile();
-        var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == precompile);
-        _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
-
-        var gsync = presetSvc.GetGSyncMode();
-        var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
-        _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
-
-        var gsyncEnable = presetSvc.GetGlobalGSyncEnabled();
-        var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == gsyncEnable);
-        _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;
-
-        var fpsLimit = presetSvc.GetGlobalFpsLimit();
-        var fpsItems = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
-        var fpsIdx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == fpsLimit);
-        if (fpsIdx < 0 && fpsLimit > 0)
-        {
-            fpsItems.Insert(fpsItems.Count - 1, $"{fpsLimit} FPS (Custom)");
-            fpsIdx = fpsItems.Count - 2;
-        }
-        _window.FpsLimitCombo.ItemsSource = fpsItems.ToArray();
-        _window.FpsLimitCombo.SelectedIndex = fpsIdx >= 0 ? fpsIdx : 0;
-
-        var refreshRate = presetSvc.GetPreferredRefreshRate();
-        var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
-        _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0;
-
-        var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
-        var globalReBarMode = presetSvc.GetGlobalReBarEnableMode();
-        _window.GlobalReBarEnableCombo.SelectedIndex = globalReBarMode == 0 ? 1 : globalReBarMode == 2 ? 2 : 0;
-        bool reBarOn = globalReBarMode == 2;
-        _window.GlobalReBarSizeCombo.IsEnabled = isAdminForReBar && reBarOn;
-        _window.GlobalReBarSizeCombo.Opacity = (isAdminForReBar && reBarOn) ? 1.0 : 0.4;
-        var globalReBarSize = presetSvc.GetGlobalReBarSizeLimit();
-        var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
-        _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1;
-
-        var globalVSync = presetSvc.GetGlobalVSyncMode();
-        var vsyncIdx = globalVSync.HasValue
-            ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == globalVSync.Value)
-            : 0;
-        _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
-
-        var globalPower = presetSvc.GetGlobalPowerMode();
-        var powerIdx = globalPower.HasValue
-            ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == globalPower.Value)
-            : 0;
-        _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
-
+        var snapshot = await presetSvc.FetchNvApiSettingsAsync(timeoutMs: 5000);
+        PopulateNvApiCombosFromSnapshot(presetSvc, snapshot);
         _window._shaderCacheComboInit = false;
     }
 

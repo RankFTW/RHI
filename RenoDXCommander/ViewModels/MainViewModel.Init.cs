@@ -326,6 +326,15 @@ public partial class MainViewModel
                         try { Directory.Delete(feederShadersDir, true); } catch { }
                     _crashReporter.Log("[MainViewModel.InitializeAsync] Wiped stale DLSS5Feeder shader pack cache — will be re-seeded from addon zip on next Feeder install");
                 }
+
+                // Also clear stale settings.json entries that point to a file that no longer exists —
+                // prevents EnsurePackAsync from treating a missing file as "up to date".
+                var feederFxStaged = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder", "DLSS5_Feed.fx");
+                if (!File.Exists(feederFxStaged))
+                {
+                    _shaderPackService.ClearPackRegistration("DLSS5Feeder");
+                    _crashReporter.Log("[MainViewModel.InitializeAsync] Cleared stale DLSS5Feeder settings entries — file missing from staging");
+                }
             }
             catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS5Feeder migration failed — {ex.Message}"); }
 

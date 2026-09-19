@@ -636,6 +636,24 @@ public partial class ShaderPackService
         finally { _settingsLock.Release(); }
     }
 
+    /// <summary>Clears the settings.json registration entries for a pack (version, files, timestamp).
+    /// Used when the staged file is missing to force re-registration on next seed.</summary>
+    public void ClearPackRegistration(string packId)
+    {
+        _settingsLock.Wait();
+        try
+        {
+            var d = new Dictionary<string, string>(ReadSettings());
+            d.Remove($"ShaderPack_{packId}_Files");
+            d.Remove($"ShaderPack_{packId}_Version");
+            d.Remove($"ShaderPack_{packId}_CacheTimestamp");
+            d.Remove(ExcludedFilesKey(packId));
+            WriteSettings(d);
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.ClearPackRegistration] Failed for '{packId}' — {ex.Message}"); }
+        finally { _settingsLock.Release(); }
+    }
+
     public void SetExcludedFiles(string packId, IEnumerable<string> excluded)
     {
         _settingsLock.Wait();

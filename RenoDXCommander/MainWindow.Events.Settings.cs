@@ -748,7 +748,7 @@ public sealed partial class MainWindow
         progressDialog.Hide();
 
         // Refresh settings page to reflect imported global values
-        _settingsHandler.RefreshGlobalNvidiaSettings();
+        await _settingsHandler.RefreshGlobalNvidiaSettingsAsync();
 
         await DialogService.ShowSafeAsync(new ContentDialog
         {
@@ -1029,7 +1029,7 @@ public sealed partial class MainWindow
             }
 
             // Re-initialize the Global Nvidia Settings combos to reflect cleared values
-            _settingsHandler.RefreshGlobalNvidiaSettings();
+            await _settingsHandler.RefreshGlobalNvidiaSettingsAsync();
 
             await DialogService.ShowSafeAsync(new ContentDialog
             {

@@ -510,9 +510,9 @@ public partial class ShaderPackService : IShaderPackService
             Id          : "DLSS5Feeder",
             DisplayName : "DLSS5 Feeder shader",
             Kind        : SourceKind.DirectUrl,
-            Url         : "https://raw.githubusercontent.com/jlrouzies-fr/DLSS5-Feeder/main/DLSS5_Feed.fx",
+            Url         : "",   // no URL — seeded from the Feeder addon zip by RHI, never downloaded
             IsMinimum   : false,
-            Description : "DLSS5_Feed.fx — deployed by RHI when installing the DLSS5 Feeder addon. Not shown in the shader picker.",
+            Description : "DLSS5_Feed.fx — seeded from the Feeder addon zip by RHI. Not shown in the shader picker.",
             Category    : PackCategory.Extra
         ),
         new(

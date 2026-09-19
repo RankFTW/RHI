@@ -1904,12 +1904,72 @@ public partial class DetailPanelBuilder
         }
 
         // Deploy DLSS5_Feed.fx + lumenite_Kernel.fx
-        // Only DLSS5Feeder is tracked in PerGameShaderSelection — lumenite_Kernel.fx is deployed
-        // directly (not via pack system) to avoid syncing the full LumeniteFX pack on refresh.
+        // DLSS5_Feed.fx is seeded from the Feeder addon zip into the DLSS5Feeder staging folder.
+        // LumeniteFX is downloaded via the pack system.
+        // We do NOT call EnsurePacksAsync for DLSS5Feeder — its URL is a dead fallback that 404s.
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying shaders...");
         try
         {
-            await _shaderPackService.EnsurePacksAsync(new[] { "DLSS5Feeder", "LumeniteFX" }).ConfigureAwait(false);
+            // Ensure LumeniteFX is staged (DLSS5Feeder is self-contained — no download needed)
+            await _shaderPackService.EnsurePacksAsync(new[] { "LumeniteFX" }).ConfigureAwait(false);
+
+            // Seed DLSS5_Feed.fx into the staging folder from the feeder addon zip if missing
+            var feedFxStaged = System.IO.Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder", "DLSS5_Feed.fx");
+            if (!File.Exists(feedFxStaged))
+            {
+                // Try to extract from the staged feeder addon zip (versioned or latest)
+                var feederZipDir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "RHI", "rdx5", "feeder");
+                var feederZip = Directory.Exists(feederZipDir)
+                    ? Directory.GetFiles(feederZipDir, "*.zip", SearchOption.AllDirectories)
+                          .OrderByDescending(f => File.GetLastWriteTimeUtc(f))
+                          .FirstOrDefault()
+                    : null;
+                // Also check the flat addon staging dir for a zip
+                if (feederZip == null)
+                {
+                    var addonDir = AddonPackService.GetStagingDir();
+                    if (Directory.Exists(addonDir))
+                        feederZip = Directory.GetFiles(addonDir, "*Feeder*.zip")
+                            .OrderByDescending(f => File.GetLastWriteTimeUtc(f))
+                            .FirstOrDefault();
+                }
+                if (feederZip != null)
+                {
+                    try
+                    {
+                        using var zip = System.IO.Compression.ZipFile.OpenRead(feederZip);
+                        var fxEntry = zip.Entries.FirstOrDefault(e =>
+                            string.Equals(e.Name, "DLSS5_Feed.fx", StringComparison.OrdinalIgnoreCase));
+                        if (fxEntry != null)
+                        {
+                            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(feedFxStaged)!);
+                            using var fs = fxEntry.Open();
+                            using var dst = File.Create(feedFxStaged);
+                            await fs.CopyToAsync(dst).ConfigureAwait(false);
+                            _ = Task.Run(() => App.Services.GetRequiredService<IShaderPackService>().RecordExtractedFilesFromDir("DLSS5Feeder"));
+                            CrashReporter.Log($"[NeuralRendering] Re-extracted DLSS5_Feed.fx from {System.IO.Path.GetFileName(feederZip)}");
+                        }
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[NeuralRendering] Failed to re-extract DLSS5_Feed.fx — {ex.Message}"); }
+                }
+                if (!File.Exists(feedFxStaged))
+                {
+                    // No zip available locally — force re-download the Feeder addon so the zip
+                    // is fetched fresh and DLSS5_Feed.fx is extracted from it.
+                    CrashReporter.Log("[NeuralRendering] DLSS5_Feed.fx missing and no zip found — re-downloading Feeder addon to seed it");
+                    _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Downloading Feed.fx...");
+                    var feederEntry = addonSvc.AvailablePacks.FirstOrDefault(p =>
+                        p.PackageName.Equals(FeederPackageName, StringComparison.OrdinalIgnoreCase));
+                    if (feederEntry != null)
+                    {
+                        await addonSvc.DownloadAddonAsync(feederEntry).ConfigureAwait(false);
+                        // DownloadAndExtractZipAsync will have extracted DLSS5_Feed.fx and called RecordExtractedFilesFromDir
+                        CrashReporter.Log($"[NeuralRendering] Re-download complete. Feed.fx present: {File.Exists(feedFxStaged)}");
+                    }
+                }
+            }
 
             // Build exclusion sets — deploy only lumenite_Kernel.fx from LumeniteFX, only DLSS5_Feed.fx from DLSS5Feeder
             var lumeniteExclude = _shaderPackService.GetPackShaderFiles(new[] { "LumeniteFX" })

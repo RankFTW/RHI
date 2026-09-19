@@ -1,4 +1,14 @@
+## v2.7.5
+
+### Bug Fixes
+
+- Fixed UI freeze when opening Settings after the PC has been idle or the GPU has woken from sleep — NVAPI reads are now performed on a background thread with a 5-second timeout.
+
 ## v2.7.4
+
+### Bug Fixes
+
+- Fixed `DLSS5_Feed.fx` not deploying when the shader staging file had been deleted — RHI now re-extracts it from the cached Feeder zip automatically. Stale registration entries that were blocking re-extraction are also cleared on startup.
 
 ### Manifest Updates
 

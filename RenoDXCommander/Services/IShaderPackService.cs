@@ -85,6 +85,7 @@ public interface IShaderPackService
     Task<HashSet<string>> GetExcludedFilesAsync(string packId);
 
     /// <summary>Saves the excluded files for a pack.</summary>
+    void ClearPackRegistration(string packId);
     void SetExcludedFiles(string packId, IEnumerable<string> excluded);
 
     /// <summary>Saves the excluded files for a pack (async-safe version).</summary>
