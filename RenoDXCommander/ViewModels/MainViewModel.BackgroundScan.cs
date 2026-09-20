@@ -59,7 +59,7 @@ public partial class MainViewModel
             var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? _renoDxDbService.FetchAllAsync()
                 : Task.FromResult<(List<GameMod>, Dictionary<string, RenoDXDbUnrealEntry>)>((new(), new(StringComparer.OrdinalIgnoreCase)));
-            var detectTask   = DetectAllGamesDedupedAsync();
+            var detectTask   = DetectAllGamesDedupedAsync(CustomScanTrigger.Startup);
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }

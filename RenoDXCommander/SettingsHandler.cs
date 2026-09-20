@@ -50,6 +50,7 @@ public class SettingsHandler
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
+        _window.RefreshCustomGameFoldersUi();
         // Populate screenshot path and per-game combo
         _window.ScreenshotPathBox.Text = ViewModel.Settings.ScreenshotPath;
         _window.PerGameScreenshotCombo.SelectedIndex = ViewModel.Settings.PerGameScreenshotFolders ? 1 : 0;

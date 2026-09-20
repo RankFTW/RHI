@@ -377,6 +377,7 @@ public sealed partial class MainWindow : Window
         }
 
         // Normal close cleanup
+        ViewModel.CancelCustomFolderScan();
         ViewModel.PropertyChanged -= OnViewModelChanged;
         if (_detailPanelBuilder.CurrentDetailCard != null)
             _detailPanelBuilder.CurrentDetailCard.PropertyChanged -= _detailPanelBuilder.DetailCard_PropertyChanged;

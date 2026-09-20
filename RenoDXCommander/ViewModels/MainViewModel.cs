@@ -606,6 +606,7 @@ public partial class MainViewModel : ObservableObject
         IDllOverrideService dllOverrideService,
         IGameNameService gameNameService,
         IGameInitializationService gameInitializationService,
+        ICustomFolderScanService customFolderScanService,
         IREFrameworkService refService,
         INexusModsService nexusModsService,
         IPcgwService pcgwService,
@@ -646,6 +647,7 @@ public partial class MainViewModel : ObservableObject
         _dllOverrideService = dllOverrideService;
         _gameNameService = gameNameService;
         _gameInitializationService = gameInitializationService;
+        _customFolderScanService = customFolderScanService;
         _addonPackService = new AddonPackService(http);
         _nexusModsService = nexusModsService;
         _pcgwService = pcgwService;
