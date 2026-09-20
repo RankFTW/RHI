@@ -2,10 +2,17 @@
 
 ### Bug Fixes
 
-- Fixed UI freeze when opening Settings after the PC has been idle or the GPU has woken from sleep — NVAPI reads are now performed on a background thread with a 5-second timeout.
-- Fixed crash when trying to reinstall Luma on a game that was originally installed via drag-drop (bespoke archive). These mods have no download URL so auto-reinstall is not possible — the button now shows "Drop a Luma archive onto the card to reinstall." instead of crashing.
-- Fixed Feeder host64\\ folder not being deployed on 32-bit games where the API isn't detected as DX9 (e.g. Diablo GOG). The host64\\ setup is required for all 32-bit Feeder installs and is no longer gated on DX9 detection. DgVoodoo2 deployment remains DX9-only.
-- Fixed DLSS5 Feeder shader packs (LumeniteFX + DLSS5_Feed.fx) not being redeployed on the next startup after a Feeder install. The shader mode/selection save was deferred into a TryEnqueue which could be overwritten by a concurrent save. Both are now written synchronously on the install thread before the settings save.
+**Settings**
+- Fixed the app freezing when opening Settings after the PC had been idle or the GPU woke from sleep. NVAPI reads now run on a background thread with a 5-second timeout, so the Settings page always opens immediately.
+
+**DLSS5 Feeder**
+- Fixed dgVoodoo2 not being deployed for DX9 games (Gothic II, Diablo, etc.) where the API scan returned an empty result set. DX9 detection now falls back to the primary detected API, so dgVoodoo2 installs correctly on all DX9 games.
+- Fixed the host64\\ folder not being deployed on 32-bit games that aren't detected as DX9 (e.g. Diablo GOG). The host64\\ folder is required for all 32-bit Feeder installs — it no longer depends on DX9 being detected.
+- Fixed LumeniteFX and DLSS5_Feed.fx disappearing from the game folder after restarting RHI. The shader selection was being saved on the UI thread and could be overwritten by a concurrent settings save — it's now written synchronously during the install.
+- Fixed the 64-bit Feeder addon being copied to the game folder on 32-bit games when a specific Feeder version was pinned. Versioned staging only stores `.addon64`, so 32-bit games now always use the AddonPackService which has the correct `.addon32`.
+
+**Luma**
+- Fixed a crash when clicking "Install Luma" on a game where Luma was originally installed via drag-drop. These games have no download URL, so RHI now shows "Drop a Luma archive onto the card to reinstall." instead of crashing.
 
 ## v2.7.4
 

@@ -546,7 +546,8 @@ public partial class DetailPanelBuilder
                     Tag(feedFxPresent    ? "✓ Feed.fx"    : "✗ Feed.fx",    feedFxPresent);
                     Tag(lumeniteFxPresent ? "✓ LumeniteFX" : "✗ LumeniteFX", lumeniteFxPresent);
                     // dgVoodoo2 required for DX9 games (D3D9→DX11 translation layer)
-                    bool isDx9Feeder = card.DetectedApis.Contains(GraphicsApiType.DirectX9);
+                    bool isDx9Feeder = card.DetectedApis.Contains(GraphicsApiType.DirectX9)
+                                    || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9);
                     if (isDx9Feeder)
                     {
                         bool dgVoodooOk = App.Services.GetRequiredService<DgVoodooService>().IsDeployed(installPath);
@@ -952,7 +953,8 @@ public partial class DetailPanelBuilder
                     // Call InstallReShadeInternalAsync directly with the forced filename instead of
                     // going through InstallReShadeCommand which uses auto-detection (returns d3d9.dll for DX9).
                     bool feederDx9 = selKey == NrMethodFeeder
-                        && card.DetectedApis.Contains(GraphicsApiType.DirectX9);
+                        && (card.DetectedApis.Contains(GraphicsApiType.DirectX9)
+                            || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9));
                     if (feederDx9)
                         await _window.ViewModel.InstallReShadeInternalAsync(card, "dxgi.dll").ConfigureAwait(false);
                     else
@@ -962,7 +964,8 @@ public partial class DetailPanelBuilder
                     await Task.Delay(500).ConfigureAwait(false);
                 }
                 else if (selKey == NrMethodFeeder
-                    && card.DetectedApis.Contains(GraphicsApiType.DirectX9)
+                    && (card.DetectedApis.Contains(GraphicsApiType.DirectX9)
+                        || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9))
                     && card.RsRecord?.InstalledAs?.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // ReShade already installed as d3d9.dll (wrong for dgVoodoo) — reinstall as dxgi.dll
@@ -1797,8 +1800,9 @@ public partial class DetailPanelBuilder
 
         // Resolve Feeder staged path — versioned or latest via AddonPackService
         string? feederSourcePath = null;
-        if (!useLatestFeeder && requestedFeederVersion != null)
+        if (!useLatestFeeder && requestedFeederVersion != null && !card.Is32Bit)
         {
+            // Versioned staging only stores .addon64 — skip for 32-bit games and use AddonPackService instead
             var staged = await rdx5Svc.EnsureVersionStagedAsync(Renodx5AddonService.FeederSubDir, requestedFeederVersion).ConfigureAwait(false);
             if (staged)
             {
@@ -1810,6 +1814,10 @@ public partial class DetailPanelBuilder
             {
                 CrashReporter.Log($"[NeuralRendering] Could not stage Feeder v{requestedFeederVersion} — falling back to latest");
             }
+        }
+        else if (!useLatestFeeder && requestedFeederVersion != null && card.Is32Bit)
+        {
+            CrashReporter.Log($"[NeuralRendering] 32-bit game — versioned staging only has .addon64, using AddonPackService for correct .addon32");
         }
 
         if (feederSourcePath == null)
@@ -2142,7 +2150,9 @@ public partial class DetailPanelBuilder
 
         // ── DX9 games: deploy dgVoodoo2 (D3D9→DX11 translation) ──
         // dgVoodoo2 is required for ALL DX9 Feeder games — not just the Luma manifest list.
-        bool isDx9 = card.DetectedApis.Contains(GraphicsApiType.DirectX9);
+        // Fall back to GraphicsApi when DetectedApis is empty (e.g. cached DX9 game with empty All set).
+        bool isDx9 = card.DetectedApis.Contains(GraphicsApiType.DirectX9)
+                  || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9);
         if (isDx9)
         {
             var manifest = _window.ViewModel.Manifest;
@@ -2253,7 +2263,8 @@ public partial class DetailPanelBuilder
                 feederFiles.Add(@"host64\nvngx_dlssnr.dll");
                 feederFiles.Add(@"host64\nvngx_dlss.dll");
             }
-            bool feederIsDx9 = card.DetectedApis.Contains(Models.GraphicsApiType.DirectX9);
+            bool feederIsDx9 = card.DetectedApis.Contains(Models.GraphicsApiType.DirectX9)
+                            || (card.DetectedApis.Count == 0 && card.GraphicsApi == Models.GraphicsApiType.DirectX9);
             if (feederIsDx9)
             {
                 feederFiles.Add("D3D9.dll");
