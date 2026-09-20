@@ -535,6 +535,7 @@
     "Mistfall Hunter": "Unreal Engine 5.7.4"
   },
   "engineIniPathOverrides": {
+    "Clive Barker's Hellraiser: Revival Demo": "Hellraiser_Demo",
     "Directive 8020": "Directive8020",
     "Echoes of Aincrad": "%LOCALAPPDATA%\\EchoesofAincrad\\Saved\\Config\\WindowsClient",
     "Echoes of Aincrad DEMO Version": "%LOCALAPPDATA%\\EchoesofAincrad\\Saved\\Config\\WindowsClient",

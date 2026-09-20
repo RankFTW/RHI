@@ -14,6 +14,10 @@
 **Luma**
 - Fixed a crash when clicking "Install Luma" on a game where Luma was originally installed via drag-drop. These games have no download URL, so RHI now shows "Drop a Luma archive onto the card to reinstall." instead of crashing.
 
+### Manifest Updates
+
+- Fixed Engine.ini being written to the wrong folder for Clive Barker's Hellraiser: Revival Demo (`Hellraiser` instead of `Hellraiser_Demo`).
+
 ## v2.7.4
 
 ### Bug Fixes
