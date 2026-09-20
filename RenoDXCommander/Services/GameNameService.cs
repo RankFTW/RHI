@@ -376,10 +376,7 @@ public class GameNameService : IGameNameService
         {
             _perGameShaderSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgssDict)
-            {
-                if (_perGameShaderMode.ContainsKey(kv.Key))
-                    _perGameShaderSelection[kv.Key] = kv.Value;
-            }
+                _perGameShaderSelection[kv.Key] = kv.Value;
         }
 
         var pgamDict = Load<Dictionary<string, string>?>("PerGameAddonMode", null);

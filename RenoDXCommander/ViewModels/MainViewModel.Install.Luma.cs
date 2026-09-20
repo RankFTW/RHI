@@ -960,6 +960,13 @@ public partial class MainViewModel
                     try { File.Delete(tempPath); } catch { }
                 }
             }
+            else if (mod.DownloadUrl == null)
+            {
+                // Bespoke drag-drop install — no download URL available
+                _crashReporter.Log($"[InstallLumaAsync] '{card.GameName}' Luma mod has no download URL (bespoke drag-drop install) — cannot reinstall automatically");
+                DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Drop a Luma archive onto the card to reinstall.");
+                return;
+            }
             else
             {
                 // ── Standard GitHub path ──────────────────────────────────────────

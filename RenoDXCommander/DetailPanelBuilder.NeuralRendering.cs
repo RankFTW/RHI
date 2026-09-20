@@ -2104,26 +2104,21 @@ public partial class DetailPanelBuilder
 
             // Add to PerGameShaderSelection so SyncGameFolder keeps them deployed
 
-            // Add DLSS5Feeder and LumeniteFX to PerGameShaderSelection, with global pack exclusions
-            // so SyncGameFolder only deploys lumenite_Kernel.fx and DLSS5_Feed.fx on refresh.
-            // SetExcludedFiles is global per-pack — safe here because LumeniteFX and DLSS5Feeder
-            // are only used by Feeder games and have no other use in the standard shader picker.
-            _window.DispatcherQueue?.TryEnqueue(() =>
+            // Add DLSS5Feeder and LumeniteFX to PerGameShaderSelection so SyncGameFolder
+            // keeps them deployed on every startup refresh.
+            // Dict writes and save happen on the background install thread (no UI dependency).
+            // card.ShaderModeOverride is dispatched to the UI thread separately.
             {
-                // Persist pack-level exclusions so SyncGameFolder uses them on every refresh.
-                // SetExcludedFiles calls _settingsLock.Wait() synchronously — offload to Task.Run
-                // so the UI thread isn't blocked while the lock may be held by a download.
+                // Persist pack-level exclusions (SetExcludedFiles acquires _settingsLock —
+                // run synchronously here; we're already on a background thread).
                 var lumeniteAllFiles = _shaderPackService.GetPackShaderFiles(new[] { "LumeniteFX" })
                     .Where(f => !f.Equals("lumenite_Kernel.fx", StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 var feederAllFiles = _shaderPackService.GetPackShaderFiles(new[] { "DLSS5Feeder" })
                     .Where(f => !f.Equals("DLSS5_Feed.fx", StringComparison.OrdinalIgnoreCase))
                     .ToList();
-                _ = Task.Run(() =>
-                {
-                    _shaderPackService.SetExcludedFiles("LumeniteFX", lumeniteAllFiles);
-                    _shaderPackService.SetExcludedFiles("DLSS5Feeder", feederAllFiles);
-                });
+                _shaderPackService.SetExcludedFiles("LumeniteFX", lumeniteAllFiles);
+                _shaderPackService.SetExcludedFiles("DLSS5Feeder", feederAllFiles);
 
                 var gameKey = Models.GameKey.From(card.GameName, card.Source ?? "").ToKey();
                 var current = _gameNameService.PerGameShaderSelection.TryGetValue(gameKey, out var sel)
@@ -2134,21 +2129,18 @@ public partial class DetailPanelBuilder
                     current.Add("LumeniteFX");
                 _gameNameService.PerGameShaderSelection[gameKey] = current;
                 _window.ViewModel.SetPerGameShaderMode(card.GameName, "Select", card.Source ?? "");
-                card.ShaderModeOverride = "Select";
+                _window.DispatcherQueue?.TryEnqueue(() => card.ShaderModeOverride = "Select");
                 _window.ViewModel.SaveSettingsPublic();
-                // Shader mode and selection are now persisted — safe to sync the game folder.
-                // DeployShadersForCard reads ResolveShaderSelection which uses the shader mode,
-                // so it must run after SetPerGameShaderMode, not concurrently with it.
+                // Deploy shaders with the now-persisted selection
                 _window.ViewModel.DeployShadersForCard(card.GameName);
-                _window.ViewModel.SaveSettingsPublic();
-            });
+            }
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[NeuralRendering] Shader deploy failed — {ex.Message}");
         }
 
-        // ── DX9 games: deploy dgVoodoo2 (D3D9→DX11 translation) + host64\ folder ──
+        // ── DX9 games: deploy dgVoodoo2 (D3D9→DX11 translation) ──
         // dgVoodoo2 is required for ALL DX9 Feeder games — not just the Luma manifest list.
         bool isDx9 = card.DetectedApis.Contains(GraphicsApiType.DirectX9);
         if (isDx9)
@@ -2170,12 +2162,14 @@ public partial class DetailPanelBuilder
                     CrashReporter.Log($"[NeuralRendering] dgVoodoo2 deploy failed — {dgEx.Message}");
                 }
             }
+        }
 
-            // host64\ folder — required for 32-bit games
-            // Contains: dlss5-feed-host64.exe, 64-bit ReShade dxgi.dll,
-            //           renodx-dlss5.addon64, nvngx_dlssnr.dll, nvngx_dlss.dll
-            if (card.Is32Bit)
-            {
+        // ── host64\ folder — required for ALL 32-bit games ──
+        // Contains: dlss5-feed-host64.exe, 64-bit ReShade dxgi.dll,
+        //           renodx-dlss5.addon64, nvngx_dlssnr.dll, nvngx_dlss.dll
+        // Note: NOT gated on isDx9 — host64 is needed for all 32-bit Feeder installs
+        if (card.Is32Bit)
+        {
                 _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Setting up host64\\...");
                 await Task.Run(async () =>
                 {
@@ -2241,7 +2235,6 @@ public partial class DetailPanelBuilder
                     }
                 }).ConfigureAwait(false);
             }
-        }
 
         // Record Feeder's deployed files in rhi_install.txt
         {

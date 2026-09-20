@@ -3,6 +3,9 @@
 ### Bug Fixes
 
 - Fixed UI freeze when opening Settings after the PC has been idle or the GPU has woken from sleep — NVAPI reads are now performed on a background thread with a 5-second timeout.
+- Fixed crash when trying to reinstall Luma on a game that was originally installed via drag-drop (bespoke archive). These mods have no download URL so auto-reinstall is not possible — the button now shows "Drop a Luma archive onto the card to reinstall." instead of crashing.
+- Fixed Feeder host64\\ folder not being deployed on 32-bit games where the API isn't detected as DX9 (e.g. Diablo GOG). The host64\\ setup is required for all 32-bit Feeder installs and is no longer gated on DX9 detection. DgVoodoo2 deployment remains DX9-only.
+- Fixed DLSS5 Feeder shader packs (LumeniteFX + DLSS5_Feed.fx) not being redeployed on the next startup after a Feeder install. The shader mode/selection save was deferred into a TryEnqueue which could be overwritten by a concurrent save. Both are now written synchronously on the install thread before the settings save.
 
 ## v2.7.4
 
