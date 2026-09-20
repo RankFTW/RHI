@@ -186,7 +186,8 @@
     "Metro 2033 Redux": "Metro Redux (2033 and Last Light)",
     "Metro: Last Light Redux": "Metro Redux (2033 and Last Light)",
     "Nioh: Complete Edition": "Nioh",
-    "Trine 5: A Clockwork Conspiracy": "Trine 5"
+    "Trine 5: A Clockwork Conspiracy": "Trine 5",
+    "L.A. Noire": "L.A. Noire"
   },
   "installPathOverrides": {
     "Warhammer 40,000: Space Marine 2": "client_pc\\root\\bin\\pc",
