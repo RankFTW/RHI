@@ -19,7 +19,7 @@ public class ReShadeExtractor : ISevenZipExtractor
     public void ExtractFile(string exePath, string entryName, string outputPath)
     {
         if (!File.Exists(exePath))
-            throw new FileNotFoundException($"ReShade installer not found: {exePath}");
+            throw new FileNotFoundException($"Установщик ReShade не найден: {exePath}");
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
@@ -64,8 +64,8 @@ public class ReShadeExtractor : ISevenZipExtractor
         }
 
         throw new FileNotFoundException(
-            $"Could not extract '{entryName}' from '{Path.GetFileName(exePath)}'.\n" +
-            "The ReShade installer is an NSIS archive which requires 7-Zip to extract.\n" +
+            $"Не удалось извлечь «{entryName}» из «{Path.GetFileName(exePath)}».\n" +
+            "Установщик ReShade — NSIS-архив, для распаковки нужен 7-Zip.\n" +
             "Please install 7-Zip from https://www.7-zip.org/ and restart RDXC.");
     }
 

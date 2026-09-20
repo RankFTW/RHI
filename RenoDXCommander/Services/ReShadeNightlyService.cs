@@ -35,7 +35,7 @@ public class ReShadeNightlyService
         CrashReporter.Log("[ReShadeNightlyService.EnsureLatestAsync] Started");
         Directory.CreateDirectory(CacheDir);
 
-        progress?.Report(("Checking for nightly ReShade builds...", 5));
+        progress?.Report(("Проверка ночных сборок ReShade...", 5));
 
         // Get the remote Content-Length to compare against local staged DLL size.
         // If the remote zip size differs from what we last downloaded, there's a new build.
@@ -50,12 +50,12 @@ public class ReShadeNightlyService
             && new FileInfo(AuxInstallService.RsNightlyStagedPath32).Length > AuxInstallService.MinReShadeSize)
         {
             CrashReporter.Log($"[ReShadeNightlyService.EnsureLatestAsync] Remote zip size unchanged ({remote64Size} bytes) — skipping");
-            progress?.Report(("ReShade nightly is current", 100));
+            progress?.Report(("ReShade nightly актуален", 100));
             return false;
         }
 
         // Download 64-bit artifact
-        progress?.Report(("Downloading ReShade nightly (64-bit)...", 15));
+        progress?.Report(("Загрузка ReShade nightly (64 бита)...", 15));
         var (success64, downloadedZipSize) = await DownloadAndExtractAsync(Nightly64Url, AuxInstallService.RsNightlyStagedPath64, "ReShade64.dll");
         if (!success64)
         {
@@ -64,7 +64,7 @@ public class ReShadeNightlyService
         }
 
         // Download 32-bit artifact
-        progress?.Report(("Downloading ReShade nightly (32-bit)...", 55));
+        progress?.Report(("Загрузка ReShade nightly (32 бита)...", 55));
         var (success32, _) = await DownloadAndExtractAsync(Nightly32Url, AuxInstallService.RsNightlyStagedPath32, "ReShade32.dll");
         if (!success32)
         {
@@ -88,7 +88,7 @@ public class ReShadeNightlyService
         }
         catch { }
 
-        progress?.Report(($"ReShade nightly ({versionTag}) ready!", 100));
+        progress?.Report(($"ReShade nightly ({versionTag}) готов!", 100));
         CrashReporter.Log($"[ReShadeNightlyService.EnsureLatestAsync] Staged {versionTag} successfully (zip size={downloadedZipSize})");
         return true;
     }

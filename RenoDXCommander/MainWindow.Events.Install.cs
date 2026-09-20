@@ -21,7 +21,7 @@ public sealed partial class MainWindow
         // Build the progress dialog
         var statusText = new TextBlock
         {
-            Text = "Preparing...",
+            Text = "Подготовка...",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
@@ -39,7 +39,7 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Updating All Components",
+            Title = "Обновление всех компонентов",
             Content = panel,
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -52,39 +52,39 @@ public sealed partial class MainWindow
         {
             if (!ViewModel.Settings.GlobalSkipRsUpdates)
             {
-                statusText.Text = "Updating ReShade...";
+                statusText.Text = "Обновление ReShade...";
                 await ViewModel.UpdateAllReShadeAsync();
             }
             if (!ViewModel.Settings.GlobalSkipRdxUpdates)
             {
-                statusText.Text = "Updating RenoDX...";
+                statusText.Text = "Обновление RenoDX...";
                 await ViewModel.UpdateAllRenoDxAsync();
             }
             if (!ViewModel.Settings.GlobalSkipUlUpdates)
             {
-                statusText.Text = "Updating ReLimiter...";
+                statusText.Text = "Обновление ReLimiter...";
                 await ViewModel.UpdateAllUlAsync();
             }
             if (!ViewModel.Settings.GlobalSkipDcUpdates)
             {
-                statusText.Text = "Updating Display Commander...";
+                statusText.Text = "Обновление Display Commander...";
                 await ViewModel.UpdateAllDcAsync();
             }
             if (!ViewModel.Settings.GlobalSkipOsUpdates)
             {
-                statusText.Text = "Updating OptiScaler...";
+                statusText.Text = "Обновление OptiScaler...";
                 await ViewModel.UpdateAllOsAsync();
             }
             if (!ViewModel.Settings.GlobalSkipRefUpdates)
             {
-                statusText.Text = "Updating RE Framework...";
+                statusText.Text = "Обновление RE Framework...";
                 await ViewModel.UpdateAllRefAsync();
             }
-            statusText.Text = "Updating DXVK...";
+            statusText.Text = "Обновление DXVK...";
             await ViewModel.UpdateAllDxvkAsync();
-            statusText.Text = "Updating Luma...";
+            statusText.Text = "Обновление Luma...";
             await ViewModel.UpdateAllLumaAsync();
-            statusText.Text = "Updating DOF Fix...";
+            statusText.Text = "Обновление DOF Fix...";
             await ViewModel.UpdateAllDofFixAsync();
         }
         catch (Exception ex)
@@ -197,12 +197,12 @@ public sealed partial class MainWindow
         // Build DXVK info content with game-specific notes from manifest
         var content = "DXVK translates DirectX 8/9/10/11 API calls into Vulkan.\n\n"
             + "Benefits:\n"
-            + "• Enables ReShade compute shaders on older DX games\n"
-            + "• May improve performance and reduce shader stutter\n"
-            + "• Enables HDR output via dxvk.conf\n"
-            + "• Borderless fullscreen recommended over exclusive fullscreen\n\n"
-            + "⚠ Anti-cheat games may ban players using DXVK.\n"
-            + "⚠ Game overlays (Steam, NVIDIA, RTSS) may conflict.";
+            + "• Включает compute-шейдеры ReShade в старых DX-играх\n"
+            + "• Может повысить производительность и снизить фризы шейдеров\n"
+            + "• Включает HDR-вывод через dxvk.conf\n"
+            + "• Рекомендуется окно без рамки вместо исключительного полноэкранного режима\n\n"
+            + "⚠ В играх с античитом за DXVK могут забанить.\n"
+            + "⚠ Игровые оверлеи (Steam, NVIDIA, RTSS) могут конфликтовать.";
 
         // Append game-specific notes from manifest
         var manifest = ViewModel.Manifest;
@@ -215,7 +215,7 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "ℹ DXVK Info",
+            Title = "ℹ Информация о DXVK",
             Content = new TextBlock
             {
                 Text = content,
@@ -301,7 +301,7 @@ public sealed partial class MainWindow
         if (card.DofFixIsInstalling || string.IsNullOrEmpty(card.InstallPath)) return;
 
         card.DofFixIsInstalling = true;
-        card.DofFixActionMessage = "Installing DOF Fix...";
+        card.DofFixActionMessage = "Установка DOF Fix...";
         card.DofFixProgress = 0;
         try
         {
@@ -315,13 +315,13 @@ public sealed partial class MainWindow
             {
                 card.DofFixInstalledVersion = _dofFixService.StagedVersion;
                 card.DofFixStatus = Models.GameStatus.Installed;
-                card.DofFixActionMessage = "✅ DOF Fix installed!";
+                card.DofFixActionMessage = "✅ DOF Fix установлен!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
             }
             else
             {
-                card.DofFixActionMessage = "❌ Install failed";
+                card.DofFixActionMessage = "❌ Не удалось установить";
             }
         }
         catch (Exception ex)
@@ -344,13 +344,13 @@ public sealed partial class MainWindow
         {
             card.DofFixStatus = Models.GameStatus.NotInstalled;
             card.DofFixInstalledVersion = null;
-            card.DofFixActionMessage = "✖ DOF Fix removed.";
+            card.DofFixActionMessage = "✖ DOF Fix удалён.";
             card.NotifyAll();
             card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
         }
         else
         {
-            card.DofFixActionMessage = "❌ Uninstall failed";
+            card.DofFixActionMessage = "❌ Не удалось удалить";
         }
     }
 
@@ -367,12 +367,12 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "UE DOF Fix — Release Notes",
+            Title = "UE DOF Fix — примечания к релизу",
             Content = new ScrollViewer
             {
                 Content = new TextBlock
                 {
-                    Text = notes ?? "No release notes available.",
+                    Text = notes ?? "Примечания к релизу недоступны.",
                     TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                     IsTextSelectionEnabled = true,
                 },
@@ -389,10 +389,10 @@ public sealed partial class MainWindow
     {
         var dialog = new ContentDialog
         {
-            Title = "DOF Fix Settings",
+            Title = "Настройки DOF Fix",
             Content = new TextBlock
             {
-                Text = "No configurable settings available for this component.",
+                Text = "Для этого компонента нет настраиваемых параметров.",
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
             },
             CloseButtonText = "OK",
@@ -492,14 +492,14 @@ public sealed partial class MainWindow
         {
             var dontShowCheck = new CheckBox
             {
-                Content = "Don't show this again",
+                Content = "Больше не показывать",
                 FontSize = 12,
                 Margin = new Thickness(0, 8, 0, 0),
             };
             var panel = new StackPanel { Spacing = 8 };
             panel.Children.Add(new TextBlock
             {
-                Text = "This toggles the engine version to Unreal Engine 5.0–5.6, making this game eligible for the DOF Fix addon.\n\nUse this when RHI cannot detect the UE version automatically (e.g. Game Pass games).",
+                Text = "Переключает версию движка на Unreal Engine 5.0–5.6, делая игру подходящей для аддона DOF Fix.\n\nИспользуйте, когда RHI не может сам определить версию UE (например, игры Game Pass).",
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                 FontSize = 12,
             });
@@ -507,10 +507,10 @@ public sealed partial class MainWindow
 
             var dialog = new ContentDialog
             {
-                Title = "Engine Version Override",
+                Title = "Переопределение версии движка",
                 Content = panel,
-                PrimaryButtonText = "Continue",
-                CloseButtonText = "Cancel",
+                PrimaryButtonText = "Продолжить",
+                CloseButtonText = "Отмена",
                 XamlRoot = Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
@@ -1035,14 +1035,14 @@ public sealed partial class MainWindow
                 var panel = new StackPanel { Spacing = 8 };
                 panel.Children.Add(new TextBlock
                 {
-                    Text = $"Remove {card.GameName} from RHI?",
+                    Text = $"Удалить {card.GameName} из RHI?",
                     FontSize = 13,
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                     Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
                 });
                 panel.Children.Add(new TextBlock
                 {
-                    Text = $"The following components are installed: {componentList}.",
+                    Text = $"Установлены следующие компоненты: {componentList}.",
                     TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                     FontSize = 12,
                     Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -1050,7 +1050,7 @@ public sealed partial class MainWindow
 
                 var uninstallCheck = new CheckBox
                 {
-                    Content = "Also uninstall all RHI-managed components from game folder",
+                    Content = "Также удалить все компоненты RHI из папки игры",
                     FontSize = 12,
                     IsChecked = false,
                 };
@@ -1058,10 +1058,10 @@ public sealed partial class MainWindow
 
                 var dialog = new ContentDialog
                 {
-                    Title = "Remove Game",
+                    Title = "Удалить игру",
                     Content = panel,
-                    PrimaryButtonText = "Remove",
-                    CloseButtonText = "Cancel",
+                    PrimaryButtonText = "Удалить",
+                    CloseButtonText = "Отмена",
                     XamlRoot = Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
@@ -1074,15 +1074,15 @@ public sealed partial class MainWindow
                 // No components installed — simple confirm
                 var dialog = new ContentDialog
                 {
-                    Title = "Remove Game",
+                    Title = "Удалить игру",
                     Content = new TextBlock
                     {
-                        Text = $"Remove {card.GameName} from RHI?",
+                        Text = $"Удалить {card.GameName} из RHI?",
                         FontSize = 12,
                         TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                     },
-                    PrimaryButtonText = "Remove",
-                    CloseButtonText = "Cancel",
+                    PrimaryButtonText = "Удалить",
+                    CloseButtonText = "Отмена",
                     XamlRoot = Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
@@ -1144,14 +1144,14 @@ public sealed partial class MainWindow
         var progressPanel = new StackPanel { Spacing = 8 };
         var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
         var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
-        var progressText = new TextBlock { Text = "Clearing caches...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        var progressText = new TextBlock { Text = "Очистка кешей...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
         progressRow.Children.Add(progressRing);
         progressRow.Children.Add(progressText);
         progressPanel.Children.Add(progressRow);
 
         var progressDialog = new ContentDialog
         {
-            Title = "Full Refresh",
+            Title = "Полное обновление",
             Content = progressPanel,
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,

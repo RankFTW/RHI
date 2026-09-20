@@ -51,9 +51,9 @@ public partial class DlssPresetService
 
     public static readonly (string Name, uint Value)[] VSyncModeOptions =
     [
-        ("App Controlled", 0x60925292),
-        ("Force Off", 0x08416747),
-        ("Force On", 0x47814940),
+        ("Управляется игрой", 0x60925292),
+        ("Принудительно выкл", 0x08416747),
+        ("Принудительно вкл", 0x47814940),
         ("Fast Sync", 0x18888888),
     ];
 
@@ -67,16 +67,16 @@ public partial class DlssPresetService
 
     public static readonly (string Name, uint Value)[] PowerManagementOptions =
     [
-        ("Optimal Performance", 0x00000005),
+        ("Оптимальная производительность", 0x00000005),
         ("Adaptive", 0x00000000),
-        ("Maximum Performance", 0x00000001),
+        ("Максимальная производительность", 0x00000001),
     ];
 
     public static readonly (string Name, uint Value)[] CpuExprModeOptions =
     [
-        ("Mode 0 (Default)", 0x00000000),
-        ("Mode 1", 0x00000001),
-        ("Mode 4", 0x00000004),
+        ("Режим 0 (по умолчанию)", 0x00000000),
+        ("Режим 1", 0x00000001),
+        ("Режим 4", 0x00000004),
     ];
 
     // ── Latency option arrays ─────────────────────────────────────────────────
@@ -94,7 +94,7 @@ public partial class DlssPresetService
     public static readonly (string Name, uint Value)[] SmoothMotionEnableOptions =
     [
         ("Off", 0x00000000),
-        ("On [40 Series+]", 0x00000001),
+        ("Вкл [40-я серия и новее]", 0x00000001),
     ];
 
     public static readonly (string Name, uint Value)[] SmoothMotionApisOptions =
@@ -106,20 +106,20 @@ public partial class DlssPresetService
         ("VK", 0x00000004),
         ("DX12, VK", 0x00000005),
         ("DX11, VK", 0x00000006),
-        ("All [DX11/12, VK]", 0x00000007),
+        ("Все [DX11/12, VK]", 0x00000007),
     ];
 
     public static readonly (string Name, uint Value)[] SmoothMotionFlipPacingFsOptions =
     [
-        ("Off [Latency]", 0x00000000),
-        ("On [Pacing]", 0xFFFFFFFF),
+        ("Выкл [Latency]", 0x00000000),
+        ("Вкл [Pacing]", 0xFFFFFFFF),
     ];
 
     public static readonly (string Name, uint Value)[] SmoothMotionFlipPacingWinOptions =
     [
-        ("Off [Latency]", 0x00000000),
-        ("On [Pacing]", 0x00000001),
-        ("Force On [Pacing]", 0xFFFFFFFF),
+        ("Выкл [Latency]", 0x00000000),
+        ("Вкл [Pacing]", 0x00000001),
+        ("Принудительно вкл [Pacing]", 0xFFFFFFFF),
     ];
 
     // ── Shader Cache option arrays ────────────────────────────────────────────
@@ -132,7 +132,7 @@ public partial class DlssPresetService
         ("5GB", 0x00001400),
         ("10GB", 0x00002800),
         ("12GB", 0x00003000),
-        ("16GB (Default)", 0x00004000),
+        ("16 ГБ (по умолчанию)", 0x00004000),
         ("24GB", 0x00006000),
         ("32GB", 0x00008000),
         ("48GB", 0x0000C000),
@@ -144,7 +144,7 @@ public partial class DlssPresetService
     public static readonly (string Name, uint Value)[] ShaderPrecompileOptions =
     [
         ("Off", 0x00000000),
-        ("Low (Default)", 0x00000001),
+        ("Низкое (по умолчанию)", 0x00000001),
         ("Medium", 0x00000002),
         ("High", 0x00000003),
     ];
@@ -154,14 +154,14 @@ public partial class DlssPresetService
     public static readonly (string Name, uint Value)[] GSyncModeOptions =
     [
         ("Off", 0x00000000),
-        ("Fullscreen only", 0x00000001),
+        ("Только полноэкранный режим", 0x00000001),
         ("Fullscreen/Windowed", 0x00000002),
     ];
 
     public static readonly (string Name, uint Value)[] PreferredRefreshRateOptions =
     [
-        ("App Setting", 0x00000000),
-        ("Highest available", 0x00000001),
+        ("Настройка приложения", 0x00000000),
+        ("Наивысшая доступная", 0x00000001),
     ];
 
     public static readonly (string Name, uint Value)[] GSyncEnableOptions =
@@ -194,16 +194,16 @@ public partial class DlssPresetService
     public static readonly (string Name, uint Value)[] DmfgFrameCountOptions =
     [
         ("Off", 0x00000000),
-        ("3x [50 Series+]", 0x00000002),
-        ("4x [50 Series+]", 0x00000003),
-        ("5x [50 Series+]", 0x00000004),
-        ("6x [50 Series+]", 0x00000005),
+        ("3x [серия 50 и выше]", 0x00000002),
+        ("4x [серия 50 и выше]", 0x00000003),
+        ("5x [серия 50 и выше]", 0x00000004),
+        ("6x [серия 50 и выше]", 0x00000005),
     ];
 
     public static readonly (string Name, uint Value)[] DmfgTargetFpsOptions =
     [
         ("Off", 0x00000000),
-        ("Max Refresh Rate", 0x01000000),
+        ("Максимальная частота обновления", 0x01000000),
         ("59 FPS (60Hz VRR Cap)", 59),
         ("73 FPS (75Hz VRR Cap)", 73),
         ("97 FPS (100Hz VRR Cap)", 97),

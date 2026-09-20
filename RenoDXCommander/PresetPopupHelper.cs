@@ -50,7 +50,7 @@ public static class PresetPopupHelper
 
             var emptyDlg = new ContentDialog
             {
-                Title = "Select ReShade Presets",
+                Title = "Выбрать пресеты ReShade",
                 Content = new StackPanel
                 {
                     Spacing = 8,
@@ -58,7 +58,7 @@ public static class PresetPopupHelper
                     {
                         new TextBlock
                         {
-                            Text = "No preset files found.",
+                            Text = "Файлы пресетов не найдены.",
                             FontSize = 13,
                             Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                         },
@@ -72,8 +72,8 @@ public static class PresetPopupHelper
                         emptyPathLink,
                     },
                 },
-                PrimaryButtonText = "Open Folder",
-                CloseButtonText = "Cancel",
+                PrimaryButtonText = "Открыть папку",
+                CloseButtonText = "Отмена",
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 RequestedTheme = ElementTheme.Dark,
@@ -100,7 +100,7 @@ public static class PresetPopupHelper
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 6),
         };
-        pathLink.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = "Presets from: " });
+        pathLink.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = "Пресеты из: " });
         var linkRun = new Microsoft.UI.Xaml.Documents.Hyperlink();
         linkRun.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = PresetsDir });
         linkRun.Click += (s, e) =>
@@ -136,11 +136,11 @@ public static class PresetPopupHelper
 
         var dlg = new ContentDialog
         {
-            Title = "Select ReShade Presets",
+            Title = "Выбрать пресеты ReShade",
             Content = scrollViewer,
-            PrimaryButtonText = "Deploy",
+            PrimaryButtonText = "Развернуть",
             IsPrimaryButtonEnabled = false,
-            CloseButtonText = "Cancel",
+            CloseButtonText = "Отмена",
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             RequestedTheme = ElementTheme.Dark,

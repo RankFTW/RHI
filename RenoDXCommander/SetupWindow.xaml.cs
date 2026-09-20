@@ -27,7 +27,7 @@ public sealed partial class SetupWindow : Window
     {
         InitializeComponent();
 
-        Title = "RHI Setup";
+        Title = "Установка RHI";
 
         // Size and position — scale by display DPI so window is correct at any Windows scaling setting
         var hwndForDpi = WindowNative.GetWindowHandle(this);
@@ -97,7 +97,7 @@ public sealed partial class SetupWindow : Window
         // ── Title ──
         root.Children.Add(new TextBlock
         {
-            Text = "Welcome to RHI",
+            Text = "Добро пожаловать в RHI",
             FontSize = 22,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -105,14 +105,14 @@ public sealed partial class SetupWindow : Window
 
         // ── Description ──
         const string description =
-            "RHI can manage ReShade across all your games automatically. Here's what that includes:\n\n" +
-            "  - Installs and updates ReShade for each game with one click\n" +
-            "  - Keeps the correct DLL name per game based on what the game needs\n" +
-            "  - Manages shader packs globally - install once, deployed to every game automatically\n" +
-            "  - Backs up any shaders already in your game folders before taking over\n" +
-            "  - Keeps ReShade in sync when you install RenoDX, OptiScaler, or other components\n\n" +
-            "If you already have a custom ReShade setup - specific shader collections, hand-tuned configs, " +
-            "or a version you prefer - choose \"I'll manage it myself\" and RHI will leave ReShade completely alone.";
+            "RHI умеет автоматически управлять ReShade во всех ваших играх. Это включает:\n\n" +
+            "  - Устанавливает и обновляет ReShade для каждой игры в один клик\n" +
+            "  - Подбирает правильное имя DLL для каждой игры в зависимости от её требований\n" +
+            "  - Управляет наборами шейдеров глобально — установите один раз, они развернутся во все игры автоматически\n" +
+            "  - Создаёт резервные копии шейдеров в папках игр перед тем, как взять их под контроль\n" +
+            "  - Синхронизирует ReShade при установке RenoDX, OptiScaler и других компонентов\n\n" +
+            "Если у вас уже своя настройка ReShade — особые наборы шейдеров, вручную подобранные конфиги, " +
+            "или любую удобную версию — выберите «Настрою сам», и RHI вообще не будет трогать ReShade.";
 
         root.Children.Add(new TextBlock
         {
@@ -140,7 +140,7 @@ public sealed partial class SetupWindow : Window
         // "Manage ReShade for me" — accent blue style
         var manageBtn = new Button
         {
-            Content = "Manage ReShade for me",
+            Content = "Пусть ReShade управляет RHI",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             FontSize = 14,
             Padding = new Thickness(12, 10, 12, 10),
@@ -153,7 +153,7 @@ public sealed partial class SetupWindow : Window
 
         var selfBtn = new Button
         {
-            Content = "I'll manage it myself",
+            Content = "Настрою сам",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             FontSize = 14,
             Padding = new Thickness(12, 10, 12, 10),

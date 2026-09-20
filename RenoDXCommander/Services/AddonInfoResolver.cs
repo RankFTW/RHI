@@ -17,28 +17,28 @@ public class AddonInfoResolver
     // ── Generic fallback text constants (Tier 3) ──────────────────────────────────
 
     public const string FallbackREFramework =
-        "RE Framework is a modding framework for RE Engine games. It enables ReShade injection and other mods by hooking into the game's rendering pipeline.";
+        "RE Framework — мод-фреймворк для игр на RE Engine. Открывает возможность инъекции ReShade и других модов через подключение к конвейеру рендеринга игры.";
 
     public const string FallbackReShade =
-        "ReShade is a post-processing injector that adds visual effects to games. It is required by RenoDX to apply HDR tone mapping and color grading.";
+        "ReShade — инъектор пост-обработки, добавляющий в игры визуальные эффекты. Нужен RenoDX для применения HDR-тонмаппинга и цветокоррекции.";
 
     public const string FallbackRenoDX =
-        "RenoDX is an HDR mod framework that upgrades SDR games to HDR using ReShade. It provides per-game tone mapping and color space conversion.";
+        "RenoDX — фреймворк HDR-модов, превращающий SDR-игры в HDR через ReShade. Даёт тональное отображение и преобразование цветового пространства для каждой игры.";
 
     public const string FallbackNativeHdr =
         "This game is set to use UE-Extended. It is automatically configured to use native HDR and an Engine.ini will be automatically deployed upon installation. If there is an ingame HDR option then enable that too.";
 
     public const string FallbackReLimiter =
-        "ReLimiter is a frame limiter that works alongside ReShade to reduce input lag and improve frame pacing in games.";
+        "ReLimiter — ограничитель частоты кадров, работающий вместе с ReShade: снижает задержку ввода и делает вывод кадров в играх более плавным.";
 
     public const string FallbackDisplayCommander =
-        "Display Commander is a frame limiter that works alongside ReShade to reduce input lag and improve frame pacing.";
+        "Display Commander — ограничитель частоты кадров, работающий вместе с ReShade: снижает задержку ввода и делает вывод кадров более плавным.";
 
     public const string FallbackOptiScaler =
-        "OptiScaler is an upscaling compatibility layer that enables FSR, XeSS, or DLSS across different GPU vendors, allowing you to use any upscaler regardless of your hardware.";
+        "OptiScaler — слой совместимости апскейлинга, включающий FSR, XeSS или DLSS на GPU любых производителей: используйте любой апскейлер независимо от вашего железа.";
 
     public const string FallbackLuma =
-        "Luma is an alternative HDR mod framework that provides native HDR output for supported games, bypassing the need for ReShade-based injection.";
+        "Luma — альтернативный HDR-фреймворк, дающий нативный HDR-вывод в поддерживаемых играх без необходимости инъекции через ReShade.";
 
     /// <summary>
     /// Returns the generic fallback text for the given addon type.
@@ -146,10 +146,10 @@ public class AddonInfoResolver
         var source = GetSourceType(card, addon, manifest, osWikiData, hdrDatabase);
         return source switch
         {
-            InfoSourceType.Manifest => "Per-game notes available",
-            InfoSourceType.Wiki     => "Wiki info available",
-            InfoSourceType.Fallback => "General addon info",
-            _ => "General addon info"
+            InfoSourceType.Manifest => "Есть заметки по игре",
+            InfoSourceType.Wiki     => "Есть информация из вики",
+            InfoSourceType.Fallback => "Общие сведения об аддоне",
+            _ => "Общие сведения об аддоне"
         };
     }
 
@@ -301,7 +301,7 @@ public class AddonInfoResolver
         {
             Content = content,
             Url = card.NameUrl,
-            UrlLabel = !string.IsNullOrEmpty(card.NameUrl) ? "View wiki page" : null,
+            UrlLabel = !string.IsNullOrEmpty(card.NameUrl) ? "Открыть страницу вики" : null,
             Source = InfoSourceType.Wiki,
             WikiStatusLabel = card.WikiStatusLabel,
             WikiStatusBadgeBg = card.WikiStatusBadgeBackground,
@@ -344,7 +344,7 @@ public class AddonInfoResolver
         {
             Content = content,
             Url = url,
-            UrlLabel = url != null ? "View wiki page" : null,
+            UrlLabel = url != null ? "Открыть страницу вики" : null,
             Source = InfoSourceType.Wiki,
             OptiScalerCompat = stdEntry,
             OptiScalerFsr4Compat = fsr4Entry
@@ -382,7 +382,7 @@ public class AddonInfoResolver
         {
             var upscalers = stdEntry.Upscalers.Count > 0
                 ? string.Join(", ", stdEntry.Upscalers)
-                : "None listed";
+                : "Не указано";
             parts.Add($"OptiScaler Compatibility: {stdEntry.Status}\nUpscalers: {upscalers}");
             if (!string.IsNullOrWhiteSpace(stdEntry.Notes))
                 parts.Add(stdEntry.Notes);
@@ -392,7 +392,7 @@ public class AddonInfoResolver
         {
             var upscalers = fsr4Entry.Upscalers.Count > 0
                 ? string.Join(", ", fsr4Entry.Upscalers)
-                : "None listed";
+                : "Не указано";
             parts.Add($"FSR4 Compatibility: {fsr4Entry.Status}\nUpscalers: {upscalers}");
             if (!string.IsNullOrWhiteSpace(fsr4Entry.Notes))
                 parts.Add(fsr4Entry.Notes);

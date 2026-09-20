@@ -28,8 +28,8 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Failed to read '{iniPath}' — {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Read Error",
-                Content = $"Failed to read the file: {ex.Message}",
+                Title = "❌ Ошибка чтения",
+                Content = $"Не удалось прочитать файл: {ex.Message}",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -43,8 +43,8 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] '{fileName}' is not a recognised ReShade preset");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Not a ReShade Preset",
-                Content = "This file is not a recognised ReShade preset. A valid preset must contain a Techniques= line with at least one @.fx entry.",
+                Title = "❌ Это не пресет ReShade",
+                Content = "Этот файл не распознан как пресет ReShade. В корректном пресете есть строка Techniques= хотя бы с одной записью @.fx.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -66,8 +66,8 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Failed to copy to presets folder — {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Storage Error",
-                Content = $"Failed to save preset to the presets folder: {ex.Message}",
+                Title = "❌ Ошибка хранилища",
+                Content = $"Не удалось сохранить пресет в папку пресетов: {ex.Message}",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -82,8 +82,8 @@ public partial class DragDropHandler
         {
             var noGamesDialog = new ContentDialog
             {
-                Title = "No Games Available",
-                Content = "No games are currently detected. Add a game first.",
+                Title = "Нет доступных игр",
+                Content = "Игры пока не обнаружены. Сначала добавьте игру.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -95,7 +95,7 @@ public partial class DragDropHandler
         var combo = new ComboBox
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            PlaceholderText = "Select a game...",
+            PlaceholderText = "Выберите игру...",
         };
 
         var sortedCards = cards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
@@ -118,7 +118,7 @@ public partial class DragDropHandler
         var panel = new StackPanel { Spacing = 12 };
         panel.Children.Add(new TextBlock
         {
-            Text = $"Install {fileName} to a game folder.",
+            Text = $"Установите {fileName} в папку игры.",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 13,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -127,10 +127,10 @@ public partial class DragDropHandler
 
         var pickDialog = new ContentDialog
         {
-            Title = "🎨 Install ReShade Preset",
+            Title = "🎨 Установить пресет ReShade",
             Content = panel,
-            PrimaryButtonText = "Next",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Далее",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -142,8 +142,8 @@ public partial class DragDropHandler
         {
             var noSelection = new ContentDialog
             {
-                Title = "No Game Selected",
-                Content = "Please select a game to install the preset to.",
+                Title = "Игра не выбрана",
+                Content = "Выберите игру для установки пресета.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -167,8 +167,8 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Failed to deploy preset — {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Deploy Failed",
-                Content = $"Failed to copy preset to game folder: {ex.Message}",
+                Title = "❌ Не удалось развернуть",
+                Content = $"Не удалось скопировать пресет в папку игры: {ex.Message}",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -180,10 +180,10 @@ public partial class DragDropHandler
         // ── Step 5: Shader confirmation dialog ───────────────────────────────
         var shaderDialog = new ContentDialog
         {
-            Title = "🔧 Install Shaders?",
-            Content = "Also install the required shaders and textures?",
-            PrimaryButtonText = "Yes",
-            CloseButtonText = "No",
+            Title = "🔧 Установить шейдеры?",
+            Content = "Также установить необходимые шейдеры и текстуры?",
+            PrimaryButtonText = "Да",
+            CloseButtonText = "Нет",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };

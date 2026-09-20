@@ -30,19 +30,19 @@ public partial class GameCardViewModel
             // RE Engine games require REFramework before ReShade can be installed
             // (unless user has excluded REF via Update Inclusion toggle)
             if (IsREEngineGame && !IsRefInstalled && !EffectiveLumaMode && !ExcludeFromUpdateAllRef)
-                return "⚠  RE Framework required";
+                return "⚠  Требуется RE Framework";
             if (RequiresVulkanInstall)
             {
                 bool layerInstalled = IsLayerInstalledFunc();
                 if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
-                    return "⬆  Update Vulkan ReShade";
-                if (layerInstalled && IsVulkanRsActive) return "↺  Reinstall Vulkan ReShade";
-                if (layerInstalled) return "⬇  Install Vulkan ReShade";
-                return "⬇  Install Vulkan Layer";
+                    return "⬆  Обновить Vulkan ReShade";
+                if (layerInstalled && IsVulkanRsActive) return "↺  Переустановить Vulkan ReShade";
+                if (layerInstalled) return "⬇  Установить Vulkan ReShade";
+                return "⬇  Установить слой Vulkan";
             }
-            return RsStatus == GameStatus.UpdateAvailable ? "⬆  Update ReShade"
-                 : RsStatus == GameStatus.Installed       ? "↺  Reinstall ReShade"
-                 : "⬇  Install ReShade";
+            return RsStatus == GameStatus.UpdateAvailable ? "⬆  Обновить ReShade"
+                 : RsStatus == GameStatus.Installed       ? "↺  Переустановить ReShade"
+                 : "⬇  Установить ReShade";
         }
     }
 
@@ -79,14 +79,14 @@ public partial class GameCardViewModel
             {
                 bool layerInstalled = IsLayerInstalledFunc();
                 if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
-                    return "⬆ Update";
-                if (layerInstalled && IsVulkanRsActive) return "↺ Reinstall";
+                    return "⬆ Обновить";
+                if (layerInstalled && IsVulkanRsActive) return "↺ Переустановить";
                 if (layerInstalled) return "⬇ Vulkan RS";
-                return "⬇ Install";
+                return "⬇ Установить";
             }
-            return RsStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-                 : RsStatus == GameStatus.Installed       ? "↺ Reinstall"
-                 : "⬇ Install";
+            return RsStatus == GameStatus.UpdateAvailable ? "⬆ Обновить"
+                 : RsStatus == GameStatus.Installed       ? "↺ Переустановить"
+                 : "⬇ Установить";
         }
     }
 

@@ -81,10 +81,10 @@ public sealed partial class MainWindow
                         + (string.IsNullOrEmpty(ViewModel.SubStatusText) ? "" : $"  —  {ViewModel.SubStatusText}");
                     break;
                 case nameof(ViewModel.InstalledCount):
-                    InstalledCountText.Text = $"{ViewModel.InstalledCount} installed";
+                    InstalledCountText.Text = $"установлено: {ViewModel.InstalledCount}";
                     break;
                 case nameof(ViewModel.TotalGames):
-                    GameCountText.Text = $"{ViewModel.TotalGames} shown";
+                    GameCountText.Text = $"показано: {ViewModel.TotalGames}";
                     if (ViewModel.CurrentViewLayout == ViewLayout.Compact
                         && ViewModel.SelectedGame is { } compactCard)
                     {
@@ -94,7 +94,7 @@ public sealed partial class MainWindow
                     break;
                 case nameof(ViewModel.HiddenCount):
                     HiddenCountText.Text = ViewModel.HiddenCount > 0
-                        ? $"· {ViewModel.HiddenCount} hidden" : "";
+                        ? $"· скрыто: {ViewModel.HiddenCount}" : "";
                     break;
                 case nameof(ViewModel.FilterMode):
                     RefreshFilterButtonStyles();
@@ -210,7 +210,7 @@ public sealed partial class MainWindow
 
     internal void UpdateLumaToggleStyle(bool isLumaMode)
     {
-        DetailLumaToggleText.Text = isLumaMode ? "Luma ON" : "Luma OFF";
+        DetailLumaToggleText.Text = isLumaMode ? "Luma вкл" : "Luma выкл";
         if (isLumaMode)
         {
             DetailLumaToggle.Background = Brush(ResourceKeys.AccentGreenBgBrush);

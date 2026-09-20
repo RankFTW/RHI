@@ -72,7 +72,7 @@ public partial class DlssPresetService
     public static readonly (string Name, ulong Value)[] ReBarSizeLimits =
     [
         ("512MB", 0x0000000020000000),
-        ("1GB (Default)", 0x0000000040000000),
+        ("1 ГБ (по умолчанию)", 0x0000000040000000),
         ("1.5GB", 0x0000000060000000),
         ("2GB", 0x0000000080000000),
         ("4GB", 0x0000000100000000),

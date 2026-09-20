@@ -35,7 +35,7 @@ public partial class DxvkService
     {
         try
         {
-            progress?.Report(("Preparing DXVK install...", 5));
+            progress?.Report(("Подготовка установки DXVK...", 5));
 
             // ── 1. Ensure staging is ready ───────────────────────────────
             if (!IsStagingReady)
@@ -45,7 +45,7 @@ public partial class DxvkService
                 if (!IsStagingReady)
                 {
                     CrashReporter.Log("[DxvkService.InstallAsync] Staging still not ready — aborting");
-                    progress?.Report(("DXVK staging not available", 0));
+                    progress?.Report(("DXVK ещё не загружен", 0));
                     return;
                 }
             }
@@ -57,7 +57,7 @@ public partial class DxvkService
             // ── 3. Validate deployment path ──────────────────────────────
             if (!IsValidDeploymentPath(card.InstallPath))
             {
-                var msg = $"Cannot deploy DXVK to '{card.InstallPath}' — path is under a protected system directory.";
+                var msg = $"Нельзя развернуть DXVK в «{card.InstallPath}» — путь в защищённом системном каталоге.";
                 CrashReporter.Log($"[DxvkService.InstallAsync] {msg}");
                 progress?.Report((msg, 0));
                 return;
@@ -75,13 +75,13 @@ public partial class DxvkService
             var sampleDll = Path.Combine(StagingDir, archFolder, dllNames[0]);
             if (!File.Exists(sampleDll))
             {
-                var msg = $"Staged DLL not found: '{sampleDll}' — try clearing the DXVK cache in Settings.";
+                var msg = $"Загруженная DLL не найдена: «{sampleDll}» — попробуйте очистить кеш DXVK в настройках.";
                 CrashReporter.Log($"[DxvkService.InstallAsync] {msg}");
                 progress?.Report((msg, 0));
                 return;
             }
 
-            progress?.Report(("Resolving deployment paths...", 15));
+            progress?.Report(("Определение путей развертывания...", 15));
 
             // ── DX8/DX9 Direct Mode ─────────────────────────────────────
             // All variants deploy DXVK as d3d9.dll directly for DX8/DX9 games.
@@ -127,7 +127,7 @@ public partial class DxvkService
                 CrashReporter.Log($"[DxvkService.InstallAsync] Direct DX9: deployed DXVK as d3d9.dll (variant={_selectedVariant})");
 
                 // Step 4: Deploy dxvk.conf
-                progress?.Report(("Configuring dxvk.conf...", 60));
+                progress?.Report(("Настройка dxvk.conf...", 60));
                 var dx9ConfPath = Path.Combine(card.InstallPath, "dxvk.conf");
                 bool dx9DeployedConf = false;
                 try
@@ -145,7 +145,7 @@ public partial class DxvkService
                 }
 
                 // Step 5: Deploy Vulkan reshade.ini + footprint (no [PROXY] section)
-                progress?.Report(("Configuring Vulkan ReShade...", 70));
+                progress?.Report(("Настройка Vulkan ReShade...", 70));
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName);
                 VulkanFootprintService.Create(card.InstallPath);
                 CrashReporter.Log("[DxvkService.InstallAsync] Direct DX9: deployed Vulkan reshade.ini + footprint");
@@ -153,7 +153,7 @@ public partial class DxvkService
                 // Step 5b: Lilium HDR only — set NVIDIA profile settings for HDR present mode
                 if (_selectedVariant == DxvkVariant.LiliumHdr)
                 {
-                    progress?.Report(("Setting NVIDIA profile...", 78));
+                    progress?.Report(("Настройка профиля NVIDIA...", 78));
                     try
                     {
                         var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
@@ -167,7 +167,7 @@ public partial class DxvkService
                 }
 
                 // Step 6: Save tracking record
-                progress?.Report(("Saving install record...", 85));
+                progress?.Report(("Сохранение записи об установке...", 85));
                 var dx9Record = new DxvkInstalledRecord
                 {
                     GameName = card.GameName,
@@ -199,7 +199,7 @@ public partial class DxvkService
                 card.RsStatus = GameStatus.Installed;
                 card.NotifyAll();
 
-                progress?.Report(("DXVK installed!", 100));
+                progress?.Report(("DXVK установлен!", 100));
                 CrashReporter.Log($"[DxvkService.InstallAsync] Direct DX9 install complete for {card.GameName} (variant={_selectedVariant})");
                 return;
             }
@@ -216,10 +216,10 @@ public partial class DxvkService
             // - DXVK also needs to deploy dxgi.dll for DX10/DX11 games
             // - If we deploy DXVK's dxgi.dll first, then the ReShade uninstall
             //   deletes it thinking it's removing the old ReShade DLL
-            progress?.Report(("Switching ReShade mode...", 25));
+            progress?.Report(("Переключение режима ReShade...", 25));
             await SwitchReShadeForDxvkAsync(card, dxvkEnabled: true);
 
-            progress?.Report(("Deploying DXVK DLLs...", 35));
+            progress?.Report(("Развертывание DLL DXVK...", 35));
 
             var backedUpFiles = new List<string>();
 
@@ -251,7 +251,7 @@ public partial class DxvkService
                 }
             }
 
-            progress?.Report(("Configuring dxvk.conf...", 65));
+            progress?.Report(("Настройка dxvk.conf...", 65));
 
             // ── 9. Deploy default dxvk.conf if none exists ───────────────
             var confPath = Path.Combine(card.InstallPath, "dxvk.conf");
@@ -287,7 +287,7 @@ public partial class DxvkService
                 CrashReporter.Log($"[DxvkService.InstallAsync] Failed to deploy dxvk.conf — {ex.Message}");
             }
 
-            progress?.Report(("Saving install record...", 80));
+            progress?.Report(("Сохранение записи об установке...", 80));
 
             // ── 10. Create and persist DxvkInstalledRecord ───────────────
             var record = new DxvkInstalledRecord
@@ -312,12 +312,12 @@ public partial class DxvkService
             card.DxvkRecord = record;
             HasUpdate = false;
 
-            progress?.Report(("DXVK installed!", 100));
+            progress?.Report(("DXVK установлен!", 100));
             CrashReporter.Log($"[DxvkService.InstallAsync] Install complete for {card.GameName}");
         }
         catch (IOException ioEx) when (IsFileLockedException(ioEx))
         {
-            var msg = $"File is in use — close {card.GameName} and retry.";
+            var msg = $"Файл занят — закройте {card.GameName} и повторите.";
             CrashReporter.Log($"[DxvkService.InstallAsync] {msg} — {ioEx.Message}");
             progress?.Report(($"❌ {msg}", 0));
         }
@@ -326,7 +326,7 @@ public partial class DxvkService
             CrashReporter.Log($"[DxvkService.InstallAsync] {card.GameName} — {ex.Message}");
             CrashReporter.WriteCrashReport("DxvkService.InstallAsync", ex,
                 note: $"Game: {card.GameName}, Path: {card.InstallPath}");
-            progress?.Report(($"❌ Install failed: {ex.Message}", 0));
+            progress?.Report(($"❌ Не удалось установить: {ex.Message}", 0));
         }
     }
 
@@ -546,7 +546,7 @@ public partial class DxvkService
     {
         try
         {
-            progress?.Report(("Preparing DXVK update...", 5));
+            progress?.Report(("Подготовка обновления DXVK...", 5));
 
             // ── 1. Re-stage latest DXVK if needed ────────────────────────
             if (HasUpdate)
@@ -561,7 +561,7 @@ public partial class DxvkService
                 if (!IsStagingReady)
                 {
                     CrashReporter.Log("[DxvkService.UpdateAsync] Staging not ready after download — aborting");
-                    progress?.Report(("DXVK staging not available", 0));
+                    progress?.Report(("DXVK ещё не загружен", 0));
                     return;
                 }
             }
@@ -574,7 +574,7 @@ public partial class DxvkService
                 return;
             }
 
-            progress?.Report(("Updating DXVK DLLs...", 30));
+            progress?.Report(("Обновление DLL DXVK...", 30));
 
             // ── 2. Determine arch folder for staging ─────────────────────
             // For direct DX9 mode (any variant), card.GraphicsApi is Vulkan (runtime override) — use the
@@ -613,7 +613,7 @@ public partial class DxvkService
                 }
             }
 
-            progress?.Report(("Saving updated record...", 80));
+            progress?.Report(("Сохранение обновлённой записи...", 80));
 
             // ── 5. Rewrite dxvk.conf for direct DX9 installs ────────────
             if (isDx9DirectInstall)
@@ -648,12 +648,12 @@ public partial class DxvkService
             card.DxvkRecord = existingRecord;
             HasUpdate = false;
 
-            progress?.Report(("DXVK updated!", 100));
+            progress?.Report(("DXVK обновлён!", 100));
             CrashReporter.Log($"[DxvkService.UpdateAsync] Update complete for {card.GameName}");
         }
         catch (IOException ioEx) when (IsFileLockedException(ioEx))
         {
-            var msg = $"File is in use — close {card.GameName} and retry.";
+            var msg = $"Файл занят — закройте {card.GameName} и повторите.";
             CrashReporter.Log($"[DxvkService.UpdateAsync] {msg} — {ioEx.Message}");
             progress?.Report(($"❌ {msg}", 0));
         }
@@ -662,7 +662,7 @@ public partial class DxvkService
             CrashReporter.Log($"[DxvkService.UpdateAsync] {card.GameName} — {ex.Message}");
             CrashReporter.WriteCrashReport("DxvkService.UpdateAsync", ex,
                 note: $"Game: {card.GameName}, Path: {card.InstallPath}");
-            progress?.Report(($"❌ Update failed: {ex.Message}", 0));
+            progress?.Report(($"❌ Не удалось обновить: {ex.Message}", 0));
         }
     }
 
@@ -736,7 +736,7 @@ public partial class DxvkService
                     }
 
                     // Unmanaged DXVK detected
-                    return "Detected (unmanaged)";
+                    return "Определено (не управляется)";
                 }
             }
 
@@ -750,7 +750,7 @@ public partial class DxvkService
                     if (File.Exists(dllPath) && IsDxvkFile(dllPath))
                     {
                         var record = FindRecord(Path.GetFileName(installPath), installPath);
-                        return record?.DxvkVersion ?? "Detected (unmanaged)";
+                        return record?.DxvkVersion ?? "Определено (не управляется)";
                     }
                 }
             }
@@ -832,7 +832,7 @@ public partial class DxvkService
         catch (IOException ioEx) when (IsFileLockedException(ioEx))
         {
             throw new IOException(
-                $"Cannot copy '{dllName}' — the file is in use. Close {gameName} and retry.", ioEx);
+                $"Не удалось скопировать «{dllName}» — файл занят. Закройте {gameName} и повторите.", ioEx);
         }
     }
 
@@ -903,8 +903,8 @@ public partial class DxvkService
                 {
                     CrashReporter.Log(
                         $"[DxvkService.SwitchReShadeForDxvk] WARNING: {card.GameName}: " +
-                        "Global Vulkan ReShade layer is not installed. DXVK games present as Vulkan " +
-                        "and require the layer. Install ReShade on a Vulkan game via the UI to set up the layer.");
+                        "Глобальный слой Vulkan ReShade не установлен. DXVK-игры определяются как Vulkan " +
+                        "и требуют этот слой. Установите ReShade в какую-нибудь Vulkan-игру через интерфейс, чтобы настроить слой.");
                 }
 
                 CrashReporter.Log($"[DxvkService.SwitchReShadeForDxvk] {card.GameName}: switched ReShade to Vulkan layer mode");

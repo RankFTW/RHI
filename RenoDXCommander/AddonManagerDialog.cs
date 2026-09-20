@@ -29,14 +29,14 @@ public static class AddonManagerDialog
         {
             var emptyDlg = new ContentDialog
             {
-                Title = "ReShade Addon Manager",
+                Title = "Менеджер аддонов ReShade",
                 Content = new TextBlock
                 {
-                    Text = "No addons available. Try refreshing.",
+                    Text = "Доступных аддонов нет. Попробуйте обновить.",
                     FontSize = 13,
                     Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                 },
-                CloseButtonText = "Close",
+                CloseButtonText = "Закрыть",
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 MinWidth = 750,
@@ -87,7 +87,7 @@ public static class AddonManagerDialog
         {
             panel.Children.Add(new TextBlock
             {
-                Text = "Custom Addons",
+                Text = "Свои аддоны",
                 FontSize = 12,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
@@ -111,9 +111,9 @@ public static class AddonManagerDialog
 
         var dlg = new ContentDialog
         {
-            Title = "ReShade Addon Manager",
+            Title = "Менеджер аддонов ReShade",
             Content = scrollViewer,
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             MinWidth = 750,
@@ -300,7 +300,7 @@ public static class AddonManagerDialog
         {
             rightElement = new HyperlinkButton
             {
-                Content = "Repository",
+                Content = "Репозиторий",
                 NavigateUri = new Uri(entry.RepositoryUrl!),
                 FontSize = 11,
                 Foreground = Brush(ResourceKeys.AccentBlueBrush),

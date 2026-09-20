@@ -22,7 +22,7 @@ public partial class MainViewModel
     private async Task RunBackgroundScanAndMergeAsync(SavedGameLibrary savedLib, bool isStartup = false)
     {
         IsBackgroundScanning = true;
-        BackgroundScanStatusText = "Scanning for changes...";
+        BackgroundScanStatusText = "Поиск изменений...";
         _crashReporter.Log("[MainViewModel.RunBackgroundScanAndMergeAsync] Starting background scan...");
 
         try
@@ -472,8 +472,8 @@ public partial class MainViewModel
             DispatcherQueue?.TryEnqueue(() =>
             {
                 StatusText = offlineMode
-                    ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
-                    : $"{detectedGames.Count} games detected · {InstalledCount} mods installed";
+                    ? $"игр обнаружено: {detectedGames.Count} · автономный режим (данные о модах недоступны)"
+                    : $"игр обнаружено: {detectedGames.Count} · модов установлено: {InstalledCount}";
                 SubStatusText = "";
 
                 // Re-scroll to selected game after merge (cards may have shifted)
@@ -799,10 +799,10 @@ public partial class MainViewModel
     private static string FormatAge(DateTime utc)
     {
         var age = DateTime.UtcNow - utc;
-        if (age.TotalMinutes < 1) return "just now";
-        if (age.TotalHours   < 1) return $"{(int)age.TotalMinutes}m ago";
-        if (age.TotalDays    < 1) return $"{(int)age.TotalHours}h ago";
-        return $"{(int)age.TotalDays}d ago";
+        if (age.TotalMinutes < 1) return "только что";
+        if (age.TotalHours   < 1) return $"{(int)age.TotalMinutes} мин назад";
+        if (age.TotalDays    < 1) return $"{(int)age.TotalHours} ч назад";
+        return $"{(int)age.TotalDays} дн назад";
     }
 
     /// <summary>

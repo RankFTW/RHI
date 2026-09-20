@@ -1,349 +1,349 @@
-# RHI Manifest Field Reference
+# Справочник полей манифеста RHI
 
-Complete reference for every field in `RemoteManifest`. For each field: what it does, where in the code it's read, and what it controls.
+Полный справочник по каждому полю `RemoteManifest`. Для каждого поля: что оно делает, где в коде читается и чем управляет.
 
 ---
 
-## Game Detection Fields
+## Поля определения игр
 
 ### `blacklist` — `List<string>`
-Completely suppresses detected games from appearing in RHI (e.g. DLC launchers, anti-cheat helpers).
-- `GameInitializationService.ApplyManifest()` → populates `_manifestBlacklist`
-- `MainViewModel.Init`, `BackgroundScan`, `CacheLoad` → filters `allGames` before card build
+Полностью скрывает найденные игры из RHI (например, лаунчеры DLC, хелперы античита).
+- `GameInitializationService.ApplyManifest()` → наполняет `_manifestBlacklist`
+- `MainViewModel.Init`, `BackgroundScan`, `CacheLoad` → фильтрует `allGames` перед сборкой карточек
 
 ### `wikiNameOverrides` — `Dict<string,string>`
-Maps detected folder/store name → RenoDX wiki mod name. Fixes cases where Steam folder names don't match the wiki.
-- `GameInitializationService.ApplyManifest()` → adds to `_nameMappings` (user overrides win)
-- Marked as manifest-origin: invisible in UI, excluded from settings.json saves
+Отображение «найденная папка/магазин → имя мода в вики RenoDX». Чинит случаи, когда имена папок Steam не совпадают с вики.
+- `GameInitializationService.ApplyManifest()` → добавляет в `_nameMappings` (пользовательские переопределения сильнее)
+- Помечено как источник-манифест: невидимо в UI, исключается из сохранений settings.json
 
 ### `lumaNameOverrides` — `Dict<string,string>`
-Maps detected game names → Luma completed-mods list entry names. Separate from wiki name overrides.
-- `MainViewModel.Install.Luma.MatchLumaGame()` → highest priority, before fuzzy matching
+Отображение «имя найденной игры → имя записи в списке завершённых модов Luma». Отдельно от переопределений имён вики.
+- `MainViewModel.Install.Luma.MatchLumaGame()` → наивысший приоритет, до нечёткого сопоставления
 
 ### `installPathOverrides` — `Dict<string,string>`
-Defines the subpath within the detected install folder where mods should be deployed (e.g. `"bin\\x64"`).
-Supports pipe-separated candidates: `"Win64|WinGDK"` — tried in order, first existing wins.
-- `GameInitializationService.ApplyManifest()` → merges into shared `_installPathOverrides` dict
-- `BuildCards`, `CacheLoad`, `AddManualGame` → applies path resolution before card creation
+Задаёт подпуть внутри найденной папки установки, куда разворачиваются моды (например, `"bin\\x64"`).
+Поддерживает кандидаты через пайп: `"Win64|WinGDK"` — пробуются по порядку, побеждает первый существующий.
+- `GameInitializationService.ApplyManifest()` → вливается в общий словарь `_installPathOverrides`
+- `BuildCards`, `CacheLoad`, `AddManualGame` → применяет разрешение пути перед созданием карточки
 
 ### `splitGames` — `Dict<string,List<SplitGameEntry>>`
-Splits a single detected store entry into multiple cards, each pointing to a subfolder.
-- `MainViewModel.BuildCards` → very early, replaces one `DetectedGame` entry with N sub-entries
-- `SplitGameEntry` has `name` (card display name) and `subPath` (relative path from bundle root)
-- Entry is only created if the subPath directory actually exists on disk
+Разбивает одну найденную запись магазина на несколько карточек, каждая указывает на подпапку.
+- `MainViewModel.BuildCards` → очень рано, заменяет одну запись `DetectedGame` на N суб-записей
+- У `SplitGameEntry` есть `name` (отображаемое имя карточки) и `subPath` (относительный путь от корня бандла)
+- Запись создаётся, только если папка subPath реально существует на диске
 
 ### `engineOverrides` — `Dict<string,string>`
-Forces a specific engine type and label, overriding auto-detection.
-Special values: `"Unreal"`, `"Unreal (Legacy)"`, `"Unity"`, `"RE Engine"` → map to `EngineType` enum.
-Any other string (e.g. `"Silk"`) is stored as-is and shown in the engine badge but doesn't affect mod fallback logic.
-- `GameInitializationService.ApplyManifest()` → populates `_manifestEngineOverrides`
-- `MainViewModel.GameMatching.ResolveEngineOverride()` → called during card build
-- When present: engine badge `isClickable = false` (no user toggling)
+Форсирует конкретный тип движка и подпись, перекрывая автоопределение.
+Специальные значения: `"Unreal"`, `"Unreal (Legacy)"`, `"Unity"`, `"RE Engine"` → отображаются на перечисление `EngineType`.
+Любая другая строка (например, `"Silk"`) сохраняется как есть и показывается на значке движка, но не влияет на логику запасных модов.
+- `GameInitializationService.ApplyManifest()` → наполняет `_manifestEngineOverrides`
+- `MainViewModel.GameMatching.ResolveEngineOverride()` → вызывается при сборке карточек
+- При наличии: значок движка `isClickable = false` (без переключения пользователем)
 
 ### `engineHintOverrides` — `Dict<string,string>`
-Sets the `EngineHint` display string on a card (e.g. `"4.27.2"`, `"5.3.2"`). Unlike `engineOverrides`, display/hint only — doesn't affect `EngineType` enum.
-- `BuildCards`, `CacheLoad` → `card.EngineHint = manifestEngineHint` after card construction
-- Used by Engine.ini deployment to decide UE4 vs UE5 HDR key behaviour
+Задаёт отображаемую строку `EngineHint` на карточке (например, `"4.27.2"`, `"5.3.2"`). В отличие от `engineOverrides` — только отображение/подсказка, на перечисление `EngineType` не влияет.
+- `BuildCards`, `CacheLoad` → `card.EngineHint = manifestEngineHint` после сборки карточки
+- Используется развертыванием Engine.ini для выбора поведения ключей HDR UE4 против UE5
 
 ### `engineIniPathOverrides` — `Dict<string,string>`
-Overrides the Unreal project name used to locate `Engine.ini` in `%LocalAppData%`. Supports pipe-separated candidates and absolute paths.
+Переопределяет имя проекта Unreal для поиска `Engine.ini` в `%LocalAppData%`. Поддерживает кандидаты через пайп и абсолютные пути.
 - `BuildCards`, `CacheLoad`, `AddManualGame` → `card.EngineIniProjectOverride`
-- Consumed by all `AuxInstallService` Engine.ini methods, the 📋 INI button, and the cog dialog HDR/LUT handlers
+- Потребляется всеми методами Engine.ini в `AuxInstallService`, кнопкой 📋 INI и обработчиками HDR/LUT диалога шестерёнки
 
 ### `emulatorGames` — `Dict<string,EmulatorConfig>`
-Drives the Ryubing emulator bundle. Defines which addons to download and their fallback URLs.
-- `BuildCards`, `CacheLoad`, `AddManualGame` → sets `card.EmulatorAddonNames` and synthetic `GameMod`
-- `InstallEmulatorAddonsAsync()` → reads `AddonUrls` per wiki name (manifest priority > wiki-scraped)
-- `EmulatorConfig` fields: `addons` (wiki game name list), `addonUrls` (per-game URL overrides)
+Управляет бандлом эмулятора Ryubing. Определяет, какие аддоны скачивать, и их запасные ссылки.
+- `BuildCards`, `CacheLoad`, `AddManualGame` → задаёт `card.EmulatorAddonNames` и синтетический `GameMod`
+- `InstallEmulatorAddonsAsync()` → читает `AddonUrls` по имени в вики (манифест приоритетнее вики-скрейпа)
+- Поля `EmulatorConfig`: `addons` (список имён игр в вики), `addonUrls` (поигровые переопределения ссылок)
 
 ### `thirtyTwoBitGames` / `sixtyFourBitGames` — `List<string>`
-Forces 32-bit or 64-bit mode independent of PE header detection. Determines which DLL variant is deployed.
-- `GameInitializationService.ApplyManifest()` → populates `_manifest32BitGames` / `_manifest64BitGames`
-- `MainViewModel.GameMatching.ResolveIs32Bit()` → checked after user override, before PE-header fallback
+Форсирует 32-бит или 64-бит режим независимо от анализа PE-заголовка. Определяет, какой вариант DLL развернётся.
+- `GameInitializationService.ApplyManifest()` → наполняет `_manifest32BitGames` / `_manifest64BitGames`
+- `MainViewModel.GameMatching.ResolveIs32Bit()` → проверяется после пользовательского переопределения, до PE-заголовочного запасного варианта
 
 ### `dlssSkipGames` — `List<string>`
-Suppresses the DLSS/Streamline file scan for specific games (false positives, known irrelevant, or slow).
-- `MainViewModel.BuildCards` → inline check, skips the entire DLSS detection block when matched
+Подавляет сканирование файлов DLSS/Streamline для конкретных игр (ложные срабатывания, заведомо нерелевантные или медленные).
+- `MainViewModel.BuildCards` → инлайн-проверка, при совпадении пропускает весь блок обнаружения DLSS
 
 ### `steamAppIdOverrides` — `Dict<string,int>`
-Forces a specific Steam AppID regardless of ACF manifest or `steam_appid.txt`.
-- `SteamAppIdResolver.ResolveAsync()` → highest priority (step 1 of 5)
-- Used for PCGW lookups (HDR database, DLSS data) and Steam launch commands
+Форсирует конкретный Steam AppID независимо от ACF-манифеста или `steam_appid.txt`.
+- `SteamAppIdResolver.ResolveAsync()` → наивысший приоритет (шаг 1 из 5)
+- Используется для запросов PCGW (база HDR, данные DLSS) и команд запуска Steam
 
 ---
 
-## UE-Extended / HDR Feature Flags
+## Флаги UE-Extended / HDR
 
 ### `ueExtendedGames` — `List<string>`
-Games that should use `renodx-ue-extended.addon64` instead of the standard generic UE addon.
-- `GameInitializationService.ApplyManifest()` → adds to `gameNameService.UeExtendedGames`
-- Lowest priority UE-Extended signal — overridden by `ueExtendedCompatibility`, blocked by `noUeExtendedGames`
+Игры, которые должны использовать `renodx-ue-extended.addon64` вместо стандартного универсального UE-аддона.
+- `GameInitializationService.ApplyManifest()` → добавляет в `gameNameService.UeExtendedGames`
+- Самый низкоприоритетный сигнал UE-Extended — перекрывается `ueExtendedCompatibility`, блокируется `noUeExtendedGames`
 
 ### `nativeHdrGames` — `List<string>`
-Games that force UE-Extended on AND bypass the `hasNamedMod` block (named wiki mod won't prevent UE-Extended).
-- `GameInitializationService.ApplyManifest()` → populates `_manifestNativeHdrGames`
-- `IsNativeHdrGameMatch()` → drives `isNativeHdr = true` in BuildCards/Install
-- Effect: forces UE-Extended, hides toggle, sets `card.IsNativeHdrGame = true`
+Игры, которые форсируют включение UE-Extended и обходят блок `hasNamedMod` (именной мод из вики не помешает UE-Extended).
+- `GameInitializationService.ApplyManifest()` → наполняет `_manifestNativeHdrGames`
+- `IsNativeHdrGameMatch()` → включает `isNativeHdr = true` в BuildCards/Install
+- Эффект: форсирует UE-Extended, скрывает переключатель, ставит `card.IsNativeHdrGame = true`
 
 ### `noUeExtendedGames` — `List<string>`
-Highest-priority block on UE-Extended. Overrides everything including `nativeHdrGames` and user opt-in.
-- `GameInitializationService.ApplyManifest()` → populates `_manifestNoUeExtendedGames`
-- BuildCards/AddManualGame → `noUeExtended` gate is the first check in `useUeExt` decision tree
+Высший по приоритету блок UE-Extended. Перекрывает всё, включая `nativeHdrGames` и согласие пользователя.
+- `GameInitializationService.ApplyManifest()` → наполняет `_manifestNoUeExtendedGames`
+- BuildCards/AddManualGame → врата `noUeExtended` — первая проверка в дереве решения `useUeExt`
 
 ### `ueExtendedCompatibility` — `Dict<string,UeExtendedCompatEntry>`
-Highest-priority UE-Extended config. Replaces both `nativeHdrGames` and `ueExtendedGames` (v2+ feature).
-Presence in the dict = forced UE-Extended. Entry controls Engine.ini deployment:
-- `hdr: false` → skip HDR keys (game has its own in-engine HDR option); default: deploy for UE5, skip for UE4
-- `lut: false` → skip LUT key; default: always deploy
-- `GameInitializationService.ApplyManifest()` → populates `_manifestUeExtendedCompat` AND adds keys to `_manifestNativeHdrGames`
-- `MainViewModel.Install.InstallModAsync()`, `UpdateOrchestrationService` → read `deployHdr`/`deployLut` from entry
+Конфигурация UE-Extended с наивысшим приоритетом. Заменяет и `nativeHdrGames`, и `ueExtendedGames` (функция с v2+).
+Присутствие в словаре = форсированный UE-Extended. Запись управляет развертыванием Engine.ini:
+- `hdr: false` → пропустить ключи HDR (у игры есть собственная HDR-опция в движке); по умолчанию: разворачивать для UE5, пропускать для UE4
+- `lut: false` → пропустить ключ LUT; по умолчанию: всегда разворачивать
+- `GameInitializationService.ApplyManifest()` → наполняет `_manifestUeExtendedCompat` И добавляет ключи в `_manifestNativeHdrGames`
+- `MainViewModel.Install.InstallModAsync()`, `UpdateOrchestrationService` → читают `deployHdr`/`deployLut` из записи
 
 ### `lumaRenodxCompat` — `List<string>`
-Games where RenoDX and Luma can coexist. Normally enabling Luma removes the RenoDX mod.
+Игры, где RenoDX и Luma могут сосуществовать. Обычно включение Luma удаляет мод RenoDX.
 - `BuildCards`, `CacheLoad`, `AddManualGame` → `card.LumaRenodxCompatible = true`
-- **Important:** uses direct `Contains(game.Name)` — exact match, no normalization
-- Effect: keeps RenoDX row visible in Luma mode, skips RenoDX removal on Luma install
+- **Важно:** использует прямой `Contains(game.Name)` — точное совпадение, без нормализации
+- Эффект: строка RenoDX остаётся видимой в режиме Luma, при установке Luma удаление RenoDX пропускается
 
 ### `lumaDefaultGames` — `List<string>`
-Games that auto-enable Luma mode on first detection without user action. Respects prior toggles.
-- `MainViewModel.BuildCards` → auto-adds composite key to `_lumaEnabledGames` if no prior user toggle
-- NOT applied during CacheLoad phase (only fires in Phase 2)
+Игры, автоматически включающие режим Luma при первом обнаружении без действий пользователя. Учитывает ранее заданные переключения.
+- `MainViewModel.BuildCards` → авто-добавляет составной ключ в `_lumaEnabledGames`, если пользовательского переключения не было
+- НЕ применяется на фазе CacheLoad (срабатывает только во второй фазе)
 
 ---
 
-## Install Behaviour Fields
+## Поля поведения установки
 
 ### `forceExternalOnly` — `Dict<string,ForceExternalEntry>`
-Forces a card into redirect-only mode. Install button becomes an external link instead of a direct download.
-- `GameInitializationService.ApplyManifestCardOverrides()` → sets `card.IsExternalOnly = true`, `card.ExternalUrl`, `card.ExternalLabel`, `card.WikiStatus`
-- Entry has `url` (download link) and `label` (button text)
-- Key must match the **detected** game name, NOT the wiki-mapped name
+Форсирует карточку в режим «только перенаправление». Кнопка установки становится внешней ссылкой вместо прямого скачивания.
+- `GameInitializationService.ApplyManifestCardOverrides()` → ставит `card.IsExternalOnly = true`, `card.ExternalUrl`, `card.ExternalLabel`, `card.WikiStatus`
+- У записи есть `url` (ссылка на скачивание) и `label` (текст кнопки)
+- Ключ должен совпадать с **найденным** именем игры, а НЕ с привязанным именем вики
 
 ### `snapshotOverrides` — `Dict<string,string>`
-Injects or overrides the addon download URL for a game when wiki scraping fails or captures the wrong URL.
-- `BuildCards`, `Install`, `AddManualGame` → sets `effectiveMod.SnapshotUrl`
-- **Warning:** any non-null `SnapshotUrl` makes `hasNamedMod = true`, blocking UE-Extended. Never add NativeHDR generic UE games here.
+Внедряет или переопределяет ссылку скачивания аддона для игры, когда вики-скрейп не удался или выхватил неверный URL.
+- `BuildCards`, `Install`, `AddManualGame` → задаёт `effectiveMod.SnapshotUrl`
+- **Предупреждение:** любой непустой `SnapshotUrl` делает `hasNamedMod = true`, блокируя UE-Extended. Никогда не добавляйте сюда универсальные UE-игры с NativeHDR.
 
 ### `installWarnings` — `Dict<string,Dict<string,string>>`
-Per-game, per-component blocking confirm dialogs before install. User can cancel to abort.
-Structure: `{ "Game Name": { "reshade": "warning text", "renodx": "...", ... } }`
-- `MainViewModel.Install.Luma.CheckInstallWarningAsync(gameName, component)` → shows ContentDialog
-- Wired for all 8 components: `reshade`, `renodx`, `relimiter`, `dc`, `optiscaler`, `luma`, `reframework`, `dxvk`
+Поигровые, покомпонентные блокирующие диалоги подтверждения перед установкой. Пользователь может отменить и прервать.
+Структура: `{ "Game Name": { "reshade": "warning text", "renodx": "...", ... } }`
+- `MainViewModel.Install.Luma.CheckInstallWarningAsync(gameName, component)` → показывает ContentDialog
+- Подключено для всех 8 компонентов: `reshade`, `renodx`, `relimiter`, `dc`, `optiscaler`, `luma`, `reframework`, `dxvk`
 
 ### `dllNameOverrides` — `Dict<string,ManifestDllNames>`
-Forces specific DLL proxy filenames (ReShade and/or DC) per game. Example: `{ "reshade": "winmm.dll", "dc": "" }`
-- `GameInitializationService.ApplyManifest()` → populates `_manifestDllNameOverrides`
-- `GetManifestDllNames()` → exact → trademark-stripped → normalized lookup
-- `InstallReShadeAsync()`, `ApplyManifestDllRenames()` → use `.ReShade` filename
+Форсирует конкретные имена прокси-DLL (ReShade и/или DC) для игры. Пример: `{ "reshade": "winmm.dll", "dc": "" }`
+- `GameInitializationService.ApplyManifest()` → наполняет `_manifestDllNameOverrides`
+- `GetManifestDllNames()` → точное → без торговых знаков → нормализованное сопоставление
+- `InstallReShadeAsync()`, `ApplyManifestDllRenames()` → используют имя `.ReShade`
 
 ### `optiScalerDllOverrides` — `Dict<string,string>`
-Per-game OptiScaler DLL filename override. **Declared in the model but not currently consumed in code** — reserved for future use.
+Поигровое переопределение имени DLL OptiScaler. **Объявлено в модели, но кодом пока не потребляется** — зарезервировано на будущее.
 
 ### `gacSymlinkGames` — `Dict<string,string>`
-Routes XNA Framework games (e.g. Terraria) through a GAC symlink install instead of a normal DLL copy.
-- `GetGacSymlinkPath()` → checks this dict; if found, `InstallReShadeAsync` routes to `InstallReShadeGacAsync`
-- Dict value = absolute GAC directory path. Requires admin privileges.
+Направляет игры на XNA Framework (например, Terraria) через установку GAC-симлинком вместо обычного копирования DLL.
+- `GetGacSymlinkPath()` → проверяет этот словарь; при наличии `InstallReShadeAsync` уходит в `InstallReShadeGacAsync`
+- Значение словаря = абсолютный путь каталога GAC. Требуются права администратора.
 
 ### `legacyReShadeVersions` — `Dict<string,string>`
-Auto-assigns a locked legacy ReShade channel per game (e.g. `"Max Payne 3": "6.4.1"`). Never overwrites existing user overrides.
-- `MainViewModel.Init`, `BackgroundScan` → calls `SetReShadeChannelOverride(gameName, version)` if no existing override (checks both name-only and composite keys)
+Автоназначает игре заблокированный старый канал ReShade (например, `"Max Payne 3": "6.4.1"`). Никогда не перезаписывает существующие пользовательские переопределения.
+- `MainViewModel.Init`, `BackgroundScan` → вызывает `SetReShadeChannelOverride(gameName, version)`, если переопределения нет (проверяются и ключ по имени, и составной)
 
 ### `legacyReShadeAvailable` — `List<string>`
-List of version strings shown in the legacy ReShade version picker dialog. Server-managed.
-- `DetailPanelBuilder.Overrides.RsChannel` → RS channel picker, populates `RadioButtons` in the `"Legacy..."` selection dialog
+Список строк версий, показываемых в диалоге выбора старых версий ReShade. Управляется сервером.
+- `DetailPanelBuilder.Overrides.RsChannel` → выбор канала RS, наполняет `RadioButtons` в диалоге выбора «Legacy…»
 
 ### `launchExeOverrides` — `Dict<string,string>`
-Relative exe path from InstallPath. Used for two purposes:
-1. **Game launch** (priority 2, after user override): `MainWindow.Events.Install.LaunchGame()` → `Path.Combine(card.InstallPath, manifestExe)`
-2. **NVIDIA profile matching**: `DlssPresetService.FindProfileUncached()` → matches the exe filename against NVIDIA driver profile application entries
+Относительный путь exe от InstallPath. Используется для двух целей:
+1. **Запуск игры** (приоритет 2, после пользовательского переопределения): `MainWindow.Events.Install.LaunchGame()` → `Path.Combine(card.InstallPath, manifestExe)`
+2. **Сопоставление профилей NVIDIA**: `DlssPresetService.FindProfileUncached()` → сверяет имя exe с записями приложений в профилях драйвера NVIDIA
 
 ### `renodxIniOverrides` — `Dict<string,Dict<string,string>>`
-Per-game `[renodx]` INI keys written to `reshade.ini` on install/update. Only adds/updates — never removes user values (unless `forceOverwrite: true`).
-- Read via `AuxInstallService.GlobalManifest?.RenodxIniOverrides` in: `InstallModAsync`, `UpdateAllRenoDxAsync`, `MergeRsIni` button, `RdxCogButton_Click` redeploy
+Поигровые ключи INI секции `[renodx]`, записываемые в `reshade.ini` при установке/обновлении. Только добавляет/обновляет — никогда не удаляет пользовательские значения (если не `forceOverwrite: true`).
+- Читается через `AuxInstallService.GlobalManifest?.RenodxIniOverrides` в: `InstallModAsync`, `UpdateAllRenoDxAsync`, кнопке «Слить RS INI», повторном развертывании `RdxCogButton_Click`
 
 ### `renodxExtraSettings` — `List<RenodxExtraSetting>`
-Adds extra ComboBox rows to the RenoDX ⚙ cog Compatibility Settings grid without a client update.
-- `MainWindow.Events.Components.RdxCogButton_Click` → appends rows; `SelectionChanged` writes chosen value to `[renodx]` INI section
-- Each entry: `key`, `label`, `default`, `options` (array of `{value, name}` pairs)
+Добавляет дополнительные строки ComboBox в сетку настроек совместимости шестерёнки ⚙ RenoDX без обновления клиента.
+- `MainWindow.Events.Components.RdxCogButton_Click` → добавляет строки; `SelectionChanged` пишет выбранное значение в секцию INI `[renodx]`
+- Каждая запись: `key`, `label`, `default`, `options` (массив пар `{value, name}`)
 
 ### `pdUpscalerGames` — `Dict<string,string>`
-RE Engine games that need the PD-Upscaler REFramework build when OptiScaler is installed.
-- `InstallEventHandler.InstallOsButton_Click` → after OptiScaler install, if `dinput8.dll` exists, swaps to PD-Upscaler REFramework
-- `UninstallOsButton_Click` → restores standard REFramework on uninstall
-- Dict value = nightly.link artifact name (e.g. `"RE2"`, `"RE7"`, `"RE8"`)
+Игры RE Engine, которым нужна сборка REFramework с PD-Upscaler, когда установлен OptiScaler.
+- `InstallEventHandler.InstallOsButton_Click` → после установки OptiScaler, если существует `dinput8.dll`, подменяет на PD-Upscaler REFramework
+- `UninstallOsButton_Click` → при удалении возвращает стандартный REFramework
+- Значение словаря = имя артефакта на nightly.link (например, `"RE2"`, `"RE7"`, `"RE8"`)
 
 ---
 
-## DXVK Fields
+## Поля DXVK
 
 ### `dxvkBlacklist` — `List<string>`
-Prevents the DXVK toggle from being enabled (greyed out with anti-cheat tooltip).
+Запрещает включение переключателя DXVK (серый с подсказкой про античит).
 - `GameInitializationService.ApplyManifestCardOverrides()` → `card.IsDxvkBlacklisted = true`
-- `GameCardViewModel.Dxvk.IsDxvkToggleEnabled` → returns `false`; tooltip shows anti-cheat warning
+- `GameCardViewModel.Dxvk.IsDxvkToggleEnabled` → возвращает `false`; в подсказке предупреждение об античите
 
 ### `dxvkApiOverrides` — `Dict<string,string>`
-Intended per-game DXVK DLL selection override (`"DX8"`, `"DX9"`, etc.). **The value string is not currently consumed** — only existence is checked.
-- `ApplyManifestCardOverrides()` → `card.HasDxvkApiOverride = true` (presence only)
-- Effect: unlocks DXVK toggle for games where GraphicsApi is Unknown
+Предполагаемое поигровое переопределение выбора DLL DXVK (`"DX8"`, `"DX9"` и т.п.). **Строка-значение пока не потребляется** — проверяется только сам факт наличия.
+- `ApplyManifestCardOverrides()` → `card.HasDxvkApiOverride = true` (только наличие)
+- Эффект: разблокирует переключатель DXVK для игр с GraphicsApi = Unknown
 
 ### `dxvkGameNotes` — `Dict<string,GameNoteEntry>`
-Per-game notes shown in the DXVK Info dialog. Appended after the generic DXVK description.
-- `MainWindow.Events.Install.DxvkInfoButton_Click()` → direct inline read (bypasses `AddonInfoResolver`)
+Поигровые заметки в диалоге информации DXVK. Добавляются после общего описания DXVK.
+- `MainWindow.Events.Install.DxvkInfoButton_Click()` → прямой инлайн-чтение (мимо `AddonInfoResolver`)
 
 ---
 
-## Info Button Content Fields
+## Поля содержимого кнопок «Инфо»
 
-All `*GameInfo` and `gameNotes` fields are routed through `AddonInfoResolver.GetManifestDict(AddonType)` for the component info button dialogs. `DxvkGameNotes` is the exception — read directly in the DXVK info button handler.
+Все поля `*GameInfo` и `gameNotes` идут через `AddonInfoResolver.GetManifestDict(AddonType)` в диалогах кнопок информации компонентов. Исключение — `DxvkGameNotes`: читается напрямую в обработчике кнопки информации DXVK.
 
-| Field | Component info button | Notes |
+| Поле | Кнопка информации компонента | Примечания |
 |-------|----------------------|-------|
-| `gameNotes` | RenoDX | Also has a secondary path via `ApplyManifestCardOverrides` → `card.Notes` |
+| `gameNotes` | RenoDX | Есть и второй путь через `ApplyManifestCardOverrides` → `card.Notes` |
 | `reshadeGameInfo` | ReShade | — |
 | `relimiterGameInfo` | ReLimiter | — |
 | `displayCommanderGameInfo` | Display Commander | — |
 | `reframeworkGameInfo` | RE Framework | — |
 | `optiScalerGameInfo` | OptiScaler | — |
-| `lumaGameInfo` | Luma (primary) | — |
-| `lumaGameNotes` | Luma (supplementary) | Also has secondary path via `ApplyManifestCardOverrides` → `card.LumaNotes`; also read directly in `AddonInfoResolver.TryResolveLumaWiki()` as a supplement after LumaMod wiki notes |
-| `dxvkGameNotes` | DXVK | Read inline in `DxvkInfoButton_Click`, NOT via `AddonInfoResolver` |
+| `lumaGameInfo` | Luma (основное) | — |
+| `lumaGameNotes` | Luma (дополнительное) | Есть и второй путь через `ApplyManifestCardOverrides` → `card.LumaNotes`; также читается напрямую в `AddonInfoResolver.TryResolveLumaWiki()` как дополнение после заметок вики LumaMod |
+| `dxvkGameNotes` | DXVK | Читается инлайн в `DxvkInfoButton_Click`, НЕ через `AddonInfoResolver` |
 
-All use `GameNoteEntry` schema: `{ notes, notesUrl, notesUrlLabel }`.
+Все используют схему `GameNoteEntry`: `{ notes, notesUrl, notesUrlLabel }`.
 
 ---
 
-## Wiki Status / Author Fields
+## Поля статуса вики / авторов
 
 ### `wikiStatusOverrides` — `Dict<string,string>`
-Overrides the status emoji on wiki `GameMod` entries (e.g. `"✅"`, `"🚧"`) without requiring a wiki edit.
-- `GameInitializationService.ApplyManifestStatusOverrides()` → iterates `_allMods`, sets `mod.Status`
-- Called after wiki fetch in both Init and BackgroundScan
+Переопределяет значок статуса у записей `GameMod` вики (например, `"✅"`, `"🚧"`) без правки вики.
+- `GameInitializationService.ApplyManifestStatusOverrides()` → обходит `_allMods`, ставит `mod.Status`
+- Вызывается после загрузки вики и в Init, и в BackgroundScan
 
 ### `wikiUnlinks` — `List<string>`
-Completely severs a game from the wiki/mod system. No RenoDX row, no generic engine fallback.
-Unlike `blacklist`, the card still appears — it just has no mod options.
-- `GameInitializationService.ApplyManifest()` → populates `_manifestWikiUnlinks`
-- `BuildCards`, `InstallModAsync`, `AddManualGame` → if `_manifestWikiUnlinks.Contains(game.Name)` → `mod = null`, `fallback = null`
+Полностью отрезает игру от системы вики/модов. Ни строки RenoDX, ни универсального запасного мода движка.
+В отличие от `blacklist`, карточка остаётся видимой — просто без опций модов.
+- `GameInitializationService.ApplyManifest()` → наполняет `_manifestWikiUnlinks`
+- `BuildCards`, `InstallModAsync`, `AddManualGame` → если `_manifestWikiUnlinks.Contains(game.Name)` → `mod = null`, `fallback = null`
 
 ### `donationUrls` — `Dict<string,string>`
-Donation page URLs keyed by author display name. Merged into the hardcoded dictionary; manifest entries take priority.
+Ссылки на страницы пожертвований по отображаемым именам авторов. Вливаются в захардкоженный словарь; записи манифеста приоритетнее.
 - `MainViewModel.Init`, `BackgroundScan` → `GameCardViewModel.MergeManifestAuthorData(DonationUrls, AuthorDisplayNames)`
 
 ### `authorDisplayNames` — `Dict<string,string>`
-Display-name overrides for wiki maintainer handles (e.g. `"oopydoopy": "Jon"`). Merged into hardcoded dict.
-- `GameCardViewModel.MergeManifestAuthorData()` → same call as `donationUrls`
+Переопределения отображаемых имён мейнтейнеров из вики (например, `"oopydoopy": "Jon"`). Вливаются в захардкоженный словарь.
+- `GameCardViewModel.MergeManifestAuthorData()` → тот же вызов, что у `donationUrls`
 
 ### `authorOverrides` — `Dict<string,string>`
-Sets the mod author for games with no wiki entry (Discord/Nexus-only mods).
-- `GameInitializationService.ApplyManifestCardOverrides()` → `card.Maintainer = author` (only if `card.Maintainer` is empty)
+Задаёт автора мода для игр без записи в вики (моды только на Discord/Nexus).
+- `GameInitializationService.ApplyManifestCardOverrides()` → `card.Maintainer = author` (только если `card.Maintainer` пуст)
 
 ---
 
-## URL Override Fields
+## Поля переопределения ссылок
 
-All follow the same pattern in their respective services — checked first before any scraped/cached source.
+Все следуют одному паттерну в своих сервисах — проверяются первыми, до любых источников из скрейпа/кеша.
 
-| Field | Used in | What it overrides |
+| Поле | Где используется | Что переопределяет |
 |-------|---------|-------------------|
-| `nexusUrlOverrides` | `NexusModsService` | Game → Nexus Mods page URL |
-| `pcgwUrlOverrides` | `PcgwService` | Game → PCGamingWiki page URL |
-| `uwFixUrlOverrides` | `UltraWideFixService` | Game → ultrawide fix URL |
-| `ultraPlusUrlOverrides` | `UltraPlusService` | Game → Ultra+ URL |
-| `steamAppIdOverrides` | `SteamAppIdResolver.ResolveAsync()` | Forces Steam AppID (highest priority, before ACF/file detection) |
+| `nexusUrlOverrides` | `NexusModsService` | Игра → URL страницы Nexus Mods |
+| `pcgwUrlOverrides` | `PcgwService` | Игра → URL страницы PCGamingWiki |
+| `uwFixUrlOverrides` | `UltraWideFixService` | Игра → URL ультраширокого исправления |
+| `ultraPlusUrlOverrides` | `UltraPlusService` | Игра → URL Ultra+ |
+| `steamAppIdOverrides` | `SteamAppIdResolver.ResolveAsync()` | Форсирует Steam AppID (наивысший приоритет, до ACF/файлов) |
 
 ### `optiScalerWikiNames` — `Dict<string,string>`
-Maps RHI game names to their OptiScaler wiki compatibility list names (when they differ).
-- `AddonInfoResolver.ResolveOptiScalerWikiName()` → used before all OptiScaler wiki lookups
+Отображает имена игр RHI на имена в списке совместимости вики OptiScaler (когда они различаются).
+- `AddonInfoResolver.ResolveOptiScalerWikiName()` → используется перед всеми запросами вики OptiScaler
 
 ---
 
-## NVIDIA Profile / DLSS Fields
+## Поля профилей NVIDIA / DLSS
 
 ### `profileExeExclusions` — `List<string>`
-Additional exe names excluded from NVIDIA profile matching (extends the hardcoded defaults).
-- `DlssPresetService.ApplyManifestProfileConfig()` → merged into `_excludedProfileExeNames`
+Дополнительные имена exe, исключаемые из сопоставления профилей NVIDIA (расширяет захардкоженные значения по умолчанию).
+- `DlssPresetService.ApplyManifestProfileConfig()` → вливается в `_excludedProfileExeNames`
 - `FindProfileUncached()` → `exeNames.ExceptWith(_excludedProfileExeNames)`
 
 ### `profileNameOverrides` — `Dict<string,string>`
-Redirects a game name to a different NVIDIA driver profile name (first lookup attempted, before exe scanning).
-- `DlssPresetService.ApplyManifestProfileConfig()` → stored as `_profileNameOverrides`
-- `FindProfileUncached()` → checked before exact title match and exe scanning
+Перенаправляет имя игры на другое имя профиля драйвера NVIDIA (первая попытка сопоставления, до сканирования exe).
+- `DlssPresetService.ApplyManifestProfileConfig()` → сохраняется как `_profileNameOverrides`
+- `FindProfileUncached()` → проверяется до точного совпадения названия и сканирования exe
 
 ### `dlssPresets` — `ManifestDlssPresets`
-Injects new DLSS preset options (SR/RR/FG) into the detail panel dropdowns without a client update.
-- `DlssPresetService.ApplyManifestPresets()` → merges `.Sr`, `.Rr`, `.Fg` into static preset arrays
-- Called at Init and BackgroundScan. `disabled: true` entries remove existing presets by name.
+Внедряет новые варианты пресетов DLSS (SR/RR/FG) в выпадающие списки панели подробностей без обновления клиента.
+- `DlssPresetService.ApplyManifestPresets()` → вливает `.Sr`, `.Rr`, `.Fg` в статические массивы пресетов
+- Вызывается при Init и BackgroundScan. Записи с `disabled: true` удаляют существующие пресеты по имени.
 
 ### `rtxHdrInfoUrl` — `string`
-URL for the RTX HDR Calibration Guide hyperlink in the RenoDX info dialog. Falls back to a hardcoded Reddit post.
-- Read in `DialogService.Game` info dialog builder
+URL гиперссылки «Руководство по калибровке RTX HDR» в диалоге информации RenoDX. Запасной вариант — захардкоженный пост на Reddit.
+- Читается в конструкторе диалога информации `DialogService.Game`
 
 ---
 
-## DOF Fix Fields
+## Поля DOF Fix
 
 ### `dofFixSkipGames` — `List<string>`
-Suppresses DOF Fix eligibility for specific games (no DOF issue, or known incompatible).
+Подавляет применимость DOF Fix для конкретных игр (нет проблемы с DOF или заведомо несовместимо).
 - `MainViewModel.Init`, `BackgroundScan` → `DofFixService.SetSkipGames()`
-- `DofFixService.IsEligible()` → returns `false` if game is on the list
+- `DofFixService.IsEligible()` → возвращает `false`, если игра в списке
 
 ### `dofFixForceGames` — `List<string>`
-Force-enables DOF Fix eligibility for games where UE engine detection fails. 64-bit requirement still applies.
+Форсирует применимость DOF Fix для игр, где не сработало определение движка UE. Требование 64-бит остаётся.
 - `MainViewModel.Init`, `BackgroundScan` → `DofFixService.SetForceGames()`
-- `DofFixService.IsForceEligible()` → returns `true`
+- `DofFixService.IsForceEligible()` → возвращает `true`
 
 ---
 
-## Graphics API Fields
+## Поля графического API
 
 ### `graphicsApiOverrides` — `Dict<string,string>`
-Forces a specific graphics API badge, overriding all PE import scanning.
-Supports comma-separated multi-API: `"DX12, VLK"` marks a game as dual-API.
-Valid tokens: `DX8`, `DX9`, `DX10`, `DX11`, `DX12`, `Vulkan`/`VLK`, `OpenGL`/`OGL`.
-- `MainViewModel.GameMatching.DetectGraphicsApi()` and `_DetectAllApisForCard()` → checked after user API override, before all filesystem scanning
-- Affects: API badge on card, auto-selected ReShade DLL filename, DXVK toggle visibility, DXVK DLL deployment
+Форсирует конкретный значок графического API, перекрывая весь анализ PE-импортов.
+Поддерживает несколько API через запятую: `"DX12, VLK"` помечает игру как dual-API.
+Допустимые токены: `DX8`, `DX9`, `DX10`, `DX11`, `DX12`, `Vulkan`/`VLK`, `OpenGL`/`OGL`.
+- `MainViewModel.GameMatching.DetectGraphicsApi()` и `_DetectAllApisForCard()` → проверяется после пользовательского переопределения API, до любого сканирования файловой системы
+- Влияет на: значок API на карточке, автоматически выбранное имя DLL ReShade, видимость переключателя DXVK, развертывание DLL DXVK
 
 ---
 
-## Pack / Preset Override Fields
+## Поля переопределения наборов / пресетов
 
 ### `shaderPacks` — `Dict<string,ManifestShaderPack>`
-Add, override, or disable shader packs without a client update.
-- `ShaderPackService.ApplyManifestOverrides()` → called at Init and BackgroundScan
-- `disabled: true` removes the pack from the active list
-- New packs require at minimum a `url` and `kind` (`"GhRelease"` or `"DirectUrl"`)
+Добавление, переопределение или отключение наборов шейдеров без обновления клиента.
+- `ShaderPackService.ApplyManifestOverrides()` → вызывается при Init и BackgroundScan
+- `disabled: true` убирает набор из активного списка
+- Для новых наборов минимум: `url` и `kind` (`"GhRelease"` или `"DirectUrl"`)
 
 ### `addonPacks` — `Dict<string,ManifestAddonPack>`
-Add, override, or disable addon entries without a client update. Keyed by `SectionId`.
-- `AddonPackService.ApplyManifestOverrides()` → called at Init and BackgroundScan; also re-applied when the Addon Manager dialog opens
-- `disabled: true` removes the addon
+Добавление, переопределение или отключение записей аддонов без обновления клиента. Ключ — `SectionId`.
+- `AddonPackService.ApplyManifestOverrides()` → вызывается при Init и BackgroundScan; также повторно применяется при открытии диалога менеджера аддонов
+- `disabled: true` убирает аддон
 
 ### `componentUrls` — `Dict<string,string>`
-Override base download URLs for components. Active keys:
-- `"ueExtended"` → UE-Extended addon download URL (`MainViewModel.Install.UeExtendedUrl`)
-- `"ueDofFix"` → DOF Fix URL override (`DofFixService.ManifestUrlOverride`, set at Init/BackgroundScan)
+Переопределение базовых ссылок скачивания компонентов. Активные ключи:
+- `"ueExtended"` → ссылка скачивания аддона UE-Extended (`MainViewModel.Install.UeExtendedUrl`)
+- `"ueDofFix"` → переопределение URL DOF Fix (`DofFixService.ManifestUrlOverride`, задаётся при Init/BackgroundScan)
 
 ---
 
-## Other Fields
+## Прочие поля
 
 ### `version` — `int`
-Manifest version integer. Logged on every `ApplyManifest` call for diagnostics.
+Целочисленная версия манифеста. Пишется в лог при каждом вызове `ApplyManifest` для диагностики.
 
-### `gacSymlinkGames` — see [Install Behaviour Fields](#gacSymlinkGames)
+### `gacSymlinkGames` — см. [Поля поведения установки](#gacSymlinkGames)
 
 ---
 
-## Key Architectural Notes
+## Ключевые архитектурные заметки
 
-1. **Two apply paths**: Most fields are processed by `GameInitializationService.ApplyManifest()` (populates shared sets/dicts), then read by BuildCards/CacheLoad. Card-level fields (`forceExternalOnly`, `gameNotes`, `authorOverrides`, etc.) are applied by `ApplyManifestCardOverrides()` after cards are built.
+1. **Два пути применения**: большинство полей обрабатываются в `GameInitializationService.ApplyManifest()` (наполняет общие множества/словари), затем читаются BuildCards/CacheLoad. Поигровые поля (`forceExternalOnly`, `gameNotes`, `authorOverrides` и т.п.) применяются `ApplyManifestCardOverrides()` после сборки карточек.
 
-2. **Three init paths**: Fields that affect game display must be applied in ALL three: `InitializeAsync` (full scan), `LoadCacheAndBuildCardsAsync` (Phase 1 cache display), AND `RunBackgroundScanAndMergeAsync` (Phase 2 update). Missing one causes inconsistent state between phases.
+2. **Три пути инициализации**: поля, влияющие на отображение игр, должны применяться во ВСЕХ трёх: `InitializeAsync` (полное сканирование), `LoadCacheAndBuildCardsAsync` (фаза 1, показ из кеша) И `RunBackgroundScanAndMergeAsync` (фаза 2, обновление). Пропуск одного приводит к рассинхрону состояний между фазами.
 
-3. **Case sensitivity**: `ManifestService.Normalize()` rebuilds most dicts with `StringComparer.OrdinalIgnoreCase`. Fields NOT normalized: `dxvkApiOverrides` (lookups are case-sensitive as deserialized). `lumaRenodxCompat` uses direct `Contains(game.Name)` — exact match.
+3. **Регистр символов**: `ManifestService.Normalize()` пересобирает большинство словарей с `StringComparer.OrdinalIgnoreCase`. НЕ нормализуются: `dxvkApiOverrides` (поиск чувствителен к регистру, как десериализовано). `lumaRenodxCompat` использует прямой `Contains(game.Name)` — точное совпадение.
 
-4. **Name matching**: `GetManifestDllNames()`, `GetGacSymlinkPath()`, `ResolveEngineOverride()` all try: (1) exact match, (2) trademark-stripped (™®©), (3) fully normalized. Most other fields use exact match only.
+4. **Сопоставление имён**: `GetManifestDllNames()`, `GetGacSymlinkPath()`, `ResolveEngineOverride()` пробуют: (1) точное совпадение, (2) без торговых знаков (™®©), (3) полностью нормализованное. Большинство остальных полей — только точное совпадение.
 
-5. **User override priority**: Manifest `WikiNameOverrides` only adds if key not already in `_nameMappings` (user wins). Manifest `DllNameOverrides` are blocked by `DllOverrideService` per-game opt-outs. Manifest `LegacyReShadeVersions` doesn't overwrite existing RS channel overrides.
+5. **Приоритет пользовательских переопределений**: манифестный `WikiNameOverrides` добавляется только если ключа ещё нет в `_nameMappings` (пользователь сильнее). Манифестные `DllNameOverrides` блокируются поигровыми отказами в `DllOverrideService`. Манифестный `LegacyReShadeVersions` не перезаписывает существующие переопределения канала RS.
 
-6. **`AuxInstallService.GlobalManifest`**: A static reference to the live manifest, accessible from services that don't receive the manifest via DI. Used by `RenodxIniOverrides`, `RenodxExtraSettings`, `UeExtendedCompatibility` in Update flow.
+6. **`AuxInstallService.GlobalManifest`**: статическая ссылка на живой манифест, доступная сервисам, которые не получают манифест через DI. Используется `RenodxIniOverrides`, `RenodxExtraSettings`, `UeExtendedCompatibility` в потоке обновления.

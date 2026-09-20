@@ -1054,7 +1054,7 @@ public partial class MainViewModel
         }
 
         // 14. Set StatusText to show cached game count
-        StatusText    = $"{_allCards.Count} games";
+        StatusText    = $"игр: {_allCards.Count}";
         SubStatusText = "";
 
         _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Cache phase complete — {_allCards.Count} cards displayed");

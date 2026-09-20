@@ -203,13 +203,13 @@ public class NexusDownloadService
     {
         try
         {
-            progress?.Report(("Starting download...", 0));
+            progress?.Report(("Начинаю загрузку...", 0));
 
             using var response = await _http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
                 CrashReporter.Log($"[NexusDownloadService.DownloadToTempAsync] HTTP {(int)response.StatusCode}");
-                progress?.Report(($"Download failed: HTTP {(int)response.StatusCode}", 0));
+                progress?.Report(($"Ошибка загрузки: HTTP {(int)response.StatusCode}", 0));
                 return null;
             }
 
@@ -247,13 +247,13 @@ public class NexusDownloadService
             }
 
             CrashReporter.Log($"[NexusDownloadService.DownloadToTempAsync] Downloaded {downloaded:N0} bytes to {tempPath}");
-            progress?.Report(("Download complete", 100));
+            progress?.Report(("Загрузка завершена", 100));
             return tempPath;
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[NexusDownloadService.DownloadToTempAsync] Failed — {ex.Message}");
-            progress?.Report(($"Download failed: {ex.Message}", 0));
+            progress?.Report(($"Ошибка загрузки: {ex.Message}", 0));
             return null;
         }
     }

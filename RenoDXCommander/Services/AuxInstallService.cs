@@ -494,7 +494,7 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
                 return false;
             }
 
-            progress?.Report(($"ReShade {version} ready!", 100));
+            progress?.Report(($"ReShade {version} готов!", 100));
             CrashReporter.Log($"[AuxInstallService.DownloadLegacyReShadeAsync] v{version} staged successfully");
             return true;
         }

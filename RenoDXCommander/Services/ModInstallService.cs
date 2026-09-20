@@ -69,7 +69,7 @@ public class ModInstallService : IModInstallService
         string? store = null)
     {
         if (mod.SnapshotUrl == null)
-            throw new InvalidOperationException($"{mod.Name} has no Snapshot download URL.");
+            throw new InvalidOperationException($"У {mod.Name} нет ссылки на скачивание снапшота.");
 
         // Apply URL override before anything else — this ensures the correct CDN is
         // used for both the HEAD size check and the actual download.
@@ -86,7 +86,7 @@ public class ModInstallService : IModInstallService
          && !ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(
-                $"Unsupported file type '{ext}' for {mod.Name}. Only .addon64 and .addon32 files are supported.");
+                $"Неподдерживаемый тип файла «{ext}» для {mod.Name}. Поддерживаются только .addon64 и .addon32.");
         }
 
         var destPath  = Path.Combine(GetAddonDeployPath(gameInstallPath), fileName);
@@ -117,10 +117,10 @@ public class ModInstallService : IModInstallService
             bool sizeOk   = remoteSize.HasValue && remoteSize.Value == cacheSize;
             if (sizeOk && HasPeSignature(cachePath))
             {
-                progress?.Report(("Installing from cache...", 50));
+                progress?.Report(("Установка из кеша...", 50));
                 File.Copy(cachePath, destPath, overwrite: true);
                 usedCache = true;
-                progress?.Report(("✅ Installed from cache!", 100));
+                progress?.Report(("✅ Установлено из кеша!", 100));
             }
             else if (!HasPeSignature(cachePath))
             {
@@ -181,7 +181,7 @@ public class ModInstallService : IModInstallService
 
             if (response == null || !response.IsSuccessStatusCode)
                 throw new HttpRequestException(
-                    $"Failed to download snapshot. Tried: {string.Join(", ", tried)}");
+                    $"Не удалось скачать снапшот. Пробовал: {string.Join(", ", tried)}");
 
             // Capture size from actual download response if HEAD didn't return one
             if (!remoteSize.HasValue)
@@ -217,7 +217,7 @@ public class ModInstallService : IModInstallService
                 var badSize = new FileInfo(cachePath).Length;
                 File.Delete(cachePath);
                 throw new InvalidOperationException(
-                    $"Downloaded file from '{resolvedUrl}' is not a valid addon ({badSize} bytes). The server may have returned an error page. Please try again.");
+                    $"Скачанный файл с «{resolvedUrl}» — не аддон ({badSize} байт). Возможно, сервер вернул страницу с ошибкой. Попробуйте снова.");
             }
 
             File.Copy(cachePath, destPath, overwrite: true);

@@ -26,18 +26,18 @@ public static class GameReportEncoder
         // Gatekeep: ask user to correct overrides first
         var gateDlg = new ContentDialog
         {
-            Title = "Before you submit",
+            Title = "Перед отправкой",
             Content = new TextBlock
             {
-                Text = "Please use the overrides on this panel to correct any wrong values " +
-                       "(bitness, graphics API, game name, etc.) before generating a report. " +
-                       "This helps us update the manifest faster.\n\n" +
-                       "Have you corrected everything you can?",
+                Text = "Используйте переопределения на этой панели, чтобы исправить неверные значения " +
+                       "(разрядность, графический API, название игры и т.д.) перед формированием отчёта. " +
+                       "Это помогает нам обновлять манифест быстрее.\n\n" +
+                       "Вы исправили всё, что могли?",
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 12,
             },
-            PrimaryButtonText = "Yes, continue",
-            CloseButtonText = "Go back",
+            PrimaryButtonText = "Да, продолжить",
+            CloseButtonText = "Назад",
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -48,7 +48,7 @@ public static class GameReportEncoder
         // Show dialog with optional note
         var noteBox = new TextBox
         {
-            PlaceholderText = "Describe the issue (optional)",
+            PlaceholderText = "Опишите проблему (необязательно)",
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             MinHeight = 80,
@@ -57,7 +57,7 @@ public static class GameReportEncoder
 
         var dlg = new ContentDialog
         {
-            Title = "Copy Game Report",
+            Title = "Скопировать отчёт об игре",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -65,8 +65,8 @@ public static class GameReportEncoder
                 {
                     new TextBlock
                     {
-                        Text = "This saves a report file and copies it to your clipboard. " +
-                               "Paste it directly into Discord or attach it to a GitHub issue.",
+                        Text = "Будет сохранён файл отчёта и скопирован в буфер обмена. " +
+                               "Вставьте его прямо в Discord или приложите к задаче на GitHub.",
                         TextWrapping = TextWrapping.Wrap,
                         FontSize = 12,
                         Opacity = 0.7,
@@ -74,8 +74,8 @@ public static class GameReportEncoder
                     noteBox,
                 },
             },
-            PrimaryButtonText = "Copy to Clipboard",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Скопировать в буфер обмена",
+            CloseButtonText = "Отмена",
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -153,7 +153,7 @@ public static class GameReportEncoder
         {
             sb.AppendLine("## Components");
             sb.AppendLine();
-            sb.AppendLine("| Component | Status | Version | Filename |");
+            sb.AppendLine("| Компонент | Статус | Версия | Файл |");
             sb.AppendLine("|-----------|--------|---------|----------|");
             foreach (var c in comps)
                 sb.AppendLine($"| {c["name"]} | {c["status"]} | {c["version"]} | {c["filename"]} |");

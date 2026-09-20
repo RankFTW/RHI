@@ -783,7 +783,7 @@ public partial class MainViewModel
                     {
                         SetUalInstalledAs(gameName, chosenName, store);
                         _crashReporter.Log($"[SfAutoConfig] Installed UAL as '{chosenName}' for '{gameName}'" +
-                            (hookedOriginal != null ? $" (chained '{hookedOriginal}')" : ""));
+                            (hookedOriginal != null ? $" (в цепочке: «{hookedOriginal}»)" : ""));
                     }
                 }
                 catch (Exception ex) { _crashReporter.Log($"[SfAutoConfig] UAL install failed — {ex.Message}"); }

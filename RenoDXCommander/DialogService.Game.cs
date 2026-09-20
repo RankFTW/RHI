@@ -26,14 +26,14 @@ public partial class DialogService
                 TextWrapping = TextWrapping.Wrap,
                 Foreground   = Brush(ResourceKeys.AccentAmberBrush),
                 FontSize     = 13,
-                Text         = $"A dxgi.dll file was found in:\n{card.InstallPath}\n\n" +
-                               $"File size: {sizeKB:N0} KB\n\n" +
-                               "RHI cannot identify this file as ReShade or Display Commander. " +
-                               "It may belong to another mod (e.g. DXVK, Special K, ENB).\n\n" +
-                               "Overwriting it may break the existing mod. Do you want to proceed?",
+                Text         = $"В папке найден файл dxgi.dll:\n{card.InstallPath}\n\n" +
+                               $"Размер файла: {sizeKB:N0} КБ\n\n" +
+                               "RHI не смог опознать этот файл как ReShade или Display Commander. " +
+                               "Он может принадлежать другому моду (например, DXVK, Special K, ENB).\n\n" +
+                               "Перезапись может сломать существующий мод. Продолжить?",
             },
-            PrimaryButtonText   = "Overwrite",
-            CloseButtonText     = "Cancel",
+            PrimaryButtonText   = "Перезаписать",
+            CloseButtonText     = "Отмена",
             XamlRoot            = _window.Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
             RequestedTheme      = ElementTheme.Dark,
@@ -56,14 +56,14 @@ public partial class DialogService
                 TextWrapping = TextWrapping.Wrap,
                 Foreground   = Brush(ResourceKeys.AccentAmberBrush),
                 FontSize     = 13,
-                Text         = $"A winmm.dll file was found in:\n{card.InstallPath}\n\n" +
-                               $"File size: {sizeKB:N0} KB\n\n" +
-                               "RHI cannot identify this file as Display Commander. " +
-                               "It may belong to another mod or DLL injector.\n\n" +
-                               "Overwriting it may break the existing mod. Do you want to proceed?",
+                Text         = $"В папке найден файл winmm.dll:\n{card.InstallPath}\n\n" +
+                               $"Размер файла: {sizeKB:N0} КБ\n\n" +
+                               "RHI не смог опознать этот файл как Display Commander. " +
+                               "Он может принадлежать другому моду или инъектору DLL.\n\n" +
+                               "Перезапись может сломать существующий мод. Продолжить?",
             },
-            PrimaryButtonText   = "Overwrite",
-            CloseButtonText     = "Cancel",
+            PrimaryButtonText   = "Перезаписать",
+            CloseButtonText     = "Отмена",
             XamlRoot            = _window.Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
             RequestedTheme      = ElementTheme.Dark,
@@ -192,7 +192,7 @@ public partial class DialogService
             {
                 Title           = $"{addonName} — {card.GameName}",
                 Content         = scrollContent,
-                CloseButtonText = "Close",
+                CloseButtonText = "Закрыть",
                 XamlRoot        = _window.Content.XamlRoot,
                 Background      = Brush(ResourceKeys.SurfaceToolbarBrush),
                 RequestedTheme  = ElementTheme.Dark,
@@ -248,7 +248,7 @@ public partial class DialogService
                 BorderThickness     = new Thickness(1),
                 Child = new TextBlock
                 {
-                    Text       = "RTX HDR Enabled",
+                    Text       = "RTX HDR включён",
                     FontSize   = 12,
                     Foreground = Brush(ResourceKeys.AccentGreenBrush),
                 }
@@ -257,21 +257,21 @@ public partial class DialogService
 
             panel.Children.Add(new TextBlock
             {
-                Text = "RTX HDR uses NVIDIA's driver-level HDR injection to upgrade SDR games to HDR. " +
-                       "It works at the GPU level without injecting DLLs into the game, making it compatible with anti-cheat systems.\n\n" +
-                       "Requires: NVIDIA App installed, Game Filter/Freestyle enabled, RTX GPU, driver 550+.",
+                Text = "RTX HDR использует внедрение HDR на уровне драйвера NVIDIA, превращая SDR-игры в HDR. " +
+                       "Работает на уровне GPU без внедрения DLL в игру, поэтому совместим с античит-системами.\n\n" +
+                       "Требуется: установленный NVIDIA App, включённый Game Filter/Freestyle, GPU RTX, драйвер 550+.",
                 TextWrapping = TextWrapping.Wrap,
                 Foreground   = textColour,
                 FontSize     = 13,
                 LineHeight   = 22,
             });
 
-            AddHyperlinkBlock(panel, "RTX HDR Calibration Guide", manifest?.RtxHdrInfoUrl ?? "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/", linkColour);
+            AddHyperlinkBlock(panel, "Руководство по калибровке RTX HDR", manifest?.RtxHdrInfoUrl ?? "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/", linkColour);
 
             // Still show HDR Gaming Database link if available
             if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
             {
-                AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+                AddHyperlinkBlock(panel, "HDR-анализ — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
             }
 
             return; // Skip regular RenoDX content
@@ -328,19 +328,19 @@ public partial class DialogService
         // ── Wiki page link (NameUrl) as clickable hyperlink ──────────────────
         if (!string.IsNullOrEmpty(result.Url))
         {
-            AddHyperlinkBlock(panel, result.UrlLabel ?? "View wiki page", result.Url, linkColour);
+            AddHyperlinkBlock(panel, result.UrlLabel ?? "Открыть страницу вики", result.Url, linkColour);
         }
 
         // ── "Also available on Nexus" link (Snapshot+Nexus games only) ───────
         if (!card.IsExternalOnly && card.Mod?.SnapshotUrl != null && !string.IsNullOrEmpty(card.NexusUrl))
         {
-            AddHyperlinkBlock(panel, "Also available on Nexus Mods", card.NexusUrl, linkColour);
+            AddHyperlinkBlock(panel, "Также доступно на Nexus Mods", card.NexusUrl, linkColour);
         }
 
         // ── HDR Gaming Database link (supplementary) ─────────────────────────
         if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
         {
-            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+            AddHyperlinkBlock(panel, "HDR-анализ — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
         }
 
         // ── Fallback if no content at all ────────────────────────────────────
@@ -348,7 +348,7 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text       = "No additional RenoDX notes for this game.",
+                Text       = "Дополнительных заметок RenoDX для этой игры нет.",
                 Foreground = dimColour,
                 FontSize   = 13,
             });
@@ -481,7 +481,7 @@ public partial class DialogService
         // ── HDR Gaming Database link (supplementary) ─────────────────────────
         if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
         {
-            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+            AddHyperlinkBlock(panel, "HDR-анализ — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
         }
 
         // ── Fallback if no content at all ────────────────────────────────────
@@ -502,7 +502,7 @@ public partial class DialogService
             {
                 panel.Children.Add(new TextBlock
                 {
-                    Text       = "No additional Luma notes for this game.",
+                    Text       = "Дополнительных заметок Luma для этой игры нет.",
                     Foreground = dimColour,
                     FontSize   = 13,
                 });
@@ -529,7 +529,7 @@ public partial class DialogService
             // ── Standard OptiScaler Compatibility section ─────────────────────
             if (result.OptiScalerCompat != null)
             {
-                BuildOptiScalerSection(panel, "OptiScaler Compatibility",
+                BuildOptiScalerSection(panel, "Совместимость OptiScaler",
                     result.OptiScalerCompat, textColour, linkColour);
             }
 
@@ -540,7 +540,7 @@ public partial class DialogService
                 if (result.OptiScalerCompat != null)
                     panel.Children.Add(new Border { Height = 4 });
 
-                BuildOptiScalerSection(panel, "FSR4 Compatibility",
+                BuildOptiScalerSection(panel, "Совместимость FSR4",
                     result.OptiScalerFsr4Compat, textColour, linkColour);
             }
 
@@ -560,7 +560,7 @@ public partial class DialogService
                 });
                 // Show URL only for the unstructured fallback path (no per-section links)
                 if (!string.IsNullOrEmpty(result.Url))
-                    AddHyperlinkBlock(panel, result.UrlLabel ?? "View wiki page", result.Url, linkColour);
+                    AddHyperlinkBlock(panel, result.UrlLabel ?? "Открыть страницу вики", result.Url, linkColour);
             }
         }
         else
@@ -573,7 +573,7 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text       = "No OptiScaler compatibility data available for this game.",
+                Text       = "Для этой игры нет данных о совместимости с OptiScaler.",
                 Foreground = dimColour,
                 FontSize   = 13,
             });
@@ -593,7 +593,7 @@ public partial class DialogService
     {
         var upscalers = entry.Upscalers.Count > 0
             ? string.Join(", ", entry.Upscalers)
-            : "None listed";
+            : "Не указано";
 
         // Section header with status
         panel.Children.Add(new TextBlock
@@ -639,7 +639,7 @@ public partial class DialogService
             };
             link.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text     = "View details",
+                Text     = "Подробнее",
                 FontSize = 13,
             });
             var para = new Microsoft.UI.Xaml.Documents.Paragraph();
@@ -679,7 +679,7 @@ public partial class DialogService
 
         // ── HDR Gaming Database link (supplementary) ─────────────────────────
         if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
-            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+            AddHyperlinkBlock(panel, "HDR-анализ — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
     }
 
     // ── Release notes content rendering (ReLimiter, Display Commander) ───────────
@@ -766,7 +766,7 @@ public partial class DialogService
         }
 
         // Always show link to the releases page
-        AddHyperlinkBlock(panel, "View all releases on GitHub", releasesPageUrl, linkColour);
+        AddHyperlinkBlock(panel, "Все релизы на GitHub", releasesPageUrl, linkColour);
     }
 
     // ── Shared helpers for dialog content ────────────────────────────────────────
@@ -859,25 +859,25 @@ public partial class DialogService
 
             var hasNotes = !string.IsNullOrWhiteSpace(card.Notes);
             var notesHint = hasNotes
-                ? "\n\nCheck the Info button for any additional compatibility information for this game."
-                : "\n\nNo specific notes are available for this game — check the RenoDX Discord for community reports.";
+                ? "\n\nПроверьте кнопку «Инфо» — там может быть дополнительная информация о совместимости с этой игрой."
+                : "\n\nСпециальных заметок по этой игре нет — загляните в RenoDX Discord за отзывами сообщества.";
 
             var dlg = new ContentDialog
             {
-                Title               = "⚠ UE-Extended Compatibility Warning",
+                Title               = "⚠ Предупреждение о совместимости UE-Extended",
                 Content             = new TextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
                     FontSize     = 13,
-                    Text         = "Not all Unreal Engine games are compatible with UE-Extended.\n\n" +
-                                   "UE-Extended uses a generic injection method that works with most " +
-                                   "Unreal Engine games but may cause crashes or visual issues with others. " +
-                                   "If the game has a named RenoDX mod, that mod is specifically tailored " +
-                                   "for the game and may provide better results." +
+                    Text         = "Не все игры на Unreal Engine совместимы с UE-Extended.\n\n" +
+                                   "UE-Extended использует универсальный метод инъекции, работающий с большинством " +
+                                   "играми на Unreal Engine, но может вызывать вылеты или визуальные проблемы в других. " +
+                                   "Если у игры есть именной мод RenoDX, он специально адаптирован " +
+                                   "для этой игры и может дать лучший результат." +
                                    notesHint,
                 },
-                PrimaryButtonText   = "OK, I understand",
-                SecondaryButtonText = "Don't show again",
+                PrimaryButtonText   = "Хорошо, понятно",
+                SecondaryButtonText = "Больше не показывать",
                 XamlRoot            = _window.Content.XamlRoot,
                 Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
                 RequestedTheme      = ElementTheme.Dark,
@@ -908,19 +908,19 @@ public partial class DialogService
 
             var dlg = new ContentDialog
             {
-                Title = "Administrator Privileges Required",
+                Title = "Требуются права администратора",
                 Content = new TextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
                     FontSize = 13,
                     Text = "Installing the Vulkan ReShade layer requires writing to C:\\ProgramData\\ReShade\\ " +
-                           "and modifying system registry keys, which needs administrator privileges.\n\n" +
-                           "Enable Admin Mode — RHI will always launch elevated (no UAC prompt after setup).\n\n" +
-                           "Restart as Admin — one-time elevated restart to complete this install.",
+                           "и изменение системных ключей реестра, что требует прав администратора.\n\n" +
+                           "Включить режим администратора — RHI всегда будет запускаться с повышенными правами (после настройки запрос UAC не появляется).\n\n" +
+                           "Перезапуск от администратора — разовый запуск с повышенными правами для завершения установки.",
                 },
-                PrimaryButtonText = "Enable Admin Mode",
-                SecondaryButtonText = "Restart as Admin",
-                CloseButtonText = "Cancel",
+                PrimaryButtonText = "Включить режим администратора",
+                SecondaryButtonText = "Перезапуск от администратора",
+                CloseButtonText = "Отмена",
                 XamlRoot = _window.Content.XamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 RequestedTheme = ElementTheme.Dark,
@@ -958,7 +958,7 @@ public partial class DialogService
     private static void CreateAdminTaskAndRestart()
     {
         var exePath = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
-        var taskName = "RHI Admin Mode";
+        var taskName = "Режим администратора RHI";
 
         // Create the task (triggers UAC)
         var createArgs = $"/Create /TN \"{taskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONCE /ST 00:00 /SD 01/01/2000 /RL HIGHEST /F";

@@ -1,92 +1,92 @@
-# Nexus Mods API Approval — Response & Action Plan
+# Одобрение Nexus Mods API — ответ и план действий
 
-## Their Demands
+## Их требования
 
-> 1. Your manager appears to have credential leakage. The CrashReporter.cs:100-110 logs permanently to %LocalAppData%\RHI\logs containing a lot of information openly such as user IDs which it should not.
-> 2. Automated downloads. The AUP expressly objects to API keys being used "without the action being initiated by the user." A user opt-in would be sufficient.
-> 3. There appears to be some references to GraphQL in your code. Is that intended?
-
----
-
-## Our Response to Each Point
-
-### 1. Credential Leakage in Session Logs
-
-**Their concern:** Session logs at `%LocalAppData%\RHI\logs\session_*.txt` contain full file paths (e.g. `C:\Users\Mark\...`, Steam `userdata\{steamId}\...` paths) and Xbox AUMIDs. Logs are written by `CrashReporter.Log()` which calls `AppendSessionLog()` at lines 100–110 of `CrashReporter.cs`.
-
-**Note:** These are local logs stored on the user's own machine and never transmitted anywhere. However Nexus consider logging this data at all to be a privacy concern.
-
-**Our fix (deferred to next update):** Sanitise paths before writing to the session log:
-- Replace `C:\Users\{username}\` → `%USERPROFILE%\` 
-- Replace full Steam `userdata\{numericId}` paths → `userdata\[userid]\`
-- Truncate or mask Xbox AUMIDs — log only the game name, not the full package family string
-- Implementation: add a `SanitisePath(string entry)` static helper to `CrashReporter.cs` that runs a regex substitution before `AppendSessionLog` is called
-
-**Files to change:** `g:\RDXC\RenoDXCommander\Services\CrashReporter.cs`
+> 1. Похоже, у вашего менеджера утечка учётных данных. CrashReporter.cs:100-110 перманентно пишет в %LocalAppData%\RHI\logs много открытой информации, например пользовательские ID, чего быть не должно.
+> 2. Автоматические скачивания. AUP прямо возражает против использования API-ключей «без действия, инициированного пользователем». Достаточно согласия пользователя (opt-in).
+> 3. В вашем коде есть упоминания GraphQL. Это намеренно?
 
 ---
 
-### 2. Automated API Calls Without User Action
+## Наш ответ по каждому пункту
 
-**Their concern:** `NexusUpdateService.CheckForUpdatesAsync` (which POSTs to `api.nexusmods.com/v2/graphql`) fires automatically:
-- On every app startup, via `RunBackgroundScanAndMergeAsync`
-- Every 4 hours via the periodic update timer in `MainViewModel.Update.cs`
+### 1. Утечка учётных данных в логах сессий
 
-The AUP requires API usage to be initiated by the user. A user opt-in toggle is sufficient.
+**Их замечание:** логи сессий в `%LocalAppData%\RHI\logs\session_*.txt` содержат полные пути файлов (например, `C:\Users\Mark\...`, пути `userdata\{steamId}\...` Steam) и AUMID Xbox. Логи пишет `CrashReporter.Log()`, вызывающий `AppendSessionLog()` в строках 100–110 `CrashReporter.cs`.
 
-**Our fix (deferred to next update):**
+**Примечание:** это локальные логи на машине самого пользователя, никуда не передаются. Но Nexus считает, что само логирование таких данных — вопрос приватности.
 
-Add a **"Background Update Checks" combo box** next to the existing Check for Updates button in Settings. Two states:
-- **On** (default): current behaviour — full update checks on startup and every 4 hours, including Nexus GraphQL calls
-- **Minimal**: manifest files only on startup/timer (RHI manifest, DLSS manifest, rhi-repo DB). All component update checks (RenoDX addons, ReShade, RE Framework, ReLimiter, DC, OptiScaler, Nexus) only fire when the user explicitly clicks Refresh or Update All
+**Наш фикс (отложен до следующего обновления):** чистить пути перед записью в лог сессии:
+- Заменять `C:\Users\{username}\` → `%USERPROFILE%\` 
+- Заменять полные пути `userdata\{numericId}` Steam → `userdata\[userid]\`
+- Обрезать или маскировать AUMID Xbox — в лог только имя игры, без полной строки пакета
+- Реализация: добавить в `CrashReporter.cs` статический хелпер `SanitisePath(string entry)`, выполняющий regex-замену перед вызовом `AppendSessionLog`
 
-The Nexus GraphQL calls specifically are gated by the new setting. When set to Minimal, they only run on explicit user action.
-
-**Files to change:**
-- `g:\RDXC\RenoDXCommander\ViewModels\SettingsViewModel.cs` — add `BackgroundUpdateChecks` property (persisted)
-- `g:\RDXC\RenoDXCommander\ViewModels\MainViewModel.Update.cs` — gate `CheckForUpdatesAsync` and Nexus check behind setting
-- `g:\RDXC\RenoDXCommander\SettingsHandler.cs` — add combo box to Settings UI next to Check for Updates button
+**Какие файлы менять:** `g:\RDXC\RenoDXCommander\Services\CrashReporter.cs`
 
 ---
 
-### 3. GraphQL Usage
+### 2. Автоматические вызовы API без действия пользователя
 
-**Their question:** Is the GraphQL usage intentional?
+**Их замечание:** `NexusUpdateService.CheckForUpdatesAsync` (POST на `api.nexusmods.com/v2/graphql`) срабатывает автоматически:
+- При каждом запуске приложения через `RunBackgroundScanAndMergeAsync`
+- Каждые 4 часа по периодическому таймеру обновлений в `MainViewModel.Update.cs`
 
-**Our answer:** Yes. RHI uses the Nexus Mods GraphQL v2 API (`api.nexusmods.com/v2/graphql`) for:
-- **Update detection**: querying `legacyModsByDomain` to check if a newer mod version is available (compares installed version string against the latest `version` field on the node)
-- **Mod summaries**: fetching the `summary` field for the Info button dialog
+AUP требует, чтобы использование API инициировалось пользователем. Достаточно переключателя opt-in.
 
-No API key is used. The GraphQL endpoint is called anonymously. Nexus confirmed in earlier correspondence that anonymous GraphQL usage is permitted.
+**Наш фикс (отложен до следующего обновления):**
 
-**Confirm in reply:** State explicitly that GraphQL is intentional and used for update detection and mod summary display. No authentication, no API key.
+Добавить **комбобокс «Фоновые проверки обновлений»** рядом с существующей кнопкой проверки обновлений в настройках. Два состояния:
+- **Вкл** (по умолчанию): текущее поведение — полные проверки обновлений при запуске и каждые 4 часа, включая вызовы Nexus GraphQL
+- **Минимальный**: только файлы манифестов при запуске/по таймеру (манифест RHI, манифест DLSS, база rhi-repo). Все проверки обновлений компонентов (аддоны RenoDX, ReShade, RE Framework, ReLimiter, DC, OptiScaler, Nexus) срабатывают только при явном нажатии «Обновить» или «Обновить всё»
+
+Вызовы Nexus GraphQL конкретно ограждаются новой настройкой. В режиме «Минимальный» они выполняются только по явному действию пользователя.
+
+**Какие файлы менять:**
+- `g:\RDXC\RenoDXCommander\ViewModels\SettingsViewModel.cs` — добавить свойство `BackgroundUpdateChecks` (с сохранением)
+- `g:\RDXC\RenoDXCommander\ViewModels\MainViewModel.Update.cs` — оградить `CheckForUpdatesAsync` и проверку Nexus настройкой
+- `g:\RDXC\RenoDXCommander\SettingsHandler.cs` — добавить комбобокс в UI настроек рядом с кнопкой проверки обновлений
 
 ---
 
-## Draft Reply to Nexus
+### 3. Использование GraphQL
 
-> Hi,
+**Их вопрос:** использование GraphQL намеренно?
+
+**Наш ответ:** Да. RHI использует GraphQL v2 API Nexus Mods (`api.nexusmods.com/v2/graphql`) для:
+- **Определения обновлений**: запрос `legacyModsByDomain`, чтобы проверить, есть ли новая версия мода (сравнивает строку установленной версии с последним полем `version` на узле)
+- **Описаний модов**: получение поля `summary` для диалога кнопки «Инфо»
+
+API-ключ не используется. GraphQL-эндпоинт вызывается анонимно. Nexus ранее в переписке подтвердил, что анонимное использование GraphQL разрешено.
+
+**Подтвердить в ответе:** прямо указать, что GraphQL намеренный и используется для определения обновлений и показа описаний модов. Без аутентификации, без API-ключа.
+
+---
+
+## Черновик ответа Nexus
+
+> Привет,
 >
-> Thank you for the detailed feedback. Here's our response to each point:
+> Спасибо за подробный отклик. Отвечаем по каждому пункту:
 >
-> **1. Session logs:** You're correct that our session logs write full file paths including usernames and AUMIDs to the user's local AppData folder. These logs are never transmitted outside the user's machine, but we understand your concern about logging this data at all. We will sanitise paths in the session log before the next release — replacing usernames with %USERPROFILE%, masking Steam user IDs in paths, and truncating Xbox AUMIDs to the game name only.
+> **1. Логи сессий:** Вы правы, наши логи сессий пишут полные пути файлов, включая имена пользователей и AUMID, в локальную папку AppData пользователя. Эти логи никогда не передаются за пределы машины пользователя, но мы понимаем ваше опасение насчёт самого факта логирования этих данных. Перед следующим релизом мы будем чистить пути в логе сессии — заменять имена пользователей на %USERPROFILE%, маскировать ID пользователей Steam в путях и обрезать AUMID Xbox до имени игры.
 >
-> **2. Automated API calls:** We will add a "Background Update Checks" setting that defaults to On (current behaviour) but can be set to Minimal, which restricts automatic background calls to manifest fetches only. All Nexus GraphQL calls in Minimal mode will only fire when the user explicitly initiates a Refresh or Update All action. This opt-in toggle will be prominently placed next to the existing update check controls.
+> **2. Автоматические вызовы API:** Мы добавим настройку «Фоновые проверки обновлений», по умолчанию «Вкл» (текущее поведение), которую можно поставить в «Минимальный» — тогда автоматические фоновые вызовы ограничатся только загрузкой манифестов. Все вызовы Nexus GraphQL в минимальном режиме будут срабатывать только при явном действии пользователя: «Обновить» или «Обновить всё». Этот переключатель opt-in будет заметно расположен рядом с существующими элементами проверки обновлений.
 >
-> **3. GraphQL:** Yes, this is intentional. We use the Nexus Mods GraphQL v2 API anonymously (no API key) for two purposes: checking whether a newer version of an installed mod is available, and fetching mod summaries for the in-app info dialog. We are not using any authenticated endpoints.
+> **3. GraphQL:** Да, это намеренно. Мы используем GraphQL v2 API Nexus Mods анонимно (без API-ключа) для двух целей: проверка доступности новой версии установленного мода и получение описаний модов для диалога информации в приложении. Аутентифицированные эндпоинты мы не используем вовсе.
 >
-> We will implement both fixes before our next public release and can share the updated code for review at that point.
+> Оба исправления будут реализованы до следующего публичного релиза; в этот момент мы можем предоставить обновлённый код на проверку.
 >
-> Kind regards,
+> С уважением,
 > Mark
 
 ---
 
-## Implementation Checklist (Next Update)
+## Чек-лист реализации (следующее обновление)
 
-- [ ] `CrashReporter.cs` — add `SanitisePath()` helper, apply to `Log()` before `AppendSessionLog()`
-- [ ] `SettingsViewModel.cs` — add `BackgroundUpdateChecks` string property ("On" / "Minimal"), load/save
-- [ ] `MainViewModel.Update.cs` — gate `CheckForUpdatesAsync` Nexus path behind `Settings.BackgroundUpdateChecks == "On"`
-- [ ] `SettingsHandler.cs` — add ComboBox next to Check for Updates button, wire to `BackgroundUpdateChecks`
-- [ ] Reply to Nexus with the draft above
-- [ ] Share updated code with Nexus for review before next public release
+- [ ] `CrashReporter.cs` — добавить хелпер `SanitisePath()`, применять в `Log()` перед `AppendSessionLog()`
+- [ ] `SettingsViewModel.cs` — добавить строковое свойство `BackgroundUpdateChecks` («On» / «Minimal»), загрузка/сохранение
+- [ ] `MainViewModel.Update.cs` — оградить Nexus-путь `CheckForUpdatesAsync` условием `Settings.BackgroundUpdateChecks == "On"`
+- [ ] `SettingsHandler.cs` — добавить ComboBox рядом с кнопкой проверки обновлений, привязать к `BackgroundUpdateChecks`
+- [ ] Ответить Nexus по черновику выше
+- [ ] Передать обновлённый код Nexus на проверку до следующего публичного релиза

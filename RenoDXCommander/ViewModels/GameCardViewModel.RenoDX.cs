@@ -14,12 +14,12 @@ public partial class GameCardViewModel
         get
         {
             if (IsInstalling) return "Installing...";
-            if (IsRtxHdrEnabled) return "Configure RTX HDR";
+            if (IsRtxHdrEnabled) return "Настроить RTX HDR";
             if (!IsRsInstalled && !ExcludeFromUpdateAllReShade && Mod?.SnapshotUrl != null && !IsExternalOnly)
-                return "⚠  ReShade required";
+                return "⚠  Требуется ReShade";
             // No mod available and nothing manually installed
             if (Mod?.SnapshotUrl == null && !IsExternalOnly && string.IsNullOrEmpty(InstalledAddonFileName))
-                return "No RenoDX mod available";
+                return "Мод RenoDX недоступен";
             var name = UseUeExtended ? "UE-Extended" : "RenoDX";
             return Status == GameStatus.UpdateAvailable ? $"⬆  Update {name}"
                  : Status == GameStatus.Installed       ? $"↺  Reinstall {name}"
@@ -31,10 +31,10 @@ public partial class GameCardViewModel
 
     public string GenericModLabel => IsGenericMod
         ? (EngineHint.Contains("Unity")
-           ? "Generic Unity"
-           : (IsNativeHdrGame ? "UE Extended Native HDR"
+           ? "Универсальный Unity"
+           : (IsNativeHdrGame ? "UE Extended нативный HDR"
               : (IsManifestUeExtended || UseUeExtended) ? "UE Extended"
-              : "Generic UE"))
+              : "Универсальный UE"))
         : "";
 
     // Update button colours — purple when an update is available, normal blue otherwise
@@ -43,7 +43,7 @@ public partial class GameCardViewModel
     public string InstallBtnBorderBrush => Status == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     // UE-Extended toggle label and styling
-    public string UeExtendedLabel      => UseUeExtended ? "⚡ UE Extended" : "⚡ Standard UE";
+    public string UeExtendedLabel      => UseUeExtended ? "⚡ UE Extended" : "⚡ Обычный UE";
     public string UeExtendedBackground => UseUeExtended ? "#201838" : "#1E242C";
     public string UeExtendedForeground => UseUeExtended ? "#B898E8" : "#6B7A8E";
     public string UeExtendedBorderBrush => UseUeExtended ? "#3A2860" : "#283240";
@@ -73,13 +73,13 @@ public partial class GameCardViewModel
             if (IsExternalOnly)
             {
                 // External-only: no RenoDX to install, only ReShade
-                if (RsStatus == GameStatus.UpdateAvailable) return "⬆  Update ReShade";
-                if (RsStatus == GameStatus.Installed) return "↺  Reinstall ReShade";
-                return "⬇  Install ReShade";
+                if (RsStatus == GameStatus.UpdateAvailable) return "⬆  Обновить ReShade";
+                if (RsStatus == GameStatus.Installed) return "↺  Переустановить ReShade";
+                return "⬇  Установить ReShade";
             }
-            if (AnyUpdateAvailable) return "⬆  Update All";
-            if (Status == GameStatus.Installed) return "↺  Reinstall All";
-            return "⬇  Install All";
+            if (AnyUpdateAvailable) return "⬆  Обновить всё";
+            if (Status == GameStatus.Installed) return "↺  Переустановить всё";
+            return "⬇  Установить всё";
         }
     }
 
@@ -114,9 +114,9 @@ public partial class GameCardViewModel
         : Status == GameStatus.Installed       ? "#5ECB7D"
         : Mod?.SnapshotUrl != null             ? "#A0AABB" : "#404858";
     public string RdxShortAction => IsInstalling ? "…"
-        : Status == GameStatus.UpdateAvailable ? "⬆ Update"
-        : Status == GameStatus.Installed       ? "↺ Reinstall"
-        : "⬇ Install";
+        : Status == GameStatus.UpdateAvailable ? "⬆ Обновить"
+        : Status == GameStatus.Installed       ? "↺ Переустановить"
+        : "⬇ Установить";
 
     // Negated installing flag — used for IsEnabled bindings to avoid converter in DataTemplate
     public bool IsNotInstalling => !IsInstalling;
@@ -145,7 +145,7 @@ public partial class GameCardViewModel
     // ── External link label: "Update" when Nexus update available, "Redownload" when installed ──
     public string ExternalDisplayLabel =>
         Status == GameStatus.UpdateAvailable && IsRdxInstalled
-            ? "⬆  Update RenoDX"
+            ? "⬆  Обновить RenoDX"
             : IsRdxInstalled && !string.IsNullOrEmpty(ExternalLabel)
                 ? "↺  " + ExternalLabel.Replace("Download", "Redownload")
                 : "⬇  " + ExternalLabel;

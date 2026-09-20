@@ -32,7 +32,7 @@ public partial class DetailPanelBuilder
         });
 
         // Version ComboBox
-        var versionLabel = new TextBlock { Text = "Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+        var versionLabel = new TextBlock { Text = "Версия", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
         col.Children.Add(versionLabel);
 
         // Build items list with (Default) marker on the game's original/default version
@@ -121,7 +121,7 @@ public partial class DetailPanelBuilder
         };
 
         if (driverOverrideActive)
-            ToolTipService.SetToolTip(versionCombo, "NVIDIA Override is active — the driver is injecting its own latest DLL for this game. Select any other version to disable the override and deploy that version instead.");
+            ToolTipService.SetToolTip(versionCombo, "Активно переопределение NVIDIA — драйвер подставляет собственную новейшую DLL для этой игры. Выберите любую другую версию, чтобы отключить переопределение и развернуть выбранную.");
         else if (onDriverOverrideToggled != null)
             ToolTipService.SetToolTip(versionCombo, "Selects which DLL version is copied into the game folder. Default restores the original game DLL. Custom uses your own file from %LocalAppData%\\RHI\\Custom\\DLSS\\. NVIDIA Override lets the driver inject its own latest version instead of a file on disk — equivalent to enabling DLSS Override in NVIDIA App or Profile Inspector.");
         else
@@ -136,7 +136,7 @@ public partial class DetailPanelBuilder
             var selected = versionCombo.SelectedItem as string;
             if (string.IsNullOrEmpty(selected)) return;
 
-            if (selected == "NVIDIA Override")
+            if (selected == "Переопределение NVIDIA")
             {
                 // Enable driver DLL override — no DLL swap needed
                 onDriverOverrideToggled?.Invoke(true);
@@ -144,7 +144,7 @@ public partial class DetailPanelBuilder
             }
 
             // If we were on NVIDIA Override and switched away, disable it first
-            if (driverOverrideActive || (ev.RemovedItems.Count > 0 && ev.RemovedItems[0] as string == "NVIDIA Override"))
+            if (driverOverrideActive || (ev.RemovedItems.Count > 0 && ev.RemovedItems[0] as string == "Переопределение NVIDIA"))
                 onDriverOverrideToggled?.Invoke(false);
 
             versionCombo.IsEnabled = false;
@@ -166,7 +166,7 @@ public partial class DetailPanelBuilder
         // Preset ComboBox (only for SR, RR, FG)
         if (presets != null && isPresent)
         {
-            col.Children.Add(new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+            col.Children.Add(new TextBlock { Text = "Пресет", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
 
             var presetItems = presets.Select(p => p.Name).ToList();
             int presetIdx = 0;
@@ -187,9 +187,9 @@ public partial class DetailPanelBuilder
             // Add tooltip explaining presets
             string presetTooltip = label switch
             {
-                "DLSS Super Resolution" => "Override the DLSS upscaling model. J/K use the 1st-gen transformer (DLSS 4.0). L/M use the 2nd-gen transformer (DLSS 4.5) with better temporal stability. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
-                "Ray Reconstruction" => "Override the Ray Reconstruction denoising model. Higher presets are newer model iterations. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
-                "Frame Generation" => "Override the Frame Generation interpolation model. Higher presets are newer model iterations. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
+                "Суперразрешение DLSS (SR)" => "Переопределить модель масштабирования DLSS. J/K — трансформер 1-го поколения (DLSS 4.0). L/M — трансформер 2-го поколения (DLSS 4.5) с лучшей временной стабильностью. «Рекомендовано NVIDIA» использует выбор пресета по разрешению от NVIDIA.",
+                "Ray Reconstruction" => "Переопределить модель шумоподавления Ray Reconstruction. Пресеты выше — более новые итерации модели. «Рекомендовано NVIDIA» использует выбор пресета по разрешению от NVIDIA.",
+                "Генерация кадров" => "Переопределить модель интерполяции генерации кадров. Пресеты выше — более новые итерации модели. «Рекомендовано NVIDIA» использует выбор пресета по разрешению от NVIDIA.",
                 _ => ""
             };
             if (!string.IsNullOrEmpty(presetTooltip))
@@ -210,7 +210,7 @@ public partial class DetailPanelBuilder
         // Render Scale ComboBox (only for SR and RR)
         if (onRenderScaleSelected != null && isPresent)
         {
-            col.Children.Add(new TextBlock { Text = "Render Scale", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+            col.Children.Add(new TextBlock { Text = "Масштаб рендеринга", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
             var rsOptions = DlssPresetService.RenderScaleOptions;
             var rsItems = rsOptions.Select(o => o.Name).ToList();
 
@@ -239,7 +239,7 @@ public partial class DetailPanelBuilder
                 IsEnabled = isPresent,
             };
             ToolTipService.SetToolTip(rsCombo,
-                "Override the DLSS render resolution scale. Off = game controls the scale.\nNamed presets set a fixed percentage. Custom lets you enter any value from 33-100%.");
+                "Переопределить масштаб рендеринга DLSS. Выкл — масштабом управляет игра.\nИменные пресеты задают фиксированный процент. «Свой» позволяет ввести любое значение от 33 до 100%.");
 
             bool rsInit = true;
             rsCombo.SelectionChanged += (s, ev) =>

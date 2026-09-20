@@ -24,26 +24,26 @@ public sealed partial class MainWindow
 
         // Welcome section
         panel.Children.Add(BuildFaqSection(
-            null, "Welcome to RHI", "AccentTealBrush",
-            "RHI auto-detects your games and lets you install HDR mods, shaders, frame limiters, and manage NVIDIA driver settings — all from one place. Here's how to get started.",
+            null, "Добро пожаловать в RHI", "AccentTealBrush",
+            "RHI сам находит ваши игры и позволяет устанавливать HDR-моды, шейдеры, ограничители FPS и управлять настройками драйвера NVIDIA — всё в одном месте. Вот с чего начать.",
             null));
 
         // Step 1: Select a Game
         panel.Children.Add(BuildFaqStep(1,
-            "Select a Game",
-            "Your games are listed in the sidebar on the left. Click any game to see its details and available actions. Use the filter chips (All Games, Installed, Unreal, etc.) and search box to find specific games.",
+            "Выберите игру",
+            "Игры перечислены в боковой панели слева. Нажмите на игру, чтобы увидеть её подробности и доступные действия. Для поиска используйте фильтры (Все игры, Установленные, Unreal и т.д.) и строку поиска.",
             "Tip: Double-click a game to launch it directly. Drag and drop a game's .exe file onto RHI to add games not auto-detected."));
 
         // Step 2: Install ReShade
         panel.Children.Add(BuildFaqStep(2,
-            "Install ReShade",
-            "ReShade is required for RenoDX HDR mods to work. Click 'Install ReShade' on the game's detail panel. RHI automatically downloads and installs the correct version with full addon support.",
+            "Установить ReShade",
+            "Для работы HDR-модов RenoDX нужен ReShade. Нажмите «Установить ReShade» на панели игры. RHI автоматически скачает и установит нужную версию с полной поддержкой аддонов.",
             "ReShade version can be changed per-game via the game overrides section — choose Stable, Nightly, Legacy, or a custom ReShade DLL.\nVulkan Games: Vulkan games (like Doom Eternal) require admin privileges. RHI will prompt for elevation when needed.\nDrag and drop ReShade preset files (.ini) onto a game to install them automatically."));
 
         // Step 3a: RenoDX
         panel.Children.Add(BuildFaqSection(
             "3a", "RenoDX", "AccentTealBrush",
-            "RenoDX is RHI's primary HDR mod framework. The RenoDX row on each game shows what's available:\n\n• Named mods — game-specific HDR mods from the RenoDX wiki, made by the community.\n• UE-Extended — for Unreal Engine games without a named mod. Provides native HDR output via a generic UE addon.\n• Unity addon — same idea for Unity Engine games. Provides HDR output for Unity games without a named mod.\n• RTX HDR — if no mod is available, you can enable NVIDIA's driver-level SDR-to-HDR conversion via the RenoDX ⚙ cog.",
+            "RenoDX",
             "The cog icon next to RenoDX opens advanced settings: Peak Nits, UE-Extended toggle, and RTX HDR configuration.\nEngine.ini Settings (Unreal Engine games only): toggle HDR keys and LUT update frequency written to the game's Engine.ini for accurate HDR rendering.\nFor games not on the wiki, drag and drop an .addon64 file from the RenoDX Discord directly onto the game in RHI."));
 
         // Step 3b: Luma
@@ -54,87 +54,87 @@ public sealed partial class MainWindow
 
         // Step 4: Choose Shaders
         panel.Children.Add(BuildFaqStep(4,
-            "Choose Shaders (Optional)",
-            "Click the 'Shaders/Addons' button in the toolbar, then 'Global Shaders' to select shader packs. Lilium's HDR shader pack is selected by default. These apply to all games with ReShade installed.\n\nExpand any pack to pick individual shaders — the pack shows a dash when only some files are selected. Use the Profiles panel on the right to save, load, rename, and share named shader selections. Export a profile as a zip to share via Discord.",
-            "Tip: Per-game shaders can be set using the Shaders button on each game's detail card (when ReShade is installed).\nTip: Use Expand All / Collapse All to browse all packs at once. Deselect All clears the whole selection. Export copies a zip of your selected shaders to the clipboard — paste directly into Discord to share."));
+            "Выбрать шейдеры (необязательно)",
+            "Нажмите кнопку «Шейдеры/Аддоны» на панели инструментов, затем «Глобальные шейдеры», чтобы выбрать наборы шейдеров. По умолчанию выбран HDR-набор Lilium. Он применяется ко всем играм с установленным ReShade.\n\nРазверните набор, чтобы выбрать отдельные шейдеры — если отмечены лишь некоторые файлы, у набора будет прочерк. Панель «Профили» справа позволяет сохранять, загружать, переименовывать и делиться именными подборками шейдеров. Экспортируйте профиль в zip, чтобы поделиться через Discord.",
+            "Совет: шейдеры для отдельной игры задаются кнопкой «Шейдеры» на её карточке (если ReShade установлен).\nСовет: «Развернуть все» / «Свернуть все» — просмотреть все наборы сразу. «Снять всё» очищает выбор. «Экспорт» копирует zip выбранных шейдеров в буфер обмена — вставьте прямо в Discord, чтобы поделиться."));
 
         // Step 5: DOF Fix
         panel.Children.Add(BuildFaqStep(5,
-            "DOF Fix (Recommended for UE5)",
-            "DOF Fix backports a depth-of-field rendering fix from Unreal Engine 5.7 to games running on UE 5.0–5.6. It appears in the Recommended section on the game's detail panel when supported. Install it alongside RenoDX for the best result.",
-            "DOF Fix only shows on eligible UE 5.0–5.6 games — it won't appear on UE4 or UE 5.7+ titles.\nInstall and uninstall work the same as any other component."));
+            "DOF Fix (рекомендуется для UE5)",
+            "DOF Fix переносит исправление рендеринга глубины резкости из Unreal Engine 5.7 в игры на UE 5.0–5.6. Для поддерживаемых игр появляется в разделе «Рекомендуемое» на панели игры. Для лучшего результата устанавливайте вместе с RenoDX.",
+            "DOF Fix"));
 
         // Step 6: Frame Limiters
         panel.Children.Add(BuildFaqStep(6,
-            "Frame Limiters (Optional)",
-            "ReLimiter and Display Commander are ReShade addons that provide precise frame limiting for VRR displays. Install them from the game's detail panel. ReLimiter is recommended as it's developed by the same team as RHI. Set your target FPS in Settings, per-game via the cog icon, or directly in-game.",
-            "VRR cap presets by refresh rate (leave headroom below max for smooth VRR):\n• 60Hz → 59 FPS\n• 120Hz → 116 FPS\n• 144Hz → 138 FPS\n• 165Hz → 157 FPS\n• 240Hz → 224 FPS\n• 360Hz → 324 FPS\nThese values are pre-configured in RHI's FPS dropdown menus."));
+            "Ограничители FPS (необязательно)",
+            "ReLimiter и Display Commander — аддоны ReShade с точным ограничением частоты кадров для VRR-дисплеев. Устанавливаются с панели игры. Рекомендуется ReLimiter — его развивает та же команда, что и RHI. Целевой FPS задаётся в настройках, для каждой игры через значок ⚙ или прямо в игре.",
+            "Пресеты лимитов VRR по частоте обновления (с запасом ниже максимума для плавного VRR):\n• 60 Гц → 59 FPS\n• 120 Гц → 116 FPS\n• 144 Гц → 138 FPS\n• 165 Гц → 157 FPS\n• 240 Гц → 224 FPS\n• 360 Гц → 324 FPS\nЭти значения предзаданы в выпадающих списках FPS в RHI."));
 
         // Step 7: DLSS/Streamline
         panel.Children.Add(BuildFaqStep(7,
-            "Update DLSS / Streamline (Optional)",
-            "Games with DLSS or Streamline DLLs have a dedicated section on the detail panel showing version info. Click to update to the latest version. Using the newest versions is recommended for best performance and quality. RHI backs up originals automatically so you can restore anytime.",
-            "When new DLSS or Streamline versions release, they will appear in RHI automatically. Set your default DLSS preset in Settings. Per-game presets can be changed in the DLSS section on each game's detail panel."));
+            "Обновить DLSS / Streamline (необязательно)",
+            "Игры с DLL DLSS или Streamline имеют отдельный раздел на панели игры с информацией о версиях. Нажмите, чтобы обновить до последней версии. Новейшие версии рекомендуются для лучшей производительности и качества. RHI автоматически резервирует оригиналы, так что их можно вернуть в любой момент.",
+            "Новые версии DLSS и Streamline появляются в RHI автоматически. Пресет DLSS по умолчанию задаётся в настройках. Пресеты отдельных игр меняются в разделе DLSS на панели каждой игры."));
 
         // OptiScaler
         panel.Children.Add(BuildFaqSpecialSection("⚙", "AccentAmberBrush",
-            "OptiScaler (Optional)",
+            "OptiScaler (необязательно)",
             "OptiScaler replaces DLSS/XeSS with alternative upscalers (FSR, XeSS, Intel Arc) or adds/patches frame generation on any GPU. Install it from the game's detail panel when a game has OptiScaler support.\n\nThe ⚙ cog on the OptiScaler row opens per-game settings. For the Nightly build channel these include:\n• Streamline/DLSS Enabler — deploys Streamline and DLSS Enabler to the game folder for DLSS Frame Generation support.\n• Frame Generation — set FG Input, FG Output, FG Nvngx Override, and HUD Fix.\n• Additional Settings — DLSS SR/RR preset, render scale, and flip metering.\n• Presets — save and apply named setting presets across games.\n• Engine.ini Settings (Unreal Engine games) — Dilated Motion Vectors, FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin.",
             "Switch between Stable and Nightly channels per game in the cog — Nightly adds frame generation and additional settings.\nOptiScaler and ReShade can coexist. If you see crashes with both installed, try renaming ReShade to a different DLL name using DLL Naming Overrides in the Game Overrides panel.\nGPU type and DLSS input settings (AMD/Intel only) are configured in Settings → OptiScaler Settings before installing.\nThe 'Deploy OptiScaler.ini' button in the cog redeploys your configured INI template to the game folder."));
 
         // Settings Overview
         panel.Children.Add(BuildFaqInfoSection("Settings",
-            "Click 'Settings' in the toolbar to configure defaults for all games:",
+            "Нажмите «Настройки» на панели инструментов, чтобы задать значения по умолчанию для всех игр:",
             new[]
             {
-                "ReLimiter FPS: Default frame rate target",
-                "DLSS Preset: Default upscaling preset",
-                "NVIDIA Driver Settings: VSync, Low Latency, Power Mode",
-                "Peak Nits: Your display's peak brightness for HDR",
-                "ReShade Hotkeys: Customize overlay and screenshot keys"
+                "ReLimiter FPS: целевая частота кадров по умолчанию",
+                "Пресет DLSS: пресет масштабирования по умолчанию",
+                "Настройки драйвера NVIDIA: VSync, Low Latency, режим питания",
+                "Пиковая яркость: пиковая яркость вашего дисплея для HDR",
+                "Горячие клавиши ReShade: настройка клавиш оверлея и скриншотов"
             }));
 
         // NVIDIA Driver Settings
-        panel.Children.Add(BuildFaqInfoSection("NVIDIA Driver Settings",
-            "RHI can manage per-game NVIDIA driver profiles. These settings are available directly on each game's detail panel:",
+        panel.Children.Add(BuildFaqInfoSection("Настройки драйвера NVIDIA",
+            "RHI умеет управлять профилями драйвера NVIDIA для каждой игры. Эти настройки доступны прямо на панели каждой игры:",
             new[]
             {
-                "VSync: On, Off, or Adaptive (Fast Sync)",
-                "Low Latency Mode: Ultra, On, or Off",
-                "Smooth Motion: Multi Frame Generation (per-game only)",
-                "ReBAR: Resizable BAR (requires admin)"
+                "VSync: вкл, выкл или адаптивный (Fast Sync)",
+                "Режим Low Latency: Ultra, вкл или выкл",
+                "Smooth Motion: мульти-генерация кадров (только для отдельных игр)",
+                "ReBAR: Resizable BAR (нужны права администратора)"
             },
-            "Global defaults for VSync, Low Latency, and Power Mode are set in Settings. Per-game overrides are configured directly on each game's detail panel."));
+            "Значения по умолчанию для VSync, Low Latency и режима питания задаются в настройках. Переопределения для отдельных игр настраиваются прямо на панели каждой игры."));
 
         // Vulkan Games
         panel.Children.Add(BuildFaqSpecialSection("V", "AccentPurpleBrush",
-            "Vulkan Games",
+            "Vulkan-игры",
             "Vulkan games (shown with a 'Vulkan' badge) use a global ReShade layer installed to C:\\ProgramData\\ReShade. This requires administrator privileges. When you install ReShade on a Vulkan game, RHI will prompt for elevation.",
-            "All Vulkan games share the same ReShade installation. Updating ReShade on one Vulkan game updates it for all.\nPer-game RenoDX addons and shaders are still installed individually to each game folder."));
+            "Все Vulkan-игры используют общую установку ReShade. Обновление ReShade в одной Vulkan-игре обновляет его для всех.\nИндивидуальные аддоны RenoDX и шейдеры по-прежнему устанавливаются в папку каждой игры отдельно."));
 
         // Adding Games Manually
         panel.Children.Add(BuildFaqSpecialSection("+", "AccentAmberBrush",
-            "Adding Games Manually",
+            "Добавление игр вручную",
             "If a game isn't auto-detected, drag and drop its .exe file directly onto the RHI window. RHI will add it to your library and detect its engine type.",
             "You can also drag .addon64 files from the RenoDX Discord onto any game to install mods not yet on the wiki."));
 
         // Updating Everything
         panel.Children.Add(BuildFaqSpecialSection("↑", "AccentGreenBrush",
-            "Updating Everything",
-            "Click 'Update All' in the toolbar to update all installed components across all games at once. This includes ReShade, RenoDX mods, ReLimiter, Display Commander, and more.",
-            "Games with available updates show a green dot in the sidebar. Configure which components are included in 'Update All' from Settings."));
+            "Обновление всего",
+            "Нажмите «Обновить всё» на панели инструментов, чтобы разом обновить все установленные компоненты во всех играх. Это включает ReShade, моды RenoDX, ReLimiter, Display Commander и многое другое.",
+            "Игры с доступными обновлениями помечаются зелёной точкой в боковой панели. Какие компоненты входят в «Обновить всё», настраивается в параметрах."));
 
         // Troubleshooting - Full Refresh
         panel.Children.Add(BuildFaqSpecialSection("↻", "AccentBlueBrush",
-            "Troubleshooting: Full Refresh",
-            "If games are missing, install locations have changed, or DLSS/Streamline files have been added or removed, use 'Full Refresh' in Settings to rescan your entire library from scratch.",
-            "Full Refresh clears the cached game list and re-detects everything. Use it when the normal Refresh button doesn't pick up changes."));
+            "Устранение неполадок: полное обновление",
+            "Если игры пропали, изменились пути установки или файлы DLSS/Streamline добавлялись и удалялись, используйте «Полное обновление» в настройках, чтобы пересканировать всю библиотеку с нуля.",
+            "Полное обновление очищает кешированный список игр и заново определяет всё. Используйте, если обычная кнопка «Обновить» не замечает изменений."));
 
         // System Tray
         panel.Children.Add(BuildFaqSpecialSection("◰", "AccentPurpleBrush",
-            "System Tray",
-            "RHI can minimize to the system tray instead of closing. Right-click the tray icon to quickly launch recent games without opening the main window.",
-            "Enable 'Close to System Tray' in Settings to keep RHI running in the background. The tray icon provides quick access to your most recently played games. RHI automatically checks for updates every 4 hours while running, so everything stays up to date."));
+            "Системный трей",
+            "RHI может сворачиваться в системный трей вместо закрытия. Правый клик по значку в трее — быстрый запуск недавних игр без открытия главного окна.",
+            "Включите «Свёртывать в трей» в настройках, чтобы RHI продолжал работать в фоне. Значок в трее даёт быстрый доступ к недавно запускавшимся играм. Работающий RHI каждые 4 часа автоматически проверяет обновления, так что всё остаётся актуальным."));
 
         // Need More Help
         panel.Children.Add(BuildFaqLinksSection());
@@ -467,7 +467,7 @@ public sealed partial class MainWindow
 
         stack.Children.Add(new TextBlock
         {
-            Text = "Need More Help?",
+            Text = "Нужна помощь?",
             FontSize = 14,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = (Brush)Application.Current.Resources["AccentTealBrush"]
@@ -475,7 +475,7 @@ public sealed partial class MainWindow
 
         stack.Children.Add(new TextBlock
         {
-            Text = "Support is available on Discord — join the community for help, mod updates, and discussion.",
+            Text = "Поддержка — в Discord: присоединяйтесь к сообществу за помощью, обновлениями модов и обсуждением.",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 12,
             Foreground = (Brush)Application.Current.Resources["TextSecondaryBrush"],
@@ -491,7 +491,7 @@ public sealed partial class MainWindow
         };
         discordLink.Content = new TextBlock
         {
-            Text = "Join the Ultra+ Discord (main community)",
+            Text = "Discord Ultra+ (основное сообщество)",
             Foreground = (Brush)Application.Current.Resources["AccentBlueBrush"],
             FontSize = 12
         };
@@ -504,7 +504,7 @@ public sealed partial class MainWindow
         };
         renodxDiscordLink.Content = new TextBlock
         {
-            Text = "RenoDX Discord (mod development)",
+            Text = "RenoDX Discord (разработка модов)",
             Foreground = (Brush)Application.Current.Resources["AccentBlueBrush"],
             FontSize = 12
         };
@@ -517,7 +517,7 @@ public sealed partial class MainWindow
         };
         wikiLink.Content = new TextBlock
         {
-            Text = "Browse the RenoDX Mod Wiki",
+            Text = "Открыть вики модов RenoDX",
             Foreground = (Brush)Application.Current.Resources["AccentBlueBrush"],
             FontSize = 12
         };
@@ -530,7 +530,7 @@ public sealed partial class MainWindow
         };
         githubLink.Content = new TextBlock
         {
-            Text = "RHI GitHub — Report issues or request features",
+            Text = "RHI на GitHub — сообщить о проблеме или предложить функцию",
             Foreground = (Brush)Application.Current.Resources["AccentBlueBrush"],
             FontSize = 12
         };

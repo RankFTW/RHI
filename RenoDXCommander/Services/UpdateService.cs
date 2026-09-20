@@ -197,7 +197,7 @@ public class UpdateService : IUpdateService
     {
         try
         {
-            progress?.Report(("Downloading update...", 0));
+            progress?.Report(("Загрузка обновления...", 0));
 
             var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RHI", CurrentVersion.ToString()));
@@ -228,18 +228,18 @@ public class UpdateService : IUpdateService
                 if (totalBytes > 0)
                 {
                     var pct = (double)totalRead / totalBytes * 100;
-                    progress?.Report(($"Downloading update... {pct:F0}%", pct));
+                    progress?.Report(($"Загрузка обновления... {pct:F0}%", pct));
                 }
             }
 
-            progress?.Report(("Download complete.", 100));
+            progress?.Report(("Загрузка завершена.", 100));
             CrashReporter.Log($"[UpdateService.DownloadInstallerAsync] Downloaded installer to {tempPath} ({totalRead:N0} bytes)");
             return tempPath;
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[UpdateService.DownloadInstallerAsync] Download failed — {ex.Message}");
-            progress?.Report(($"Download failed: {ex.Message}", 0));
+            progress?.Report(($"Ошибка загрузки: {ex.Message}", 0));
             return null;
         }
     }

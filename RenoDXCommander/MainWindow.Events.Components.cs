@@ -201,12 +201,12 @@ public sealed partial class MainWindow
         {
             Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString),
             IsReadOnly = true,
-            PlaceholderText = "Click then press a key...",
+            PlaceholderText = "Нажмите сюда, затем нажмите клавишу...",
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(hotkeyBox, "Click here then press your desired key. Written to all reshade*.ini files for this game.");
-        hotkeyBox.GotFocus  += (s, ev) => hotkeyBox.Text = "Press a key...";
+        hotkeyBox.GotFocus  += (s, ev) => hotkeyBox.Text = "Нажмите клавишу...";
         hotkeyBox.KeyDown   += (s, ev) =>
         {
             var vk = (int)ev.Key;
@@ -218,9 +218,9 @@ public sealed partial class MainWindow
             hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString);
             ev.Handled = true;
         };
-        hotkeyBox.LostFocus += (s, ev) => { if (hotkeyBox.Text == "Press a key...") hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString); };
+        hotkeyBox.LostFocus += (s, ev) => { if (hotkeyBox.Text == "Нажмите клавишу...") hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString); };
 
-        var applyKeyBtn = new Button { Content = "Apply", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
+        var applyKeyBtn = new Button { Content = "Применить", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
         applyKeyBtn.Click += (s, ev) =>
         {
             if (string.IsNullOrEmpty(card.InstallPath)) return;
@@ -242,12 +242,12 @@ public sealed partial class MainWindow
         {
             Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString),
             IsReadOnly = true,
-            PlaceholderText = "Click then press a key...",
+            PlaceholderText = "Нажмите сюда, затем нажмите клавишу...",
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(screenshotHotkeyBox, "Press a key to assign it, or Backspace to clear it. Written to all reshade*.ini files for this game.");
-        screenshotHotkeyBox.GotFocus  += (s, ev) => screenshotHotkeyBox.Text = "Press a key...";
+        screenshotHotkeyBox.GotFocus  += (s, ev) => screenshotHotkeyBox.Text = "Нажмите клавишу...";
         screenshotHotkeyBox.KeyDown   += (s, ev) =>
         {
             var vk2 = (int)ev.Key;
@@ -259,9 +259,9 @@ public sealed partial class MainWindow
             screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString);
             ev.Handled = true;
         };
-        screenshotHotkeyBox.LostFocus += (s, ev) => { if (screenshotHotkeyBox.Text == "Press a key...") screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString); };
+        screenshotHotkeyBox.LostFocus += (s, ev) => { if (screenshotHotkeyBox.Text == "Нажмите клавишу...") screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString); };
 
-        var applyScreenshotKeyBtn = new Button { Content = "Apply", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
+        var applyScreenshotKeyBtn = new Button { Content = "Применить", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
         applyScreenshotKeyBtn.Click += (s, ev) =>
         {
             if (string.IsNullOrEmpty(card.InstallPath)) return;
@@ -285,7 +285,7 @@ public sealed partial class MainWindow
         hotkeysGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         var overlayCol = new StackPanel { Spacing = 4 };
-        overlayCol.Children.Add(new TextBlock { Text = "Overlay Key", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        overlayCol.Children.Add(new TextBlock { Text = "Клавиша оверлея", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
         var overlayRow = new Grid { ColumnSpacing = 8 };
         overlayRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         overlayRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -294,7 +294,7 @@ public sealed partial class MainWindow
         overlayCol.Children.Add(overlayRow);
 
         var screenshotCol = new StackPanel { Spacing = 4 };
-        screenshotCol.Children.Add(new TextBlock { Text = "Screenshot Key", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        screenshotCol.Children.Add(new TextBlock { Text = "Клавиша скриншота", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
         var screenshotRow = new Grid { ColumnSpacing = 8 };
         screenshotRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         screenshotRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -346,9 +346,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "ReShade Settings",
+            Title = "Настройки ReShade",
             Content = content,
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -370,7 +370,7 @@ public sealed partial class MainWindow
         {
             content.Children.Add(new TextBlock
             {
-                Text = "UE-Extended Settings",
+                Text = "Настройки UE-Extended",
                 FontSize = 13,
                 Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             });
@@ -393,7 +393,7 @@ public sealed partial class MainWindow
             var ueCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
             ueCombo.Items.Add("Off");
             ueCombo.Items.Add("On");
-            ToolTipService.SetToolTip(ueCombo, "Switch between using UE-Extended or the game specific mod/generic Unreal RenoDX mod.");
+            ToolTipService.SetToolTip(ueCombo, "Переключение между UE-Extended и именным/универсальным модом RenoDX для Unreal.");
             ueCombo.SelectedIndex = card.UseUeExtended ? 1 : 0;
             ueCombo.SelectionChanged += (s, ev) =>
             {
@@ -423,7 +423,7 @@ public sealed partial class MainWindow
             // Label in column 0
             var nitsLabel = new TextBlock
             {
-                Text = "Set Maximum Nits",
+                Text = "Задать макс. нит",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
@@ -437,7 +437,7 @@ public sealed partial class MainWindow
                 Text = currentNits,
                 Width = 100,
                 FontSize = 11,
-                PlaceholderText = "nits",
+                PlaceholderText = "нит",
                 VerticalAlignment = VerticalAlignment.Center,
             };
 
@@ -446,7 +446,7 @@ public sealed partial class MainWindow
             {
                 if (!int.TryParse(nitsValue, out var val) || val <= 0)
                 {
-                    card.ActionMessage = "❌ Enter a valid number.";
+                    card.ActionMessage = "❌ Введите корректное число.";
                     return;
                 }
                 try
@@ -468,7 +468,7 @@ public sealed partial class MainWindow
                     }
                     AuxInstallService.WriteIni(iniPath, freshIni);
                     nitsBox.Text = val.ToString();
-                    card.ActionMessage = $"✅ Set toneMapPeakNits={val} in {updated} preset(s).";
+                    card.ActionMessage = $"✅ Задано toneMapPeakNits={val} в пресетах ({updated}).";
                     card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
                 }
                 catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
@@ -488,21 +488,21 @@ public sealed partial class MainWindow
 
             var autoBtn = new Button
             {
-                Content = "Auto",
+                Content = "Авто",
                 Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
                 Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
                 BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8), Padding = new Thickness(10, 5, 10, 5), FontSize = 11,
             };
-            ToolTipService.SetToolTip(autoBtn, "Reads your monitor's peak brightness automatically.");
+            ToolTipService.SetToolTip(autoBtn, "Автоматически считывает пиковую яркость монитора.");
             autoBtn.Click += async (s, ev) =>
             {
                 try
                 {
                     var devices = await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
                         Windows.Devices.Display.DisplayMonitor.GetDeviceSelector());
-                    if (devices.Count == 0) { card.ActionMessage = "❌ No display found."; return; }
+                    if (devices.Count == 0) { card.ActionMessage = "❌ Дисплей не найден."; return; }
 
                     float maxNitsFound = 0;
                     foreach (var device in devices)
@@ -516,7 +516,7 @@ public sealed partial class MainWindow
                         catch { }
                     }
                     var peakNits = (int)maxNitsFound;
-                    if (peakNits <= 0) { card.ActionMessage = "❌ Could not read peak brightness."; return; }
+                    if (peakNits <= 0) { card.ActionMessage = "❌ Не удалось считать пиковую яркость."; return; }
 
                     ApplyNitsValue(peakNits.ToString());
                 }
@@ -557,7 +557,7 @@ public sealed partial class MainWindow
                     content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
                     content.Children.Add(new TextBlock
                     {
-                        Text = "Compatibility Settings",
+                        Text = "Настройки совместимости",
                         FontSize = 13,
                         Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
                         Margin = new Thickness(0, 4, 0, 0),
@@ -585,7 +585,7 @@ public sealed partial class MainWindow
 
                         var label = new TextBlock
                         {
-                            Text = isSetPath ? "Upgrade Path" : isDumpLut ? "Dump LUT Shaders" : kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase) ? kv.Key.Substring(8) : kv.Key,
+                            Text = isSetPath ? "Путь обновления" : isDumpLut ? "Дамп LUT-шейдеров" : kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase) ? kv.Key.Substring(8) : kv.Key,
                             FontSize = 11,
                             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                             VerticalAlignment = VerticalAlignment.Center,
@@ -685,7 +685,7 @@ public sealed partial class MainWindow
             {
                 content.Children.Add(new TextBlock
                 {
-                    Text = "Run the game once with RenoDX installed to generate settings.",
+                    Text = "Запустите игру один раз с установленным RenoDX, чтобы создать настройки.",
                     FontSize = 11,
                     Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                     FontStyle = Windows.UI.Text.FontStyle.Italic,
@@ -731,7 +731,7 @@ public sealed partial class MainWindow
             {
                 var hdrLabel = new TextBlock
                 {
-                    Text = "HDR Settings",
+                    Text = "Настройки HDR",
                     FontSize = 11,
                     Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                     VerticalAlignment = VerticalAlignment.Center,
@@ -783,7 +783,7 @@ public sealed partial class MainWindow
             int lutCol = card.UseUeExtended ? 2 : 0;
             var lutLabel = new TextBlock
             {
-                Text = "LUT Update Every Frame",
+                Text = "Обновлять LUT каждый кадр",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
@@ -853,7 +853,7 @@ public sealed partial class MainWindow
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
         content.Children.Add(new TextBlock
         {
-            Text = "RenoDX Presets",
+            Text = "Пресеты RenoDX",
             FontSize = 13,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             Margin = new Thickness(0, 8, 0, 0),
@@ -862,7 +862,7 @@ public sealed partial class MainWindow
 
         var exportBtn = new Button
         {
-            Content = "Export Presets",
+            Content = "Экспортировать пресеты",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
@@ -898,7 +898,7 @@ public sealed partial class MainWindow
 
                 if (presetLines.Count == 0)
                 {
-                    card.ActionMessage = "❌ No [renodx-preset*] sections found.";
+                    card.ActionMessage = "❌ Секции [renodx-preset*] не найдены.";
                     return;
                 }
 
@@ -919,17 +919,17 @@ public sealed partial class MainWindow
                     Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
                 }
                 catch { /* clipboard copy is best-effort */ }
-                card.ActionMessage = $"✅ Exported {presetLines.Count(l => l.StartsWith("["))} preset(s) & copied to clipboard.";
+                card.ActionMessage = $"✅ Экспортировано пресетов: {presetLines.Count(l => l.StartsWith("["))}, скопировано в буфер обмена.";
                 card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
             }
             catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
         };
-        ToolTipService.SetToolTip(exportBtn, "Save all RenoDX presets to a file and copy to clipboard for sharing.");
+        ToolTipService.SetToolTip(exportBtn, "Сохранить все пресеты RenoDX в файл и скопировать в буфер обмена для обмена.");
         presetRow.Children.Add(exportBtn);
 
         var importBtn = new Button
         {
-            Content = "Import Presets",
+            Content = "Импортировать пресеты",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
@@ -977,13 +977,13 @@ public sealed partial class MainWindow
                 filtered.AddRange(presetLines);
 
                 File.WriteAllLines(iniPath, filtered);
-                card.ActionMessage = $"✅ Imported {presetSections.Count} preset(s).";
+                card.ActionMessage = $"✅ Импортировано пресетов: {presetSections.Count}.";
                 card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
             }
             catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
         };
         if (!File.Exists(presetPath))
-            ToolTipService.SetToolTip(importBtn, "No RHI-RenoDX-Preset.txt file found. Export first.");
+            ToolTipService.SetToolTip(importBtn, "Файл RHI-RenoDX-Preset.txt не найден. Сначала экспортируйте.");
         else
             ToolTipService.SetToolTip(importBtn, "Restore presets from the exported backup file into reshade.ini.");
         presetRow.Children.Add(importBtn);
@@ -1001,7 +1001,7 @@ public sealed partial class MainWindow
         });
         content.Children.Add(new TextBlock
         {
-            Text = "Requires NVIDIA App with Overlay and Game Filters enabled.",
+            Text = "Требуется NVIDIA App с включёнными Overlay и Game Filters.",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
             TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
@@ -1105,7 +1105,7 @@ public sealed partial class MainWindow
         var rtxHdrRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
         rtxHdrRow.Children.Add(new TextBlock
         {
-            Text = "Enable RTX HDR",
+            Text = "Включить RTX HDR",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
@@ -1115,9 +1115,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "RenoDX Settings",
+            Title = "Настройки RenoDX",
             Content = new ScrollViewer { Content = content, MaxHeight = 620, Padding = new Thickness(0, 0, 16, 0) },
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -1150,14 +1150,14 @@ public sealed partial class MainWindow
 
         // ── Peak Brightness ───────────────────────────────────────────────────
         var nitsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        var nitsLabel = new TextBlock { Text = $"Peak Brightness: {peakBrightnessDisplay} nits", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), MinWidth = 175 };
-        var nitsWarning = new TextBlock { Text = "⚠ High values may look unnatural", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush), VerticalAlignment = VerticalAlignment.Center, Opacity = peakBrightnessDisplay > 600 ? 1.0 : 0.0 };
+        var nitsLabel = new TextBlock { Text = $"Пиковая яркость: {peakBrightnessDisplay} нит", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), MinWidth = 175 };
+        var nitsWarning = new TextBlock { Text = "⚠ Высокие значения могут выглядеть неестественно", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush), VerticalAlignment = VerticalAlignment.Center, Opacity = peakBrightnessDisplay > 600 ? 1.0 : 0.0 };
         nitsRow.Children.Add(nitsLabel);
         nitsRow.Children.Add(nitsWarning);
         var nitsSlider = new Slider { Minimum = 400, Maximum = 2000, StepFrequency = 10, Value = peakBrightnessDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
         nitsSlider.ValueChanged += (s, ev) =>
         {
-            nitsLabel.Text = $"Peak Brightness: {(int)nitsSlider.Value} nits";
+            nitsLabel.Text = $"Пиковая яркость: {(int)nitsSlider.Value} нит";
             nitsWarning.Opacity = (int)nitsSlider.Value > 600 ? 1.0 : 0.0;
         };
         content.Children.Add(nitsRow);
@@ -1167,9 +1167,9 @@ public sealed partial class MainWindow
         // ── Contrast ──────────────────────────────────────────────────────────
         string ContrastLabel(int val) => val switch
         {
-            0 => "Contrast: 0 — Gamma 2.0 (Default)",
-            25 => "Contrast: +25 — Gamma 2.2",
-            50 => "Contrast: +50 — Gamma 2.4",
+            0 => "Контраст: 0 — Гамма 2.0 (по умолчанию)",
+            25 => "Контраст: +25 — Гамма 2.2",
+            50 => "Контраст: +50 — Гамма 2.4",
             _ => $"Contrast: {(val >= 0 ? "+" : "")}{val}",
         };
         var contrastLabel = new TextBlock { Text = ContrastLabel(contrastDisplay), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
@@ -1180,7 +1180,7 @@ public sealed partial class MainWindow
 
         // ── Gamma preset buttons ──────────────────────────────────────────────
         var gammaPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 2, 0, 4) };
-        foreach (var (label, value) in new[] { ("Gamma 2.0", 0), ("Gamma 2.2", 25), ("Gamma 2.4", 50) })
+        foreach (var (label, value) in new[] { ("Гамма 2.0", 0), ("Гамма 2.2", 25), ("Гамма 2.4", 50) })
         {
             var btn = new Button
             {
@@ -1253,13 +1253,13 @@ public sealed partial class MainWindow
         string MiddleGreyLabel(int val, int contrastVal)
         {
             var perceivedPw = CalcPerceivedPaperwhite(val, contrastVal);
-            return $"Middle Grey: {val} ({perceivedPw} nits)";
+            return $"Средний серый: {val} ({perceivedPw} нит)";
         }
         
         int mgInitialPw = CalcPerceivedPaperwhite(mgInitial, (int)contrastSlider.Value);
         var mgRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var mgLabel = new TextBlock { Text = MiddleGreyLabel(mgInitial, (int)contrastSlider.Value), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), MinWidth = 175 };
-        var mgWarning = new TextBlock { Text = "⚠ High values may look washed out", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush), VerticalAlignment = VerticalAlignment.Center, Opacity = mgInitialPw > 203 ? 1.0 : 0.0 };
+        var mgWarning = new TextBlock { Text = "⚠ Высокие значения могут выглядеть блёкло", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush), VerticalAlignment = VerticalAlignment.Center, Opacity = mgInitialPw > 203 ? 1.0 : 0.0 };
         mgRow.Children.Add(mgLabel);
         mgRow.Children.Add(mgWarning);
         var mgSlider = new Slider { Minimum = 10, Maximum = 100, StepFrequency = 1, Value = mgInitial, HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -1281,11 +1281,11 @@ public sealed partial class MainWindow
         var mgButtonsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 2, 0, 4) };
         var autoMgBtn = new Button
         {
-            Content = "Auto",
+            Content = "Авто",
             FontSize = 11,
             Padding = new Thickness(10, 4, 10, 4),
         };
-        ToolTipService.SetToolTip(autoMgBtn, "Calculate Middle Grey from Peak Brightness and Gamma using the ITU formula");
+        ToolTipService.SetToolTip(autoMgBtn, "Вычислять средний серый из пиковой яркости и гаммы по формуле ITU");
         autoMgBtn.Click += (s, ev) =>
         {
             var autoVal = CalcAutoMiddleGrey((int)nitsSlider.Value, (int)contrastSlider.Value);
@@ -1309,7 +1309,7 @@ public sealed partial class MainWindow
                 MinWidth = 36,
             };
             var capturedPw = presetPw;
-            ToolTipService.SetToolTip(presetBtn, $"Set Middle Grey to achieve ~{presetPw} nits paperwhite");
+            ToolTipService.SetToolTip(presetBtn, $"Задайте средний серый для яркости белого ~{presetPw} нит");
             presetBtn.Click += (s, ev) =>
             {
                 // Reverse formula: midGrey = paperwhite × (0.5 ^ gamma)
@@ -1329,7 +1329,7 @@ public sealed partial class MainWindow
         // ── Saturation ────────────────────────────────────────────────────────
         string SaturationLabel(int val) => val switch
         {
-            -25 => "Saturation: -25 — Neutral Saturation",
+            -25 => "Насыщенность: -25 — нейтральная насыщенность",
             _ => $"Saturation: {(val >= 0 ? "+" : "")}{val}",
         };
         var satLabel = new TextBlock { Text = SaturationLabel(saturationDisplay), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
@@ -1342,11 +1342,11 @@ public sealed partial class MainWindow
         // ── Debanding ─────────────────────────────────────────────────────────
         var debandingOptions = new (string name, uint value)[]
         {
-            ("No Debanding", 0x06),
-            ("Low Debanding", 0x0A),
-            ("High Debanding", 0x02),
-            ("High Debanding (Indicator)", 0x03),
-            ("High Debanding (Indicator + Debug)", 0x23),
+            ("Без устранения бандинга", 0x06),
+            ("Слабое устранение бандинга", 0x0A),
+            ("Сильное устранение бандинга", 0x02),
+            ("Сильное устранение бандинга (индикатор)", 0x03),
+            ("Сильное устранение бандинга (индикатор + отладка)", 0x23),
         };
         bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
         var debandingCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = isAdmin, Opacity = isAdmin ? 1.0 : 0.4 };
@@ -1357,13 +1357,13 @@ public sealed partial class MainWindow
             if (currentDebanding == (int)debandingOptions[i].value) selectedDbIndex = i;
         }
         debandingCombo.SelectedIndex = selectedDbIndex;
-        var dbLabel = new TextBlock { Text = "Debanding", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        var dbLabel = new TextBlock { Text = "Устранение бандинга", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
         content.Children.Add(dbLabel);
         content.Children.Add(debandingCombo);
         if (!isAdmin)
             content.Children.Add(new TextBlock
             {
-                Text = "Requires admin mode to change",
+                Text = "Для изменения нужен режим администратора",
                 FontSize = 10,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 Margin = new Thickness(0, -4, 0, 0),
@@ -1380,21 +1380,21 @@ public sealed partial class MainWindow
         var defaultsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
         var saveDefaultBtn = new Button
         {
-            Content = "Save as Default",
+            Content = "Сохранить по умолчанию",
             FontSize = 11,
             Padding = new Thickness(12, 6, 12, 6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        ToolTipService.SetToolTip(saveDefaultBtn, "Save current slider values as your default RTX HDR preset");
+        ToolTipService.SetToolTip(saveDefaultBtn, "Сохранить текущие ползунки как пресет RTX HDR по умолчанию");
         var setDefaultBtn = new Button
         {
-            Content = "Set Default",
+            Content = "Установить по умолчанию",
             FontSize = 11,
             Padding = new Thickness(12, 6, 12, 6),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = hasDefaults,
         };
-        ToolTipService.SetToolTip(setDefaultBtn, hasDefaults ? "Apply your saved default preset to the sliders" : "No default saved yet — use 'Save as Default' first");
+        ToolTipService.SetToolTip(setDefaultBtn, hasDefaults ? "Применить сохранённый пресет по умолчанию к ползункам" : "Значения по умолчанию ещё не сохранены — сначала нажмите «Сохранить по умолчанию»");
 
         saveDefaultBtn.Click += (s, ev) =>
         {
@@ -1412,7 +1412,7 @@ public sealed partial class MainWindow
                 File.WriteAllText(defaultsPath, JsonSerializer.Serialize(defaults,
                     new JsonSerializerOptions { WriteIndented = true }));
                 setDefaultBtn.IsEnabled = true;
-                ToolTipService.SetToolTip(setDefaultBtn, "Apply your saved default preset to the sliders");
+                ToolTipService.SetToolTip(setDefaultBtn, "Применить сохранённый пресет по умолчанию к ползункам");
                 saveDefaultBtn.Content = "Saved!";
             }
             catch (Exception ex) { CrashReporter.Log($"[RtxHdrConfigButton_Click] Failed to save defaults — {ex.Message}"); }
@@ -1453,10 +1453,10 @@ public sealed partial class MainWindow
         // ── Dialog ────────────────────────────────────────────────────────────
         var dialog = new ContentDialog
         {
-            Title = "RTX HDR Settings",
+            Title = "Настройки RTX HDR",
             Content = new ScrollViewer { Content = content, MaxHeight = 600, Padding = new Thickness(0, 0, 16, 0) },
-            PrimaryButtonText = "Apply",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Применить",
+            CloseButtonText = "Отмена",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -1480,7 +1480,7 @@ public sealed partial class MainWindow
             dlssPresetService.SetRtxHdrDebanding(card.GameName, card.InstallPath, debanding);
             CrashReporter.Log($"[RtxHdrConfigButton_Click] Applied RTX HDR settings for '{card.GameName}': PeakNits={peakNits}, Contrast={contrastStored}, Sat={satStored}, MidGrey={middleGrey}, Deband=0x{debanding:X2}");
         });
-        card.ActionMessage = "✅ RTX HDR settings applied.";
+        card.ActionMessage = "✅ Настройки RTX HDR применены.";
         card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
     }
 
@@ -1526,7 +1526,7 @@ public sealed partial class MainWindow
         // Open relimiter log
         var openLogBtn = new Button
         {
-            Content = "Open ReLimiter log",
+            Content = "Открыть журнал ReLimiter",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -1545,7 +1545,7 @@ public sealed partial class MainWindow
         // Copy relimiter log to clipboard (as file with correct name)
         var copyLogBtn = new Button
         {
-            Content = "Copy ReLimiter log to clipboard",
+            Content = "Скопировать журнал ReLimiter в буфер обмена",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -1570,7 +1570,7 @@ public sealed partial class MainWindow
                     dataPackage.SetStorageItems(new[] { storageFile });
                     Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
                     Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
-                    card.UlActionMessage = $"✅ {Path.GetFileName(logFile)} copied to clipboard.";
+                    card.UlActionMessage = $"✅ Скопировано в буфер обмена: {Path.GetFileName(logFile)}.";
                     card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
                 }
                 catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
@@ -1585,7 +1585,7 @@ public sealed partial class MainWindow
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
         content.Children.Add(new TextBlock
         {
-            Text = "Frame Limiter",
+            Text = "Ограничитель FPS",
             FontSize = 13,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             Margin = new Thickness(0, 4, 0, 0),
@@ -1597,7 +1597,7 @@ public sealed partial class MainWindow
         targetFpsPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var targetFpsLabel = new TextBlock
         {
-            Text = "Target FPS",
+            Text = "Целевой FPS",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
@@ -1605,7 +1605,7 @@ public sealed partial class MainWindow
         Grid.SetColumn(targetFpsLabel, 0);
         targetFpsPanel.Children.Add(targetFpsLabel);
         var targetFpsCombo = new ComboBox { FontSize = 12, MinWidth = 140, HorizontalAlignment = HorizontalAlignment.Right };
-        ToolTipService.SetToolTip(targetFpsCombo, "FPS cap for this game. Select a VRR preset or Custom for a manual value.");
+        ToolTipService.SetToolTip(targetFpsCombo, "Лимит FPS для этой игры. Выберите пресет VRR или «Свой», чтобы задать вручную.");
         Grid.SetColumn(targetFpsCombo, 1);
         targetFpsPanel.Children.Add(targetFpsCombo);
 
@@ -1653,7 +1653,7 @@ public sealed partial class MainWindow
         // Inline custom FPS input (shown when "Custom..." is selected)
         var customFpsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Visibility = Visibility.Collapsed };
         var customFpsBox = new TextBox { PlaceholderText = "20-1000", FontSize = 12, MinWidth = 100 };
-        var customFpsBtn = new Button { Content = "Set", FontSize = 12 };
+        var customFpsBtn = new Button { Content = "Задать", FontSize = 12 };
         customFpsPanel.Children.Add(customFpsBox);
         customFpsPanel.Children.Add(customFpsBtn);
 
@@ -1748,8 +1748,8 @@ public sealed partial class MainWindow
                     AuxInstallService.ApplyUlTargetFps(iniFile, newFps);
                     currentTargetFps = newFps;
                     card.UlActionMessage = newFps == 0
-                        ? "✅ Target FPS disabled for this game."
-                        : $"✅ Target FPS set to {newFps} for this game.";
+                        ? "✅ Целевой FPS отключён для этой игры."
+                        : $"✅ Целевой FPS для этой игры: {newFps}.";
                     card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
                 }
                 catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
@@ -1768,7 +1768,7 @@ public sealed partial class MainWindow
                     try
                     {
                         AuxInstallService.ApplyUlTargetFps(iniFile, customFps);
-                        card.UlActionMessage = $"✅ Target FPS set to {customFps} for this game.";
+                        card.UlActionMessage = $"✅ Целевой FPS для этой игры: {customFps}.";
                         card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
                         RefreshFpsCombo(customFps);
                     }
@@ -1791,7 +1791,7 @@ public sealed partial class MainWindow
                         try
                         {
                             AuxInstallService.ApplyUlTargetFps(iniFile, customFps);
-                            card.UlActionMessage = $"✅ Target FPS set to {customFps} for this game.";
+                            card.UlActionMessage = $"✅ Целевой FPS для этой игры: {customFps}.";
                             card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
                             RefreshFpsCombo(customFps);
                         }
@@ -1820,7 +1820,7 @@ public sealed partial class MainWindow
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
         content.Children.Add(new TextBlock
         {
-            Text = "Compatibility Settings",
+            Text = "Настройки совместимости",
             FontSize = 13,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             Margin = new Thickness(0, 4, 0, 0),
@@ -1832,7 +1832,7 @@ public sealed partial class MainWindow
         dlssHooksPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var dlssHooksLabel = new TextBlock
         {
-            Text = "DLSS Hooks",
+            Text = "Хуки DLSS",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
@@ -1842,7 +1842,7 @@ public sealed partial class MainWindow
         var dlssHooksCombo = new ComboBox { FontSize = 12, MinWidth = 80, HorizontalAlignment = HorizontalAlignment.Right };
         dlssHooksCombo.Items.Add("Off");
         dlssHooksCombo.Items.Add("On");
-        ToolTipService.SetToolTip(dlssHooksCombo, "Shows DLSS version/preset info on the ReLimiter OSD. Disable if causing crashes.");
+        ToolTipService.SetToolTip(dlssHooksCombo, "Показывает версию/пресет DLSS в OSD ReLimiter. Отключите, если вызывает вылеты.");
         Grid.SetColumn(dlssHooksCombo, 1);
         dlssHooksPanel.Children.Add(dlssHooksCombo);
 
@@ -1876,8 +1876,8 @@ public sealed partial class MainWindow
                 {
                     AuxInstallService.ApplyUlDlssHooks(ulIniFile, dlssHooksCombo.SelectedIndex == 1);
                     card.UlActionMessage = dlssHooksCombo.SelectedIndex == 1
-                        ? "✅ DLSS Hooks enabled for this game."
-                        : "✅ DLSS Hooks disabled for this game.";
+                        ? "✅ Хуки DLSS включены для этой игры."
+                        : "✅ Хуки DLSS отключены для этой игры.";
                     card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
                 }
                 catch (Exception ex) { card.UlActionMessage = $"❌ {ex.Message}"; }
@@ -1892,9 +1892,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "ReLimiter Settings",
+            Title = "Настройки ReLimiter",
             Content = content,
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -1930,9 +1930,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Display Commander Settings",
+            Title = "Настройки Display Commander",
             Content = content,
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -1997,7 +1997,7 @@ public sealed partial class MainWindow
         };
         var fpsLabels = new[] { "Off" }.Concat(vrrPresetsOs.Select(p => p.Label)).ToArray();
         var fpsLimitCombo = new ComboBox { ItemsSource = fpsLabels, FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
-        ToolTipService.SetToolTip(fpsLimitCombo, "Framerate limit using Reflex whenever possible. 'Off' disables the limit.");
+        ToolTipService.SetToolTip(fpsLimitCombo, "Ограничение частоты кадров с использованием Reflex, где возможно. «Выкл» отключает лимит.");
 
         // Read current value from OptiScaler.ini
         string currentFpsStr = "Off";
@@ -2022,12 +2022,12 @@ public sealed partial class MainWindow
         }
         fpsLimitCombo.SelectedItem = currentFpsStr;
 
-        AddRow(unifiedGrid, 0, "OptiScaler Version",
+        AddRow(unifiedGrid, 0, "Версия OptiScaler",
             new ComboBox { ItemsSource = new[] { "Stable", "Nightly", "DLSS NR" }, SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? "") == "DlssNr" ? "DLSS NR" : ViewModel.GetOsVariant(card.GameName, card.Source ?? ""), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch },
-            "Framerate Limit", fpsLimitCombo);
+            "Лимит частоты кадров", fpsLimitCombo);
         // Grab the variant combo we just added
         var variantCombo = (ComboBox)unifiedGrid.Children.Cast<UIElement>().Where(c => c is ComboBox).First();
-        ToolTipService.SetToolTip(variantCombo, "Stable: official release. Nightly: daily build. DLSS NR: Neural Rendering fork with multi-pass NR support.");
+        ToolTipService.SetToolTip(variantCombo, "Stable: официальный релиз. Nightly: ежедневная сборка. DLSS NR: форк Neural Rendering с поддержкой многопроходного NR.");
 
         fpsLimitCombo.SelectionChanged += (s, ev) =>
         {
@@ -2047,21 +2047,21 @@ public sealed partial class MainWindow
         // Left combo: which API to configure. Right combo: upscaler for that API.
         static string[] GetUpscalerOptions(string api) => api switch
         {
-            "DX12"   => new[] { "Auto (Default)", "DLSS", "XeSS", "FSR 2.1", "FSR 2.2", "FSR 3.x / FFX" },
-            "Vulkan" => new[] { "Auto (Default)", "DLSS", "FSR 2.1", "FSR 2.2", "FSR 3.x / FFX", "XeSS", "FSR2.1 on DX12", "FSR3 on DX12" },
-            _        => new[] { "Auto (Default)", "DLSS", "FSR 2.2", "FSR 3.1", "XeSS (Arc only)", "XeSS on DX12", "FSR2.1 on DX12", "FSR2.2 on DX12", "FSR3 on DX12" }, // DX11
+            "DX12"   => new[] { "Авто (по умолчанию)", "DLSS", "XeSS", "FSR 2.1", "FSR 2.2", "FSR 3.x / FFX" },
+            "Vulkan" => new[] { "Авто (по умолчанию)", "DLSS", "FSR 2.1", "FSR 2.2", "FSR 3.x / FFX", "XeSS", "FSR2.1 на DX12", "FSR3 на DX12" },
+            _        => new[] { "Авто (по умолчанию)", "DLSS", "FSR 2.2", "FSR 3.1", "XeSS (только Arc)", "XeSS на DX12", "FSR2.1 на DX12", "FSR2.2 на DX12", "FSR3 на DX12" }, // DX11
         };
         static string UpscalerOptionToIni(string api, string display) => api switch
         {
             "DX12"   => display switch { "DLSS" => "dlss", "XeSS" => "xess", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", _ => "auto" },
-            "Vulkan" => display switch { "DLSS" => "dlss", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", "XeSS" => "xess", "FSR2.1 on DX12" => "fsr21_12", "FSR3 on DX12" => "ffx_12", _ => "auto" },
-            _        => display switch { "DLSS" => "dlss", "FSR 2.2" => "fsr22", "FSR 3.1" => "fsr31", "XeSS (Arc only)" => "xess", "XeSS on DX12" => "xess_12", "FSR2.1 on DX12" => "fsr21_12", "FSR2.2 on DX12" => "fsr22_12", "FSR3 on DX12" => "ffx_12", _ => "auto" },
+            "Vulkan" => display switch { "DLSS" => "dlss", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", "XeSS" => "xess", "FSR2.1 на DX12" => "fsr21_12", "FSR3 на DX12" => "ffx_12", _ => "auto" },
+            _        => display switch { "DLSS" => "dlss", "FSR 2.2" => "fsr22", "FSR 3.1" => "fsr31", "XeSS (только Arc)" => "xess", "XeSS на DX12" => "xess_12", "FSR2.1 на DX12" => "fsr21_12", "FSR2.2 на DX12" => "fsr22_12", "FSR3 на DX12" => "ffx_12", _ => "auto" },
         };
         static string IniToUpscalerOption(string api, string ini) => api switch
         {
-            "DX12"   => ini switch { "dlss" => "DLSS", "xess" => "XeSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", _ => "Auto (Default)" },
-            "Vulkan" => ini switch { "dlss" => "DLSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", "xess" => "XeSS", "fsr21_12" => "FSR2.1 on DX12", "ffx_12" => "FSR3 on DX12", _ => "Auto (Default)" },
-            _        => ini switch { "dlss" => "DLSS", "fsr22" => "FSR 2.2", "fsr31" => "FSR 3.1", "xess" => "XeSS (Arc only)", "xess_12" => "XeSS on DX12", "fsr21_12" => "FSR2.1 on DX12", "fsr22_12" => "FSR2.2 on DX12", "ffx_12" => "FSR3 on DX12", _ => "Auto (Default)" },
+            "DX12"   => ini switch { "dlss" => "DLSS", "xess" => "XeSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", _ => "Авто (по умолчанию)" },
+            "Vulkan" => ini switch { "dlss" => "DLSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", "xess" => "XeSS", "fsr21_12" => "FSR2.1 на DX12", "ffx_12" => "FSR3 на DX12", _ => "Авто (по умолчанию)" },
+            _        => ini switch { "dlss" => "DLSS", "fsr22" => "FSR 2.2", "fsr31" => "FSR 3.1", "xess" => "XeSS (только Arc)", "xess_12" => "XeSS на DX12", "fsr21_12" => "FSR2.1 на DX12", "fsr22_12" => "FSR2.2 на DX12", "ffx_12" => "FSR3 на DX12", _ => "Авто (по умолчанию)" },
         };
         static string ApiToIniKey(string api) => api switch { "DX12" => "Dx12Upscaler", "Vulkan" => "VulkanUpscaler", _ => "Dx11Upscaler" };
 
@@ -2088,8 +2088,8 @@ public sealed partial class MainWindow
 
         var apiCombo = new ComboBox { ItemsSource = new[] { "DX11", "DX12", "Vulkan" }, SelectedItem = apiDefault, FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
         var apiUpscalerCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
-        ToolTipService.SetToolTip(apiCombo, "Select which graphics API's upscaler to configure.");
-        ToolTipService.SetToolTip(apiUpscalerCombo, "Upscaler for the selected API. 'Auto' lets OptiScaler choose based on your GPU.");
+        ToolTipService.SetToolTip(apiCombo, "Выберите апскейлер какого графического API настроить.");
+        ToolTipService.SetToolTip(apiUpscalerCombo, "Апскейлер для выбранного API. «Авто» — OptiScaler выберет по вашей видеокарте.");
 
         // Populate upscaler combo for initial API and select current INI value
         void RefreshUpscalerCombo(string api)
@@ -2104,7 +2104,7 @@ public sealed partial class MainWindow
         RefreshUpscalerCombo(apiDefault);
 
         bool apiComboInitializing = true;
-        AddRow(unifiedGrid, 1, "Upscaler API", apiCombo, "Upscaler", apiUpscalerCombo);
+        AddRow(unifiedGrid, 1, "API апскейлера", apiCombo, "Upscaler", apiUpscalerCombo);
         apiComboInitializing = false;
 
         apiCombo.SelectionChanged += (s, ev) =>
@@ -2176,12 +2176,12 @@ public sealed partial class MainWindow
         if (isNightly || isDlssNr)
         {
             // ── INI value converters ───────────────────────────────────────
-            FgInputToIni  = (string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
+            FgInputToIni  = (string d) => d switch { "OptiFG (апскейлер)" => "upscaler", "DLSSG через Streamline" => "dlssg", "DLSSG через Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
             FgOutputToIni = (string d) => d switch { "FSR FG" => "fsrfg", "DLSSG" => "dlssg", "XeFG" => "xefg", _ => "auto" };
             FgNvngxToIni  = (string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", _ => "None" };
-            string IniToFgInput(string v) => v switch { "upscaler" => "OptiFG (Upscaler)", "dlssg" => "DLSSG via Streamline", "nvngxfg" => "DLSSG via Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => "Auto (Default)" };
-            string IniToFgOutput(string v) => v switch { "fsrfg" => "FSR FG", "dlssg" => "DLSSG", "xefg" => "XeFG", _ => "Auto (Default)" };
-            string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", _ => "None (Real DLSSG)" };
+            string IniToFgInput(string v) => v switch { "upscaler" => "OptiFG (апскейлер)", "dlssg" => "DLSSG через Streamline", "nvngxfg" => "DLSSG через Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => "Авто (по умолчанию)" };
+            string IniToFgOutput(string v) => v switch { "fsrfg" => "FSR FG", "dlssg" => "DLSSG", "xefg" => "XeFG", _ => "Авто (по умолчанию)" };
+            string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", _ => "Нет (настоящий DLSSG)" };
 
             // Separator row between version and nightly settings (spans all 4 columns)
             unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -2191,7 +2191,7 @@ public sealed partial class MainWindow
 
             // Section heading: Frame Generation Settings
             unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var fgHeading = new TextBlock { Text = "Frame Generation Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+            var fgHeading = new TextBlock { Text = "Настройки генерации кадров", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) };
             Grid.SetRow(fgHeading, 3); Grid.SetColumn(fgHeading, 0); Grid.SetColumnSpan(fgHeading, 4);
             unifiedGrid.Children.Add(fgHeading);
 
@@ -2210,12 +2210,12 @@ public sealed partial class MainWindow
 
             bool combinedOn = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "");
             combinedCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = combinedOn ? "Yes" : "No" };
-            ToolTipService.SetToolTip(combinedCombo, "Deploys Streamline and DLSS Enabler to the game's OptiScaler folder. Required for DLSS Frame Generation with OptiScaler.");
+            ToolTipService.SetToolTip(combinedCombo, "Разворачивает Streamline и DLSS Enabler в папку OptiScaler игры. Необходимо для генерации кадров DLSS вместе с OptiScaler.");
             var slVersionCombo = new ComboBox { ItemsSource = slVersions.Count > 0 ? (IEnumerable<string>)slVersions : new[] { slVersionDefault }, SelectedItem = slVersionDefault, IsEnabled = combinedOn };
-            AddRow(unifiedGrid, 4, "Streamline/DLSS Enabler", combinedCombo, "Streamline Version", slVersionCombo);
+            AddRow(unifiedGrid, 4, "Streamline/DLSS Enabler", combinedCombo, "Версия Streamline", slVersionCombo);
 
             // Row 4: FG Input (left) | HUD Fix (right)
-            fgInputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
+            fgInputCombo = new ComboBox { ItemsSource = new[] { "Авто (по умолчанию)", "OptiFG (апскейлер)", "DLSSG через Streamline", "DLSSG через Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
 
             // Read HUD Fix from OptiScaler.ini
             string hudFixCurrent = "auto";
@@ -2238,19 +2238,19 @@ public sealed partial class MainWindow
                                : hudFixCurrent.Equals("false", StringComparison.OrdinalIgnoreCase) ? "Off"
                                : "Default";
             hudFixCombo = new ComboBox { ItemsSource = new[] { "Default", "On", "Off" }, SelectedItem = hudFixSelected };
-            ToolTipService.SetToolTip(hudFixCombo!, "HUD Fix: enables hudless resource tracking for Frame Generation. On = HUDFix=true in [OptiFG].");
+            ToolTipService.SetToolTip(hudFixCombo!, "HUD Fix: включает отслеживание ресурсов без HUD для генерации кадров. Вкл = HUDFix=true в [OptiFG].");
 
-            AddRow(unifiedGrid, 5, "FG Input", fgInputCombo!, "HUD Fix", hudFixCombo!);
+            AddRow(unifiedGrid, 5, "Вход FG", fgInputCombo!, "HUD Fix", hudFixCombo!);
 
             // Row 5: FG Output (left) | FG Nvngx Override (right)
-            fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
+            fgOutputCombo = new ComboBox { ItemsSource = new[] { "Авто (по умолчанию)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
             bool enablerAvail = true; // Always allow Enabler — requires Streamline deployed, user responsibility
-            var nvngxItems = new List<object> { "None (Real DLSSG)", "Nukem's", new ComboBoxItem { Content = "Enabler", IsEnabled = enablerAvail }, "FSR 3/4 FG" };
+            var nvngxItems = new List<object> { "Нет (настоящий DLSSG)", "Nukem's", new ComboBoxItem { Content = "Enabler", IsEnabled = enablerAvail }, "FSR 3/4 FG" };
             var currentNvngxDisplay = IniToFgNvngx(ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? ""));
             object? nvngxSelected = nvngxItems.FirstOrDefault(i => i is ComboBoxItem cb ? (cb.Content as string) == currentNvngxDisplay : (i as string) == currentNvngxDisplay) ?? nvngxItems[0];
             fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
-            ToolTipService.SetToolTip(fgNvngxCombo!, "Only relevant when FG Output = DLSSG. Enabler requires Deploy Streamline + Deploy DLSS Enabler.");
-            AddRow(unifiedGrid, 6, "FG Output", fgOutputCombo!, "FG Nvngx Override", fgNvngxCombo!);
+            ToolTipService.SetToolTip(fgNvngxCombo!, "Важно только при FG Output = DLSSG. Для Enabler нужны «Развернуть Streamline» + «Развернуть DLSS Enabler».");
+            AddRow(unifiedGrid, 6, "Выход FG", fgOutputCombo!, "Переопределение FG Nvngx", fgNvngxCombo!);
 
             bool fgOutputIsDlssg = fgOutputCombo!.SelectedItem as string == "DLSSG";
             fgNvngxCombo!.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
@@ -2335,7 +2335,7 @@ public sealed partial class MainWindow
 
             // ── Additional Settings ────────────────────────────────────────
             content.Children.Add(MakeSeparator());
-            content.Children.Add(new TextBlock { Text = "Additional Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+            content.Children.Add(new TextBlock { Text = "Дополнительные настройки", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) });
 
             var addGrid = MakeSettingsGrid();
 
@@ -2362,22 +2362,22 @@ public sealed partial class MainWindow
             var srCurrent = ReadIniValue("DLSS", "RenderPresetForAll");
             var srSelected = srPresetMap.FirstOrDefault(p => p.Item2 == srCurrent).Item1 ?? "Default";
             srPresetCombo = new ComboBox { ItemsSource = srPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = srSelected };
-            ToolTipService.SetToolTip(srPresetCombo!, "DLSS Super Resolution render preset. J-M are the recommended modern presets.");
+            ToolTipService.SetToolTip(srPresetCombo!, "Пресет рендеринга DLSS Super Resolution. J–M — рекомендуемые современные пресеты.");
 
             // DLSS RR preset: 3=D, 4=E
             rrPresetMap = new[] { ("Default", "auto"), ("D", "3"), ("E", "4") };
             var rrCurrent = ReadIniValue("DLSSD", "RenderPresetForAll");
             var rrSelected = rrPresetMap.FirstOrDefault(p => p.Item2 == rrCurrent).Item1 ?? "Default";
             rrPresetCombo = new ComboBox { ItemsSource = rrPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = rrSelected };
-            ToolTipService.SetToolTip(rrPresetCombo!, "DLSS Ray Reconstruction render preset.");
+            ToolTipService.SetToolTip(rrPresetCombo!, "Пресет рендеринга DLSS Ray Reconstruction.");
 
-            AddRow(addGrid, 0, "DLSS SR Preset", srPresetCombo!, "DLSS RR Preset", rrPresetCombo!);
+            AddRow(addGrid, 0, "Пресет DLSS SR", srPresetCombo!, "Пресет DLSS RR", rrPresetCombo!);
 
             // Disable Flip Metering + Render Scale
             var flipCurrent = ReadIniValue("NvApi", "DisableFlipMetering");
             var flipSelected = flipCurrent == "true" ? "On" : "Default";
             flipCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = flipSelected };
-            ToolTipService.SetToolTip(flipCombo!, "On: DisableFlipMetering=true — fixes thick frametime graph with NukemFG + fakenvapi.");
+            ToolTipService.SetToolTip(flipCombo!, "Вкл: DisableFlipMetering=true — исправляет толстый график фреймтайма с NukemFG + fakenvapi.");
 
             // Render Scale — UpscaleRatioOverride
             renderScaleMap = new[] {
@@ -2403,9 +2403,9 @@ public sealed partial class MainWindow
                 if (match.Item1 != null) rsSelected = match.Item1;
             }
             rsCombo = new ComboBox { ItemsSource = renderScaleMap.Select(p => p.Item1).ToArray(), SelectedItem = rsSelected };
-            ToolTipService.SetToolTip(rsCombo!, "Override the internal render resolution. Off = use in-game quality preset as-is.");
+            ToolTipService.SetToolTip(rsCombo!, "Переопределить внутреннее разрешение рендеринга. Выкл — использовать игровой пресет качества как есть.");
 
-            AddRow(addGrid, 1, "Render Scale", rsCombo!, "Disable Flip Metering", flipCombo!);
+            AddRow(addGrid, 1, "Масштаб рендеринга", rsCombo!, "Отключить Flip Metering", flipCombo!);
 
             content.Children.Add(addGrid);
 
@@ -2457,16 +2457,16 @@ public sealed partial class MainWindow
                 var ueGrid = MakeSettingsGrid();
 
                 var dmvCombo = new ComboBox { ItemsSource = new[] { "Default", "Off" }, SelectedItem = ViewModel.GetOsDilatedMotionVectorsOff(card.GameName, card.Source ?? "") ? "Off" : "Default" };
-                ToolTipService.SetToolTip(dmvCombo, "Off: r.NGX.DLSS.DilateMotionVectors=0 + r.Streamline.DilateMotionVectors=0");
+                ToolTipService.SetToolTip(dmvCombo, "Выкл: r.NGX.DLSS.DilateMotionVectors=0 + r.Streamline.DilateMotionVectors=0");
                 var fsrCombo = new ComboBox { ItemsSource = new[] { "None", "FSR2", "FSR3", "FSR3.1" }, SelectedItem = ViewModel.GetOsFsrCrashFix(card.GameName, card.Source ?? "") };
-                ToolTipService.SetToolTip(fsrCombo, "FSR2: r.FidelityFX.FSR2.UseNativeDX12=1\nFSR3: r.FidelityFX.FSR3.UseNativeDX12=1\nFSR3.1: above + r.FidelityFX.FSR3.UseRHI=0");
-                AddRow(ueGrid, 0, "Dilated Motion Vectors", dmvCombo, "FSR Crash Fix", fsrCombo);
+                ToolTipService.SetToolTip(fsrCombo, "FSR2: r.FidelityFX.FSR2.UseNativeDX12=1\nFSR3: r.FidelityFX.FSR3.UseNativeDX12=1\nFSR3.1: то же + r.FidelityFX.FSR3.UseRHI=0");
+                AddRow(ueGrid, 0, "Размытые векторы движения", dmvCombo, "Исправление вылетов FSR", fsrCombo);
 
                 var fgSwapCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = ViewModel.GetOsFsrFgSwapchain(card.GameName, card.Source ?? "") ? "On" : "Default" };
-                ToolTipService.SetToolTip(fgSwapCombo, "On: r.FidelityFX.FI.OverrideSwapChainDX12=1");
+                ToolTipService.SetToolTip(fgSwapCombo, "Вкл: r.FidelityFX.FI.OverrideSwapChainDX12=1");
                 var upscalerCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = ViewModel.GetOsUpscalerPlugin(card.GameName, card.Source ?? "") ? "On" : "Default" };
-                ToolTipService.SetToolTip(upscalerCombo, "On: r.AntiAliasingMethod=4 + r.TemporalAA.Upscaler=1");
-                AddRow(ueGrid, 1, "FSR-FG Swapchain", fgSwapCombo, "Upscaler Plugin", upscalerCombo);
+                ToolTipService.SetToolTip(upscalerCombo, "Вкл: r.AntiAliasingMethod=4 + r.TemporalAA.Upscaler=1");
+                AddRow(ueGrid, 1, "FSR-FG swapchain", fgSwapCombo, "Плагин апскейлера", upscalerCombo);
 
                 content.Children.Add(ueGrid);
 
@@ -2497,7 +2497,7 @@ public sealed partial class MainWindow
             if (isDlssNr)
             {
                 content.Children.Add(MakeSeparator());
-                content.Children.Add(new TextBlock { Text = "Neural Rendering Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                content.Children.Add(new TextBlock { Text = "Настройки нейронного рендеринга", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var nrGrid = MakeSettingsGrid();
 
                 // Helper: read a key from the [DlssNr] section of OptiScaler.ini
@@ -2537,7 +2537,7 @@ public sealed partial class MainWindow
                                  : nrEnabledRaw.Equals("false", StringComparison.OrdinalIgnoreCase) ? "Off"
                                  : "Default" };
                 ToolTipService.SetToolTip(nrEnabledCombo, "Enable DLSS Neural Rendering. Requires nvngx_dlssnr.dll + nvngx.dll_dlssnr.dll in game folder.");
-                AddRow(nrGrid, 0, "NR Runtime", nrRuntimeCombo!, "NR Enabled", nrEnabledCombo!);
+                AddRow(nrGrid, 0, "Среда выполнения NR", nrRuntimeCombo!, "NR включён", nrEnabledCombo!);
 
                 // Row 1: Run Before SR | Passes
                 var nrRunBeforeRaw = ReadNrIni("RunBeforeSR");
@@ -2545,26 +2545,26 @@ public sealed partial class MainWindow
                     SelectedItem = nrRunBeforeRaw.Equals("true", StringComparison.OrdinalIgnoreCase) ? "On"
                                  : nrRunBeforeRaw.Equals("false", StringComparison.OrdinalIgnoreCase) ? "Off"
                                  : "Default" };
-                ToolTipService.SetToolTip(nrRunBeforeSrCombo, "Run NR before Super Resolution. On = before upscaling; Off = after upscaling.");
+                ToolTipService.SetToolTip(nrRunBeforeSrCombo, "Запускать NR до Super Resolution. Вкл — до масштабирования; выкл — после.");
 
                 var nrPassesRaw = ReadNrIni("Passes");
                 nrPassesCombo = new ComboBox { ItemsSource = new[] { "Default", "1", "2", "3" },
                     SelectedItem = nrPassesRaw is "1" or "2" or "3" ? nrPassesRaw : "Default" };
-                ToolTipService.SetToolTip(nrPassesCombo, "Number of NR model passes. Each extra pass costs ~2x the model time but increases quality.");
-                AddRow(nrGrid, 1, "Run Before SR", nrRunBeforeSrCombo!, "Passes", nrPassesCombo!);
+                ToolTipService.SetToolTip(nrPassesCombo, "Количество проходов модели NR. Каждый дополнительный проход удваивает время модели, но повышает качество.");
+                AddRow(nrGrid, 1, "Запускать до SR", nrRunBeforeSrCombo!, "Passes", nrPassesCombo!);
 
                 // Row 2: Working Scale | Finished Picture
                 var nrScaleRaw = ReadNrIni("WorkingScale");
-                nrScaleMap = new[] { ("Default", "auto"), ("0.5x (half)", "0.5"), ("0.75x", "0.75"), ("1.0x (full)", "1.0"), ("1.5x (supersample)", "1.5") };
+                nrScaleMap = new[] { ("Default", "auto"), ("0.5x (половина)", "0.5"), ("0.75x", "0.75"), ("1.0x (полный)", "1.0"), ("1.5x (суперсэмплинг)", "1.5") };
                 var nrScaleSelected = nrScaleMap.FirstOrDefault(p => p.Item2 == nrScaleRaw).Item1 ?? "Default";
                 nrWorkingScaleCombo = new ComboBox { ItemsSource = nrScaleMap.Select(p => p.Item1).ToArray(), SelectedItem = nrScaleSelected };
-                ToolTipService.SetToolTip(nrWorkingScaleCombo, "Model work resolution as a fraction of frame size. Lower = faster; above 1.0 supersamples the model.");
+                ToolTipService.SetToolTip(nrWorkingScaleCombo, "Рабочее разрешение модели как доля от размера кадра. Ниже — быстрее; выше 1.0 — суперсэмплинг модели.");
 
                 var nrFinishedRaw = ReadNrIni("FinishedPicture");
                 nrFinishedPicCombo = new ComboBox { ItemsSource = new[] { "Default", "On" },
                     SelectedItem = nrFinishedRaw.Equals("true", StringComparison.OrdinalIgnoreCase) ? "On" : "Default" };
-                ToolTipService.SetToolTip(nrFinishedPicCombo, "Apply NR to the finished picture (after all game lighting and effects). Helps with green noise. DX12 native only.");
-                AddRow(nrGrid, 2, "Working Scale", nrWorkingScaleCombo!, "Apply to Finished Picture", nrFinishedPicCombo!);
+                ToolTipService.SetToolTip(nrFinishedPicCombo, "Применять NR к готовой картинке (после всего игрового освещения и эффектов). Помогает против зелёного шума. Только для нативного DX12.");
+                AddRow(nrGrid, 2, "Рабочий масштаб", nrWorkingScaleCombo!, "Применять к готовой картинке", nrFinishedPicCombo!);
 
                 content.Children.Add(nrGrid);
 
@@ -2644,7 +2644,7 @@ public sealed partial class MainWindow
 
         if (isNightly || isDlssNr)
         {
-            var presetsLabel = new TextBlock { Text = "Presets", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            var presetsLabel = new TextBlock { Text = "Пресеты", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
             bottomBorder.Children.Add(presetsLabel);
 
             // Load global presets from disk
@@ -2678,13 +2678,13 @@ public sealed partial class MainWindow
 
                 var saveBtn = new Button
                 {
-                    Content = "Save",
+                    Content = "Сохранить",
                     FontSize = 11,
                     Width = 42,
                     Padding = new Thickness(4),
                     CornerRadius = new CornerRadius(4),
                 };
-                ToolTipService.SetToolTip(saveBtn, "Save current cog settings into this slot");
+                ToolTipService.SetToolTip(saveBtn, "Сохранить текущие настройки шестерёнки в этот слот");
 
                 // Stretch the textbox to fill remaining space
                 var nameRowGrid = new Grid { ColumnSpacing = 4 };
@@ -2706,7 +2706,7 @@ public sealed partial class MainWindow
                     IsEnabled = hasData,
                     Opacity = hasData ? 1.0 : 0.40,
                 };
-                ToolTipService.SetToolTip(applyBtn, hasData ? "Apply this preset to the current game" : "No preset saved yet — click Save to capture current settings");
+                ToolTipService.SetToolTip(applyBtn, hasData ? "Применить этот пресет к текущей игре" : "Пресет ещё не сохранён — нажмите «Сохранить», чтобы зафиксировать текущие настройки");
 
                 // ── Wire: TextBox name editing ─────────────────────────────
                 nameBox.TextChanged += (s, ev) =>
@@ -2770,7 +2770,7 @@ public sealed partial class MainWindow
                     applyBtn.IsEnabled = true;
                     applyBtn.Opacity = 1.0;
                     applyBtn.Content = p.Name ?? $"Slot {i + 1}";
-                    ToolTipService.SetToolTip(applyBtn, "Apply this preset to the current game");
+                    ToolTipService.SetToolTip(applyBtn, "Применить этот пресет к текущей игре");
                 };
 
                 // ── Wire: Apply button ─────────────────────────────────────
@@ -2986,9 +2986,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "OptiScaler Settings",
+            Title = "Настройки OptiScaler",
             Content = rootGrid,
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -3040,12 +3040,12 @@ public sealed partial class MainWindow
 
         var variantLabel = new TextBlock
         {
-            Text = "Variant",
+            Text = "Вариант",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(variantLabel, "Development: latest nightly build. Stable: last stable release. Lilium HDR: HDR-optimised variant (default).");
+        ToolTipService.SetToolTip(variantLabel, "Development: новейшая ночная сборка. Stable: последний стабильный релиз. Lilium HDR: вариант с оптимизацией HDR (по умолчанию).");
         Grid.SetRow(variantLabel, 0); Grid.SetColumn(variantLabel, 0);
         variantGrid.Children.Add(variantLabel);
 
@@ -3069,14 +3069,14 @@ public sealed partial class MainWindow
 
         var liliumPresetLabel = new TextBlock
         {
-            Text = "Lilium Preset",
+            Text = "Пресет Lilium",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
             Visibility = isLiliumSelected ? Visibility.Visible : Visibility.Collapsed,
         };
         ToolTipService.SetToolTip(liliumPresetLabel,
-            "Safest = swap chain only (near 100% compatible).\nHigher tiers upgrade back buffers and render targets — better HDR but may cause visual issues.");
+            "Самый безопасный = только цепочка обмена (почти 100% совместимость).\nБолее высокие уровни затрагивают буферы и цели рендеринга — лучше HDR, но возможны артефакты.");
         Grid.SetRow(liliumPresetLabel, 1); Grid.SetColumn(liliumPresetLabel, 0);
         variantGrid.Children.Add(liliumPresetLabel);
 
@@ -3154,7 +3154,7 @@ public sealed partial class MainWindow
         // ── Deploy dxvk.conf button ───────────────────────────────────────────
         var deployBtn = new Button
         {
-            Content = "Deploy dxvk.conf",
+            Content = "Развернуть dxvk.conf",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
@@ -3176,12 +3176,12 @@ public sealed partial class MainWindow
         // Row 0: Prefer DXGI Swapchain
         var presentLabel = new TextBlock
         {
-            Text = "Prefer DXGI Swapchain",
+            Text = "Предпочитать DXGI swapchain",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(presentLabel, "Sets Vulkan/OpenGL Present Method to 'Preferred layered on DXGI Swapchain' in the NVIDIA driver profile. Recommended for DXVK — improves compatibility and HDR support.");
+        ToolTipService.SetToolTip(presentLabel, "Задаёт в профиле драйвера NVIDIA метод вывода Vulkan/OpenGL «Preferred layered on DXGI Swapchain». Рекомендуется для DXVK — улучшает совместимость и поддержку HDR.");
         Grid.SetRow(presentLabel, 0); Grid.SetColumn(presentLabel, 0);
         presentGrid.Children.Add(presentLabel);
 
@@ -3202,12 +3202,12 @@ public sealed partial class MainWindow
         // Row 1: DXVK as Native Flags
         var flagsLabel = new TextBlock
         {
-            Text = "DXVK as Native",
+            Text = "DXVK как нативный",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(flagsLabel, "Standard: Treat DXVK as Native (0x000802A5). Alternative: Allow DXVK Promotion + DirectFlip (0x00080004). Only active when Prefer DXGI Swapchain is Yes.");
+        ToolTipService.SetToolTip(flagsLabel, "Стандартный: считать DXVK нативным (0x000802A5). Альтернативный: разрешить DXVK Promotion + DirectFlip (0x00080004). Действует только при «Предпочитать DXGI swapchain» = Да.");
         Grid.SetRow(flagsLabel, 1); Grid.SetColumn(flagsLabel, 0);
         presentGrid.Children.Add(flagsLabel);
 
@@ -3218,7 +3218,7 @@ public sealed partial class MainWindow
         };
         var flagsCombo = new ComboBox { FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch };
         foreach (var (lbl, _) in flagOptions) flagsCombo.Items.Add(lbl);
-        ToolTipService.SetToolTip(flagsCombo, "Standard (0x000802A5): Treat DXVK as Native\nAlternative (0x00080004): Allow DXVK Promotion + DirectFlip");
+        ToolTipService.SetToolTip(flagsCombo, "Стандартный (0x000802A5): считать DXVK нативным\nАльтернативный (0x00080004): разрешить DXVK Promotion + DirectFlip");
 
         var currentFlags = _dlssPresetService.GetVulkanPresentMethodFlags(card.GameName, card.InstallPath ?? "");
         bool presentIsYes = currentPresentMethod == 0x00000001;
@@ -3269,9 +3269,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "DXVK Settings",
+            Title = "Настройки DXVK",
             Content = content,
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };

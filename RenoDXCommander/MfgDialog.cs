@@ -38,11 +38,11 @@ public static class MfgDialog
             var warningPanel = new StackPanel { Spacing = 12 };
             warningPanel.Children.Add(new TextBlock
             {
-                Text = "Multi Frame Generation (MFG) and Dynamic MFG are only supported on NVIDIA 50 Series GPUs (Blackwell architecture).\n\n" +
-                       "Minimum driver requirements:\n" +
-                       "• MFG (Fixed): Driver 572.16+\n" +
-                       "• DMFG (Dynamic): Driver 595.97+\n\n" +
-                       "These settings will have no effect on 40 Series or older hardware.",
+                Text = "Мульти-генерация кадров (MFG) и динамический MFG поддерживаются только на GPU NVIDIA 50-й серии (архитектура Blackwell).\n\n" +
+                       "Минимальные требования к драйверу:\n" +
+                       "• MFG (фиксированный): драйвер 572.16+\n" +
+                       "• DMFG (динамический): драйвер 595.97+\n\n" +
+                       "Эти настройки не действуют на железе 40-й серии и старше.",
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 13,
                 Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush),
@@ -50,7 +50,7 @@ public static class MfgDialog
 
             var dontShowCheck = new CheckBox
             {
-                Content = "Don't show this warning again",
+                Content = "Больше не показывать это предупреждение",
                 FontSize = 12,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             };
@@ -58,10 +58,10 @@ public static class MfgDialog
 
             var warningDialog = new ContentDialog
             {
-                Title = "⚠ Hardware Requirement",
+                Title = "⚠ Требования к железу",
                 Content = warningPanel,
                 PrimaryButtonText = "OK",
-                CloseButtonText = "Cancel",
+                CloseButtonText = "Отмена",
                 XamlRoot = xamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
@@ -98,7 +98,7 @@ public static class MfgDialog
         // ── FG Mode ──
         panel.Children.Add(new TextBlock
         {
-            Text = "FG Mode",
+            Text = "Режим FG",
             FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -120,13 +120,13 @@ public static class MfgDialog
             CornerRadius = new CornerRadius(6),
         };
         ToolTipService.SetToolTip(modeCombo,
-            "Default = application controls frame generation. Fixed = always generate a fixed multiplier of frames. Dynamic = generate up to a target frame rate.");
+            "По умолчанию — генерацией кадров управляет игра. Фиксированный — всегда создавать заданный множитель кадров. Динамический — создавать кадры до целевой частоты.");
         panel.Children.Add(modeCombo);
 
         // ── Frame Count ──
         panel.Children.Add(new TextBlock
         {
-            Text = "Frame Count",
+            Text = "Количество кадров",
             FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -140,13 +140,13 @@ public static class MfgDialog
             CornerRadius = new CornerRadius(6),
         };
         ToolTipService.SetToolTip(countCombo,
-            "Fixed: exact frame multiplier (2x-6x). Dynamic: maximum frames the driver may generate (Up to 3x-6x). 50 Series GPUs only for 3x+.");
+            "Фиксированный: точный множитель кадров (2x–6x). Динамический: максимум кадров, которые может создать драйвер (до 3x–6x). Для 3x+ нужен GPU серии 50.");
         panel.Children.Add(countCombo);
 
         // ── Target Frame Rate ──
         panel.Children.Add(new TextBlock
         {
-            Text = "Target Frame Rate",
+            Text = "Целевая частота кадров",
             FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -160,13 +160,13 @@ public static class MfgDialog
             CornerRadius = new CornerRadius(6),
         };
         ToolTipService.SetToolTip(fpsCombo,
-            "The target output frame rate for dynamic frame generation. Only active in Dynamic mode.");
+            "Целевая частота кадров на выходе для динамической генерации кадров. Действует только в динамическом режиме.");
         panel.Children.Add(fpsCombo);
 
         // Inline custom FPS input (shown when "Custom..." is selected)
         var customFpsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Visibility = Visibility.Collapsed };
         var customFpsBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13, MinWidth = 100 };
-        var customFpsBtn = new Button { Content = "Set", FontSize = 12 };
+        var customFpsBtn = new Button { Content = "Задать", FontSize = 12 };
         customFpsPanel.Children.Add(customFpsBox);
         customFpsPanel.Children.Add(customFpsBtn);
         panel.Children.Add(customFpsPanel);
@@ -478,9 +478,9 @@ public static class MfgDialog
         // ── Show dialog ──
         var dialog = new ContentDialog
         {
-            Title = "Multi Frame Generation",
+            Title = "Мульти-генерация кадров",
             Content = panel,
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };

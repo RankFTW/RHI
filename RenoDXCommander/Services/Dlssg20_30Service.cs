@@ -27,8 +27,8 @@ public class Dlssg20_30Service
     public const string StagedDllName = "version.dll";
     public const string IniFileName   = "dlssg_sm86.ini";
 
-    public const string GpuGenRtx30 = "RTX 30 Series";
-    public const string GpuGenRtx20 = "RTX 20 Series";
+    public const string GpuGenRtx30 = "Серия RTX 30";
+    public const string GpuGenRtx20 = "Серия RTX 20";
 
     /// <summary>All valid proxy DLL names (version.dll default + altnative folder).</summary>
     public static readonly string[] ProxyNames =
@@ -100,11 +100,11 @@ public class Dlssg20_30Service
             return;
         }
 
-        progress?.Report(("Downloading 20/30 FG Unlock DLL...", 20));
+        progress?.Report(("Загрузка DLL разблокировки FG 20/30...", 20));
         if (!await DownloadFileAsync(DllRawUrl, Path.Combine(_stagingDir, StagedDllName)).ConfigureAwait(false))
             return;
 
-        progress?.Report(("Downloading INI...", 60));
+        progress?.Report(("Загрузка INI...", 60));
         if (!await DownloadFileAsync(IniRawUrl, Path.Combine(_stagingDir, IniFileName)).ConfigureAwait(false))
             return;
 
@@ -112,7 +112,7 @@ public class Dlssg20_30Service
         LatestVersion = sha;
         HasUpdate = false;
         _crashReporter.Log($"[Dlssg20_30Service.EnsureStaging] Staged commit {sha}");
-        progress?.Report(("20/30 FG Unlock ready", 100));
+        progress?.Report(("Разблокировка FG 20/30 готова", 100));
     }
 
     // ── Install ───────────────────────────────────────────────────────────────

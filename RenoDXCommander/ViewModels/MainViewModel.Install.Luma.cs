@@ -44,7 +44,7 @@ public partial class MainViewModel
 
         if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath))
         {
-            card.RsActionMessage = "No install path — use 📁 to pick the game folder.";
+            card.RsActionMessage = "Путь установки не задан — выберите папку игры кнопкой 📁.";
             return;
         }
 
@@ -54,7 +54,7 @@ public partial class MainViewModel
             && !(card.LumaFeatureEnabled && card.IsLumaMode)
             && !card.ExcludeFromUpdateAllRef)
         {
-            card.RsActionMessage = "⚠ Install RE Framework first.";
+            card.RsActionMessage = "⚠ Сначала установите RE Framework.";
             return;
         }
 
@@ -110,7 +110,7 @@ public partial class MainViewModel
         }
 
         card.RsIsInstalling  = true;
-        card.RsActionMessage = "Starting ReShade download...";
+        card.RsActionMessage = "Начинаю загрузку ReShade...";
         try
         {
             var progress = new Progress<(string msg, double pct)>(p =>
@@ -159,7 +159,7 @@ public partial class MainViewModel
                 card.RsInstalledFile    = record.InstalledAs;
                 card.RsInstalledVersion = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.InstalledAs);
                 card.RsStatus           = GameStatus.Installed;
-                card.RsActionMessage    = "✅ ReShade installed!";
+                card.RsActionMessage    = "✅ ReShade установлен!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
 
@@ -189,7 +189,7 @@ public partial class MainViewModel
         if (IsVulkanLayerInstalledFunc())
         {
             card.RsIsInstalling  = true;
-            card.RsActionMessage = "Installing Vulkan ReShade...";
+            card.RsActionMessage = "Установка Vulkan ReShade...";
             try
             {
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
@@ -205,7 +205,7 @@ public partial class MainViewModel
                 {
                     card.RsInstalledVersion = vulkanVersion;
                     card.RsStatus        = GameStatus.Installed;
-                    card.RsActionMessage = "✅ Vulkan ReShade installed!";
+                    card.RsActionMessage = "✅ Vulkan ReShade установлен!";
                     card.NotifyAll();
                     card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
 
@@ -236,7 +236,7 @@ public partial class MainViewModel
             if (ShowVulkanAdminRequiredDialog != null)
                 await ShowVulkanAdminRequiredDialog();
             else
-                card.RsActionMessage = "⚠ Administrator privileges are required for Vulkan layer installation. Restart RHI as admin.";
+                card.RsActionMessage = "⚠ Для установки слоя Vulkan нужны права администратора. Перезапустите RHI от администратора.";
             return;
         }
 
@@ -248,14 +248,14 @@ public partial class MainViewModel
                 var proceed = await ShowVulkanLayerWarningDialog();
                 if (!proceed)
                 {
-                    card.RsActionMessage = "Vulkan layer install cancelled.";
+                    card.RsActionMessage = "Установка слоя Vulkan отменена.";
                     return;
                 }
             }
         }
 
         card.RsIsInstalling  = true;
-        card.RsActionMessage = "Installing Vulkan ReShade layer...";
+        card.RsActionMessage = "Установка слоя Vulkan ReShade...";
         try
         {
             // 3. Install the global Vulkan layer (copies DLL, writes manifest, registers in registry)
@@ -283,7 +283,7 @@ public partial class MainViewModel
             {
                 card.RsInstalledVersion = vulkanVersion;
                 card.RsStatus        = GameStatus.Installed;
-                card.RsActionMessage = "✅ ReShade installed (Vulkan Layer)!";
+                card.RsActionMessage = "✅ ReShade установлен (слой Vulkan)!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
 
@@ -318,7 +318,7 @@ public partial class MainViewModel
             if (ShowVulkanAdminRequiredDialog != null)
                 await ShowVulkanAdminRequiredDialog();
             else
-                card.RsActionMessage = "⚠ Administrator privileges are required for GAC symlink installation. Restart RHI as admin.";
+                card.RsActionMessage = "⚠ Для установки символической ссылки в GAC нужны права администратора. Перезапустите RHI от администратора.";
             return;
         }
 
@@ -331,7 +331,7 @@ public partial class MainViewModel
         dllFileName ??= "dxgi.dll"; // default — DX11/DX12 games use dxgi.dll
 
         card.RsIsInstalling = true;
-        card.RsActionMessage = "Installing ReShade (GAC symlink)...";
+        card.RsActionMessage = "Установка ReShade (ссылка GAC)...";
         try
         {
             AuxInstallService.EnsureReShadeStaging();
@@ -361,7 +361,7 @@ public partial class MainViewModel
                 card.RsInstalledFile = dllFileName;
                 card.RsInstalledVersion = version;
                 card.RsStatus = GameStatus.Installed;
-                card.RsActionMessage = "✅ ReShade installed (GAC symlink)!";
+                card.RsActionMessage = "✅ ReShade установлен (ссылка GAC)!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
                 DeployAddonsForCard(card.GameName);
@@ -396,7 +396,7 @@ public partial class MainViewModel
         // GAC symlink removal requires admin (files are in C:\Windows\...)
         if (isGacGame && !IsRunningAsAdminFunc())
         {
-            card.RsActionMessage = "⚠ Administrator privileges required to remove GAC symlinks. Enable Admin Mode in Settings.";
+            card.RsActionMessage = "⚠ Для удаления ссылок GAC нужны права администратора. Включите режим администратора в настройках.";
             card.NotifyAll();
             return;
         }
@@ -439,13 +439,13 @@ public partial class MainViewModel
             card.RsInstalledFile    = null;
             card.RsInstalledVersion = null;
             card.RsStatus           = GameStatus.NotInstalled;
-            card.RsActionMessage    = "✖ ReShade removed.";
+            card.RsActionMessage    = "✖ ReShade удалён.";
             card.NotifyAll();
             card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
         }
         catch (Exception ex)
         {
-            card.RsActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.RsActionMessage = $"❌ Не удалось удалить: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallReShade", ex, note: $"Game: {card.GameName}");
         }
     }
@@ -484,13 +484,13 @@ public partial class MainViewModel
 
             // 6. Update card status — do NOT touch the global Vulkan layer
             card.RsStatus        = GameStatus.NotInstalled;
-            card.RsActionMessage = "✖ Vulkan ReShade removed.";
+            card.RsActionMessage = "✖ Vulkan ReShade удалён.";
             card.NotifyAll();
             card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
         }
         catch (Exception ex)
         {
-            card.RsActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.RsActionMessage = $"❌ Не удалось удалить: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallVulkanReShade", ex, note: $"Game: {card.GameName}");
         }
     }
@@ -504,7 +504,7 @@ public partial class MainViewModel
 
         if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath))
         {
-            card.RefActionMessage = "No install path — use 📁 to pick the game folder.";
+            card.RefActionMessage = "Путь установки не задан — выберите папку игры кнопкой 📁.";
             return;
         }
 
@@ -512,7 +512,7 @@ public partial class MainViewModel
         if (!await CheckInstallWarningAsync(card.GameName, "reframework")) return;
 
         card.RefIsInstalling = true;
-        card.RefActionMessage = "Starting RE Framework download...";
+        card.RefActionMessage = "Начинаю загрузку RE Framework...";
         try
         {
             var progress = new Progress<(string msg, double pct)>(p =>
@@ -526,7 +526,7 @@ public partial class MainViewModel
                 card.RefRecord = record;
                 card.RefInstalledVersion = record.InstalledVersion;
                 card.RefStatus = GameStatus.Installed;
-                card.RefActionMessage = "✅ RE Framework installed!";
+                card.RefActionMessage = "✅ RE Framework установлен!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RefActionMessage = m, card.RefActionMessage);
             });
@@ -553,13 +553,13 @@ public partial class MainViewModel
             card.RefRecord = null;
             card.RefInstalledVersion = null;
             card.RefStatus = GameStatus.NotInstalled;
-            card.RefActionMessage = "✖ RE Framework removed.";
+            card.RefActionMessage = "✖ RE Framework удалён.";
             card.NotifyAll();
             card.FadeMessage(m => card.RefActionMessage = m, card.RefActionMessage);
         }
         catch (Exception ex)
         {
-            card.RefActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.RefActionMessage = $"❌ Не удалось удалить: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallREFramework", ex, note: $"Game: {card.GameName}");
         }
     }
@@ -893,7 +893,7 @@ public partial class MainViewModel
         if (!skipWarning && !await CheckInstallWarningAsync(card.GameName, "luma")) return;
 
         card.IsLumaInstalling = true;
-        card.LumaActionMessage = "Installing Luma...";
+        card.LumaActionMessage = "Установка Luma...";
         try
         {
             LumaInstalledRecord record;
@@ -906,16 +906,16 @@ public partial class MainViewModel
                 var parsed = NexusUpdateService.ParseNexusUrl(mod.NexusUrl);
                 if (parsed == null)
                 {
-                    card.LumaActionMessage = "❌ Invalid Nexus URL.";
+                    card.LumaActionMessage = "❌ Неверная ссылка Nexus.";
                     return;
                 }
 
-                card.LumaActionMessage = "Fetching mod info...";
+                card.LumaActionMessage = "Загрузка информации о модах...";
                 var latestFile = await nexusDl.GetLatestMainFileAsync(parsed.Value.Domain, parsed.Value.ModId).ConfigureAwait(false);
                 if (latestFile == null)
                 {
                     _crashReporter.Log($"[InstallLumaAsync] Nexus — no MAIN file for '{card.GameName}'");
-                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "No downloadable file found on Nexus.");
+                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "На Nexus не найдено файлов для скачивания.");
                     return;
                 }
 
@@ -923,7 +923,7 @@ public partial class MainViewModel
                 if (uri == null)
                 {
                     _crashReporter.Log($"[InstallLumaAsync] Nexus — could not resolve CDN URI for '{card.GameName}'");
-                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Could not resolve Nexus download link.");
+                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Не удалось определить ссылку на скачивание с Nexus.");
                     return;
                 }
 
@@ -933,7 +933,7 @@ public partial class MainViewModel
                 var tempPath = await nexusDl.DownloadToTempAsync(uri, progress).ConfigureAwait(false);
                 if (tempPath == null)
                 {
-                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Download failed.");
+                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Не удалось скачать.");
                     return;
                 }
 
@@ -964,7 +964,7 @@ public partial class MainViewModel
             {
                 // Bespoke drag-drop install — no download URL available
                 _crashReporter.Log($"[InstallLumaAsync] '{card.GameName}' Luma mod has no download URL (bespoke drag-drop install) — cannot reinstall automatically");
-                DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Drop a Luma archive onto the card to reinstall.");
+                DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Перетащите архив Luma на карточку, чтобы переустановить.");
                 return;
             }
             else
@@ -994,7 +994,7 @@ public partial class MainViewModel
             {
                 card.LumaRecord = record;
                 card.LumaStatus = GameStatus.Installed;
-                card.LumaActionMessage = "Luma installed!";
+                card.LumaActionMessage = "Luma установлен!";
                 card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
             });
 
@@ -1002,7 +1002,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = $"❌ Install failed: {ex.Message}");
+            DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = $"❌ Не удалось установить: {ex.Message}");
             _crashReporter.WriteCrashReport("InstallLuma", ex, note: $"Game: {card.GameName}");
         }
         finally
@@ -1026,7 +1026,7 @@ public partial class MainViewModel
         // Deploy RHI's newest DLSS version (Luma bundles its own — RHI manages it instead)
         try
         {
-            DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Updating DLSS...");
+            DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Обновление DLSS...");
             var newestDlssPath = await _dlssStreamlineService.EnsureNewestDlssCachedAsync();
             if (newestDlssPath != null && File.Exists(newestDlssPath))
             {
@@ -1053,7 +1053,7 @@ public partial class MainViewModel
         // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
         // When dgVoodoo2 is being deployed: force ReShade to dxgi.dll so it hooks dgVoodoo's
         // DX11 output rather than competing with dgVoodoo2 for the d3d9.dll slot.
-        DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Installing ReShade...");
+        DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Установка ReShade...");
         await InstallReShadeInternalAsync(card, needsDgVoodoo ? "dxgi.dll" : null);
 
         // ── dgVoodoo2 (DX9→DX11 translation layer — required for some legacy games) ────
@@ -1064,7 +1064,7 @@ public partial class MainViewModel
         {
             try
             {
-                DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Installing dgVoodoo2...");
+                DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Установка dgVoodoo2...");
                 var dgVoodooSvc = App.Services.GetRequiredService<DgVoodooService>();
 
                 // Prefer the version recommended by the wiki for this specific mod.
@@ -1155,7 +1155,7 @@ public partial class MainViewModel
         }
 
         // Clear the action message — drag-drop path has no subsequent step to overwrite it
-        card.FadeMessage(m => card.LumaActionMessage = m, "✅ Luma installed!");
+        card.FadeMessage(m => card.LumaActionMessage = m, "✅ Luma установлен!");
     }
 
     [RelayCommand]
@@ -1185,7 +1185,7 @@ public partial class MainViewModel
             _lumaService.Uninstall(card.LumaRecord);
             card.LumaRecord = null;
             card.LumaStatus = GameStatus.NotInstalled;
-            card.LumaActionMessage = "✖ Luma removed.";
+            card.LumaActionMessage = "✖ Luma удалён.";
 
             // Clean up nvngx_dlss.dll deployed by ApplyLumaPostInstallAsync.
             // It's not in InstalledFiles (deployed after record was saved), so handle it here.
@@ -1218,7 +1218,7 @@ public partial class MainViewModel
             bool wasDgVoodooGame = wasDgVoodoo;
             if (wasDgVoodooGame && card.IsRsInstalled)
             {
-                card.LumaActionMessage = "Restoring ReShade...";
+                card.LumaActionMessage = "Восстановление ReShade...";
                 _ = InstallReShadeInternalAsync(card, forceFilename: null);
             }
             else if (card.IsRsInstalled)
@@ -1320,7 +1320,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            card.LumaActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.LumaActionMessage = $"❌ Не удалось удалить: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallLuma", ex, note: $"Game: {card.GameName}");
         }
     }
@@ -1353,8 +1353,8 @@ public partial class MainViewModel
             {
                 Title = $"⚠ Install Note — {gameName}",
                 Content = message,
-                PrimaryButtonText = "Continue",
-                CloseButtonText = "Cancel",
+                PrimaryButtonText = "Продолжить",
+                CloseButtonText = "Отмена",
                 DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.Primary,
                 XamlRoot = xamlRoot,
             };
@@ -1440,7 +1440,7 @@ public partial class MainViewModel
 
             card.UseNormalReShade = true;
             card.RsStatus = GameStatus.NotInstalled;
-            card.RsActionMessage = "Normal ReShade selected — click Install to deploy.";
+            card.RsActionMessage = "Выбран обычный ReShade — нажмите «Установить» для развертывания.";
             card.NotifyAll();
             card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
             _crashReporter.Log($"[SetUseNormalReShade] '{card.GameName}' flagged for normal ReShade (not installed yet)");
@@ -1476,7 +1476,7 @@ public partial class MainViewModel
 
             card.UseNormalReShade = false;
             card.RsStatus = GameStatus.NotInstalled;
-            card.RsActionMessage = "Addon ReShade selected — click Install to deploy.";
+            card.RsActionMessage = "Выбран ReShade с аддонами — нажмите «Установить» для развертывания.";
             card.NotifyAll();
             card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
             _crashReporter.Log($"[SetUseNormalReShade] '{card.GameName}' flagged for addon ReShade (not installed yet)");

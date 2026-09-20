@@ -221,7 +221,7 @@ public partial class MainViewModel
         try
         {
             var path = Path.Combine(AppContext.BaseDirectory, "RHI_PatchNotes.md");
-            if (!File.Exists(path)) return "Patch notes file not found.";
+            if (!File.Exists(path)) return "Файл списка изменений не найден.";
 
             var lines = File.ReadAllLines(path);
             var sections = new List<string>();
@@ -264,11 +264,11 @@ public partial class MainViewModel
 
             return sections.Count > 0
                 ? string.Join("\n\n---\n\n", sections)
-                : "No patch notes available.";
+                : "Список изменений недоступен.";
         }
         catch (Exception ex)
         {
-            return $"Error reading patch notes: {ex.Message}";
+            return $"Ошибка чтения списка изменений: {ex.Message}";
         }
     }
 

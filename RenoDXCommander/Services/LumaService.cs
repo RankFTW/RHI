@@ -37,7 +37,7 @@ public class LumaService : ILumaService
     /// </summary>
     public async Task<List<LumaMod>> FetchCompletedModsAsync(IProgress<string>? progress = null)
     {
-        progress?.Report("Fetching Luma wiki...");
+        progress?.Report("Загрузка вики Luma...");
         var html = await _http.GetStringAsync(WikiUrl);
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
@@ -171,7 +171,7 @@ public class LumaService : ILumaService
                 mods[i].FeatureNotes = ExtractAnchorSection(doc, anchor, allAnchors);
         }
 
-        progress?.Report($"Found {mods.Count} Luma mods");
+        progress?.Report($"Найдено модов Luma: {mods.Count}");
         return mods;
     }
 
@@ -182,7 +182,7 @@ public class LumaService : ILumaService
     /// </summary>
     public async Task<Dictionary<string, LumaGenericGameEntry>> FetchGenericUeTableAsync(IProgress<string>? progress = null)
     {
-        progress?.Report("Fetching Luma UE wiki...");
+        progress?.Report("Загрузка UE-вики Luma...");
         var result = new Dictionary<string, LumaGenericGameEntry>(StringComparer.OrdinalIgnoreCase);
 
         try
@@ -561,7 +561,7 @@ public class LumaService : ILumaService
         string? store = null)
     {
         if (mod.DownloadUrl == null)
-            throw new InvalidOperationException($"{mod.Name} has no download URL.");
+            throw new InvalidOperationException($"У {mod.Name} нет ссылки на скачивание.");
 
         // Only allow downloads from Filoppi's GitHub to prevent untrusted sources.
         if (!mod.DownloadUrl.StartsWith("https://github.com/Filoppi/", StringComparison.OrdinalIgnoreCase))
@@ -601,7 +601,7 @@ public class LumaService : ILumaService
         // Download
         if (needsDownload)
         {
-        progress?.Report(("Downloading Luma mod...", 0));
+        progress?.Report(("Загрузка мода Luma...", 0));
         HttpResponseMessage? response = null;
         try
         {
@@ -637,7 +637,7 @@ public class LumaService : ILumaService
         }
         catch (Exception ex)
         {
-            throw new HttpRequestException($"Failed to download Luma mod: {ex.Message}");
+            throw new HttpRequestException($"Не удалось скачать мод Luma: {ex.Message}");
         }
         finally
         {
@@ -646,13 +646,13 @@ public class LumaService : ILumaService
         } // end if (needsDownload)
 
         // Extract zip to game folder, tracking all extracted file names
-        progress?.Report(("Extracting Luma files...", 80));
+        progress?.Report(("Распаковка файлов Luma...", 80));
         var installedFiles = new List<string>();
 
         // ── Deploy reshade.ini FIRST ──────────────────────────────────────────────
         // Must happen before zip extraction so that the AddonPath setting in
         // reshade.ini is available when resolving where .addon files should go.
-        progress?.Report(("Deploying ReShade config...", 75));
+        progress?.Report(("Развертывание конфигурации ReShade...", 75));
         try
         {
             _auxFileService.EnsureInisDir();
@@ -665,7 +665,7 @@ public class LumaService : ILumaService
         catch (Exception ex) { CrashReporter.Log($"[LumaService.Install] reshade.ini deploy failed — {ex.Message}"); }
 
         // ── Extract zip ───────────────────────────────────────────────────────────
-        progress?.Report(("Extracting Luma files...", 80));
+        progress?.Report(("Распаковка файлов Luma...", 80));
 
         if (cachePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
@@ -720,7 +720,7 @@ public class LumaService : ILumaService
         }
 
         // ── Deploy shaders (same as normal ReShade — respects global/per-game selection) ──
-        progress?.Report(("Deploying shaders...", 95));
+        progress?.Report(("Развертывание шейдеров...", 95));
         try
         {
             var exclLuma1 = selectedShaderPacks == null ? null : await Task.Run(() =>
@@ -755,7 +755,7 @@ public class LumaService : ILumaService
             InstalledBuildNumber = await GetLatestBuildNumberAsync().ConfigureAwait(false),
         };
         SaveRecord(record);
-        progress?.Report(("Luma installed!", 100));
+        progress?.Report(("Luma установлен!", 100));
         return record;
     }
 
