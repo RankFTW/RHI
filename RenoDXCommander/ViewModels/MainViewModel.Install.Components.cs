@@ -149,7 +149,7 @@ public partial class MainViewModel
             return;
 
         card.IsInstalling = true;
-        card.ActionMessage = "Installing emulator addons...";
+        card.ActionMessage = "Установка аддонов-эмуляторов...";
         _crashReporter.Log($"[MainViewModel.InstallEmulatorAddonsAsync] Starting bundle install for {card.GameName}");
 
         int installed = 0;
@@ -223,10 +223,10 @@ public partial class MainViewModel
             DispatcherQueue?.TryEnqueue(() =>
             {
                 card.Status = installed > 0 ? GameStatus.Installed : GameStatus.Available;
-                card.InstalledAddonFileName = $"{installed} addons";
+                card.InstalledAddonFileName = $"аддонов: {installed}";
                 card.ActionMessage = failed == 0
-                    ? $"✅ {installed} addons installed!"
-                    : $"✅ {installed} installed, {failed} failed.";
+                    ? $"✅ Аддонов установлено: {installed}!"
+                    : $"✅ Установлено: {installed}, с ошибками: {failed}.";
                 card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
                 card.NotifyAll();
                 SaveLibrary();
@@ -281,7 +281,7 @@ public partial class MainViewModel
 
         card.Status = GameStatus.Available;
         card.InstalledAddonFileName = null;
-        card.ActionMessage = $"✖ {removed} addons removed.";
+        card.ActionMessage = $"✖ Аддонов удалено: {removed}.";
         card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
         card.NotifyAll();
         SaveLibrary();
@@ -322,7 +322,7 @@ public partial class MainViewModel
         if (!await CheckInstallWarningAsync(card.GameName, "relimiter")) return;
 
         card.UlIsInstalling = true;
-        card.UlActionMessage = "Downloading ReLimiter...";
+        card.UlActionMessage = "Загрузка ReLimiter...";
         card.UlProgress = 0;
         try
         {
@@ -401,7 +401,7 @@ public partial class MainViewModel
                 card.UlInstalledVersion = _latestUlVersion?.TrimStart('v', 'V')
                     ?? ReadUlInstalledVersion(card.Is32Bit);
                 card.UlStatus = GameStatus.Installed;
-                card.UlActionMessage = "✅ ReLimiter installed!";
+                card.UlActionMessage = "✅ ReLimiter установлен!";
                 card.UlIsInstalling = false;
                 card.NotifyAll();
                 card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
@@ -411,7 +411,7 @@ public partial class MainViewModel
         {
             DispatcherQueue?.TryEnqueue(() =>
             {
-                card.UlActionMessage = $"❌ Install failed: {ex.Message}";
+                card.UlActionMessage = $"❌ Не удалось установить: {ex.Message}";
                 card.UlIsInstalling = false;
                 card.NotifyAll();
             });
@@ -427,7 +427,7 @@ public partial class MainViewModel
     {
         if (File.Exists(GetUlCachePath(is32Bit)))
         {
-            progress?.Report(("Installing from cache...", 50));
+            progress?.Report(("Установка из кеша...", 50));
             return;
         }
 
@@ -442,7 +442,7 @@ public partial class MainViewModel
         var url = currentUrl;
         if (string.IsNullOrEmpty(url))
         {
-            throw new InvalidOperationException("Could not determine ReLimiter download URL from GitHub releases.");
+            throw new InvalidOperationException("Не удалось определить ссылку на скачивание ReLimiter из релизов GitHub.");
         }
 
         Directory.CreateDirectory(DownloadPaths.FrameLimiter);
@@ -565,13 +565,13 @@ public partial class MainViewModel
             card.UlInstalledFile = null;
             card.UlInstalledVersion = null;
             card.UlStatus = GameStatus.NotInstalled;
-            card.UlActionMessage = "✖ ReLimiter removed.";
+            card.UlActionMessage = "✖ ReLimiter удалён.";
             card.NotifyAll();
             card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
         }
         catch (Exception ex)
         {
-            card.UlActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.UlActionMessage = $"❌ Не удалось удалить: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallUl", ex, note: $"Game: {card.GameName}");
         }
     }
@@ -641,7 +641,7 @@ public partial class MainViewModel
 
         if (File.Exists(GetDcCachePath(is32Bit)))
         {
-            progress?.Report(("Installing from cache...", 50));
+            progress?.Report(("Установка из кеша...", 50));
             return;
         }
 
@@ -656,7 +656,7 @@ public partial class MainViewModel
         var url = currentUrl;
         if (string.IsNullOrEmpty(url))
         {
-            throw new InvalidOperationException("Could not determine Display Commander download URL from GitHub releases.");
+            throw new InvalidOperationException("Не удалось определить ссылку на скачивание Display Commander из релизов GitHub.");
         }
 
         Directory.CreateDirectory(DownloadPaths.FrameLimiter);
@@ -766,7 +766,7 @@ public partial class MainViewModel
         if (!await CheckInstallWarningAsync(card.GameName, "dc")) return;
 
         card.DcIsInstalling = true;
-        card.DcActionMessage = "Downloading Display Commander...";
+        card.DcActionMessage = "Загрузка Display Commander...";
         card.DcProgress = 0;
         try
         {
@@ -847,7 +847,7 @@ public partial class MainViewModel
                 if (cachedVersion == "latest_build") cachedVersion = null;
                 card.DcInstalledVersion = peVersion ?? cachedVersion ?? ReadDcInstalledVersion(card.Is32Bit);
                 card.DcStatus = GameStatus.Installed;
-                card.DcActionMessage = "✅ Display Commander installed!";
+                card.DcActionMessage = "✅ Display Commander установлен!";
                 card.DcIsInstalling = false;
                 card.NotifyAll();
                 card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
@@ -857,7 +857,7 @@ public partial class MainViewModel
         {
             DispatcherQueue?.TryEnqueue(() =>
             {
-                card.DcActionMessage = $"❌ Install failed: {ex.Message}";
+                card.DcActionMessage = $"❌ Не удалось установить: {ex.Message}";
                 card.DcIsInstalling = false;
                 card.NotifyAll();
             });
@@ -896,13 +896,13 @@ public partial class MainViewModel
             card.DcInstalledFile = null;
             card.DcInstalledVersion = null;
             card.DcStatus = GameStatus.NotInstalled;
-            card.DcActionMessage = "✖ Display Commander removed.";
+            card.DcActionMessage = "✖ Display Commander удалён.";
             card.NotifyAll();
             card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
         }
         catch (Exception ex)
         {
-            card.DcActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.DcActionMessage = $"❌ Не удалось удалить: {ex.Message}";
             _crashReporter.WriteCrashReport("UninstallDc", ex, note: $"Game: {card.GameName}");
         }
     }
@@ -1001,7 +1001,7 @@ public partial class MainViewModel
             sections.Add((currentHeader, currentBody.ToString().TrimEnd()));
 
         if (sections.Count == 0)
-            return "(No changelog entries found)";
+            return "(Список изменений пуст)";
 
         // Find the section matching the installed version
         int startIndex = 0;

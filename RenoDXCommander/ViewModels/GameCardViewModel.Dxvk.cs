@@ -70,11 +70,11 @@ public partial class GameCardViewModel
     /// </summary>
     public string? DxvkToggleTooltip =>
         IsDxvkToggleEnabled ? null
-        : IsDxvkBlacklisted ? "DXVK is blocked for this game due to anti-cheat software."
+        : IsDxvkBlacklisted ? "DXVK заблокирован для этой игры из-за античита."
         : GraphicsApi == GraphicsApiType.Unknown && !HasDxvkApiOverride
-            ? "DXVK cannot be enabled because the game's DirectX version could not be determined."
+            ? "DXVK нельзя включить: не удалось определить версию DirectX игры."
         : GraphicsApi is GraphicsApiType.DirectX12 or GraphicsApiType.Vulkan or GraphicsApiType.OpenGL
-            ? $"DXVK does not support {GraphicsApi}. It only translates DirectX 8/9/10/11 to Vulkan."
+            ? $"DXVK не поддерживает {GraphicsApi}. Он транслирует в Vulkan только DirectX 8/9/10/11."
         : null;
 
     // ── DXVK computed properties ──────────────────────────────────────────────────
@@ -84,9 +84,9 @@ public partial class GameCardViewModel
         : DxvkStatus == GameStatus.Installed ? "🟢" : "⚪";
 
     public string DxvkActionLabel => DxvkIsInstalling ? "Installing..."
-        : DxvkStatus == GameStatus.UpdateAvailable ? "⬆  Update DXVK"
-        : DxvkStatus == GameStatus.Installed ? "↺  Reinstall DXVK"
-        : "⬇  Install DXVK";
+        : DxvkStatus == GameStatus.UpdateAvailable ? "⬆  Обновить DXVK"
+        : DxvkStatus == GameStatus.Installed ? "↺  Переустановить DXVK"
+        : "⬇  Установить DXVK";
 
     public string DxvkBtnBackground  => DxvkStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string DxvkBtnForeground  => DxvkStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
@@ -105,9 +105,9 @@ public partial class GameCardViewModel
         : DxvkStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string DxvkShortAction => DxvkIsInstalling ? "…"
-        : DxvkStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : DxvkStatus == GameStatus.Installed ? "↺ Reinstall"
-        : "⬇ Install";
+        : DxvkStatus == GameStatus.UpdateAvailable ? "⬆ Обновить"
+        : DxvkStatus == GameStatus.Installed ? "↺ Переустановить"
+        : "⬇ Установить";
 
     public bool IsDxvkNotInstalling => !DxvkIsInstalling;
     public bool IsDxvkInstalled => DxvkStatus == GameStatus.Installed || DxvkStatus == GameStatus.UpdateAvailable;

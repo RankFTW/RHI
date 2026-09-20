@@ -20,7 +20,7 @@ public class MassDlssDeployDialog
     private readonly Action? _onComplete;
 
     private const string NoneOption = "None";
-    private const string DefaultOption = "Default (Restore)";
+    private const string DefaultOption = "По умолчанию (восстановить)";
     private const string CustomOption = "Custom";
 
     public MassDlssDeployDialog(MainViewModel viewModel, IDlssStreamlineService dlssService, XamlRoot xamlRoot, Action? onComplete = null)
@@ -43,8 +43,8 @@ public class MassDlssDeployDialog
         {
             var emptyDialog = new ContentDialog
             {
-                Title = "No DLSS/Streamline Games",
-                Content = "No games with DLSS or Streamline DLLs were detected.\nRun a Full Refresh to scan for them.",
+                Title = "Нет игр с DLSS/Streamline",
+                Content = "Игры с DLL DLSS или Streamline не обнаружены.\nВыполните «Полное обновление», чтобы найти их.",
                 CloseButtonText = "OK",
                 XamlRoot = _xamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -70,14 +70,14 @@ public class MassDlssDeployDialog
                     : Windows.UI.Color.FromArgb(255, 220, 220, 220)),
             };
             if (isV1)
-                ToolTipService.SetToolTip(cb, "Skipped — v1.x DLSS/Streamline not compatible with newer versions");
+                ToolTipService.SetToolTip(cb, "Пропущено — DLSS/Streamline v1.x несовместимы с новыми версиями");
             checkBoxes.Add(cb);
             gameListPanel.Children.Add(cb);
         }
 
         var selectAllBtn = new Button
         {
-            Content = "Select All", FontSize = 11, Padding = new Thickness(8, 4, 8, 4),
+            Content = "Выбрать всё", FontSize = 11, Padding = new Thickness(8, 4, 8, 4),
             Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 40, 60)),
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
             CornerRadius = new CornerRadius(6),
@@ -86,7 +86,7 @@ public class MassDlssDeployDialog
 
         var deselectAllBtn = new Button
         {
-            Content = "Deselect All", FontSize = 11, Padding = new Thickness(8, 4, 8, 4),
+            Content = "Снять всё", FontSize = 11, Padding = new Thickness(8, 4, 8, 4),
             Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 40, 60)),
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
             CornerRadius = new CornerRadius(6),
@@ -126,9 +126,9 @@ public class MassDlssDeployDialog
         var fgPresetCombo = BuildPresetCombo(DlssPresetService.FgPresets, settings.DefaultFgPreset);
 
         var rightPanel = new StackPanel { Spacing = 8, Width = 320 };
-        rightPanel.Children.Add(BuildDropdownSection("DLSS Super Resolution", dlssCombo));
-        rightPanel.Children.Add(BuildDropdownSection("DLSS Ray Reconstruction", dlssdCombo));
-        rightPanel.Children.Add(BuildDropdownSection("DLSS Frame Generation", dlssgCombo));
+        rightPanel.Children.Add(BuildDropdownSection("Суперразрешение DLSS (SR)", dlssCombo));
+        rightPanel.Children.Add(BuildDropdownSection("Трассировка лучей DLSS (Ray Reconstruction)", dlssdCombo));
+        rightPanel.Children.Add(BuildDropdownSection("Генерация кадров DLSS", dlssgCombo));
         rightPanel.Children.Add(BuildDropdownSection("Streamline", slCombo));
 
         // Presets section
@@ -138,9 +138,9 @@ public class MassDlssDeployDialog
             Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
             Margin = new Thickness(0, 4, 0, 4),
         });
-        rightPanel.Children.Add(BuildDropdownSection("SR Preset", srPresetCombo));
-        rightPanel.Children.Add(BuildDropdownSection("RR Preset", rrPresetCombo));
-        rightPanel.Children.Add(BuildDropdownSection("FG Preset", fgPresetCombo));
+        rightPanel.Children.Add(BuildDropdownSection("Пресет SR", srPresetCombo));
+        rightPanel.Children.Add(BuildDropdownSection("Пресет RR", rrPresetCombo));
+        rightPanel.Children.Add(BuildDropdownSection("Пресет FG", fgPresetCombo));
 
         var rightScroll = new ScrollViewer
         {
@@ -152,7 +152,7 @@ public class MassDlssDeployDialog
         // Auto-create profiles checkbox — lives outside the scroll so it's always visible
         var autoCreateCheck = new CheckBox
         {
-            Content = "Auto-create NVIDIA profiles",
+            Content = "Автосоздание профилей NVIDIA",
             IsChecked = true,
             FontSize = 11,
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
@@ -196,11 +196,11 @@ public class MassDlssDeployDialog
         // ── Dialog ──
         var dialog = new ContentDialog
         {
-            Title = "Batch DLSS & Streamline Deploy",
+            Title = "Массовое развертывание DLSS и Streamline",
             Content = mainGrid,
-            PrimaryButtonText = "Deploy",
-            SecondaryButtonText = "Restore",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Развернуть",
+            SecondaryButtonText = "Восстановить",
+            CloseButtonText = "Отмена",
             XamlRoot = _xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -258,7 +258,7 @@ public class MassDlssDeployDialog
         // Show progress
         var progressText = new TextBlock
         {
-            Text = "Deploying to selected games...",
+            Text = "Развертывание в выбранные игры...",
             FontSize = 12,
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
             TextWrapping = TextWrapping.Wrap,
@@ -287,7 +287,7 @@ public class MassDlssDeployDialog
 
         var progressDialog = new ContentDialog
         {
-            Title = "Deploying...",
+            Title = "Развертывание...",
             Content = progressContainer,
             XamlRoot = _xamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -473,27 +473,27 @@ public class MassDlssDeployDialog
 
         // ── Show results ──
         var report = new System.Text.StringBuilder();
-        if (dlssCount > 0) report.AppendLine($"DLSS SR deployed to {dlssCount} game(s)");
-        if (dlssdCount > 0) report.AppendLine($"DLSS RR deployed to {dlssdCount} game(s)");
-        if (dlssgCount > 0) report.AppendLine($"DLSS FG deployed to {dlssgCount} game(s)");
-        if (slCount > 0) report.AppendLine($"Streamline deployed to {slCount} game(s)");
-        if (srPresetCount > 0) report.AppendLine($"SR Preset applied to {srPresetCount} game(s)");
-        if (rrPresetCount > 0) report.AppendLine($"RR Preset applied to {rrPresetCount} game(s)");
-        if (fgPresetCount > 0) report.AppendLine($"FG Preset applied to {fgPresetCount} game(s)");
-        if (srDriverCount > 0) report.AppendLine($"SR NVIDIA Override set on {srDriverCount} game(s)");
-        if (rrDriverCount > 0) report.AppendLine($"RR NVIDIA Override set on {rrDriverCount} game(s)");
-        if (fgDriverCount > 0) report.AppendLine($"FG NVIDIA Override set on {fgDriverCount} game(s)");
+        if (dlssCount > 0) report.AppendLine($"DLSS SR развернут в игры ({dlssCount})");
+        if (dlssdCount > 0) report.AppendLine($"DLSS RR развернут в игры ({dlssdCount})");
+        if (dlssgCount > 0) report.AppendLine($"DLSS FG развернут в игры ({dlssgCount})");
+        if (slCount > 0) report.AppendLine($"Streamline развернут в игры ({slCount})");
+        if (srPresetCount > 0) report.AppendLine($"Пресет SR применён к играм ({srPresetCount})");
+        if (rrPresetCount > 0) report.AppendLine($"Пресет RR применён к играм ({rrPresetCount})");
+        if (fgPresetCount > 0) report.AppendLine($"Пресет FG применён к играм ({fgPresetCount})");
+        if (srDriverCount > 0) report.AppendLine($"Переопределение SR NVIDIA задано для игр ({srDriverCount})");
+        if (rrDriverCount > 0) report.AppendLine($"Переопределение RR NVIDIA задано для игр ({rrDriverCount})");
+        if (fgDriverCount > 0) report.AppendLine($"Переопределение FG NVIDIA задано для игр ({fgDriverCount})");
         if (autoCreateProfiles && presetService.ProfilesCreatedCount > 0)
-            report.AppendLine($"NVIDIA profiles created: {presetService.ProfilesCreatedCount}");
-        if (skippedAlreadyAtVersion > 0) report.AppendLine($"\nSkipped: {skippedAlreadyAtVersion} (already at selected version)");
-        if (skippedNoComponent > 0) report.AppendLine($"Skipped: {skippedNoComponent} (component not present)");
-        if (presetMissedCount > 0) report.AppendLine($"Presets missed: {presetMissedCount} game(s) (no NVIDIA profile found)");
+            report.AppendLine($"Создано профилей NVIDIA: {presetService.ProfilesCreatedCount}");
+        if (skippedAlreadyAtVersion > 0) report.AppendLine($"\nПропущено: {skippedAlreadyAtVersion} (уже выбранная версия)");
+        if (skippedNoComponent > 0) report.AppendLine($"Пропущено: {skippedNoComponent} (компонент отсутствует)");
+        if (presetMissedCount > 0) report.AppendLine($"Пресеты пропущены: игр — {presetMissedCount} (не найден профиль NVIDIA)");
 
-        if (report.Length == 0) report.Append("No changes made.");
+        if (report.Length == 0) report.Append("Изменений нет.");
 
         var resultDialog = new ContentDialog
         {
-            Title = "Batch Deploy Complete",
+            Title = "Массовое развертывание завершено",
             Content = new TextBlock { Text = report.ToString().TrimEnd(), TextWrapping = TextWrapping.Wrap, FontSize = 12 },
             CloseButtonText = "OK",
             XamlRoot = _xamlRoot,
@@ -512,7 +512,7 @@ public class MassDlssDeployDialog
         // Show progress
         var progressText = new TextBlock
         {
-            Text = "Restoring selected games...",
+            Text = "Восстановление выбранных игр...",
             FontSize = 12,
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
             TextWrapping = TextWrapping.Wrap,
@@ -533,7 +533,7 @@ public class MassDlssDeployDialog
 
         var progressDialog = new ContentDialog
         {
-            Title = "Restoring...",
+            Title = "Восстановление...",
             Content = progressContainer,
             XamlRoot = _xamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -582,13 +582,13 @@ public class MassDlssDeployDialog
         progressDialog.Hide();
 
         var reportText = new System.Text.StringBuilder();
-        if (restoredCount > 0) reportText.AppendLine($"Restored {restoredCount} game(s) to default DLLs.");
-        if (presetsResetCount > 0) reportText.AppendLine($"Reset presets to Default on {presetsResetCount} game(s).");
-        if (restoredCount == 0 && presetsResetCount == 0) reportText.Append("No games had backups to restore or presets to reset.");
+        if (restoredCount > 0) reportText.AppendLine($"Восстановлено игр на исходные DLL: {restoredCount}.");
+        if (presetsResetCount > 0) reportText.AppendLine($"Сбросить пресеты на «По умолчанию» в играх ({presetsResetCount}).");
+        if (restoredCount == 0 && presetsResetCount == 0) reportText.Append("Нет игр с резервными копиями для восстановления или пресетами для сброса.");
 
         var resultDialog = new ContentDialog
         {
-            Title = "Restore Complete",
+            Title = "Восстановление завершено",
             Content = new TextBlock
             {
                 Text = reportText.ToString().TrimEnd(),
@@ -612,7 +612,7 @@ public class MassDlssDeployDialog
         return false;
     }
 
-    private const string NvidiaOverrideOption = "NVIDIA Override";
+    private const string NvidiaOverrideOption = "Переопределение NVIDIA";
 
     private ComboBox BuildVersionCombo(IReadOnlyList<string> versions, string savedDefault = "", bool includeDriverOverride = false, bool currentDriverOverride = false)
     {

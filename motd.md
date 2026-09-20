@@ -1,1 +1,1 @@
-Hi to all the new users. If you need any help with anything then we have support channels on The Ultra Place and RenoDX Discords. Thank you for all of your support, Rank
+Привет всем новым пользователям. Если вам нужна помощь — у нас есть каналы поддержки в Discord-сообществах The Ultra Place и RenoDX. Спасибо за вашу поддержку, Rank

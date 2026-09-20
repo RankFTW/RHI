@@ -127,7 +127,7 @@ public partial class MainViewModel
     public async Task FullRefreshAsync(IProgress<string>? progress = null)
     {
         // Clear all caches so every game is re-scanned from disk.
-        progress?.Report("Clearing caches...");
+        progress?.Report("Очистка кешей...");
         _engineTypeCache.Clear();
         _resolvedPathCache.Clear();
         _addonFileCache.Clear();
@@ -135,7 +135,7 @@ public partial class MainViewModel
         _dlssStreamlineService.ClearScanCaches();
 
         // Validate installed.json — remove records where the addon file no longer exists on disk
-        progress?.Report("Validating install records...");
+        progress?.Report("Проверка записей об установке...");
         try
         {
             var records = _installer.LoadAll();
@@ -260,14 +260,14 @@ public partial class MainViewModel
             bool hasCachedLibrary = savedLib != null && !forceRescan;
             if (hasCachedLibrary)
             {
-                StatusText    = $"Library loaded ({savedLib!.Games.Count} games, scanned {FormatAge(savedLib.LastScanned)})";
-                SubStatusText = "Checking for new games and fetching latest mod info...";
+                StatusText    = $"Библиотека загружена (игр: {savedLib!.Games.Count}, просканировано: {FormatAge(savedLib.LastScanned)})";
+                SubStatusText = "Поиск новых игр и загрузка свежей информации о модах...";
                 addonCache    = savedLib.AddonScanCache;
             }
             else
             {
-                StatusText    = "Scanning game library...";
-                SubStatusText = "Running store scans + wiki fetch simultaneously...";
+                StatusText    = "Сканирование библиотеки игр...";
+                SubStatusText = "Сканирую магазины и параллельно загружаю вики...";
                 addonCache    = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             }
 
@@ -427,7 +427,7 @@ public partial class MainViewModel
             });
 
             // 3. Await detection first — this never needs network
-            progress?.Report("Detecting games...");
+            progress?.Report("Поиск игр...");
             var freshGames = await detectTask;
 
             // 4. Await network tasks individually so failures don't block game display
@@ -618,7 +618,7 @@ public partial class MainViewModel
             // a visual gap where the update badge disappears until the network check completes.
             // (prevUpdateStatus was captured at the top of InitializeAsync before _allCards.Clear())
 
-            SubStatusText = "Matching mods and checking install status...";
+            SubStatusText = "Подбор модов и проверка статуса установки...";
 
             // Ensure Nexus Mods dictionary and PCGW AppID cache are ready before building cards
             await nexusInitTask;
@@ -627,7 +627,7 @@ public partial class MainViewModel
             await ultraPlusInitTask;
 
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
-            progress?.Report($"Building cards for {allGames.Count} games...");
+            progress?.Report($"Построение карточек для игр ({allGames.Count})...");
             _allCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));
             _crashReporter.Log($"[MainViewModel.InitializeAsync] BuildCards complete: {_allCards.Count} cards");
             GraphicsApiDetector.SaveCache();
@@ -834,13 +834,13 @@ public partial class MainViewModel
 
             var offlineMode = wikiFetchFailed;
             StatusText    = offlineMode
-                ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
-                : $"{detectedGames.Count} games detected · {InstalledCount} mods installed";
+                ? $"игр обнаружено: {detectedGames.Count} · автономный режим (данные о модах недоступны)"
+                : $"игр обнаружено: {detectedGames.Count} · модов установлено: {InstalledCount}";
             SubStatusText = "";
         }
         catch (Exception ex)
         {
-            StatusText = "Error loading";
+            StatusText = "Ошибка загрузки";
             SubStatusText = ex.Message;
             _crashReporter.WriteCrashReport("InitializeAsync", ex);
         }

@@ -191,11 +191,11 @@ public partial class DetailPanelBuilder
                     var cursorProp = DetailPanelBuilder.CursorProp;
                     badge.PointerEntered += (s, e) => cursorProp?.SetValue(badge, handCursor);
                     badge.PointerExited += (s, e) => cursorProp?.SetValue(badge, arrowCursor);
-                    ToolTipService.SetToolTip(badge, $"Mod author: {author} — click to open Ko-fi donation page");
+                    ToolTipService.SetToolTip(badge, $"Автор мода: {author} — нажмите, чтобы открыть страницу пожертвований на Ko-fi");
                 }
                 else
                 {
-                    ToolTipService.SetToolTip(badge, $"Mod author: {author}");
+                    ToolTipService.SetToolTip(badge, $"Автор мода: {author}");
                 }
                 _window.DetailAuthorBadgePanel.Children.Add(badge);
             }
@@ -229,14 +229,14 @@ public partial class DetailPanelBuilder
                 _window.DetailModStatusIcon.Text = "✓";
                 _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);
                 _window.DetailModStatusIcon.Visibility = Visibility.Visible;
-                ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod complete");
+                ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR-мод завершён");
             }
             else if (string.Equals(dbEntry.Status, "WIP", StringComparison.OrdinalIgnoreCase))
             {
                 _window.DetailModStatusIcon.Text = "🔨";
                 _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
                 _window.DetailModStatusIcon.Visibility = Visibility.Visible;
-                ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod in progress");
+                ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR-мод в разработке");
             }
             else
             {
@@ -330,7 +330,7 @@ public partial class DetailPanelBuilder
         if (card.HasUwFixUrl)
         {
             var source = card.UwFixSource ?? "creator";
-            ToolTipService.SetToolTip(_window.DetailUwFixBtn, $"Open {source}'s ultrawide fix page");
+            ToolTipService.SetToolTip(_window.DetailUwFixBtn, $"Открыть страницу ультраширокого исправления для {source}");
         }
 
         // Ultra+ link button

@@ -214,7 +214,7 @@ public partial class GameDetectionService
         {
             foreach (var drive in DriveInfo.GetDrives()
                 .Where(d => d.DriveType == DriveType.Fixed && d.IsReady))
-                foreach (var name in new[] { "XboxGames", "Xbox Games" })
+                foreach (var name in new[] { "XboxGames", "Игры Xbox" })
                 {
                     var dir = Path.Combine(drive.RootDirectory.FullName, name);
                     if (Directory.Exists(dir)) searchRoots.Add(dir);

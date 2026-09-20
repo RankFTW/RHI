@@ -189,7 +189,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
                 CrashReporter.Log($"[DlssStreamlineService.FetchManifestAsync] Loaded: " +
                     $"{_manifest?.Dlss?.Count ?? 0} SR, {_manifest?.Dlssd?.Count ?? 0} RR, " +
-                    $"{_manifest?.Dlssg?.Count ?? 0} FG, {_manifest?.Dlssnr?.Count ?? 0} NR, {_manifest?.Streamline?.Count ?? 0} SL versions");
+                    $"версий: {_manifest?.Dlssg?.Count ?? 0} FG, {_manifest?.Dlssnr?.Count ?? 0} NR, {_manifest?.Streamline?.Count ?? 0} SL");
             }
         }
         catch (Exception ex)

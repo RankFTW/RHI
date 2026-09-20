@@ -41,7 +41,7 @@ public class AddonPackService : IAddonPackService
     private static readonly AddonEntry RenoDxDevKitEntry = new(
         SectionId: "renodx-devkit",
         PackageName: "RenoDX DevKit",
-        PackageDescription: "RenoDX development tools addon for ReShade",
+        PackageDescription: "Аддон инструментов разработки RenoDX для ReShade",
         DownloadUrl: null,
         DownloadUrl32: "https://github.com/clshortfuse/renodx/releases/download/snapshot/renodx-devkit.addon32",
         DownloadUrl64: "https://github.com/clshortfuse/renodx/releases/download/snapshot/renodx-devkit.addon64",
@@ -64,7 +64,7 @@ public class AddonPackService : IAddonPackService
     private static readonly AddonEntry Renodx5SfEntry = new(
         SectionId: "renodx-dlss-sf",
         PackageName: "DLSS Tool (ShortFuse)",
-        PackageDescription: "ShortFuse's DLSS5 addon. Supports DX12, DX11 and DX9. For non-DLSS games enable Load DLSS Libraries and set Hook Method to On Present. Supports RTX 20-50 Series. Still WIP — fall back to DLSS5 Tool if you have issues.",
+        PackageDescription: "Аддон DLSS5 от ShortFuse. Поддерживает DX12, DX11 и DX9. Для игр без DLSS включите Load DLSS Libraries и задайте Hook Method = On Present. Поддерживает RTX 20–50 серий. Пока в разработке — при проблемах используйте DLSS5 Tool.",
         DownloadUrl: null,
         DownloadUrl32: null,
         DownloadUrl64: null,
@@ -76,7 +76,7 @@ public class AddonPackService : IAddonPackService
     private static readonly AddonEntry DlssFixEntry = new(
         SectionId: "renodx-dlssfix",
         PackageName: "DLSS Fix",
-        PackageDescription: "Makes ReShade draw on native game frames instead of frame gen frames. Also hides DLSS upscaling from ReShade.",
+        PackageDescription: "Заставляет ReShade работать с нативными кадрами игры вместо сгенерированных. Также скрывает масштабирование DLSS от ReShade.",
         DownloadUrl: "https://github.com/clshortfuse/renodx/releases/download/snapshot/renodx-dlssfix.addon64",
         DownloadUrl32: null,
         DownloadUrl64: "https://github.com/clshortfuse/renodx/releases/download/snapshot/renodx-dlssfix.addon64",
@@ -441,13 +441,13 @@ public class AddonPackService : IAddonPackService
             if (entry.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
                 || entry.PackageName.Equals("DLSS5 Tool", StringComparison.OrdinalIgnoreCase))
             {
-                progress?.Report(("Downloading RenoDX DLSS5 addon...", 10));
+                progress?.Report(("Загрузка аддона RenoDX DLSS5...", 10));
                 var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
                 await rdx5Service.EnsureStagingAsync(progress).ConfigureAwait(false);
                 if (!rdx5Service.IsStagingReady)
                 {
                     CrashReporter.Log("[AddonPackService.DownloadAddonAsync] RenoDX DLSS5 staging not ready after EnsureStaging");
-                    progress?.Report(("RenoDX DLSS5 download failed", 0));
+                    progress?.Report(("Не удалось скачать RenoDX DLSS5", 0));
                 }
                 return;
             }
@@ -455,13 +455,13 @@ public class AddonPackService : IAddonPackService
             // SF variant — route to Renodx5AddonService.EnsureSfStagingAsync
             if (entry.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase))
             {
-                progress?.Report(("Downloading DLSS Tool (ShortFuse)...", 10));
+                progress?.Report(("Загрузка DLSS Tool (ShortFuse)...", 10));
                 var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
                 await rdx5Service.EnsureSfStagingAsync(progress).ConfigureAwait(false);
                 if (!rdx5Service.IsSfStagingReady)
                 {
                     CrashReporter.Log("[AddonPackService.DownloadAddonAsync] SF staging not ready after EnsureStaging");
-                    progress?.Report(("DLSS Tool (ShortFuse) download failed", 0));
+                    progress?.Report(("Не удалось скачать DLSS Tool (ShortFuse)", 0));
                 }
                 return;
             }
@@ -476,7 +476,7 @@ public class AddonPackService : IAddonPackService
                 if (resolvedUrl == null)
                 {
                     CrashReporter.Log($"[AddonPackService.DownloadAddonAsync] Could not resolve asset URL from API for '{entry.PackageName}'");
-                    progress?.Report(($"❌ Failed to resolve download URL for {entry.PackageName}", 0));
+                    progress?.Report(($"❌ Не удалось определить ссылку на скачивание для {entry.PackageName}", 0));
                     return;
                 }
                 // Use the tag as the version token unless the caller already supplied one
@@ -565,7 +565,7 @@ public class AddonPackService : IAddonPackService
 
             if (!anySucceeded)
             {
-                progress?.Report(($"❌ Download failed for {entry.PackageName}", 0));
+                progress?.Report(($"❌ Не удалось скачать {entry.PackageName}", 0));
                 return;
             }
 
@@ -573,13 +573,13 @@ public class AddonPackService : IAddonPackService
             versionToken ??= "unknown";
             SaveAddonVersion(entry.PackageName, versionToken, safeName);
 
-            progress?.Report(($"{entry.PackageName} downloaded.", 100));
+            progress?.Report(($"{entry.PackageName} скачано.", 100));
             CrashReporter.Log($"[AddonPackService.DownloadAddonAsync] '{entry.PackageName}' download complete. Version = {versionToken}");
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[AddonPackService.DownloadAddonAsync] Failed for '{entry.PackageName}' — {ex.Message}");
-            progress?.Report(($"❌ Download failed: {ex.Message}", 0));
+            progress?.Report(($"❌ Ошибка загрузки: {ex.Message}", 0));
         }
     }
 
@@ -932,7 +932,7 @@ public class AddonPackService : IAddonPackService
             results.Add(new AddonEntry(
                 SectionId: $"custom-{baseName}",
                 PackageName: baseName,
-                PackageDescription: "Custom addon (local file)",
+                PackageDescription: "Свой аддон (локальный файл)",
                 DownloadUrl: null,
                 DownloadUrl32: null,
                 DownloadUrl64: null,

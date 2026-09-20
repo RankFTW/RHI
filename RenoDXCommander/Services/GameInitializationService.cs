@@ -314,7 +314,7 @@ public class GameInitializationService : IGameInitializationService
                     card.Mod.SnapshotUrl = null;
                 card.IsExternalOnly = true;
                 card.ExternalUrl    = ext.Url ?? "https://discord.gg/gF4GRJWZ2A";
-                card.ExternalLabel  = ext.Label ?? "Download from Discord";
+                card.ExternalLabel  = ext.Label ?? "Скачать с Discord";
                 // Set WikiStatus based on the actual download source
                 bool isNexus = ext.Url != null && ext.Url.Contains("nexusmods", StringComparison.OrdinalIgnoreCase);
                 card.WikiStatus     = isNexus ? "🌐" : "💬";
@@ -377,10 +377,10 @@ public class GameInitializationService : IGameInitializationService
         var overrides = new Dictionary<string, CardOverride>(StringComparer.OrdinalIgnoreCase)
         {
             ["Cyberpunk 2077"] = new CardOverride(
-                Notes: "⚠️ The RenoDX mod for Cyberpunk 2077 is a WIP. " +
-                       "Always get the latest build directly from the RenoDX Discord — " +
-                       "it is updated more frequently than any wiki download.\n\n" +
-                       "See Creepy's Cyberpunk RenoDX Guide for setup instructions:",
+                Notes: "⚠️ Мод RenoDX для Cyberpunk 2077 в разработке. " +
+                       "Всегда берите свежую сборку прямо из RenoDX Discord — " +
+                       "он обновляется чаще, чем любая выгрузка из вики.\n\n" +
+                       "Инструкции по настройке — в руководстве Creepy по Cyberpunk (RenoDX):",
                 DiscordUrl: "https://discord.gg/gF4GRJWZ2A",
                 ForceDiscord: true,
                 NameUrl:       "https://www.hdrmods.com/Cyberpunk",
@@ -388,9 +388,9 @@ public class GameInitializationService : IGameInitializationService
                 NotesUrlLabel: "Creepy's Cyberpunk RenoDX Guide"),
 
             ["Dishonored"] = new CardOverride(
-                Notes: "ℹ️ This game has both 32-bit and 64-bit RenoDX builds.\n\n" +
-                       "• 64-bit (default) — for the Microsoft Store and Epic Games Store versions.\n" +
-                       "• 32-bit — for the Steam version. Enable 32-bit mode in 🎯 Overrides to use this.",
+                Notes: "ℹ️ У этой игры есть сборки RenoDX и 32-, и 64-бит.\n\n" +
+                       "• 64-бит (по умолчанию) — для версий из Microsoft Store и Epic Games Store.\n" +
+                       "• 32-бит — для версии из Steam. Включите 32-битный режим в 🎯 «Переопределения».",
                 DiscordUrl: null, ForceDiscord: false),
         };
 
@@ -404,7 +404,7 @@ public class GameInitializationService : IGameInitializationService
                     card.Mod.SnapshotUrl = null;
                 card.IsExternalOnly  = true;
                 card.ExternalUrl     = ov.DiscordUrl ?? "https://discord.gg/gF4GRJWZ2A";
-                card.ExternalLabel   = "Download from Discord";
+                card.ExternalLabel   = "Скачать с Discord";
                 card.DiscordUrl      = ov.DiscordUrl ?? "https://discord.gg/gF4GRJWZ2A";
                 card.WikiStatus      = "💬";
             }

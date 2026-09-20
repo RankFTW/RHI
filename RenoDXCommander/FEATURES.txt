@@ -1,146 +1,153 @@
-ReLimiter — Feature Reference
+ReLimiter — справочник по возможностям
 ==================================
 
-Core Features
+Основные функции
 -------------
 
-FPS Limit
-  Slider 0-500. Quick buttons: 30, 60, 120, 240, Reflex Cap.
-  Reflex Cap formula: fps = refresh - (refresh^2 / 4096), floored.
-  Example: 165 Hz -> 165 - (27225/4096) = 165 - 6.64 = 158.
+Ограничение FPS
+  Ползунок 0-500. Быстрые кнопки: 30, 60, 120, 240, лимит Reflex.
+  Формула лимита Reflex: fps = refresh - (refresh^2 / 4096), с округлением вниз.
+  Пример: 165 Гц -> 165 - (27225/4096) = 165 - 6.64 = 158.
 
-VSync Override
-  Game (passthrough), On (SyncInterval=1), Off (SyncInterval=0 + ALLOW_TEARING).
-  Hooks IDXGISwapChain::Present. Tearing auto-detected via IDXGIFactory5.
-  Also applied in Streamline proxy Present hook.
+Переопределение VSync
+  Игра (сквозной режим), Вкл (SyncInterval=1), Выкл (SyncInterval=0 + ALLOW_TEARING).
+  Хук IDXGISwapChain::Present. Разрывы определяются автоматически через IDXGIFactory5.
+  Также применяется в прокси-хуке Present у Streamline.
 
-5XXX Exclusive Pacing Optimization
-  Hooks IDXGISwapChain2::SetMaximumFrameLatency, overrides to 1.
-  Only on waitable swapchains. Game's original value captured and restored.
-  Designed for NVIDIA 50-series GPUs with flip metering support.
+Оптимизация pacing для серии 5XXX
+  Хук IDXGISwapChain2::SetMaximumFrameLatency, переопределяет значение на 1.
+  Только для waitable-swapchain. Исходное значение игры сохраняется и восстанавливается.
+  Рассчитано на GPU NVIDIA 50-й серии с поддержкой flip metering.
 
-FG Mode
-  Auto-detects DLSS FG, FSR FG, Smooth Motion from loaded DLLs.
-  Manual override: Off, 2x, 3x, 4x.
-  Divides target FPS by multiplier for real render rate.
+Режим FG
+  Автоопределение DLSS FG, FSR FG, Smooth Motion по загруженным DLL.
+  Ручное переопределение: Выкл, 2x, 3x, 4x.
+  Целевой FPS делится на множитель для получения реальной частоты рендеринга.
 
-Boost Override
-  Game (passthrough), On (force boost), Off (force no boost).
-  Controls Reflex Low Latency Boost (GPU clock management).
+Переопределение Boost
+  Игра (сквозной режим), Вкл (принудительный boost), Выкл (принудительно без boost).
+  Управляет Reflex Low Latency Boost (управление частотами GPU).
 
-Pacing Presets
-  Native Pacing    — SIM_START, no queue limit. Lowest latency.
-  Marker Low Lat   — Reflex markers, max 1 queued frame.
-  Balanced         — Reflex markers, max 2 queued frames.
-  Stability        — Reflex markers, max 3 queued frames.
-  SL Proxy         — Pace generated frames via Streamline proxy.
-  Custom           — Manual control of all sub-settings.
+Пресеты pacing
+  Native Pacing    — SIM_START, без лимита очереди. Минимальная задержка.
+  Marker Low Lat   — маркеры Reflex, не более 1 кадра в очереди.
+  Balanced         — маркеры Reflex, не более 2 кадров в очереди.
+  Stability        — маркеры Reflex, не более 3 кадров в очереди.
+  SL Proxy         — pacing генерируемых кадров через прокси Streamline.
+  Custom           — ручное управление всеми подпараметрами.
 
 
-UL-Exclusive Adaptive Features
+Адаптивные функции, уникальные для UL
 ------------------------------
 
-These features are unique to ReLimiter. Neither Special K nor Display
-Commander implement any of them.
+Эти функции есть только в ReLimiter. Ни Special K, ни Display
+Commander их не реализуют.
 
-1. Predictive Sleep
-   GPU-aware wake scheduling. Tracks 8-sample GPU time history with weighted
-   averaging (4x/3x/2x/1x). Detects upward trends (3+ frames rising) and
-   biases prediction upward. Adaptive safety margin: 500us start, +50us per
-   miss, -10us per 30 stable frames, clamped 200-2000us. Only active when
-   GPU-bound. Predictive interval can only tighten the base interval.
+1. Предиктивная задержка сна
+   Планирование пробуждения с учётом GPU. Хранит историю из 8 замеров времени GPU
+   со взвешенным усреднением (4x/3x/2x/1x). Определяет восходящие тренды
+   (3+ кадра роста подряд) и смещает прогноз вверх. Адаптивный запас безопасности:
+   старт с 500 мкс, +50 мкс за промах, -10 мкс за 30 стабильных кадров,
+   ограничение 200–2000 мкс. Активно только при упоре в GPU.
+   Предиктивный интервал может только сокращать базовый.
 
-2. Phase-Locked Timing Grid
-   target[k] = epoch + k * interval. No drift accumulation. Late frames snap
-   forward. Uses CREATE_WAITABLE_TIMER_HIGH_RESOLUTION + busy-wait tail.
-   ZwSetTimerResolution for max kernel timer precision.
+2. Фазо-заблокированная сетка таймингов
+   target[k] = epoch + k * interval. Накопления дрейфа нет. Опоздавшие кадры
+   подтягиваются вперёд. Использует CREATE_WAITABLE_TIMER_HIGH_RESOLUTION + активное
+   ожидание на хвосте. ZwSetTimerResolution для максимальной точности таймера ядра.
 
-3. Present-to-Present Feedback Loop
-   Closed-loop correction. Accumulates P2P error over 30 frames. Nudges
-   interval +/-1us per window. Dead zone +/-1us. Clamped +/-8us total.
-   Only active without FG. Resets on FPS limit change.
+3. Контур обратной связи Present-to-Present
+   Коррекция с замкнутым контуром. Накапливает ошибку P2P за 30 кадров.
+   Сдвигает интервал на +/-1 мкс за окно. Мёртвая зона +/-1 мкс.
+   Общий предел +/-8 мкс. Активно только без FG. Сброс при смене лимита FPS.
 
-4. Automatic Enforcement Site
-   GPU load > 85% -> SIM_START (lowest latency).
-   GPU load < 65% -> PRESENT_FINISH (best pacing).
-   65-85% hysteresis band prevents flip-flopping.
+4. Автоматический выбор точки принудительного применения
+   Нагрузка GPU > 85% -> SIM_START (минимальная задержка).
+   Нагрузка GPU < 65% -> PRESENT_FINISH (лучший pacing).
+   Гистерезис 65–85% предотвращает «дёрганье» между режимами.
 
-5. Queue Pressure Detection
-   Monitors OS render queue time from GetLatency. If avg queue time > 1.5x
-   target interval, adds 4us to sleep interval to throttle proactively.
+5. Определение давления очереди
+   Следит за временем очереди рендеринга ОС через GetLatency. Если среднее время
+   очереди > 1.5x целевого интервала, добавляет 4 мкс к интервалу сна,
+   снижая нагрузку проактивно.
 
-6. Adaptive DLSS FG Pacing
-   Measures actual FG overhead (GPU render end to present end) via GetLatency.
-   EMA smoothed (alpha=0.1). Replaces static +24us offset. Clamped 4-60us.
+6. Адаптивный pacing для DLSS FG
+   Измеряет фактические накладные расходы FG (от конца рендеринга GPU до конца
+   present) через GetLatency. Сглаживание EMA (alpha=0.1). Заменяет статическую
+   прибавку +24 мкс. Ограничение 4–60 мкс.
 
-7. Hybrid Queue Wait
-   Two-phase: waitable timer sleeps (~0.5ms) then busy-wait for final <1ms.
-   50ms timeout. Saves CPU vs pure spin-loop used by SK and DC.
+7. Гибридное ожидание очереди
+   Две фазы: сон на waitable-таймере (~0.5 мс), затем активное ожидание последних <1 мс.
+   Таймаут 50 мс. Экономит CPU по сравнению с чистым спин-ожиданием в SK и DC.
 
-8. Time-Based Warmup
-   2-second wall-clock warmup from first present. Consistent across frame
-   rates (frame-count warmup is 10s at 30fps but 1.25s at 240fps).
+8. Прогрев по времени
+   Двухсекундный прогрев от первого present по настенным часам. Одинаков
+   для любых частот кадров (прогрев по числу кадров — это 10 с при 30 FPS,
+   но всего 1.25 с при 240 FPS).
 
-9. Proper Reflex Restore
-   Captures game's SetSleepMode params on hook. Restores on shutdown.
-   If game never called SetSleepMode, disables Reflex cleanly.
+9. Корректное восстановление Reflex
+   При установке хука сохраняет параметры SetSleepMode игры. Восстанавливает
+   при завершении. Если игра ни разу не вызывала SetSleepMode — аккуратно
+   отключает Reflex.
 
-10. VRR / GSync Awareness
-    Ceiling = 3600 * hz / (hz + 3600). 0.5% safety margin. Clamps interval
-    so limiter never exceeds VRR window. Cached 2s. Disabled when VSync off.
+10. Учёт VRR / GSync
+    Потолок = 3600 * hz / (hz + 3600). Запас безопасности 0.5%. Ограничивает
+    интервал так, чтобы лимитер не выходил за окно VRR. Кешируется на 2 с.
+    Отключается при выключенном VSync.
 
-11. Adaptive Interval Adjustment
-    GPU load < 70%: -3us (tighten). GPU load > 90%: up to +4us (buffer).
-    Driver shave: always -2us to compensate for systematic overshoot.
+11. Адаптивная подстройка интервала
+    Нагрузка GPU < 70%: -3 мкс (ужесточение). Нагрузка GPU > 90%: до +4 мкс (запас).
+    Срез драйвера: всегда -2 мкс для компенсации систематического перебега.
 
-12. Flip Metering Block
-    Hooks nvapi_QueryInterface. Blocks ordinal 0xF3148C42 (SetFlipConfig)
-    by returning nullptr. Exception: Smooth Motion (needs flip metering).
-    UL's own lookups use original QI pointer. Always active, no toggle.
+12. Блокировка flip metering
+    Хук nvapi_QueryInterface. Блокирует ординал 0xF3148C42 (SetFlipConfig),
+    возвращая nullptr. Исключение: Smooth Motion (flip metering ему нужен).
+    Собственные запросы UL идут через оригинальный указатель QI.
+    Активно всегда, без переключателя.
 
 
-Interval Computation Pipeline
+Конвейер вычисления интервала
 -----------------------------
 
-Raw interval (from fps_limit / FG divisor)
-  -> VRR floor clamp
-  -> FG offset (adaptive or +24us static)
-  -> Queue pressure (+4us if flagged)
-  -> GPU headroom adjustment (-3us to +4us)
-  -> P2P feedback correction (-8us to +8us)
-  -> Driver shave (-2us)
-  -> Predictive sleep (can only tighten)
-  = Final minimumIntervalUs sent to driver
+Сырой интервал (из fps_limit / делителя FG)
+  -> ограничение по полу VRR
+  -> прибавка FG (адаптивная или статические +24 мкс)
+  -> давление очереди (+4 мкс при срабатывании)
+  -> коррекция запаса GPU (-3 мкс до +4 мкс)
+  -> коррекция обратной связи P2P (-8 мкс до +8 мкс)
+  -> срез драйвера (-2 мкс)
+  -> предиктивный сон (может только сократить)
+  = Итоговый minimumIntervalUs, отправляемый драйверу
 
 
-Reflex Hook Summary
+Сводка по хукам Reflex
 -------------------
 
-SetSleepMode  — Swallowed. Game params captured. UL drives sleep mode.
-Sleep         — Swallowed. UL calls Sleep on its own schedule.
-SetMarker     — Intercepted. RTSS filtered. INPUT_SAMPLE reordered.
-                Timestamps in 64-slot ring buffer. Dedup per frame.
-GetLatency    — Not hooked. Called directly for adaptive features.
-QueryInterface — Hooked. Blocks flip metering (SetFlipConfig).
+SetSleepMode  — Перехватывается. Параметры игры сохраняются. Режимом сна управляет UL.
+Sleep         — Перехватывается. UL вызывает Sleep по собственному расписанию.
+SetMarker     — Перехватывается. RTSS отфильтровывается. INPUT_SAMPLE переставляется.
+                Метки времени в кольцевом буфере на 64 слота. Дедупликация по кадру.
+GetLatency    — Не хукается. Вызывается напрямую для адаптивных функций.
+QueryInterface — Хукается. Блокирует flip metering (SetFlipConfig).
 
 
 Smooth Motion
 -------------
 
-Detected via NvPresent64.dll. NOT the same as DLSS Frame Generation.
-When active: Reflex Sleep bypassed, timing-only pacing, flip metering
-block disabled, OSD FPS/Native swapped.
+Определяется по NvPresent64.dll. Это НЕ то же самое, что генерация кадров DLSS.
+Когда активен: обход Reflex Sleep, только тайминг-pacing, блокировка flip metering
+отключена, FPS/Native в OSD меняются местами.
 
 
-OSD Elements
+Элементы OSD
 ------------
 
-FPS           White   Output frame rate (incl. generated frames)
-Native FPS    White   Real render rate from SIM_START markers
-Frame         White   Rolling avg frame time (64-frame window)
-GPU           Cyan    GPU active render time from GetLatency
-Render Lat    Cyan    Sim-start to GPU-render-end
-Present Lat   Cyan    Present start-to-end
-FG            Gold    Detected FG tech + multiplier
-Res           Gold    Render -> output resolution with scale %
-Graph         Green   128-sample frametime history, auto-scaled
+FPS           Белый    Частота на выходе (включая сгенерированные кадры)
+Native FPS    Белый    Реальная частота рендеринга по меткам SIM_START
+Frame         Белый    Скользящее среднее времени кадра (окно 64 кадра)
+GPU           Циан     Активное время рендеринга GPU из GetLatency
+Render Lat    Циан     От sim-start до конца рендеринга GPU
+Present Lat   Циан     От начала до конца present
+FG            Золотой  Определённая технология FG + множитель
+Res           Золотой  Разрешение рендеринга -> вывода с процентом масштаба
+Graph         Зелёный  История фреймтайма на 128 замеров, автомасштабирование

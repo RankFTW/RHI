@@ -67,7 +67,7 @@ public partial class DetailPanelBuilder
         };
         var ovTitle = new TextBlock
         {
-            Text       = "Game Overrides",
+            Text       = "Переопределения игры",
             FontSize   = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -115,23 +115,23 @@ public partial class DetailPanelBuilder
         // ── Game name + Wiki name ────────────────────────────────────────────────
         var detectedBox = new TextBox
         {
-            Header = "Game name (editable)",
+            Header = "Название игры (можно изменить)",
             Text = gameName,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(detectedBox,
-            "The display name for this game. Edit and press Enter to rename. Reset reverts to the auto-detected store name.");
+            "Отображаемое название игры. Измените и нажмите Enter. «Сбросить» вернёт автоопределённое название из магазина.");
         var wikiBox = new TextBox
         {
-            Header = "Wiki mod name",
-            PlaceholderText = "Exact wiki name",
+            Header = "Имя мода в вики",
+            PlaceholderText = "Точное имя в вики",
             Text = _window.ViewModel.GetUserNameMapping(gameName) ?? "",
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(wikiBox,
-            "Override the name used to look up this game on the RenoDX/Luma wiki. Leave blank to use the game name. Press Enter to save.");
+            "Переопределить имя для поиска этой игры в вики RenoDX/Luma. Пусто — использовать название игры. Enter — сохранить.");
         var originalStoreName = _window.ViewModel.GetOriginalStoreName(gameName);
 
         // Mutable captured name so rename handler can update it for subsequent handlers
@@ -139,7 +139,7 @@ public partial class DetailPanelBuilder
 
         var resetBtn = new Button
         {
-            Content = "Reset",
+            Content = "Сбросить",
             FontSize = 12,
             VerticalAlignment = VerticalAlignment.Bottom,
             Padding = new Thickness(10, 6, 10, 6),
@@ -147,7 +147,7 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
         };
-        ToolTipService.SetToolTip(resetBtn, "Reset game name back to auto-detected and clear wiki name mapping.");
+        ToolTipService.SetToolTip(resetBtn, "Вернуть название игры к автоопределённому и очистить привязку к имени в вики.");
         resetBtn.Click += (s, ev) =>
         {
             var resetName = (originalStoreName ?? gameName).Trim();
@@ -175,21 +175,21 @@ public partial class DetailPanelBuilder
 
         var dllOverrideToggle = new ToggleSwitch
         {
-            Header = "DLL naming overrides",
+            Header = "Переопределение имён DLL",
             IsOn = isDllOverride,
             IsEnabled = true,
-            OnContent = "Custom filenames enabled",
-            OffContent = "Override DLL filenames",
+            OnContent = "Своё имя файла включено",
+            OffContent = "Переопределить имена DLL",
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             FontSize = 12,
         };
         ToolTipService.SetToolTip(dllOverrideToggle,
-            "Override the filenames ReShade is installed as. When enabled, existing RS files are renamed to the custom filenames.");
+            "Переопределить имена файлов, под которыми ставится ReShade. При включении существующие файлы RS переименовываются в пользовательские имена.");
         var existingRsName = existingCfg?.ReShadeFileName ?? "";
 
         var rsNameBox = new ComboBox
         {
-            PlaceholderText = "Select ReShade DLL name",
+            PlaceholderText = "Выберите имя DLL для ReShade",
             Header = (object?)null,
             FontSize = 12,
             IsEnabled = isDllOverride,
@@ -199,7 +199,7 @@ public partial class DetailPanelBuilder
         if (card.IsOsInstalled)
         {
             ToolTipService.SetToolTip(rsNameBox,
-                "Override the ReShade DLL name. OptiScaler is installed — RHI will rename ReShade to this filename after OptiScaler is uninstalled.");
+                "Переопределить имя DLL ReShade. Установлен OptiScaler — после его удаления RHI переименует ReShade в это имя.");
         }
         if (!string.IsNullOrEmpty(existingRsName))
         {
@@ -220,7 +220,7 @@ public partial class DetailPanelBuilder
 
         var dcNameBox = new ComboBox
         {
-            PlaceholderText = "Select DC DLL name",
+            PlaceholderText = "Выберите имя DLL для DC",
             FontSize = 12,
             IsEnabled = isDcDllOverrideOn,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -259,7 +259,7 @@ public partial class DetailPanelBuilder
 
         var osNameBox = new ComboBox
         {
-            PlaceholderText = "Select OptiScaler DLL name",
+            PlaceholderText = "Выберите имя DLL для OptiScaler",
             FontSize = 12,
             IsEnabled = isDllOverride,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -579,12 +579,12 @@ public partial class DetailPanelBuilder
                 else if (!result.DcReverted)
                 {
                     ToolTipService.SetToolTip(dllOverrideToggle,
-                        "Could not revert Display Commander to its default name — the filename is occupied by another file. DC was kept under its current name.");
+                        "Не удалось вернуть Display Commander имя по умолчанию — это имя занято другим файлом. DC оставлен под текущим именем.");
                 }
                 else
                 {
                     ToolTipService.SetToolTip(dllOverrideToggle,
-                        "Override the filenames ReShade is installed as. When enabled, existing RS files are renamed to the custom filenames.");
+                        "Переопределить имена файлов, под которыми ставится ReShade. При включении существующие файлы RS переименовываются в пользовательские имена.");
                 }
             } // end if/else dllOverrideToggle.IsOn
             } // end try body
@@ -685,7 +685,7 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(wikiExcludeCombo,
-            "Included = this game is looked up on the RenoDX and Luma wikis. Excluded = skip wiki lookups for this game.");
+            "Включено — игра ищется в вики RenoDX и Luma. Исключено — не искать в вики для этой игры.");
         wikiExcludeCombo.SelectionChanged += (s, ev) =>
         {
             var selected = wikiExcludeCombo.SelectedItem as string;
@@ -816,7 +816,7 @@ public partial class DetailPanelBuilder
             IsEnabled = !card.UseNormalReShade,
         };
         ToolTipService.SetToolTip(shaderModeCombo,
-            "Global = use global shader selection. Custom = use custom shader directories. Select = pick per-game packs. Off = no shaders.");
+            "Глобально — использовать общий набор шейдеров. Свои — использовать свои каталоги шейдеров. Выбрать — задать наборы для этой игры. Выкл — без шейдеров.");
 
         // Allow re-opening the Select picker when already on Select
         shaderModeCombo.DropDownClosed += (s, ev) =>
@@ -923,7 +923,7 @@ public partial class DetailPanelBuilder
         // ── Bitness Override ComboBox (left column of Bitness & API Row) ─────────
         var bitnessLabel = new TextBlock
         {
-            Text = "Bitness",
+            Text = "Разрядность",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             Margin = new Thickness(0, 0, 0, 8),
@@ -946,7 +946,7 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(bitnessCombo,
-            "Override the auto-detected bitness for this game. Auto uses PE header detection. 32-bit or 64-bit forces the value.");
+            "Переопределить определённую разрядность этой игры. «Авто» определяет по PE-заголовку. «32-бит» или «64-бит» задают значение принудительно.");
 
         bitnessCombo.SelectionChanged += (s, e) =>
         {
@@ -1029,15 +1029,15 @@ public partial class DetailPanelBuilder
         // ── API Override ComboBox (single selection, placed in left panel below bitness) ──────
         var apiLabel = new TextBlock
         {
-            Text = "Graphics API",
+            Text = "Графический API",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         };
         ToolTipService.SetToolTip(apiLabel,
-            "Override the detected graphics API for this game.\n\n" +
-            "Auto uses the auto-detected value from PE header scanning.\n" +
-            "User overrides set here take precedence over manifest and auto-detected values.\n" +
-            "Reset Overrides reverts to auto-detection.");
+            "Переопределить определённый графический API этой игры.\n\n" +
+            "Авто использует значение, определённое по PE-заголовку.\n" +
+            "Заданные здесь переопределения важнее манифеста и автоопределённых значений.\n" +
+            "«Сбросить переопределения» возвращает автоопределение.");
 
         var apiDropdownItems = new[] { "Auto", "DirectX8", "DirectX9", "DirectX10", "DirectX11", "DirectX12", "Vulkan", "OpenGL" };
         var existingApiOverride = _window.ViewModel.GetApiOverride(gameName, card.Source);
@@ -1071,7 +1071,7 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(apiCombo,
-            "Override the detected graphics API for this game.\nAuto uses PE header scanning. Reset Overrides reverts to auto-detection.");
+            "Переопределить определённый графический API этой игры.\n«Авто» определяет по PE-заголовку. «Сбросить переопределения» возвращает автоопределение.");
 
         apiCombo.SelectionChanged += (s, ev) =>
         {

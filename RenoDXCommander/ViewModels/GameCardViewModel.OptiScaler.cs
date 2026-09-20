@@ -25,9 +25,9 @@ public partial class GameCardViewModel
         : OsStatus == GameStatus.Installed ? "🟢" : "⚪";
 
     public string OsActionLabel => OsIsInstalling ? "Installing..."
-        : OsStatus == GameStatus.UpdateAvailable ? "⬆  Update OptiScaler"
-        : OsStatus == GameStatus.Installed ? "↺  Reinstall OptiScaler"
-        : "⬇  Install OptiScaler";
+        : OsStatus == GameStatus.UpdateAvailable ? "⬆  Обновить OptiScaler"
+        : OsStatus == GameStatus.Installed ? "↺  Переустановить OptiScaler"
+        : "⬇  Установить OptiScaler";
 
     public string OsBtnBackground  => OsStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string OsBtnForeground  => OsStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
@@ -48,9 +48,9 @@ public partial class GameCardViewModel
         : OsStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string OsShortAction => OsIsInstalling ? "…"
-        : OsStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : OsStatus == GameStatus.Installed ? "↺ Reinstall"
-        : "⬇ Install";
+        : OsStatus == GameStatus.UpdateAvailable ? "⬆ Обновить"
+        : OsStatus == GameStatus.Installed ? "↺ Переустановить"
+        : "⬇ Установить";
 
     public bool IsOsNotInstalling => !OsIsInstalling;
     public bool IsOsInstalled => OsStatus == GameStatus.Installed

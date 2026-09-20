@@ -13,10 +13,10 @@ public partial class GameCardViewModel
         : DcStatus == GameStatus.Installed ? "🟢" : "⚪";
 
     public string DcActionLabel => DcIsInstalling ? "Installing..."
-        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? "⚠  ReShade required"
-        : DcStatus == GameStatus.UpdateAvailable ? "⬆  Update DC"
-        : DcStatus == GameStatus.Installed ? "↺  Reinstall DC"
-        : "⬇  Install DC";
+        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? "⚠  Требуется ReShade"
+        : DcStatus == GameStatus.UpdateAvailable ? "⬆  Обновить DC"
+        : DcStatus == GameStatus.Installed ? "↺  Переустановить DC"
+        : "⬇  Установить DC";
 
     public string DcBtnBackground  => DcStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string DcBtnForeground  => DcStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
@@ -36,9 +36,9 @@ public partial class GameCardViewModel
         : DcStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string DcShortAction => DcIsInstalling ? "…"
-        : DcStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : DcStatus == GameStatus.Installed ? "↺ Reinstall"
-        : "⬇ Install";
+        : DcStatus == GameStatus.UpdateAvailable ? "⬆ Обновить"
+        : DcStatus == GameStatus.Installed ? "↺ Переустановить"
+        : "⬇ Установить";
 
     public bool IsDcNotInstalling => !DcIsInstalling;
     public bool IsDcInstalled => DcStatus == GameStatus.Installed || DcStatus == GameStatus.UpdateAvailable;

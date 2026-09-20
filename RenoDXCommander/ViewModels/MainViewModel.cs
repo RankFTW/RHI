@@ -89,7 +89,7 @@ public partial class MainViewModel : ObservableObject
         set => _settingsViewModel.LastSeenVersion = value;
     }
 
-    public string UpdateButtonTooltip => "Update ReShade, RenoDX, ReLimiter, Display Commander, and RE Framework for all games";
+    public string UpdateButtonTooltip => "Обновить ReShade, RenoDX, ReLimiter, Display Commander и RE Framework во всех играх";
 
     /// <summary>
     /// The global shader picker button is disabled while custom shaders are active.
@@ -144,9 +144,9 @@ public partial class MainViewModel : ObservableObject
 
     public string LayoutToggleLabel => CurrentViewLayout switch
     {
-        ViewLayout.Detail => "Detail View",
-        ViewLayout.Compact => "Simple View",
-        _ => "Detail View",
+        ViewLayout.Detail => "Подробный вид",
+        ViewLayout.Compact => "Простой вид",
+        _ => "Подробный вид",
     };
 
     partial void OnCurrentViewLayoutChanged(ViewLayout value)
@@ -577,12 +577,12 @@ public partial class MainViewModel : ObservableObject
 
     // UE common warnings shown at bottom of every generic UE info dialog
     private const string UnrealWarnings =
-        "\n\n⚠ COMMON UNREAL ENGINE MOD WARNINGS\n\n" +
-        "🖥 Black Screen on Launch\n" +
-        "Upgrade `R10G10B10A2_UNORM` → `output size`\n" +
-        "Unlock upgrade sliders: Settings Mode → Advanced, then restart game.\n\n" +
-        "🖥 DLSS FG Flickering\n" +
-        "Replace DLSSG DLL with older 3.8.x (locks FG x2) or use DLSS FIX (beta) from Discord.";
+        "\n\n⚠ ОБЩИЕ ПРЕДУПРЕЖДЕНИЯ ДЛЯ МОДОВ UNREAL ENGINE\n\n" +
+        "🖥 Чёрный экран при запуске\n" +
+        "Замена `R10G10B10A2_UNORM` → `output size`\n" +
+        "Откройте ползунки апгрейдов: Settings Mode → Advanced, затем перезапустите игру.\n\n" +
+        "🖥 Мерцание DLSS FG\n" +
+        "Замените DLL DLSSG на старую 3.8.x (фиксирует FG x2) или используйте DLSS FIX (бета) из Discord.";
 
     public MainViewModel(
         HttpClient http,

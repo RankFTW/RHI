@@ -13,10 +13,10 @@ public partial class GameCardViewModel
         : UlStatus == GameStatus.Installed ? "🟢" : "⚪";
 
     public string UlActionLabel => UlIsInstalling ? "Installing..."
-        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? "⚠  ReShade required"
-        : UlStatus == GameStatus.UpdateAvailable ? "⬆  Update ReLimiter"
-        : UlStatus == GameStatus.Installed ? "↺  Reinstall ReLimiter"
-        : "⬇  Install ReLimiter";
+        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? "⚠  Требуется ReShade"
+        : UlStatus == GameStatus.UpdateAvailable ? "⬆  Обновить ReLimiter"
+        : UlStatus == GameStatus.Installed ? "↺  Переустановить ReLimiter"
+        : "⬇  Установить ReLimiter";
 
     public string UlBtnBackground  => UlStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string UlBtnForeground  => UlStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
@@ -35,9 +35,9 @@ public partial class GameCardViewModel
         : UlStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string UlShortAction => UlIsInstalling ? "…"
-        : UlStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : UlStatus == GameStatus.Installed ? "↺ Reinstall"
-        : "⬇ Install";
+        : UlStatus == GameStatus.UpdateAvailable ? "⬆ Обновить"
+        : UlStatus == GameStatus.Installed ? "↺ Переустановить"
+        : "⬇ Установить";
 
     public bool IsUlNotInstalling => !UlIsInstalling;
     public bool IsUlInstalled => UlStatus == GameStatus.Installed || UlStatus == GameStatus.UpdateAvailable;

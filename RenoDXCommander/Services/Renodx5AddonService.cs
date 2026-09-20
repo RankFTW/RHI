@@ -100,7 +100,7 @@ public class Renodx5AddonService
             return;
         }
         await DownloadAndStageAsync(TagPrefix, StagedFileName, "renodx-dlss5", _versionFile,
-            "RenoDX DLSS5 addon", progress,
+            "Аддон RenoDX DLSS5", progress,
             v => { HasUpdate = false; LatestVersion = v; },
             () => AutoRedeployAsync(StagedFileName, DeployFileName, "Renodx5AddonService.AutoRedeployAsync")).ConfigureAwait(false);
     }
@@ -587,9 +587,9 @@ public class Renodx5AddonService
             return;
         }
 
-        progress?.Report(($"{displayName} ready", 90));
+        progress?.Report(($"{displayName} готов", 90));
         await autoRedeploy().ConfigureAwait(false);
-        progress?.Report(($"{displayName} ready", 100));
+        progress?.Report(($"{displayName} готов", 100));
     }
 
     private async Task<(string? version, string? downloadUrl)> FetchLatestReleaseInfoAsync(
@@ -835,7 +835,7 @@ public class Renodx5AddonService
 
             _crashReporter.Log($"[Renodx5AddonService.FetchAndCacheAvailableVersionsAsync] " +
                 $"Cached {_dlss5ToolVersions.Count} DLSS5 Tool, {_dlssToolVersions.Count} ShortFuse, " +
-                $"{_feederVersions.Count} Feeder, {_bridgeVersions.Count} Bridge versions");
+                $"версий: {_feederVersions.Count} Feeder, {_bridgeVersions.Count} Bridge");
         }
         catch (Exception ex)
         {

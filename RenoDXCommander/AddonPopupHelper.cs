@@ -44,14 +44,14 @@ public static class AddonPopupHelper
         {
             var emptyDlg = new ContentDialog
             {
-                Title = "Select Addons",
+                Title = "Выбрать аддоны",
                 Content = new TextBlock
                 {
-                    Text = "No addons available.",
+                    Text = "Доступных аддонов нет.",
                     FontSize = 13,
                     Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                 },
-                CloseButtonText = "Close",
+                CloseButtonText = "Закрыть",
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 MinWidth = 750,
@@ -203,8 +203,8 @@ public static class AddonPopupHelper
             };
             if (peerIsSelected)
                 ToolTipService.SetToolTip(toggle, rtx40MfgConflict
-                    ? "RTX 40 MFG Unlock is already installed and conflicts with this addon. Remove it from the Extras section first."
-                    : $"Disable {mutualExclusivePeer} first to enable this addon.");
+                    ? "Разблокировка RTX 40 MFG уже установлена и конфликтует с этим аддоном. Сначала удалите её в разделе «Дополнения»."
+                    : $"Сначала отключите {mutualExclusivePeer}, чтобы включить этот аддон.");
 
             // Capture for the lambda
             var capturedEntry = entry;
@@ -252,7 +252,7 @@ public static class AddonPopupHelper
                         peer.Toggle.IsEnabled = !toggle.IsOn;
                         peer.Toggle.Opacity = toggle.IsOn ? 0.35 : 1.0;
                         if (toggle.IsOn)
-                            ToolTipService.SetToolTip(peer.Toggle, $"Disable {entry.PackageName} first to enable this addon.");
+                            ToolTipService.SetToolTip(peer.Toggle, $"Сначала отключите {entry.PackageName}, чтобы включить этот аддон.");
                         else
                             ToolTipService.SetToolTip(peer.Toggle, null);
                     }
@@ -306,7 +306,7 @@ public static class AddonPopupHelper
         {
             panel.Children.Add(new TextBlock
             {
-                Text = "Custom Addons",
+                Text = "Свои аддоны",
                 FontSize = 12,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
@@ -391,10 +391,10 @@ public static class AddonPopupHelper
 
         var dlg = new ContentDialog
         {
-            Title = "Select Addons",
+            Title = "Выбрать аддоны",
             Content = scrollViewer,
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Развернуть",
+            CloseButtonText = "Отмена",
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             MinWidth = 750,

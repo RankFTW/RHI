@@ -119,7 +119,7 @@ public partial class MainViewModel
             card.IsExternalOnly = effectiveMod?.SnapshotUrl == null &&
                                   (effectiveMod?.NexusUrl != null || effectiveMod?.DiscordUrl != null);
             card.ExternalUrl    = effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "";
-            card.ExternalLabel  = effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord";
+            card.ExternalLabel  = effectiveMod?.NexusUrl != null ? "Скачать с Nexus Mods" : "Скачать с Discord";
             card.NexusUrl       = effectiveMod?.NexusUrl;
             card.DiscordUrl     = effectiveMod?.DiscordUrl;
             card.WikiStatus     = (mod == null && fallback != null && !card.UseUeExtended && !card.IsNativeHdrGame)
@@ -679,7 +679,7 @@ public partial class MainViewModel
                               : effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "",
             ExternalLabel   = _wikiExclusions.Contains(game.Name)
                               ? ""
-                              : effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord",
+                              : effectiveMod?.NexusUrl != null ? "Скачать с Nexus Mods" : "Скачать с Discord",
             NexusUrl        = effectiveMod?.NexusUrl,
             DiscordUrl      = _wikiExclusions.Contains(game.Name)
                               ? null
@@ -742,7 +742,7 @@ public partial class MainViewModel
                 if (foundCount > 0)
                 {
                     card.Status = GameStatus.Installed;
-                    card.InstalledAddonFileName = $"{foundCount} addons";
+                    card.InstalledAddonFileName = $"аддонов: {foundCount}";
                 }
             }
         }
@@ -832,7 +832,7 @@ public partial class MainViewModel
             card.Mod.SnapshotUrl = card.Mod.SnapshotUrl32;
         if (string.IsNullOrEmpty(card.InstallPath))
         {
-            card.ActionMessage = "No install path — use 📁 to pick the game folder.";
+            card.ActionMessage = "Путь установки не задан — выберите папку игры кнопкой 📁.";
             return;
         }
 
@@ -844,7 +844,7 @@ public partial class MainViewModel
         }
 
         card.IsInstalling = true;
-        card.ActionMessage = "Starting download...";
+        card.ActionMessage = "Начинаю загрузку...";
         _crashReporter.Log($"[MainViewModel.InstallModAsync] Install started: {card.GameName} → {card.InstallPath}");
         try
         {
@@ -961,7 +961,7 @@ public partial class MainViewModel
                 card.InstalledAddonFileName = record.AddonFileName;
                 card.RdxInstalledVersion    = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName);
                 card.Status                 = GameStatus.Installed;
-                card.FadeMessage(m => card.ActionMessage = m, "✅ Installed! Press Home in-game to open ReShade.");
+                card.FadeMessage(m => card.ActionMessage = m, "✅ Установлено! Нажмите Home в игре, чтобы открыть ReShade.");
                 _crashReporter.Log($"[MainViewModel.InstallModAsync] Install complete: {card.GameName} — {record.AddonFileName}");
                 // Reset Nexus baseline so update indicator clears after install
                 _nexusUpdateService.ResetBaseline(card.GameName);
@@ -1020,7 +1020,7 @@ public partial class MainViewModel
         card.InstalledAddonFileName = null;
         card.RdxInstalledVersion    = null;
         card.Status                 = GameStatus.Available;
-        card.ActionMessage          = "✖ Mod removed.";
+        card.ActionMessage          = "✖ Мод удалён.";
         card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
         // Clear the addon file cache so the next Refresh doesn't think a file is still there.
         if (!string.IsNullOrEmpty(card.InstallPath))

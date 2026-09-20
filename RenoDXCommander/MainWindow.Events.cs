@@ -28,18 +28,18 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Full Refresh",
-            Content = "This will clear all caches and re-scan everything from scratch:\n\n" +
-                      "• Re-detects all games from every storefront\n" +
-                      "• Re-scans DLSS/Streamline DLL paths\n" +
-                      "• Re-detects graphics APIs and engine types\n" +
-                      "• Rebuilds shader and addon deployment state\n\n" +
-                      "Try a normal Refresh first — it handles most issues without the full rescan. " +
-                      "Use Full Refresh as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card.\n\n" +
-                      "The next couple of restarts may take a few seconds longer while caches are rebuilt.\n\n" +
-                      "Do not close RHI while the refresh is in progress — closing early will result in a missing library and the scan will need to be repeated.",
-            PrimaryButtonText = "Continue",
-            CloseButtonText = "Cancel",
+            Title = "Полное обновление",
+            Content = "Будут очищены все кеши и всё пересканировано с нуля:\n\n" +
+                      "• Заново находит игры во всех магазинах\n" +
+                      "• Заново сканирует пути DLL DLSS/Streamline\n" +
+                      "• Заново определяет графические API и типы движков\n" +
+                      "• Пересобирает состояние развертывания шейдеров и аддонов\n\n" +
+                      "Сначала попробуйте обычное «Обновить» — оно решает большинство проблем без полного пересканирования. " +
+                      "«Полное обновление» — крайняя мера: если игры пропали, пути изменились, к игре добавился DLSS или с карточки игры пропал раздел DLSS.\n\n" +
+                      "Следующие пару запусков могут занять на несколько секунд дольше — кеши будут пересоздаваться.\n\n" +
+                      "Не закрывайте RHI, пока идёт обновление — раннее закрытие приведёт к потере части библиотеки, и сканирование придётся повторить.",
+            PrimaryButtonText = "Продолжить",
+            CloseButtonText = "Отмена",
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = Content.XamlRoot,
         };
@@ -66,14 +66,14 @@ public sealed partial class MainWindow
         var progressPanel = new StackPanel { Spacing = 8 };
         var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
         var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
-        var progressText = new TextBlock { Text = "Fetching manifest...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        var progressText = new TextBlock { Text = "Загрузка манифеста...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
         progressRow.Children.Add(progressRing);
         progressRow.Children.Add(progressText);
         progressPanel.Children.Add(progressRow);
 
         var progressDialog = new ContentDialog
         {
-            Title = "Checking for updates...",
+            Title = "Проверка обновлений...",
             Content = progressPanel,
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -89,14 +89,14 @@ public sealed partial class MainWindow
             ViewModel.ForceNextUpdateCheck();
 
             // Trigger a Refresh (which fetches manifests + wiki + runs update checks)
-            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components...");
+            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Проверка компонентов...");
             await ViewModel.RefreshAsync();
 
             // Trigger silent auto-install of any updates found
             ViewModel.TriggerAutoUpdate();
 
             // Check app update
-            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking app version...");
+            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Проверка версии приложения...");
             await _dialogService.CheckForAppUpdateAsync();
         }
         catch (Exception ex)
@@ -200,7 +200,7 @@ public sealed partial class MainWindow
             // ── HDR on First Boot ──────────────────────────────────────────────
             var hdrLabel = new TextBlock
             {
-                Text = "HDR on First Boot",
+                Text = "HDR при первом запуске",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
@@ -214,9 +214,9 @@ public sealed partial class MainWindow
             hdrCombo.Items.Add("On");
             ToolTipService.SetToolTip(hdrCombo,
                 "Controls EnableHDR and DisplayMode in the [Luma] section of reshade.ini.\n" +
-                "Default: leaves both keys as-is (Luma controls them).\n" +
-                "Off: sets EnableHDR=0 and DisplayMode=0.\n" +
-                "On: sets EnableHDR=1 and DisplayMode=1.");
+                "По умолчанию: оставить оба ключа как есть (ими управляет Luma).\n" +
+                "Выкл: задаёт EnableHDR=0 и DisplayMode=0.\n" +
+                "Вкл: задаёт EnableHDR=1 и DisplayMode=1.");
 
             var currentHdr = AuxInstallService.GetLumaReshadeIniValue(card.InstallPath, "EnableHDR");
             // Default = key absent or never set by RHI; Off = "0"; On = "1"
@@ -230,7 +230,7 @@ public sealed partial class MainWindow
                 {
                     AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "EnableHDR");
                     AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "DisplayMode");
-                    card.LumaActionMessage = "✅ HDR reset to Luma default.";
+                    card.LumaActionMessage = "✅ HDR сброшен к значению Luma по умолчанию.";
                 }
                 else
                 {
@@ -247,7 +247,7 @@ public sealed partial class MainWindow
             // ── TAA Settings ───────────────────────────────────────────────────
             var taaLabel = new TextBlock
             {
-                Text = "TAA Settings",
+                Text = "Настройки TAA",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
@@ -260,7 +260,7 @@ public sealed partial class MainWindow
             taaCombo.Items.Add("On");
             ToolTipService.SetToolTip(taaCombo,
                 "Writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini.\n" +
-                "Forces TAA with high quality for Luma HDR compatibility.");
+                "Принудительно включает качественный TAA для совместимости с Luma HDR.");
 
             bool taaActive = ViewModel.IsLumaTaaEnabled(card.GameName);
             taaCombo.SelectedIndex = taaActive ? 1 : 0;
@@ -301,9 +301,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Luma Settings",
+            Title = "Настройки Luma",
             Content = content,
-            CloseButtonText = "Close",
+            CloseButtonText = "Закрыть",
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = this.Content.XamlRoot,
         };
@@ -630,7 +630,7 @@ public sealed partial class MainWindow
         // ── Open Folder ──
         var openFolderItem = new MenuFlyoutItem
         {
-            Text = "📂 Open Folder",
+            Text = "📂 Открыть папку",
             Tag = card,
         };
         openFolderItem.Click += CardOpenFolder_Click;
@@ -652,7 +652,7 @@ public sealed partial class MainWindow
         {
             var discussionItem = new MenuFlyoutItem
             {
-                Text = "ℹ Discussion / Instructions",
+                Text = "ℹ Обсуждение / инструкции",
                 Tag = card,
             };
             discussionItem.Click += async (s, ev) =>
@@ -668,7 +668,7 @@ public sealed partial class MainWindow
         {
             var notesItem = new MenuFlyoutItem
             {
-                Text = "💬 View Notes",
+                Text = "💬 Заметки",
                 Tag = card,
             };
             notesItem.Click += async (s, ev) =>
@@ -839,7 +839,7 @@ public sealed partial class MainWindow
         var currentQuery = SearchBox.Text?.Trim() ?? "";
         if (string.IsNullOrEmpty(currentQuery)) return;
 
-        var nameBox = new TextBox { PlaceholderText = "Filter name", Text = currentQuery, Width = 350 };
+        var nameBox = new TextBox { PlaceholderText = "Имя фильтра", Text = currentQuery, Width = 350 };
         var errorText = new TextBlock
         {
             Text = "",
@@ -851,7 +851,7 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Save Custom Filter",
+            Title = "Сохранить свой фильтр",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -859,7 +859,7 @@ public sealed partial class MainWindow
                 {
                     new TextBlock
                     {
-                        Text = $"Save the current search \"{currentQuery}\" as a custom filter:",
+                        Text = $"Сохранить текущий поиск «{currentQuery}» как свой фильтр:",
                         TextWrapping = TextWrapping.Wrap,
                         Foreground = Brush(ResourceKeys.TextSecondaryBrush),
                     },
@@ -867,8 +867,8 @@ public sealed partial class MainWindow
                     errorText,
                 }
             },
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Сохранить",
+            CloseButtonText = "Отмена",
             XamlRoot = Content.XamlRoot,
             Background = Brush(ResourceKeys.SurfaceToolbarBrush),
             RequestedTheme = ElementTheme.Dark,
@@ -880,14 +880,14 @@ public sealed partial class MainWindow
             var name = nameBox.Text?.Trim() ?? "";
             if (string.IsNullOrEmpty(name))
             {
-                errorText.Text = "Please enter a filter name.";
+                errorText.Text = "Введите имя фильтра.";
                 errorText.Visibility = Visibility.Visible;
                 args.Cancel = true;
                 return;
             }
             if (ViewModel.Filter.CustomFilterNameExists(name))
             {
-                errorText.Text = $"A filter named \"{name}\" already exists.";
+                errorText.Text = $"Фильтр с именем «{name}» уже существует.";
                 errorText.Visibility = Visibility.Visible;
                 args.Cancel = true;
                 return;
@@ -942,7 +942,7 @@ public sealed partial class MainWindow
 
             // Right-click context menu with "Delete" option (Req 5.1–5.5)
             var flyout = new MenuFlyout();
-            var deleteItem = new MenuFlyoutItem { Text = "Delete" };
+            var deleteItem = new MenuFlyoutItem { Text = "Удалить" };
             deleteItem.Click += (s, args) =>
             {
                 ViewModel.Filter.RemoveCustomFilter(chipName);
@@ -1012,19 +1012,19 @@ public sealed partial class MainWindow
         nameBox.SelectAll();
         var nameDialog = new ContentDialog
         {
-            Title           = "Name This Game",
+            Title           = "Назвать игру",
             Content         = new StackPanel
             {
                 Spacing = 10,
                 Children =
                 {
                     new TextBlock { Text = $"Selected: {filePath}", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush), FontSize = 11 },
-                    new TextBlock { Text = "Enter the game name:", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush) },
+                    new TextBlock { Text = "Введите название игры:", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush) },
                     nameBox
                 }
             },
-            PrimaryButtonText   = "Add Game",
-            CloseButtonText     = "Cancel",
+            PrimaryButtonText   = "Добавить игру",
+            CloseButtonText     = "Отмена",
             XamlRoot            = Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceToolbarBrush),
             RequestedTheme      = ElementTheme.Dark,
@@ -1112,17 +1112,17 @@ public sealed partial class MainWindow
             {
                 var warningDialog = new ContentDialog
                 {
-                    Title = "⚠ ReShade Addons",
+                    Title = "⚠ Аддоны ReShade",
                     Content = new TextBlock
                     {
-                        Text = "ReShade addons are advanced features intended for experienced users who understand what they are.\n\n" +
-                               "Addons can modify game rendering behaviour and may cause instability. " +
-                               "Only proceed if you are comfortable managing ReShade addons.",
+                        Text = "Аддоны ReShade — продвинутая функция для опытных пользователей, понимающих, что это такое.\n\n" +
+                               "Аддоны могут менять работу рендеринга игры и способны вызывать нестабильность. " +
+                               "Продолжайте, только если уверенно управляете аддонами ReShade.",
                         TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                         MaxWidth = 450,
                     },
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
+                    PrimaryButtonText = "Продолжить",
+                    CloseButtonText = "Отмена",
                     XamlRoot = Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };

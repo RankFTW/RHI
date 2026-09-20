@@ -695,7 +695,7 @@ public partial class MainViewModel
                                          : effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "",
                 ExternalLabel          = _wikiExclusions.Contains(game.Name)
                                          ? ""
-                                         : effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord",
+                                         : effectiveMod?.NexusUrl != null ? "Скачать с Nexus Mods" : "Скачать с Discord",
                 NexusUrl               = effectiveMod?.NexusUrl,
                 DiscordUrl             = _wikiExclusions.Contains(game.Name)
                                          ? null
@@ -755,7 +755,7 @@ public partial class MainViewModel
                     if (emuFoundCount > 0)
                     {
                         newCard.Status = GameStatus.Installed;
-                        newCard.InstalledAddonFileName = $"{emuFoundCount} addons";
+                        newCard.InstalledAddonFileName = $"аддонов: {emuFoundCount}";
                     }
                 }
             }

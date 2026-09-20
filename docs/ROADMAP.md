@@ -1,107 +1,107 @@
-# RHI Roadmap
+# Дорожная карта RHI
 
-Ideas, technical debt, and planned improvements. Categorised for easy reference.
-
----
-
-## ✅ Completed
-
-### Phase 1 — Reduce Surface Area
-- **Remove Grid View** — deleted CardBuilder, OverridesFlyoutBuilder, ViewLayout.Grid. -5000 lines.
-- **Split mega-files** — 6 files split into 26 partials. All under 50KB.
-- **Unify dual UI builders** — OverridesFlyoutBuilder deleted (was Grid-only dead code). Only DetailPanelBuilder remains.
-
-### Phase 2 — Structural Improvements (Partial)
-- **NVAPI abstraction** — DlssPresetService split into 6 partials (max 36KB). ProfileMatching, DriverSettings, ReBar, Export, Reset separated.
-- **Reduce ViewModel surface** — All consumers use direct injection. 14 forwarding properties deleted. Only 3 remain (ShaderPack, AddonPack, GameName).
+Идеи, технический долг и запланированные улучшения. Сгруппированы для удобства.
 
 ---
 
-## 🔧 Engineering Debt
+## ✅ Выполнено
 
-Items that improve maintainability, performance, or reliability. No user-facing changes.
+### Этап 1 — уменьшение площади кода
+- **Удалён grid-режим просмотра** — удалены CardBuilder, OverridesFlyoutBuilder, ViewLayout.Grid. -5000 строк.
+- **Разделены мега-файлы** — 6 файлов разделены на 26 частичных классов. Все меньше 50 КБ.
+- **Унифицированы двойные UI-билдеры** — OverridesFlyoutBuilder удалён (был мёртвым кодом только для grid-режима). Остался только DetailPanelBuilder.
 
-### Concurrency Model
-- Introduce `BackgroundTaskCoordinator` — serializes operations on shared resources (library saves, staging downloads, card updates, panel rebuilds)
-- Establish threading contract: services on background threads → marshal results to UI via single `DispatcherQueue.TryEnqueue` point
-- Replace individual guard flags (`comboInitializing`, `_suppressSelectionChanged`) with a `PanelState` enum (Building / Interactive / Rebuilding)
-- Move shader pack version tracking out of `settings.json` into dedicated `shader_pack_versions.json` (fixes startup file contention)
-
-### Settings Modernization
-- Replace flat `Dictionary<string, string>` with structured `PerGameSettings` class
-- Single serialization point instead of manual dict/hashset pattern
-- Migration system for settings format changes
-- Eliminates MigrateDict/MigrateHashSet in `RenameGame()`
-
-### Data-Driven Component System
-- `IGameComponent` interface: Detect, Install, Uninstall, CheckForUpdate, Update
-- Components register in DI, detail panel iterates them dynamically
-- Eliminates "add to 11 files" pattern for new components
-
-### Structured Error Handling
-- `OperationResult` type instead of try/catch + `ActionMessage = "❌ ..."`
-- Centralized `ErrorDialogService.ShowAsync(result, retryAction?)`
-- Service methods return results, callers decide how to surface
-
-### Incremental Panel Updates
-- Rebuild only the changed section instead of full `BuildOverridesPanel()`
-- Bind version labels, status dots, enabled states to observable properties
-- Structural changes (add/remove rows) stay imperative
-
-### Test Infrastructure
-- Baseline verification (37 tests passing): `dotnet test RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -p:Platform=x64`
-- Add integration tests: install/uninstall roundtrip, manifest parse → card assertions, settings save/load
-- CI pipeline: `dotnet build && dotnet test` on push
+### Этап 2 — структурные улучшения (частично)
+- **Абстракция NVAPI** — DlssPresetService разделён на 6 частичных классов (макс. 36 КБ). ProfileMatching, DriverSettings, ReBar, Export, Reset выделены.
+- **Уменьшена площадь ViewModel** — все потребители используют прямое внедрение. Удалено 14 транзитных свойств, осталось 3 (ShaderPack, AddonPack, GameName).
 
 ---
 
-## 🚀 Feature Ideas
+## 🔧 Инженерный долг
 
-User-requested features and enhancements. Not committed — just captured.
+Пункты, улучшающие сопровождаемость, производительность или надёжность. Видимых пользователю изменений нет.
 
-### Steam Full Library Integration
-Show the user's complete Steam catalog (owned, family shared, not just installed) to browse compatibility before downloading.
+### Модель конкурентности
+- Ввести `BackgroundTaskCoordinator` — сериализация операций над общими ресурсами (сохранение библиотеки, загрузки staging, обновление карточек, пересборка панелей)
+- Установить контракт потоков: сервисы работают в фоновых потоках → результаты передаются в UI через единую точку `DispatcherQueue.TryEnqueue`
+- Заменить отдельные флаги-предохранители (`comboInitializing`, `_suppressSelectionChanged`) на enum `PanelState` (Building / Interactive / Rebuilding)
+- Вынести учёт версий наборов шейдеров из `settings.json` в отдельный `shader_pack_versions.json` (устраняет конкуренцию за файл при запуске)
 
-- Auto-read SteamID from `loginusers.vdf`
-- User provides Steam Web API key in Settings
-- `GetOwnedGames` returns all owned games with app names
-- Non-installed games show as greyed cards with compatibility badges
-- Filter chip: "Not Installed"
-- "Install" links to `steam://install/{appId}`
+### Модернизация настроек
+- Заменить плоский `Dictionary<string, string>` на структурированный класс `PerGameSettings`
+- Единая точка сериализации вместо ручных словарей/наборов
+- Система миграций при смене формата настроек
+- Устраняет MigrateDict/MigrateHashSet в `RenameGame()`
 
-**Source:** Discord user request. Similar to SteamDB/SteamDD.
+### Компонентная система на данных
+- Интерфейс `IGameComponent`: Detect, Install, Uninstall, CheckForUpdate, Update
+- Компоненты регистрируются в DI, панель игры динамически их обходит
+- Устраняет паттерн «добавь в 11 файлов» для новых компонентов
 
-### Store-Qualified installPathOverrides
-Games on both Steam and Xbox with different subfolder structures (`Win64` vs `WinGDK`).
+### Структурированная обработка ошибок
+- Тип `OperationResult` вместо try/catch + `ActionMessage = "❌ ..."`
+- Централизованный `ErrorDialogService.ShowAsync(result, retryAction?)`
+- Методы сервисов возвращают результат, вызывающий решает, как показать
 
-- Pipe-separated paths (try both, use whichever exists) — consistent with `engineIniPathOverrides`
-- Or store-qualified dict: `{ "Steam": "..\\Win64", "Xbox": "..\\WinGDK" }` — needs migration
+### Инкрементальное обновление панелей
+- Перестраивать только изменённый раздел вместо полного `BuildOverridesPanel()`
+- Привязать подписи версий, статусные точки и состояния включённости к observable-свойствам
+- Структурные изменения (добавление/удаление строк) остаются императивными
 
-**Trigger:** When a game has the same name from both stores but different subfolder layouts.
-
-### NVAPI Driver Version Gating
-- Check driver version before enabling settings (MFG needs 572.16+, render scale needs 565+)
-- Currently the UI silently fails on older drivers
-- Show "Requires driver X.XX+" tooltip when disabled
-
-### Custom ReShade Auto-Redeploy
-When a user updates a custom ReShade DLL in the Custom folder, automatically redeploy it to all games using that DLL.
-
-- Hash each `.dll` in Custom folder, store hashes in `custom_reshade_hashes.json` alongside the DLLs (in the Custom folder itself)
-- On Refresh + 4-hour background cycle: re-hash and compare
-- If hash changed → redeploy to all games with "Custom" RS channel that use that specific DLL
-- Vulkan games: update the global layer in `%ProgramData%\ReShade\` (requires admin)
-- Update stored hashes after successful redeploy
-
-**Source:** Discord user request.
+### Тестовая инфраструктура
+- Базовая верификация (37 проходящих тестов): `dotnet test RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -p:Platform=x64`
+- Добавить интеграционные тесты: цикл установки/удаления, разбор манифеста → проверки карточек, сохранение/загрузка настроек
+- CI-конвейер: `dotnet build && dotnet test` на каждый push
 
 ---
 
-## 💡 Nice-to-Have
+## 🚀 Идеи функций
 
-Low priority items with no current demand.
+Запрошенные пользователями функции и улучшения. Не подтверждены — просто зафиксированы.
 
-- **Localization** — WinUI `.resw` support. Not urgent for target audience.
-- **Accessibility audit** — Screen reader support for code-behind UI elements.
-- **Plugin system** — Third-party components register without app changes.
-- **Telemetry** — Usage analytics. Privacy-sensitive, opt-in only.
+### Полная интеграция библиотеки Steam
+Показывать весь каталог Steam пользователя (купленное, семейный доступ — не только установленное), чтобы изучать совместимость до скачивания.
+
+- Автосчитывание SteamID из `loginusers.vdf`
+- Пользователь вводит ключ Steam Web API в настройках
+- `GetOwnedGames` возвращает все купленные игры с названиями
+- Неустановленные игры показываются затемнёнными карточками со значками совместимости
+- Фильтр: «Не установленные»
+- «Установить» ведёт на `steam://install/{appId}`
+
+**Источник:** запрос пользователя в Discord. Похож на SteamDB/SteamDD.
+
+### store-квалифицированные installPathOverrides
+Игры одновременно в Steam и Xbox с разной структурой подпапок (`Win64` против `WinGDK`).
+
+- Пути через разделитель «|» (пробовать оба, использовать существующий) — согласуется с `engineIniPathOverrides`
+- Или словарь с ключом магазина: `{ "Steam": "..\\Win64", "Xbox": "..\\WinGDK" }` — нужна миграция
+
+**Триггер:** когда игра с одинаковым названием приходит из двух магазинов с разной раскладкой подпапок.
+
+### Проверка версии драйвера через NVAPI
+- Проверять версию драйвера перед включением настроек (MFG нужен 572.16+, масштаб рендеринга — 565+)
+- Сейчас интерфейс молча не срабатывает на старых драйверах
+- Показывать подсказку «Требуется драйвер X.XX+», когда настройка недоступна
+
+### Автоперенос пользовательского ReShade
+Когда пользователь обновляет свою DLL ReShade в папке Custom, автоматически переносить её во все игры, использующие эту DLL.
+
+- Считать хэш каждого `.dll` в папке Custom и хранить хэши в `custom_reshade_hashes.json` рядом с DLL (в самой папке Custom)
+- При «Обновить» + 4-часовом фоновом цикле: пересчитывать хэши и сравнивать
+- Если хэш изменился → развернуть во все игры с каналом RS «Custom», использующие именно эту DLL
+- Vulkan-игры: обновить глобальный слой в `%ProgramData%\ReShade\` (нужен администратор)
+- Обновлять сохранённые хэши после успешного переноса
+
+**Источник:** запрос пользователя в Discord.
+
+---
+
+## 💡 Желательно, но не срочно
+
+Пункты низкого приоритета без текущего спроса.
+
+- **Локализация** — поддержка WinUI `.resw`. Для целевой аудитории не горит.
+- **Аудит доступности** — поддержка скринридеров для UI-элементов, создаваемых в коде.
+- **Система плагинов** — регистрация сторонних компонентов без изменения приложения.
+- **Телеметрия** — аналитика использования. Чувствительна к приватности, только по согласию.

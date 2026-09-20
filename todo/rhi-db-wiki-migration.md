@@ -1,25 +1,25 @@
-# RHI Database — Full Wiki Replacement Plan
+# База данных RHI — план полной замены вики
 
-## Goal
+## Цель
 
-Replace the RenoDX wiki (`https://github.com/clshortfuse/renodx/wiki/Mods`) as the source of truth for mod data with the RHI-maintained database (`rhi-repo`). The wiki will no longer be fetched at all once the DB is complete and trusted.
-
----
-
-## Current State
-
-- `RenoDxDbSource` setting controls which source drives `_allMods`: `"WikiOnly"` (default), `"DbOnly"`, `"Hybrid"`
-- `WikiService.FetchAllAsync` always runs regardless of `RenoDxDbSource` — the wiki result is then discarded by `MergeDbSources` in DbOnly mode
-- The wiki is also used for Luma matching, game name normalization, and `SeenWikiMods` tracking
-- DB is currently dev-only (`DevUnlockService.IsUnlocked` gate in `InitializeAsync` and `RunBackgroundScanAndMergeAsync`)
+Заменить вики RenoDX (`https://github.com/clshortfuse/renodx/wiki/Mods`) как источник истины по данным модов на базу, поддерживаемую RHI (`rhi-repo`). Вики перестанет загружаться вовсе, как только база будет полна и ей можно доверять.
 
 ---
 
-## Phase 1 — Skip wiki fetch in DbOnly mode (quick win)
+## Текущее состояние
 
-**Files:** `MainViewModel.Init.cs`, `MainViewModel.BackgroundScan.cs`
+- Настройка `RenoDxDbSource` управляет тем, какой источник кормит `_allMods`: `"WikiOnly"` (по умолчанию), `"DbOnly"`, `"Hybrid"`
+- `WikiService.FetchAllAsync` выполняется всегда, независимо от `RenoDxDbSource` — в режиме DbOnly результат вики просто отбрасывается в `MergeDbSources`
+- Вики также используется для сопоставления Luma, нормализации имён игр и отслеживания `SeenWikiMods`
+- База пока доступна только разработчикам (врата `DevUnlockService.IsUnlocked` в `InitializeAsync` и `RunBackgroundScanAndMergeAsync`)
 
-Add a guard around `WikiService.FetchAllAsync` calls:
+---
+
+## Фаза 1 — пропуск загрузки вики в режиме DbOnly (быстрая победа)
+
+**Файлы:** `MainViewModel.Init.cs`, `MainViewModel.BackgroundScan.cs`
+
+Добавьте ограждение вокруг вызовов `WikiService.FetchAllAsync`:
 
 ```csharp
 if (!string.Equals(_settingsViewModel.RenoDxDbSource, "DbOnly", StringComparison.OrdinalIgnoreCase))
@@ -28,68 +28,68 @@ if (!string.Equals(_settingsViewModel.RenoDxDbSource, "DbOnly", StringComparison
 }
 ```
 
-Also guard `SeenWikiMods` updates — those should only run when the wiki is the active source.
+Также оградите обновления `SeenWikiMods` — они должны выполняться, только когда вики активный источник.
 
-**Result:** Saves ~300ms on startup and one unnecessary HTTP request per background scan in DbOnly mode.
-
----
-
-## Phase 2 — Migrate remaining wiki dependencies to DB
-
-These wiki-only features must be ported before the wiki can be fully removed:
-
-### 2a. Luma matching
-`MatchLumaGame(gameName)` searches `_allMods` for Luma entries by name. This is currently wiki-sourced. The DB has a separate `RenoDXdb-unreal.json` table for UE-Extended games. Luma named mods should be added to the DB as a `lumaUrl` or `isLuma: true` field, or kept as a separate DB endpoint.
-
-### 2b. `SeenWikiMods` / "New Mods" detection
-`SeenWikiModsService` tracks which mod names the user has already seen — used to show the "New Mods" notification badge. Currently seeded from wiki mod names. Should be seeded from DB mod names instead. Low risk change.
-
-### 2c. Game name normalization for wiki matching
-`GameDetectionService.MatchGame` compares detected game names against normalized wiki names for `IsWikiExclusion`, `WikiStatusBadge`, etc. If the wiki is removed, these lookups need to be driven from DB entries. The DB `name` field already uses the same naming convention.
-
-### 2d. `ToggleWikiExclusion` and per-game wiki inclusion overrides
-`IGameNameService.WikiExclusions` / `WikiOptIns` currently reference "the wiki" in their semantics. Rename to `ModDbExclusions` / `ModDbOptIns` and update all call sites. Pure rename, no logic change.
-
-### 2e. Deprecated mods filter
-`WikiService` skips mods listed after a "Deprecated" heading. The DB should have a `"status": "Deprecated"` or just omit deprecated mods. Confirm DB has no deprecated entries before removing the filter.
+**Результат:** экономит ~300 мс при запуске и один лишний HTTP-запрос на фоновое сканирование в режиме DbOnly.
 
 ---
 
-## Phase 3 — Remove wiki entirely
+## Фаза 2 — перенос оставшихся зависимостей от вики на базу
 
-1. Delete `WikiService.cs` and `IWikiService.cs`
-2. Remove `WikiService` from `App.xaml.cs` DI registration
-3. Remove all `_wikiService` field references in `MainViewModel`
-4. Remove `_allMods` population from `WikiService.FetchAllAsync` — replace with DB-only fetch
-5. Change `RenoDxDbSource` default to `"DbOnly"` permanently (or remove the setting entirely)
-6. Remove `RenoDxDbSourceCard` from `MainWindow.xaml` and `SettingsHandler.InitRenoDxDbSourceCombo()`
-7. Remove `DevUnlockService.IsUnlocked` gate from `RenoDXDbService.FetchAllAsync` call sites
-8. Update `SeenWikiMods` → `SeenDbMods` references throughout
+Эти функции, доступные только через вики, нужно перенести, прежде чем вики можно будет удалить полностью:
 
----
+### 2a. Сопоставление Luma
+`MatchLumaGame(gameName)` ищет записи Luma по имени в `_allMods`. Сейчас источник — вики. В базе есть отдельная таблица `RenoDXdb-unreal.json` для игр UE-Extended. Именные моды Luma стоит добавить в базу полем `lumaUrl` или `isLuma: true`, либо держать отдельным эндпоинтом базы.
 
-## DB Completeness Requirements Before Phase 3
+### 2b. `SeenWikiMods` / определение «новых модов»
+`SeenWikiModsService` отслеживает, какие имена модов пользователь уже видел — используется для значка уведомления «Новые моды». Сейчас наполняется именами модов из вики. Должно наполняться именами из базы. Изменение с низким риском.
 
-The DB must cover all mods currently on the RenoDX wiki before the wiki can be removed:
-- All named game-specific mods (currently ~954 wiki entries vs 272 DB entries)
-- All generic UE-Extended games (currently wiki-scraped; DB has ~70)
-- Status field parity: `"Done"`, `"WIP"`, `"Deprecated"` matching wiki ✅/🚧 semantics
-- `snapshotUrl` for every mod (same URLs as wiki — already the case for existing DB entries)
+### 2c. Нормализация имён игр для сопоставления с вики
+`GameDetectionService.MatchGame` сверяет найденные имена игр с нормализованными именами вики для `IsWikiExclusion`, `WikiStatusBadge` и т.п. Если вики удаляется, эти поиски должны питаться записями базы. Поле `name` в базе уже использует ту же конвенцию имён.
 
-Run `docs/merge_game_db.py` against community submissions to grow the DB coverage faster.
+### 2d. `ToggleWikiExclusion` и поигровые переопределения включения в вики
+Семантика `IGameNameService.WikiExclusions` / `WikiOptIns` сейчас отсылает к «вики». Переименуйте в `ModDbExclusions` / `ModDbOptIns` и обновите все точки вызова. Чистое переименование, без смены логики.
+
+### 2e. Фильтр устаревших модов
+`WikiService` пропускает моды, перечисленные после заголовка «Deprecated». В базе должно быть `"status": "Deprecated"`, либо устаревшие моды просто опускаются. Перед снятием фильтра убедитесь, что в базе нет устаревших записей.
 
 ---
 
-## Key Files
+## Фаза 3 — полное удаление вики
 
-| File | Role |
+1. Удалить `WikiService.cs` и `IWikiService.cs`
+2. Убрать `WikiService` из регистрации DI в `App.xaml.cs`
+3. Убрать все ссылки на поле `_wikiService` в `MainViewModel`
+4. Убрать наполнение `_allMods` из `WikiService.FetchAllAsync` — заменить загрузкой только из базы
+5. Поменять умолчание `RenoDxDbSource` на `"DbOnly"` навсегда (или убрать настройку целиком)
+6. Убрать `RenoDxDbSourceCard` из `MainWindow.xaml` и `SettingsHandler.InitRenoDxDbSourceCombo()`
+7. Убрать врата `DevUnlockService.IsUnlocked` из мест вызова `RenoDXDbService.FetchAllAsync`
+8. Обновить ссылки `SeenWikiMods` → `SeenDbMods` по всему коду
+
+---
+
+## Требования к полноте базы перед фазой 3
+
+База должна покрыть все моды, сейчас присутствующие на вики RenoDX, прежде чем вики можно будет убрать:
+- Все именные поигровые моды (сейчас ~954 записи в вики против 272 в базе)
+- Все универсальные игры UE-Extended (сейчас скрейпятся с вики; в базе ~70)
+- Паритет поля статуса: `"Done"`, `"WIP"`, `"Deprecated"` с семантикой ✅/🚧 вики
+- `snapshotUrl` для каждого мода (те же ссылки, что в вики — для существующих записей базы уже так)
+
+Запускайте `docs/merge_game_db.py` по заявкам сообщества, чтобы быстрее наращивать покрытие базы.
+
+---
+
+## Ключевые файлы
+
+| Файл | Роль |
 |------|------|
-| `RenoDXCommander/Services/WikiService.cs` | Fetches and parses RenoDX wiki — to be removed in Phase 3 |
-| `RenoDXCommander/Services/RenoDXDbService.cs` | Fetches rhi-repo DB — becomes the sole mod source |
-| `RenoDXCommander/ViewModels/MainViewModel.cs` | `MergeDbSources()` — merge logic to simplify once wiki removed |
-| `RenoDXCommander/ViewModels/MainViewModel.Init.cs` | Add Phase 1 guard here |
-| `RenoDXCommander/ViewModels/MainViewModel.BackgroundScan.cs` | Add Phase 1 guard here |
-| `RenoDXCommander/Services/SeenWikiModsService.cs` | Rename + reroute to DB in Phase 2 |
-| `game-db/game_db.json` | Community submission data |
-| `docs/RenoDXdb.json` | Named mods DB file |
-| `docs/RenoDXdb-unreal-ue-extended.json` | UE-Extended DB file |
+| `RenoDXCommander/Services/WikiService.cs` | Загружает и парсит вики RenoDX — удаляется в фазе 3 |
+| `RenoDXCommander/Services/RenoDXDbService.cs` | Загружает базу rhi-repo — станет единственным источником модов |
+| `RenoDXCommander/ViewModels/MainViewModel.cs` | `MergeDbSources()` — логику слияния упростить после удаления вики |
+| `RenoDXCommander/ViewModels/MainViewModel.Init.cs` | Сюда добавить ограждение фазы 1 |
+| `RenoDXCommander/ViewModels/MainViewModel.BackgroundScan.cs` | Сюда добавить ограждение фазы 1 |
+| `RenoDXCommander/Services/SeenWikiModsService.cs` | Переименовать + перенаправить на базу в фазе 2 |
+| `game-db/game_db.json` | Данные заявок сообщества |
+| `docs/RenoDXdb.json` | Файл базы именных модов |
+| `docs/RenoDXdb-unreal-ue-extended.json` | Файл базы UE-Extended |

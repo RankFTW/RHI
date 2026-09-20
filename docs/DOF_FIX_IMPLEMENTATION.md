@@ -1,51 +1,51 @@
-# DOF Fix Component — Implementation Guide
+# Компонент DOF Fix — руководство по реализации
 
-## Current State
+## Текущее состояние
 
-Branch: `wip-cogs-and-dof`
+Ветка: `wip-cogs-and-dof`
 
-**Files that EXIST and are correct:**
-- `RenoDXCommander/Services/DofFixService.cs` — Full service implementation (untracked, needs `git add`)
-- `RenoDXCommander/Services/IDofFixService.cs` — Interface (untracked, needs `git add`)
-- `RenoDXCommander/ViewModels/GameCardViewModel.DofFix.cs` — ViewModel partial (untracked, needs `git add`)
+**Файлы, которые СУЩЕСТВУЮТ и корректны:**
+- `RenoDXCommander/Services/DofFixService.cs` — полная реализация сервиса (не отслеживается, нужен `git add`)
+- `RenoDXCommander/Services/IDofFixService.cs` — интерфейс (не отслеживается, нужен `git add`)
+- `RenoDXCommander/ViewModels/GameCardViewModel.DofFix.cs` — частичный ViewModel (не отслеживается, нужен `git add`)
 
-**Files that NEED modifications re-applied** (changes were lost during a git stash/branch switch):
+**Файлы, в которые НУЖНО заново внести правки** (изменения были потеряны при git stash/переключении ветки):
 
 ---
 
-## 1. `App.xaml.cs` — Register DofFixService in DI
+## 1. `App.xaml.cs` — зарегистрировать DofFixService в DI
 
-Find where other services are registered (look for `DxvkService` or `OptiScalerService` registration).
-Add:
+Найдите место регистрации других сервисов (ищите регистрацию `DxvkService` или `OptiScalerService`).
+Добавьте:
 ```csharp
 services.AddSingleton<DofFixService>();
 ```
 
 ---
 
-## 2. `ViewModels/MainViewModel.cs` — Add service field
+## 2. `ViewModels/MainViewModel.cs` — добавить поле сервиса
 
-Add field:
+Добавьте поле:
 ```csharp
 private readonly DofFixService _dofFixService;
 ```
 
-Add to constructor parameters and assign:
+Добавьте в параметры конструктора и присвойте:
 ```csharp
 _dofFixService = App.Services.GetRequiredService<DofFixService>();
 ```
 
 ---
 
-## 3. `ViewModels/MainViewModel.Init.cs` — Multiple changes
+## 3. `ViewModels/MainViewModel.Init.cs` — несколько изменений
 
-### a) Staging on startup (in `InitializeAsync`, parallel task block)
-Add alongside other staging tasks:
+### a) Подготовка хранилища при запуске (в `InitializeAsync`, блок параллельных задач)
+Добавьте рядом с остальными задачами подготовки:
 ```csharp
 Task.Run(() => _dofFixService.EnsureStagingAsync())
 ```
 
-### b) Manifest wiring (after manifest fetch, where `ApplyManifestPresets` is called — TWO places: init path and background scan path)
+### b) Привязка манифеста (после загрузки манифеста, там где вызывается `ApplyManifestPresets` — ДВА места: путь инициализации и путь фонового сканирования)
 ```csharp
 _dofFixService.SetSkipGames(_manifest?.DofFixSkipGames);
 _dofFixService.SetForceGames(_manifest?.DofFixForceGames);
@@ -53,7 +53,7 @@ if (_manifest?.ComponentUrls?.TryGetValue("ueDofFix", out var dofFixUrl) == true
     _dofFixService.ManifestUrlOverride = dofFixUrl;
 ```
 
-### c) Detection in `BuildCards` (background scan, after DXVK detection block)
+### c) Определение в `BuildCards` (фоновое сканирование, после блока DXVK)
 ```csharp
 // DOF Fix detection
 newCard.IsDofFixEligible = _dofFixService.IsGameEligible(newCard.EngineHint, newCard.Is32Bit, game.Name);
@@ -67,14 +67,14 @@ if (newCard.IsDofFixEligible && !string.IsNullOrEmpty(installPath) && Directory.
 }
 ```
 
-### d) Detection in `LoadCacheAndBuildCardsAsync` (cached startup, after DXVK block)
-Same code as above.
+### d) Определение в `LoadCacheAndBuildCardsAsync` (стартовый путь из кеша, после блока DXVK)
+Тот же код, что и выше.
 
 ---
 
-## 4. `MainWindow.xaml` — Add DOF Fix row
+## 4. `MainWindow.xaml` — добавить строку DOF Fix
 
-Insert BETWEEN the `DetailOptionalSeparator` and the OptiScaler row (`DetailOsRow`):
+Вставьте МЕЖДУ `DetailOptionalSeparator` и строкой OptiScaler (`DetailOsRow`):
 
 ```xml
 <!-- DOF Fix row -->
@@ -131,21 +131,21 @@ Insert BETWEEN the `DetailOptionalSeparator` and the OptiScaler row (`DetailOsRo
 
 ---
 
-## 5. `MainWindow.Events.cs` — Click handlers
+## 5. `MainWindow.Events.cs` — обработчики кликов
 
-Add these handlers (use existing component handlers as reference for pattern):
+Добавьте эти обработчики (образец — существующие обработчики компонентов):
 
-- `InstallDofFixButton_Click` — calls `_dofFixService.InstallAsync(card.InstallPath, progress)`, updates card status
-- `UninstallDofFixButton_Click` — calls `_dofFixService.Uninstall(card.InstallPath)`, clears card status
-- `DofFixInfoButton_Click` — shows ContentDialog with `_dofFixService.ReleaseNotes` (fetched from GitHub)
-- `DofFixCogButton_Click` — placeholder ContentDialog ("No settings available")
-- `DetailDofFixStatus_PointerPressed` — opens `_dofFixService.GetReleaseUrl(version)` in browser
+- `InstallDofFixButton_Click` — вызывает `_dofFixService.InstallAsync(card.InstallPath, progress)`, обновляет статус карточки
+- `UninstallDofFixButton_Click` — вызывает `_dofFixService.Uninstall(card.InstallPath)`, очищает статус карточки
+- `DofFixInfoButton_Click` — показывает ContentDialog с `_dofFixService.ReleaseNotes` (загружается с GitHub)
+- `DofFixCogButton_Click` — заглушка ContentDialog («Настройки недоступны»)
+- `DetailDofFixStatus_PointerPressed` — открывает `_dofFixService.GetReleaseUrl(version)` в браузере
 
 ---
 
-## 6. `DetailPanelBuilder.Components.cs` — Row population
+## 6. `DetailPanelBuilder.Components.cs` — наполнение строки
 
-In `UpdateDetailComponentRows`, add DOF Fix row logic (between Optional separator visibility and OptiScaler):
+В `UpdateDetailComponentRows` добавьте логику строки DOF Fix (между видимостью разделителя «Необязательные» и OptiScaler):
 
 ```csharp
 // DOF Fix row
@@ -184,21 +184,21 @@ _window.DetailDofFixMessage.Text = card.DofFixActionMessage;
 _window.DetailDofFixMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.DofFixActionMessage));
 ```
 
-Also update `DetailOptionalSeparator.Visibility` to show when DOF Fix OR OptiScaler is visible.
+Также обновите `DetailOptionalSeparator.Visibility` — показывать, когда видим DOF Fix ИЛИ OptiScaler.
 
 ---
 
-## 7. `Services/UpdateOrchestrationService.cs` — Update All
+## 7. `Services/UpdateOrchestrationService.cs` — «Обновить всё»
 
-Add a `UpdateAllDofFixAsync` method (same pattern as other UpdateAll methods).
-Call it from the main Update All flow.
-Add to `IUpdateOrchestrationService.cs` interface.
+Добавьте метод `UpdateAllDofFixAsync` (по образцу остальных UpdateAll-методов).
+Вызовите его из основного потока «Обновить всё».
+Добавьте в интерфейс `IUpdateOrchestrationService.cs`.
 
 ---
 
-## 8. `Models/RemoteManifest.cs` — Manifest fields
+## 8. `Models/RemoteManifest.cs` — поля манифеста
 
-Add:
+Добавьте:
 ```csharp
 [JsonPropertyName("dofFixSkipGames")]
 public List<string>? DofFixSkipGames { get; set; }
@@ -209,9 +209,9 @@ public List<string>? DofFixForceGames { get; set; }
 
 ---
 
-## 9. `Services/AddonFileWatcher.cs` — Exclusion
+## 9. `Services/AddonFileWatcher.cs` — исключение
 
-In the addon detection check (where filenames starting with `renodx-` trigger detection), add exclusion:
+В проверке обнаружения аддонов (где имена, начинающиеся с `renodx-`, запускают обнаружение), добавьте исключение:
 ```csharp
 if (fileName.StartsWith("renodx-universal_ue_dof_fix", StringComparison.OrdinalIgnoreCase))
     return;
@@ -219,17 +219,17 @@ if (fileName.StartsWith("renodx-universal_ue_dof_fix", StringComparison.OrdinalI
 
 ---
 
-## 10. `DragDropHandler.Addon.cs` + `MainViewModel.Install.cs` — Exclusion from mod replace
+## 10. `DragDropHandler.Addon.cs` + `MainViewModel.Install.cs` — исключение из замены модов
 
-Add `"renodx-universal_ue_dof_fix"` to the exclusion list alongside `renodx-dlssfix` and `renodx-devkit` in both:
-- The "existing addon" warning check
-- The removal loop
+Добавьте `"renodx-universal_ue_dof_fix"` в список исключений рядом с `renodx-dlssfix` и `renodx-devkit` в обоих файлах:
+- Проверка предупреждения «существующий аддон»
+- Цикл удаления
 
 ---
 
 ## 11. `GameCardViewModel.UI.cs` — UpdateBadgeVisibility
 
-Add DOF Fix to the update badge computation:
+Добавьте DOF Fix в вычисление значка обновления:
 ```csharp
 || (DofFixStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllDofFix)
 ```
@@ -238,25 +238,25 @@ Add DOF Fix to the update badge computation:
 
 ## 12. `MainViewModel.Settings.cs` — AnyUpdateAvailable
 
-Add DOF Fix to the `AnyUpdateAvailable` property:
+Добавьте DOF Fix в свойство `AnyUpdateAvailable`:
 ```csharp
 || (c.DofFixStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDofFix)
 ```
 
 ---
 
-## Key Technical Details
+## Ключевые технические детали
 
-- **Addon filename**: `renodx-universal_ue_dof_fix.addon64`
-- **GitHub tag pattern**: `ue-dof-fix-{version}` (e.g. `ue-dof-fix-1.0.0`)
+- **Имя файла аддона**: `renodx-universal_ue_dof_fix.addon64`
+- **Схема тегов GitHub**: `ue-dof-fix-{version}` (например, `ue-dof-fix-1.0.0`)
 - **GitHub API**: `https://api.github.com/repos/RankFTW/rhi-repo/releases`
-- **Download URL pattern**: `https://github.com/RankFTW/rhi-repo/releases/download/ue-dof-fix-{version}/renodx-universal_ue_dof_fix.addon64`
-- **Staging dir**: `%LocalAppData%\RHI\ue-dof-fix\` with `version.txt`
-- **Eligibility**: UE 5.0–5.6 AND 64-bit AND not in skip list, OR in force list (still requires 64-bit)
-- **Version link URL**: `https://github.com/RankFTW/rhi-repo/releases/tag/ue-dof-fix-{version}`
-- **Manifest URL override key**: `componentUrls.ueDofFix`
+- **Схема ссылок скачивания**: `https://github.com/RankFTW/rhi-repo/releases/download/ue-dof-fix-{version}/renodx-universal_ue_dof_fix.addon64`
+- **Каталог хранилища**: `%LocalAppData%\RHI\ue-dof-fix\` с `version.txt`
+- **Условия применимости**: UE 5.0–5.6 И 64-бит И не в списке пропуска, ИЛИ в списке форсированных (64-бит всё равно требуется)
+- **Ссылка на версию**: `https://github.com/RankFTW/rhi-repo/releases/tag/ue-dof-fix-{version}`
+- **Ключ переопределения URL в манифесте**: `componentUrls.ueDofFix`
 
-## Build Verification
+## Проверка сборки
 
-After all changes: `dotnet build RenoDXCommander\RenoDXCommander.csproj --no-restore -v quiet`
-Must be 0 errors.
+После всех изменений: `dotnet build RenoDXCommander\RenoDXCommander.csproj --no-restore -v quiet`
+Ошибок быть не должно (0 errors).

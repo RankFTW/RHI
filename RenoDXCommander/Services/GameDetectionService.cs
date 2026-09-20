@@ -425,10 +425,10 @@ public partial class GameDetectionService : IGameDetectionService
     /// that can carry their own engine DLLs and exes.</summary>
     private readonly HashSet<string> _skipFolders = new(StringComparer.OrdinalIgnoreCase)
     {
-        "artbook", "art book", "artbooks", "digitalartbook",
+        "artbook", "артбук", "artbooks", "digitalartbook",
         "soundtrack", "ost", "music",
         "manual", "manuals", "docs", "documentation",
-        "bonus", "bonuscontent", "bonus content", "extras",
+        "bonus", "bonuscontent", "бонусный контент", "extras",
         "wallpapers", "wallpaper",
     };
 

@@ -161,7 +161,7 @@ public partial class DxvkService : IDxvkService
             GraphicsApiType.DirectX10 => new List<string> { "d3d10core.dll", "dxgi.dll" },
             GraphicsApiType.DirectX11 => new List<string> { "d3d11.dll", "dxgi.dll" },
             _ => throw new InvalidOperationException(
-                $"DXVK does not support {api}. Only DX8/9/10/11 are supported.")
+                $"DXVK не поддерживает {api}. Поддерживаются только DX8/9/10/11.")
         };
         return (arch, dlls);
     }
@@ -219,7 +219,7 @@ public partial class DxvkService : IDxvkService
         d3d9.upgradeSwapChainColorSpaceTo         = scRGB
         d3d9.enforceWindowModeInternally          = disabled
         """),
-        ("2nd Safest", """
+        ("2-й по безопасности", """
         dxvk.enableAsync                          = true
         dxvk.gplAsyncCache                        = true
         d3d9.enableBackBufferUpgrade              = true
@@ -229,7 +229,7 @@ public partial class DxvkService : IDxvkService
         d3d9.upgradeSwapChainColorSpaceTo         = scRGB
         d3d9.enforceWindowModeInternally          = disabled
         """),
-        ("Slightly Unsafe", """
+        ("Слегка рискованно", """
         dxvk.enableAsync                          = true
         dxvk.gplAsyncCache                        = true
         d3d9.enableSwapChainUpgrade               = true
@@ -262,7 +262,7 @@ public partial class DxvkService : IDxvkService
         d3d9.upgradeSwapChainColorSpaceTo         = scRGB
         d3d9.enforceWindowModeInternally          = disabled
         """),
-        ("Even Unsafer", """
+        ("Ещё рискованнее", """
         dxvk.enableAsync                          = true
         dxvk.gplAsyncCache                        = true
         d3d9.enableRenderTargetUpgrades           = true
@@ -346,7 +346,7 @@ public partial class DxvkService : IDxvkService
         d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
         d3d11.upgradeSwapChainColorSpaceTo            = scRGB
         """),
-        ("2nd Safest", """
+        ("2-й по безопасности", """
         dxvk.enableAsync                              = true
         dxvk.gplAsyncCache                            = true
         d3d11.enableBackBufferUpgrade                 = true
@@ -355,7 +355,7 @@ public partial class DxvkService : IDxvkService
         d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
         d3d11.upgradeSwapChainColorSpaceTo            = scRGB
         """),
-        ("Slightly Unsafe", """
+        ("Слегка рискованно", """
         dxvk.enableAsync                              = true
         dxvk.gplAsyncCache                            = true
         d3d11.enableBackBufferUpgrade                 = true
@@ -385,7 +385,7 @@ public partial class DxvkService : IDxvkService
         d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
         d3d11.upgradeSwapChainColorSpaceTo            = scRGB
         """),
-        ("Even Unsafer", """
+        ("Ещё рискованнее", """
         dxvk.enableAsync                              = true
         dxvk.gplAsyncCache                            = true
         d3d11.enableRenderTargetUpgrades              = true
@@ -406,7 +406,7 @@ public partial class DxvkService : IDxvkService
         d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
         d3d11.upgradeSwapChainColorSpaceTo            = scRGB
         """),
-        ("Slightly Experimental", """
+        ("Слегка экспериментально", """
         dxvk.enableAsync                              = true
         dxvk.gplAsyncCache                            = true
         d3d11.enableRenderTargetUpgrades              = true
@@ -427,7 +427,7 @@ public partial class DxvkService : IDxvkService
         d3d11.upgradeSwapChainFormatTo                = rgba16_sfloat
         d3d11.upgradeSwapChainColorSpaceTo            = scRGB
         """),
-        ("Fully Experimental", """
+        ("Полностью экспериментально", """
         dxvk.enableAsync                              = true
         dxvk.gplAsyncCache                            = true
         d3d11.enableRenderTargetUpgrades              = true

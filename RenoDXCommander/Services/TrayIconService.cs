@@ -110,7 +110,7 @@ public static class TrayIconService
             AppendMenu(hMenu, MF_SEPARATOR, 0, null);
         }
 
-        AppendMenu(hMenu, MF_STRING, 1, "Open RHI");
+        AppendMenu(hMenu, MF_STRING, 1, "Открыть RHI");
         AppendMenu(hMenu, MF_STRING, 2, "Exit");
 
         // Required for the menu to close when clicking away

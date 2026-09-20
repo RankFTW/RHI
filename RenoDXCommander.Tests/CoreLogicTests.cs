@@ -163,35 +163,35 @@ public class CoreLogicTests
     public void FormatAge_LessThanOneMinute_ReturnsJustNow()
     {
         var utc = DateTime.UtcNow.AddSeconds(-30);
-        Assert.Equal("just now", FormatAgeHelper(utc));
+        Assert.Equal("только что", FormatAgeHelper(utc));
     }
 
     [Fact]
     public void FormatAge_FiveMinutes_Returns5mAgo()
     {
         var utc = DateTime.UtcNow.AddMinutes(-5);
-        Assert.Equal("5m ago", FormatAgeHelper(utc));
+        Assert.Equal("5 мин назад", FormatAgeHelper(utc));
     }
 
     [Fact]
     public void FormatAge_TwoHours_Returns2hAgo()
     {
         var utc = DateTime.UtcNow.AddHours(-2);
-        Assert.Equal("2h ago", FormatAgeHelper(utc));
+        Assert.Equal("2 ч назад", FormatAgeHelper(utc));
     }
 
     [Fact]
     public void FormatAge_ThreeDays_Returns3dAgo()
     {
         var utc = DateTime.UtcNow.AddDays(-3);
-        Assert.Equal("3d ago", FormatAgeHelper(utc));
+        Assert.Equal("3 дн назад", FormatAgeHelper(utc));
     }
 
     /// <summary>Mirrors MainViewModel.FormatAge exactly.</summary>
     private static string FormatAgeHelper(DateTime utc)
     {
         var age = DateTime.UtcNow - utc;
-        if (age.TotalMinutes < 1) return "just now";
+        if (age.TotalMinutes < 1) return "только что";
         if (age.TotalHours   < 1) return $"{(int)age.TotalMinutes}m ago";
         if (age.TotalDays    < 1) return $"{(int)age.TotalHours}h ago";
         return $"{(int)age.TotalDays}d ago";

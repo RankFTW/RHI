@@ -29,7 +29,7 @@ public partial class AuxInstallService
 
         if (!File.Exists(rsStagedPath))
             throw new FileNotFoundException(
-                $"ReShade DLL not found in staging directory.\nExpected: {rsStagedPath}");
+                $"DLL ReShade не найдена в папке загрузок.\nОжидалась: {rsStagedPath}");
 
         File.Copy(rsStagedPath, stagedDllPath, overwrite: true);
 

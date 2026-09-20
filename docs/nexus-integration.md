@@ -1,104 +1,104 @@
-# Nexus Mods Full Download Integration — Implementation Guide
+# Полноценная интеграция загрузок Nexus Mods — руководство по реализации
 
-## Purpose
+## Назначение
 
-This document is a complete implementation guide for adding one-click Nexus Mods download/update support to RHI. It covers what already exists in RHI, the Nexus API in full, and exactly what needs to be built — file by file.
+Этот документ — полное руководство по реализации поддержки скачивания/обновления Nexus Mods в один клик в RHI. Он охватывает то, что уже существует в RHI, Nexus API целиком и что именно нужно построить — файл за файлом.
 
 ---
 
-## Build & Test Commands
+## Сборка и тестирование
 
 ```powershell
-# Build
+# Сборка
 dotnet build g:\RDXC\RenoDXCommander\RenoDXCommander.csproj --no-restore -v q -p:Platform=x64
 
-# Publish (deploys to the running build location)
-# Run publish.bat from g:\RDXC\
+# Публикация (деплоит в место работающей сборки)
+# Запустите publish.bat из g:\RDXC\
 ```
 
 ---
 
-## What Already Exists in RHI
+## Что уже существует в RHI
 
-### Update Detection — `NexusUpdateService.cs`
+### Определение обновлений — `NexusUpdateService.cs`
 `RenoDXCommander/Services/NexusUpdateService.cs`
 
-Already working. Uses the **Nexus GraphQL v2 API** (`https://api.nexusmods.com/v2/graphql`) — **no API key required**.
+Уже работает. Использует **Nexus GraphQL v2 API** (`https://api.nexusmods.com/v2/graphql`) — **API-ключ не нужен**.
 
-- Queries `legacyModsByDomain` with `{gameDomain, modId}` pairs
-- `ParseNexusUrl(url)` → extracts `(Domain, ModId)` from a `nexusmods.com/domain/mods/id` URL
-- Compares `updatedAt` timestamp against persisted baselines in `%LocalAppData%\RHI\nexus_baselines.json`
-- `NexusBaseline` model: `Domain`, `ModId`, `LastKnownUpdate`, `InstalledVersion`, `HasUpdate`
-- Flags `card.Status = UpdateAvailable` when remote is newer
+- Запрашивает `legacyModsByDomain` парами `{gameDomain, modId}`
+- `ParseNexusUrl(url)` → извлекает `(Domain, ModId)` из ссылки вида `nexusmods.com/domain/mods/id`
+- Сравнивает метку времени `updatedAt` с сохранёнными базовыми значениями в `%LocalAppData%\RHI\nexus_baselines.json`
+- Модель `NexusBaseline`: `Domain`, `ModId`, `LastKnownUpdate`, `InstalledVersion`, `HasUpdate`
+- Ставит `card.Status = UpdateAvailable`, когда удалённая версия новее
 
-**Missing from `NexusBaseline`:** `FileId` (the specific file_id that was installed). Needs adding.
+**Чего не хватает в `NexusBaseline`:** `FileId` (конкретный file_id установленный). Нужно добавить.
 
-### Game Catalogue — `NexusModsService.cs`
+### Каталог игр — `NexusModsService.cs`
 `RenoDXCommander/Services/NexusModsService.cs`
 
-Fetches Nexus game catalogue (`https://data.nexusmods.com/file/nexus-data/games.json`), builds a normalised lookup of game name → Nexus URL. Used for the PCGW-style wiki link button, NOT for downloads. This service is separate from download functionality.
+Загружает каталог игр Nexus (`https://data.nexusmods.com/file/nexus-data/games.json`), строит нормализованный поиск «имя игры → ссылка Nexus». Используется для кнопки вики-ссылки в стиле PCGW, НЕ для загрузок. Этот сервис отделён от функциональности загрузки.
 
-### Card State for Nexus Mods
-A card gets `IsExternalOnly = true` when `effectiveMod.SnapshotUrl == null && effectiveMod.NexusUrl != null`. These are mods hosted on Nexus that RHI can't currently download directly.
+### Состояние карточки для Nexus Mods
+Карточка получает `IsExternalOnly = true`, когда `effectiveMod.SnapshotUrl == null && effectiveMod.NexusUrl != null`. Это моды, размещённые на Nexus, которые RHI пока не может скачать напрямую.
 
-When `IsExternalOnly`:
-- `card.ExternalUrl` = the Nexus mod page URL (e.g. `https://www.nexusmods.com/kingdomsofamalurreckoning/mods/64`)
+Когда `IsExternalOnly`:
+- `card.ExternalUrl` = URL страницы мода Nexus (например, `https://www.nexusmods.com/kingdomsofamalurreckoning/mods/64`)
 - `card.ExternalLabel` = `"Download from Nexus Mods"`
-- The install button opens the browser to `ExternalUrl` (see `MainWindow.Events.cs` → `ExternalLinkButton_Click`)
-- `card.NexusUrl` = same as `ExternalUrl` for Nexus mods (set in `MainViewModel.Install.cs` and `BuildCards.cs`)
-- `AutoUpdateService` currently **excludes** `IsExternalOnly` cards — line 113: `&& !c.IsExternalOnly`
+- Кнопка установки открывает браузер на `ExternalUrl` (см. `MainWindow.Events.cs` → `ExternalLinkButton_Click`)
+- `card.NexusUrl` = то же, что `ExternalUrl` для модов Nexus (задаётся в `MainViewModel.Install.cs` и `BuildCards.cs`)
+- `AutoUpdateService` сейчас **исключает** карточки с `IsExternalOnly` — строка 113: `&& !c.IsExternalOnly`
 
-### Existing Install Record — `InstalledModRecord.cs`
+### Существующая запись об установке — `InstalledModRecord.cs`
 `RenoDXCommander/Models/InstalledModRecord.cs`
 
-Fields: `GameName`, `Store`, `AddonFileName`, `FileHash`, `InstalledAt`, `InstallPath`, `InstalledVersion`, plus others.
+Поля: `GameName`, `Store`, `AddonFileName`, `FileHash`, `InstalledAt`, `InstallPath`, `InstalledVersion` и другие.
 
-**Missing:** `NexusFileId` (int) — the file_id from Nexus API, needed to identify which file is installed vs latest. Add this field.
+**Чего не хватает:** `NexusFileId` (int) — file_id из Nexus API, нужен, чтобы отличать установленный файл от последнего. Добавьте это поле.
 
-### Single Instance Forwarding — `SingleInstanceService.cs`
+### Пересылка в единственный экземпляр — `SingleInstanceService.cs`
 `RenoDXCommander/Services/SingleInstanceService.cs`
 
-Uses a named pipe (`RenoDXCommander_AddonPipe`) to forward file paths from a second instance to the running one. `FileReceived` event fires with the path. This exact pattern is needed for NXM protocol forwarding — the NXM URL arrives as a command-line arg to a new RHI process that needs to forward it to the running instance.
+Использует именованный канал (`RenoDXCommander_AddonPipe`), чтобы пересылать пути файлов из второго экземпляра в работающий. Срабатывает событие `FileReceived` с путём. Точно этот же паттерн нужен для пересылки протокола NXM — NXM-ссылка приходит аргументом командной строки в новый процесс RHI, который должен переслать её работающему экземпляру.
 
-### Settings Persistence — `SettingsViewModel.cs`
+### Хранение настроек — `SettingsViewModel.cs`
 `RenoDXCommander/ViewModels/SettingsViewModel.cs`
 
-Uses `[ObservableProperty]` fields with `LoadSettingsFromDict` / `SaveSettingsToDict` pattern against `%LocalAppData%\RHI\settings.json`. Add `NexusApiKey` (string) and `NexusIsPremium` (bool) here.
+Использует поля `[ObservableProperty]` с паттерном `LoadSettingsFromDict` / `SaveSettingsToDict` против `%LocalAppData%\RHI\settings.json`. Добавьте сюда `NexusApiKey` (string) и `NexusIsPremium` (bool).
 
-Pattern for a new string setting:
+Паттерн для новой строковой настройки:
 ```csharp
-// Declaration
+// Объявление
 [ObservableProperty] private string _nexusApiKey = "";
 
-// Load
+// Загрузка
 if (s.TryGetValue("NexusApiKey", out var nakVal)) NexusApiKey = nakVal ?? "";
 
-// Save
+// Сохранение
 if (!string.IsNullOrEmpty(NexusApiKey)) s["NexusApiKey"] = NexusApiKey;
 ```
 
 ---
 
-## Nexus Mods API — Complete Reference
+## Nexus Mods API — полный справочник
 
-### Base URL
+### Базовый URL
 ```
 https://api.nexusmods.com/v1/
 ```
 
-### Authentication — All v1 REST Endpoints
-Every request needs these headers:
+### Аутентификация — все REST-эндпоинты v1
+Каждый запрос требует этих заголовков:
 ```
 apikey: {USER_API_KEY}
 Application-Name: RHI
 Application-Version: 2.4.x
 ```
 
-### Validate API Key + Get Membership Status
+### Проверка API-ключа + статус подписки
 ```
 GET /v1/users/validate.json
 ```
-Returns:
+Возвращает:
 ```json
 {
   "user_id": 12345,
@@ -108,13 +108,13 @@ Returns:
   "is_supporter": false
 }
 ```
-Call this when the user enters/connects their key. Store `is_premium` as `NexusIsPremium` in settings.
+Вызывайте, когда пользователь вводит/подключает ключ. Сохраняйте `is_premium` как `NexusIsPremium` в настройках.
 
-### Get Mod Files List
+### Список файлов мода
 ```
 GET /v1/games/{game_domain}/mods/{mod_id}/files.json
 ```
-Returns all files for the mod. Each file has:
+Возвращает все файлы мода. Каждый файл:
 ```json
 {
   "file_id": 67890,
@@ -127,15 +127,15 @@ Returns all files for the mod. Each file has:
   "file_name": "modname-1.5.zip"
 }
 ```
-To find the latest file to download: filter `category_name == "MAIN"`, pick highest `uploaded_timestamp`.
+Чтобы найти свежий файл для скачивания: фильтруйте `category_name == "MAIN"`, берите максимальный `uploaded_timestamp`.
 
-### Get Download Links (PREMIUM ONLY)
+### Получение ссылок для скачивания (ТОЛЬКО ПРЕМИУМ)
 ```
 GET /v1/games/{game_domain}/mods/{mod_id}/files/{file_id}/download_links.json
 ```
-**Returns HTTP 403 for free users** with message: `"You don't have permission to get download links from the API without visiting nexusmods.com — this is for premium users only."`
+**Для бесплатных пользователей возвращает HTTP 403** с сообщением: `"You don't have permission to get download links from the API without visiting nexusmods.com — this is for premium users only."`
 
-For premium users, returns:
+Для премиум-пользователей возвращает:
 ```json
 [
   {
@@ -145,43 +145,43 @@ For premium users, returns:
   }
 ]
 ```
-The `URI` is a direct HTTPS download link that **expires in ~30 minutes**. Never cache it — generate fresh per download.
+`URI` — прямая HTTPS-ссылка на скачивание, которая **протухает примерно через 30 минут**. Никогда не кешируйте её — генерируйте свежую на каждую загрузку.
 
-### Get Download Links (FREE — NXM Key Path)
-Same endpoint but with query params from the NXM protocol URL:
+### Получение ссылок (БЕСПЛАТНО — путь через NXM-ключ)
+Тот же эндпоинт, но с параметрами запроса из ссылки протокола NXM:
 ```
 GET /v1/games/{game_domain}/mods/{mod_id}/files/{file_id}/download_links.json?key={key}&expires={expires}&user_id={user_id}
 ```
-This works for free users when the params come from an NXM link generated by the Nexus website.
+Работает для бесплатных пользователей, когда параметры приходят из NXM-ссылки, сгенерированной сайтом Nexus.
 
-### Rate Limits
-- 20,000 requests per 24 hours (resets 00:00 GMT)
-- After 20k: 500 per hour
-- Response headers: `X-RL-Hourly-Remaining`, `X-RL-Daily-Remaining`, `X-RL-Hourly-Reset`, `X-RL-Daily-Reset`
-- Always check these headers and back off gracefully
+### Лимиты запросов
+- 20 000 запросов за 24 часа (сброс в 00:00 GMT)
+- После 20k: 500 в час
+- Заголовки ответа: `X-RL-Hourly-Remaining`, `X-RL-Daily-Remaining`, `X-RL-Hourly-Reset`, `X-RL-Daily-Reset`
+- Всегда проверяйте эти заголовки и корректно снижайте активность
 
 ---
 
-## NXM Protocol — Free User Download Path
+## Протокол NXM — путь загрузки бесплатного пользователя
 
-### URL Format
+### Формат ссылки
 ```
 nxm://{game_domain}/mods/{mod_id}/files/{file_id}?key={key}&expires={timestamp}&user_id={user_id}
 ```
-Example:
+Пример:
 ```
 nxm://kingdomsofamalurreckoning/mods/64/files/67890?key=AbCdEf123&expires=1787000000&user_id=99999
 ```
 
-### How It Works
-1. User clicks "Mod Manager Download" on nexusmods.com
-2. Browser fires the `nxm://` protocol, Windows looks up the registered handler
-3. The registered handler (RHI) receives the URL as a command-line arg: `RHI.exe --nxm "nxm://..."`
-4. RHI parses the URL, calls the download_links endpoint with the key params
-5. Downloads and installs the file
+### Как это работает
+1. Пользователь нажимает «Mod Manager Download» на nexusmods.com
+2. Браузер запускает протокол `nxm://`, Windows ищет зарегистрированный обработчик
+3. Зарегистрированный обработчик (RHI) получает ссылку аргументом командной строки: `RHI.exe --nxm "nxm://..."`
+4. RHI разбирает ссылку, вызывает эндпоинт download_links с параметрами ключа
+5. Скачивает и устанавливает файл
 
-### Windows Registry — Protocol Handler
-Write at RHI first launch or in installer:
+### Реестр Windows — обработчик протокола
+Записывать при первом запуске RHI или в установщике:
 ```
 HKEY_CURRENT_USER\Software\Classes\nxm
   (Default) = "URL:NXM Protocol"
@@ -190,57 +190,57 @@ HKEY_CURRENT_USER\Software\Classes\nxm
 HKEY_CURRENT_USER\Software\Classes\nxm\shell\open\command
   (Default) = "\"C:\Users\...\RHI.exe\" --nxm \"%1\""
 ```
-Use the `Environment.ProcessPath` for the RHI exe path (not `AppContext.BaseDirectory` — wrong for single-file publish).
+Используйте `Environment.ProcessPath` для пути exe RHI (не `AppContext.BaseDirectory` — неверно для single-file публикации).
 
-**Conflict with Vortex/MO2**: These apps also register `nxm://`. Whichever registered last wins. Only overwrite if no handler exists, or show a dialog offering to claim it.
+**Конфликт с Vortex/MO2**: эти приложения тоже регистрируют `nxm://`. Побеждает тот, кто зарегистрировался последним. Перезаписывайте только если обработчика нет, или показывайте диалог с предложением перехватить.
 
-### Single Instance Forwarding for NXM
-RHI may already be running when the NXM URL arrives. The new process must forward the URL to the running instance:
+### Пересылка NXM в единственный экземпляр
+RHI может уже работать к моменту прихода NXM-ссылки. Новый процесс должен переслать её работающему экземпляру:
 
-In `App.OnLaunched`, check for `--nxm` arg. If RHI is already running, call `SingleInstanceService.SendToRunningInstance("nxm:" + url)` (use a prefix to distinguish from addon files) and exit.
+В `App.OnLaunched` проверьте аргумент `--nxm`. Если RHI уже запущен, вызовите `SingleInstanceService.SendToRunningInstance("nxm:" + url)` (префикс нужен, чтобы отличать от файлов аддонов) и выйдите.
 
-In the running instance, `SingleInstanceService.FileReceived` fires. Add a check: if the received string starts with `"nxm:"`, route to the NXM handler instead of the addon drag-drop handler.
+В работающем экземпляре срабатывает `SingleInstanceService.FileReceived`. Добавьте проверку: если принятая строка начинается с `"nxm:"`, направляйте в обработчик NXM вместо обработчика drag-drop аддонов.
 
-`SingleInstanceService` pipe name: `RenoDXCommander_AddonPipe`. The existing pipe is string-based — just prefix the NXM URL with `"nxm:"` so the receiver can distinguish.
-
----
-
-## App Registration with Nexus (Required for Public Release)
-
-Before shipping to users, email `support@nexusmods.com` with:
-- A testing build of RHI demonstrating API key input
-- App name: `RHI`
-- Short description: tool for managing ReShade, RenoDX and HDR mods across PC game libraries
-- Logo: high-res, visible on dark background
-
-They assign a **slug** (e.g. `"rhi"`) used for SSO. Until registered, personal API keys work for testing. Using personal keys for a public app violates their AUP.
-
-### SSO Flow (After Registration — Optional but Better UX)
-Instead of copy-paste, users can authorise via browser:
-1. Generate UUID v4
-2. Open WebSocket: `wss://sso.nexusmods.com`
-3. Send: `{ "id": "<uuid>", "appid": "rhi" }`
-4. Ping every 30s to keep alive
-5. Open `https://www.nexusmods.com/sso?id=<uuid>` in the user's browser
-6. User clicks Authorise on the Nexus site
-7. WebSocket receives the API key as a plain string
-8. Save key, close socket
-
-WinUI 3 `Windows.System.Launcher.LaunchUriAsync` opens the browser. For the WebSocket, use `System.Net.WebSockets.ClientWebSocket`.
+Имя канала `SingleInstanceService`: `RenoDXCommander_AddonPipe`. Существующий канал строковый — просто добавьте к NXM-ссылке префикс `"nxm:"`, чтобы приёмник мог различить.
 
 ---
 
-## What Needs to Be Built — File by File
+## Регистрация приложения в Nexus (нужно для публичного релиза)
 
-### 1. `SettingsViewModel.cs` — Add API Key Fields
+Перед выпуском пользователям напишите на `support@nexusmods.com`:
+- Тестовую сборку RHI с вводом API-ключа
+- Название приложения: `RHI`
+- Краткое описание: инструмент управления ReShade, RenoDX и HDR-модами в библиотеках ПК-игр
+- Логотип: высокое разрешение, видимый на тёмном фоне
+
+Они выдадут **slug** (например, `"rhi"`) для SSO. До регистрации для тестирования работают персональные API-ключи. Использование персональных ключей в публичном приложении нарушает их AUP.
+
+### Поток SSO (после регистрации — опционально, но удобнее)
+Вместо копипасты пользователи могут авторизоваться через браузер:
+1. Сгенерируйте UUID v4
+2. Откройте WebSocket: `wss://sso.nexusmods.com`
+3. Отправьте: `{ "id": "<uuid>", "appid": "rhi" }`
+4. Пингуйте каждые 30 с для поддержания
+5. Откройте `https://www.nexusmods.com/sso?id=<uuid>` в браузере пользователя
+6. Пользователь нажимает Authorise на сайте Nexus
+7. WebSocket принимает API-ключ простой строкой
+8. Сохраните ключ, закройте сокет
+
+`Windows.System.Launcher.LaunchUriAsync` в WinUI 3 открывает браузер. Для WebSocket используйте `System.Net.WebSockets.ClientWebSocket`.
+
+---
+
+## Что нужно построить — файл за файлом
+
+### 1. `SettingsViewModel.cs` — поля API-ключа
 ```csharp
 [ObservableProperty] private string _nexusApiKey = "";
 [ObservableProperty] private bool _nexusIsPremium;
 [ObservableProperty] private string _nexusUsername = "";
 ```
-Load/save following existing pattern. Never log the API key value.
+Загрузка/сохранение по существующему паттерну. Никогда не пишите значение ключа в лог.
 
-### 2. `NexusDownloadService.cs` (new file)
+### 2. `NexusDownloadService.cs` (новый файл)
 `RenoDXCommander/Services/NexusDownloadService.cs`
 
 ```csharp
@@ -256,41 +256,41 @@ public class NexusDownloadService
 }
 ```
 
-Models:
+Модели:
 ```csharp
 public record NexusUserInfo(int UserId, string Name, bool IsPremium);
 public record NexusModFile(int FileId, string Name, string Version, string CategoryName, long UploadedTimestamp, string FileName);
 ```
 
-Inject via DI as singleton. Register in `App.xaml.cs` alongside other services.
+Внедрить через DI как синглтон. Зарегистрируйте в `App.xaml.cs` рядом с другими сервисами.
 
-### 3. `InstalledModRecord.cs` — Add NexusFileId
-Add:
+### 3. `InstalledModRecord.cs` — добавить NexusFileId
+Добавьте:
 ```csharp
 public int? NexusFileId { get; set; }
 ```
-Write this when installing a Nexus mod (drag-drop today, direct download later).
+Записывать при установке мода Nexus (сегодня drag-drop, позже прямое скачивание).
 
-### 4. `NexusBaseline` — Add FileId
-In `NexusUpdateService.cs`, add to `NexusBaseline`:
+### 4. `NexusBaseline` — добавить FileId
+В `NexusUpdateService.cs` добавьте в `NexusBaseline`:
 ```csharp
 [JsonPropertyName("fileId")]
 public int? FileId { get; set; }
 ```
 
-### 5. Settings UI
-In `MainWindow.xaml`, add a new section in the relevant settings card (or create a "Nexus Mods" card). Needs:
-- A `PasswordBox` (or `TextBox`) for API key paste
-- A "Connect" button that calls `ValidateApiKeyAsync` and shows `"Connected as {name} (Premium)"` or `"Connected as {name} (Free)"`
-- A "Disconnect" button that clears the key
-- Description text explaining premium = automatic downloads, free = one-click via browser
+### 5. UI настроек
+В `MainWindow.xaml` добавьте новую секцию в соответствующую карточку настроек (или создайте карточку «Nexus Mods»). Нужно:
+- `PasswordBox` (или `TextBox`) для вставки API-ключа
+- Кнопка «Подключить», вызывающая `ValidateApiKeyAsync` и показывающая `"Connected as {name} (Premium)"` или `"Connected as {name} (Free)"`
+- Кнопка «Отключить», очищающая ключ
+- Текст описания: премиум = автоматические загрузки, бесплатный = в один клик через браузер
 
-In `SettingsHandler.cs`, initialize the UI from `ViewModel.Settings.NexusApiKey` in `SettingsButton_Click`.
+В `SettingsHandler.cs` инициализируйте UI из `ViewModel.Settings.NexusApiKey` в `SettingsButton_Click`.
 
-### 6. `NxmProtocolHandler.cs` (new file)
+### 6. `NxmProtocolHandler.cs` (новый файл)
 `RenoDXCommander/Services/NxmProtocolHandler.cs`
 
-Handles parsing and routing of NXM URLs:
+Разбирает и маршрутизирует NXM-ссылки:
 ```csharp
 public static class NxmProtocolHandler
 {
@@ -306,11 +306,10 @@ public static class NxmProtocolHandler
 
 public record NxmLink(string Domain, int ModId, int FileId, string Key, string Expires, string UserId);
 ```
+Вызывайте `RegisterProtocolHandler()` при первом запуске (сначала проверьте `IsRegistered()`, чтобы не перезаписать Vortex).
 
-Call `RegisterProtocolHandler()` on first launch (check `IsRegistered()` first to avoid overwriting Vortex).
-
-### 7. `App.OnLaunched` — NXM Argument Handling
-In `App.xaml.cs`, `OnLaunched` already checks for `--nxm` pattern from command-line args. Add:
+### 7. `App.OnLaunched` — обработка NXM-аргумента
+В `App.xaml.cs` `OnLaunched` уже проверяет паттерн `--nxm` в аргументах командной строки. Добавьте:
 ```csharp
 string? nxmArg = null;
 if (cmdArgs.Length > 1 && cmdArgs[1].StartsWith("nxm://", StringComparison.OrdinalIgnoreCase))
@@ -321,11 +320,11 @@ if (nxmIdx >= 0 && nxmIdx < cmdArgs.Length - 1)
     nxmArg = cmdArgs[nxmIdx + 1];
 ```
 
-If RHI is already running: `SingleInstanceService.SendToRunningInstance("nxm:" + nxmArg)` and exit.
-If this is the first instance: store the NXM URL, process it after `MainWindow` is ready.
+Если RHI уже запущен: `SingleInstanceService.SendToRunningInstance("nxm:" + nxmArg)` и выход.
+Если это первый экземпляр: сохраните NXM-ссылку и обработайте её, когда `MainWindow` будет готов.
 
-### 8. `SingleInstanceService.cs` — NXM Routing
-In `MainWindow.xaml.cs`, where `FileReceived` is wired:
+### 8. `SingleInstanceService.cs` — маршрутизация NXM
+В `MainWindow.xaml.cs`, где подключается `FileReceived`:
 ```csharp
 SingleInstanceService.FileReceived += path =>
 {
@@ -336,9 +335,9 @@ SingleInstanceService.FileReceived += path =>
 };
 ```
 
-`HandleIncomingNxmUrl` parses the NXM link, calls `NexusDownloadService.GetDownloadUriWithNxmKeyAsync`, downloads, then routes to the install flow.
+`HandleIncomingNxmUrl` разбирает NXM-ссылку, вызывает `NexusDownloadService.GetDownloadUriWithNxmKeyAsync`, скачивает, затем направляет в поток установки.
 
-### 9. `MainViewModel.Install.Nexus.cs` (new partial file)
+### 9. `MainViewModel.Install.Nexus.cs` (новый partial-файл)
 `RenoDXCommander/ViewModels/MainViewModel.Install.Nexus.cs`
 
 ```csharp
@@ -355,16 +354,16 @@ public partial class MainViewModel
 }
 ```
 
-`UpdateNexusModAsync` flow:
-1. Parse `card.NexusUrl` via `NexusUpdateService.ParseNexusUrl()` → get `(domain, modId)`
-2. Call `NexusDownloadService.GetModFilesAsync(domain, modId)` → get files list
-3. Find latest MAIN file (highest `UploadedTimestamp` where `CategoryName == "MAIN"`)
-4. If `NexusIsPremium`: call `GetDownloadUriAsync` → download → extract/deploy
-5. If free: open browser to mod page (existing behaviour) — NXM path handles the rest when user clicks
-6. On success: update `InstalledModRecord.NexusFileId`, call `NexusUpdateService.ResetBaseline(card.GameName)`
+Поток `UpdateNexusModAsync`:
+1. Разберите `card.NexusUrl` через `NexusUpdateService.ParseNexusUrl()` → получите `(domain, modId)`
+2. Вызовите `NexusDownloadService.GetModFilesAsync(domain, modId)` → получите список файлов
+3. Найдите свежий MAIN-файл (максимальный `UploadedTimestamp` при `CategoryName == "MAIN"`)
+4. Если `NexusIsPremium`: вызовите `GetDownloadUriAsync` → скачайте → распакуйте/разверните
+5. Если бесплатный: откройте браузер на странице мода (существующее поведение) — NXM-путь доделает остальное, когда пользователь нажмёт
+6. При успехе: обновите `InstalledModRecord.NexusFileId`, вызовите `NexusUpdateService.ResetBaseline(card.GameName)`
 
-### 10. `AutoUpdateService.cs` — Add Nexus Cards
-In `RunUpdatePassAsync`, remove `&& !c.IsExternalOnly` filter and replace with Nexus-specific handling:
+### 10. `AutoUpdateService.cs` — добавить карточки Nexus
+В `RunUpdatePassAsync` уберите фильтр `&& !c.IsExternalOnly` и замените специфичной для Nexus обработкой:
 ```csharp
 // Nexus mods — premium only for silent update
 var nexusCards = cards.Where(c =>
@@ -384,10 +383,10 @@ foreach (var card in nexusCards)
 }
 ```
 
-`AutoUpdateService` currently doesn't have access to `NexusDownloadService` — inject it via `SetViewModel` or add it to the constructor.
+`AutoUpdateService` сейчас не имеет доступа к `NexusDownloadService` — внедрите через `SetViewModel` или добавьте в конструктор.
 
-### 11. Install/Update Button Routing
-In `MainWindow.Events.cs`, `ExternalLinkButton_Click` currently always opens the browser. When a Nexus API key is configured AND user is premium, intercept:
+### 11. Маршрутизация кнопок установки/обновления
+В `MainWindow.Events.cs` `ExternalLinkButton_Click` сейчас всегда открывает браузер. Когда API-ключ Nexus настроен И пользователь премиум, перехватывайте:
 
 ```csharp
 private async void ExternalLinkButton_Click(object sender, RoutedEventArgs e)
@@ -413,29 +412,29 @@ private async void ExternalLinkButton_Click(object sender, RoutedEventArgs e)
 
 ---
 
-## Extraction / Install After Download — Exact Pattern
+## Распаковка / установка после скачивания — точный паттерн
 
-Once the CDN URI is obtained, the download and install must go through the existing infrastructure, not a new pipeline. Here is the exact flow:
+Когда CDN-URI получен, скачивание и установка должны идти через существующую инфраструктуру, а не новый конвейер. Вот точный поток:
 
-### The Nexus download is a `.zip` containing a `.addon64` file
+### Скачанное с Nexus — `.zip`, внутри файл `.addon64`
 
-This is the standard case for Nexus-hosted RenoDX mods. The flow:
+Стандартный случай для модов RenoDX на Nexus. Поток:
 
-1. Download the zip to a temp path using `HttpClient` (stream to file, same pattern as `ModInstallService.InstallAsync` steps 3–4)
-2. Extract using 7-Zip: `App.Services.GetRequiredService<ISevenZipExtractor>().Find7ZipExe()` to get the 7z exe, then `Process.Start` with args `x "{zipPath}" -o"{tempDir}" -y`
-3. Find `.addon64`/`.addon32` files in the extracted temp dir:
+1. Скачайте zip во временный путь через `HttpClient` (поток в файл, тот же паттерн, что шаги 3–4 в `ModInstallService.InstallAsync`)
+2. Распакуйте 7-Zip'ом: `App.Services.GetRequiredService<ISevenZipExtractor>().Find7ZipExe()` даёт exe 7z, затем `Process.Start` с аргументами `x "{zipPath}" -o"{tempDir}" -y`
+3. Найдите файлы `.addon64`/`.addon32` во временной папке:
    ```csharp
    var addonFiles = Directory.GetFiles(tempDir, "*.addon64", SearchOption.AllDirectories)
        .Concat(Directory.GetFiles(tempDir, "*.addon32", SearchOption.AllDirectories))
        .Where(f => Path.GetFileName(f).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
        .ToList();
    ```
-4. Copy the addon to the game's deploy path:
+4. Скопируйте аддон в путь развертывания игры:
    ```csharp
    var deployDir = ModInstallService.GetAddonDeployPath(card.InstallPath);
    File.Copy(addonPath, Path.Combine(deployDir, addonFileName), overwrite: true);
    ```
-5. Save an `InstalledModRecord`:
+5. Сохраните `InstalledModRecord`:
    ```csharp
    var record = new InstalledModRecord
    {
@@ -449,11 +448,11 @@ This is the standard case for Nexus-hosted RenoDX mods. The flow:
    };
    _installer.SaveRecordPublic(record);
    ```
-6. Post-install steps (mirror `UpdateOrchestrationService.UpdateAllRenoDxAsync`):
-   - Deploy Engine.ini LUT: `AuxInstallService.ApplyEngineIniLutSetting(...)` if UE game
-   - Deploy Engine.ini HDR: `AuxInstallService.ApplyEngineIniHdrSettings(...)` if UE-Extended
-   - Apply `renodxIniOverrides` from manifest: `AuxInstallService.ApplyRenodxIniOverrides(...)`
-7. Update card state on dispatcher:
+6. Пост-шаги установки (зеркало `UpdateOrchestrationService.UpdateAllRenoDxAsync`):
+   - Развернуть Engine.ini LUT: `AuxInstallService.ApplyEngineIniLutSetting(...)`, если UE-игра
+   - Развернуть Engine.ini HDR: `AuxInstallService.ApplyEngineIniHdrSettings(...)`, если UE-Extended
+   - Применить `renodxIniOverrides` из манифеста: `AuxInstallService.ApplyRenodxIniOverrides(...)`
+7. Обновите состояние карточки на диспетчере:
    ```csharp
    DispatcherQueue?.TryEnqueue(() =>
    {
@@ -466,14 +465,14 @@ This is the standard case for Nexus-hosted RenoDX mods. The flow:
        card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
    });
    ```
-8. Reset Nexus baseline: `_nexusUpdateService.ResetBaseline(card.GameName)`
-9. Save library: `SaveLibrary()`
+8. Сбросьте базовую линию Nexus: `_nexusUpdateService.ResetBaseline(card.GameName)`
+9. Сохраните библиотеку: `SaveLibrary()`
 
-**Do NOT route through `DragDropHandler.ProcessDroppedAddon`** — that method shows a game-picker dialog asking the user which game to install to. For programmatic install where you already know the card, copy the file and save the record directly as above.
+**НЕ направляйте через `DragDropHandler.ProcessDroppedAddon`** — этот метод показывает диалог выбора игры, спрашивая пользователя, куда ставить. Для программной установки, когда карточка уже известна, копируйте файл и сохраняйте запись напрямую, как выше.
 
-`DragDropHandler.ProcessDroppedArchive` and `ProcessDroppedAddon` are for **user-initiated drag-drop only** — they show ContentDialogs, ask for confirmation, and require user interaction. The download path must be silent.
+`DragDropHandler.ProcessDroppedArchive` и `ProcessDroppedAddon` — **только для drag-drop по инициативе пользователя**: они показывают ContentDialog'ы, запрашивают подтверждение и требуют взаимодействия. Путь скачивания должен быть тихим.
 
-### Deploy path helper
+### Хелпер пути развертывания
 ```csharp
 ModInstallService.GetAddonDeployPath(card.InstallPath)
 // Returns the addon subfolder if the game uses one, otherwise the install path itself
@@ -481,72 +480,72 @@ ModInstallService.GetAddonDeployPath(card.InstallPath)
 
 ---
 
-## Card State — `InstallActionLabel`, `CanInstall`, `CardRdxInstallEnabled`
+## Состояние карточки — `InstallActionLabel`, `CanInstall`, `CardRdxInstallEnabled`
 
-These are computed properties in `GameCardViewModel.RenoDX.cs`.
+Это вычисляемые свойства в `GameCardViewModel.RenoDX.cs`.
 
-**Current state for `IsExternalOnly` cards** (Nexus-only mods today):
-- `CanInstall` returns `false` — it explicitly excludes `IsExternalOnly`: `Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && ...`
-- `InstallActionLabel` falls through to the Status-based labels (Install/Update/Reinstall) but the button is disabled
-- The card row shows an external link button instead of the install button
+**Текущее состояние карточек с `IsExternalOnly`** (сегодня моды только на Nexus):
+- `CanInstall` возвращает `false` — он явно исключает `IsExternalOnly`: `Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && ...`
+- `InstallActionLabel` проваливается в подписи по статусу (Install/Update/Reinstall), но кнопка отключена
+- В строке карточки вместо кнопки установки показывается кнопка внешней ссылки
 
-**What needs to change** when adding direct download support:
+**Что нужно изменить** при добавлении прямого скачивания:
 
-`CanInstall` in `GameCardViewModel.RenoDX.cs` line 30 needs to include the Nexus premium path:
+`CanInstall` в `GameCardViewModel.RenoDX.cs`, строка 30, должен включить премиум-путь Nexus:
 ```csharp
 public bool CanInstall => IsRtxHdrEnabled
     || (Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && (IsRsInstalled || ExcludeFromUpdateAllReShade))
     || (IsExternalOnly && NexusUrl != null && /* nexusDownloadService.IsPremium — pass via card property */);
 ```
 
-The cleanest approach: add `[ObservableProperty] private bool _nexusDirectDownloadAvailable` to `GameCardViewModel.cs`, set it in `BuildCards`/`CacheLoad` when `card.NexusUrl != null && settings.NexusIsPremium`, and use it in the `CanInstall` expression. This avoids service dependencies in the ViewModel.
+Чище всего: добавить `[ObservableProperty] private bool _nexusDirectDownloadAvailable` в `GameCardViewModel.cs`, задавать в `BuildCards`/`CacheLoad`, когда `card.NexusUrl != null && settings.NexusIsPremium`, и использовать в выражении `CanInstall`. Это позволяет избежать зависимостей ViewModel от сервисов.
 
-`InstallActionLabel` for external-only with direct download:
-- `Status == NotInstalled` → `"Download from Nexus Mods"` (or `"Install"`)
+`InstallActionLabel` для «только внешняя» с прямым скачиванием:
+- `Status == NotInstalled` → `"Download from Nexus Mods"` (или `"Install"`)
 - `Status == UpdateAvailable` → `"⬆  Update"` 
 - `Status == Installed` → `"↺  Reinstall"`
 
-The existing `ExternalLink_Click` handler in `MainWindow.Events.cs` (line 683) is what fires for the external link button. That's the interception point for premium users — add the service check there.
+Существующий обработчик `ExternalLink_Click` в `MainWindow.Events.cs` (строка 683) срабатывает для кнопки внешней ссылки. Это точка перехвата для премиум-пользователей — добавьте проверку сервиса там.
 
 ---
 
-## `GameMod.NexusUrl` — Where It Comes From
+## `GameMod.NexusUrl` — откуда он берётся
 
-**Read-only. Do not write to it programmatically.**
+**Только чтение. Не пишите в него программно.**
 
-`WikiService.cs` scrapes the RenoDX wiki mod table. For each mod row, it scans all links — if a link contains `nexusmods.com`, it's stored as `nexusUrl`. This becomes `GameMod.NexusUrl`. Set in `WikiService.FetchAllAsync()` line 233.
+`WikiService.cs` парсит таблицу модов вики RenoDX. Для каждой строки мода он сканирует все ссылки — если ссылка содержит `nexusmods.com`, она сохраняется как `nexusUrl`. Это становится `GameMod.NexusUrl`. Задаётся в `WikiService.FetchAllAsync()`, строка 233.
 
-The manifest `nexusUrlOverrides` dict can override this per game — checked in `NexusModsService.ResolveUrl()`, but that's for the **PCGW-style info button link**, not the mod download URL.
+Словарь `nexusUrlOverrides` в манифесте может переопределить это поигрово — проверяется в `NexusModsService.ResolveUrl()`, но это для **кнопки-ссылки в стиле PCGW**, а не URL загрузки мода.
 
-For the download feature, `card.NexusUrl` (from `GameMod.NexusUrl`) is the mod page URL, from which `NexusUpdateService.ParseNexusUrl()` extracts `(Domain, ModId)`. You then call the files API to find the latest file_id. **The wiki `NexusUrl` is the mod page — not a direct download link.**
+Для функции скачивания `card.NexusUrl` (из `GameMod.NexusUrl`) — URL страницы мода, из которого `NexusUpdateService.ParseNexusUrl()` извлекает `(Domain, ModId)`. Затем вызываете files-API, чтобы найти свежий file_id. **Викишный `NexusUrl` — это страница мода, а не прямая ссылка на скачивание.**
 
 ---
 
-## `CheckInstallWarningAsync` — Call Pattern
+## `CheckInstallWarningAsync` — паттерн вызова
 
-**Defined in:** `MainViewModel.Install.Luma.cs` line 1016
+**Определён в:** `MainViewModel.Install.Luma.cs`, строка 1016
 
 ```csharp
 public async Task<bool> CheckInstallWarningAsync(string gameName, string component)
 ```
 
-- `component` is a string key matching entries in `manifest.InstallWarnings` dict (e.g. `"renodx"`, `"reshade"`, `"luma"`, `"dxvk"`, etc.)
-- Returns `true` → proceed with install
-- Returns `false` → user cancelled, abort install
-- Shows a `ContentDialog` with the manifest-defined warning message if one exists for this game+component combo
+- `component` — строковый ключ, совпадающий с записями словаря `manifest.InstallWarnings` (например, `"renodx"`, `"reshade"`, `"luma"`, `"dxvk"` и т.п.)
+- Вернул `true` → продолжать установку
+- Вернул `false` → пользователь отменил, прервать установку
+- Показывает `ContentDialog` с сообщением предупреждения из манифеста, если для этой комбинации игра+компонент оно есть
 
-**Call it in `InstallNexusModAsync` before starting the download:**
+**Вызывайте в `InstallNexusModAsync` перед началом скачивания:**
 ```csharp
 if (!await CheckInstallWarningAsync(card.GameName, "renodx")) return;
 ```
 
-Use the `"renodx"` key since Nexus mods are RenoDX addons. No new component key needed.
+Используйте ключ `"renodx"`, так как моды Nexus — аддоны RenoDX. Новый ключ компонента не нужен.
 
 ---
 
-## `ExternalLink_Click` — Current Implementation
+## `ExternalLink_Click` — текущая реализация
 
-`MainWindow.Events.cs` line 683:
+`MainWindow.Events.cs`, строка 683:
 ```csharp
 internal async void ExternalLink_Click(object sender, RoutedEventArgs e)
 {
@@ -568,7 +567,7 @@ internal async void ExternalLink_Click(object sender, RoutedEventArgs e)
 }
 ```
 
-**Intercept point for Phase 2** — before the `LaunchUriAsync` call, check:
+**Точка перехвата для фазы 2** — перед вызовом `LaunchUriAsync` проверьте:
 ```csharp
 var nexusDownload = App.Services.GetRequiredService<NexusDownloadService>();
 if (card.NexusUrl != null && nexusDownload.IsApiKeyConfigured && nexusDownload.IsPremium)
@@ -582,39 +581,39 @@ if (card.NexusUrl != null && nexusDownload.IsApiKeyConfigured && nexusDownload.I
 
 ---
 
-## Implementation Order
+## Порядок реализации
 
-| Phase | Files | User benefit |
+| Фаза | Файлы | Польза для пользователя |
 |---|---|---|
-| 1 | `SettingsViewModel` + `NexusDownloadService` (validate only) + Settings UI | Users can connect account, see premium status |
-| 2 | `GetModFilesAsync` + `GetDownloadUriAsync` + `DownloadToTempAsync` + `InstallNexusModAsync` + button routing | Premium users get one-click download/update from the card |
-| 3 | `InstalledModRecord.NexusFileId` + `NexusBaseline.FileId` + record on install | Accurate update detection — know which file is installed |
-| 4 | `UpdateNexusModAsync` + `AutoUpdateService` Nexus cards | Premium users get silent auto-update |
-| 5 | `NxmProtocolHandler` registration + `App.OnLaunched` NXM parsing + `SingleInstanceService` routing | Free users get one-click from browser |
-| 6 | SSO login flow (after Nexus app registration) | Better UX than copy-paste |
+| 1 | `SettingsViewModel` + `NexusDownloadService` (только проверка ключа) + UI настроек | Пользователи могут подключить аккаунт, увидеть статус подписки |
+| 2 | `GetModFilesAsync` + `GetDownloadUriAsync` + `DownloadToTempAsync` + `InstallNexusModAsync` + маршрутизация кнопок | Премиум-пользователи получают скачивание/обновление с карточки в один клик |
+| 3 | `InstalledModRecord.NexusFileId` + `NexusBaseline.FileId` + запись при установке | Точное определение обновлений — известно, какой файл установлен |
+| 4 | `UpdateNexusModAsync` + карточки Nexus в `AutoUpdateService` | Премиум-пользователи получают тихое автообновление |
+| 5 | Регистрация `NxmProtocolHandler` + разбор NXM в `App.OnLaunched` + маршрутизация в `SingleInstanceService` | Бесплатные пользователи получают установку в один клик из браузера |
+| 6 | Вход через SSO (после регистрации приложения в Nexus) | Удобнее, чем копипаста |
 
 ---
 
-## Known Gotchas
+## Известные подводные камни
 
-- **CDN URLs expire (~30 min)** — generate fresh per download, never cache.
-- **File categories**: always pick `category_name == "MAIN"` with highest `uploaded_timestamp`. Never auto-install `OLD_VERSION` or `OPTIONAL` files.
-- **`content_preview_link` is broken** as of June 2026 — field in `/v1/.../files.json` returns 404 for files uploaded after ~June 11 2026. Do not use this field.
-- **NXM handler conflict**: if Vortex/MO2 is installed, they're already the NXM handler. Only register if no other handler exists. Or offer a setting.
-- **Single instance + NXM**: the second RHI instance has no `DispatcherQueue` yet — use `SingleInstanceService.SendToRunningInstance("nxm:" + url)` then `Environment.Exit(0)` immediately. Don't initialise the full app.
-- **API key security**: never log the key value. Store it in `settings.json` as plaintext (same as other settings) — it's a local user file. Don't add extra encryption complexity.
-- **`IsExternalOnly` flag**: this is set for mods where `SnapshotUrl == null && NexusUrl != null`. The install button currently opens a browser. After Phase 2, this button should download directly for premium users. The card's `ExternalLabel` / `InstallActionLabel` / `CanInstall` logic may need adjustment to show "Download" vs "Update" correctly.
-- **Adult content flag**: some mods require the account's adult content setting enabled. API returns 403 for these if not enabled. Handle with a clear error message.
-- **Rate limit headers**: always read from every response. If `X-RL-Daily-Remaining < 100`, back off and log a warning.
-- **`NexusModsUrl` vs `NexusUrl`**: `card.NexusModsUrl` (set by `NexusModsService`) is the PCGW-style wiki link button — unrelated to downloads. `card.NexusUrl` (set from `GameMod.NexusUrl`) is the mod page URL used for downloading. Don't confuse them.
+- **CDN-ссылки протухают (~30 мин)** — генерируйте свежую на каждую загрузку, не кешируйте.
+- **Категории файлов**: всегда берите `category_name == "MAIN"` с максимальным `uploaded_timestamp`. Никогда не устанавливайте автоматически файлы `OLD_VERSION` или `OPTIONAL`.
+- **`content_preview_link` сломан** по состоянию на июнь 2026 — поле в `/v1/.../files.json` возвращает 404 для файлов, загруженных после ~11 июня 2026. Не используйте это поле.
+- **Конфликт NXM-обработчика**: если установлен Vortex/MO2, они уже обработчик NXM. Регистрируйтесь только если другого обработчика нет. Или предложите настройку.
+- **Единственный экземпляр + NXM**: у второго экземпляра RHI ещё нет `DispatcherQueue` — используйте `SingleInstanceService.SendToRunningInstance("nxm:" + url)` и немедленно `Environment.Exit(0)`. Не инициализируйте всё приложение.
+- **Безопасность API-ключа**: никогда не пишите значение ключа в лог. Храните в `settings.json` открытым текстом (как остальные настройки) — это локальный файл пользователя. Не добавляйте лишнее шифрование.
+- **Флаг `IsExternalOnly`**: задаётся для модов, где `SnapshotUrl == null && NexusUrl != null`. Кнопка установки сейчас открывает браузер. После фазы 2 она должна скачивать напрямую для премиум-пользователей. Возможно, придётся подправить `ExternalLabel` / `InstallActionLabel` / логику `CanInstall` карточки, чтобы корректно показывать «Скачать» против «Обновить».
+- **Флаг контента 18+**: часть модов требует включённой настройки контента 18+ в аккаунте. API возвращает для них 403, если не включено. Обработайте понятным сообщением об ошибке.
+- **Заголовки лимитов**: читайте из каждого ответа. Если `X-RL-Daily-Remaining < 100`, снижайте активность и пишите предупреждение в лог.
+- **`NexusModsUrl` vs `NexusUrl`**: `card.NexusModsUrl` (задаётся `NexusModsService`) — кнопка-ссылка в стиле PCGW, к загрузкам отношения не имеет. `card.NexusUrl` (задаётся из `GameMod.NexusUrl`) — URL страницы мода для скачивания. Не путайте.
 
 ---
 
-## Summary Table
+## Сводная таблица
 
-| Capability | Premium user with API key | Free user (NXM registered) | Free user (no NXM) |
+| Возможность | Премиум с API-ключом | Бесплатный (NXM зарегистрирован) | Бесплатный (без NXM) |
 |---|---|---|---|
-| Detect updates | ✅ already works | ✅ already works | ✅ already works |
-| One-click install/update | ✅ Phase 2 | ✅ Phase 5 (browser click) | ❌ manual |
-| Silent auto-update | ✅ Phase 4 | ❌ | ❌ |
-| No browser needed | ✅ | ❌ | ❌ |
+| Определение обновлений | ✅ уже работает | ✅ уже работает | ✅ уже работает |
+| Установка/обновление в один клик | ✅ Фаза 2 | ✅ Фаза 5 (клик в браузере) | ❌ вручную |
+| Тихое автообновление | ✅ Фаза 4 | ❌ | ❌ |
+| Без браузера | ✅ | ❌ | ❌ |

@@ -55,8 +55,8 @@ public partial class DragDropHandler
         {
             var dupDialog = new ContentDialog
             {
-                Title           = "Game Already Exists",
-                Content         = $"\"{existingCard.GameName}\" is already in your library at:\n{existingCard.InstallPath}",
+                Title           = "Игра уже добавлена",
+                Content         = $"«{existingCard.GameName}» уже есть в вашей библиотеке:\n{existingCard.InstallPath}",
                 CloseButtonText = "OK",
                 XamlRoot        = _window.Content.XamlRoot,
                 Background      = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
@@ -71,7 +71,7 @@ public partial class DragDropHandler
         var engineLabel = engine switch
         {
             EngineType.Unreal       => "Unreal Engine",
-            EngineType.UnrealLegacy => "Unreal Engine (Legacy)",
+            EngineType.UnrealLegacy => "Unreal Engine (устаревшие)",
             EngineType.Unity        => "Unity",
             _                       => "Unknown"
         };
@@ -79,12 +79,12 @@ public partial class DragDropHandler
         var confirmPanel = new StackPanel { Spacing = 8 };
         confirmPanel.Children.Add(new TextBlock
         {
-            Text = "Game name:", Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            Text = "Название игры:", Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
         });
         confirmPanel.Children.Add(nameBox);
         confirmPanel.Children.Add(new TextBlock
         {
-            Text = $"Engine: {engineLabel}\nInstall path: {installPath}",
+            Text = $"Движок: {engineLabel}\nПуть установки: {installPath}",
             TextWrapping = TextWrapping.Wrap,
             Foreground   = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
             FontSize     = 12, Margin = new Thickness(0, 6, 0, 0),
@@ -92,10 +92,10 @@ public partial class DragDropHandler
 
         var confirmDialog = new ContentDialog
         {
-            Title             = "➕ Add Dropped Game",
+            Title             = "➕ Добавить перенесённую игру",
             Content           = confirmPanel,
-            PrimaryButtonText = "Add Game",
-            CloseButtonText   = "Cancel",
+            PrimaryButtonText = "Добавить игру",
+            CloseButtonText   = "Отмена",
             XamlRoot          = _window.Content.XamlRoot,
             Background        = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
             RequestedTheme    = ElementTheme.Dark,

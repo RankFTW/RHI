@@ -1,41 +1,41 @@
-# What is RHI?
+# Что такое RHI?
 
-**RHI** is a free tool that adds HDR, visual upgrades, and NVIDIA driver management to your PC games, automatically.
+**RHI** — бесплатный инструмент, который автоматически добавляет в ваши ПК-игры HDR, визуальные улучшения и управление драйвером NVIDIA.
 
-## Why RHI?
+## Зачем RHI?
 
-HDR modding involves a lot of moving parts. ReShade, shaders, RenoDX, DXVK, Luma, all great tools but spread across different sources with their own install steps. I wanted to bring it all together in one place so nobody has to juggle multiple downloads and guides.
+HDR-моддинг — это масса отдельных компонентов: ReShade, шейдеры, RenoDX, DXVK, Luma. Все инструменты отличные, но разбросаны по разным источникам, и у каждого свои шаги установки. Я хотел собрать всё в одном месте, чтобы никому не пришлось жонглировать десятком загрузок и руководств.
 
-Same with NVIDIA driver settings and DLSS. Per-game presets, ReBAR, frame gen, render scale, swapping DLSS and Streamline DLL versions, it's all possible but scattered across different apps. RHI puts it all under one roof.
+То же самое с настройками драйвера NVIDIA и DLSS: индивидуальные пресеты, ReBAR, генерация кадров, масштаб рендеринга, подмена версий DLL DLSS и Streamline — всё возможно, но размазано по разным приложениям. RHI собирает это под одной крышей.
 
-## What It Does
+## Что умеет
 
-RHI detects games across **Steam, Epic, GOG, Xbox, Ubisoft, EA, Battle.net, itch.io** then handles everything in one click.
+RHI находит игры в **Steam, Epic, GOG, Xbox, Ubisoft, EA, Battle.net, itch.io** и делает всё остальное в один клик.
 
-**HDR & Mods**
-- **ReShade** - installs, updates, manages presets and 46 shader packs
-- **RenoDX** - auto-detects the right HDR mod, installs it, keeps it updated
-- **RenoDX Upgrade + RenoFX** - HDR for games without a dedicated mod
-- **DXVK + Lilium HDR** - brings HDR to older DX9 games
-- **UE DOF Fix** - fixes DOF artifacts in Unreal Engine 5 games
-- **OptiScaler** - FSR/XeSS for DLSS-only games
-- **ReLimiter** - per-game frame limiter
-- **RE Framework** - RE Engine mod loader
-- **Luma** - Luma HDR mod install
+**HDR и моды**
+- **ReShade** — установка, обновление, управление пресетами и 46 наборами шейдеров
+- **RenoDX** — сам определяет подходящий HDR-мод, устанавливает и обновляет его
+- **RenoDX Upgrade + RenoFX** — HDR для игр без отдельного мода
+- **DXVK + Lilium HDR** — приносит HDR в старые игры на DX9
+- **UE DOF Fix** — исправляет артефакты глубины резкости в играх на Unreal Engine 5
+- **OptiScaler** — FSR/XeSS для игр только с DLSS
+- **ReLimiter** — ограничитель FPS для каждой игры
+- **RE Framework** — загрузчик модов для RE Engine
+- **Luma** — установка HDR-мода Luma
 
-**DLSS & Streamline**
-- Swap SR, RR, FG, and Streamline versions per-game from a dropdown
-- Batch deploy across your entire library, auto-update, backup/restore
+**DLSS и Streamline**
+- Подмена версий SR, RR, FG и Streamline для каждой игры из выпадающего списка
+- Массовое развертывание на всю библиотеку, автообновление, резервные копии/восстановление
 
-**NVIDIA Driver Profiles**
-- DLSS presets, render scale override, Multi Frame Generation
-- ReBAR, G-Sync, Low Latency, VSync, Power Mode, FPS Limiter
-- Export/Import all profiles for backup after driver updates
+**Профили драйвера NVIDIA**
+- Пресеты DLSS, переопределение масштаба рендеринга, мульти-генерация кадров
+- ReBAR, G-Sync, Low Latency, VSync, режим питания, ограничитель FPS
+- Экспорт/импорт всех профилей для резервного копирования после обновлений драйвера
 
-**Quality of Life**
-- One-click install, Update All across your whole library
-- Per-game overrides for everything
-- HDR auto-toggle on launch, off on exit
-- System tray with recent game launcher
+**Удобства**
+- Установка в один клик, «Обновить всё» для всей библиотеки
+- Индивидуальные переопределения для чего угодно
+- Автопереключение HDR: включение при запуске, выключение при выходе
+- Системный трей с быстрым запуском недавних игр
 
-**Download:** https://discord.com/channels/1296187754979528747/1475173660686815374
+**Загрузка:** https://discord.com/channels/1296187754979528747/1475173660686815374

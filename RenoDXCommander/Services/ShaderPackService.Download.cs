@@ -302,7 +302,7 @@ public partial class ShaderPackService
 
         await SaveStoredVersionAsync(pack.Id, versionToken);
         ClearIncludeCache();
-        progress?.Report($"{pack.DisplayName} updated.");
+        progress?.Report($"{pack.DisplayName} обновлено.");
         CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Done. Version = {versionToken}");
         }
         finally { packLock.Release(); }

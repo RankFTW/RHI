@@ -52,10 +52,10 @@ public partial class GameCardViewModel
                 if (effectiveStatus == GameStatus.UpdateAvailable
                     || RsStatus == GameStatus.UpdateAvailable
                     || LumaStatus == GameStatus.UpdateAvailable)
-                    return "⬆  Manage";
-                return "↺  Manage";
+                    return "⬆  Управление";
+                return "↺  Управление";
             }
-            return "⬇  Install";
+            return "⬇  Установить";
         }
     }
 
@@ -100,12 +100,12 @@ public partial class GameCardViewModel
 
     // ── Derived display ───────────────────────────────────────────────────────────
 
-    public string WikiStatusLabel => WikiStatus == "✅" ? "✅ Working"
-                                   : WikiStatus == "🚧" ? "🚧 In Progress"
-                                   : WikiStatus == "?"  ? "⚠️ May Work"
+    public string WikiStatusLabel => WikiStatus == "✅" ? "✅ Работает"
+                                   : WikiStatus == "🚧" ? "🚧 В работе"
+                                   : WikiStatus == "?"  ? "⚠️ Может работать"
                                    : WikiStatus == "💬" ? "💬 Discord"
                                    : WikiStatus == "🌐" ? "🌐 Nexus"
-                                   : WikiStatus == "—" && IsGenericMod ? "⚠️ May Work"
+                                   : WikiStatus == "—" && IsGenericMod ? "⚠️ Может работать"
                                    : "";
 
     /// <summary>
@@ -199,7 +199,7 @@ public partial class GameCardViewModel
     public bool HasUwFixUrl        => !string.IsNullOrEmpty(UwFixUrl);
     public bool HasUltraPlusUrl    => !string.IsNullOrEmpty(UltraPlusUrl);
     public bool HasNameUrl            => !string.IsNullOrEmpty(NameUrl);
-    public string HideButtonLabel     => IsHidden ? "👁 Show" : "🚫 Hide";
+    public string HideButtonLabel     => IsHidden ? "👁 Показать" : "🚫 Скрыть";
     public string StarForeground       => IsFavourite ? "#FFD700" : "#282840";
     public Visibility IsFavouriteVisibility      => IsFavourite ? Visibility.Visible : Visibility.Collapsed;
     public Visibility IsNotFavouriteVisibility   => IsFavourite ? Visibility.Collapsed : Visibility.Visible;

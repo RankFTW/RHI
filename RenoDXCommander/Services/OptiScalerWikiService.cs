@@ -41,7 +41,7 @@ public class OptiScalerWikiService : IOptiScalerWikiService
         if (CachedData != null)
             return CachedData;
 
-        progress?.Report("Fetching OptiScaler wiki...");
+        progress?.Report("Загрузка вики OptiScaler...");
 
         var standardCompat = new Dictionary<string, OptiScalerCompatEntry>(StringComparer.OrdinalIgnoreCase);
         var fsr4Compat = new Dictionary<string, OptiScalerCompatEntry>(StringComparer.OrdinalIgnoreCase);
@@ -90,7 +90,7 @@ public class OptiScalerWikiService : IOptiScalerWikiService
         };
 
         CachedData = data;
-        progress?.Report($"OptiScaler wiki: {standardCompat.Count} standard + {fsr4Compat.Count} FSR4 entries");
+        progress?.Report($"Вики OptiScaler: {standardCompat.Count} стандартных + {fsr4Compat.Count} записей FSR4");
         return data;
     }
 
@@ -183,7 +183,7 @@ public class OptiScalerWikiService : IOptiScalerWikiService
                     if (statusText.Contains("✔") || statusText.Contains("✔️"))
                         status = "Working";
                     else if (statusText.Contains("❌"))
-                        status = "Not Working";
+                        status = "Не работает";
                 }
 
                 // Column 2: FSR4 status (✅ = confirmed working with FSR4)

@@ -32,8 +32,8 @@ public partial class DragDropHandler
         {
             var errDialog = new ContentDialog
             {
-                Title = "7-Zip Not Found",
-                Content = "Cannot extract archive — 7-Zip was not found. Please reinstall RDXC.",
+                Title = "7-Zip не найден",
+                Content = "Не удалось распаковать архив — 7-Zip не найден. Переустановите RDXC.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -81,8 +81,8 @@ public partial class DragDropHandler
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] 7z exit code {proc.ExitCode}");
                 var failDialog = new ContentDialog
                 {
-                    Title = "Archive Extraction Failed",
-                    Content = $"Failed to extract '{archiveName}'. The file may be corrupt or in an unsupported format.",
+                    Title = "Не удалось распаковать архив",
+                    Content = $"Не удалось распаковать «{archiveName}». Файл может быть повреждён или в неподдерживаемом формате.",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
@@ -105,8 +105,8 @@ public partial class DragDropHandler
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] No addon files found in '{archiveName}'");
                 var noAddonDialog = new ContentDialog
                 {
-                    Title = "No Addon Found",
-                    Content = $"No .addon64, .addon32, or .addon files were found inside '{archiveName}'.",
+                    Title = "Аддон не найден",
+                    Content = $"Внутри «{archiveName}» не найдено файлов .addon64, .addon32 или .addon.",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
@@ -129,7 +129,7 @@ public partial class DragDropHandler
                 var combo = new ComboBox
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch,
-                    PlaceholderText = "Select addon to install...",
+                    PlaceholderText = "Выберите аддон для установки...",
                 };
                 foreach (var af in addonFiles)
                     combo.Items.Add(new ComboBoxItem { Content = Path.GetFileName(af), Tag = af });
@@ -139,8 +139,8 @@ public partial class DragDropHandler
                 {
                     Title = $"Multiple Addons in '{archiveName}'",
                     Content = combo,
-                    PrimaryButtonText = "Install",
-                    CloseButtonText = "Cancel",
+                    PrimaryButtonText = "Установить",
+                    CloseButtonText = "Отмена",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
@@ -173,7 +173,7 @@ public partial class DragDropHandler
                     };
                     var lumaPickDialog = new ContentDialog
                     {
-                        Title = "🌙 Install Luma Addon",
+                        Title = "🌙 Установить аддон Luma",
                         Content = new StackPanel
                         {
                             Spacing = 8,
@@ -183,8 +183,8 @@ public partial class DragDropHandler
                                 lumaCombo,
                             }
                         },
-                        PrimaryButtonText = "Install",
-                        CloseButtonText = "Cancel",
+                        PrimaryButtonText = "Установить",
+                        CloseButtonText = "Отмена",
                         XamlRoot = _window.Content.XamlRoot,
                         RequestedTheme = ElementTheme.Dark,
                     };
@@ -229,8 +229,8 @@ public partial class DragDropHandler
         {
             var noGamesDialog = new ContentDialog
             {
-                Title = "No Games Available",
-                Content = "No games are currently detected. Add a game first.",
+                Title = "Нет доступных игр",
+                Content = "Игры пока не обнаружены. Сначала добавьте игру.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -243,7 +243,7 @@ public partial class DragDropHandler
         var combo = new ComboBox
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            PlaceholderText = "Select a game...",
+            PlaceholderText = "Выберите игру...",
         };
 
         // Sort alphabetically and populate
@@ -297,7 +297,7 @@ public partial class DragDropHandler
         var panel = new StackPanel { Spacing = 12 };
         panel.Children.Add(new TextBlock
         {
-            Text = $"Install {addonFileName} to a game folder.",
+            Text = $"Установите {addonFileName} в папку игры.",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 13,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -306,10 +306,10 @@ public partial class DragDropHandler
 
         var pickDialog = new ContentDialog
         {
-            Title = isLumaAddon ? "🌙 Install Luma Addon" : "📦 Install RenoDX Addon",
+            Title = isLumaAddon ? "🌙 Установить аддон Luma" : "📦 Установить аддон RenoDX",
             Content = panel,
-            PrimaryButtonText = "Next",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Далее",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -321,8 +321,8 @@ public partial class DragDropHandler
         {
             var noSelection = new ContentDialog
             {
-                Title = "No Game Selected",
-                Content = "Please select a game to install the addon to.",
+                Title = "Игра не выбрана",
+                Content = "Выберите игру для установки аддона.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -355,22 +355,22 @@ public partial class DragDropHandler
         catch (Exception ex) { _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Failed to check existing addons in '{installPath}' — {ex.Message}"); }
 
         // Confirmation dialog
-        var warningText = $"Are you sure you want to install {addonFileName} for {gameName}?";
+        var warningText = $"Установить {addonFileName} для игры {gameName}?";
         if (!string.IsNullOrEmpty(existingAddon))
-            warningText += $"\n\nThis will replace the existing addon: {existingAddon}";
-        warningText += $"\n\nInstall path: {installPath}";
+            warningText += $"\n\nСуществующий аддон будет заменён: {existingAddon}";
+        warningText += $"\n\nПуть установки: {installPath}";
 
         var confirmDialog = new ContentDialog
         {
-            Title = "⚠ Confirm Addon Install",
+            Title = "⚠ Подтвердите установку аддона",
             Content = new TextBlock
             {
                 Text = warningText,
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 13,
             },
-            PrimaryButtonText = "Install",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Установить",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -470,7 +470,7 @@ public partial class DragDropHandler
                 };
                 targetCard.IsExternalOnly = true;
                 targetCard.ExternalUrl = "https://discord.gg/gF4GRJWZ2A";
-                targetCard.ExternalLabel = "Download from Discord";  // ExternalDisplayLabel does the Replace("Download", "Redownload")
+                targetCard.ExternalLabel = "Скачать с Discord";  // ExternalDisplayLabel does the Replace("Download", "Redownload")
             }
 
             // Update card status
@@ -497,8 +497,8 @@ public partial class DragDropHandler
 
             var successDialog = new ContentDialog
             {
-                Title = "✅ Addon Installed",
-                Content = $"{addonFileName} has been installed for {gameName}.",
+                Title = "✅ Аддон установлен",
+                Content = $"{addonFileName} установлен для {gameName}.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -510,8 +510,8 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Install failed — {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Install Failed",
-                Content = $"Failed to install addon: {ex.Message}",
+                Title = "❌ Не удалось установить",
+                Content = $"Не удалось установить аддон: {ex.Message}",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -534,8 +534,8 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Invalid URL: {url}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Invalid URL",
-                Content = "The dropped URL could not be parsed. Please check the link and try again.",
+                Title = "❌ Неверная ссылка",
+                Content = "Не удалось разобрать перетащенную ссылку. Проверьте её и попробуйте снова.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -551,8 +551,8 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Could not extract filename from URL: {url}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Invalid URL",
-                Content = "Could not determine a filename from the dropped URL.",
+                Title = "❌ Неверная ссылка",
+                Content = "Не удалось определить имя файла из перетащенной ссылки.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -595,18 +595,18 @@ public partial class DragDropHandler
                         };
                         var pickerDialog = new ContentDialog
                         {
-                            Title = "Install Luma Mod",
+                            Title = "Установить мод Luma",
                             Content = new StackPanel
                             {
                                 Spacing = 8,
                                 Children =
                                 {
-                                    new TextBlock { Text = $"Luma mod detected: {filename}\n\nSelect game to install to:", TextWrapping = TextWrapping.Wrap, FontSize = 12 },
+                                    new TextBlock { Text = $"Обнаружен мод Luma: {filename}\n\nВыберите игру для установки:", TextWrapping = TextWrapping.Wrap, FontSize = 12 },
                                     combo,
                                 }
                             },
-                            PrimaryButtonText = "Install",
-                            CloseButtonText = "Cancel",
+                            PrimaryButtonText = "Установить",
+                            CloseButtonText = "Отмена",
                             XamlRoot = _window.Content.XamlRoot,
                             RequestedTheme = ElementTheme.Dark,
                         };
@@ -643,8 +643,8 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Unsupported extension '{ext}' for file '{filename}' from URL: {url}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Unsupported File Type",
-                Content = $"Only .addon64 and .addon32 files are supported.\n\nThe URL points to: {filename}",
+                Title = "❌ Неподдерживаемый тип файла",
+                Content = $"Поддерживаются только файлы .addon64 и .addon32.\n\nСсылка указывает на: {filename}",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -678,7 +678,7 @@ public partial class DragDropHandler
         };
         var progressDialog = new ContentDialog
         {
-            Title = "⬇ Downloading Addon",
+            Title = "⬇ Скачивание аддона",
             Content = new StackPanel
             {
                 Spacing = 12,
@@ -711,8 +711,8 @@ public partial class DragDropHandler
                     if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                     var errDialog = new ContentDialog
                     {
-                        Title = "❌ Download Failed",
-                        Content = $"The server returned HTTP {(int)response.StatusCode}.\n\nURL: {url}",
+                        Title = "❌ Ошибка загрузки",
+                        Content = $"Сервер вернул HTTP {(int)response.StatusCode}.\n\nСсылка: {url}",
                         CloseButtonText = "OK",
                         XamlRoot = _window.Content.XamlRoot,
                         RequestedTheme = ElementTheme.Dark,
@@ -767,8 +767,8 @@ public partial class DragDropHandler
                 if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
-                    Title = "❌ Download Failed",
-                    Content = $"A network error occurred while downloading the addon.\n\n{ex.Message}",
+                    Title = "❌ Ошибка загрузки",
+                    Content = $"Сетевая ошибка при загрузке аддона.\n\n{ex.Message}",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
@@ -783,8 +783,8 @@ public partial class DragDropHandler
                 if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
-                    Title = "❌ Download Timed Out",
-                    Content = "The download timed out. Please check your connection and try again.",
+                    Title = "❌ Истекло время ожидания загрузки",
+                    Content = "Загрузка не уложилась по времени. Проверьте соединение и попробуйте снова.",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
@@ -807,8 +807,8 @@ public partial class DragDropHandler
                 if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
-                    Title = "❌ Invalid Addon File",
-                    Content = "The downloaded file is not a valid addon binary. The server may have returned an error page.",
+                    Title = "❌ Неверный файл аддона",
+                    Content = "Скачанный файл не является бинарником аддона. Возможно, сервер вернул страницу с ошибкой.",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,

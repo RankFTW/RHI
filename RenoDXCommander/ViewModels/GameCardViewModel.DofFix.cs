@@ -27,9 +27,9 @@ public partial class GameCardViewModel
         IsDofFixEligible ? Visibility.Visible : Visibility.Collapsed;
 
     public string DofFixActionLabel => DofFixIsInstalling ? "Installing..."
-        : DofFixStatus == GameStatus.UpdateAvailable ? "⬆  Update DOF Fix"
-        : DofFixStatus == GameStatus.Installed ? "↺  Reinstall DOF Fix"
-        : "⬇  Install DOF Fix";
+        : DofFixStatus == GameStatus.UpdateAvailable ? "⬆  Обновить DOF Fix"
+        : DofFixStatus == GameStatus.Installed ? "↺  Переустановить DOF Fix"
+        : "⬇  Установить DOF Fix";
 
     public string DofFixBtnBackground  => DofFixStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string DofFixBtnForeground  => DofFixStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";

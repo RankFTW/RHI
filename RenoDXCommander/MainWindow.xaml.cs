@@ -500,7 +500,7 @@ public sealed partial class MainWindow : Window
                 };
                 var pickerDialog = new ContentDialog
                 {
-                    Title = "🌙 Install Luma Addon",
+                    Title = "🌙 Установить аддон Luma",
                     Content = new StackPanel
                     {
                         Spacing = 8,
@@ -510,8 +510,8 @@ public sealed partial class MainWindow : Window
                             combo,
                         }
                     },
-                    PrimaryButtonText = "Install",
-                    CloseButtonText = "Cancel",
+                    PrimaryButtonText = "Установить",
+                    CloseButtonText = "Отмена",
                     XamlRoot = Content.XamlRoot,
                     RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
                 };

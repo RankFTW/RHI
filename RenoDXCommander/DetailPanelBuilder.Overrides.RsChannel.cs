@@ -23,14 +23,14 @@ public partial class DetailPanelBuilder
 
         var channelLabel = new TextBlock
         {
-            Text = "ReShade Channel",
+            Text = "Канал ReShade",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         };
         ToolTipService.SetToolTip(channelLabel,
-            "Override the global ReShade build channel for this game.\nVulkan games: changing this affects ALL Vulkan games.");
+            "Переопределить общий канал сборки ReShade для этой игры.\nVulkan-игры: изменение затронет ВСЕ Vulkan-игры.");
 
-        var channelItems = new[] { "Stable", "Nightly", "Custom", "No Addons", "Legacy..." };
+        var channelItems = new[] { "Stable", "Nightly", "Custom", "Без аддонов", "Legacy..." };
         // For Vulkan games, show the effective Vulkan-wide override (any Vulkan game's override applies to all)
         var currentChannelOverride = _window.ViewModel.GetReShadeChannelOverride(gameName, card.Source);
         if (currentChannelOverride == null && card.RequiresVulkanInstall)
@@ -46,7 +46,7 @@ public partial class DetailPanelBuilder
         string defaultChannelSelection;
         if (card.UseNormalReShade)
         {
-            defaultChannelSelection = "No Addons";
+            defaultChannelSelection = "Без аддонов";
         }
         else if (string.Equals(currentChannelOverride, "Custom", StringComparison.OrdinalIgnoreCase))
         {
@@ -74,7 +74,7 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(channelCombo,
-            "Override the ReShade build channel for this game.\nVulkan games: changing this affects ALL Vulkan games.");
+            "Переопределить канал сборки ReShade для этой игры.\nVulkan-игры: изменение затронет ВСЕ Vulkan-игры.");
 
         bool channelComboInitializing = true;
         ctx.ChannelComboInitializing = true;
@@ -117,7 +117,7 @@ public partial class DetailPanelBuilder
                 var pickerContent = new StackPanel { Spacing = 12 };
                 pickerContent.Children.Add(new TextBlock
                 {
-                    Text = "⚠ Older ReShade versions may not support newer addons.\nThe game will be excluded from automatic ReShade updates.",
+                    Text = "⚠ Старые версии ReShade могут не поддерживать новые аддоны.\nИгра будет исключена из автоматических обновлений ReShade.",
                     TextWrapping = TextWrapping.Wrap,
                     Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                     FontSize = 12,
@@ -126,10 +126,10 @@ public partial class DetailPanelBuilder
 
                 var pickerDialog = new ContentDialog
                 {
-                    Title = "Select Legacy ReShade Version",
+                    Title = "Выберите устаревшую версию ReShade",
                     Content = new ScrollViewer { Content = pickerContent, MaxHeight = 400 },
-                    PrimaryButtonText = "Confirm",
-                    CloseButtonText = "Cancel",
+                    PrimaryButtonText = "Подтвердить",
+                    CloseButtonText = "Отмена",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
@@ -185,7 +185,7 @@ public partial class DetailPanelBuilder
 
             // ── If a legacy version is already selected and user picks it again, do nothing ──
             if (selected != "Global" && selected != "Stable" && selected != "Nightly"
-                && selected != "No Addons" && selected != "Legacy..." && selected != "Custom"
+                && selected != "Без аддонов" && selected != "Legacy..." && selected != "Custom"
                 && MainViewModel.IsLegacyVersion(selected))
             {
                 return;
@@ -233,7 +233,7 @@ public partial class DetailPanelBuilder
 
                     var warnDialog = new ContentDialog
                     {
-                        Title = "Custom ReShade Not Found",
+                        Title = "Пользовательский ReShade не найден",
                         Content = warnContent,
                         CloseButtonText = "OK",
                         XamlRoot = _window.Content.XamlRoot,
@@ -286,9 +286,9 @@ public partial class DetailPanelBuilder
 
                 var pickerDialog = new ContentDialog
                 {
-                    Title = "Select Custom ReShade",
-                    PrimaryButtonText = "Deploy",
-                    CloseButtonText = "Cancel",
+                    Title = "Выбрать свой ReShade",
+                    PrimaryButtonText = "Развернуть",
+                    CloseButtonText = "Отмена",
                     DefaultButton = ContentDialogButton.Primary,
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
@@ -323,11 +323,11 @@ public partial class DetailPanelBuilder
                 {
                     var vDialog = new ContentDialog
                     {
-                        Title = "Vulkan ReShade Channel Override",
-                        Content = "Vulkan games share a global ReShade layer.\n\n" +
-                            "Changing the channel for this game will change it for ALL Vulkan games.",
-                        PrimaryButtonText = "Apply to All Vulkan Games",
-                        CloseButtonText = "Cancel",
+                        Title = "Переопределение канала Vulkan ReShade",
+                        Content = "Vulkan-игры используют общий слой ReShade.\n\n" +
+                            "Смена канала для этой игры изменит его для ВСЕХ Vulkan-игр.",
+                        PrimaryButtonText = "Применить ко всем Vulkan-играм",
+                        CloseButtonText = "Отмена",
                         XamlRoot = _window.Content.XamlRoot,
                         RequestedTheme = ElementTheme.Dark,
                     };
@@ -390,7 +390,7 @@ public partial class DetailPanelBuilder
             }
 
             // ── "No Addons" — switch to normal (non-addon) ReShade ──
-            if (selected == "No Addons")
+            if (selected == "Без аддонов")
             {
                 CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{ctx.CapturedName}' → No Addons mode");
                 var targetCardNoAddon = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -404,7 +404,7 @@ public partial class DetailPanelBuilder
                     if (targetCardNoAddon.RsStatus == GameStatus.NotInstalled || targetCardNoAddon.IsRsInstalled)
                         await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(targetCardNoAddon);
                 }
-                defaultChannelSelection = "No Addons";
+                defaultChannelSelection = "Без аддонов";
                 // Rebuild to grey out addon controls
                 var refreshCardNoAddon = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
@@ -442,11 +442,11 @@ public partial class DetailPanelBuilder
                     // Setting a specific override on a Vulkan game
                     var dialog = new ContentDialog
                     {
-                        Title = "Vulkan ReShade Channel Override",
-                        Content = "Vulkan games share a global ReShade layer.\n\n" +
-                            "Changing the channel for this game will change it for ALL Vulkan games.",
-                        PrimaryButtonText = "Apply to All Vulkan Games",
-                        CloseButtonText = "Cancel",
+                        Title = "Переопределение канала Vulkan ReShade",
+                        Content = "Vulkan-игры используют общий слой ReShade.\n\n" +
+                            "Смена канала для этой игры изменит его для ВСЕХ Vulkan-игр.",
+                        PrimaryButtonText = "Применить ко всем Vulkan-играм",
+                        CloseButtonText = "Отмена",
                         XamlRoot = _window.Content.XamlRoot,
                         RequestedTheme = ElementTheme.Dark,
                     };
@@ -552,7 +552,7 @@ public partial class DetailPanelBuilder
         ctx.UpdateSummaryText = updateSummaryText; // assign for reset action to use
 
         var toggleRow = new StackPanel { Spacing = 0 };
-        ToolTipService.SetToolTip(updateInclusionBtn, "Choose which components are included in Update All for this game.");
+        ToolTipService.SetToolTip(updateInclusionBtn, "Выберите, какие компоненты включать в «Обновить всё» для этой игры.");
         toggleRow.Children.Add(updateInclusionBtn);
         toggleRow.Children.Add(updateSummaryText);
 
@@ -560,7 +560,7 @@ public partial class DetailPanelBuilder
         var globalUpdateColumn = new StackPanel { Spacing = 0 };
         globalUpdateColumn.Children.Add(new TextBlock
         {
-            Text = "Global update inclusion",
+            Text = "Включение в глобальное обновление",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             Margin = new Thickness(0, 0, 0, 8),

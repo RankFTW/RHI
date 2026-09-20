@@ -116,7 +116,7 @@ public static class NxmProtocolHandler
     public static void RegisterProtocolHandler()
     {
         var exePath = Environment.ProcessPath
-            ?? throw new InvalidOperationException("Cannot determine RHI executable path");
+            ?? throw new InvalidOperationException("Не удалось определить путь к исполняемому файлу RHI");
 
         // Normalize to backslashes (Win32 GetOpenFileName pitfall)
         exePath = exePath.Replace('/', '\\');

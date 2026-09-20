@@ -86,9 +86,9 @@ public class RenoDXDbUnrealEntry
 
             return parts[1].ToLowerInvariant() switch
             {
-                "output size"  => "1",
-                "output ratio" => "2",
-                "any size"     => "3",
+                "выходное разрешение"  => "1",
+                "выходной масштаб" => "2",
+                "любой размер"     => "3",
                 _ => null,
             };
         }

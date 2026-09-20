@@ -130,7 +130,7 @@ public class UltimateAsiLoaderService
         }
 
         Directory.CreateDirectory(stagingDir);
-        progress?.Report(("Downloading ASI Loader...", 10));
+        progress?.Report(("Загрузка ASI Loader...", 10));
 
         var (version, assets, body) = await FetchLatestReleaseInfoAsync().ConfigureAwait(false);
         if (string.IsNullOrEmpty(version) || assets == null || !assets.TryGetValue(assetName, out var downloadUrl))
@@ -139,7 +139,7 @@ public class UltimateAsiLoaderService
             return;
         }
 
-        progress?.Report(("Downloading ASI Loader...", 30));
+        progress?.Report(("Загрузка ASI Loader...", 30));
 
         try
         {
@@ -172,7 +172,7 @@ public class UltimateAsiLoaderService
             _crashReporter.Log($"[UltimateAsiLoaderService.EnsureStagingAsync] Failed — {ex.Message}");
         }
 
-        progress?.Report(("ASI Loader ready", 100));
+        progress?.Report(("ASI Loader готов", 100));
     }
 
     // ── Install / Uninstall ───────────────────────────────────────────────────
@@ -248,7 +248,7 @@ public class UltimateAsiLoaderService
             }
         }
 
-        progress?.Report(("Deploying ASI Loader...", 80));
+        progress?.Report(("Развертывание ASI Loader...", 80));
 
         try
         {
@@ -280,7 +280,7 @@ public class UltimateAsiLoaderService
         };
         _auxInstaller.SaveAuxRecord(record);
 
-        progress?.Report(("ASI Loader installed!", 100));
+        progress?.Report(("ASI Loader установлен!", 100));
         return (true, hookedOriginal);
     }
 

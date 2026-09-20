@@ -39,7 +39,7 @@ public partial class DetailPanelBuilder
         };
         var exTitle = new TextBlock
         {
-            Text       = "Extras",
+            Text       = "Дополнения",
             FontSize   = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -77,7 +77,7 @@ public partial class DetailPanelBuilder
         CrashReporter.Log($"[BuildExtrasSection] UalRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── MFG Unlocks separator ─────────────────────────────────────────────
-        exBody.Children.Add(MakeExtrasSeparator("MFG Unlocks"));
+        exBody.Children.Add(MakeExtrasSeparator("Разблокировки MFG"));
 
         // ── RTX 40 MFG Unlock row ─────────────────────────────────────────────
         __t0 = __exSw.ElapsedMilliseconds;
@@ -110,7 +110,7 @@ public partial class DetailPanelBuilder
         // ── API Upgrades sub-header + DXVK row ────────────────────────────────
         if (card.IsDxvkToggleVisible)
         {
-            exBody.Children.Add(MakeExtrasSeparator("API Upgrades"));
+            exBody.Children.Add(MakeExtrasSeparator("API-апгрейды"));
             __t0 = __exSw.ElapsedMilliseconds;
             BuildDxvkRow(card, exBody);
             CrashReporter.Log($"[BuildExtrasSection] DxvkRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
@@ -229,7 +229,7 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "Ultimate ASI Loader — proxy DLL that loads .asi plugins into game processes.");
+        ToolTipService.SetToolTip(label, "Ultimate ASI Loader — DLL-прокси, загружающая плагины .asi в процессы игр.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -245,7 +245,7 @@ public partial class DetailPanelBuilder
         };
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, $"Installed as: {installedAs}\nClick to open GitHub releases");
+            ToolTipService.SetToolTip(statusBlock, $"Установлен как: {installedAs}\nНажмите, чтобы открыть релизы на GitHub");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases"));
         }
@@ -255,7 +255,7 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button (matches Components style)
         var infoBtn = new Button
         {
-            Content = "Info",
+            Content = "Инфо",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -266,7 +266,7 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
-        ToolTipService.SetToolTip(infoBtn, "Open Ultimate ASI Loader GitHub releases page");
+        ToolTipService.SetToolTip(infoBtn, "Открыть страницу релизов Ultimate ASI Loader на GitHub");
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases"));
         Grid.SetColumn(infoBtn, 2);
@@ -275,7 +275,7 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         var installBtn = new Button
         {
-            Content = isInstalled ? "↺  Reinstall ASI Loader" : "⬇  Install ASI Loader",
+            Content = isInstalled ? "↺  Переустановить ASI Loader" : "⬇  Установить ASI Loader",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -293,8 +293,8 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
         };
         ToolTipService.SetToolTip(installBtn, isInstalled
-            ? $"Reinstall Ultimate ASI Loader (currently '{installedAs}')"
-            : "Install Ultimate ASI Loader — choose which DLL name to use");
+            ? $"Переустановить Ultimate ASI Loader (сейчас «{installedAs}»)"
+            : "Установить Ultimate ASI Loader — выберите имя DLL");
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -313,8 +313,8 @@ public partial class DetailPanelBuilder
                     {
                         _ = DialogService.ShowSafeAsync(new ContentDialog
                         {
-                            Title = "Original DLL chained",
-                            Content = $"The existing '{chosen}' was renamed to '{hookedOriginal}' so ASI Loader can chain-load it automatically.",
+                            Title = "Исходная DLL в цепочке",
+                            Content = $"Существующий «{chosen}» переименован в «{hookedOriginal}», чтобы ASI Loader мог автоматически подгружать его по цепочке.",
                             CloseButtonText = "OK",
                             XamlRoot = _window.Content.XamlRoot,
                         });
@@ -323,7 +323,7 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    installBtn.Content = "❌ Install failed";
+                    installBtn.Content = "❌ Не удалось установить";
                 }
             }
             finally { installBtn.IsEnabled = true; }
@@ -345,15 +345,15 @@ public partial class DetailPanelBuilder
             Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
             Tag = card,
         };
-        ToolTipService.SetToolTip(cogBtn, "ASI Loader settings (coming soon)");
+        ToolTipService.SetToolTip(cogBtn, "Настройки ASI Loader (скоро)");
         cogBtn.Click += async (s, e) =>
         {
             // Placeholder — settings dialog will be added later
             var dlg = new ContentDialog
             {
-                Title = "ASI Loader Settings",
-                Content = new TextBlock { Text = "No settings available yet.", FontSize = 12 },
-                CloseButtonText = "Close",
+                Title = "Настройки ASI Loader",
+                Content = new TextBlock { Text = "Настройки пока недоступны.", FontSize = 12 },
+                CloseButtonText = "Закрыть",
                 XamlRoot = _window.Content.XamlRoot,
             };
             await DialogService.ShowSafeAsync(dlg);
@@ -376,7 +376,7 @@ public partial class DetailPanelBuilder
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove Ultimate ASI Loader from this game");
+        ToolTipService.SetToolTip(removeBtn, "Удалить Ultimate ASI Loader из этой игры");
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -429,7 +429,7 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "MFG Ada Unlock — unlocks DLSS Multi Frame Generation (3x/4x+) on RTX 40-series GPUs. Requires ReShade. In-memory only, no files modified.");
+        ToolTipService.SetToolTip(label, "MFG Ada Unlock — открывает мульти-генерацию кадров DLSS (3x/4x+) на GPU RTX 40-й серии. Требуется ReShade. Работает только в памяти, файлы не изменяются.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -445,7 +445,7 @@ public partial class DetailPanelBuilder
         };
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, "Click to open GitHub releases");
+            ToolTipService.SetToolTip(statusBlock, "Открыть релизы на GitHub");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx/releases"));
         }
@@ -455,7 +455,7 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button (always blue)
         var infoBtn = new Button
         {
-            Content = "Info",
+            Content = "Инфо",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -466,7 +466,7 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
-        ToolTipService.SetToolTip(infoBtn, "Open MFG Ada Unlock GitHub page");
+        ToolTipService.SetToolTip(infoBtn, "Открыть страницу MFG Ada Unlock на GitHub");
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx"));
         Grid.SetColumn(infoBtn, 2);
@@ -477,22 +477,22 @@ public partial class DetailPanelBuilder
         bool btnEnabled = true;
         if (!rsInstalled)
         {
-            btnLabel   = "⚠  ReShade required";
+            btnLabel   = "⚠  Требуется ReShade";
             btnEnabled = false;
         }
         else if (rtx40Conflict)
         {
-            btnLabel   = "⚠  RTX 40 MFG installed";
+            btnLabel   = "⚠  Установлен RTX 40 MFG";
             btnEnabled = false;
         }
         else if (!staged)
         {
-            btnLabel   = "⬇  Install MFG Ada Unlock";
+            btnLabel   = "⬇  Установить MFG Ada Unlock";
             btnEnabled = true; // will download on demand when clicked
         }
         else
         {
-            btnLabel = isInstalled ? "↺  Reinstall MFG Ada Unlock" : "⬇  Install MFG Ada Unlock";
+            btnLabel = isInstalled ? "↺  Переустановить MFG Ada Unlock" : "⬇  Установить MFG Ada Unlock";
         }
 
         var installBtn = new Button
@@ -511,9 +511,9 @@ public partial class DetailPanelBuilder
         };
 
         if (!rsInstalled)
-            ToolTipService.SetToolTip(installBtn, "Install ReShade first — MFG Ada Unlock requires it");
+            ToolTipService.SetToolTip(installBtn, "Сначала установите ReShade — MFG Ada Unlock требует его");
         else if (rtx40Conflict)
-            ToolTipService.SetToolTip(installBtn, "RTX 40 MFG Unlock (ASI version) is already installed and conflicts. Remove it first.");
+            ToolTipService.SetToolTip(installBtn, "Разблокировка RTX 40 MFG (версия ASI) уже установлена и конфликтует. Сначала удалите её.");
 
         installBtn.Click += async (s, e) =>
         {
@@ -535,7 +535,7 @@ public partial class DetailPanelBuilder
                 if (!File.Exists(stagedPath))
                 {
                     CrashReporter.Log("[BuildMfgAdaUnlockRow] Staged file still not found after download attempt");
-                    _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = "Download failed");
+                    _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = "Не удалось скачать");
                     return;
                 }
 
@@ -566,7 +566,7 @@ public partial class DetailPanelBuilder
             CornerRadius = new CornerRadius(8),
             Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
         };
-        ToolTipService.SetToolTip(cogBtn, "MFG Ada Unlock settings");
+        ToolTipService.SetToolTip(cogBtn, "Настройки MFG Ada Unlock");
         cogBtn.Click += async (s, e) =>
         {
             var dlg = new ContentDialog
@@ -574,13 +574,13 @@ public partial class DetailPanelBuilder
                 Title = "MFG Ada Unlock",
                 Content = new TextBlock
                 {
-                    Text = "MFG Ada Unlock unlocks DLSS Multi Frame Generation (3x/4x and above) on RTX 40-series GPUs.\n\n" +
-                           "Configure via the ReShade overlay in-game.",
+                    Text = "MFG Ada Unlock открывает мульти-генерацию кадров DLSS (3x/4x и выше) на GPU RTX 40-й серии.\n\n" +
+                           "Настраивается через оверлей ReShade в игре.",
                     FontSize = 12,
                     TextWrapping = TextWrapping.Wrap,
                 },
-                PrimaryButtonText = "Open GitHub",
-                CloseButtonText = "Close",
+                PrimaryButtonText = "Открыть GitHub",
+                CloseButtonText = "Закрыть",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
@@ -606,7 +606,7 @@ public partial class DetailPanelBuilder
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove MFG Ada Unlock from this game");
+        ToolTipService.SetToolTip(removeBtn, "Удалить MFG Ada Unlock из этой игры");
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -703,7 +703,7 @@ public partial class DetailPanelBuilder
         };
         if (card.IsOsInstalled && !osGreyed)
         {
-            ToolTipService.SetToolTip(statusBlock, "Click to open OptiScaler wiki");
+            ToolTipService.SetToolTip(statusBlock, "Открыть вики OptiScaler");
             statusBlock.PointerPressed += async (s, e) =>
                 await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/optiscaler/OptiScaler/wiki"));
         }
@@ -713,7 +713,7 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
+            Content = "Инфо",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -765,7 +765,7 @@ public partial class DetailPanelBuilder
             IsEnabled = !osGreyed,
             Opacity = osGreyed ? 0.35 : 1.0,
         };
-        ToolTipService.SetToolTip(cogBtn, "OptiScaler Settings");
+        ToolTipService.SetToolTip(cogBtn, "Настройки OptiScaler");
         cogBtn.Click += (s, e) => _window.OsCogButton_ClickInternal(s, e);
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);
@@ -787,7 +787,7 @@ public partial class DetailPanelBuilder
             Opacity = (osGreyed || !osShow) ? 0 : 1.0,
             IsHitTestVisible = osShow && !osGreyed,
         };
-        ToolTipService.SetToolTip(deleteBtn, "Remove OptiScaler");
+        ToolTipService.SetToolTip(deleteBtn, "Удалить OptiScaler");
         deleteBtn.Click += (s, e) => _window.UninstallOsButton_Click(s, e);
         Grid.SetColumn(deleteBtn, 5);
         row.Children.Add(deleteBtn);
@@ -875,11 +875,11 @@ public partial class DetailPanelBuilder
             if (isRecommended)
                 contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
             if (isTaken)
-                contentRow.Children.Add(MakeBadge("In use", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge("Используется", "#2A1818", "#CC6666", "#5A2828"));
             if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge("Используется RHI", "#2A1818", "#CC6666", "#5A2828"));
             if (isRhiConflict && !isRhiOwned)
-                contentRow.Children.Add(MakeBadge("May conflict with ReShade/OS", "#2A1A10", "#CC9955", "#5A3A18"));
+                contentRow.Children.Add(MakeBadge("Может конфликтовать с ReShade/ОС", "#2A1A10", "#CC9955", "#5A3A18"));
             if (isCurrent)
                 contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
 
@@ -889,7 +889,7 @@ public partial class DetailPanelBuilder
             if (isTaken)
                 ToolTipService.SetToolTip(btn, $"'{name}' already exists in the game folder. Selecting it will rename the existing file to '{Path.GetFileNameWithoutExtension(name)}Hooked.dll' so ASI Loader can chain-load it.");
             else if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component (ReShade, OptiScaler, or DC). Choose a different name.");
+                ToolTipService.SetToolTip(btn, "Это имя уже занято компонентом под управлением RHI (ReShade, OptiScaler или DC). Выберите другое.");
 
             btn.Tag = name;
             btn.Click += (s, ev) =>
@@ -908,7 +908,7 @@ public partial class DetailPanelBuilder
 
         var dialog = new ContentDialog
         {
-            Title = "Choose ASI Loader DLL name",
+            Title = "Выберите имя DLL для ASI Loader",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -924,7 +924,7 @@ public partial class DetailPanelBuilder
                     scrollViewer,
                 }
             },
-            CloseButtonText = "Cancel",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
         };
 
@@ -998,12 +998,12 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "20/30 FG Unlock",
+            Text = "Разблокировка FG 20/30",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "20/30 FG Unlock — enables DLSS Frame Generation on RTX 20 and 30 series GPUs. D3D12 only. No ASI Loader or ReShade required.");
+        ToolTipService.SetToolTip(label, "Разблокировка FG 20/30 — включает генерацию кадров DLSS на видеокартах RTX 20-й и 30-й серий. Только D3D12. ASI Loader и ReShade не требуются.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -1019,7 +1019,7 @@ public partial class DetailPanelBuilder
         };
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases");
+            ToolTipService.SetToolTip(statusBlock, $"Установлен как: {currentDllName}\nНажмите, чтобы открыть релизы на GitHub");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/sdli1995/dlssg_for_sm86"));
         }
@@ -1029,7 +1029,7 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
+            Content = "Инфо",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -1040,7 +1040,7 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
-        ToolTipService.SetToolTip(infoBtn, "Open 20/30 FG Unlock GitHub page");
+        ToolTipService.SetToolTip(infoBtn, "Открыть страницу разблокировки FG 20/30 на GitHub");
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/sdli1995/dlssg_for_sm86"));
         Grid.SetColumn(infoBtn, 2);
@@ -1049,7 +1049,7 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         var installBtn = new Button
         {
-            Content = isInstalled ? "↺  Reinstall 20/30 FG" : "⬇  Install 20/30 FG",
+            Content = isInstalled ? "↺  Переустановить FG 20/30" : "⬇  Установить FG 20/30",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -1064,13 +1064,13 @@ public partial class DetailPanelBuilder
         {
             installBtn.IsEnabled = false;
             installBtn.Opacity   = 0.35;
-            installBtn.Content   = "Uninstall MFG Ada Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (addon) is installed and conflicts. Remove it from the addon picker first.");
+            installBtn.Content   = "Сначала удалите MFG Ada Unlock";
+            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (аддон) установлен и конфликтует. Сначала удалите его в выборе аддонов.");
         }
         else
         {
             ToolTipService.SetToolTip(installBtn, isInstalled
-                ? $"Reinstall 20/30 FG Unlock (currently deployed as {currentDllName})"
+                ? $"Переустановить разблокировку FG 20/30 (сейчас развернута как {currentDllName})"
                 : "Install 20/30 FG Unlock — deploys version.dll under a name you choose");
         }
 
@@ -1105,14 +1105,14 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    installBtn.Content   = "Download failed — try again";
+                    installBtn.Content   = "Не удалось скачать — попробуйте снова";
                     installBtn.IsEnabled = true;
                 }
             }
             catch (Exception ex)
             {
                 CrashReporter.Log($"[BuildDlssg2030Row] Install failed — {ex.Message}");
-                installBtn.Content   = "Install failed";
+                installBtn.Content   = "Не удалось установить";
                 installBtn.IsEnabled = true;
             }
         };
@@ -1130,7 +1130,7 @@ public partial class DetailPanelBuilder
             CornerRadius = new CornerRadius(8),
             Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
         };
-        ToolTipService.SetToolTip(cogBtn, "Select GPU generation");
+        ToolTipService.SetToolTip(cogBtn, "Выберите поколение GPU");
         cogBtn.Click += async (s, e) =>
         {
             var currentGen = _window.ViewModel.GetDlssg2030GpuGen(gameName, store);
@@ -1142,7 +1142,7 @@ public partial class DetailPanelBuilder
             };
             var dlg = new ContentDialog
             {
-                Title = "20/30 FG Unlock — GPU Generation",
+                Title = "Разблокировка FG 20/30 — генерация кадров на GPU",
                 Content = new StackPanel
                 {
                     Spacing = 8,
@@ -1150,18 +1150,18 @@ public partial class DetailPanelBuilder
                     {
                         new TextBlock
                         {
-                            Text = "Select your GPU generation. This controls which rendering path is used.\n\n" +
-                                   "RTX 30 Series (SM86) — Ampere\n" +
-                                   "RTX 20 Series (SM75) — Turing\n\n" +
-                                   "Reinstall after changing to apply the new setting.",
+                            Text = "Выберите поколение GPU. От этого зависит используемый путь рендеринга.\n\n" +
+                                   "RTX 30-й серии (SM86) — Ampere\n" +
+                                   "RTX 20-й серии (SM75) — Turing\n\n" +
+                                   "После изменения переустановите, чтобы применить новую настройку.",
                             FontSize = 12,
                             TextWrapping = TextWrapping.Wrap,
                         },
                         combo,
                     },
                 },
-                PrimaryButtonText = "Save",
-                CloseButtonText   = "Cancel",
+                PrimaryButtonText = "Сохранить",
+                CloseButtonText   = "Отмена",
                 XamlRoot          = _window.Content.XamlRoot,
                 RequestedTheme    = ElementTheme.Dark,
             };
@@ -1196,7 +1196,7 @@ public partial class DetailPanelBuilder
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove 20/30 FG Unlock from this game");
+        ToolTipService.SetToolTip(removeBtn, "Удалить разблокировку FG 20/30 из этой игры");
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -1261,13 +1261,13 @@ public partial class DetailPanelBuilder
             if (isRecommended)
                 contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
             if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge("Используется RHI", "#2A1818", "#CC6666", "#5A2828"));
             if (isCurrent)
                 contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
 
             btn.Content = contentRow;
             if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component. Choose a different name.");
+                ToolTipService.SetToolTip(btn, "Это имя уже занято компонентом под управлением RHI. Выберите другое.");
 
             btn.Tag    = name;
             btn.Click += (s, ev) =>
@@ -1284,7 +1284,7 @@ public partial class DetailPanelBuilder
 
         var pickerDialog = new ContentDialog
         {
-            Title = "Choose 20/30 FG Unlock DLL name",
+            Title = "Выберите имя DLL для разблокировки FG 20/30",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -1292,7 +1292,7 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select your GPU generation in the cog (⚙) before installing. Then choose the filename to deploy the DLL as.",
+                        Text = "Перед установкой выберите поколение GPU в шестерёнке (⚙). Затем выберите имя файла для развертывания DLL.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                         TextWrapping = TextWrapping.Wrap,
@@ -1300,7 +1300,7 @@ public partial class DetailPanelBuilder
                     scrollViewer,
                 }
             },
-            CloseButtonText = "Cancel",
+            CloseButtonText = "Отмена",
             XamlRoot        = _window.Content.XamlRoot,
         };
 
@@ -1342,7 +1342,7 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "RTX 40 MFG Unlock — enables DLSS Multi Frame Generation multipliers beyond 2x (up to 6x) on RTX 40 Series GPUs. Standalone DLL, no ASI Loader required.");
+        ToolTipService.SetToolTip(label, "Разблокировка RTX 40 MFG — включает множители мульти-генерации кадров DLSS выше 2x (до 6x) на GPU RTX 40-й серии. Отдельная DLL, ASI Loader не нужен.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -1358,7 +1358,7 @@ public partial class DetailPanelBuilder
         };
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases page");
+            ToolTipService.SetToolTip(statusBlock, $"Установлен как: {currentDllName}\nНажмите, чтобы открыть страницу релизов на GitHub");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock/releases"));
         }
@@ -1368,7 +1368,7 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
+            Content = "Инфо",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -1379,7 +1379,7 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
-        ToolTipService.SetToolTip(infoBtn, "Open RTX 40 MFG Unlock GitHub page");
+        ToolTipService.SetToolTip(infoBtn, "Открыть страницу разблокировки RTX 40 MFG на GitHub");
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock"));
         Grid.SetColumn(infoBtn, 2);
@@ -1388,7 +1388,7 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         var installBtn = new Button
         {
-            Content = isInstalled ? "↺  Reinstall RTX 40 MFG" : "⬇  Install RTX 40 MFG",
+            Content = isInstalled ? "↺  Переустановить RTX 40 MFG" : "⬇  Установить RTX 40 MFG",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -1409,13 +1409,13 @@ public partial class DetailPanelBuilder
         {
             installBtn.IsEnabled = false;
             installBtn.Opacity   = 0.35;
-            installBtn.Content   = "Uninstall MFG Ada Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (addon) is already installed and conflicts with RTX 40 MFG Unlock. Remove it from the addon picker first.");
+            installBtn.Content   = "Сначала удалите MFG Ada Unlock";
+            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (аддон) уже установлен и конфликтует с разблокировкой RTX 40 MFG. Сначала удалите его в выборе аддонов.");
         }
         else
         {
             ToolTipService.SetToolTip(installBtn, isInstalled
-                ? $"Reinstall RTX 40 MFG Unlock (currently deployed as {currentDllName})"
+                ? $"Переустановить разблокировку RTX 40 MFG (сейчас развернута как {currentDllName})"
                 : "Install RTX 40 MFG Unlock — deploys RTXMFG.dll under a name you choose");
         }
 
@@ -1449,14 +1449,14 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    installBtn.Content   = "Download failed — try again";
+                    installBtn.Content   = "Не удалось скачать — попробуйте снова";
                     installBtn.IsEnabled = true;
                 }
             }
             catch (Exception ex)
             {
                 CrashReporter.Log($"[BuildRtx40MfgRow] Install failed — {ex.Message}");
-                installBtn.Content   = "Install failed";
+                installBtn.Content   = "Не удалось установить";
                 installBtn.IsEnabled = true;
             }
         };
@@ -1476,26 +1476,26 @@ public partial class DetailPanelBuilder
             CornerRadius = new CornerRadius(8),
             Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
         };
-        ToolTipService.SetToolTip(cogBtn, "RTX 40 MFG settings — configure multiplier mode");
+        ToolTipService.SetToolTip(cogBtn, "Настройки RTX 40 MFG — режим множителя");
         cogBtn.Click += async (s, e) =>
         {
-            var installedNote = isInstalled ? $"\n\nCurrently installed as: {currentDllName}" : "";
+            var installedNote = isInstalled ? $"\n\nСейчас установлен как: {currentDllName}" : "";
             var dlg = new ContentDialog
             {
-                Title = "RTX 40 MFG Settings",
+                Title = "Настройки RTX 40 MFG",
                 Content = new TextBlock
                 {
-                    Text = "Press Backspace in-game to open the RTX 40 MFG menu.\n\n" +
-                           "• Follow game — uses the game's own MFG setting\n" +
-                           "• Fixed 2x–6x — forces a specific multiplier\n" +
-                           "• Dynamic — targets the display refresh rate or a custom FPS value\n\n" +
-                           "If frames freeze above 2x, try setting Frame Generation to Preset B in the NVIDIA App." +
+                    Text = "Нажмите Backspace в игре, чтобы открыть меню RTX 40 MFG.\n\n" +
+                           "• Следовать игре — использует собственную настройку MFG игры\n" +
+                           "• Фиксированный 2x–6x — принудительный множитель\n" +
+                           "• Динамический — ориентируется на частоту обновления дисплея или свой FPS\n\n" +
+                           "Если кадры замирают на множителях выше 2x, попробуйте задать Preset B для генерации кадров в NVIDIA App." +
                            installedNote,
                     FontSize = 12,
                     TextWrapping = TextWrapping.Wrap,
                 },
-                PrimaryButtonText = "Open GitHub",
-                CloseButtonText   = "Close",
+                PrimaryButtonText = "Открыть GitHub",
+                CloseButtonText   = "Закрыть",
                 XamlRoot          = _window.Content.XamlRoot,
                 RequestedTheme    = ElementTheme.Dark,
             };
@@ -1521,7 +1521,7 @@ public partial class DetailPanelBuilder
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove RTX 40 MFG Unlock from this game");
+        ToolTipService.SetToolTip(removeBtn, "Удалить разблокировку RTX 40 MFG из этой игры");
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -1574,7 +1574,7 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(label, "DLSS Enabler — standalone proxy DLL that enables DLSS in games that don't natively support it.");
+        ToolTipService.SetToolTip(label, "DLSS Enabler — отдельная DLL-прокси, включающая DLSS в играх без нативной поддержки.");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
@@ -1590,7 +1590,7 @@ public partial class DetailPanelBuilder
         };
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases");
+            ToolTipService.SetToolTip(statusBlock, $"Установлен как: {currentDllName}\nНажмите, чтобы открыть релизы на GitHub");
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/RankFTW/rhi-repo/releases"));
         }
@@ -1600,7 +1600,7 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
+            Content = "Инфо",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -1611,7 +1611,7 @@ public partial class DetailPanelBuilder
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
         };
-        ToolTipService.SetToolTip(infoBtn, "Open DLSS Enabler Nexus page");
+        ToolTipService.SetToolTip(infoBtn, "Открыть страницу DLSS Enabler на Nexus");
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://www.nexusmods.com/site/mods/757"));
         Grid.SetColumn(infoBtn, 2);
@@ -1620,9 +1620,9 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         string installBtnLabel;
         if (osConflict)
-            installBtnLabel = "Installed via OptiScaler";
+            installBtnLabel = "Установлено через OptiScaler";
         else
-            installBtnLabel = isInstalled ? "↺  Reinstall DLSS Enabler" : "⬇  Install DLSS Enabler";
+            installBtnLabel = isInstalled ? "↺  Переустановить DLSS Enabler" : "⬇  Установить DLSS Enabler";
 
         var installBtn = new Button
         {
@@ -1648,13 +1648,13 @@ public partial class DetailPanelBuilder
             installBtn.IsEnabled = false;
             installBtn.IsHitTestVisible = false;
             installBtn.Opacity = 0.35;
-            ToolTipService.SetToolTip(installBtn, "Cannot install alongside OptiScaler — DLSS Enabler is already included within OptiScaler");
+            ToolTipService.SetToolTip(installBtn, "Нельзя установить вместе с OptiScaler — DLSS Enabler уже входит в состав OptiScaler");
         }
         else
         {
             ToolTipService.SetToolTip(installBtn, isInstalled
-                ? $"Reinstall DLSS Enabler (currently '{currentDllName}')"
-                : "Install DLSS Enabler — choose which DLL name to use");
+                ? $"Переустановить DLSS Enabler (сейчас «{currentDllName}»)"
+                : "Установить DLSS Enabler — выберите имя DLL");
 
             installBtn.Click += async (s, e) =>
             {
@@ -1674,14 +1674,14 @@ public partial class DetailPanelBuilder
                     }
                     else
                     {
-                        installBtn.Content   = "Install failed";
+                        installBtn.Content   = "Не удалось установить";
                         installBtn.IsEnabled = true;
                     }
                 }
                 catch (Exception ex)
                 {
                     CrashReporter.Log($"[BuildDlssEnablerRow] Install failed — {ex.Message}");
-                    installBtn.Content   = "Install failed";
+                    installBtn.Content   = "Не удалось установить";
                     installBtn.IsEnabled = true;
                 }
             };
@@ -1705,14 +1705,14 @@ public partial class DetailPanelBuilder
             IsHitTestVisible = !osConflict,
             Opacity = osConflict ? 0.35 : 1.0,
         };
-        ToolTipService.SetToolTip(cogBtn, osConflict ? "Cannot install alongside OptiScaler" : "DLSS Enabler settings");
+        ToolTipService.SetToolTip(cogBtn, osConflict ? "Нельзя установить вместе с OptiScaler" : "Настройки DLSS Enabler");
         cogBtn.Click += async (s, e) =>
         {
             var dlg = new ContentDialog
             {
-                Title   = "DLSS Enabler Settings",
-                Content = new TextBlock { Text = "No settings available.", FontSize = 12 },
-                CloseButtonText   = "Close",
+                Title   = "Настройки DLSS Enabler",
+                Content = new TextBlock { Text = "Настройки недоступны.", FontSize = 12 },
+                CloseButtonText   = "Закрыть",
                 XamlRoot          = _window.Content.XamlRoot,
                 RequestedTheme    = ElementTheme.Dark,
             };
@@ -1736,7 +1736,7 @@ public partial class DetailPanelBuilder
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove standalone DLSS Enabler from this game");
+        ToolTipService.SetToolTip(removeBtn, "Удалить отдельный DLSS Enabler из этой игры");
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(currentDllName)) return;
@@ -1803,16 +1803,16 @@ public partial class DetailPanelBuilder
             if (isRecommended)
                 contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
             if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge("Используется RHI", "#2A1818", "#CC6666", "#5A2828"));
             else if (isDxgiConflict)
-                contentRow.Children.Add(MakeBadge("May conflict with ReShade/OS", "#2A1A10", "#CC9955", "#5A3A18"));
+                contentRow.Children.Add(MakeBadge("Может конфликтовать с ReShade/ОС", "#2A1A10", "#CC9955", "#5A3A18"));
             if (isCurrent)
                 contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
 
             btn.Content = contentRow;
 
             if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component. Choose a different name.");
+                ToolTipService.SetToolTip(btn, "Это имя уже занято компонентом под управлением RHI. Выберите другое.");
             else if (isDxgiConflict)
                 ToolTipService.SetToolTip(btn, "dxgi.dll may conflict with ReShade or OptiScaler if they also use this name.");
 
@@ -1832,7 +1832,7 @@ public partial class DetailPanelBuilder
 
         var pickerDialog = new ContentDialog
         {
-            Title = "Choose RTX 40 MFG DLL name",
+            Title = "Выберите имя DLL для RTX 40 MFG",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -1848,7 +1848,7 @@ public partial class DetailPanelBuilder
                     scrollViewer,
                 }
             },
-            CloseButtonText = "Cancel",
+            CloseButtonText = "Отмена",
             XamlRoot        = _window.Content.XamlRoot,
         };
 
@@ -1920,16 +1920,16 @@ public partial class DetailPanelBuilder
             if (isRecommended)
                 contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
             if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge("Используется RHI", "#2A1818", "#CC6666", "#5A2828"));
             else if (isDxgiConflict)
-                contentRow.Children.Add(MakeBadge("May conflict with ReShade/OS", "#2A1A10", "#CC9955", "#5A3A18"));
+                contentRow.Children.Add(MakeBadge("Может конфликтовать с ReShade/ОС", "#2A1A10", "#CC9955", "#5A3A18"));
             if (isCurrent)
                 contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
 
             btn.Content = contentRow;
 
             if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component (ReShade, OptiScaler, or DC). Choose a different name.");
+                ToolTipService.SetToolTip(btn, "Это имя уже занято компонентом под управлением RHI (ReShade, OptiScaler или DC). Выберите другое.");
             else if (isDxgiConflict)
                 ToolTipService.SetToolTip(btn, "dxgi.dll may conflict with ReShade or OS components if they also use this name.");
 
@@ -1949,7 +1949,7 @@ public partial class DetailPanelBuilder
 
         var pickerDialog = new ContentDialog
         {
-            Title = "Choose DLSS Enabler DLL name",
+            Title = "Выберите имя DLL для DLSS Enabler",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -1965,7 +1965,7 @@ public partial class DetailPanelBuilder
                     scrollViewer,
                 }
             },
-            CloseButtonText = "Cancel",
+            CloseButtonText = "Отмена",
             XamlRoot        = _window.Content.XamlRoot,
         };
 
@@ -2017,7 +2017,7 @@ public partial class DetailPanelBuilder
         };
         if (card.IsDxvkInstalled && !isDisabled)
         {
-            ToolTipService.SetToolTip(statusBlock, "Click to open DXVK releases");
+            ToolTipService.SetToolTip(statusBlock, "Открыть релизы DXVK");
             statusBlock.PointerPressed += (s, e) => _window.DetailDxvkStatus_PointerPressed(s, e);
             statusBlock.PointerEntered += (s, e) => _window.LinkText_PointerEntered(s, e);
             statusBlock.PointerExited  += (s, e) => _window.LinkText_PointerExited(s, e);
@@ -2028,7 +2028,7 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
+            Content = "Инфо",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -2083,7 +2083,7 @@ public partial class DetailPanelBuilder
             IsEnabled = !isDisabled,
             Opacity = isDisabled ? 0.35 : 1.0,
         };
-        ToolTipService.SetToolTip(cogBtn, "DXVK Settings");
+        ToolTipService.SetToolTip(cogBtn, "Настройки DXVK");
         cogBtn.Click += (s, e) => _window.DxvkCogButton_Click(s, e);
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);
@@ -2105,7 +2105,7 @@ public partial class DetailPanelBuilder
             Opacity = showDelete ? 1.0 : 0.0,
             IsHitTestVisible = showDelete,
         };
-        ToolTipService.SetToolTip(deleteBtn, "Remove DXVK");
+        ToolTipService.SetToolTip(deleteBtn, "Удалить DXVK");
         deleteBtn.Click += (s, e) => _window.UninstallDxvkButton_Click(s, e);
         Grid.SetColumn(deleteBtn, 5);
         row.Children.Add(deleteBtn);

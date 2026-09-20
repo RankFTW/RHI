@@ -14,9 +14,9 @@ public partial class GameCardViewModel
     // ── REF computed properties ───────────────────────────────────────────────────
 
     public string RefActionLabel => RefIsInstalling ? "Installing..."
-        : RefStatus == GameStatus.UpdateAvailable ? "⬆  Update RE Framework"
-        : RefStatus == GameStatus.Installed ? "↺  Reinstall RE Framework"
-        : "⬇  Install RE Framework";
+        : RefStatus == GameStatus.UpdateAvailable ? "⬆  Обновить RE Framework"
+        : RefStatus == GameStatus.Installed ? "↺  Переустановить RE Framework"
+        : "⬇  Установить RE Framework";
 
     public string RefBtnBackground  => RefStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
     public string RefBtnForeground  => RefStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
@@ -35,9 +35,9 @@ public partial class GameCardViewModel
         : RefStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string RefShortAction => RefIsInstalling ? "…"
-        : RefStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : RefStatus == GameStatus.Installed ? "↺ Reinstall"
-        : "⬇ Install";
+        : RefStatus == GameStatus.UpdateAvailable ? "⬆ Обновить"
+        : RefStatus == GameStatus.Installed ? "↺ Переустановить"
+        : "⬇ Установить";
 
     public bool IsRefNotInstalling => !RefIsInstalling;
     public bool IsRefInstalled => RefStatus == GameStatus.Installed || RefStatus == GameStatus.UpdateAvailable;

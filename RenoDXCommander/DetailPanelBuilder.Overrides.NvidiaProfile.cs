@@ -24,7 +24,7 @@ public partial class DetailPanelBuilder
         var nvSettings   = _window.ViewModel.Settings;
         bool nvCollapsed = nvSettings.CollapsedDetailSections.Contains(nvSectionKey);
 
-        var nvidiaHeaderText = "Nvidia Profile Overrides";
+        var nvidiaHeaderText = "Переопределения профиля NVIDIA";
         var driverVer = _dlssPresetService.DriverVersionString;
         if (!string.IsNullOrEmpty(driverVer))
             nvidiaHeaderText += $" — Driver {driverVer}";
@@ -191,7 +191,7 @@ public partial class DetailPanelBuilder
             // Disable for DLSS 1.x (not compatible with 2.x+ versions in manifest)
             bool srEnabled = hasDlss && !(card.DlssInstalledVersion?.StartsWith("1.") == true);
             bool srDriverOverride = dlssData?.SrDriverOverride == true;
-            var srCol = BuildDlssColumn("DLSS Super Resolution", srEnabled, dlssService.DlssVersions,
+            var srCol = BuildDlssColumn("Суперразрешение DLSS (SR)", srEnabled, dlssService.DlssVersions,
                 card.DlssInstalledVersion, DlssPresetService.SrPresets,
                 presetService.IsSupported && srEnabled ? (dlssData?.SrPreset ?? 0u) : 0u,
                 async (version) =>
@@ -248,7 +248,7 @@ public partial class DetailPanelBuilder
             // FG column — no v1.x guard (FG can be updated from v1.0.0 to newer versions)
             bool fgEnabled = hasDlssg;
             bool fgDriverOverride = dlssData?.FgDriverOverride == true;
-            var fgCol = BuildDlssColumn("Frame Generation", fgEnabled, dlssService.DlssgVersions,
+            var fgCol = BuildDlssColumn("Генерация кадров", fgEnabled, dlssService.DlssgVersions,
                 card.DlssgInstalledVersion, DlssPresetService.FgPresets,
                 presetService.IsSupported && fgEnabled ? (dlssData?.FgPreset ?? 0u) : 0u,
                 async (version) =>
@@ -272,7 +272,7 @@ public partial class DetailPanelBuilder
             fgCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
             var mfgBtn = new Button
             {
-                Content = "Multi Frame Gen",
+                Content = "Мульти-генерация кадров",
                 FontSize = 11,
                 Height = 32,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -284,7 +284,7 @@ public partial class DetailPanelBuilder
                 IsEnabled = fgEnabled && presetService.IsSupported,
                 Opacity = (fgEnabled && presetService.IsSupported) ? 1.0 : 0.4,
             };
-            ToolTipService.SetToolTip(mfgBtn, "Configure NVIDIA Multi Frame Generation: mode, frame count multiplier, and dynamic target frame rate. Requires 50 Series GPU.");
+            ToolTipService.SetToolTip(mfgBtn, "Настройка мульти-генерации кадров NVIDIA (MFG): режим, множитель кадров и динамическая целевая частота. Требуется GPU серии 50.");
             mfgBtn.Click += async (s, ev) =>
             {
                 var xamlRoot = (s as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
@@ -327,7 +327,7 @@ public partial class DetailPanelBuilder
                 string nrSelectedVersion = nrInstalledVersion ?? "";
 
                 bool nrDriverOverride = dlssData?.NrDriverOverride == true;
-                var nrCol = BuildDlssColumn("Neural Rendering", hasDlssnr, dlssService.DlssnrVersions,
+                var nrCol = BuildDlssColumn("Нейронный рендеринг", hasDlssnr, dlssService.DlssnrVersions,
                     nrInstalledVersion, DlssPresetService.NrPresets,
                     presetService.IsSupported && hasDlssnr ? (dlssData?.NrPreset ?? 0u) : 0u,
                     async (version) =>
@@ -361,7 +361,7 @@ public partial class DetailPanelBuilder
                 // When NR is not installed the placeholder is invisible but still takes space.
                 if (!hasDlssnr)
                 {
-                    var presetPlaceholderLabel = new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0), Opacity = 0 };
+                    var presetPlaceholderLabel = new TextBlock { Text = "Пресет", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0), Opacity = 0 };
                     var presetPlaceholderCombo = new ComboBox { ItemsSource = new[] { "Default" }, SelectedIndex = 0, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = false, Opacity = 0 };
                     nrCol.Children.Add(presetPlaceholderLabel);
                     nrCol.Children.Add(presetPlaceholderCombo);
@@ -373,7 +373,7 @@ public partial class DetailPanelBuilder
 
                 var deployNrBtn = new Button
                 {
-                    Content = "Deploy DLL",
+                    Content = "Развернуть DLL",
                     FontSize = 11,
                     Height = 32,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -433,7 +433,7 @@ public partial class DetailPanelBuilder
                                     "RHI", "Custom", "DLSS", "nvngx_dlssnr.dll");
                                 if (!File.Exists(customSrc))
                                 {
-                                    _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Not in Custom/DLSS"; deployNrBtn.IsEnabled = true; });
+                                    _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Не в Custom/DLSS"; deployNrBtn.IsEnabled = true; });
                                     return;
                                 }
                                 File.Copy(customSrc, destPath, overwrite: true);
@@ -464,7 +464,7 @@ public partial class DetailPanelBuilder
                             }
                             else if (cachedPath == null)
                             {
-                                _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Not available"; deployNrBtn.IsEnabled = true; });
+                                _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Недоступно"; deployNrBtn.IsEnabled = true; });
                                 return;
                             }
                             else if (isDefault)
@@ -513,7 +513,7 @@ public partial class DetailPanelBuilder
                     catch (Exception ex)
                     {
                         CrashReporter.Log($"[NrDeployBtn] Failed — {ex.Message}");
-                        _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Deploy DLL"; deployNrBtn.IsEnabled = true; });
+                        _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Развернуть DLL"; deployNrBtn.IsEnabled = true; });
                     }
                 };
 
@@ -609,7 +609,7 @@ public partial class DetailPanelBuilder
             bool restoreEnabled = card.HasAnyDlssBackup || hasNonDefaultPreset;
             var dlssRestoreBtn = new Button
             {
-                Content = "Restore DLSS/SL",
+                Content = "Восстановить DLSS/SL",
                 FontSize = 11,
                 Height = 32,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -672,7 +672,7 @@ public partial class DetailPanelBuilder
 
             var applyBtn = new Button
             {
-                Content = "Quick Apply",
+                Content = "Быстрое применение",
                 FontSize = 11,
                 Height = 32,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -683,7 +683,7 @@ public partial class DetailPanelBuilder
                 CornerRadius = new CornerRadius(8),
                 IsEnabled = hasDefaults && card.HasAnyDlssStreamline,
             };
-            ToolTipService.SetToolTip(applyBtn, "Apply your configured DLSS/Streamline default versions, presets, and render scales to this game. Downloads versions on-demand if not cached.");
+            ToolTipService.SetToolTip(applyBtn, "Применить к этой игре настроенные версии, пресеты и масштабы рендеринга DLSS/Streamline по умолчанию. Версии скачиваются по мере необходимости, если их нет в кеше.");
             applyBtn.Click += async (s, ev) =>
             {
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -786,7 +786,7 @@ public partial class DetailPanelBuilder
                         child.Opacity = 0.4;
                 }
             }
-            ToolTipService.SetToolTip(dlssRestoreBtn, "Restore all DLSS and Streamline DLLs to their original game versions and reset presets to Default.");
+            ToolTipService.SetToolTip(dlssRestoreBtn, "Вернуть все DLL DLSS и Streamline к исходным версиям игры и сбросить пресеты на «По умолчанию».");
 
             Grid.SetColumn(slCol, slColumn);
             dlssRowGrid.Children.Add(slCol);

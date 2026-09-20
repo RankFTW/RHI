@@ -1,160 +1,160 @@
-# Handover Report — Session 13 September 2026 (Evening)
+# Отчёт о передаче — сессия 13 сентября 2026 (вечер)
 
-**Branch:** main  
-**App version:** 2.7.1 (in progress, not released)  
-**Published:** RHI.exe  
+**Ветка:** main  
+**Версия приложения:** 2.7.1 (в работе, не выпущена)  
+**Публикуется:** RHI.exe  
 **HEAD:** b744b81
 
 ---
 
-## What Was Done This Session
+## Что сделано в этой сессии
 
-### 1. `rhi_install.txt` Game-Folder Manifest
+### 1. Манифест в папке игры `rhi_install.txt`
 
-A new JSON file written to every game folder on OptiScaler install/update. Solves two persistent bugs:
+Новый JSON-файл, записываемый в каждую папку игры при установке/обновлении OptiScaler. Решает две застарелые проблемы:
 
-**Version confusion:** OptiScaler was reading the installed version from the staging `version.txt`, which changes when a new version downloads. If you installed nightly `20260912`, then a new nightly downloaded, the card showed the new version instead of what's actually installed. `rhi_install.txt` records the version at install time and is read preferentially on startup.
+**Путаница с версиями:** OptiScaler читал установленную версию из хранилищного `version.txt`, который меняется при скачивании новой версии. Если вы поставили nightly `20260912`, а затем скачался новый nightly, карточка показывала новую версию вместо реально установленной. `rhi_install.txt` фиксирует версию на момент установки и при запуске читается в приоритете.
 
-**Stale uninstall cleanup:** Uninstall previously scanned the staging folder to know which files to delete. If staging changed (new nightly downloaded between install and uninstall), wrong files got deleted. Now uninstall reads the game-folder manifest for the authoritative file list.
+**Устаревшая очистка при удалении:** удаление раньше сканировало папку хранилища, чтобы узнать, какие файлы чистить. Если хранилище менялось (новый nightly скачался между установкой и удалением), удалялись не те файлы. Теперь удаление читает манифест в папке игры как авторитетный список файлов.
 
-**Model:** `Models/RhiInstallManifest.cs`  
-Fields: `component`, `variant`, `version`, `installedAs`, `installedAt`, `files`, `folders`, `sharedFiles`, `components`, `nrMethod`  
-Static helpers: `Write`, `Read`, `Delete`, `UpdateInstalledAs`, `SetNrMethod`, `AddSharedFileOwner`, `RemoveSharedFileOwner`, `SetComponent`, `GetComponentFiles`, `RemoveComponent`
+**Модель:** `Models/RhiInstallManifest.cs`  
+Поля: `component`, `variant`, `version`, `installedAs`, `installedAt`, `files`, `folders`, `sharedFiles`, `components`, `nrMethod`  
+Статические хелперы: `Write`, `Read`, `Delete`, `UpdateInstalledAs`, `SetNrMethod`, `AddSharedFileOwner`, `RemoveSharedFileOwner`, `SetComponent`, `GetComponentFiles`, `RemoveComponent`
 
-**Files changed:** `OptiScalerService.Install.cs`, `MainViewModel.BuildCards.cs`, `MainViewModel.CacheLoad.cs`, `DetailPanelBuilder.Overrides.cs`
-
----
-
-### 2. Shared DLSS File Ownership (`sharedFiles` in manifest)
-
-Multiple components (OptiScaler, ShortFuse NR, DLSS5 Tool, Feeder) all deploy the same `nvngx_dlss*.dll` files to the game folder. Previously they trampled each other's sentinel files and deleted files the other component still needed.
-
-**Solution:** `sharedFiles` dict in `rhi_install.txt` maps each filename to a list of component owners. A file is only deleted/restored when the last owner uninstalls.
-
-**Components wired:**
-- OptiScaler (all variants): registers `nvngx_dlss.dll`, `nvngx_dlssd.dll`, `nvngx_dlssg.dll` always; `nvngx_dlssnr.dll` for DlssNr variant only
-- ShortFuse: registers all 4 DLLs in `DeploySfDllsAsync`; deregisters in `UninstallSf`
-- DLSS5 Tool: registers all 4 in `UpgradeDlssDllsAsync`; deregisters in `Renodx5AddonService.Uninstall`
-- Bridge: uses DLSS5 Tool's ownership
-- Feeder: registers `nvngx_dlssnr.dll` in `DeployNrDllIfAbsentAsync("Feeder")`; deregisters in `RemoveNrDll("Feeder")`
-
-**Edge case fixed:** When DLSS5 Tool deploys to a detected plugin subfolder (e.g. `Engine\Plugins\Runtime\Nvidia\DLSS\...`) but OptiScaler deployed to the game root, `RestoreDlssDllsWithSentinel` now also cleans up the root copies if the paths differ.
-
-**Files changed:** `Renodx5AddonService.cs`, `DetailPanelBuilder.NeuralRendering.cs`, `OptiScalerService.Install.cs`
+**Изменённые файлы:** `OptiScalerService.Install.cs`, `MainViewModel.BuildCards.cs`, `MainViewModel.CacheLoad.cs`, `DetailPanelBuilder.Overrides.cs`
 
 ---
 
-### 3. Per-Component File Records (`components` in manifest)
+### 2. Совместное владение файлами DLSS (`sharedFiles` в манифесте)
 
-Each NR component now records its complete deployed file list in `rhi_install.txt` under a `components` dict. This provides redundancy alongside sentinels — if sentinels are missing or wrong, RHI still knows what to clean up.
+Несколько компонентов (OptiScaler, ShortFuse NR, DLSS5 Tool, Feeder) разворачивают одни и те же файлы `nvngx_dlss*.dll` в папку игры. Раньше они затирали sentinel-файлы друг друга и удаляли файлы, нужные другому компоненту.
 
-**What each component records:**
-- `ShortFuse`: `renodx-dlss.addon64` + 4 nvngx DLLs + 11 sl.*.dll files
-- `Dlss5Tool`: `renodx-dlss5.addon64` + 4 nvngx DLLs; Bridge adds `dlss5-bridge.addon64`
-- `Feeder`: feeder addon + nvngx_dlssnr + nvngx_dlss + renodx-dlss5 + shaders + `ReShadePreset.ini`; 32-bit adds `host64\*`; DX9 adds `D3D9.dll` + `dgVoodoo.conf`
+**Решение:** словарь `sharedFiles` в `rhi_install.txt` отображает каждое имя файла на список компонентов-владельцев. Файл удаляется/восстанавливается только когда удалён последний владелец.
 
-**Important:** OptiScaler's `InstallAsync` and `UpdateAsync` both preserve `sharedFiles`, `components`, and `nrMethod` when rewriting the manifest. Earlier bug: it was creating a fresh `RhiInstallManifest` object which wiped those fields.
+**Подключённые компоненты:**
+- OptiScaler (все варианты): всегда регистрирует `nvngx_dlss.dll`, `nvngx_dlssd.dll`, `nvngx_dlssg.dll`; `nvngx_dlssnr.dll` — только для варианта DlssNr
+- ShortFuse: регистрирует все 4 DLL в `DeploySfDllsAsync`; снимает регистрацию в `UninstallSf`
+- DLSS5 Tool: регистрирует все 4 в `UpgradeDlssDllsAsync`; снимает в `Renodx5AddonService.Uninstall`
+- Bridge: использует владение DLSS5 Tool
+- Feeder: регистрирует `nvngx_dlssnr.dll` в `DeployNrDllIfAbsentAsync("Feeder")`; снимает в `RemoveNrDll("Feeder")`
 
----
+**Исправленный краевой случай:** когда DLSS5 Tool разворачивает в найденную подпапку плагина (например, `Engine\Plugins\Runtime\Nvidia\DLSS\...`), а OptiScaler — в корень игры, `RestoreDlssDllsWithSentinel` теперь чистит и корневые копии, если пути различаются.
 
-### 4. GitHub API Rate Limit Fixes
-
-**Token support:** `DevUnlockService.GitHubApiToken` now reads from `%LocalAppData%\RHI\github_api.txt` first (any user), falls back to `github_api=` line in `unlock.txt` (dev only). Token is applied to all `GitHubETagCache.GetWithETagAsync` calls.
-
-**403 handling:** Previously any 403 set `_rateLimited = true` for the entire session. Now only sets it when `X-RateLimit-Remaining: 0` is confirmed — transient 403s no longer kill all API calls for the session. Log message now includes the URL and whether the request was authenticated.
-
-**Files changed:** `DevUnlockService.cs`, `GitHubETagCache.cs`
+**Изменённые файлы:** `Renodx5AddonService.cs`, `DetailPanelBuilder.NeuralRendering.cs`, `OptiScalerService.Install.cs`
 
 ---
 
-### 5. DB Refresh Fix
+### 3. Поигровые записи о файлах (`components` в манифесте)
 
-RHI database (rhi-repo) changes were not reflecting after standard Refresh — required a full restart. Root cause: `GitHubETagCache` is in-memory and session-scoped. On Refresh, the ETag was still cached so GitHub returned 304 with the old data.
+Каждый NR-компонент теперь записывает свой полный список развёрнутых файлов в `rhi_install.txt` в словаре `components`. Это избыточность рядом с sentinel-файлами — если sentinel'ы отсутствуют или неверны, RHI всё равно знает, что чистить.
 
-Fix: `InitializeAsync` calls `_renoDxDbService.InvalidateCache()` when `forceRescan=true`, clearing the DB URLs from the ETag cache before fetching.
+**Что записывает каждый компонент:**
+- `ShortFuse`: `renodx-dlss.addon64` + 4 DLL nvngx + 11 файлов sl.*.dll
+- `Dlss5Tool`: `renodx-dlss5.addon64` + 4 DLL nvngx; Bridge добавляет `dlss5-bridge.addon64`
+- `Feeder`: аддон feeder + nvngx_dlssnr + nvngx_dlss + renodx-dlss5 + шейдеры + `ReShadePreset.ini`; 32-бит добавляет `host64\*`; DX9 добавляет `D3D9.dll` + `dgVoodoo.conf`
 
-**Files changed:** `MainViewModel.Init.cs`, `RenoDXDbService.cs`, `IRenoDXDbService.cs`, `GitHubETagCache.cs`
-
----
-
-### 6. Detail Panel Refresh After Refresh
-
-After a Refresh, `ViewModel.SelectedGame` gets set to null (new card objects don't match old references). `GameList.SelectedItem` still holds the old object so `SelectionChanged` never fires and `PopulateDetailPanel` never runs. Fixed in `MainWindow.UISync.cs`: when `IsLoading` goes false on a silent (Refresh) transition, capture the current `GameList.SelectedItem`, find the equivalent new card in `DisplayedGames`, and force `PopulateDetailPanel`.
-
-**File changed:** `MainWindow.UISync.cs`
+**Важно:** `InstallAsync` и `UpdateAsync` OptiScaler оба сохраняют `sharedFiles`, `components` и `nrMethod` при перезаписи манифеста. Прошлый баг: создавался свежий объект `RhiInstallManifest`, стиравший эти поля.
 
 ---
 
-### 7. UE-Extended DB Notes in Info Dialog
+### 4. Исправления лимитов GitHub API
 
-`RenoDXDbUnrealEntry.Comments` was never reaching the info dialog for NativeHDR/UE-Extended games due to three separate blocks:
-1. `MergeDbSources` only wrote Comments to `_genericNotes` in DbOnly/Hybrid mode — now always writes regardless of source mode
-2. `BuildNotes` early-returned for NativeHDR games before calling `GetGenericNote` — now includes DB comment after the HDR warning
-3. `AddonInfoResolver` never read `card.Notes` — now appends DB comment (stripped of the HDR warning line) to the fallback text
+**Поддержка токена:** `DevUnlockService.GitHubApiToken` теперь сначала читает `%LocalAppData%\RHI\github_api.txt` (любой пользователь), с откатом к строке `github_api=` в `unlock.txt` (только разработчики). Токен применяется ко всем вызовам `GitHubETagCache.GetWithETagAsync`.
 
----
+**Обработка 403:** раньше любой 403 ставил `_rateLimited = true` на всю сессию. Теперь только при подтверждении `X-RateLimit-Remaining: 0` — единичные 403 больше не убивают все вызовы API на сессию. В лог теперь пишется URL и то, был ли запрос аутентифицирован.
 
-### 8. MFG Ada Unlock Reinstall Fix
-
-When installed via Extras section, the addon picker toggle is greyed (extrasInstalledConflict). Users couldn't deselect it in the picker. Remove button in Extras now also removes the entry from `EnabledGlobalAddons` and `PerGameAddonSelection`.
-
-**File changed:** `DetailPanelBuilder.Extras.cs`
+**Изменённые файлы:** `DevUnlockService.cs`, `GitHubETagCache.cs`
 
 ---
 
-### 9. Other Fixes
+### 5. Исправление обновления базы
 
-- **OptiScaler Stable/Nightly uninstall removed NR-owned `nvngx_dlssnr.dll`** — step 2e now only runs for DlssNr variant
-- **DLSS files deleted twice on uninstall** — the generic step 3 loop was re-deleting files that steps 2b/2c/2d had already handled. Fixed by adding `explicitlyHandled` set
-- **Batch DLSS deploy stuck** — `MassDlssDeployDialog` now checks `Directory.Exists` before processing each game
-- **Shader pack folder renamed to `reshade-shaders-original`** — race condition in `ShaderPackService.Deploy.cs`, fixed by writing the managed marker before rename/deploy
-- **Solasta 2 Engine.ini path** — added to `engineIniPathOverrides` in manifest (`"Solasta 2": "Solasta 2"`)
-- **Stale OptiScaler sentinels** — `CleanOrphanedOptiScalerSentinels()` runs on startup, removes `.original` files whose base filename doesn't match `InstalledAs`
+Изменения базы RHI (rhi-repo) не подхватывались после обычного «Обновить» — требовался полный перезапуск. Причина: `GitHubETagCache` живёт в памяти и ограничен сессией. При обновлении ETag оставался закешированным, и GitHub возвращал 304 со старыми данными.
 
----
+Фикс: `InitializeAsync` вызывает `_renoDxDbService.InvalidateCache()` при `forceRescan=true`, очищая URL базы из ETag-кеша перед загрузкой.
 
-## Active/Pending Items
-
-### Nexus appid Registration
-Mark is in correspondence with Nexus support. Update `AppId` const in `NexusSsoService.cs` (~line 20) when they assign an official slug.
-
-### `rhi_install.txt` Limitations
-- Existing installs (before this session) have no manifest — uninstall falls back to staging scan. The sentinel-guard fix (only delete root files if `.original` exists in staging scan fallback) helps but isn't perfect for all edge cases.
-- The `sharedFiles` tracking only starts working once both components have been installed/reinstalled with the new code. Users who installed OptiScaler + ShortFuse before this update won't have ownership tracking until they reinstall.
+**Изменённые файлы:** `MainViewModel.Init.cs`, `RenoDXDbService.cs`, `IRenoDXDbService.cs`, `GitHubETagCache.cs`
 
 ---
 
-## Key Files Changed This Session
+### 6. Обновление панели подробностей после «Обновить»
 
-| File | Change |
+После «Обновить» `ViewModel.SelectedGame` становится null (новые объекты карточек не совпадают со старыми ссылками). `GameList.SelectedItem` всё ещё держит старый объект, поэтому `SelectionChanged` не срабатывает и `PopulateDetailPanel` не выполняется. Исправлено в `MainWindow.UISync.cs`: когда `IsLoading` становится false при тихом (обновление) переходе, берём текущий `GameList.SelectedItem`, находим эквивалентную новую карточку в `DisplayedGames` и форсируем `PopulateDetailPanel`.
+
+**Изменённый файл:** `MainWindow.UISync.cs`
+
+---
+
+### 7. Заметки UE-Extended из базы в диалоге информации
+
+`RenoDXDbUnrealEntry.Comments` не доходил до диалога информации для игр NativeHDR/UE-Extended из-за трёх отдельных блоков:
+1. `MergeDbSources` писал Comments в `_genericNotes` только в режиме DbOnly/Hybrid — теперь пишет всегда, независимо от режима источника
+2. `BuildNotes` рано возвращался для игр NativeHDR до вызова `GetGenericNote` — теперь включает комментарий базы после предупреждения об HDR
+3. `AddonInfoResolver` никогда не читал `card.Notes` — теперь добавляет комментарий базы (без строки предупреждения об HDR) к запасному тексту
+
+---
+
+### 8. Исправление переустановки MFG Ada Unlock
+
+При установке через секцию Extras переключатель в окне выбора аддонов серый (extrasInstalledConflict). Пользователи не могли его снять в окне выбора. Кнопка удаления в Extras теперь также убирает запись из `EnabledGlobalAddons` и `PerGameAddonSelection`.
+
+**Изменённый файл:** `DetailPanelBuilder.Extras.cs`
+
+---
+
+### 9. Прочие исправления
+
+- **Удаление OptiScaler Stable/Nightly удаляло принадлежащий NR `nvngx_dlssnr.dll`** — шаг 2e теперь выполняется только для варианта DlssNr
+- **Двойное удаление файлов DLSS при деинсталляции** — общий цикл шага 3 повторно удалял файлы, уже обработанные шагами 2b/2c/2d. Исправлено множеством `explicitlyHandled`
+- **Зависание массового развертывания DLSS** — `MassDlssDeployDialog` теперь проверяет `Directory.Exists` перед обработкой каждой игры
+- **Переименование папки набора шейдеров в `reshade-shaders-original`** — гонка в `ShaderPackService.Deploy.cs`, исправлена записью управляемого маркера до переименования/развертывания
+- **Путь Engine.ini для Solasta 2** — добавлен в `engineIniPathOverrides` в манифесте (`"Solasta 2": "Solasta 2"`)
+- **Устаревшие sentinel'ы OptiScaler** — `CleanOrphanedOptiScalerSentinels()` запускается при старте, удаляет файлы `.original`, чьё базовое имя не совпадает с `InstalledAs`
+
+---
+
+## Активные/ожидающие пункты
+
+### Регистрация appid в Nexus
+Mark переписывается с поддержкой Nexus. Обновите константу `AppId` в `NexusSsoService.cs` (~строка 20), когда выдадут официальный slug.
+
+### Ограничения `rhi_install.txt`
+- Существующие установки (до этой сессии) манифеста не имеют — удаление откатывается к сканированию хранилища. Фикс с защитой sentinel'ов (удалять корневые файлы, только если `.original` есть в запасном скане хранилища) помогает, но не идеален для всех краевых случаев.
+- Отслеживание `sharedFiles` начинает работать только после того, как оба компонента установлены/переустановлены с новым кодом. У тех, кто ставил OptiScaler + ShortFuse до этого обновления, отслеживания владения не будет до переустановки.
+
+---
+
+## Ключевые изменённые файлы этой сессии
+
+| Файл | Изменение |
 |------|--------|
-| `Models/RhiInstallManifest.cs` | **New** — full model with all fields and static helpers |
-| `Services/OptiScalerService.Install.cs` | Manifest write/read/delete in Install/Update/Uninstall; shared file ownership; preserve fields on write |
-| `Services/Renodx5AddonService.cs` | Shared file ownership for ShortFuse/DLSS5Tool; component records; RemoveNrDll with component param |
-| `DetailPanelBuilder.NeuralRendering.cs` | Component records for Dlss5Tool/Bridge/Feeder; RestoreDlssDllsWithSentinel root cleanup; ownership calls |
-| `DetailPanelBuilder.Overrides.cs` | UpdateInstalledAs called on OS DLL rename (fixes sentinel and manifest on override change) |
-| `DetailPanelBuilder.Extras.cs` | MFG Ada Unlock remove also clears addon selection |
-| `Services/GitHubETagCache.cs` | Token auth on all requests; proper 403 handling (only rate-limit on Remaining=0) |
-| `Services/DevUnlockService.cs` | github_api.txt support for all users |
-| `Services/RenoDXDbService.cs` | InvalidateCache() method |
-| `Services/IRenoDXDbService.cs` | InvalidateCache() in interface |
-| `Services/AddonInfoResolver.cs` | DB Comments appended to NativeHDR fallback text |
-| `ViewModels/MainViewModel.cs` | MergeDbSources always writes Comments to _genericNotes |
-| `ViewModels/MainViewModel.Init.cs` | DB cache invalidate on Refresh; CleanOrphanedOptiScalerSentinels |
-| `ViewModels/MainViewModel.CacheLoad.cs` | BuildNotes includes DB comment for NativeHDR games |
-| `ViewModels/MainViewModel.BackgroundScan.cs` | CleanOrphanedOptiScalerSentinels method |
-| `ViewModels/MainViewModel.BuildCards.cs` | OsInstalledVersion from manifest first |
-| `MainWindow.UISync.cs` | Force panel rebuild for selected game after Refresh |
-| `MassDlssDeployDialog.cs` | Directory.Exists guard |
+| `Models/RhiInstallManifest.cs` | **Новый** — полная модель со всеми полями и статическими хелперами |
+| `Services/OptiScalerService.Install.cs` | Запись/чтение/удаление манифеста в Install/Update/Uninstall; совместное владение файлами; сохранение полей при записи |
+| `Services/Renodx5AddonService.cs` | Совместное владение для ShortFuse/DLSS5Tool; записи компонентов; RemoveNrDll с параметром компонента |
+| `DetailPanelBuilder.NeuralRendering.cs` | Записи компонентов для Dlss5Tool/Bridge/Feeder; чистка корня в RestoreDlssDllsWithSentinel; вызовы владения |
+| `DetailPanelBuilder.Overrides.cs` | UpdateInstalledAs вызывается при переименовании DLL OptiScaler (чинит sentinel и манифест при смене переопределения) |
+| `DetailPanelBuilder.Extras.cs` | Удаление MFG Ada Unlock также чистит выбор аддона |
+| `Services/GitHubETagCache.cs` | Токен-аутентификация во всех запросах; корректная обработка 403 (лимит только при Remaining=0) |
+| `Services/DevUnlockService.cs` | Поддержка github_api.txt для всех пользователей |
+| `Services/RenoDXDbService.cs` | Метод InvalidateCache() |
+| `Services/IRenoDXDbService.cs` | InvalidateCache() в интерфейсе |
+| `Services/AddonInfoResolver.cs` | Комментарии базы добавляются к запасному тексту NativeHDR |
+| `ViewModels/MainViewModel.cs` | MergeDbSources всегда пишет Comments в _genericNotes |
+| `ViewModels/MainViewModel.Init.cs` | Инвалидация кеша базы при «Обновить»; CleanOrphanedOptiScalerSentinels |
+| `ViewModels/MainViewModel.CacheLoad.cs` | BuildNotes включает комментарий базы для игр NativeHDR |
+| `ViewModels/MainViewModel.BackgroundScan.cs` | Метод CleanOrphanedOptiScalerSentinels |
+| `ViewModels/MainViewModel.BuildCards.cs` | OsInstalledVersion сначала из манифеста |
+| `MainWindow.UISync.cs` | Принудительная пересборка панели выбранной игры после «Обновить» |
+| `MassDlssDeployDialog.cs` | Защита Directory.Exists |
 | `manifest.json` | Solasta 2 engineIniPathOverrides |
-| `RHI_PatchNotes.md` | v2.7.1 patch notes |
+| `RHI_PatchNotes.md` | Patch notes v2.7.1 |
 
 ---
 
-## Notes for Next Agent
+## Заметки следующему агенту
 
-- Never bump version — Mark does it manually
-- Always ask before committing or pushing
-- Build: `dotnet build g:\RDXC\RenoDXCommander\RenoDXCommander.csproj --no-restore -v q -p:Platform=x64`
-- Publish: close RHI first, then `& "g:\RDXC\publish.bat"` — if RHI is running, the exe is locked and publish silently fails
-- Log access: `Copy-Item "$env:LOCALAPPDATA\RHI\Logs\*" "g:\RDXC\Logs\" -Force` then read from `g:\RDXC\Logs\`
+- Никогда не поднимайте версию — Mark делает это вручную
+- Всегда спрашивайте перед коммитом или пушем
+- Сборка: `dotnet build g:\RDXC\RenoDXCommander\RenoDXCommander.csproj --no-restore -v q -p:Platform=x64`
+- Публикация: сначала закройте RHI, затем `& "g:\RDXC\publish.bat"` — если RHI работает, exe заблокирован, и публикация тихо провалится
+- Доступ к логам: `Copy-Item "$env:LOCALAPPDATA\RHI\Logs\*" "g:\RDXC\Logs\" -Force`, затем читайте из `g:\RDXC\Logs\`

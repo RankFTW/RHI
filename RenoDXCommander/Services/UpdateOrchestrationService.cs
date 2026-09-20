@@ -134,7 +134,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.InstalledAddonFileName = record.AddonFileName;
                     card.RdxInstalledVersion    = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName);
                     card.Status                 = GameStatus.Installed;
-                    card.ActionMessage          = "✅ Updated!";
+                    card.ActionMessage          = "✅ Обновлено!";
                     card.NotifyAll();
                     card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
                 });
@@ -238,7 +238,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.RsInstalledFile    = record.InstalledAs;
                     card.RsInstalledVersion = _auxFileService.ReadInstalledVersion(record.InstallPath, record.InstalledAs);
                     card.RsStatus           = GameStatus.Installed;
-                    card.RsActionMessage    = "✅ Updated!";
+                    card.RsActionMessage    = "✅ Обновлено!";
                     card.NotifyAll();
                     card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
                 });
@@ -382,7 +382,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             foreach (var vCard in vulkanTargets)
             {
                 vCard.RsIsInstalling = true;
-                vCard.RsActionMessage = "Updating Vulkan ReShade...";
+                vCard.RsActionMessage = "Обновление Vulkan ReShade...";
                 try
                 {
                     if (keepRsIniUpdatedResolver == null || keepRsIniUpdatedResolver(vCard.GameName, vCard.Source ?? ""))
@@ -394,7 +394,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     {
                         vCard.RsInstalledVersion = vulkanVersion;
                         vCard.RsStatus = GameStatus.Installed;
-                        vCard.RsActionMessage = layerUpdated ? "✅ Updated!" : "✅ Up to date";
+                        vCard.RsActionMessage = layerUpdated ? "✅ Обновлено!" : "✅ Актуально";
                         vCard.NotifyAll();
                         vCard.FadeMessage(m => vCard.RsActionMessage = m, vCard.RsActionMessage);
                     });
@@ -460,7 +460,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.RefRecord = record;
                     card.RefInstalledVersion = record.InstalledVersion;
                     card.RefStatus = GameStatus.Installed;
-                    card.RefActionMessage = "✅ Updated!";
+                    card.RefActionMessage = "✅ Обновлено!";
                     card.NotifyAll();
                     card.FadeMessage(m => card.RefActionMessage = m, card.RefActionMessage);
                 });
@@ -506,13 +506,13 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     {
                         card.DofFixInstalledVersion = dofFixService.StagedVersion;
                         card.DofFixStatus = GameStatus.Installed;
-                        card.DofFixActionMessage = "✅ Updated!";
+                        card.DofFixActionMessage = "✅ Обновлено!";
                         card.NotifyAll();
                         card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
                     }
                     else
                     {
-                        card.DofFixActionMessage = "❌ Update failed";
+                        card.DofFixActionMessage = "❌ Не удалось обновить";
                     }
                 });
             }

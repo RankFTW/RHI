@@ -64,7 +64,7 @@ public partial class DialogService
     {
         var dlg = new ContentDialog
         {
-            Title   = "🔄 Update Available",
+            Title   = "🔄 Доступно обновление",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -75,15 +75,15 @@ public partial class DialogService
                         TextWrapping = TextWrapping.Wrap,
                         Foreground   = Brush(ResourceKeys.TextSecondaryBrush),
                         FontSize     = 14,
-                        Text         = $"A new version of RHI is available!\n\n" +
+                        Text         = $"Доступна новая версия RHI!\n\n" +
                                        $"Installed:  v{updateInfo.CurrentVersion}\n" +
                                        $"Available:  v{updateInfo.DisplayVersion ?? updateInfo.RemoteVersion.ToString()}\n\n" +
-                                       "Would you like to update now?",
+                                       "Обновить сейчас?",
                     },
                 },
             },
-            PrimaryButtonText   = "Update Now",
-            CloseButtonText     = "Later",
+            PrimaryButtonText   = "Обновить сейчас",
+            CloseButtonText     = "Позже",
             XamlRoot            = _window.Content.XamlRoot,
             Background          = Brush(ResourceKeys.SurfaceRaisedBrush),
             RequestedTheme      = ElementTheme.Dark,
@@ -101,7 +101,7 @@ public partial class DialogService
         // Create a non-dismissable progress dialog
         var progressText = new TextBlock
         {
-            Text         = "Starting download...",
+            Text         = "Начинаю загрузку...",
             TextWrapping = TextWrapping.Wrap,
             Foreground   = Brush(ResourceKeys.TextSecondaryBrush),
             FontSize     = 13,
@@ -116,7 +116,7 @@ public partial class DialogService
         };
         var downloadDlg = new ContentDialog
         {
-            Title   = "⬇ Downloading Update",
+            Title   = "⬇ Скачивание обновления",
             Content = new StackPanel
             {
                 Spacing = 12,
@@ -161,7 +161,7 @@ public partial class DialogService
             // Download failed — update dialog to show error with a Close button
             _dispatcherQueue.TryEnqueue(() =>
             {
-                progressText.Text = "❌ Download failed. Please try again later or download manually from GitHub.";
+                progressText.Text = "❌ Не удалось скачать. Попробуйте позже или скачайте вручную с GitHub.";
                 progressBar.Value = 0;
                 downloadDlg.CloseButtonText = "Close";
             });
@@ -220,7 +220,7 @@ public partial class DialogService
             try
             {
                 Directory.CreateDirectory(PatchNotesDir);
-                File.WriteAllText(markerFile, $"Patch notes shown for v{versionStr}");
+                File.WriteAllText(markerFile, $"Список изменений показан для v{versionStr}");
             }
             catch (Exception ex)
             {
@@ -268,9 +268,9 @@ public partial class DialogService
 
         var dlg = new ContentDialog
         {
-            Title              = "📋 Patch Notes — What's New",
+            Title              = "📋 Список изменений — что нового",
             Content            = scrollViewer,
-            CloseButtonText    = "Close",
+            CloseButtonText    = "Закрыть",
             XamlRoot           = _window.Content.XamlRoot,
             Background         = Brush(ResourceKeys.SurfaceToolbarBrush),
             RequestedTheme     = ElementTheme.Dark,
@@ -321,7 +321,7 @@ public partial class DialogService
     {
         var dlg = new ContentDialog
         {
-            Title = "📢 Message from RHI",
+            Title = "📢 Сообщение от RHI",
             Content = new ScrollViewer
             {
                 Content = new TextBlock

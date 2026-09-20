@@ -80,7 +80,7 @@ public class ReShadeUpdateService : IReShadeUpdateService
         CrashReporter.Log("[ReShadeUpdateService.EnsureLatestAsync] Started");
         Directory.CreateDirectory(CacheDir);
 
-        progress?.Report(("Checking for ReShade updates...", 5));
+        progress?.Report(("Проверка обновлений ReShade...", 5));
         var latest = await CheckLatestVersionAsync();
         if (latest == null)
         {
@@ -99,7 +99,7 @@ public class ReShadeUpdateService : IReShadeUpdateService
             && new FileInfo(AuxInstallService.RsStagedPath32).Length > 1_000_000)
         {
             CrashReporter.Log($"[ReShadeUpdateService.EnsureLatestAsync] Already have v{version}");
-            progress?.Report(($"ReShade {version} is current", 100));
+            progress?.Report(($"ReShade {version} актуален", 100));
             return false;
         }
 
@@ -202,7 +202,7 @@ public class ReShadeUpdateService : IReShadeUpdateService
         }
 
         // Extract DLLs from the exe (it has an appended ZIP archive)
-        progress?.Report(("Extracting ReShade DLLs...", 80));
+        progress?.Report(("Распаковка DLL ReShade...", 80));
         try
         {
             _extractor.ExtractFile(exePath, "ReShade64.dll", AuxInstallService.RsStagedPath64);
@@ -236,7 +236,7 @@ public class ReShadeUpdateService : IReShadeUpdateService
         }
         catch (Exception ex) { CrashReporter.Log($"[ReShadeUpdateService.EnsureLatestAsync] Failed to clean up old installers — {ex.Message}"); }
 
-        progress?.Report(($"ReShade {version} ready!", 100));
+        progress?.Report(($"ReShade {version} готов!", 100));
         CrashReporter.Log($"[ReShadeUpdateService.EnsureLatestAsync] Staged v{version} successfully");
         return true;
     }

@@ -84,7 +84,7 @@ public class DofFixService : IDofFixService
         }
 
         Directory.CreateDirectory(_stagingDir);
-        progress?.Report(("Downloading DOF Fix...", 10));
+        progress?.Report(("Загрузка DOF Fix...", 10));
 
         var (version, downloadUrl, body) = await FetchLatestReleaseInfoAsync().ConfigureAwait(false);
         if (string.IsNullOrEmpty(version) || string.IsNullOrEmpty(downloadUrl))
@@ -93,7 +93,7 @@ public class DofFixService : IDofFixService
             return;
         }
 
-        progress?.Report(("Downloading DOF Fix...", 30));
+        progress?.Report(("Загрузка DOF Fix...", 30));
 
         try
         {
@@ -110,7 +110,7 @@ public class DofFixService : IDofFixService
             _crashReporter.Log($"[DofFixService.EnsureStagingAsync] Download failed ({downloadUrl}) — {ex.Message}");
         }
 
-        progress?.Report(("DOF Fix ready", 100));
+        progress?.Report(("DOF Fix готов", 100));
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public class DofFixService : IDofFixService
         await EnsureStagingAsync(progress).ConfigureAwait(false);
         if (!IsStagingReady) return false;
 
-        progress?.Report(("Deploying DOF Fix...", 70));
+        progress?.Report(("Развертывание DOF Fix...", 70));
 
         var src = Path.Combine(_stagingDir, AddonFileName);
         var dest = Path.Combine(installPath, AddonFileName);
@@ -150,7 +150,7 @@ public class DofFixService : IDofFixService
         {
             File.Copy(src, dest, overwrite: true);
             _crashReporter.Log($"[DofFixService.InstallAsync] Deployed to {installPath}");
-            progress?.Report(("DOF Fix installed!", 100));
+            progress?.Report(("DOF Fix установлен!", 100));
             return true;
         }
         catch (Exception ex)

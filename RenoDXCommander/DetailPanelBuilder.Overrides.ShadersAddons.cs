@@ -27,7 +27,7 @@ public partial class DetailPanelBuilder
         var shadersAddonsLeftColumn = new StackPanel { Spacing = 6 };
         shadersAddonsLeftColumn.Children.Add(new TextBlock
         {
-            Text = "Shaders and Addons",
+            Text = "Шейдеры и аддоны",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             Margin = new Thickness(0, 0, 0, 4),
@@ -42,7 +42,7 @@ public partial class DetailPanelBuilder
 
         var shaderLabel = new TextBlock
         {
-            Text = "Shaders",
+            Text = "Шейдеры",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
         };
@@ -65,7 +65,7 @@ public partial class DetailPanelBuilder
             IsEnabled = !card.UseNormalReShade,
         };
         ToolTipService.SetToolTip(addonModeCombo,
-            "Global = use global addon set. Select = pick per-game addons. Off = no addons for this game.");
+            "Глобально — использовать общий набор аддонов. Выбрать — задать аддоны для этой игры. Выкл — без аддонов.");
 
         // Allow re-opening the Select picker when already on Select
         addonModeCombo.DropDownClosed += (s, ev) =>
@@ -105,10 +105,10 @@ public partial class DetailPanelBuilder
                 {
                     var infoDlg = new ContentDialog
                     {
-                        Title = "Select Addons",
+                        Title = "Выбрать аддоны",
                         Content = new TextBlock
                         {
-                            Text = "Addon service is not yet wired. Complete Task 9.1 to enable addon selection.",
+                            Text = "Сервис аддонов ещё не подключен. Завершите задачу 9.1, чтобы включить выбор аддонов.",
                             FontSize = 13,
                             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
                         },
@@ -164,7 +164,7 @@ public partial class DetailPanelBuilder
 
         var addonLabel = new TextBlock
         {
-            Text = "Addons",
+            Text = "Аддоны",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
         };
@@ -178,7 +178,7 @@ public partial class DetailPanelBuilder
         // "Select ReShade Preset" button
         var presetBtn = new Button
         {
-            Content = "Select ReShade Preset",
+            Content = "Выбрать пресет ReShade",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -207,10 +207,10 @@ public partial class DetailPanelBuilder
                     {
                         var shaderDialog = new ContentDialog
                         {
-                            Title = "🔧 Install Shaders?",
-                            Content = "Also install the required shaders and textures?",
-                            PrimaryButtonText = "Yes",
-                            CloseButtonText = "No",
+                            Title = "🔧 Установить шейдеры?",
+                            Content = "Также установить необходимые шейдеры и текстуры?",
+                            PrimaryButtonText = "Да",
+                            CloseButtonText = "Нет",
                             XamlRoot = _window.Content.XamlRoot,
                             RequestedTheme = ElementTheme.Dark,
                         };
@@ -271,8 +271,8 @@ public partial class DetailPanelBuilder
                 : null); // exe scan deferred — label updates asynchronously
 
         var headerText = string.IsNullOrEmpty(effectiveExe)
-            ? "Launch executable"
-            : $"Launch executable  —  {effectiveExe}";
+            ? "Запускаемый файл"
+            : $"Запускаемый файл  —  {effectiveExe}";
         var exeHeaderText = new TextBlock
         {
             Text = headerText,
@@ -303,7 +303,7 @@ public partial class DetailPanelBuilder
                     _window.DispatcherQueue?.TryEnqueue(() =>
                     {
                         if (_window.ViewModel.SelectedGame == card)
-                            exeHeaderText.Text = $"Launch executable  —  {scannedExe}";
+                            exeHeaderText.Text = $"Запускаемый файл  —  {scannedExe}";
                     });
             });
         }
@@ -320,12 +320,12 @@ public partial class DetailPanelBuilder
         var launchExeBox = new TextBox
         {
             Text = currentLaunchExe,
-            PlaceholderText = "Auto-detect (or paste path)",
+            PlaceholderText = "Автоопределение (или вставьте путь)",
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ToolTipService.SetToolTip(launchExeBox,
-            "Override the executable used when launching this game. Leave blank for auto-detection (largest exe in install folder).");
+            "Переопределить исполняемый файл для запуска этой игры. Оставьте пустым для автоопределения (наибольший exe в папке установки).");
         launchExeBox.LostFocus += (s, ev) =>
         {
             var newPath = launchExeBox.Text.Trim();
@@ -341,13 +341,13 @@ public partial class DetailPanelBuilder
         var launchArgsBox = new TextBox
         {
             Text = currentLaunchArgs,
-            PlaceholderText = "Launch arguments",
+            PlaceholderText = "Аргументы запуска",
             FontSize = 11,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        var argsTooltip = "Command-line arguments passed to the game on launch. Saves on focus lost.";
+        var argsTooltip = "Аргументы командной строки, передаваемые игре при запуске. Сохраняются при потере фокуса.";
         if (card.Source.Equals("Epic", StringComparison.OrdinalIgnoreCase))
-            argsTooltip += "\n\nNote: Setting arguments disables Epic protocol launch. EOS-protected games may fail to launch with arguments.";
+            argsTooltip += "\n\nПримечание: задание аргументов отключает запуск по протоколу Epic. Игры с защитой EOS могут не запуститься с аргументами.";
         ToolTipService.SetToolTip(launchArgsBox, argsTooltip);
         launchArgsBox.LostFocus += (s, ev) =>
         {
@@ -375,7 +375,7 @@ public partial class DetailPanelBuilder
         launchBtnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         var browseLaunchBtn = new Button
         {
-            Content = "Browse",
+            Content = "Обзор",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -412,12 +412,12 @@ public partial class DetailPanelBuilder
             }
         };
         Grid.SetColumn(browseLaunchBtn, 0);
-        ToolTipService.SetToolTip(browseLaunchBtn, "Browse for a game executable to use as the launch target.");
+        ToolTipService.SetToolTip(browseLaunchBtn, "Выберите исполняемый файл игры для запуска.");
         launchBtnRow.Children.Add(browseLaunchBtn);
 
         var resetLaunchBtn = new Button
         {
-            Content = "Reset",
+            Content = "Сбросить",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -434,7 +434,7 @@ public partial class DetailPanelBuilder
             _window.ViewModel.SaveSettingsPublic();
         };
         Grid.SetColumn(resetLaunchBtn, 1);
-        ToolTipService.SetToolTip(resetLaunchBtn, "Clear the launch executable override and revert to auto-detection.");
+        ToolTipService.SetToolTip(resetLaunchBtn, "Сбросить переопределение запускаемого exe и вернуться к автоопределению.");
         launchBtnRow.Children.Add(resetLaunchBtn);
         Grid.SetRow(launchBtnRow, 2);
         shadersAddonsRightColumn.Children.Add(launchBtnRow);
@@ -446,7 +446,7 @@ public partial class DetailPanelBuilder
 
         var resetOverridesBtn = new Button
         {
-            Content = "Reset Overrides",
+            Content = "Сбросить переопределения",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,

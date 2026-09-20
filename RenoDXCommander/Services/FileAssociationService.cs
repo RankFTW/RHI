@@ -20,7 +20,7 @@ public static class FileAssociationService
 
             // Create ProgId: HKCU\Software\Classes\RenoDXCommander.Addon
             using var progKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{ProgId}");
-            progKey?.SetValue("", "RenoDX Addon");
+            progKey?.SetValue("", "Аддон RenoDX");
 
             // Icon
             using var iconKey = progKey?.CreateSubKey("DefaultIcon");

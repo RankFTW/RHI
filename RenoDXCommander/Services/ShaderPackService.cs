@@ -68,8 +68,8 @@ public partial class ShaderPackService : IShaderPackService
     public const string GameReShadeShaders = "reshade-shaders";
     public const string GameReShadeOriginal = "reshade-shaders-original";
     internal const string ManagedMarkerFileName = "Managed by RDXC.txt";
-    private const string ManagedMarkerContent = "This folder is managed by RenoDXCommander. Do not edit manually.\n"
-                                                  + "Deleting this file will cause RDXC to treat the folder as user-managed.";
+    private const string ManagedMarkerContent = "Эта папка управляется RenoDXCommander. Не редактируйте вручную.\n"
+                                                  + "Если удалить этот файл, RDXC будет считать папку управляемой пользователем.";
 
     // ── Pack definitions ──────────────────────────────────────────────────────────
 
@@ -113,30 +113,30 @@ public partial class ShaderPackService : IShaderPackService
     {
         new(
             Id          : "Lilium",
-            DisplayName : "Lilium HDR Shaders",
+            DisplayName : "Шейдеры Lilium HDR",
             Kind        : SourceKind.GhRelease,
             Url         : "https://api.github.com/repos/EndlesslyFlowering/ReShade_HDR_shaders/releases/latest",
             IsMinimum   : true,
             AssetExt    : ".7z",
-            Description : "HDR tone mapping and inverse tone mapping shaders",
+            Description : "Шейдеры HDR-тонмаппинга и обратного тонмаппинга",
             Category    : PackCategory.Essential
         ),
         new(
             Id          : "CrosireMaster",
-            DisplayName : "crosire reshade-shaders (master)",
+            DisplayName : "reshade-shaders от crosire (master)",
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/crosire/reshade-shaders/archive/refs/heads/master.zip",
             IsMinimum   : true,
-            Description : "Official ReShade standard effects — full master branch",
+            Description : "Официальные стандартные эффекты ReShade — полная ветка master",
             Category    : PackCategory.Recommended
         ),
         new(
             Id          : "CrosireLegacy",
-            DisplayName : "crosire reshade-shaders (legacy)",
+            DisplayName : "reshade-shaders от crosire (legacy)",
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/crosire/reshade-shaders/archive/refs/heads/legacy.zip",
             IsMinimum   : false,
-            Description : "Legacy ReShade effects (older versions removed from master)",
+            Description : "Устаревшие эффекты ReShade (старые версии, удалённые из master)",
             Category    : PackCategory.Extra
         ),
         new(
@@ -146,16 +146,16 @@ public partial class ShaderPackService : IShaderPackService
             Url         : "https://api.github.com/repos/Filoppi/PumboAutoHDR/releases/latest",
             IsMinimum   : false,
             AssetExt    : ".zip",
-            Description : "Automatic HDR conversion for SDR games",
+            Description : "Автоматическое преобразование SDR-игр в HDR",
             Category    : PackCategory.Recommended
         ),
         new(
             Id          : "SmolbbsoopShaders",
-            DisplayName : "smolbbsoop shaders",
+            DisplayName : "шейдеры smolbbsoop",
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/smolbbsoop/smolbbsoopshaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "HDR utility shaders and effects",
+            Description : "Служебные HDR-шейдеры и эффекты",
             Category    : PackCategory.Extra
         ),
         new(
@@ -164,16 +164,16 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/MaxG2D/ReshadeSimpleHDRShaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Simple HDR bloom, lens flare, and tone mapping",
+            Description : "Простой HDR-блум, блики и тонмаппинг",
             Category    : PackCategory.Recommended
         ),
         new(
             Id          : "ClshortfuseShaders",
-            DisplayName : "clshortfuse ReShade shaders",
+            DisplayName : "Шейдеры ReShade от clshortfuse",
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/clshortfuse/reshade-shaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "HDR and color correction shaders for RenoDX",
+            Description : "HDR- и цветокорректирующие шейдеры для RenoDX",
             Category    : PackCategory.Recommended
         ),
         new(
@@ -182,7 +182,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/CreepySasquatch/potatoFX/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Lightweight post-processing effects for low-end hardware",
+            Description : "Лёгкие эффекты пост-обработки для слабого железа",
             Category    : PackCategory.Extra
         ),
         new(
@@ -191,7 +191,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Zenteon/Azen/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Zenteon's casual shader collection — experimental effects",
+            Description : "Любительская коллекция шейдеров Zenteon — экспериментальные эффекты",
             Requires    : new[] { "SmolbbsoopShaders" }
         ),
         new(
@@ -200,7 +200,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/CeeJayDK/SweetFX/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Classic color grading, sharpening, and bloom effects"
+            Description : "Классическая цветокоррекция, резкость и блум"
         ),
         new(
             Id          : "OtisFX",
@@ -208,7 +208,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/FransBouma/OtisFX/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Cinematic depth of field, light rays, and camera effects"
+            Description : "Кинематографическая глубина резкости, лучи света и эффекты камеры"
         ),
         new(
             Id          : "Depth3D",
@@ -216,7 +216,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/BlueSkyDefender/Depth3D/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Stereoscopic 3D and depth-based visual effects"
+            Description : "Стереоскопическое 3D и эффекты на основе глубины"
         ),
         new(
             Id          : "DaodanShaders",
@@ -224,7 +224,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Daodan317081/reshade-shaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Comic, crosshatch, and artistic style effects"
+            Description : "Комиксные, штриховые и художественные стилизации"
         ),
         new(
             Id          : "BrussellShaders",
@@ -232,7 +232,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/brussell1/Shaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Halftone, sketch, and stylized rendering effects"
+            Description : "Полутоновые, эскизные и стилизованные эффекты рендеринга"
         ),
         new(
             Id          : "FubaxShaders",
@@ -240,7 +240,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Fubaxiusz/fubax-shaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "VR-friendly lens distortion and chromatic aberration"
+            Description : "Дисторсия и хроматическая аберрация для VR"
         ),
         new(
             Id          : "qUINT",
@@ -248,7 +248,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/martymcmodding/qUINT/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "MXAO, ADOF, lightroom, and screen-space reflections"
+            Description : "MXAO, ADOF, lightroom и отражения в экранном пространстве"
         ),
         new(
             Id          : "AlucardDH",
@@ -256,7 +256,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/AlucardDH/dh-reshade-shaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Ambient occlusion, undither, and color enhancement"
+            Description : "Ambient occlusion, устранение дизеринга и улучшение цвета"
         ),
         new(
             Id          : "WarpFX",
@@ -264,15 +264,15 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Radegast-FFXIV/Warp-FX/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Screen warp, swirl, and distortion effects"
+            Description : "Искажение, завихрение и деформация экрана"
         ),
         new(
             Id          : "Prod80",
-            DisplayName : "Color effects by prod80",
+            DisplayName : "Цветовые эффекты от prod80",
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/prod80/prod80-ReShade-Repository/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Professional color grading, curves, and tone tools"
+            Description : "Профессиональная цветокоррекция, кривые и тон-инструменты"
         ),
         new(
             Id          : "CorgiFX",
@@ -280,7 +280,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/originalnicodr/CorgiFX/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Screenshot and virtual photography tools"
+            Description : "Инструменты для скриншотов и виртуальной фотографии"
         ),
         new(
             Id          : "InsaneShaders",
@@ -288,7 +288,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/LordOfLunacy/Insane-Shaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Advanced dithering, fog removal, and edge detection"
+            Description : "Продвинутое дизеринг, удаление тумана и выделение границ"
         ),
         new(
             Id          : "CobraFX",
@@ -296,7 +296,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/LordKobra/CobraFX/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Gravity, auto-focus, and real-time ray tracing effects"
+            Description : "Гравитация, автофокус и эффекты трассировки лучей в реальном времени"
         ),
         new(
             Id          : "AstrayFX",
@@ -304,7 +304,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/BlueSkyDefender/AstrayFX/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Depth-based fog, haze, and atmospheric effects"
+            Description : "Туман, дымка и атмосферные эффекты на основе глубины"
         ),
         new(
             Id          : "CRTRoyale",
@@ -312,7 +312,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/akgunter/crt-royale-reshade/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "CRT monitor simulation with phosphor and scanline emulation"
+            Description : "Имитация ЭЛТ-монитора с эмуляцией люминофора и строк развёртки"
         ),
         new(
             Id          : "RSRetroArch",
@@ -320,7 +320,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Matsilagi/RSRetroArch/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "RetroArch shader ports — CRT, LCD, and retro filters"
+            Description : "Порты шейдеров RetroArch — фильтры CRT, LCD и ретро"
         ),
         new(
             Id          : "VRToolkit",
@@ -328,7 +328,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/retroluxfilm/reshade-vrtoolkit/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Sharpening and clarity tools optimized for VR headsets"
+            Description : "Инструменты резкости и чёткости, оптимизированные для VR-гарнитур"
         ),
         new(
             Id          : "FGFX",
@@ -336,7 +336,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/AlexTuduran/FGFX/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Film grain, multi-LUT, and cinematic post-processing"
+            Description : "Плёночное зерно, мульты-LUT и кинематографичный пост-процессинг"
         ),
         new(
             Id          : "CShade",
@@ -344,7 +344,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/papadanku/CShade/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Optical flow, motion blur, and convolution effects"
+            Description : "Оптический поток, размытие в движении и свёрточные эффекты"
         ),
         new(
             Id          : "iMMERSE",
@@ -352,7 +352,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/martymcmodding/iMMERSE/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Next-gen RTGI, MXAO, and anti-aliasing suite"
+            Description : "RTGI нового поколения, MXAO и набор сглаживания"
         ),
         new(
             Id          : "VortShaders",
@@ -360,7 +360,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/vortigern11/vort_Shaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Sharpening, color correction, and depth effects"
+            Description : "Резкость, цветокоррекция и эффекты глубины"
         ),
         new(
             Id          : "BXShade",
@@ -368,7 +368,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/liuxd17thu/BX-Shade/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Bloom, exposure, and color enhancement effects"
+            Description : "Эффекты блума, экспозиции и улучшения цвета"
         ),
         new(
             Id          : "SHADERDECK",
@@ -376,7 +376,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/IAmTreyM/SHADERDECK/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Curated collection of color and lighting effects"
+            Description : "Отобранная коллекция цветовых эффектов и освещения"
         ),
         new(
             Id          : "METEOR",
@@ -384,7 +384,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/martymcmodding/METEOR/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Advanced denoiser and image reconstruction"
+            Description : "Продвинутый шумоподавитель и реконструкция изображения"
         ),
         new(
             Id          : "AnnReShade",
@@ -392,7 +392,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/AnastasiaGals/Ann-ReShade/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Soft bloom, color grading, and ambient light presets"
+            Description : "Мягкий блум, цветокоррекция и пресеты окружающего света"
         ),
         new(
             Id          : "ZenteonFX",
@@ -400,7 +400,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Zenteon/ZenteonFX/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Global illumination, SSR, and path tracing effects"
+            Description : "Глобальное освещение, SSR и трассировка пути"
         ),
         new(
             Id          : "GShadeShaders",
@@ -408,7 +408,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Mortalitas/GShade-Shaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Large collection of community shaders from GShade"
+            Description : "Большая коллекция общественных шейдеров из GShade"
         ),
         new(
             Id          : "PthoFX",
@@ -416,7 +416,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/PthoEastCoast/Ptho-FX/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Cinematic color grading and film emulation"
+            Description : "Кинематографическая цветокоррекция и имитация плёнки"
         ),
         new(
             Id          : "Anagrama",
@@ -424,7 +424,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/nullfrctl/reshade-shaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Artistic and experimental visual effects"
+            Description : "Художественные и экспериментальные визуальные эффекты"
         ),
         new(
             Id          : "BarbatosShaders",
@@ -432,7 +432,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/BarbatosBachiko/Reshade-Shaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Ambient occlusion, bloom, and color effects"
+            Description : "Ambient occlusion, блум и цветовые эффекты"
         ),
         new(
             Id          : "BFBFX",
@@ -440,7 +440,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/yplebedev/BFBFX/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Stylized and artistic post-processing effects"
+            Description : "Стилизованные и художественные эффекты пост-обработки"
         ),
         new(
             Id          : "Rendepth",
@@ -448,7 +448,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/outmode/rendepth-reshade/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Depth-based 3D rendering and stereo effects"
+            Description : "Объёмный 3D-рендеринг на основе глубины и стереоэффекты"
         ),
         new(
             Id          : "CropAndResize",
@@ -456,7 +456,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/P0NYSLAYSTATION/Scaling-Shaders/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Screen cropping, scaling, and aspect ratio tools"
+            Description : "Обрезка экрана, масштабирование и инструменты пропорций"
         ),
         new(
             Id          : "FXShaders",
@@ -464,7 +464,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/luluco250/FXShaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Bloom, grain, dithering, and utility shader library"
+            Description : "Блум, зерно, дизеринг и библиотека служебных шейдеров"
         ),
         new(
             Id          : "LumeniteFX",
@@ -472,7 +472,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/umar-afzaal/LumeniteFX/archive/refs/heads/mainline.zip",
             IsMinimum   : false,
-            Description : "Lighting, bloom, and atmospheric glow effects"
+            Description : "Освещение, блум и атмосферное свечение"
         ),
         new(
             Id          : "NNShaders",
@@ -480,7 +480,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Sarenya/NN-Shaders/archive/refs/heads/master.zip",
             IsMinimum   : false,
-            Description : "Neural network-based image processing shaders"
+            Description : "Шейдеры обработки изображений на нейросетях"
         ),
         new(
             Id          : "QdOledAplFixer",
@@ -488,7 +488,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/mspeedo/QD-OLED-APL-FIXER/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "HDR brightness boost to compensate for QD-OLED ABL dimming"
+            Description : "Повышение яркости HDR для компенсации затемнения ABL на QD-OLED"
         ),
         new(
             Id          : "GlamaryeFX",
@@ -496,7 +496,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/rj200/Glamarye_Fast_Effects_for_ReShade/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "Lightweight all-in-one: sharpening, AO, indirect lighting, and color correction in a single pass"
+            Description : "Лёгкий универсальный набор: резкость, AO, непрямое освещение и цветокоррекция за один проход"
         ),
         new(
             Id          : "LumaBoost",
@@ -504,15 +504,15 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/Valadore/LumaBoost/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "OLED ABL compensation — dynamically lifts midtones to counteract auto brightness limiting"
+            Description : "Компенсация ABL для OLED — динамически поднимает полутона против автоограничения яркости"
         ),
         new(
             Id          : "DLSS5Feeder",
-            DisplayName : "DLSS5 Feeder shader",
+            DisplayName : "Шейдер DLSS5 Feeder",
             Kind        : SourceKind.DirectUrl,
             Url         : "",   // no URL — seeded from the Feeder addon zip by RHI, never downloaded
             IsMinimum   : false,
-            Description : "DLSS5_Feed.fx — seeded from the Feeder addon zip by RHI. Not shown in the shader picker.",
+            Description : "DLSS5_Feed.fx — распаковывается RHI из zip аддона Feeder. В списке шейдеров не показывается.",
             Category    : PackCategory.Extra
         ),
         new(
@@ -521,7 +521,7 @@ public partial class ShaderPackService : IShaderPackService
             Kind        : SourceKind.DirectUrl,
             Url         : "https://github.com/clshortfuse/renofx/archive/refs/heads/main.zip",
             IsMinimum   : false,
-            Description : "SDR to HDR conversion, tone mapping, and color grading for games without a RenoDX mod",
+            Description : "Преобразование SDR в HDR, тонмаппинг и цветокоррекция для игр без мода RenoDX",
             Category    : PackCategory.Recommended
         ),
     };

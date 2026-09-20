@@ -27,10 +27,10 @@ public class MassDeployHandler
         var eligible = _window.ViewModel.AllCards.Where(c => c.RsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
         var confirmDialog = new ContentDialog
         {
-            Title = "Confirm Mass Deployment",
-            Content = $"This will deploy ReShade.ini to {eligible.Count} game(s) with ReShade installed.\n\nCustom hotkey and screenshot path settings are preserved.\n\nContinue?",
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
+            Title = "Подтвердить массовое развертывание",
+            Content = $"ReShade.ini будет развернут в игры ({eligible.Count}) с установленным ReShade.\n\nПользовательские горячие клавиши и путь к скриншотам сохранятся.\n\nПродолжить?",
+            PrimaryButtonText = "Развернуть",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -64,10 +64,10 @@ public class MassDeployHandler
         var eligible = _window.ViewModel.AllCards.Where(c => c.UlStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
         var confirmDialog = new ContentDialog
         {
-            Title = "Confirm Mass Deployment",
-            Content = $"This will deploy relimiter.ini to {eligible.Count} game(s) with ReLimiter installed.\n\nContinue?",
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
+            Title = "Подтвердить массовое развертывание",
+            Content = $"relimiter.ini будет развернут в игры ({eligible.Count}) с установленным ReLimiter.\n\nПродолжить?",
+            PrimaryButtonText = "Развернуть",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -95,10 +95,10 @@ public class MassDeployHandler
         var eligible = _window.ViewModel.AllCards.Where(c => c.DcStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
         var confirmDialog = new ContentDialog
         {
-            Title = "Confirm Mass Deployment",
-            Content = $"This will deploy DisplayCommander.ini to {eligible.Count} game(s) with Display Commander installed.\n\nContinue?",
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
+            Title = "Подтвердить массовое развертывание",
+            Content = $"DisplayCommander.ini будет развернут в игры ({eligible.Count}) с установленным Display Commander.\n\nПродолжить?",
+            PrimaryButtonText = "Развернуть",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -135,10 +135,10 @@ public class MassDeployHandler
         var eligible = _window.ViewModel.AllCards.Where(c => c.OsStatus == GameStatus.Installed && !string.IsNullOrEmpty(c.InstallPath)).ToList();
         var confirmDialog = new ContentDialog
         {
-            Title = "Confirm Mass Deployment",
-            Content = $"This will deploy OptiScaler.ini to {eligible.Count} game(s) with OptiScaler installed.\n\nContinue?",
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
+            Title = "Подтвердить массовое развертывание",
+            Content = $"OptiScaler.ini будет развернут в игры ({eligible.Count}) с установленным OptiScaler.\n\nПродолжить?",
+            PrimaryButtonText = "Развернуть",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -163,11 +163,11 @@ public class MassDeployHandler
     private async Task ShowDeployResult(string iniName, int count)
     {
         var message = count > 0
-            ? $"✅ Deployed {iniName} to {count} game(s)."
-            : $"No games found with the corresponding component installed.";
+            ? $"✅ Развернуто {iniName} в игры ({count})."
+            : $"Игр с установленным соответствующим компонентом не найдено.";
         var dialog = new ContentDialog
         {
-            Title = "Mass INI Deployment",
+            Title = "Массовое развертывание INI",
             Content = message,
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
@@ -192,8 +192,8 @@ public class MassDeployHandler
         {
             var noGamesDialog = new ContentDialog
             {
-                Title = "No Games Available",
-                Content = "No games with ReShade installed were found. Install ReShade on at least one game first.",
+                Title = "Нет доступных игр",
+                Content = "Игр с установленным ReShade не найдено. Сначала установите ReShade хотя бы в одну игру.",
                 CloseButtonText = "OK",
                 XamlRoot = xamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -208,14 +208,14 @@ public class MassDeployHandler
         // Select All / Deselect All buttons
         var selectAllBtn = new Button
         {
-            Content = "Select All",
+            Content = "Выбрать всё",
             FontSize = 11,
             Padding = new Thickness(8, 4, 8, 4),
             Margin = new Thickness(0, 0, 8, 8),
         };
         var deselectAllBtn = new Button
         {
-            Content = "Deselect All",
+            Content = "Снять всё",
             FontSize = 11,
             Padding = new Thickness(8, 4, 8, 4),
             Margin = new Thickness(0, 0, 0, 8),
@@ -253,9 +253,9 @@ public class MassDeployHandler
         {
             Title = $"Select Games — {string.Join(", ", selectedPresets)}",
             Content = gameScrollViewer,
-            PrimaryButtonText = "Deploy",
+            PrimaryButtonText = "Развернуть",
             IsPrimaryButtonEnabled = false,
-            CloseButtonText = "Cancel",
+            CloseButtonText = "Отмена",
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
             MinWidth = 500,
@@ -297,10 +297,10 @@ public class MassDeployHandler
         // ── 4. Offer shader installation ─────────────────────────────────────
         var shaderDialog = new ContentDialog
         {
-            Title = "🔧 Install Shaders?",
-            Content = $"Presets deployed to {selectedGames.Count} game(s).\n\nAlso install the required shader packs for these games?",
-            PrimaryButtonText = "Yes",
-            CloseButtonText = "No",
+            Title = "🔧 Установить шейдеры?",
+            Content = $"Пресеты развернуты в игры ({selectedGames.Count}).\n\nТакже установить необходимые наборы шейдеров для этих игр?",
+            PrimaryButtonText = "Да",
+            CloseButtonText = "Нет",
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };

@@ -36,7 +36,7 @@ public partial class DetailPanelBuilder
         };
         var mgmtTitle = new TextBlock
         {
-            Text       = "Management",
+            Text       = "Управление",
             FontSize   = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
@@ -80,7 +80,7 @@ public partial class DetailPanelBuilder
 
         var changeFolderBtn = new Button
         {
-            Content = "Change install folder",
+            Content = "Изменить папку установки",
             FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -92,7 +92,7 @@ public partial class DetailPanelBuilder
             Tag = card,
         };
         changeFolderBtn.Click += (s, ev) => _window.BrowseFolder_Click(s, ev);
-        ToolTipService.SetToolTip(changeFolderBtn, "Change the install folder for this game. Use when auto-detection picked the wrong directory.");
+        ToolTipService.SetToolTip(changeFolderBtn, "Изменить папку установки для этой игры. Пригодится, если автоопределение выбрало неверный каталог.");
         Grid.SetColumn(changeFolderBtn, 0);
         mgmtRow.Children.Add(changeFolderBtn);
 
@@ -102,7 +102,7 @@ public partial class DetailPanelBuilder
 
         var removeGameBtn = new Button
         {
-            Content = "Reset / Remove game",
+            Content = "Сбросить / удалить игру",
             FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -114,7 +114,7 @@ public partial class DetailPanelBuilder
             Tag = card,
         };
         removeGameBtn.Click += (s, ev) => _window.RemoveManualGame_Click(s, ev);
-        ToolTipService.SetToolTip(removeGameBtn, "Reset the install folder to auto-detected, or remove a manually added game entirely.");
+        ToolTipService.SetToolTip(removeGameBtn, "Вернуть папку установки к автоопределённой или полностью удалить вручную добавленную игру.");
         Grid.SetColumn(removeGameBtn, 2);
         mgmtRow.Children.Add(removeGameBtn);
 
@@ -124,7 +124,7 @@ public partial class DetailPanelBuilder
 
         var mgmtResetOverridesBtn = new Button
         {
-            Content = "Reset Overrides",
+            Content = "Сбросить переопределения",
             FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -140,7 +140,7 @@ public partial class DetailPanelBuilder
             ctx.ResetAction?.Invoke();
         };
         Grid.SetColumn(mgmtResetOverridesBtn, 4);
-        ToolTipService.SetToolTip(mgmtResetOverridesBtn, "Reset all per-game overrides back to defaults (DLL names, channels, shaders, addons, launch settings, update inclusion).");
+        ToolTipService.SetToolTip(mgmtResetOverridesBtn, "Сбросить все переопределения игр к значениям по умолчанию (имена DLL, каналы, шейдеры, аддоны, параметры запуска, обновления).");
         mgmtRow.Children.Add(mgmtResetOverridesBtn);
 
         var sep3 = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
@@ -149,7 +149,7 @@ public partial class DetailPanelBuilder
 
         var reportBtn = new Button
         {
-            Content = "Copy Report",
+            Content = "Скопировать отчёт",
             FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -167,7 +167,7 @@ public partial class DetailPanelBuilder
                 await GameReportEncoder.ShowAndCopyAsync(_window.Content.XamlRoot, targetCard, _window.ViewModel);
         };
         Grid.SetColumn(reportBtn, 6);
-        ToolTipService.SetToolTip(reportBtn, "Copy a diagnostic report for this game to the clipboard. Useful for Discord or GitHub support.");
+        ToolTipService.SetToolTip(reportBtn, "Скопировать диагностический отчёт по этой игре в буфер обмена. Пригодится для поддержки в Discord или на GitHub.");
         mgmtRow.Children.Add(reportBtn);
 
         mgmtBody.Children.Add(mgmtRow);

@@ -198,10 +198,10 @@ public class InstallEventHandler
             {
                 var warningDialog = new ContentDialog
                 {
-                    Title = "⚠ OptiScaler Setup",
-                    Content = "Before installing OptiScaler, please configure your GPU type and DLSS input (AMD/Intel only) settings in the OptiScaler Settings section on the Settings page.\n\nThis ensures OptiScaler is configured correctly for your hardware.",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
+                    Title = "⚠ Настройка OptiScaler",
+                    Content = "Перед установкой OptiScaler настройте тип видеокарты и DLSS-вход (только для AMD/Intel) в разделе «Настройки OptiScaler» на странице настроек.\n\nТак OptiScaler будет корректно настроен под ваше железо.",
+                    PrimaryButtonText = "Продолжить",
+                    CloseButtonText = "Отмена",
                     XamlRoot = xamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
@@ -220,7 +220,7 @@ public class InstallEventHandler
         var osVariant = ViewModel.GetOsVariant(card.GameName, card.Source ?? "");
 
         card.OsIsInstalling = true;
-        card.OsActionMessage = "Installing OptiScaler...";
+        card.OsActionMessage = "Установка OptiScaler...";
         card.OsProgress = 0;
         try
         {
@@ -242,7 +242,7 @@ public class InstallEventHandler
             {
                 try
                 {
-                    card.OsActionMessage = "Installing PD-Upscaler REFramework...";
+                    card.OsActionMessage = "Установка PD-Upscaler REFramework...";
                     await _reFrameworkService.InstallPdUpscalerAsync(
                         card.GameName, card.InstallPath, pdArtifact,
                         new Progress<(string message, double percent)>(p =>
@@ -260,7 +260,7 @@ public class InstallEventHandler
                 }
             }
 
-            card.OsActionMessage = "✅ OptiScaler installed!";
+            card.OsActionMessage = "✅ OptiScaler установлен!";
             card.OsStatus = GameStatus.Installed;
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
@@ -303,7 +303,7 @@ public class InstallEventHandler
         }
         catch (Exception ex)
         {
-            card.OsActionMessage = $"❌ Install failed: {ex.Message}";
+            card.OsActionMessage = $"❌ Не удалось установить: {ex.Message}";
         }
         finally
         {
@@ -371,14 +371,14 @@ public class InstallEventHandler
             }
             catch (Exception cleanEx) { CrashReporter.Log($"[InstallEventHandler.UninstallOptiScaler] Settings cleanup failed — {cleanEx.Message}"); }
 
-            card.OsActionMessage = "✖ OptiScaler removed.";
+            card.OsActionMessage = "✖ OptiScaler удалён.";
             card.OsStatus = GameStatus.Available;
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }
         catch (Exception ex)
         {
-            card.OsActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.OsActionMessage = $"❌ Не удалось удалить: {ex.Message}";
         }
 
         _window.DispatcherQueue?.TryEnqueue(() =>
@@ -514,7 +514,7 @@ public class InstallEventHandler
         ViewModel.ToggleUeExtended(card);
 
         // Directly update the badge text based on the new state
-        string newLabel = card.UseUeExtended ? "UE Extended" : "Generic UE";
+        string newLabel = card.UseUeExtended ? "UE Extended" : "Универсальный UE";
         _window.DetailGenericText.Text = newLabel;
 
         // Update the UE button styling
@@ -533,7 +533,7 @@ public class InstallEventHandler
 
         // Update tooltip
         ToolTipService.SetToolTip(_window.DetailUeExtendedBtn,
-            card.UseUeExtended ? "Disable UE Extended" : "Enable UE Extended");
+            card.UseUeExtended ? "Отключить UE Extended" : "Включить UE Extended");
 
         // Show inline message or warning dialog
         if (card.UseUeExtended)
@@ -577,16 +577,16 @@ public class InstallEventHandler
 
         var dontShowCheck = new CheckBox
         {
-            Content = "Don't show this again",
+            Content = "Больше не показывать",
             FontSize = 12,
             Margin = new Thickness(0, 12, 0, 0),
         };
 
         var messageText = new TextBlock
         {
-            Text = "Heads up — you're installing both RenoDX and Luma on this game.\n\n" +
-                   "There's no guarantee they'll work well together. If you're using RenoDX for HDR and just want Luma for DLAA, make sure to disable HDR in the Luma mod settings to avoid conflicts.\n\n" +
-                   "If something doesn't look right, uninstalling one of them is the first thing to try. We can't offer support for issues that come from running both together.",
+            Text = "Внимание — вы устанавливаете на эту игру и RenoDX, и Luma.\n\n" +
+                   "Гарантии, что они будут хорошо работать вместе, нет. Если используете RenoDX для HDR, а Luma — только ради DLAA, обязательно отключите HDR в настройках мода Luma, чтобы избежать конфликтов.\n\n" +
+                   "Если что-то работает не так, первым делом попробуйте удалить один из них. Мы не можем поддерживать проблемы от одновременного использования обоих.",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 13,
             LineHeight = 22,
@@ -599,10 +599,10 @@ public class InstallEventHandler
 
         var dialog = new ContentDialog
         {
-            Title = "Installing both RenoDX and Luma",
+            Title = "Установка RenoDX и Luma вместе",
             Content = content,
-            PrimaryButtonText = "Continue",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Продолжить",
+            CloseButtonText = "Отмена",
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,

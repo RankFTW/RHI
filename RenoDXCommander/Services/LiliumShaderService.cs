@@ -62,7 +62,7 @@ public class LiliumShaderService : ILiliumShaderService
     {
         try
         {
-            progress?.Report("Checking Lilium HDR shaders...");
+            progress?.Report("Проверка шейдеров Lilium HDR...");
 
             // ── 1. Fetch latest release metadata ─────────────────────────────────
             string? json;
@@ -117,11 +117,11 @@ public class LiliumShaderService : ILiliumShaderService
                 && ShadersAvailable)
             {
                 CrashReporter.Log($"[LiliumShaderService.EnsureLatestAsync] Already up to date ({assetName})");
-                progress?.Report($"Lilium shaders up to date ({assetName})");
+                progress?.Report($"Шейдеры Lilium актуальны ({assetName})");
                 return;
             }
 
-            progress?.Report($"Downloading Lilium shaders ({assetName})...");
+            progress?.Report($"Загрузка шейдеров Lilium ({assetName})...");
             CrashReporter.Log($"[LiliumShaderService.EnsureLatestAsync] Downloading {assetName} from {downloadUrl}");
 
             // ── 4. Download the .7z into the downloads cache ─────────────────────
@@ -151,7 +151,7 @@ public class LiliumShaderService : ILiliumShaderService
                         await file.WriteAsync(buf.AsMemory(0, read));
                         downloaded += read;
                         if (total > 0)
-                            progress?.Report($"Downloading Lilium shaders... {downloaded / 1024} KB / {total / 1024} KB");
+                            progress?.Report($"Загрузка шейдеров Lilium... {downloaded / 1024} КБ / {total / 1024} КБ");
                     }
                 }
 
@@ -166,7 +166,7 @@ public class LiliumShaderService : ILiliumShaderService
             }
 
             // ── 5. Extract Shaders/ and Textures/ from the .7z ──────────────────
-            progress?.Report("Extracting Lilium shaders...");
+            progress?.Report("Распаковка шейдеров Lilium...");
             try
             {
                 Directory.CreateDirectory(ShadersDir);
@@ -230,7 +230,7 @@ public class LiliumShaderService : ILiliumShaderService
 
             // ── 6. Store the version so we skip next time ─────────────────────────
             SaveStoredVersion(assetName);
-            progress?.Report($"Lilium shaders updated ({assetName})");
+            progress?.Report($"Шейдеры Lilium обновлены ({assetName})");
             CrashReporter.Log($"[LiliumShaderService.EnsureLatestAsync] Done. Version saved as {assetName}");
         }
         catch (Exception ex)

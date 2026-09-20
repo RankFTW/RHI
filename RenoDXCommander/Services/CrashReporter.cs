@@ -57,7 +57,7 @@ public static class CrashReporter
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             SessionLogPath = Path.Combine(LogDir, $"session_{timestamp}.txt");
             File.WriteAllText(SessionLogPath,
-                $"═══ RHI v{AppVersion} — Session started {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
+                $"═══ RHI v{AppVersion} — сеанс начат {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
                 Encoding.UTF8);
         }
         catch { SessionLogPath = Path.Combine(LogDir, "session_fallback.txt"); }
@@ -74,7 +74,7 @@ public static class CrashReporter
         {
             _verboseLogging = value;
             if (value)
-                Log("Verbose logging enabled");
+                Log("Подробное журналирование включено");
         }
     }
 
@@ -145,14 +145,14 @@ public static class CrashReporter
             var ex = e.ExceptionObject as Exception;
             WriteCrashReport("AppDomain.UnhandledException", ex,
                 isTerminating: e.IsTerminating,
-                note: e.IsTerminating ? "Process is terminating." : null);
+                note: e.IsTerminating ? "Процесс завершается." : null);
         };
 
         // 2. Unobserved Task exceptions (async void, fire-and-forget Tasks)
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
             WriteCrashReport("TaskScheduler.UnobservedTaskException", e.Exception,
-                note: "Task exception was unobserved. Marking as observed to prevent crash.");
+                note: "Необработанное исключение задачи. Помечаю как обработанное, чтобы избежать сбоя.");
             e.SetObserved(); // Prevent the process from being killed
         };
 
@@ -164,7 +164,7 @@ public static class CrashReporter
             e.Handled = true; // Try to keep the app alive
         };
 
-        Log("CrashReporter registered.");
+        Log("Отчётчик сбоев зарегистрирован.");
     }
 
     // ── Report writer ─────────────────────────────────────────────────────────────
@@ -192,18 +192,18 @@ public static class CrashReporter
 
             // ── Header ──────────────────────────────────────────────────────────
             sb.AppendLine("═══════════════════════════════════════════════════════════════");
-            sb.AppendLine("  RenoDX Mod Manager — Error / Crash Report");
+            sb.AppendLine("  RenoDX Mod Manager — отчёт об ошибке / сбое");
             sb.AppendLine("═══════════════════════════════════════════════════════════════");
             sb.AppendLine();
 
             // ── Basic info ───────────────────────────────────────────────────────
-            sb.AppendLine($"Timestamp    : {timestamp:yyyy-MM-dd HH:mm:ss} (local)");
-            sb.AppendLine($"App version  : {AppVersion}");
+            sb.AppendLine($"Время: {timestamp:yyyy-MM-dd HH:mm:ss} (местное)");
+            sb.AppendLine($"Версия приложения: {AppVersion}");
             sb.AppendLine($"Source       : {source}");
             sb.AppendLine($"Terminating  : {isTerminating}");
             sb.AppendLine($"OS           : {Environment.OSVersion}");
             sb.AppendLine($"Architecture : {RuntimeInformation()}");
-            sb.AppendLine($".NET runtime : {Environment.Version}");
+            sb.AppendLine($"Среда .NET: {Environment.Version}");
             sb.AppendLine($"Machine      : {Environment.MachineName}");
 
             if (note != null)
@@ -215,12 +215,12 @@ public static class CrashReporter
             // ── Exception chain ──────────────────────────────────────────────────
             sb.AppendLine();
             sb.AppendLine("───────────────────────────────────────────────────────────────");
-            sb.AppendLine("  Exception Details");
+            sb.AppendLine("  Подробности исключения");
             sb.AppendLine("───────────────────────────────────────────────────────────────");
 
             if (ex == null)
             {
-                sb.AppendLine("(No exception object available)");
+                sb.AppendLine("(Объект исключения недоступен)");
             }
             else
             {
@@ -230,13 +230,13 @@ public static class CrashReporter
             // ── Breadcrumb trail ─────────────────────────────────────────────────
             sb.AppendLine();
             sb.AppendLine("───────────────────────────────────────────────────────────────");
-            sb.AppendLine("  Recent Activity Log (newest last)");
+            sb.AppendLine("  Журнал недавних событий (новые — внизу)");
             sb.AppendLine("───────────────────────────────────────────────────────────────");
 
             var crumbs = _breadcrumbs.ToArray();
             if (crumbs.Length == 0)
             {
-                sb.AppendLine("(no breadcrumbs recorded)");
+                sb.AppendLine("(трассировка не записана)");
             }
             else
             {
@@ -247,7 +247,7 @@ public static class CrashReporter
             // ── Loaded assemblies (helps detect version conflicts) ───────────────
             sb.AppendLine();
             sb.AppendLine("───────────────────────────────────────────────────────────────");
-            sb.AppendLine("  Loaded Assemblies");
+            sb.AppendLine("  Загруженные сборки");
             sb.AppendLine("───────────────────────────────────────────────────────────────");
             try
             {
@@ -258,17 +258,17 @@ public static class CrashReporter
                     sb.AppendLine($"  {name.Name,-50} {name.Version}");
                 }
             }
-            catch { sb.AppendLine("(could not enumerate assemblies)"); }
+            catch { sb.AppendLine("(не удалось перечислить сборки)"); }
 
             sb.AppendLine();
             sb.AppendLine("═══════════════════════════════════════════════════════════════");
-            sb.AppendLine($"  End of report — {fileName}");
+            sb.AppendLine($"  Конец отчёта — {fileName}");
             sb.AppendLine("═══════════════════════════════════════════════════════════════");
 
             File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
 
             // Also log that we wrote the report so the next crash knows about this one
-            Log($"Crash report written: {fileName}");
+            Log($"Отчёт о сбое записан: {fileName}");
         }
         catch
         {
@@ -281,7 +281,7 @@ public static class CrashReporter
     private static void AppendException(StringBuilder sb, Exception ex, int depth)
     {
         var indent = new string(' ', depth * 4);
-        var label  = depth == 0 ? "Exception" : "Inner Exception";
+        var label  = depth == 0 ? "Exception" : "Внутреннее исключение";
 
         sb.AppendLine($"{indent}{label}  : {ex.GetType().FullName}");
         sb.AppendLine($"{indent}Message   : {ex.Message}");
@@ -291,14 +291,14 @@ public static class CrashReporter
 
         if (ex.StackTrace != null)
         {
-            sb.AppendLine($"{indent}Stack trace:");
+            sb.AppendLine($"{indent}Трассировка стека:");
             foreach (var line in ex.StackTrace.Split('\n'))
                 sb.AppendLine($"{indent}  {line.TrimEnd()}");
         }
 
         if (ex is AggregateException agg)
         {
-            sb.AppendLine($"{indent}Aggregate inner exceptions ({agg.InnerExceptions.Count}):");
+            sb.AppendLine($"{indent}Вложенные исключения ({agg.InnerExceptions.Count}):");
             for (int i = 0; i < agg.InnerExceptions.Count; i++)
             {
                 sb.AppendLine($"{indent}  [{i}]");

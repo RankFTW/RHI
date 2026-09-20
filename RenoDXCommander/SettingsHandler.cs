@@ -300,7 +300,7 @@ public class SettingsHandler
 
         // Global ReBAR Enable
         var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
-        _window.GlobalReBarEnableCombo.ItemsSource = new[] { "Auto (Default)", "Off", "On" };
+        _window.GlobalReBarEnableCombo.ItemsSource = new[] { "Авто (по умолчанию)", "Off", "On" };
         var globalReBarMode = snapshot.ReBarEnableMode ?? 1; // 0=Off, 1=Auto, 2=On
         _window.GlobalReBarEnableCombo.SelectedIndex = globalReBarMode == 0 ? 1 : globalReBarMode == 2 ? 2 : 0;
         _window.GlobalReBarEnableCombo.IsEnabled = isAdminForReBar;
@@ -466,12 +466,12 @@ public class SettingsHandler
 
         // Show confirmation dialog
         var appliedSettings = string.IsNullOrEmpty(screenshotPath)
-            ? "ReShade hotkeys and effect list style"
-            : "Screenshot path, ReShade hotkeys, and effect list style";
+            ? "Горячие клавиши ReShade и стиль списка эффектов"
+            : "Путь к скриншотам, горячие клавиши ReShade и стиль списка эффектов";
         var dialog = new ContentDialog
         {
-            Title = "Screenshots & Hotkeys",
-            Content = $"{appliedSettings} applied to {updatedCount} game{(updatedCount == 1 ? "" : "s")}.",
+            Title = "Скриншоты и горячие клавиши",
+            Content = $"{appliedSettings} применено к играм: {updatedCount}{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -522,8 +522,8 @@ public class SettingsHandler
         {
             var emptyDialog = new ContentDialog
             {
-                Title = "Peak Nits",
-                Content = "Peak nits is not configured or is disabled.",
+                Title = "Пиковая яркость",
+                Content = "Пиковая яркость не настроена или отключена.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -562,8 +562,8 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "Peak Nits",
-            Content = $"Applied peak nits ({peakNits}) to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Title = "Пиковая яркость",
+            Content = $"Пиковая яркость ({peakNits}) применена к файлам reshade.ini ({updatedCount}){(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -581,7 +581,7 @@ public class SettingsHandler
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logsDir) { UseShellExecute = true });
     }
 
-    private const string AdminTaskName = "RHI Admin Mode";
+    private const string AdminTaskName = "Режим администратора RHI";
     private bool _adminComboInit = true;
 
     /// <summary>
@@ -612,8 +612,8 @@ public class SettingsHandler
         {
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Admin Mode",
-                Content = "UAC is disabled on this system — RHI always runs as administrator.",
+                Title = "Режим администратора",
+                Content = "UAC в этой системе отключён — RHI всегда работает от администратора.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -634,10 +634,10 @@ public class SettingsHandler
             // Show restart notice
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Admin Mode",
+                Title = "Режим администратора",
                 Content = enable
-                    ? "Admin Mode enabled. Restart RHI for it to take effect."
-                    : "Admin Mode disabled. RHI will launch normally on next start.",
+                    ? "Режим администратора включён. Перезапустите RHI, чтобы он вступил в силу."
+                    : "Режим администратора отключён. RHI запустится в обычном режиме в следующий раз.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -792,8 +792,8 @@ public class SettingsHandler
             {
                 await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "Game Data Copied",
-                    Content = $"Data for {ViewModel.AllCards.Count} games has been gathered and copied to your clipboard. Paste directly into Discord to share.",
+                    Title = "Данные об игре скопированы",
+                    Content = $"Данные по играм ({ViewModel.AllCards.Count}) собраны и скопированы в буфер обмена. Вставьте прямо в Discord, чтобы поделиться.",
                     CloseButtonText = "OK",
                     XamlRoot = fe.XamlRoot,
                     RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
@@ -957,8 +957,8 @@ public class SettingsHandler
             {
                 await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "Logs Copied",
-                    Content = "All session logs have been archived and copied to your clipboard. Paste directly into Discord to share.",
+                    Title = "Журналы скопированы",
+                    Content = "Все журналы сеанса заархивированы и скопированы в буфер обмена. Вставьте их прямо в Discord, чтобы поделиться.",
                     CloseButtonText = "OK",
                     XamlRoot = fe.XamlRoot,
                 });
@@ -975,10 +975,10 @@ public class SettingsHandler
         // Show warning dialog
         var warningDialog = new ContentDialog
         {
-            Title = "⚠ Purge Staging Files",
-            Content = "This will delete cached DLSS, Streamline, and component staging files to free disk space.\n\nShaders, installed RenoDX addons, and version metadata are preserved.\n\nThese files will be re-downloaded automatically when needed.\n\nContinue?",
-            PrimaryButtonText = "Purge",
-            CloseButtonText = "Cancel",
+            Title = "⚠ Очистить кеш загрузок",
+            Content = "Будут удалены кешированные файлы DLSS, Streamline и компонентов, чтобы освободить место.\n\nШейдеры, установленные ",
+            PrimaryButtonText = "Очистить",
+            CloseButtonText = "Отмена",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -1090,15 +1090,15 @@ public class SettingsHandler
                 >= 1_073_741_824 => $"{bytesFreed / 1_073_741_824.0:F1} GB",
                 >= 1_048_576 => $"{bytesFreed / 1_048_576.0:F1} MB",
                 >= 1024 => $"{bytesFreed / 1024.0:F1} KB",
-                _ => $"{bytesFreed} bytes"
+                _ => $"{bytesFreed} байт"
             };
 
             CrashReporter.Log($"[SettingsHandler.PurgeCachedFiles_Click] Purged {filesDeleted} files, freed {sizeStr}");
 
             var resultDialog = new ContentDialog
             {
-                Title = "✅ Cache Purged",
-                Content = $"Deleted {filesDeleted} files, freed {sizeStr} of disk space.",
+                Title = "✅ Кеш очищен",
+                Content = $"Удалено файлов: {filesDeleted}, освобождено места: {sizeStr}.",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -1110,8 +1110,8 @@ public class SettingsHandler
             CrashReporter.Log($"[SettingsHandler.PurgeCachedFiles_Click] Failed: {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Purge Failed",
-                Content = $"An error occurred: {ex.Message}",
+                Title = "❌ Не удалось очистить",
+                Content = $"Произошла ошибка: {ex.Message}",
                 CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -1223,8 +1223,8 @@ public class SettingsHandler
         // Req 4.5: Show confirmation dialog with count of updated files
         var dialog = new ContentDialog
         {
-            Title = "ReShade UI Hotkey",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Title = "Горячая клавиша интерфейса ReShade",
+            Content = $"Обновлено файлов reshade.ini: {updatedCount}{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -1278,8 +1278,8 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "ReShade Hotkeys",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Title = "Горячие клавиши ReShade",
+            Content = $"Обновлено файлов reshade.ini: {updatedCount}{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -1371,8 +1371,8 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "ReShade Screenshot Hotkey",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Title = "Горячая клавиша скриншотов ReShade",
+            Content = $"Обновлено файлов reshade.ini: {updatedCount}{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -1493,8 +1493,8 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "ReLimiter Settings",
-            Content = $"Updated {updatedCount} relimiter.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Title = "Настройки ReLimiter",
+            Content = $"Обновлено файлов relimiter.ini: {updatedCount}{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -1594,7 +1594,7 @@ public class SettingsHandler
             var panel = new StackPanel { Spacing = 8 };
             panel.Children.Add(new TextBlock
             {
-                Text = "Enter a custom FPS value (20-1000):",
+                Text = "Введите своё значение FPS (20–1000):",
                 FontSize = 12,
             });
             var inputBox = new TextBox
@@ -1606,10 +1606,10 @@ public class SettingsHandler
 
             var dialog = new ContentDialog
             {
-                Title = "Custom Target FPS",
+                Title = "Свой целевой FPS",
                 Content = panel,
-                PrimaryButtonText = "Set",
-                CloseButtonText = "Cancel",
+                PrimaryButtonText = "Задать",
+                CloseButtonText = "Отмена",
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
             };
@@ -1682,7 +1682,7 @@ public class SettingsHandler
         var refCheck = new CheckBox { Content = "RE Framework", IsChecked = !settings.GlobalSkipRefUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
 
         var checkPanel = new StackPanel { Spacing = 0 };
-        checkPanel.Children.Add(new TextBlock { Text = "Include components in Update All globally:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
+        checkPanel.Children.Add(new TextBlock { Text = "Какие компоненты включать в «Обновить всё» глобально:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
         checkPanel.Children.Add(rsCheck);
         checkPanel.Children.Add(rdxCheck);
         checkPanel.Children.Add(ulCheck);
@@ -1692,10 +1692,10 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "Global Update Inclusion",
+            Title = "Включение в глобальное обновление",
             Content = checkPanel,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Сохранить",
+            CloseButtonText = "Отмена",
             XamlRoot = xamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
@@ -1824,8 +1824,8 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "OptiScaler Hotkey",
-            Content = $"Updated {updatedCount} OptiScaler.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Title = "Горячая клавиша OptiScaler",
+            Content = $"Обновлено файлов OptiScaler.ini: {updatedCount}{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -1896,11 +1896,11 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "DXVK Variant Changed",
-            Content = $"DXVK variant changed to {variantLabel}."
+            Title = "Изменён вариант DXVK",
+            Content = $"Вариант DXVK изменён на {variantLabel}."
                 + (gamesWithDxvk.Count > 0
-                    ? $"\n\nSwitching {gamesWithDxvk.Count} game(s) to the {variantLabel} build."
-                    : "\n\nNo games currently have DXVK installed."),
+                    ? $"\n\nПереключение {gamesWithDxvk.Count} игры(игр) на сборку {variantLabel}."
+                    : "\n\nСейчас DXVK не установлен ни в одной игре."),
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -2050,12 +2050,12 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "ReShade Build Channel Changed",
-            Content = $"ReShade build channel changed to {channelLabel}.\n\n"
+            Title = "Изменён канал сборки ReShade",
+            Content = $"Канал сборки ReShade изменён на {channelLabel}.\n\n"
                 + (totalCount > 0
                     ? $"Switching {totalCount} game(s) to the {channelLabel} build."
-                      + (vulkanCount > 0 ? $"\n{vulkanCount} Vulkan game(s) updated via global layer." : "")
-                    : "No games currently have ReShade installed."),
+                      + (vulkanCount > 0 ? $"\nОбновлено Vulkan-игр через глобальный слой: {vulkanCount}." : "")
+                    : "Сейчас ReShade не установлен ни в одной игре."),
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
@@ -2109,7 +2109,7 @@ public class SettingsHandler
         }
         else
         {
-            _window.NexusStatusText.Text = "Not connected";
+            _window.NexusStatusText.Text = "Не подключено";
             _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
             _window.NexusDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
             _window.NexusConnectBtn.Content = "Connect";
@@ -2117,7 +2117,7 @@ public class SettingsHandler
 
         // NXM handler status
         bool nxmRegistered = NxmProtocolHandler.IsRegistered();
-        _window.NxmStatusText.Text = nxmRegistered ? "RHI is the active nxm:// handler" : "Not registered";
+        _window.NxmStatusText.Text = nxmRegistered ? "RHI — активный обработчик nxm://" : "Не зарегистрировано";
         _window.NxmStatusText.Foreground = UIFactory.Brush(
             nxmRegistered ? ResourceKeys.AccentGreenBrush : ResourceKeys.TextSecondaryBrush);
         _window.NxmRegisterBtn.Content = nxmRegistered ? "Unregister" : "Register";
@@ -2129,7 +2129,7 @@ public class SettingsHandler
         var nexusSso = App.Services.GetRequiredService<NexusSsoService>();
 
         _window.NexusConnectBtn.IsEnabled = false;
-        _window.NexusStatusText.Text = "Opening browser for authorisation...";
+        _window.NexusStatusText.Text = "Открываю браузер для авторизации...";
         _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
 
         using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(120));
@@ -2142,7 +2142,7 @@ public class SettingsHandler
             catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Failed to open browser — {ex.Message}"); }
 
             _window.DispatcherQueue?.TryEnqueue(() =>
-                _window.NexusStatusText.Text = "Waiting for authorisation in browser...");
+                _window.NexusStatusText.Text = "Ожидание авторизации в браузере...");
         };
 
         try
@@ -2167,14 +2167,14 @@ public class SettingsHandler
 
                 if (string.IsNullOrEmpty(receivedKey))
                 {
-                    _window.NexusStatusText.Text = "Authorisation timed out or was cancelled.";
+                    _window.NexusStatusText.Text = "Авторизация не дождалась ответа или была отменена.";
                     _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
                     return;
                 }
 
                 if (info == null)
                 {
-                    _window.NexusStatusText.Text = "Received key was invalid. Please try again.";
+                    _window.NexusStatusText.Text = "Полученный ключ недействителен. Попробуйте ещё раз.";
                     _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
                     return;
                 }
@@ -2216,10 +2216,10 @@ public class SettingsHandler
             {
                 var result = await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "NXM Protocol Handler",
-                    Content = "Another application (e.g. Vortex or MO2) is already registered as the nxm:// handler. Registering RHI will replace it. Continue?",
-                    PrimaryButtonText = "Register RHI",
-                    CloseButtonText = "Cancel",
+                    Title = "Обработчик протокола NXM",
+                    Content = "Другое приложение (например, Vortex или MO2) уже зарегистрировано как обработчик nxm://. Регистрация RHI заменит его. Продолжить?",
+                    PrimaryButtonText = "Зарегистрировать RHI",
+                    CloseButtonText = "Отмена",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
                 });
@@ -2235,8 +2235,8 @@ public class SettingsHandler
             {
                 await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "NXM Registration Failed",
-                    Content = $"Could not register the nxm:// handler: {ex.Message}",
+                    Title = "Не удалось зарегистрировать NXM",
+                    Content = $"Не удалось зарегистрировать обработчик nxm://: {ex.Message}",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,

@@ -39,8 +39,8 @@ public partial class DetailPanelBuilder
             (_nvBodyPanel ?? _window.NvidiaProfilePanel).Children.Add(new TextBlock
             {
                 Text = elevated
-                    ? "✓ Running as admin — all driver profile settings are writable."
-                    : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
+                    ? "✓ Запущено от администратора — все настройки профиля доступны для записи."
+                    : "⚠ Для записи настроек профиля драйвера нужны права администратора. Включите режим администратора в настройках или перезапустите RHI от его имени.",
                 FontSize = 10,
                 Foreground = UIFactory.Brush(elevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
                 TextWrapping = TextWrapping.Wrap,
@@ -153,12 +153,12 @@ public partial class DetailPanelBuilder
             // ── Column 0: VSync ──
             var vsyncCol = new StackPanel { Spacing = 4 };
             var vsyncLabel = new TextBlock { Text = "VSync", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            ToolTipService.SetToolTip(vsyncLabel, "Vertical Sync settings — controls how the driver synchronizes frame rendering with your display's refresh rate.");
+            ToolTipService.SetToolTip(vsyncLabel, "Настройки вертикальной синхронизации — как драйвер согласует рендеринг кадров с частотой обновления дисплея.");
             vsyncCol.Children.Add(vsyncLabel);
 
             // VSync Mode
             {
-                vsyncCol.Children.Add(new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                vsyncCol.Children.Add(new TextBlock { Text = "Режим", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var options = DlssPresetService.VSyncModeOptions;
                 uint current = d.VSyncMode;
                 var globalVSync = d.GlobalVSyncMode;
@@ -166,7 +166,7 @@ public partial class DetailPanelBuilder
                 var itemsList = new List<string>();
                 if (globalVSync.HasValue)
                 {
-                    var globalName = options.FirstOrDefault(o => o.Value == globalVSync.Value).Name ?? "App Controlled";
+                    var globalName = options.FirstOrDefault(o => o.Value == globalVSync.Value).Name ?? "Управляется игрой";
                     itemsList.Add($"Global ({globalName})");
                 }
                 itemsList.AddRange(options.Select(o => o.Name));
@@ -195,8 +195,8 @@ public partial class DetailPanelBuilder
                     CornerRadius = new CornerRadius(6),
                 };
                 ToolTipService.SetToolTip(combo, globalVSync.HasValue
-                    ? "Global = inherit from global setting. App Controlled: let the game decide. Force Off: disables VSync. Force On: locks to refresh rate. Fast Sync: renders freely, displays latest complete frame."
-                    : "VSync Mode — App Controlled: let the game decide. Force Off: disables VSync entirely. Force On: locks to refresh rate. Fast Sync: renders freely, displays latest complete frame.");
+                    ? "Глобально — наследовать общую настройку. Управляется игрой: решает сама игра. Принудительно выкл: отключает VSync. Принудительно вкл: привязка к частоте обновления. Fast Sync: рендер без ограничений, выводится последний завершённый кадр."
+                    : "Режим VSync — управление игрой: решает сама игра. Принудительно выкл: полностью отключает VSync. Принудительно вкл: привязка к частоте обновления. Fast Sync: рендер без ограничений, выводится последний завершённый кадр.");
                 var init = true;
                 combo.SelectionChanged += (s, ev) =>
                 {
@@ -226,7 +226,7 @@ public partial class DetailPanelBuilder
 
             // VSync Tear Control
             {
-                vsyncCol.Children.Add(new TextBlock { Text = "Tear Control", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                vsyncCol.Children.Add(new TextBlock { Text = "Управление разрывами", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var options = DlssPresetService.VSyncTearControlOptions;
                 uint current = d.VSyncTearControl;
                 var items = options.Select(o => o.Name).ToArray();
@@ -240,7 +240,7 @@ public partial class DetailPanelBuilder
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                 };
-                ToolTipService.SetToolTip(combo, "VSync Tear Control — Standard: normal VSync behavior. Adaptive: VSync on when FPS ≥ refresh rate, off when below (reduces stuttering at low FPS).");
+                ToolTipService.SetToolTip(combo, "Управление разрывами VSync — стандартно: обычное поведение VSync. Адаптивно: VSync включён при FPS ≥ частоты обновления, выключен ниже (меньше фризов при низком FPS).");
                 var init = true;
                 combo.SelectionChanged += (s, ev) =>
                 {
@@ -276,8 +276,8 @@ public partial class DetailPanelBuilder
                     Opacity = latencyLocked ? 0.4 : 1.0,
                 };
                 ToolTipService.SetToolTip(combo2, latencyLocked
-                    ? "Low Latency is locked to Ultra while Smooth Motion is enabled. Turn off Smooth Motion to change this setting."
-                    : "Low Latency Mode — Off: game controls frame queue. On: limits pre-rendered frames to 1 (lower latency). Ultra: just-in-time frame submission (lowest latency, may reduce FPS slightly).");
+                    ? "Пока включён Smooth Motion, Low Latency зафиксирован на Ultra. Выключите Smooth Motion, чтобы изменить настройку."
+                    : "Режим Low Latency — выкл: очередью кадров управляет игра. Вкл: не более 1 предрендеренного кадра (ниже задержка). Ultra: отправка кадров точно ко времени (минимальная задержка, может слегка снизить FPS).");
                 var init2 = true;
                 combo2.SelectionChanged += (s, ev) =>
                 {
@@ -298,13 +298,13 @@ public partial class DetailPanelBuilder
             // ── Column 4: Smooth Motion ──
             var smoothCol = new StackPanel { Spacing = 4 };
             var smoothLabel = new TextBlock { Text = "Smooth Motion", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            ToolTipService.SetToolTip(smoothLabel, "NVIDIA Smooth Motion — driver-level frame generation. Adds interpolated frames for smoother visuals. RTX 40 Series+ required.");
+            ToolTipService.SetToolTip(smoothLabel, "NVIDIA Smooth Motion — генерация кадров на уровне драйвера. Добавляет интерполированные кадры для более плавной картинки. Требуется RTX 40-й серии и новее.");
             smoothCol.Children.Add(smoothLabel);
 
             // Enable
             bool smoothMotionEnabled;
             {
-                smoothCol.Children.Add(new TextBlock { Text = "Enable", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                smoothCol.Children.Add(new TextBlock { Text = "Включить", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var options = DlssPresetService.SmoothMotionEnableOptions;
                 uint current = d.SmoothMotionEnable;
                 smoothMotionEnabled = current != 0;
@@ -319,7 +319,7 @@ public partial class DetailPanelBuilder
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                 };
-                ToolTipService.SetToolTip(combo, "Smooth Motion Enable — Off: disabled. On: enables driver-level frame generation (RTX 40 Series+ only).");
+                ToolTipService.SetToolTip(combo, "Включение Smooth Motion — выкл: отключено. Вкл: включает генерацию кадров на уровне драйвера (только RTX 40-й серии и новее).");
                 var init = true;
                 combo.SelectionChanged += (s, ev) =>
                 {
@@ -362,7 +362,7 @@ public partial class DetailPanelBuilder
 
             // APIs
             {
-                smoothCol.Children.Add(new TextBlock { Text = "Allowed APIs", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                smoothCol.Children.Add(new TextBlock { Text = "Разрешённые API", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var options = DlssPresetService.SmoothMotionApisOptions;
                 uint current = d.SmoothMotionApis;
                 var items = options.Select(o => o.Name).ToArray();
@@ -378,7 +378,7 @@ public partial class DetailPanelBuilder
                     IsEnabled = smoothMotionEnabled,
                     Opacity = smoothMotionEnabled ? 1.0 : 0.4,
                 };
-                ToolTipService.SetToolTip(combo, "Smooth Motion APIs — which graphics APIs Smooth Motion is allowed to hook. None = disabled for all APIs.");
+                ToolTipService.SetToolTip(combo, "API Smooth Motion — какие графические API может подхватывать Smooth Motion. «Нет» — отключено для всех API.");
                 var init = true;
                 combo.SelectionChanged += (s, ev) =>
                 {
@@ -410,7 +410,7 @@ public partial class DetailPanelBuilder
                     IsEnabled = smoothMotionEnabled,
                     Opacity = smoothMotionEnabled ? 1.0 : 0.4,
                 };
-                ToolTipService.SetToolTip(combo, "Flip Pacing — Off: prioritize lower latency. On: prioritize smoother frame pacing. Sets both fullscreen and windowed modes together.");
+                ToolTipService.SetToolTip(combo, "Flip Pacing — выкл: приоритет низкой задержки. Вкл: приоритет плавности вывода кадров. Устанавливается сразу для полноэкранного и оконного режимов.");
                 var init = true;
                 combo.SelectionChanged += (s, ev) =>
                 {
@@ -436,13 +436,13 @@ public partial class DetailPanelBuilder
 
             // ── Column 6: Other (Power, G-Sync, Restore) ──
             var powerCol = new StackPanel { Spacing = 4 };
-            var powerLabel = new TextBlock { Text = "Other", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            ToolTipService.SetToolTip(powerLabel, "Power management, G-Sync control, and profile reset.");
+            var powerLabel = new TextBlock { Text = "Другое", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            ToolTipService.SetToolTip(powerLabel, "Управление питанием, контроль G-Sync и сброс профиля.");
             powerCol.Children.Add(powerLabel);
 
             // Power Management Mode
             {
-                powerCol.Children.Add(new TextBlock { Text = "Power Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                powerCol.Children.Add(new TextBlock { Text = "Режим питания", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 var options = DlssPresetService.PowerManagementOptions;
                 uint current = d.PowerManagementMode;
                 var items = options.Select(o => o.Name).ToArray();
@@ -456,7 +456,7 @@ public partial class DetailPanelBuilder
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                 };
-                ToolTipService.SetToolTip(combo, "Power Management — Adaptive: GPU clocks down at idle. Maximum: locks GPU to highest clocks. Optimal: balanced (NVIDIA recommended).");
+                ToolTipService.SetToolTip(combo, "Управление питанием — Adaptive: GPU снижает частоты в простое. Maximum: фиксирует максимальные частоты. Optimal: баланс (рекомендация NVIDIA).");
                 var init = true;
                 combo.SelectionChanged += (s, ev) =>
                 {
@@ -482,7 +482,7 @@ public partial class DetailPanelBuilder
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                 };
-                ToolTipService.SetToolTip(gsyncCombo, "Per-game G-Sync control. Disabled forces G-Sync off for this game regardless of global setting.");
+                ToolTipService.SetToolTip(gsyncCombo, "Управление G-Sync для отдельной игры. «Отключено» принудительно выключает G-Sync для игры независимо от общей настройки.");
                 var gsyncInit = true;
                 gsyncCombo.SelectionChanged += (s, ev) =>
                 {
@@ -498,7 +498,7 @@ public partial class DetailPanelBuilder
             powerCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
             var restoreProfileBtn = new Button
             {
-                Content = "Restore Defaults",
+                Content = "Восстановить значения по умолчанию",
                 FontSize = 11,
                 Height = 32,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -510,21 +510,21 @@ public partial class DetailPanelBuilder
                 IsEnabled = nvidiaPresetService.IsSupported,
             };
             ToolTipService.SetToolTip(restoreProfileBtn,
-                "Restore this game's NVIDIA driver profile to factory defaults. Removes all custom settings (presets, render scale, MFG, driver overrides). This action is irreversible.");
+                "Вернуть профиль драйвера NVIDIA этой игры к заводским значениям. Удаляет все пользовательские настройки (пресеты, масштаб рендеринга, MFG, переопределения драйвера). Действие необратимо.");
             restoreProfileBtn.Click += async (s, ev) =>
             {
                 var xamlRoot = (s as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
                 var warningDialog = new ContentDialog
                 {
-                    Title = "Restore driver settings?",
+                    Title = "Восстановить настройки драйвера?",
                     Content = new TextBlock
                     {
-                        Text = $"This will restore driver settings for {capturedName} back to the factory default and restore DLSS/Streamline DLLs to their original versions. This action is irreversible.",
+                        Text = $"Настройки драйвера для {capturedName} будут возвращены к заводским, а DLL DLSS/Streamline — к исходным версиям. Действие необратимо.",
                         TextWrapping = TextWrapping.Wrap,
                         FontSize = 13,
                     },
-                    PrimaryButtonText = "Restore",
-                    CloseButtonText = "Cancel",
+                    PrimaryButtonText = "Восстановить",
+                    CloseButtonText = "Отмена",
                     XamlRoot = xamlRoot,
                     RequestedTheme = ElementTheme.Dark,
                 };
@@ -558,7 +558,7 @@ public partial class DetailPanelBuilder
             // ── Column 8: ReBAR ──
             var rebarCol = new StackPanel { Spacing = 4 };
             var rebarLabel = new TextBlock { Text = "ReBAR", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-            ToolTipService.SetToolTip(rebarLabel, "Resizable BAR — allows the CPU to access full GPU VRAM at once. Can improve performance by 5-10% in some titles. RTX 30+ and BIOS support required.");
+            ToolTipService.SetToolTip(rebarLabel, "Resizable BAR — позволяет CPU обращаться ко всей памяти GPU сразу. Может поднять производительность на 5–10% в отдельных играх. Нужны RTX 30+ и поддержка в BIOS.");
             rebarCol.Children.Add(rebarLabel);
 
             bool rebarEnabled = false; // set inside Enable block below
@@ -566,7 +566,7 @@ public partial class DetailPanelBuilder
 
             // Enable — Auto (Default) / Off / On using new 0x000BFA21 setting
             {
-                rebarCol.Children.Add(new TextBlock { Text = "Enable", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                rebarCol.Children.Add(new TextBlock { Text = "Включить", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
 
                 uint rebarEnableMode = d.ReBarEnableMode;
                 // 0=Off→index 1, 1=Auto→index 0, 2=On→index 2
@@ -574,13 +574,13 @@ public partial class DetailPanelBuilder
 
                 var rebarEnableCombo = new ComboBox
                 {
-                    ItemsSource = new[] { "Auto (Default)", "Off", "On" },
+                    ItemsSource = new[] { "Авто (по умолчанию)", "Off", "On" },
                     SelectedIndex = enableIdx,
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                 };
-                ToolTipService.SetToolTip(rebarEnableCombo, "Auto = driver decides. On = force-enable ReBAR. Off = force-disable ReBAR.");
+                ToolTipService.SetToolTip(rebarEnableCombo, "Авто — решает драйвер. Вкл — принудительно включить ReBAR. Выкл — принудительно выключить ReBAR.");
                 var rebarComboInit = true;
                 rebarEnableCombo.SelectionChanged += (s, ev) =>
                 {
@@ -599,7 +599,7 @@ public partial class DetailPanelBuilder
 
             // Mode
             {
-                rebarCol.Children.Add(new TextBlock { Text = "Mode", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                rebarCol.Children.Add(new TextBlock { Text = "Режим", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
                 uint rebarMode = d.ReBarMode;
                 var modeItems = DlssPresetService.ReBarModes.Select(m => m.Name).ToList();
 
@@ -617,7 +617,7 @@ public partial class DetailPanelBuilder
                     IsEnabled = rebarEnabled,
                     Opacity = rebarEnabled ? 1.0 : 0.4,
                 };
-                ToolTipService.SetToolTip(rebarModeCombo, "Standard = conservative. Optimized = aggressive driver scheduling (used by NVIDIA-whitelisted titles).");
+                ToolTipService.SetToolTip(rebarModeCombo, "Standard — консервативно. Optimized — агрессивное планирование драйвера (используется для игр из белого списка NVIDIA).");
                 var modeComboInit = true;
                 rebarModeCombo.SelectionChanged += (s, ev) =>
                 {
@@ -633,7 +633,7 @@ public partial class DetailPanelBuilder
 
             // Size Limit — always shows actual size values (no Global option)
             {
-                rebarCol.Children.Add(new TextBlock { Text = "Size Limit", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+                rebarCol.Children.Add(new TextBlock { Text = "Лимит размера", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
 
                 var sizeItems = new List<string>();
                 var sizeValues = new List<ulong>();
@@ -660,7 +660,7 @@ public partial class DetailPanelBuilder
                     IsEnabled = rebarEnabled,
                     Opacity = rebarEnabled ? 1.0 : 0.4,
                 };
-                ToolTipService.SetToolTip(rebarSizeCombo, "1GB is optimal for most games. Decrease to 512MB if experiencing ReBAR-related stutters.");
+                ToolTipService.SetToolTip(rebarSizeCombo, "1 ГБ оптимален для большинства игр. Уменьшите до 512 МБ, если возникают фризы, связанные с ReBAR.");
                 var sizeComboInit = true;
                 rebarSizeCombo.SelectionChanged += (s, ev) =>
                 {
@@ -686,8 +686,8 @@ public partial class DetailPanelBuilder
         (nvBody ?? _window.NvidiaProfilePanel).Children.Add(new TextBlock
         {
             Text = isElevated
-                ? "✓ Running as admin — all driver profile settings are writable."
-                : "⚠ Admin rights required to write driver profile settings. Enable Admin Mode in Settings or restart as admin.",
+                ? "✓ Запущено от администратора — все настройки профиля доступны для записи."
+                : "⚠ Для записи настроек профиля драйвера нужны права администратора. Включите режим администратора в настройках или перезапустите RHI от его имени.",
             FontSize = 10,
             Foreground = UIFactory.Brush(isElevated ? ResourceKeys.TextTertiaryBrush : ResourceKeys.AccentAmberDimBrush),
             TextWrapping = TextWrapping.Wrap,
