@@ -80,7 +80,8 @@ public partial class DetailPanelBuilder
             DriverProfileData? data = null;
             try
             {
-                data = new DriverProfileData(
+                // Wrap NVAPI reads in a timeout — they can hang indefinitely after sleep/wake
+                var nvapiTask = Task.Run(() => new DriverProfileData(
                     VSyncMode:              svc.GetVSyncMode(gameName, installPath),
                     GlobalVSyncMode:        svc.GetGlobalVSyncMode(),
                     VSyncTearControl:       svc.GetVSyncTearControl(gameName, installPath),
@@ -94,7 +95,12 @@ public partial class DetailPanelBuilder
                     ReBarEnableMode:        svc.GetReBarEnableMode(gameName, installPath),
                     ReBarMode:              svc.GetReBarMode(gameName, installPath),
                     GlobalReBarSizeLimit:   svc.GetGlobalReBarSizeLimit(),
-                    IsAdmin:                VulkanLayerService.IsRunningAsAdmin());
+                    IsAdmin:                VulkanLayerService.IsRunningAsAdmin()));
+                var completed = await Task.WhenAny(nvapiTask, Task.Delay(5000)).ConfigureAwait(false);
+                if (completed == nvapiTask)
+                    data = await nvapiTask.ConfigureAwait(false);
+                else
+                    CrashReporter.Log($"[BuildDriverProfileSection] NVAPI reads timed out for '{gameName}' — using defaults");
             }
             finally
             {

@@ -397,6 +397,13 @@ public class GameNameService : IGameNameService
                 for (int i = 0; i < list.Count; i++)
                     if (list[i].Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase))
                         list[i] = "DLSS5 Tool";
+                // Migration: remove NR addons that moved out of the addon picker
+                list.RemoveAll(a => a.Equals("DLSS5 Tool",           StringComparison.OrdinalIgnoreCase)
+                                 || a.Equals("DLSS Tool (ShortFuse)", StringComparison.OrdinalIgnoreCase)
+                                 || a.Equals("MFG Ada Unlock",        StringComparison.OrdinalIgnoreCase)
+                                 || a.Equals("DLSS5 Feeder",          StringComparison.OrdinalIgnoreCase)
+                                 || a.Equals("DLSS5 DX11 Bridge",     StringComparison.OrdinalIgnoreCase));
+                if (list.Count == 0) pgasDict.Remove(key);
             }
             _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgasDict)
@@ -628,19 +635,8 @@ public class GameNameService : IGameNameService
             Load<Dictionary<string, string>>("Dlssg2030GpuGen", new()),
             StringComparer.OrdinalIgnoreCase);
 
-        if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
-            setViewLayout((ViewLayout)vlInt);
-        else if (s.TryGetValue("GridLayout", out var glVal))  // backward compat
-            setViewLayout(ViewLayout.Detail);
-
-        // One-time migration: force Detail view for all users on first launch after v2.6.1
-        if (!s.ContainsKey("DetailViewForced"))
-        {
-            setViewLayout(ViewLayout.Detail);
-            s["DetailViewForced"] = "1";
-            s["ViewLayout"] = ((int)ViewLayout.Detail).ToString();
-            SettingsViewModel.SaveSettingsFile(s);
-        }
+        // Always force Detail view — Simple view has been removed
+        setViewLayout(ViewLayout.Detail);
 
         if (s.TryGetValue("FilterMode", out var fmVal) && !string.IsNullOrWhiteSpace(fmVal))
             setFilterMode(fmVal);

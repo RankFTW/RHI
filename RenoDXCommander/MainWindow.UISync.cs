@@ -85,12 +85,6 @@ public sealed partial class MainWindow
                     break;
                 case nameof(ViewModel.TotalGames):
                     GameCountText.Text = $"{ViewModel.TotalGames} shown";
-                    if (ViewModel.CurrentViewLayout == ViewLayout.Compact
-                        && ViewModel.SelectedGame is { } compactCard)
-                    {
-                        _compactViewBuilder?.RebuildCurrentPage(
-                            compactCard, ViewModel.CompactPageIndex);
-                    }
                     break;
                 case nameof(ViewModel.HiddenCount):
                     HiddenCountText.Text = ViewModel.HiddenCount > 0

@@ -101,8 +101,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private AppPage currentPage = AppPage.GameView;
     [ObservableProperty] private GameCardViewModel? selectedGame;
     [ObservableProperty] private bool hasUpdatesAvailable;
-    [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Compact;
-    [ObservableProperty] private int _compactPageIndex = 0;
+    [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Detail;
 
     /// <summary>List of new wiki mods detected since last dismiss.</summary>
     [ObservableProperty] private List<string> _newWikiMods = new();
@@ -131,42 +130,14 @@ public partial class MainViewModel : ObservableObject
     partial void OnNewLumaModsChanged(List<string> value)
         => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
 
-    public Visibility DetailPanelVisibility =>
-        CurrentViewLayout == ViewLayout.Detail ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility DetailPanelVisibility => Visibility.Visible;
 
-    public Visibility CompactViewVisibility =>
-        CurrentViewLayout == ViewLayout.Compact ? Visibility.Visible : Visibility.Collapsed;
-
-    /// <summary>
-    /// Returns Visible when in Detail OR Compact mode (both use the DetailScrollViewer).
-    /// </summary>
     public Visibility DetailOrCompactVisibility => Visibility.Visible;
-
-    public string LayoutToggleLabel => CurrentViewLayout switch
-    {
-        ViewLayout.Detail => "Detail View",
-        ViewLayout.Compact => "Simple View",
-        _ => "Detail View",
-    };
 
     partial void OnCurrentViewLayoutChanged(ViewLayout value)
     {
         OnPropertyChanged(nameof(DetailPanelVisibility));
-        OnPropertyChanged(nameof(CompactViewVisibility));
         OnPropertyChanged(nameof(DetailOrCompactVisibility));
-        OnPropertyChanged(nameof(LayoutToggleLabel));
-    }
-
-    public ViewLayout NextViewLayout() => CurrentViewLayout switch
-    {
-        ViewLayout.Detail => ViewLayout.Compact,
-        ViewLayout.Compact => ViewLayout.Detail,
-        _ => ViewLayout.Detail,
-    };
-
-    public void NavigateCompactPage(int delta)
-    {
-        CompactPageIndex = ((CompactPageIndex + delta) % 3 + 3) % 3;
     }
 
     /// <summary>

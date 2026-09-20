@@ -123,12 +123,6 @@
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
-                    <Button x:Name="LayoutToggleBtn" Content="{x:Bind ViewModel.LayoutToggleLabel, Mode=OneWay}"
-                            Click="LayoutToggle_Click"
-                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
-                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Toggle between Detail and Simple view"/>
                     <Button x:Name="SettingsBtn" Content="Settings"
                             Click="SettingsButton_Click" IsEnabled="False"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
@@ -1086,29 +1080,6 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
-
-                    <!-- Compact Nav Arrows — overlaid on content area, visible only in Compact mode -->
-                    <Button x:Name="CompactNavLeft"
-                            Content="◀" Click="CompactNavLeft_Click"
-                            VerticalAlignment="Center" HorizontalAlignment="Left"
-                            Canvas.ZIndex="1"
-                            Visibility="{x:Bind ViewModel.CompactViewVisibility, Mode=OneWay}"
-                            Background="{StaticResource SurfaceInputBrush}"
-                            Foreground="{StaticResource AccentTealBrush}"
-                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" FontSize="18"
-                            Padding="8,16" Margin="4,0"/>
-
-                    <Button x:Name="CompactNavRight"
-                            Content="▶" Click="CompactNavRight_Click"
-                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                            Canvas.ZIndex="1"
-                            Visibility="{x:Bind ViewModel.CompactViewVisibility, Mode=OneWay}"
-                            Background="{StaticResource SurfaceInputBrush}"
-                            Foreground="{StaticResource AccentTealBrush}"
-                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" FontSize="18"
-                            Padding="8,16" Margin="0,0,4,0"/>
 
                     <!-- Skeleton detail panel overlay (removed programmatically after first load) -->
                     <ScrollViewer x:Name="SkeletonDetailScrollViewer" VerticalScrollBarVisibility="Auto"

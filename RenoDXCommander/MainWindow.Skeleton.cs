@@ -213,20 +213,6 @@ public sealed partial class MainWindow
 
         PopulateSkeletonDetailPanel(fillBrush);
 
-        // In Compact mode, hide the overrides and management skeleton sections
-        // since they're on separate pages (only the game card page is visible)
-        var layout = ViewModel.CurrentViewLayout;
-        if (layout == ViewLayout.Compact)
-        {
-            var children = SkeletonDetailPanel.Children;
-            // The last two children are the Overrides border and Management border
-            if (children.Count >= 2)
-            {
-                children[children.Count - 1].Visibility = Visibility.Collapsed; // Management
-                children[children.Count - 2].Visibility = Visibility.Collapsed; // Overrides
-            }
-        }
-
         // Collect detail panel borders for shimmer
         foreach (var child in SkeletonDetailPanel.Children)
         {

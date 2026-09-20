@@ -344,64 +344,6 @@ public sealed partial class MainWindow
     }
 
 
-    // ── View toggle ─────────────────────────────────────────────────────────
-
-    private void LayoutToggle_Click(object sender, RoutedEventArgs e)
-    {
-        var previousLayout = ViewModel.CurrentViewLayout;
-        ViewModel.CurrentViewLayout = ViewModel.NextViewLayout();
-        ViewModel.SaveSettingsPublic(); // persist the chosen layout
-
-        // Handle window size locking transitions
-        if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
-        {
-            _windowStateManager.CaptureCurrentBounds();
-            _windowStateManager.ApplyCompactSize();
-            _windowStateManager.SetSizeLocked(true);
-        }
-        else if (previousLayout == ViewLayout.Compact)
-        {
-            // Leaving compact mode — restore all sections to visible first
-            _compactViewBuilder?.LeaveCompactMode();
-            _windowStateManager.SetSizeLocked(false);
-            _windowStateManager.RestoreWindowBounds();
-        }
-
-        // Rebuild content for the new layout
-        switch (ViewModel.CurrentViewLayout)
-        {
-            case ViewLayout.Detail:
-                // Switching to detail mode — repopulate detail panel for selected game if any
-                if (ViewModel.SelectedGame is { } card)
-                {
-                    PopulateDetailPanel(card);
-                    DetailPanel.Visibility = Visibility.Visible;
-                    BuildOverridesPanel(card);
-                    OverridesContainer.Visibility = Visibility.Visible;
-                    NvidiaProfileContainer.Visibility = Visibility.Visible;
-                    ManagementContainer.Visibility = Visibility.Visible;
-                    _detailPanelBuilder.ApplySectionOrder();
-                }
-                break;
-            case ViewLayout.Compact:
-                if (ViewModel.SelectedGame is { } compactCard)
-                    _compactViewBuilder?.EnterCompactMode(compactCard, ViewModel.CompactPageIndex);
-                break;
-        }
-    }
-
-    private void CompactNavLeft_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.NavigateCompactPage(-1);
-        _compactViewBuilder?.NavigateToPage(ViewModel.CompactPageIndex);
-    }
-
-    private void CompactNavRight_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.NavigateCompactPage(1);
-        _compactViewBuilder?.NavigateToPage(ViewModel.CompactPageIndex);
-    }
-
     // ── Per-component install flyout click handlers ──
 
     internal async void CardComponentInstall_Click(object sender, RoutedEventArgs e)

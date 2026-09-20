@@ -28,12 +28,13 @@ public static class AddonPopupHelper
         string? installPath = null)
     {
         var availableAddons = addonPackService.AvailablePacks
-            .Where(a => !string.IsNullOrEmpty(a.DownloadUrl)
-                     || !string.IsNullOrEmpty(a.DownloadUrl32)
-                     || !string.IsNullOrEmpty(a.DownloadUrl64)
-                     || !string.IsNullOrEmpty(a.ReleaseApiUrl)
-                     || a.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
-                     || a.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase)) // managed by Renodx5AddonService
+            .Where(a => !a.HideFromPicker
+                     && (!string.IsNullOrEmpty(a.DownloadUrl)
+                      || !string.IsNullOrEmpty(a.DownloadUrl32)
+                      || !string.IsNullOrEmpty(a.DownloadUrl64)
+                      || !string.IsNullOrEmpty(a.ReleaseApiUrl)
+                      || a.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                      || a.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase))) // managed by Renodx5AddonService
             .ToList();
 
         // Include custom addons (local files, no download URLs)

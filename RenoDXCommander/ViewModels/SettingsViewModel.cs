@@ -291,6 +291,12 @@ public partial class SettingsViewModel : ObservableObject
                 var addons = JsonSerializer.Deserialize<List<string>>(egaVal) ?? new();
                 // Migration: remove old "RenoDX DLSS5" name — renamed to "DLSS5 Tool"
                 addons.RemoveAll(a => a.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase));
+                // Migration: remove NR addons that moved out of the addon picker
+                addons.RemoveAll(a => a.Equals("DLSS5 Tool",           StringComparison.OrdinalIgnoreCase)
+                                   || a.Equals("DLSS Tool (ShortFuse)", StringComparison.OrdinalIgnoreCase)
+                                   || a.Equals("MFG Ada Unlock",        StringComparison.OrdinalIgnoreCase)
+                                   || a.Equals("DLSS5 Feeder",          StringComparison.OrdinalIgnoreCase)
+                                   || a.Equals("DLSS5 DX11 Bridge",     StringComparison.OrdinalIgnoreCase));
                 EnabledGlobalAddons = addons;
             }
             catch { EnabledGlobalAddons = new(); }

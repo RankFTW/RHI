@@ -58,7 +58,8 @@ public class AddonPackService : IAddonPackService
         DownloadUrl64: null,
         RepositoryUrl: "https://discord.com/channels/1408098019194310818/1543802634991968366",
         EffectInstallPath: null,
-        DeployFileName: "renodx-dlss5");
+        DeployFileName: "renodx-dlss5",
+        HideFromPicker: true);
 
     // ShortFuse SF variant — DX12/DX11/DX9 support, co-deploys full DLSS+Streamline stack
     private static readonly AddonEntry Renodx5SfEntry = new(
@@ -70,7 +71,8 @@ public class AddonPackService : IAddonPackService
         DownloadUrl64: null,
         RepositoryUrl: "https://discord.com/channels/1408098019194310818/1543975158937821315",
         EffectInstallPath: null,
-        DeployFileName: "renodx-dlss");
+        DeployFileName: "renodx-dlss",
+        HideFromPicker: true);
 
     // DLSS Fix addon — fixes DLSS frame generation locking to 2× in Unreal Engine games
     private static readonly AddonEntry DlssFixEntry = new(
@@ -404,6 +406,18 @@ public class AddonPackService : IAddonPackService
         }
 
         _packs = merged;
+
+        // Mark NR-specific addons as hidden from the picker — they are installed via
+        // the Neural Rendering section and Extras section, not the addon picker.
+        var pickerHiddenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "renodx-dlss5", "renodx-dlss-sf", "mfgunlock", "dlss5-feed", "dlss5-dx11-bridge"
+        };
+        for (int i = 0; i < _packs.Count; i++)
+        {
+            if (pickerHiddenIds.Contains(_packs[i].SectionId) && !_packs[i].HideFromPicker)
+                _packs[i] = _packs[i] with { HideFromPicker = true };
+        }
 
         // Always keep renodx-dlss5 at the top of the list regardless of manifest insertion order
         var rdx5Idx = _packs.FindIndex(p => p.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase));

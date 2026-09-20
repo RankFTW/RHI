@@ -1,3 +1,14 @@
+## v2.7.6
+
+### Bug Fixes
+
+- Fixed the app freezing after the PC wakes from sleep when a game card with DLSS or driver profile settings was selected. The per-game NVAPI reads (DLSS presets, VSync, Low Latency, ReBAR, etc.) now run with a 5-second timeout, same as the Settings page fix in v2.7.5. On timeout the section shows default values and the panel remains responsive.
+
+### Changes
+
+- Simple View has been removed. The app is now always in Detail View.
+- DLSS5 Tool, DLSS Tool (ShortFuse), DLSS5 Feeder, DLSS5 DX11 Bridge, and MFG Ada Unlock have been removed from the addon picker. They are still fully supported — install them from the Neural Rendering section and the Extras section respectively. Any games that had these enabled via the global or per-game addon picker will have them silently removed from those selections on first launch. The components themselves are not uninstalled.
+
 ## v2.7.5
 
 ### Bug Fixes

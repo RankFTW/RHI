@@ -39,7 +39,6 @@ public sealed partial class MainWindow : Window
     private readonly WindowStateManager _windowStateManager;
     private readonly DragDropHandler _dragDropHandler;
     private readonly AddonFileWatcher _addonFileWatcher;
-    private CompactViewBuilder? _compactViewBuilder;
 
     /// <summary>Exposes the detail panel builder for extracted handler classes.</summary>
     internal DetailPanelBuilder DetailPanelBuilderInstance => _detailPanelBuilder;
@@ -77,7 +76,7 @@ public sealed partial class MainWindow : Window
             App.Services.GetRequiredService<IOptiScalerWikiService>(),
             App.Services.GetRequiredService<IHdrDatabaseService>(),
             App.Services.GetRequiredService<IOptiScalerService>());
-        _compactViewBuilder = new CompactViewBuilder(this);
+
         _dialogService = new DialogService(this);
         _settingsHandler = new SettingsHandler(this);
         _massDeployHandler = new MassDeployHandler(this);
@@ -115,11 +114,7 @@ public sealed partial class MainWindow : Window
         // Set a sensible default size immediately so the window isn't huge on first launch.
         // TryRestoreWindowBounds (called on Activated) will then override this with the
         // saved size+position from the previous session, if one exists.
-        if (ViewModel.CurrentViewLayout != ViewLayout.Compact)
-            AppWindow.Resize(new Windows.Graphics.SizeInt32(DefaultWidth, DefaultHeight));
-        // For compact mode, sizing is handled entirely by ApplyCompactSize in the
-        // Activated handler using SetWindowPos, which avoids the size mismatch between
-        // AppWindow.Resize (client area) and SetWindowPos (full window frame).
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(DefaultWidth, DefaultHeight));
 
         // Enforce minimum window size and enable Win32 drag-and-drop via WindowStateManager
         var hwnd = WindowNative.GetWindowHandle(this);
@@ -162,13 +157,6 @@ public sealed partial class MainWindow : Window
         // Apply compact size and lock immediately in the constructor.
         // There may be a tiny WinUI layout adjustment on first render, but the lock
         // prevents the user from resizing the window freely.
-        if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
-        {
-            _windowStateManager.TryRestoreWindowBounds(positionOnly: true);
-            _windowStateManager.ApplyCompactSize();
-            _windowStateManager.SetSizeLocked(true);
-        }
-
         // Set the title bar icon (unpackaged apps need this explicitly)
         var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
         AppWindow.SetIcon(Path.Combine(exeDir, "icon.ico"));
@@ -352,17 +340,7 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
-            {
-                // Compact mode: restore position only, then apply the fixed compact size and lock.
-                _windowStateManager.TryRestoreWindowBounds(positionOnly: true);
-                _windowStateManager.ApplyCompactSize();
-                _windowStateManager.SetSizeLocked(true);
-            }
-            else
-            {
-                _windowStateManager.TryRestoreWindowBounds();
-            }
+            _windowStateManager.TryRestoreWindowBounds();
         }
         catch (Exception ex) { _crashReporter.Log($"[MainWindow.MainWindow_Activated] Failed to restore window bounds — {ex.Message}"); }
     }
@@ -574,14 +552,10 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.SelectedGame = card;
 
-            switch (ViewModel.CurrentViewLayout)
+            // Debounce panel rebuild
+            _pendingSelectionCard = card;
+            if (_selectionDebounceTimer == null)
             {
-                case ViewLayout.Detail:
-                case ViewLayout.Compact:
-                    // Debounce panel rebuild for both Detail and Compact modes
-                    _pendingSelectionCard = card;
-                    if (_selectionDebounceTimer == null)
-                    {
                         _selectionDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
                         _selectionDebounceTimer.Tick += (s, ev) =>
                         {
@@ -589,68 +563,38 @@ public sealed partial class MainWindow : Window
                             var target = _pendingSelectionCard;
                             if (target != null && target == ViewModel.SelectedGame)
                             {
-                                if (ViewModel.CurrentViewLayout == ViewLayout.Detail)
-                                {
-                                    _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel start: '{target.GameName}'");
-                                    PopulateDetailPanel(target);
-                                    _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel done, BuildOverridesPanel start: '{target.GameName}'");
-                                    DetailPanel.Visibility = Visibility.Visible;
-                                    BuildOverridesPanel(target);
-                                    _crashReporter?.Log($"[SelectionDebounce] BuildOverridesPanel done: '{target.GameName}'");
-                                    if (OverridesContainer.Visibility != Visibility.Visible)        OverridesContainer.Visibility = Visibility.Visible;
-                                    if (NeuralRenderingContainer.Visibility != Visibility.Visible)  NeuralRenderingContainer.Visibility = Visibility.Visible;
-                                    if (NvidiaProfileContainer.Visibility != Visibility.Visible)    NvidiaProfileContainer.Visibility = Visibility.Visible;
-                                    if (ManagementContainer.Visibility != Visibility.Visible)       ManagementContainer.Visibility = Visibility.Visible;
-                                    _detailPanelBuilder.ApplySectionOrder();
-                                    _crashReporter?.Log($"[SelectionDebounce] ApplySectionOrder done: '{target.GameName}'");
-                                }
-                                else if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
-                                {
-                                    _compactViewBuilder?.RebuildCurrentPage(
-                                        target, ViewModel.CompactPageIndex);
-                                }
+                                _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel start: '{target.GameName}'");
+                                PopulateDetailPanel(target);
+                                _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel done, BuildOverridesPanel start: '{target.GameName}'");
+                                DetailPanel.Visibility = Visibility.Visible;
+                                BuildOverridesPanel(target);
+                                _crashReporter?.Log($"[SelectionDebounce] BuildOverridesPanel done: '{target.GameName}'");
+                                if (OverridesContainer.Visibility != Visibility.Visible)        OverridesContainer.Visibility = Visibility.Visible;
+                                if (NeuralRenderingContainer.Visibility != Visibility.Visible)  NeuralRenderingContainer.Visibility = Visibility.Visible;
+                                if (NvidiaProfileContainer.Visibility != Visibility.Visible)    NvidiaProfileContainer.Visibility = Visibility.Visible;
+                                if (ManagementContainer.Visibility != Visibility.Visible)       ManagementContainer.Visibility = Visibility.Visible;
+                                _detailPanelBuilder.ApplySectionOrder();
+                                _crashReporter?.Log($"[SelectionDebounce] ApplySectionOrder done: '{target.GameName}'");
                             }
                         };
                     }
                     _selectionDebounceTimer.Stop();
                     _selectionDebounceTimer.Start();
-                    break;
-            }
         }
         else
         {
             ViewModel.SelectedGame = null;
-
-            switch (ViewModel.CurrentViewLayout)
-            {
-                case ViewLayout.Detail:
-                    DetailPanel.Visibility = Visibility.Collapsed;
-                    OverridesPanel.Children.Clear();
-                    OverridesContainer.Visibility = Visibility.Collapsed;
-                    NeuralRenderingPanel.Children.Clear();
-                    NeuralRenderingContainer.Visibility = Visibility.Collapsed;
-                    NvidiaProfilePanel.Children.Clear();
-                    NvidiaProfileContainer.Visibility = Visibility.Collapsed;
-                    ManagementPanel.Children.Clear();
-                    ManagementContainer.Visibility = Visibility.Collapsed;
-                    ExtrasPanel.Children.Clear();
-                    ExtrasContainer.Visibility = Visibility.Collapsed;
-                    break;
-                case ViewLayout.Compact:
-                    // Hide detail panel content when no game is selected
-                    DetailPanel.Visibility = Visibility.Collapsed;
-                    OverridesPanel.Children.Clear();
-                    OverridesContainer.Visibility = Visibility.Collapsed;
-                    NeuralRenderingPanel.Children.Clear();
-                    NeuralRenderingContainer.Visibility = Visibility.Collapsed;
-                    NvidiaProfilePanel.Children.Clear();
-                    NvidiaProfileContainer.Visibility = Visibility.Collapsed;
-                    ManagementPanel.Children.Clear();
-                    ManagementContainer.Visibility = Visibility.Collapsed;
-                    ExtrasPanel.Children.Clear();
-                    ExtrasContainer.Visibility = Visibility.Collapsed;
-                    break;
-            }
+            DetailPanel.Visibility = Visibility.Collapsed;
+            OverridesPanel.Children.Clear();
+            OverridesContainer.Visibility = Visibility.Collapsed;
+            NeuralRenderingPanel.Children.Clear();
+            NeuralRenderingContainer.Visibility = Visibility.Collapsed;
+            NvidiaProfilePanel.Children.Clear();
+            NvidiaProfileContainer.Visibility = Visibility.Collapsed;
+            ManagementPanel.Children.Clear();
+            ManagementContainer.Visibility = Visibility.Collapsed;
+            ExtrasPanel.Children.Clear();
+            ExtrasContainer.Visibility = Visibility.Collapsed;
         }
     }
 }
