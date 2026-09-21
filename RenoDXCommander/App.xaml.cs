@@ -98,6 +98,9 @@ public partial class App : Application
         services.AddSingleton<IDllOverrideService, DllOverrideService>();
         services.AddSingleton<IGameNameService, GameNameService>();
         services.AddSingleton<IGameInitializationService, GameInitializationService>();
+        services.AddSingleton<INvidiaGameProfile>(sp => new DlssPresetProfileAdapter(sp.GetRequiredService<DlssPresetService>()));
+        services.AddSingleton<OptimizationStateStore>();
+        services.AddSingleton<GameOptimizationService>();
         services.AddSingleton<ISevenZipExtractor, ReShadeExtractor>();
         services.AddSingleton<IOptiScalerService, OptiScalerService>();
         services.AddSingleton<IOptiScalerWikiService, OptiScalerWikiService>();

@@ -377,6 +377,28 @@
                                                 ToolTipService.ToolTip="Launch this game">
                                             <TextBlock Text="▶ Launch" FontSize="11"/>
                                         </Button>
+                                        <Button x:Name="DetailOptimizeBtn" x:FieldModifier="internal"
+                                                Visibility="Collapsed"
+                                                Background="{StaticResource AccentTealBgBrush}"
+                                                Foreground="{StaticResource AccentTealBrush}"
+                                                BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="10,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11" FontWeight="SemiBold"
+                                                Click="OptimizeGame_Click"
+                                                ToolTipService.ToolTip="Apply your configured RHI defaults to this game (DLSS/Streamline versions, presets, Neural Rendering). A restore point is saved first.">
+                                            <TextBlock x:Name="DetailOptimizeText" x:FieldModifier="internal" Text="⚡ Optimize" FontSize="11"/>
+                                        </Button>
+                                        <Button x:Name="DetailUndoOptimizeBtn" x:FieldModifier="internal"
+                                                Visibility="Collapsed"
+                                                Background="{StaticResource SurfaceInputBrush}"
+                                                Foreground="{StaticResource TextSecondaryBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="10,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                Click="UndoOptimization_Click"
+                                                ToolTipService.ToolTip="Restore this game to how it was immediately before the last Optimize.">
+                                            <TextBlock Text="↩ Undo Optimization" FontSize="11"/>
+                                        </Button>
                                         <Button x:Name="DetailHdrToggleBtn" x:FieldModifier="internal"
                                                 Background="{StaticResource SurfaceOverlayBrush}"
                                                 Foreground="{StaticResource ChipTextBrush}"
