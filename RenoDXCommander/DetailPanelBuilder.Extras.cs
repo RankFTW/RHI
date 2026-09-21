@@ -61,11 +61,35 @@ public partial class DetailPanelBuilder
         var exCursorProp  = DetailPanelBuilder.CursorProp;
         exHeaderRow.PointerEntered += (s, e) => exCursorProp?.SetValue(exHeaderRow, exHandCursor);
         exHeaderRow.PointerExited  += (s, e) => exCursorProp?.SetValue(exHeaderRow, exArrowCursor);
+
+        // ── Collapsed summary (dict lookups only — no FS calls) ──────────────
+        var vm = _window.ViewModel;
+        var gn = card.GameName;
+        var gs = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
+        var exSummaryEntries = new List<(string, string?)>();
+        if (!string.IsNullOrEmpty(vm.GetUalInstalledAs(gn, gs)))                           exSummaryEntries.Add(("ASI Loader", null));
+        if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("RTX 40 MFG", null));
+        if (!string.IsNullOrEmpty(installPath) && File.Exists(Path.Combine(installPath, "renodx-mfgunlock.addon64")))
+                                                                                            exSummaryEntries.Add(("MFG Ada", null));
+        if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", null));
+        if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
+        if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", null));
+        if (card.IsDxvkInstalled)                                                           exSummaryEntries.Add(("DXVK", null));
+        var exSummary = DetailPanelBuilder.MakeSectionSummaryInlines(exSummaryEntries);
+        if (exSummary != null)
+        {
+            exSummary.Visibility = exCollapsed ? Visibility.Visible : Visibility.Collapsed;
+            exHeaderRow.Children.Add(exSummary);
+        }
+
         exHeaderRow.PointerPressed += (s, e) =>
         {
             bool nowCollapsed = exBody.Visibility == Visibility.Visible;
             exBody.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
             exArrow.Text = nowCollapsed ? "▶" : "▼";
+            if (exSummary != null)
+                exSummary.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
             if (nowCollapsed) exSettings.CollapsedDetailSections.Add(extrasSectionKey);
             else              exSettings.CollapsedDetailSections.Remove(extrasSectionKey);
             _window.ViewModel.SaveSettingsPublic();

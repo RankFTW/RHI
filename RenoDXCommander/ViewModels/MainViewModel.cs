@@ -459,6 +459,76 @@ public partial class MainViewModel : ObservableObject
         _allMods = new List<GameMod>(_dbMods);
         _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db");
     }
+
+    // ── HDR Mods List ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a merged, alphabetically sorted list of all available HDR mods
+    /// from the RenoDX DB and the Luma wiki. Each entry shows whether a game has
+    /// a RenoDX mod, a Luma mod, or both, plus their download URLs.
+    /// Used by the "Available HDR Mods" dialog.
+    /// </summary>
+    public List<HdrModEntry> GetAllHdrMods()
+    {
+        var dict = new Dictionary<string, HdrModEntry>(StringComparer.OrdinalIgnoreCase);
+
+        // RenoDX named mods (from DB / wiki)
+        foreach (var mod in _allMods)
+        {
+            if (string.IsNullOrWhiteSpace(mod.Name)) continue;
+            var rdxUrl    = mod.SnapshotUrl ?? mod.NexusUrl ?? mod.DiscordUrl;
+            var rdxStatus = mod.Status == "🚧" ? "WIP" : "Done";
+            dict[mod.Name] = new HdrModEntry(
+                Name:        mod.Name,
+                RenoDXStatus: rdxStatus,
+                RenoDXUrl:   rdxUrl,
+                LumaStatus:  null,
+                LumaUrl:     null);
+        }
+
+        // UE-Extended entries — add to dict if not already covered by a named mod
+        foreach (var kv in _dbUnrealEntries)
+        {
+            if (string.IsNullOrWhiteSpace(kv.Key)) continue;
+            var ueStatus = string.Equals(kv.Value.Status, "WIP", StringComparison.OrdinalIgnoreCase)
+                ? "WIP" : "Done";
+            if (!dict.ContainsKey(kv.Key))
+            {
+                dict[kv.Key] = new HdrModEntry(
+                    Name:        kv.Value.Name,
+                    RenoDXStatus: ueStatus,
+                    RenoDXUrl:   null,
+                    LumaStatus:  null,
+                    LumaUrl:     null);
+            }
+            // If a named mod already exists, don't overwrite it — named mod takes priority
+        }
+
+        // Luma mods — merge into existing entries or add new ones
+        foreach (var luma in _lumaMods)
+        {
+            if (string.IsNullOrWhiteSpace(luma.Name) || luma.IsGenericLuma) continue;
+            var lumaUrl    = luma.DownloadUrl ?? luma.NexusUrl;
+            var lumaStatus = luma.Status == "🚧" ? "WIP" : "Done";
+            if (dict.TryGetValue(luma.Name, out var existing))
+            {
+                dict[luma.Name] = existing with { LumaStatus = lumaStatus, LumaUrl = lumaUrl };
+            }
+            else
+            {
+                dict[luma.Name] = new HdrModEntry(
+                    Name:        luma.Name,
+                    RenoDXStatus: null,
+                    RenoDXUrl:   null,
+                    LumaStatus:  lumaStatus,
+                    LumaUrl:     lumaUrl);
+            }
+        }
+
+        return dict.Values
+            .OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
     private List<GameCardViewModel> _allCards = new();
     public IReadOnlyList<GameCardViewModel> AllCards => _allCards;
     private List<DetectedGame> _manualGames = new();

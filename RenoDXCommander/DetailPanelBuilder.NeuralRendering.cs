@@ -174,11 +174,40 @@ public partial class DetailPanelBuilder
         var nrCursorProp  = DetailPanelBuilder.CursorProp;
         nrHeaderRow.PointerEntered += (s, e) => nrCursorProp?.SetValue(nrHeaderRow, nrHandCursor);
         nrHeaderRow.PointerExited  += (s, e) => nrCursorProp?.SetValue(nrHeaderRow, nrArrowCursor);
+
+        // ── Collapsed summary ─────────────────────────────────────────────────
+        bool nrAnyInstalled = dlss5Installed || sfInstalled || feederPresent || bridgePresent;
+        TextBlock? nrSummary = null;
+        if (nrAnyInstalled || nrDllPresent)
+        {
+            var nrSummaryEntries = new List<(string, string?)>();
+            string methodLabel = effectiveMethod switch
+            {
+                NrMethodShortFuse       => "DLSS Tool (SF)",
+                NrMethodDlss5Tool       => "DLSS5 Tool",
+                NrMethodDlss5ToolBridge => "DLSS5 Tool + Bridge",
+                NrMethodFeeder          => "Feeder",
+                _                       => effectiveMethod,
+            };
+            if (nrAnyInstalled)
+                nrSummaryEntries.Add((methodLabel, null));
+            if (nrDllPresent)
+                nrSummaryEntries.Add(("NR DLL", nrDllVersion));
+            nrSummary = DetailPanelBuilder.MakeSectionSummaryInlines(nrSummaryEntries);
+            if (nrSummary != null)
+            {
+                nrSummary.Visibility = nrCollapsed ? Visibility.Visible : Visibility.Collapsed;
+                nrHeaderRow.Children.Add(nrSummary);
+            }
+        }
+
         nrHeaderRow.PointerPressed += (s, e) =>
         {
             bool nowCollapsed = nrBody.Visibility == Visibility.Visible;
             nrBody.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
             nrArrow.Text = nowCollapsed ? "▶" : "▼";
+            if (nrSummary != null)
+                nrSummary.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
             if (nowCollapsed) nrSettings.CollapsedDetailSections.Add(nrSectionKey);
             else              nrSettings.CollapsedDetailSections.Remove(nrSectionKey);
             _window.ViewModel.SaveSettingsPublic();

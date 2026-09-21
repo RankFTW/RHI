@@ -1865,4 +1865,203 @@ public sealed partial class MainWindow
     private void FaqBack_Click(object sender, RoutedEventArgs e)
         => ViewModel.NavigateToGameViewCommand.Execute(null);
 
+    // ── Available HDR Mods dialog ─────────────────────────────────────────────
+
+    private async void HdrModsListBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var allEntries = ViewModel.GetAllHdrMods();
+
+        // ── Search box ────────────────────────────────────────────────────────
+        var searchBox = new TextBox
+        {
+            PlaceholderText = "Search games…",
+            FontSize        = 13,
+            Margin          = new Thickness(0, 0, 0, 10),
+        };
+
+        // ── Column header row ─────────────────────────────────────────────────
+        var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+
+        void AddHeader(string text, int col)
+        {
+            var tb = new TextBlock
+            {
+                Text              = text,
+                FontSize          = 11,
+                FontWeight        = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground        = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                HorizontalAlignment = col == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(tb, col);
+            headerGrid.Children.Add(tb);
+        }
+        AddHeader("Game",    0);
+        AddHeader("RenoDX",  1);
+        AddHeader("Luma",    2);
+        AddHeader("Download",3);
+
+        // ── List panel ────────────────────────────────────────────────────────
+        var listPanel = new StackPanel { Spacing = 2 };
+
+        Grid MakeRow(RenoDXCommander.Models.HdrModEntry entry)
+        {
+            var row = new Grid { ColumnSpacing = 8 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+
+            // Game name
+            var nameBlock = new TextBlock
+            {
+                Text              = entry.Name,
+                FontSize          = 12,
+                Foreground        = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming      = TextTrimming.CharacterEllipsis,
+            };
+            Grid.SetColumn(nameBlock, 0);
+            row.Children.Add(nameBlock);
+
+            // RenoDX tick
+            var rdxTick = new TextBlock
+            {
+                Text                = entry.RenoDXStatus == "Done" ? "✓"
+                                    : entry.RenoDXStatus == "WIP"  ? "🔨"
+                                    : "✗",
+                FontSize            = 13,
+                Foreground          = entry.RenoDXStatus == "Done"
+                    ? UIFactory.GetBrush("#5ECB7D")
+                    : entry.RenoDXStatus == "WIP"
+                        ? UIFactory.GetBrush("#D4A856")
+                        : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment   = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(rdxTick, 1);
+            row.Children.Add(rdxTick);
+
+            // Luma tick
+            var lumaTick = new TextBlock
+            {
+                Text                = entry.LumaStatus == "Done" ? "✓"
+                                    : entry.LumaStatus == "WIP"  ? "🔨"
+                                    : "✗",
+                FontSize            = 13,
+                Foreground          = entry.LumaStatus == "Done"
+                    ? UIFactory.GetBrush("#B898E8")
+                    : entry.LumaStatus == "WIP"
+                        ? UIFactory.GetBrush("#D4A856")
+                        : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment   = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(lumaTick, 2);
+            row.Children.Add(lumaTick);
+
+            // Download link — prefer RenoDX URL, fall back to Luma URL
+            var url = entry.RenoDXUrl ?? entry.LumaUrl;
+            if (!string.IsNullOrEmpty(url) && Uri.TryCreate(url, UriKind.Absolute, out var parsedUri))
+            {
+                var linkBtn = new HyperlinkButton
+                {
+                    Content             = "Link",
+                    NavigateUri         = parsedUri,
+                    FontSize            = 11,
+                    Padding             = new Thickness(0),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment   = VerticalAlignment.Center,
+                };
+                Grid.SetColumn(linkBtn, 3);
+                row.Children.Add(linkBtn);
+            }
+            else
+            {
+                var noLink = new TextBlock
+                {
+                    Text                = "—",
+                    FontSize            = 11,
+                    Foreground          = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment   = VerticalAlignment.Center,
+                };
+                Grid.SetColumn(noLink, 3);
+                row.Children.Add(noLink);
+            }
+
+            return row;
+        }
+
+        void RebuildList(string filter)
+        {
+            listPanel.Children.Clear();
+            var filtered = string.IsNullOrWhiteSpace(filter)
+                ? allEntries
+                : allEntries.Where(e => e.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            foreach (var entry in filtered)
+                listPanel.Children.Add(MakeRow(entry));
+
+            if (listPanel.Children.Count == 0)
+            {
+                listPanel.Children.Add(new TextBlock
+                {
+                    Text       = "No mods found.",
+                    FontSize   = 12,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                    Margin     = new Thickness(0, 8, 0, 0),
+                });
+            }
+        }
+
+        // Initial populate
+        RebuildList("");
+
+        searchBox.TextChanged += (s, _) => RebuildList(searchBox.Text);
+
+        // ── Assemble dialog content ───────────────────────────────────────────
+        var countLabel = new TextBlock
+        {
+            Text      = $"{allEntries.Count} games with HDR mods",
+            FontSize  = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            Margin    = new Thickness(0, 0, 0, 10),
+        };
+
+        var scrollViewer = new ScrollViewer
+        {
+            Content                   = listPanel,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Height                    = 480,
+        };
+
+        var content = new StackPanel { Spacing = 0, MinWidth = 480, MaxWidth = 520 };
+        content.Children.Add(countLabel);
+        content.Children.Add(searchBox);
+        content.Children.Add(headerGrid);
+        content.Children.Add(new Border
+        {
+            Height     = 1,
+            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            Margin     = new Thickness(0, 0, 0, 6),
+        });
+        content.Children.Add(scrollViewer);
+
+        var dlg = new ContentDialog
+        {
+            Title              = "Available HDR Mods",
+            Content            = content,
+            CloseButtonText    = "Close",
+            XamlRoot           = Content.XamlRoot,
+            DefaultButton      = ContentDialogButton.Close,
+        };
+
+        await DialogService.ShowSafeAsync(dlg);
+    }
+
 }

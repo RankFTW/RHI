@@ -359,14 +359,36 @@ public partial class DetailPanelBuilder
             _window.DetailComponentsHeader.PointerExited  -= ComponentsHeader_PointerExited;
             _window.DetailComponentsHeader.PointerExited  += ComponentsHeader_PointerExited;
 
-            // Insert/replace drag handle as first child (tagged "DragHandle" for identification)
-            var dragHandle = MakeDragHandle(_window.DetailComponentSection);
-            dragHandle.Tag = "DragHandle";
+            // Replace drag handle as first child.
+            // The XAML starts with [0]=Arrow, [1]=Title.
+            // After insert: [0]=DragHandle, [1]=Arrow, [2]=Title.
+            // We must remove any previous drag handle first so we don't accumulate.
             if (_window.DetailComponentsHeader.Children.Count > 0
                 && _window.DetailComponentsHeader.Children[0] is TextBlock tb
                 && tb.Tag is string t && t == "DragHandle")
                 _window.DetailComponentsHeader.Children.RemoveAt(0);
+            var dragHandle = MakeDragHandle(_window.DetailComponentSection);
+            dragHandle.Tag = "DragHandle";
             _window.DetailComponentsHeader.Children.Insert(0, dragHandle);
+            // Now: [0]=DragHandle [1]=Arrow [2]=Title — Count=3
+
+            // The header StackPanel now spans cols 0-3 (Grid.ColumnSpan=4 in XAML) — full width, no clipping.
+            // Append the summary directly to the header StackPanel at index 3 (after drag handle, arrow, title).
+            // Remove any stale summary from a previous card first.
+            while (_window.DetailComponentsHeader.Children.Count > 3)
+                _window.DetailComponentsHeader.Children.RemoveAt(3);
+
+            // Always hide the old DetailLumaInfoText slot (no longer used for summary)
+            _window.DetailLumaInfoText.Visibility = Visibility.Collapsed;
+            _window.DetailLumaInfoText.Inlines.Clear();
+
+            _componentsSummaryCard = card;
+            _componentsSummary = BuildComponentsSummary(card);
+            if (_componentsSummary != null)
+            {
+                _componentsSummary.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed;
+                _window.DetailComponentsHeader.Children.Add(_componentsSummary);
+            }
         }
 
         // Populate component rows
@@ -675,6 +697,10 @@ public partial class DetailPanelBuilder
 
     // ── Components section header event handlers (wired per-card in PopulateDetailPanel) ──
 
+    // ── Components section summary state ─────────────────────────────────────
+    private TextBlock? _componentsSummary;
+    private GameCardViewModel? _componentsSummaryCard;
+
     private void ComponentsHeader_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         const string sectionKey = "Components";
@@ -685,6 +711,24 @@ public partial class DetailPanelBuilder
 
         if (collapsed) settings.CollapsedDetailSections.Add(sectionKey);
         else           settings.CollapsedDetailSections.Remove(sectionKey);
+
+        // Rebuild summary on collapse, hide on expand
+        if (collapsed)
+        {
+            while (_window.DetailComponentsHeader.Children.Count > 3)
+                _window.DetailComponentsHeader.Children.RemoveAt(3);
+
+            _componentsSummary = _componentsSummaryCard != null
+                ? BuildComponentsSummary(_componentsSummaryCard)
+                : null;
+            if (_componentsSummary != null)
+                _window.DetailComponentsHeader.Children.Add(_componentsSummary);
+        }
+        else
+        {
+            if (_componentsSummary != null)
+                _componentsSummary.Visibility = Visibility.Collapsed;
+        }
 
         _window.ViewModel.SaveSettingsPublic();
     }
@@ -718,6 +762,159 @@ public partial class DetailPanelBuilder
     // NVAPI/file-scan is running at a time — all others are cancelled immediately
     // when BuildOverridesPanel fires for a new game via _panelScanCts.
     private static readonly SemaphoreSlim _panelScanSemaphore = new SemaphoreSlim(1, 1);
+
+    // ── Collapsed section summary helpers ────────────────────────────────────
+
+    /// <summary>
+    /// Creates a TextBlock with inline white + green runs for a collapsed section summary.
+    /// Format: "Name1 version1  ·  Name2 version2"
+    /// Each entry is (labelText, versionText?) — label in TextSecondaryBrush, version in #5ECB7D green.
+    /// Returns null when the list is empty (nothing installed/active → don't show anything).
+    /// </summary>
+    internal static TextBlock? MakeSectionSummaryInlines(
+        IEnumerable<(string Label, string? Version)> items)
+    {
+        var entries = items
+            .Where(i => !string.IsNullOrWhiteSpace(i.Label))
+            .ToList();
+        if (entries.Count == 0) return null;
+
+        var tb = new TextBlock
+        {
+            FontSize  = 11,
+            Margin    = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            TextWrapping = TextWrapping.NoWrap,
+        };
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (i > 0)
+            {
+                tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+                {
+                    Text       = "  ·  ",
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                });
+            }
+
+            tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            {
+                Text       = entries[i].Label,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            });
+
+            if (!string.IsNullOrWhiteSpace(entries[i].Version))
+            {
+                tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+                {
+                    Text       = " " + entries[i].Version,
+                    Foreground = UIFactory.GetBrush("#5ECB7D"),
+                });
+            }
+        }
+
+        return tb;
+    }
+
+    /// <summary>
+    /// Populates a TextBlock's Inlines with the Components section collapsed summary.
+    /// White component names, green version numbers. Clears existing inlines first.
+    /// Returns false when nothing is installed (caller should hide the TextBlock).
+    /// </summary>
+    internal static bool PopulateComponentsSummaryInlines(TextBlock target, GameCardViewModel card)
+    {
+        target.Inlines.Clear();
+
+        var entries = new List<(string Label, string? Version)>();
+        if (card.IsRefInstalled)
+            entries.Add(("RE Framework", card.RefInstalledVersion));
+        if (card.IsRsInstalled && card.LumaStatus is not GameStatus.Installed and not GameStatus.UpdateAvailable)
+            entries.Add(("ReShade", card.RsInstalledVersion));
+        if (card.IsRdxInstalled)
+            entries.Add(("RenoDX", card.RdxInstalledVersion));
+        if (card.IsUlInstalled)
+            entries.Add(("ReLimiter", card.UlInstalledVersion));
+        if (card.IsDcInstalled)
+            entries.Add(("DC", card.DcInstalledVersion));
+        if (card.IsLumaInstalled)
+            entries.Add(("Luma", null));
+
+        if (entries.Count == 0) return false;
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (i > 0)
+                target.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+                {
+                    Text       = "  ·  ",
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                });
+
+            target.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+            {
+                Text       = entries[i].Label,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            });
+
+            if (!string.IsNullOrWhiteSpace(entries[i].Version))
+                target.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+                {
+                    Text       = " " + entries[i].Version,
+                    Foreground = UIFactory.GetBrush("#5ECB7D"),
+                });
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Builds the summary for the Components section from the current card state.
+    /// Returns null when nothing is installed.
+    /// </summary>
+    internal static TextBlock? BuildComponentsSummary(GameCardViewModel card)
+    {
+        var entries = new List<(string Label, string? Version)>();
+
+        if (card.IsRefInstalled)
+            entries.Add(("RE Framework", card.RefInstalledVersion));
+        if (card.IsRsInstalled && card.LumaStatus is not GameStatus.Installed and not GameStatus.UpdateAvailable)
+            entries.Add(("ReShade", card.RsInstalledVersion));
+        if (card.IsRdxInstalled)
+            entries.Add(("RenoDX", card.RdxInstalledVersion));
+        if (card.IsUlInstalled)
+            entries.Add(("ReLimiter", card.UlInstalledVersion));
+        if (card.IsDcInstalled)
+            entries.Add(("DC", card.DcInstalledVersion));
+        if (card.IsLumaInstalled)
+            entries.Add(("Luma", null));
+
+        return MakeSectionSummaryInlines(entries);
+    }
+
+    /// <summary>
+    /// Builds the summary for the Game Overrides section.
+    /// Shows active non-default per-game overrides: RS channel, API, launch args.
+    /// Returns null when everything is at default.
+    /// </summary>
+    internal TextBlock? BuildGameOverridesSummary(GameCardViewModel card)
+    {
+        var entries = new List<(string Label, string? Version)>();
+
+        var channel = _window.ViewModel.GetReShadeChannelOverride(card.GameName, card.Source ?? "");
+        if (!string.IsNullOrEmpty(channel))
+            entries.Add(($"RS: {channel}", null));
+
+        var apis = _window.ViewModel.GetApiOverride(card.GameName, card.Source ?? "");
+        if (apis is { Count: > 0 })
+            entries.Add(("API: " + string.Join("+", apis), null));
+
+        var launchArgs = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var la)
+            ? la : null;
+        if (!string.IsNullOrWhiteSpace(launchArgs))
+            entries.Add(("Args: " + launchArgs, null));
+
+        return MakeSectionSummaryInlines(entries);
+    }
 
     /// <summary>
     /// Builds a collapsible section: a clickable header row (arrow + title) and a body

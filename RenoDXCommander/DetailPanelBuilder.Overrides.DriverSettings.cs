@@ -12,6 +12,8 @@ public partial class DetailPanelBuilder
 {
     // Set by BuildNvidiaProfileSection so BuildDriverProfileSection appends to the body, not the panel root
     private StackPanel? _nvBodyPanel;
+    // Set by BuildNvidiaProfileSection so BuildNvidiaProfileBody can append the collapsed summary
+    private StackPanel? _nvHeaderRow;
 
     // Snapshot of all NVAPI values needed to build the driver profile section — fetched off the UI thread.
     private sealed record DriverProfileData(

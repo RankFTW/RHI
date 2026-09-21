@@ -250,7 +250,7 @@ public partial class MainViewModel
             if (!wikiFetchFailed)
             {
                 var currentModNames = _allMods
-                    .Where(m => m.SnapshotUrl != null) // Only mods with downloadable addons
+                    .Where(m => m.SnapshotUrl != null || m.NexusUrl != null) // Mods with any downloadable source
                     .Select(m => m.Name)
                     .ToList();
 

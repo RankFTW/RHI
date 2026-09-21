@@ -78,6 +78,14 @@ public partial class DetailPanelBuilder
         _window.OverridesHeaderRow.Children.Add(ovTitle);
         _window.OverridesPanel.Visibility = ovCollapsed ? Visibility.Collapsed : Visibility.Visible;
 
+        // ── Collapsed summary ─────────────────────────────────────────────────
+        var ovSummary = BuildGameOverridesSummary(card);
+        if (ovSummary != null)
+        {
+            ovSummary.Visibility = ovCollapsed ? Visibility.Visible : Visibility.Collapsed;
+            _window.OverridesHeaderRow.Children.Add(ovSummary);
+        }
+
         // Unsubscribe previous handlers before adding new ones (OverridesHeaderRow is a
         // persistent XAML element — handlers stack up across rebuilds without this)
         if (_ovHeaderPressedHandler != null) _window.OverridesHeaderRow.PointerPressed -= _ovHeaderPressedHandler;
@@ -103,6 +111,22 @@ public partial class DetailPanelBuilder
             bool nowCollapsed = _window.OverridesPanel.Visibility == Visibility.Visible;
             _window.OverridesPanel.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
             ovArrow.Text = nowCollapsed ? "▶" : "▼";
+            if (nowCollapsed)
+            {
+                // Remove stale summary (index 3 = after drag handle + arrow + title)
+                while (_window.OverridesHeaderRow.Children.Count > 3)
+                    _window.OverridesHeaderRow.Children.RemoveAt(3);
+                var rebuilt = BuildGameOverridesSummary(card);
+                if (rebuilt != null)
+                    _window.OverridesHeaderRow.Children.Add(rebuilt);
+            }
+            else
+            {
+                // Hide any summary at index 3
+                if (_window.OverridesHeaderRow.Children.Count > 3
+                    && _window.OverridesHeaderRow.Children[3] is TextBlock ovSum)
+                    ovSum.Visibility = Visibility.Collapsed;
+            }
             if (nowCollapsed) ovSettings.CollapsedDetailSections.Add(overridesSectionKey);
             else              ovSettings.CollapsedDetailSections.Remove(overridesSectionKey);
             _window.ViewModel.SaveSettingsPublic();

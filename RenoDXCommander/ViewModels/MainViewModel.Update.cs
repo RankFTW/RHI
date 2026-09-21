@@ -50,7 +50,7 @@ public partial class MainViewModel
 
                         // Detect new wiki mods
                         var currentModNames = _allMods
-                            .Where(m => m.SnapshotUrl != null)
+                            .Where(m => m.SnapshotUrl != null || m.NexusUrl != null)
                             .Select(m => m.Name)
                             .ToList();
                         _crashReporter.Log($"[MainViewModel] Periodic wiki mods check: {currentModNames.Count} downloadable mods");

@@ -61,15 +61,26 @@ public partial class DetailPanelBuilder
         var nvCursorProp  = DetailPanelBuilder.CursorProp;
         nvHeaderRow.PointerEntered += (s, e) => nvCursorProp?.SetValue(nvHeaderRow, nvHandCursor);
         nvHeaderRow.PointerExited  += (s, e) => nvCursorProp?.SetValue(nvHeaderRow, nvArrowCursor);
+
+        // Placeholder for the collapsed summary — populated by BuildNvidiaProfileBody after the scan
+        // The toggle handler reads index 3 from _nvHeaderRow so it always gets the live TextBlock.
+
         nvHeaderRow.PointerPressed += (s, e) =>
         {
             bool nowCollapsed = nvBody.Visibility == Visibility.Visible;
             nvBody.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
             nvArrow.Text = nowCollapsed ? "▶" : "▼";
+            // Show/hide the summary TextBlock at index 3 (appended by BuildNvidiaProfileBody)
+            if (_nvHeaderRow != null && _nvHeaderRow.Children.Count > 3
+                && _nvHeaderRow.Children[3] is TextBlock nvSummaryTb)
+                nvSummaryTb.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
             if (nowCollapsed) nvSettings.CollapsedDetailSections.Add(nvSectionKey);
             else              nvSettings.CollapsedDetailSections.Remove(nvSectionKey);
             _window.ViewModel.SaveSettingsPublic();
         };
+
+        // Store header row + collapsed flag so BuildNvidiaProfileBody can append/update the summary
+        _nvHeaderRow = nvHeaderRow;
 
         // Store the body panel so BuildDriverProfileSection can append to it
         _nvBodyPanel = nvBody;
@@ -801,5 +812,34 @@ public partial class DetailPanelBuilder
         }
 
         BuildDriverProfileSection(card, capturedName);
+
+        // ── Update collapsed summary now that DLSS versions are known ─────────
+        // Remove any stale summary TextBlocks (index > 2: drag handle + arrow + title = indices 0-2)
+        if (_nvHeaderRow != null)
+        {
+            while (_nvHeaderRow.Children.Count > 3)
+                _nvHeaderRow.Children.RemoveAt(3);
+
+            var nvSummaryEntries = new List<(string, string?)>();
+            if (card.HasDlss)
+                nvSummaryEntries.Add(("SR", card.DlssInstalledVersion));
+            if (card.HasDlssd)
+                nvSummaryEntries.Add(("RR", card.DlssdInstalledVersion));
+            if (card.HasDlssg)
+                nvSummaryEntries.Add(("FG", card.DlssgInstalledVersion));
+            if (FeatureFlags.DlssNr && card.HasDlssnr)
+                nvSummaryEntries.Add(("NR", card.DlssnrInstalledVersion));
+            if (card.HasStreamline)
+                nvSummaryEntries.Add(("SL", card.StreamlineInstalledVersion));
+
+            var nvSummaryTb = DetailPanelBuilder.MakeSectionSummaryInlines(nvSummaryEntries);
+            if (nvSummaryTb != null)
+            {
+                var nvCollapsed = _window.ViewModel.Settings.CollapsedDetailSections
+                    .Contains("NvidiaProfile");
+                nvSummaryTb.Visibility = nvCollapsed ? Visibility.Visible : Visibility.Collapsed;
+                _nvHeaderRow.Children.Add(nvSummaryTb);
+            }
+        }
     }
 }

@@ -4,6 +4,8 @@
 
 - Luma mods that exist in the GitHub release archive but aren't listed on the wiki now show up automatically in RHI. Games with a release build but no wiki download link will have the GitHub URL filled in. Games not on the wiki at all appear as new entries. Wiki entries always take priority — Nexus links and author metadata are preserved.
 - Added a separator labelled "HDR Mods" between ReShade and RenoDX in the Components panel, consistent across all games whether or not Luma is available.
+- Collapsed detail panel sections now show a compact inline summary of what's installed or configured. Components shows installed versions (ReShade 6.8.0  ·  RenoDX  ·  ReLimiter 3.3.5), Nvidia Profile shows DLSS/Streamline versions (SR 3.10.9.1  ·  SL 2.14.1), Neural Rendering shows the active method and NR DLL version, Extras shows OptiScaler and DXVK, and Game Overrides shows any non-default channel, API, or launch arg overrides. Component names are shown in white, version numbers in green.
+- Added an "Available HDR Mods" button next to Quick Start. Opens a searchable list of every game in the RenoDX database and Luma wiki, with columns showing whether a RenoDX mod, Luma mod, or both are available, plus a direct download link.
 
 ### Bug Fixes
 
@@ -13,6 +15,7 @@
 **Other**
 - Fixed spurious `renodx-dlss5.addon64` files left in game folders after the global addon picker was cleared. Games where NR is managed by ShortFuse or Feeder now have the redundant file removed automatically on first launch.
 - Clicking the OptiScaler version number or Info button now opens the DLSS NR fork's releases page when the DLSS NR variant is installed, instead of the main OptiScaler wiki.
+- Fixed the "New Mods" notification not firing for Nexus-only mods. Mods with only a Nexus URL (no direct addon download) were excluded from the new-mods check and never surfaced as notifications.
 
 ### Changes
 
@@ -23,6 +26,7 @@
 
 - Added install warnings for 21 Luma mods that are available as release assets but are not yet officially published on the wiki. The warning notes that these are work-in-progress and support should not be requested unless specifically asked.
 - Added `L.A. Noire` name mapping for Luma release asset matching.
+- Added Overwatch install subpath (`_retail_`).
 
 ## v2.7.5
 
