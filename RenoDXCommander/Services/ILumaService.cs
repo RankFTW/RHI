@@ -9,6 +9,9 @@ public interface ILumaService
 {
     Task<List<LumaMod>> FetchCompletedModsAsync(IProgress<string>? progress = null);
 
+    /// <summary>Fetches LumaMod stubs from GitHub release assets (fills gaps not in the wiki).</summary>
+    Task<List<LumaMod>> FetchReleasesModsAsync();
+
     /// <summary>
     /// Fetches and parses the Luma Framework generic Unreal Engine wiki table.
     /// Returns per-game entries with notes, Engine.ini keys, HDR flag, UE version,

@@ -266,7 +266,36 @@ public class AddonPackService : IAddonPackService
             }
             catch { }
         }
-        catch (Exception ex) { CrashReporter.Log($"[AddonPackService] Stale file migration failed — {ex.Message}"); }        await _downloadLock.WaitAsync();
+        catch (Exception ex) { CrashReporter.Log($"[AddonPackService] Stale file migration failed — {ex.Message}"); }
+
+        // One-time migration: remove spurious renodx-dlss5.addon64 from game folders where
+        // NR is managed by ShortFuse or Feeder. These files were deployed globally via the
+        // addon picker (before it was removed) and are redundant alongside a real NR install.
+        // The guard in DeployAddonsForGame won't remove them because nvngx_dlssnr.dll is present.
+        try
+        {
+            const string dlss5Addon = "renodx-dlss5.addon64";
+            var deployments = LoadDeployments();
+            bool deploymentsChanged = false;
+            foreach (var (path, files) in deployments)
+            {
+                if (!files.Contains(dlss5Addon)) continue;
+                // Only remove if the NR section manages this game with SF or Feeder
+                var manifest = Models.RhiInstallManifest.Read(path);
+                var nrMethod = manifest?.NrMethod;
+                bool nrSectionOwnsGame = string.Equals(nrMethod, "ShortFuse", StringComparison.OrdinalIgnoreCase)
+                                      || string.Equals(nrMethod, "Feeder", StringComparison.OrdinalIgnoreCase);
+                if (!nrSectionOwnsGame) continue;
+                var gameFile = Path.Combine(path, dlss5Addon);
+                try { if (File.Exists(gameFile)) { File.Delete(gameFile); CrashReporter.Log($"[AddonPackService] Removed spurious '{dlss5Addon}' (NR={nrMethod}) from '{path}'"); } } catch { }
+                files.Remove(dlss5Addon);
+                deploymentsChanged = true;
+            }
+            if (deploymentsChanged) SaveDeployments(deployments);
+        }
+        catch (Exception ex) { CrashReporter.Log($"[AddonPackService] DLSS5 spurious addon cleanup failed — {ex.Message}"); }
+
+        await _downloadLock.WaitAsync();
         try
         {
         List<AddonEntry>? parsed = null;

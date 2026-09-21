@@ -242,8 +242,13 @@ public sealed partial class MainWindow
         if (card == null) return;
 
         if (card.IsOsInstalled)
-            await Windows.System.Launcher.LaunchUriAsync(
-                new Uri("https://github.com/optiscaler/OptiScaler/wiki"));
+        {
+            var variant = ViewModel.GetOsVariant(card.GameName, card.Source ?? "");
+            var url = variant == "DlssNr"
+                ? "https://github.com/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases"
+                : "https://github.com/optiscaler/OptiScaler/wiki";
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+        }
     }
 
     private async void DetailUlStatus_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)

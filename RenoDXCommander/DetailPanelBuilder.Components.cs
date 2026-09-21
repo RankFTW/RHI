@@ -438,7 +438,8 @@ public partial class DetailPanelBuilder
 
         // Luma row — visible whenever this game has a Luma mod (always show alongside RenoDX)
         bool hasLumaRow = card.LumaFeatureEnabled && card.LumaMod != null;
-        _window.DetailHdrModSeparator.Visibility = hasLumaRow ? Visibility.Visible : Visibility.Collapsed;
+        // HDR Mods separator — always visible between ReShade and RenoDX
+        _window.DetailHdrModSeparator.Visibility = Visibility.Visible;
         if (hasLumaRow)
         {
             _window.DetailLumaRow.Visibility = Visibility.Visible;

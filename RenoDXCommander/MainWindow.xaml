@@ -698,7 +698,7 @@
                                     </Button>
                                 </Grid>
 
-                                <!-- Labeled separator: HDR mods — choose one or both -->
+                                <!-- Labeled separator: HDR Mods -->
                                 <Grid x:Name="DetailHdrModSeparator" x:FieldModifier="internal" Margin="0,4,0,4" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
@@ -708,7 +708,7 @@
                                         <ColumnDefinition Width="36"/>
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="3" Text="———  HDR Mods — Install one or both  ———" FontSize="11"
+                                    <TextBlock Grid.Column="3" Text="———  HDR Mods  ———" FontSize="11"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>

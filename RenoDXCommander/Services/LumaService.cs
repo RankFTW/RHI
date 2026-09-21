@@ -1019,6 +1019,169 @@ public class LumaService : ILumaService
         return matches[matches.Count - 1].Groups[1].Value;
     }
 
+    // ── Releases API — asset discovery ───────────────────────────────────────────
+
+    private const string LumaReleasesListApi =
+        "https://api.github.com/repos/Filoppi/Luma-Framework/releases?per_page=5";
+
+    // Generics and dev tools — not real game mods, skip them
+    private static readonly HashSet<string> ReleasesApiExclusions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Generic Mod", "Unreal Engine", "Unity Engine", "Graphics Analyzer"
+    };
+
+    /// <summary>
+    /// Fetches the latest Luma release assets from the GitHub Releases API and returns
+    /// LumaMod stubs for any named game mods found. These are merged with the wiki results
+    /// by <see cref="MergeLumaMods"/> — wiki always wins on conflict.
+    /// </summary>
+    public async Task<List<LumaMod>> FetchReleasesModsAsync()
+    {
+        var result = new List<LumaMod>();
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, LumaReleasesListApi);
+            request.Headers.UserAgent.ParseAdd("RHI");
+            request.Headers.Accept.ParseAdd("application/vnd.github+json");
+            var response = await _http.SendAsync(request).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                CrashReporter.Log($"[LumaService.FetchReleasesModsAsync] GitHub API {response.StatusCode}");
+                return result;
+            }
+
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+            // Use the first (latest) release only
+            var releases = doc.RootElement.EnumerateArray().ToList();
+            if (releases.Count == 0) return result;
+
+            var latest = releases[0];
+            if (!latest.TryGetProperty("assets", out var assets)) return result;
+
+            var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var asset in assets.EnumerateArray())
+            {
+                var assetName = asset.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+
+                // Only standard release zips — skip -Test, -Dev, bitness variants
+                if (!assetName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) continue;
+                if (assetName.Contains("-Test", StringComparison.OrdinalIgnoreCase)) continue;
+                if (assetName.Contains("-Dev", StringComparison.OrdinalIgnoreCase)) continue;
+                if (!assetName.StartsWith("Luma-", StringComparison.OrdinalIgnoreCase)) continue;
+
+                // Extract game name: strip "Luma-" prefix and ".zip" suffix, replace _ with space
+                var stem = assetName[5..^4]; // strip "Luma-" (5) and ".zip" (4)
+
+                // Strip bitness suffix (-x32, -x64)
+                if (stem.EndsWith("-x32", StringComparison.OrdinalIgnoreCase)) stem = stem[..^4];
+                else if (stem.EndsWith("-x64", StringComparison.OrdinalIgnoreCase)) stem = stem[..^4];
+
+                var gameName = stem.Replace('_', ' ').Replace('.', '\'').Trim();
+
+                // Skip generics and dev tools
+                if (ReleasesApiExclusions.Contains(gameName)) continue;
+
+                // Deduplicate (x32 and x64 variants would produce the same name)
+                if (!seenNames.Add(gameName)) continue;
+
+                var downloadUrl = asset.TryGetProperty("browser_download_url", out var u)
+                    ? u.GetString() : null;
+                if (string.IsNullOrEmpty(downloadUrl)) continue;
+
+                result.Add(new LumaMod
+                {
+                    Name = gameName,
+                    DownloadUrl = downloadUrl,
+                    Status = "✅",
+                });
+            }
+
+            CrashReporter.Log($"[LumaService.FetchReleasesModsAsync] Found {result.Count} mods from release assets");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[LumaService.FetchReleasesModsAsync] Failed — {ex.Message}");
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Merges wiki mods with release asset mods using wiki-wins priority:
+    /// 1. Wiki entry with any URL → keep as-is, discard release asset
+    /// 2. Wiki entry with NO URL → fill in DownloadUrl from matching release asset
+    /// 3. No wiki entry → add release asset as new LumaMod
+    /// Matching uses NormalizeForLookup for fuzzy name comparison.
+    /// </summary>
+    public static List<LumaMod> MergeLumaMods(List<LumaMod> wikiMods, List<LumaMod> releaseMods)
+    {
+        // Build lookup from normalized name → release mod
+        var releaseByNorm = new Dictionary<string, LumaMod>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rm in releaseMods)
+        {
+            var norm = NormalizeForMerge(rm.Name);
+            if (!string.IsNullOrEmpty(norm) && !releaseByNorm.ContainsKey(norm))
+                releaseByNorm[norm] = rm;
+        }
+
+        var merged = new List<LumaMod>(wikiMods.Count + releaseMods.Count);
+        var wikiNorms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var wm in wikiMods)
+        {
+            var norm = NormalizeForMerge(wm.Name);
+            wikiNorms.Add(norm);
+
+            // Case 2: wiki entry has no download URL and no Nexus URL — fill in from release asset
+            if (wm.DownloadUrl == null && wm.NexusUrl == null
+                && releaseByNorm.TryGetValue(norm, out var match))
+            {
+                merged.Add(new LumaMod
+                {
+                    Name        = wm.Name,
+                    Author      = wm.Author,
+                    DownloadUrl = match.DownloadUrl,  // from release asset
+                    NexusUrl    = wm.NexusUrl,
+                    Status      = wm.Status,
+                    SpecialNotes  = wm.SpecialNotes,
+                    FeatureNotes  = wm.FeatureNotes,
+                    IsGenericLuma = wm.IsGenericLuma,
+                    RequiresDgVoodoo = wm.RequiresDgVoodoo,
+                    DgVoodooVersion  = wm.DgVoodooVersion,
+                });
+            }
+            else
+            {
+                // Cases 1 & default — keep wiki entry unchanged
+                merged.Add(wm);
+            }
+        }
+
+        // Case 3: release mods with no wiki entry
+        foreach (var rm in releaseMods)
+        {
+            var norm = NormalizeForMerge(rm.Name);
+            if (!wikiNorms.Contains(norm))
+                merged.Add(rm);
+        }
+
+        return merged;
+    }
+
+    private static string NormalizeForMerge(string name)
+    {
+        // Lowercase, strip punctuation except spaces, collapse spaces
+        var sb = new System.Text.StringBuilder(name.Length);
+        foreach (var c in name.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c)) sb.Append(c);
+            else if (char.IsWhiteSpace(c)) sb.Append(' ');
+        }
+        return System.Text.RegularExpressions.Regex.Replace(sb.ToString().Trim(), @"\s+", " ");
+    }
+
     // ── Update detection ──────────────────────────────────────────────────────────
 
     private const string LumaReleasesApi =

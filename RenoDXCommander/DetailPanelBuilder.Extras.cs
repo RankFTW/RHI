@@ -703,9 +703,13 @@ public partial class DetailPanelBuilder
         };
         if (card.IsOsInstalled && !osGreyed)
         {
-            ToolTipService.SetToolTip(statusBlock, "Click to open OptiScaler wiki");
+            var osVariant = _window.ViewModel.GetOsVariant(card.GameName, card.Source ?? "");
+            var osWikiUrl = osVariant == "DlssNr"
+                ? "https://github.com/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases"
+                : "https://github.com/optiscaler/OptiScaler/wiki";
+            ToolTipService.SetToolTip(statusBlock, "Click to open OptiScaler releases");
             statusBlock.PointerPressed += async (s, e) =>
-                await Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/optiscaler/OptiScaler/wiki"));
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(osWikiUrl));
         }
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);

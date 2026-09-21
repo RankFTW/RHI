@@ -1,13 +1,28 @@
 ## v2.7.6
 
+### New
+
+- Luma mods that exist in the GitHub release archive but aren't listed on the wiki now show up automatically in RHI. Games with a release build but no wiki download link will have the GitHub URL filled in. Games not on the wiki at all appear as new entries. Wiki entries always take priority — Nexus links and author metadata are preserved.
+- Added a separator labelled "HDR Mods" between ReShade and RenoDX in the Components panel, consistent across all games whether or not Luma is available.
+
 ### Bug Fixes
 
+**Sleep/wake freeze**
 - Fixed the app freezing after the PC wakes from sleep when a game card with DLSS or driver profile settings was selected. The per-game NVAPI reads (DLSS presets, VSync, Low Latency, ReBAR, etc.) now run with a 5-second timeout, same as the Settings page fix in v2.7.5. On timeout the section shows default values and the panel remains responsive.
+
+**Other**
+- Fixed spurious `renodx-dlss5.addon64` files left in game folders after the global addon picker was cleared. Games where NR is managed by ShortFuse or Feeder now have the redundant file removed automatically on first launch.
+- Clicking the OptiScaler version number or Info button now opens the DLSS NR fork's releases page when the DLSS NR variant is installed, instead of the main OptiScaler wiki.
 
 ### Changes
 
 - Simple View has been removed. The app is now always in Detail View.
 - DLSS5 Tool, DLSS Tool (ShortFuse), DLSS5 Feeder, DLSS5 DX11 Bridge, and MFG Ada Unlock have been removed from the addon picker. They are still fully supported — install them from the Neural Rendering section and the Extras section respectively. Any games that had these enabled via the global or per-game addon picker will have them silently removed from those selections on first launch. The components themselves are not uninstalled.
+
+### Manifest Updates
+
+- Added install warnings for 21 Luma mods that are available as release assets but are not yet officially published on the wiki. The warning notes that these are work-in-progress and support should not be requested unless specifically asked.
+- Added `L.A. Noire` name mapping for Luma release asset matching.
 
 ## v2.7.5
 

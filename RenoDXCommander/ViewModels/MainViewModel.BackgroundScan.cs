@@ -54,6 +54,7 @@ public partial class MainViewModel
             // Launch all background tasks (identical to InitializeAsync)
             var wikiTask        = _wikiService.FetchAllAsync();
             var lumaTask        = _lumaService.FetchCompletedModsAsync();
+            var lumaRelTask     = _lumaService.FetchReleasesModsAsync();
             var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
             var manifestTask    = _manifestService.FetchAsync();
             var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
@@ -234,7 +235,13 @@ public partial class MainViewModel
                 _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase);
             }
             MergeDbSources();
-            try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); }
+            try
+            {
+                var wikiLuma = lumaTask.IsCompletedSuccessfully ? await lumaTask : new();
+                var relLuma  = lumaRelTask.IsCompletedSuccessfully ? await lumaRelTask : new();
+                _lumaMods = LumaService.MergeLumaMods(wikiLuma, relLuma);
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods: {wikiLuma.Count} wiki + {relLuma.Count} releases = {_lumaMods.Count} merged");
+            }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
             try { _lumaGenericEntries = lumaUeTask.IsCompletedSuccessfully ? await lumaUeTask : new(StringComparer.OrdinalIgnoreCase); }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma UE entries failed — {ex.Message}"); _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase); }
