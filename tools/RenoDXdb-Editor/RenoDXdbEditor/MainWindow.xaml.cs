@@ -39,7 +39,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public bool HasFile
     {
         get => _hasFile;
-        set { _hasFile = value; OnPropertyChanged(nameof(HasFile)); }
+        set
+        {
+            _hasFile = value;
+            OnPropertyChanged(nameof(HasFile));
+            OnPropertyChanged(nameof(CanCheckWiki));
+        }
     }
 
     private bool _hasSelection;
@@ -48,6 +53,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         get => _hasSelection;
         set { _hasSelection = value; OnPropertyChanged(nameof(HasSelection)); }
     }
+
+    /// <summary>True only when the Named Mods DB is open (not Unreal mode).</summary>
+    public bool CanCheckWiki => _hasFile && !_isUnrealMode;
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged(string name) =>
@@ -391,7 +399,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             _currentFilePath = path;
             _isDirty         = false;
-            HasFile          = true;
+            HasFile          = true;   // also notifies CanCheckWiki
+            OnPropertyChanged(nameof(CanCheckWiki));
             SelectorPanel.Visibility = Visibility.Collapsed;
             EditorPanel.Visibility   = Visibility.Visible;
             ClearEditor();
@@ -824,5 +833,91 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_isDirty && !ConfirmDiscard()) e.Cancel = true;
         base.OnClosing(e);
+    }
+
+    // ── Wiki check ────────────────────────────────────────────────────────────
+
+    private async void WikiCheck_Click(object sender, RoutedEventArgs e)
+    {
+        if (!HasFile || _isUnrealMode) return;
+
+        WikiCheckBtn.IsEnabled = false;
+        StatusBar.Text = "Fetching RenoDX wiki…";
+
+        List<WikiMod> wikiMods;
+        try
+        {
+            wikiMods = await WikiScrapeService.FetchNamedDoneModsAsync(_githubToken);
+        }
+        catch (Exception ex)
+        {
+            StatusBar.Text = $"Wiki fetch failed: {ex.Message}";
+            WikiCheckBtn.IsEnabled = true;
+            MessageBox.Show($"Failed to fetch the wiki:\n\n{ex.Message}",
+                "Wiki Fetch Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+        finally
+        {
+            WikiCheckBtn.IsEnabled = CanCheckWiki;
+        }
+
+        // Build a set of normalised names already in the DB
+        var inDb = new HashSet<string>(
+            _allMods.Select(m => NormaliseModName(m.Name)),
+            StringComparer.Ordinal);
+
+        // Keep only wiki mods whose normalised name isn't in the DB yet
+        var newMods = wikiMods
+            .Where(w => !inDb.Contains(NormaliseModName(w.Name)))
+            .OrderBy(w => w.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (newMods.Count == 0)
+        {
+            StatusBar.Text = $"Wiki check complete — no new mods found ({wikiMods.Count} checked).";
+            MessageBox.Show(
+                $"All {wikiMods.Count} completed wiki mods are already in the DB.\n\nNothing to review.",
+                "Up to Date", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        StatusBar.Text = $"Found {newMods.Count} new mod(s) — opening review…";
+
+        var review = new WikiReviewWindow(newMods) { Owner = this };
+        review.ShowDialog();
+
+        if (review.AcceptedMods.Count == 0)
+        {
+            StatusBar.Text = $"Wiki review closed — no mods accepted.";
+            return;
+        }
+
+        // Insert all accepted mods into the list, alphabetically
+        foreach (var mod in review.AcceptedMods)
+            InsertModAlpha(mod);
+
+        _isDirty = true;
+        UpdateStatusBar();
+        StatusBar.Text = $"Added {review.AcceptedMods.Count} mod(s) from wiki. Save to persist.";
+    }
+
+    /// <summary>
+    /// Normalises a mod name for duplicate detection:
+    /// decodes HTML entities, strips trademark/copyright symbols, lowercases,
+    /// removes all non-alphanumeric/non-space characters, collapses whitespace.
+    /// Mirrors NormalizeName in the app.
+    /// </summary>
+    private static string NormaliseModName(string name)
+    {
+        // Decode HTML entities (handles &middot; &amp; &apos; etc.)
+        var s = System.Web.HttpUtility.HtmlDecode(name);
+        // Strip common trademark/copyright symbols
+        s = s.Replace("™", "").Replace("®", "").Replace("©", "");
+        // Lowercase and strip all non-alphanumeric (except spaces)
+        s = System.Text.RegularExpressions.Regex.Replace(s.ToLowerInvariant(), @"[^\w\s]", "");
+        // Collapse whitespace
+        s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", " ").Trim();
+        return s;
     }
 }

@@ -260,6 +260,14 @@
 
                 <Separator Width="1" Background="#444466" Margin="10,0"/>
 
+                <!-- Wiki check — Named Mods only -->
+                <Button x:Name="WikiCheckBtn" Content="↓ Check Wiki"
+                        Padding="11,5" IsEnabled="{Binding CanCheckWiki}"
+                        Click="WikiCheck_Click"
+                        ToolTip="Fetch the RenoDX wiki and find Done mods not yet in the DB"/>
+
+                <Separator Width="1" Background="#444466" Margin="10,0"/>
+
                 <!-- Search -->
                 <TextBox x:Name="SearchBox" Width="190" TextChanged="SearchBox_TextChanged"
                          ToolTip="Filter by name / author"/>
