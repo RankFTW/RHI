@@ -703,6 +703,7 @@ public partial class DetailPanelBuilder
 
                 // ── Step 2: Revert RS and DC ──
                 result = _window.ViewModel.DisableDllOverride(card);
+                CrashReporter.Log($"[DetailPanelBuilder] Reset DLL complete for '{capturedName}' — HasDllOverride={_window.ViewModel.HasDllOverride(capturedName)}, cfg={_window.ViewModel.GetDllOverride(capturedName)?.ReShadeFileName}");
             });
 
             // Back on UI thread — rebuild the panel directly (already on UI thread after await)
