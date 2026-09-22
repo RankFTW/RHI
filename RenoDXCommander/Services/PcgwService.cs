@@ -239,6 +239,18 @@ public class PcgwService : IPcgwService
         }
     }
 
+    /// <summary>
+    /// Returns true when the game is present in the centralized pcgw_data.json,
+    /// regardless of whether it has any populated API fields.
+    /// Use this to skip the per-page scrape for games the centralized file already covers.
+    /// </summary>
+    public bool IsInCentralData(string gameName, int? steamAppId = null)
+    {
+        if (_centralData == null) return false;
+        var (title, _) = _centralData.TryLookup(gameName, steamAppId);
+        return title != null;
+    }
+
     /// <inheritdoc />
     public async Task LoadCacheAsync()
     {

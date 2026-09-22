@@ -56,6 +56,12 @@ public interface IPcgwService
     /// </summary>
     void CheckManifestCacheVersion(RenoDXCommander.Models.RemoteManifest? manifest);
 
+    /// <summary>
+    /// Returns true when the game is present in the centralized pcgw_data.json.
+    /// Use this to skip the per-page API scrape for games the centralized file covers.
+    /// </summary>
+    bool IsInCentralData(string gameName, int? steamAppId = null);
+
     /// <summary>Loads the PCGW API info cache from disk.</summary>
     Task LoadApiCacheAsync();
 

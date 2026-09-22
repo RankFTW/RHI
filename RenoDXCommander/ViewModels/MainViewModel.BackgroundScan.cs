@@ -466,6 +466,9 @@ public partial class MainViewModel
                         {
                             if (scraped >= ApiScrapeCap) break;
                             if (string.IsNullOrEmpty(card.PcgwUrl)) continue;
+                            // Skip if the centralized pcgw_data.json already covers this game —
+                            // the centralized data is authoritative and the per-page scrape is redundant.
+                            if (_pcgwService.IsInCentralData(card.GameName, card.DetectedGame?.SteamAppId)) continue;
                             if (_pcgwService.GetCachedApiInfo(card.GameName) != null) continue;
                             await _pcgwService.FetchApiInfoAsync(card.GameName, card.PcgwUrl).ConfigureAwait(false);
                             scraped++;
