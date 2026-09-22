@@ -42,6 +42,10 @@ public partial class MainViewModel
                 try { await _pcgwService.LoadCacheAsync(); await _pcgwService.LoadApiCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
+            var pcgwCentralTask = Task.Run(async () => {
+                try { await _pcgwService.LoadCentralDataAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService central data load failed — {ex.Message}"); }
+            });
             var uwFixInitTask = Task.Run(async () => {
                 try { await _uwFixService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] UltrawideFixService init failed — {ex.Message}"); }
@@ -371,6 +375,7 @@ public partial class MainViewModel
             _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Awaiting background init tasks...");
             await nexusInitTask;
             await pcgwCacheTask;
+            await pcgwCentralTask;
             await uwFixInitTask;
             await ultraPlusInitTask;
             _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Background init tasks complete");

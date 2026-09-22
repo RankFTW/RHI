@@ -225,6 +225,10 @@ public partial class MainViewModel
                 try { await _pcgwService.LoadCacheAsync(); await _pcgwService.LoadApiCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
+            var pcgwCentralTask = Task.Run(async () => {
+                try { await _pcgwService.LoadCentralDataAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] PcgwService central data load failed — {ex.Message}"); }
+            });
             var uwFixInitTask = Task.Run(async () => {
                 try { await _uwFixService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] UltrawideFixService init failed — {ex.Message}"); }
@@ -631,6 +635,7 @@ public partial class MainViewModel
             // Ensure Nexus Mods dictionary and PCGW AppID cache are ready before building cards
             await nexusInitTask;
             await pcgwCacheTask;
+            await pcgwCentralTask;
             await uwFixInitTask;
             await ultraPlusInitTask;
 

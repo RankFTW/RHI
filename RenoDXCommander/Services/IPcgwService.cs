@@ -14,6 +14,14 @@ public interface IPcgwService
     Task LoadCacheAsync();
 
     /// <summary>
+    /// Fetches database/pcgw_data.json from rhi-repo (ETag-cached) and builds
+    /// the in-memory centralized lookup for URLs and API info.
+    /// Covers ~55k games — eliminates per-game OpenSearch and API scrape calls
+    /// for the vast majority of users' libraries.
+    /// </summary>
+    Task LoadCentralDataAsync();
+
+    /// <summary>
     /// Resolves the PCGW URL for a game, checking:
     /// 1. Manifest pcgwUrlOverrides (highest priority)
     /// 2. Steam AppID → appid.php redirect URL

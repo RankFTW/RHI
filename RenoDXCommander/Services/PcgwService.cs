@@ -1,7 +1,94 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using RenoDXCommander.Models;
 
 namespace RenoDXCommander.Services;
+
+// ── Centralized PCGW data model (database/pcgw_data.json from rhi-repo) ───────
+
+/// <summary>Single game entry in the centralized PCGW data file.</summary>
+internal sealed class PcgwCentralEntry
+{
+    [JsonPropertyName("steam_appid")]    public int     SteamAppId    { get; set; }
+    [JsonPropertyName("dx9")]            public bool    Dx9           { get; set; }
+    [JsonPropertyName("dx10")]           public bool    Dx10          { get; set; }
+    [JsonPropertyName("dx11")]           public bool    Dx11          { get; set; }
+    [JsonPropertyName("dx12")]           public bool    Dx12          { get; set; }
+    [JsonPropertyName("vulkan")]         public bool    Vulkan        { get; set; }
+    [JsonPropertyName("opengl")]         public bool    OpenGL        { get; set; }
+    [JsonPropertyName("config_path")]     public string? ConfigPath    { get; set; }
+    [JsonPropertyName("config_path_xbox")]public string? ConfigPathXbox { get; set; }
+}
+
+/// <summary>Top-level wrapper for pcgw_data.json.</summary>
+internal sealed class PcgwCentralFile
+{
+    [JsonPropertyName("name_overrides")]
+    public Dictionary<string, string>? NameOverrides { get; set; }
+
+    [JsonPropertyName("games")]
+    public Dictionary<string, PcgwCentralEntry>? Games { get; set; }
+}
+
+/// <summary>
+/// In-memory representation of the centralized PCGW data.
+/// Keyed by PCGW page title (OrdinalIgnoreCase).
+/// </summary>
+internal sealed class PcgwCentralData
+{
+    /// <summary>PCGW page title → entry (all API + config data).</summary>
+    public Dictionary<string, PcgwCentralEntry> Games { get; }
+        = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Detected game name → PCGW page title. Replaces manifest pcgwUrlOverrides.</summary>
+    public Dictionary<string, string> NameOverrides { get; }
+        = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Steam AppID → PCGW page title. Built at load time for fast reverse lookup.</summary>
+    public Dictionary<int, string> AppIdIndex { get; }
+        = new();
+
+    /// <summary>
+    /// Tries to find a PCGW page title for the given detected game name, using:
+    ///   1. name_overrides (exact match)
+    ///   2. Direct page name match in Games dict
+    ///   3. Steam AppID reverse lookup
+    /// Returns (pageTitle, entry) or (null, null) if not found.
+    /// </summary>
+    public (string? PageTitle, PcgwCentralEntry? Entry) TryLookup(string gameName, int? steamAppId)
+    {
+        // 1. name_overrides: detected name → PCGW page title
+        if (NameOverrides.TryGetValue(gameName, out var mappedTitle)
+            && Games.TryGetValue(mappedTitle, out var mappedEntry))
+            return (mappedTitle, mappedEntry);
+
+        // 2. Direct match: detected name IS the PCGW page title
+        if (Games.TryGetValue(gameName, out var directEntry))
+            return (gameName, directEntry);
+
+        // 3. Steam AppID reverse lookup
+        if (steamAppId.HasValue && steamAppId.Value > 0
+            && AppIdIndex.TryGetValue(steamAppId.Value, out var appIdTitle)
+            && Games.TryGetValue(appIdTitle, out var appIdEntry))
+            return (appIdTitle, appIdEntry);
+
+        return (null, null);
+    }
+
+    /// <summary>Converts a PcgwCentralEntry to the existing PcgwApiInfo model.</summary>
+    public static PcgwApiInfo ToApiInfo(PcgwCentralEntry e) => new()
+    {
+        HasDirectX9   = e.Dx9,
+        HasDirectX10  = e.Dx10,
+        HasDirectX11  = e.Dx11,
+        HasDirectX12  = e.Dx12,
+        HasVulkan     = e.Vulkan,
+        HasOpenGL     = e.OpenGL,
+        ConfigPath    = e.ConfigPath,
+        ConfigPathXbox = e.ConfigPathXbox,
+    };
+}
 
 /// <summary>
 /// Resolves PCGamingWiki URLs via Steam AppID (using appid.php redirect)
@@ -26,13 +113,30 @@ public class PcgwService : IPcgwService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "pcgw_cache_v2.txt");
 
+    private static readonly string CentralETagPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "pcgw_central_etag.txt");
+
+    private const string CentralDataUrl =
+        "https://raw.githubusercontent.com/RankFTW/RHI/main/database/pcgw_data.json";
+
     private static readonly JsonSerializerOptions s_writeOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions s_readOptions  = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
 
     /// <summary>Normalized game name → Steam AppID.</summary>
     private Dictionary<string, int> _appIdCache = new(StringComparer.Ordinal);
 
     /// <summary>Normalized game name → resolved PCGW wiki URL.</summary>
     private System.Collections.Concurrent.ConcurrentDictionary<string, string> _urlCache = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Centralized PCGW data loaded from database/pcgw_data.json on rhi-repo.
+    /// Null until <see cref="LoadCentralDataAsync"/> completes.
+    /// </summary>
+    private PcgwCentralData? _centralData;
 
     /// <summary>
     /// UTC timestamps for when each negative sentinel (-1) was recorded.
@@ -65,6 +169,74 @@ public class PcgwService : IPcgwService
         _http = http;
         _steamAppIdResolver = steamAppIdResolver;
         _gameDetection = gameDetection;
+    }
+
+    /// <inheritdoc />
+    public async Task LoadCentralDataAsync()
+    {
+        try
+        {
+            using var req = new System.Net.Http.HttpRequestMessage(
+                System.Net.Http.HttpMethod.Get, CentralDataUrl);
+            req.Headers.UserAgent.ParseAdd("RHI/1.0");
+
+            // ETag-based conditional GET — skip download when content hasn't changed
+            var storedETag = File.Exists(CentralETagPath)
+                ? File.ReadAllText(CentralETagPath).Trim() : null;
+            if (!string.IsNullOrEmpty(storedETag))
+                req.Headers.TryAddWithoutValidation("If-None-Match", storedETag);
+
+            var resp = await _http.SendAsync(req).ConfigureAwait(false);
+
+            if (resp.StatusCode == System.Net.HttpStatusCode.NotModified)
+            {
+                CrashReporter.Log("[PcgwService.LoadCentralDataAsync] 304 Not Modified — using in-memory data");
+                return; // _centralData already populated from a previous successful load in this session
+            }
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] HTTP {(int)resp.StatusCode} — skipping");
+                return;
+            }
+
+            var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var file = JsonSerializer.Deserialize<PcgwCentralFile>(json, s_readOptions);
+            if (file == null)
+            {
+                CrashReporter.Log("[PcgwService.LoadCentralDataAsync] Deserialization returned null");
+                return;
+            }
+
+            var data = new PcgwCentralData();
+
+            if (file.NameOverrides != null)
+                foreach (var kv in file.NameOverrides)
+                    data.NameOverrides[kv.Key] = kv.Value;
+
+            if (file.Games != null)
+                foreach (var kv in file.Games)
+                {
+                    data.Games[kv.Key] = kv.Value;
+                    if (kv.Value.SteamAppId > 0)
+                        data.AppIdIndex[kv.Value.SteamAppId] = kv.Key;
+                }
+
+            _centralData = data;
+
+            // Persist ETag for next session
+            var newETag = resp.Headers.ETag?.Tag;
+            if (!string.IsNullOrEmpty(newETag))
+            {
+                try { File.WriteAllText(CentralETagPath, newETag); } catch { }
+            }
+
+            CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] Loaded {data.Games.Count:N0} games, {data.NameOverrides.Count} name overrides, {data.AppIdIndex.Count:N0} AppID entries");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] Failed — {ex.Message}");
+        }
     }
 
     /// <inheritdoc />
@@ -132,7 +304,7 @@ public class PcgwService : IPcgwService
 
     public async Task<string?> ResolveUrlAsync(string gameName, int? steamAppId, string installPath, RemoteManifest? manifest)
     {
-        // 1. Manifest pcgwUrlOverrides (highest priority).
+        // 1. Manifest pcgwUrlOverrides (highest priority — explicit manual overrides).
         if (manifest?.PcgwUrlOverrides != null
             && manifest.PcgwUrlOverrides.TryGetValue(gameName, out var overrideUrl)
             && !string.IsNullOrEmpty(overrideUrl))
@@ -140,25 +312,41 @@ public class PcgwService : IPcgwService
             return overrideUrl;
         }
 
-        var normalized = _gameDetection.NormalizeName(gameName);
+        // 2. Centralized pcgw_data.json — covers ~55k games, zero HTTP calls.
+        if (_centralData != null)
+        {
+            var (pageTitle, _) = _centralData.TryLookup(gameName, steamAppId);
+            if (pageTitle != null)
+            {
+                var centralUrl = BuildWikiUrl(pageTitle);
+                // Cache in urlCache so TryResolveUrlFromCache hits on subsequent calls
+                // (centralized data may be slow to load during first session after update)
+                var normalized = _gameDetection.NormalizeName(gameName);
+                if (!string.IsNullOrEmpty(normalized))
+                    _urlCache[normalized] = centralUrl;
+                return centralUrl;
+            }
+        }
 
-        // 2. Cached wiki URL — avoids HTTP calls every session.
-        if (!string.IsNullOrEmpty(normalized) && _urlCache.TryGetValue(normalized, out var cachedUrl))
+        var norm = _gameDetection.NormalizeName(gameName);
+
+        // 3. Cached wiki URL — avoids HTTP calls every session.
+        if (!string.IsNullOrEmpty(norm) && _urlCache.TryGetValue(norm, out var cachedUrl))
             return cachedUrl;
 
-        // 3. Check for cached negative result — avoids HTTP calls for non-PCGW games.
-        if (!string.IsNullOrEmpty(normalized) && _appIdCache.TryGetValue(normalized, out var cachedId) && cachedId == -1)
+        // 4. Check for cached negative result — avoids HTTP calls for non-PCGW games.
+        if (!string.IsNullOrEmpty(norm) && _appIdCache.TryGetValue(norm, out var cachedId) && cachedId == -1)
             return null;
 
-        // 4. Resolve Steam AppID via the priority chain (passing our cache).
+        // 5. Resolve Steam AppID via the priority chain (passing our cache).
         var appId = await _steamAppIdResolver.ResolveAsync(
             gameName, steamAppId, installPath, manifest, _appIdCache).ConfigureAwait(false);
 
         if (appId.HasValue)
         {
-            if (!string.IsNullOrEmpty(normalized))
+            if (!string.IsNullOrEmpty(norm))
             {
-                _appIdCache[normalized] = appId.Value;
+                _appIdCache[norm] = appId.Value;
                 await SaveCacheAsync().ConfigureAwait(false);
             }
 
@@ -169,30 +357,30 @@ public class PcgwService : IPcgwService
             // appid.php currently unreliable — use OpenSearch for the actual wiki URL.
             var wikiUrl = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
 
-            if (!string.IsNullOrEmpty(normalized) && wikiUrl != null)
+            if (!string.IsNullOrEmpty(norm) && wikiUrl != null)
             {
-                _urlCache[normalized] = wikiUrl;
+                _urlCache[norm] = wikiUrl;
                 SaveUrlCacheToDisk();
             }
 
             return wikiUrl;
         }
 
-        // 5. OpenSearch fallback (no AppID resolved).
+        // 6. OpenSearch fallback (no AppID resolved).
         var result = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
 
-        if (!string.IsNullOrEmpty(normalized))
+        if (!string.IsNullOrEmpty(norm))
         {
             if (result != null)
             {
-                _urlCache[normalized] = result;
+                _urlCache[norm] = result;
                 SaveUrlCacheToDisk();
             }
             else
             {
                 // Cache negative result so we don't retry HTTP calls next session.
-                _appIdCache[normalized] = -1;
-                _negativeCacheTimestamps[normalized] = DateTime.UtcNow;
+                _appIdCache[norm] = -1;
+                _negativeCacheTimestamps[norm] = DateTime.UtcNow;
                 await SaveCacheAsync().ConfigureAwait(false);
             }
         }
@@ -207,7 +395,7 @@ public class PcgwService : IPcgwService
     /// </summary>
     public string? TryResolveUrlFromCache(string gameName, RemoteManifest? manifest)
     {
-        // 1. Manifest pcgwUrlOverrides (highest priority).
+        // 1. Manifest pcgwUrlOverrides (highest priority — explicit manual overrides).
         if (manifest?.PcgwUrlOverrides != null
             && manifest.PcgwUrlOverrides.TryGetValue(gameName, out var overrideUrl)
             && !string.IsNullOrEmpty(overrideUrl))
@@ -215,13 +403,21 @@ public class PcgwService : IPcgwService
             return overrideUrl;
         }
 
+        // 2. Centralized pcgw_data.json — covers ~55k games, zero HTTP calls.
+        if (_centralData != null)
+        {
+            var (pageTitle, _) = _centralData.TryLookup(gameName, steamAppId: null);
+            if (pageTitle != null)
+                return BuildWikiUrl(pageTitle);
+        }
+
         var normalized = _gameDetection.NormalizeName(gameName);
 
-        // 2. Cached wiki URL — avoids HTTP calls every session.
+        // 3. Cached wiki URL — avoids HTTP calls every session.
         if (!string.IsNullOrEmpty(normalized) && _urlCache.TryGetValue(normalized, out var cachedUrl))
             return cachedUrl;
 
-        // 3. Check for cached negative result — game is known to have no PCGW page.
+        // 4. Check for cached negative result — game is known to have no PCGW page.
         if (!string.IsNullOrEmpty(normalized) && _appIdCache.TryGetValue(normalized, out var cachedId) && cachedId == -1)
             return null;
 
@@ -477,9 +673,30 @@ public class PcgwService : IPcgwService
     /// Returns the cached API info for a game, or null if not yet scraped.
     /// </summary>
     public PcgwApiInfo? GetCachedApiInfo(string gameName)
+        => GetCachedApiInfo(gameName, steamAppId: null);
+
+    /// <summary>
+    /// Overload that also accepts the Steam AppID for centralized reverse lookup.
+    /// Preferred when the caller has the AppID available (e.g. BuildCards).
+    /// </summary>
+    public PcgwApiInfo? GetCachedApiInfo(string gameName, int? steamAppId)
     {
+        // 1. Centralized data — covers ~55k games, always up-to-date.
+        if (_centralData != null)
+        {
+            var (_, entry) = _centralData.TryLookup(gameName, steamAppId);
+            if (entry != null)
+            {
+                var info = PcgwCentralData.ToApiInfo(entry);
+                if (info.HasDirectX9 || info.HasDirectX10 || info.HasDirectX11 || info.HasDirectX12
+                    || info.HasVulkan || info.HasOpenGL || info.ConfigPath != null || info.ConfigPathXbox != null)
+                    return info;
+            }
+        }
+
+        // 2. Legacy per-page scraped cache (pcgw_api_cache.json).
         var normalized = _gameDetection.NormalizeName(gameName);
-        return _apiInfoCache.TryGetValue(normalized, out var info) ? info : null;
+        return _apiInfoCache.TryGetValue(normalized, out var cached) ? cached : null;
     }
 
     /// <summary>
