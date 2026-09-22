@@ -19,6 +19,14 @@ tools/RHI-Stats/out
 tools/RHI-Stats/out-small
 tools/RHI-ManifestEditor/RHI.ManifestEditor/bin
 tools/RHI-ManifestEditor/RHI.ManifestEditor/obj
+tools/RenoDXdb-Editor/RenoDXdbEditor/bin
+tools/RenoDXdb-Editor/RenoDXdbEditor/obj
+tools/RenoDXdb-Editor/publish/
+tools/PCGW-Editor/PCGWEditor/bin
+tools/PCGW-Editor/PCGWEditor/obj
+tools/PCGW-Editor/publish/
+tools/pcgw-fetch/__pycache__/
+tools/pcgw-fetch/*.pyc
 pcgw.md
 nexusmods.md
 
