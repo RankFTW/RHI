@@ -671,12 +671,9 @@ public partial class DetailPanelBuilder
                 result = _window.ViewModel.DisableDllOverride(card);
             });
 
-            // Back on UI thread — set combos to sentinel and rebuild the panel
-            rsNameBox.SelectedItem = DllDefaultSentinel;
-            dcNameBox.SelectedItem = DllDefaultSentinel;
-            osNameBox.SelectedItem = DllDefaultSentinel;
-            // Rebuild the overrides panel so the reset state is reflected immediately
-            _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
+            // Back on UI thread — rebuild the panel directly (already on UI thread after await)
+            // The panel rebuild will re-read HasDllOverride (now false) and show all combos at --------
+            BuildOverridesPanel(card);
         };
         topRightColumn.Children.Add(resetDllBtn);
 

@@ -7,6 +7,7 @@
 - Collapsed detail panel sections now show a compact inline summary of what's installed or configured. Components shows installed versions (ReShade 6.8.0  ·  RenoDX  ·  ReLimiter 3.3.5), Nvidia Profile shows DLSS/Streamline versions (SR 3.10.9.1  ·  SL 2.14.1), Neural Rendering shows the active method and NR DLL version, Extras shows OptiScaler and DXVK, and Game Overrides shows any non-default channel, API, or launch arg overrides. Component names are shown in white, version numbers in green.
 - Added an "Available HDR Mods" button next to Quick Start. Opens a searchable list of every game in the RenoDX database and Luma wiki, with columns showing whether a RenoDX mod, Luma mod, or both are available, plus a direct download link.
 - PCGamingWiki data is now fetched as a single centralized file covering 55,000+ games instead of individual per-game API requests. PCGW buttons, graphics API detection, and Engine.ini config path detection all continue to work — the data is just sourced once at startup rather than scraped on demand. This eliminates the bulk of RHI's PCGW request volume.
+- DLL naming overrides have been redesigned. The enable/disable toggle is gone — each component (ReShade, Display Commander, OptiScaler) now has its own dropdown that starts at `--------` (no override). Selecting a name renames that DLL immediately. Selecting `--------` again reverts it. A "Reset DLL Names" button reverts all three at once.
 
 ### Bug Fixes
 
