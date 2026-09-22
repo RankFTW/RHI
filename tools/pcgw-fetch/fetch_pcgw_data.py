@@ -20,8 +20,9 @@ Fields fetched per game:
 
 Usage:
     python fetch_pcgw_data.py               # full fetch, overwrite output
+    python fetch_pcgw_data.py --update      # only fetch pages changed since last run
     python fetch_pcgw_data.py --diff        # show changes vs existing, don't write
-    python fetch_pcgw_data.py --test        # fetch first 500 games only
+    python fetch_pcgw_data.py --test        # fetch first 500 games only (for testing)
 
 Credentials: stored in tools/pcgw-fetch/.env (never committed)
   PCGW_USERNAME=Rankftw@BotName
@@ -35,6 +36,7 @@ import json
 import os
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -51,11 +53,8 @@ ENV_FILE    = SCRIPT_DIR / ".env"
 API_URL    = "https://www.pcgamingwiki.com/w/api.php"
 USER_AGENT = "RHI-PCGW-Fetcher/1.0 (github.com/RankFTW/RHI; rankftw@googlemail.com)"
 
-# Max rows per CargoQuery call (PCGW allows up to 500)
-CARGO_LIMIT = 500
-
-# Seconds between requests — PCGW rate limit is 60/min, we target ~30/min
-REQUEST_DELAY = 2.0
+CARGO_LIMIT   = 500
+REQUEST_DELAY = 2.0  # seconds between paginated requests (~30 req/min, well under 60 limit)
 
 
 # ── Credentials ───────────────────────────────────────────────────────────────
@@ -90,18 +89,13 @@ def make_session():
 
 def login(session, username, password):
     print(f"Logging in as '{username}'...")
-
-    r = session.get(API_URL, params={
-        "action": "query", "meta": "tokens",
-        "type": "login", "format": "json",
-    })
+    r = session.get(API_URL, params={"action": "query", "meta": "tokens",
+                                      "type": "login", "format": "json"})
     r.raise_for_status()
     token = r.json()["query"]["tokens"]["logintoken"]
 
-    r = session.post(API_URL, data={
-        "action": "login", "lgname": username,
-        "lgpassword": password, "lgtoken": token, "format": "json",
-    })
+    r = session.post(API_URL, data={"action": "login", "lgname": username,
+                                     "lgpassword": password, "lgtoken": token, "format": "json"})
     r.raise_for_status()
     result = r.json().get("login", {})
 
@@ -113,76 +107,131 @@ def login(session, username, password):
     sys.exit(1)
 
 
+# ── Recent changes ────────────────────────────────────────────────────────────
+
+def get_changed_pages_since(session, since_ts):
+    """
+    Returns the set of article page titles changed since `since_ts` (ISO 8601 string).
+    Uses action=query&list=recentchanges, paginating with rccontinue.
+    Only namespace 0 (articles). Filters out redirects and non-article edits.
+    """
+    print(f"Fetching recent changes since {since_ts}...")
+    pages = set()
+    params = {
+        "action":    "query",
+        "list":      "recentchanges",
+        "rcnamespace": "0",
+        "rcstart":   since_ts,      # most recent → oldest (descending)
+        "rcdir":     "newer",       # oldest → newest (ascending from since_ts)
+        "rcprop":    "title|type",
+        "rclimit":   "500",
+        "rctype":    "edit|new",
+        "format":    "json",
+    }
+    while True:
+        r = session.get(API_URL, params=params)
+        if r.status_code == 429:
+            print("  Rate limited — waiting 61s...")
+            time.sleep(61)
+            r = session.get(API_URL, params=params)
+        r.raise_for_status()
+        data = r.json()
+
+        for rc in data.get("query", {}).get("recentchanges", []):
+            title = rc.get("title", "").strip()
+            if title:
+                pages.add(title)
+
+        cont = data.get("continue", {}).get("rccontinue")
+        if not cont:
+            break
+        params["rccontinue"] = cont
+        time.sleep(1.0)
+
+    print(f"  {len(pages):,} changed pages found")
+    return pages
+
+
 # ── CargoQuery helpers ────────────────────────────────────────────────────────
 
 def cargo_query(session, tables, fields, join_on=None, where=None, offset=0, limit=CARGO_LIMIT):
-    params = {
-        "action": "cargoquery",
-        "tables": tables,
-        "fields": fields,
-        "limit":  limit,
-        "offset": offset,
-        "format": "json",
-    }
+    params = {"action": "cargoquery", "tables": tables, "fields": fields,
+              "limit": limit, "offset": offset, "format": "json"}
     if join_on: params["join_on"] = join_on
     if where:   params["where"]   = where
 
     r = session.get(API_URL, params=params)
-
-    # Handle rate limit — wait 60s and retry once
     if r.status_code == 429:
         print("  Rate limited (429) — waiting 61 seconds...")
         time.sleep(61)
         r = session.get(API_URL, params=params)
-
     r.raise_for_status()
     data = r.json()
-
     if "error" in data:
         raise RuntimeError(f"CargoQuery error: {data['error'].get('info', data['error'])}")
-
     return [item["title"] for item in data.get("cargoquery", [])]
 
 
 def cargo_query_all(session, tables, fields, join_on=None, where=None, limit=None):
-    """Paginate through all results. If limit is set, stop after that many rows."""
     results = []
     offset  = 0
-    page_size = CARGO_LIMIT
     while True:
         batch = cargo_query(session, tables, fields, join_on=join_on,
-                            where=where, offset=offset, limit=page_size)
+                            where=where, offset=offset, limit=CARGO_LIMIT)
         results.extend(batch)
         print(f"  {len(results):,} rows fetched...", end="\r")
-        if len(batch) < page_size:
+        if len(batch) < CARGO_LIMIT:
             break
         if limit and len(results) >= limit:
             break
-        offset += page_size
+        offset += CARGO_LIMIT
         time.sleep(REQUEST_DELAY)
     print(f"  {len(results):,} rows total          ")
     return results
 
 
+def cargo_query_pages(session, tables, fields, page_names, join_on=None, chunk_size=50):
+    """
+    Fetch CargoQuery data for a specific set of page names (no full pagination needed).
+    Chunks the page list into batches of `chunk_size` to stay within URL length limits.
+    """
+    results = []
+    pages   = sorted(page_names)
+    for i in range(0, len(pages), chunk_size):
+        chunk = pages[i:i + chunk_size]
+        # Build an IN clause: Game._pageName IN ("A","B","C",...)
+        in_list = ",".join(f'"{p.replace(chr(34), chr(39))}"' for p in chunk)
+        where   = f"Game._pageName IN ({in_list})"
+        batch   = cargo_query(session, tables, fields, join_on=join_on, where=where)
+        results.extend(batch)
+        time.sleep(REQUEST_DELAY)
+    return results
+
+
 # ── Data fetching ─────────────────────────────────────────────────────────────
 
-def fetch_api_data(session, test_limit=None):
-    """
-    Fetches graphics API support for all PCGW games.
-    Returns dict: page_name → { dx9, dx10, dx11, dx12, vulkan, opengl, steam_appid? }
-    """
-    print("Fetching API data (Direct3D / Vulkan / OpenGL + Steam AppIDs)...")
-    rows = cargo_query_all(
-        session,
-        tables  = "Game,API",
-        fields  = "Game._pageName=Page,"
-                  "Game.Steam_AppID=SteamAppID,"
-                  "API.Direct3D_versions=DX,"
-                  "API.Vulkan_versions=Vulkan,"
-                  "API.OpenGL_versions=OpenGL",
-        join_on = "Game._pageID=API._pageID",
-        limit   = test_limit,
-    )
+def fetch_api_data(session, test_limit=None, page_names=None):
+    """Fetch Direct3D/Vulkan/OpenGL + Steam AppIDs."""
+    if page_names is not None:
+        print(f"Fetching API data for {len(page_names):,} specific pages...")
+        rows = cargo_query_pages(
+            session,
+            tables  = "Game,API",
+            fields  = "Game._pageName=Page,Game.Steam_AppID=SteamAppID,"
+                      "API.Direct3D_versions=DX,API.Vulkan_versions=Vulkan,API.OpenGL_versions=OpenGL",
+            page_names = page_names,
+            join_on = "Game._pageID=API._pageID",
+        )
+    else:
+        print("Fetching API data (Direct3D / Vulkan / OpenGL + Steam AppIDs)...")
+        rows = cargo_query_all(
+            session,
+            tables  = "Game,API",
+            fields  = "Game._pageName=Page,Game.Steam_AppID=SteamAppID,"
+                      "API.Direct3D_versions=DX,API.Vulkan_versions=Vulkan,API.OpenGL_versions=OpenGL",
+            join_on = "Game._pageID=API._pageID",
+            limit   = test_limit,
+        )
     print(f"  Parsing {len(rows):,} API rows...")
 
     result = {}
@@ -196,16 +245,12 @@ def fetch_api_data(session, test_limit=None):
         ogl = (row.get("OpenGL") or "").lower()
         steam_raw = (row.get("SteamAppID") or "").strip()
 
-        # Steam AppID — may be comma-separated, take first positive integer
         steam_id = None
         if steam_raw:
             for part in steam_raw.split(","):
-                part = part.strip()
                 try:
-                    val = int(part)
-                    if val > 0:
-                        steam_id = val
-                        break
+                    val = int(part.strip())
+                    if val > 0: steam_id = val; break
                 except ValueError:
                     pass
 
@@ -223,23 +268,32 @@ def fetch_api_data(session, test_limit=None):
     return result
 
 
-def fetch_config_paths(session, test_limit=None):
-    """
-    Fetches Windows + Microsoft Store config paths for all PCGW games.
-    Returns dict: page_name → { config_path?, config_path_xbox? }
-    """
-    print("Fetching config file paths (GameData table)...")
-    rows = cargo_query_all(
-        session,
-        tables  = "Game,GameData",
-        fields  = "Game._pageName=Page,"
-                  "GameData.Type=Type,"
-                  "GameData.Platform=Platform,"
-                  "GameData.Paths=Paths",
-        join_on = "Game._pageID=GameData._pageID",
-        where   = "GameData.Type='Config' AND (GameData.Platform='Windows' OR GameData.Platform='Steam' OR GameData.Platform='Microsoft Store')",
-        limit   = test_limit,
-    )
+def fetch_config_paths(session, test_limit=None, page_names=None):
+    """Fetch Windows + Microsoft Store config paths."""
+    where_filter = "GameData.Type='Config' AND (GameData.Platform='Windows' OR GameData.Platform='Steam' OR GameData.Platform='Microsoft Store')"
+
+    if page_names is not None:
+        print(f"Fetching config paths for {len(page_names):,} specific pages...")
+        rows = cargo_query_pages(
+            session,
+            tables  = "Game,GameData",
+            fields  = "Game._pageName=Page,GameData.Type=Type,GameData.Platform=Platform,GameData.Paths=Paths",
+            page_names = page_names,
+            join_on = "Game._pageID=GameData._pageID",
+        )
+        # Filter manually since we can't add the Type/Platform filter to an IN query easily
+        rows = [r for r in rows if r.get("Type") == "Config"
+                and r.get("Platform") in ("Windows", "Steam", "Microsoft Store")]
+    else:
+        print("Fetching config file paths (GameData table)...")
+        rows = cargo_query_all(
+            session,
+            tables  = "Game,GameData",
+            fields  = "Game._pageName=Page,GameData.Type=Type,GameData.Platform=Platform,GameData.Paths=Paths",
+            join_on = "Game._pageID=GameData._pageID",
+            where   = where_filter,
+            limit   = test_limit,
+        )
     print(f"  Parsing {len(rows):,} config rows...")
 
     result = {}
@@ -252,7 +306,6 @@ def fetch_config_paths(session, test_limit=None):
 
         entry = result.setdefault(page, {})
         if platform in ("Windows", "Steam"):
-            # Windows wins over Steam if both exist
             if "config_path" not in entry or platform == "Windows":
                 entry["config_path"] = paths
         elif platform == "Microsoft Store":
@@ -264,15 +317,12 @@ def fetch_config_paths(session, test_limit=None):
 # ── Merge + output ─────────────────────────────────────────────────────────────
 
 def merge_data(api_data, config_data):
-    """Merge API and config data. Result keyed by PCGW page name."""
     all_pages = set(api_data) | set(config_data)
     merged = {}
     for page in sorted(all_pages):
         entry = {}
-        if page in api_data:
-            entry.update(api_data[page])
-        if page in config_data:
-            entry.update(config_data[page])
+        if page in api_data:    entry.update(api_data[page])
+        if page in config_data: entry.update(config_data[page])
         merged[page] = entry
     return merged
 
@@ -281,11 +331,12 @@ def load_existing(path):
     if path.exists():
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-            # Handle both raw dict and wrapped {version, games} format
-            return data.get("games", data) if isinstance(data, dict) and "games" in data else data
+            games = data.get("games", data) if isinstance(data, dict) and "games" in data else data
+            generated = data.get("generated") if isinstance(data, dict) else None
+            return games, generated
         except Exception:
             pass
-    return {}
+    return {}, None
 
 
 def save_output(data, path):
@@ -311,18 +362,13 @@ def show_diff(new_data, existing_games):
     print(f"  Removed games: {len(removed_pages):,}")
     print(f"  Changed:       {len(changed_pages):,}")
     print(f"{'='*60}")
-
     if new_pages:
         print(f"\nNew ({min(len(new_pages), 20)} of {len(new_pages)}):")
-        for p in sorted(new_pages)[:20]:
-            print(f"  + {p}")
-
+        for p in sorted(new_pages)[:20]: print(f"  + {p}")
     if changed_pages:
         print(f"\nChanged ({min(len(changed_pages), 20)} of {len(changed_pages)}):")
         for p in sorted(changed_pages)[:20]:
-            old = existing_games[p]
-            new = new_data[p]
-            diffs = {k for k in set(old) | set(new) if old.get(k) != new.get(k)}
+            diffs = {k for k in set(existing_games[p]) | set(new_data[p]) if existing_games[p].get(k) != new_data[p].get(k)}
             print(f"  ~ {p}  [{', '.join(sorted(diffs))}]")
 
 
@@ -330,19 +376,59 @@ def show_diff(new_data, existing_games):
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch PCGW game data for RHI")
-    parser.add_argument("--diff",  action="store_true", help="Show diff vs existing file (don't write)")
-    parser.add_argument("--test",  action="store_true", help="Fetch first 500 games only (for testing)")
+    parser.add_argument("--update", action="store_true",
+                        help="Only fetch pages changed since the last run (fast update)")
+    parser.add_argument("--diff",   action="store_true",
+                        help="Show diff vs existing file (don't write)")
+    parser.add_argument("--test",   action="store_true",
+                        help="Fetch first 500 games only (for testing)")
     args = parser.parse_args()
 
-    test_limit = 500 if args.test else None
-    if args.test:
-        print("TEST MODE — fetching first 500 games only")
+    existing_games, last_generated = load_existing(OUTPUT_FILE)
 
     username, password = load_credentials()
     session = make_session()
     login(session, username, password)
 
-    api_data = fetch_api_data(session, test_limit=test_limit)
+    if args.update:
+        if not last_generated:
+            print("No existing file found — running full fetch instead.")
+            args.update = False
+        else:
+            print(f"Update mode — fetching changes since {last_generated}")
+            changed_pages = get_changed_pages_since(session, last_generated)
+            if not changed_pages:
+                print("No changes since last run. File is up to date.")
+                return
+
+            time.sleep(REQUEST_DELAY)
+            api_data    = fetch_api_data(session, page_names=changed_pages)
+            time.sleep(REQUEST_DELAY)
+            config_data = fetch_config_paths(session, page_names=changed_pages)
+
+            # Merge updates into existing data
+            new_entries = merge_data(api_data, config_data)
+            merged = dict(existing_games)
+            merged.update(new_entries)
+            merged = dict(sorted(merged.items()))
+
+            added   = len(set(new_entries) - set(existing_games))
+            updated = len(set(new_entries) & set(existing_games))
+            print(f"\nUpdate: {added} new pages, {updated} updated pages")
+
+            if args.diff:
+                show_diff(new_entries, {k: existing_games[k] for k in new_entries if k in existing_games})
+            else:
+                save_output(merged, OUTPUT_FILE)
+                print("Done. Commit database/pcgw_data.json to publish.")
+            return
+
+    # Full fetch
+    test_limit = 500 if args.test else None
+    if args.test:
+        print("TEST MODE — fetching first 500 games only")
+
+    api_data    = fetch_api_data(session, test_limit=test_limit)
     time.sleep(REQUEST_DELAY)
     config_data = fetch_config_paths(session, test_limit=test_limit)
 
@@ -350,11 +436,10 @@ def main():
     print(f"\nMerged: {len(merged):,} games total")
 
     if args.diff:
-        existing = load_existing(OUTPUT_FILE)
-        show_diff(merged, existing)
+        show_diff(merged, existing_games)
     else:
         save_output(merged, OUTPUT_FILE)
-        print("Done. Commit database/pcgw_data.json to rhi-repo to publish.")
+        print("Done. Commit database/pcgw_data.json to publish.")
 
 
 if __name__ == "__main__":
