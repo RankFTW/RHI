@@ -117,6 +117,10 @@ public class PcgwService : IPcgwService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "pcgw_central_etag.txt");
 
+    private static readonly string CentralCachePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "pcgw_central_cache.json");
+
     private const string CentralDataUrl =
         "https://raw.githubusercontent.com/RankFTW/RHI/main/database/pcgw_data.json";
 
@@ -190,8 +194,18 @@ public class PcgwService : IPcgwService
 
             if (resp.StatusCode == System.Net.HttpStatusCode.NotModified)
             {
-                CrashReporter.Log("[PcgwService.LoadCentralDataAsync] 304 Not Modified — using in-memory data");
-                return; // _centralData already populated from a previous successful load in this session
+                // 304 — content unchanged. Load from disk cache if we don't have it in memory yet.
+                if (_centralData == null && File.Exists(CentralCachePath))
+                {
+                    var cachedJson = await File.ReadAllTextAsync(CentralCachePath).ConfigureAwait(false);
+                    LoadFromJson(cachedJson);
+                    CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] 304 — loaded {_centralData?.Games.Count ?? 0:N0} games from disk cache");
+                }
+                else
+                {
+                    CrashReporter.Log("[PcgwService.LoadCentralDataAsync] 304 Not Modified — using in-memory data");
+                }
+                return;
             }
 
             if (!resp.IsSuccessStatusCode)
@@ -201,42 +215,55 @@ public class PcgwService : IPcgwService
             }
 
             var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var file = JsonSerializer.Deserialize<PcgwCentralFile>(json, s_readOptions);
-            if (file == null)
-            {
-                CrashReporter.Log("[PcgwService.LoadCentralDataAsync] Deserialization returned null");
-                return;
-            }
+            LoadFromJson(json);
 
-            var data = new PcgwCentralData();
-
-            if (file.NameOverrides != null)
-                foreach (var kv in file.NameOverrides)
-                    data.NameOverrides[kv.Key] = kv.Value;
-
-            if (file.Games != null)
-                foreach (var kv in file.Games)
-                {
-                    data.Games[kv.Key] = kv.Value;
-                    if (kv.Value.SteamAppId > 0)
-                        data.AppIdIndex[kv.Value.SteamAppId] = kv.Key;
-                }
-
-            _centralData = data;
-
-            // Persist ETag for next session
+            // Persist JSON + ETag to disk for future 304 responses
+            try { await File.WriteAllTextAsync(CentralCachePath, json).ConfigureAwait(false); } catch { }
             var newETag = resp.Headers.ETag?.Tag;
             if (!string.IsNullOrEmpty(newETag))
             {
                 try { File.WriteAllText(CentralETagPath, newETag); } catch { }
             }
 
-            CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] Loaded {data.Games.Count:N0} games, {data.NameOverrides.Count} name overrides, {data.AppIdIndex.Count:N0} AppID entries");
+            CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] Downloaded and loaded {_centralData?.Games.Count ?? 0:N0} games, {_centralData?.NameOverrides.Count ?? 0} name overrides");
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] Failed — {ex.Message}");
+            // Fall back to disk cache if download failed
+            if (_centralData == null && File.Exists(CentralCachePath))
+            {
+                try
+                {
+                    var cachedJson = await File.ReadAllTextAsync(CentralCachePath).ConfigureAwait(false);
+                    LoadFromJson(cachedJson);
+                    CrashReporter.Log($"[PcgwService.LoadCentralDataAsync] Loaded {_centralData?.Games.Count ?? 0:N0} games from disk cache (after error)");
+                }
+                catch { }
+            }
         }
+    }
+
+    private void LoadFromJson(string json)
+    {
+        var file = JsonSerializer.Deserialize<PcgwCentralFile>(json, s_readOptions);
+        if (file == null) return;
+
+        var data = new PcgwCentralData();
+
+        if (file.NameOverrides != null)
+            foreach (var kv in file.NameOverrides)
+                data.NameOverrides[kv.Key] = kv.Value;
+
+        if (file.Games != null)
+            foreach (var kv in file.Games)
+            {
+                data.Games[kv.Key] = kv.Value;
+                if (kv.Value.SteamAppId > 0)
+                    data.AppIdIndex[kv.Value.SteamAppId] = kv.Key;
+            }
+
+        _centralData = data;
     }
 
     /// <summary>
