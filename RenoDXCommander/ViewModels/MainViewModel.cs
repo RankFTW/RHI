@@ -442,22 +442,24 @@ public partial class MainViewModel : ObservableObject
     {
         var source = _settingsViewModel.RenoDxDbSource;
 
-        // Always feed DB unreal Comments into _genericNotes regardless of source mode —
-        // they supplement wiki content, not replace it, so they show in info dialogs in both modes.
-        foreach (var (name, entry) in _dbUnrealEntries)
-            if (!string.IsNullOrEmpty(entry.Comments))
-                _genericNotes[name] = entry.Comments;
-
         if (string.Equals(source, "WikiOnly", StringComparison.OrdinalIgnoreCase))
         {
-            // Mods remain wiki-sourced; only Comments propagation (above) applies
+            // Mods remain wiki-sourced; DB Comments supplement wiki generic notes
+            foreach (var (name, entry) in _dbUnrealEntries)
+                if (!string.IsNullOrEmpty(entry.Comments))
+                    _genericNotes[name] = entry.Comments;
             _crashReporter.Log("[MergeDbSources] Source=WikiOnly — using wiki mods only, DB comments merged");
             return;
         }
 
-        // DbOnly (default) — replace wiki mods with DB mods
+        // DbOnly (default) — replace wiki mods with DB mods AND replace generic
+        // notes entirely with DB Comments so no wiki-scraped notes reach the info dialog
         _allMods = new List<GameMod>(_dbMods);
-        _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db");
+        _genericNotes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, entry) in _dbUnrealEntries)
+            if (!string.IsNullOrEmpty(entry.Comments))
+                _genericNotes[name] = entry.Comments;
+        _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db, {_genericNotes.Count} generic notes from DB Comments");
     }
 
     // ── HDR Mods List ─────────────────────────────────────────────────────────

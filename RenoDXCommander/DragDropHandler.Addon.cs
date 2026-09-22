@@ -458,19 +458,45 @@ public partial class DragDropHandler
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Cleared UE-Extended state for '{gameName}' — named mod installed");
             }
 
-            // Update card's Mod to reflect it's a Discord mod (named mod with no wiki entry)
-            // This applies when installing a non-generic addon over an existing card (including UE-Extended cards)
+            // Update card's Mod to reflect external-only state after drag-drop.
+            // Preserve existing Nexus/snapshot URLs if the card already has them —
+            // only fall back to the Discord channel when there's no better download URL.
             if (isNamedMod)
             {
-                targetCard.Mod = new GameMod
+                var existingNexus    = targetCard.Mod?.NexusUrl ?? targetCard.NexusUrl;
+                var existingSnapshot = targetCard.Mod?.SnapshotUrl;
+
+                if (!string.IsNullOrEmpty(existingSnapshot))
                 {
-                    Name       = gameName,
-                    Status     = "💬",
-                    DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
-                };
-                targetCard.IsExternalOnly = true;
-                targetCard.ExternalUrl = "https://discord.gg/gF4GRJWZ2A";
-                targetCard.ExternalLabel = "Download from Discord";  // ExternalDisplayLabel does the Replace("Download", "Redownload")
+                    // Card has a snapshot URL — keep the existing mod, just mark installed
+                    // (no ExternalOnly needed — install button will show Reinstall)
+                }
+                else if (!string.IsNullOrEmpty(existingNexus))
+                {
+                    // Nexus-hosted mod — preserve the Nexus URL
+                    targetCard.Mod = new GameMod
+                    {
+                        Name     = gameName,
+                        Status   = "💬",
+                        NexusUrl = existingNexus,
+                    };
+                    targetCard.IsExternalOnly = true;
+                    targetCard.ExternalUrl    = existingNexus;
+                    targetCard.ExternalLabel  = "Download from Nexus Mods";
+                }
+                else
+                {
+                    // No known URL — fall back to Discord channel
+                    targetCard.Mod = new GameMod
+                    {
+                        Name       = gameName,
+                        Status     = "💬",
+                        DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
+                    };
+                    targetCard.IsExternalOnly = true;
+                    targetCard.ExternalUrl    = "https://discord.gg/gF4GRJWZ2A";
+                    targetCard.ExternalLabel  = "Download from Discord";
+                }
             }
 
             // Update card status
