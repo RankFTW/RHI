@@ -198,6 +198,8 @@ public partial class DetailPanelBuilder
         var defaultRsName = is32Bit ? "ReShade32.dll" : "ReShade64.dll";
 
         const string DllDefaultSentinel = "--------";
+        Button? resetDllBtn = null; // declared early so lambdas can capture it
+        bool _updatingDropdowns = false; // declared early so UpdateAllDropdowns can use it
 
         var existingRsName = existingCfg?.ReShadeFileName ?? "";
         var rsNames = DllOverrideConstants.CommonDllNames.Prepend(DllDefaultSentinel).ToArray();
@@ -294,7 +296,7 @@ public partial class DetailPanelBuilder
         osNameBox.SelectionChanged += (s, e) =>
         {
             if (_osComboInitializing) return;
-            var osName = osNameBox.SelectedItem as string;
+            var osName = osNameBox.SelectedItem is ComboBoxItem osCbi ? osCbi.Content as string : osNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(osName)) return;
 
             // -------- = clear OS override, revert DLL to default name
@@ -326,6 +328,7 @@ public partial class DetailPanelBuilder
                     }
                 }
                 _previousOsSelection = DllDefaultSentinel;
+                UpdateAllDropdowns();
                 return;
             }
             // Use card directly (not a re-lookup by name) to avoid multi-store card mismatch
@@ -382,64 +385,106 @@ public partial class DetailPanelBuilder
                     CrashReporter.Log($"[DetailPanelBuilder.BuildOverridesPanel] Failed to rename OS DLL for '{capturedName}' — {ex.Message}");
                 }
             }
+            // Re-filter all combos so the newly selected OS name greys out in RS/DC
+            UpdateAllDropdowns();
         };
         _osComboInitializing = false;
 
         // ── Cross-exclusion: filter out the other component's current name ───────
-        bool _updatingDropdowns = false;
 
-        void UpdateDcDropdownItems()
+        // Rebuilds a combo's ItemsSource using ComboBoxItem so colliding names are greyed
+        // rather than removed — the user can see them but not select them.
+        void RebuildComboWithDisabled(ComboBox combo, string[] baseNames, IEnumerable<string> disabledNames)
+        {
+            var disabled = new HashSet<string>(disabledNames, StringComparer.OrdinalIgnoreCase);
+            var current = combo.SelectedItem is ComboBoxItem ci ? ci.Content as string : combo.SelectedItem as string;
+            combo.ItemsSource = baseNames.Select(n =>
+            {
+                if (n == DllDefaultSentinel)
+                    return (object)n; // sentinel stays as plain string
+                var item = new ComboBoxItem { Content = n };
+                if (disabled.Contains(n))
+                {
+                    item.IsEnabled = false;
+                    item.Opacity   = 0.4;
+                }
+                return item;
+            }).ToArray();
+            // Restore selection
+            if (current != null)
+            {
+                foreach (var obj in (System.Collections.IEnumerable)combo.ItemsSource)
+                {
+                    var label = obj is ComboBoxItem cbi ? cbi.Content as string : obj as string;
+                    if (string.Equals(label, current, StringComparison.OrdinalIgnoreCase))
+                    {
+                        combo.SelectedItem = obj;
+                        break;
+                    }
+                }
+            }
+        }
+
+        void UpdateAllDropdowns()
         {
             if (_updatingDropdowns) return;
             _updatingDropdowns = true;
             try
             {
-                var rsCurrentName = (rsNameBox.SelectedItem as string ?? "").Trim();
-                // Don't filter on sentinel or empty
-                bool rsIsReal = !string.IsNullOrEmpty(rsCurrentName) && rsCurrentName != DllDefaultSentinel;
-                var filtered = rsIsReal
-                    ? dcNames.Where(n => n == DllDefaultSentinel || !n.Equals(rsCurrentName, StringComparison.OrdinalIgnoreCase)).ToArray()
-                    : dcNames;
-                var currentDc = dcNameBox.SelectedItem as string;
-                if (currentDc != null && currentDc != DllDefaultSentinel && !filtered.Contains(currentDc, StringComparer.OrdinalIgnoreCase))
-                    filtered = filtered.Append(currentDc).ToArray();
-                dcNameBox.ItemsSource = filtered;
-                if (currentDc != null && filtered.Contains(currentDc, StringComparer.OrdinalIgnoreCase))
-                    dcNameBox.SelectedItem = filtered.First(n => n.Equals(currentDc, StringComparison.OrdinalIgnoreCase));
+                string GetSelected(ComboBox c) =>
+                    c.SelectedItem is ComboBoxItem ci ? (ci.Content as string ?? "") :
+                    c.SelectedItem as string ?? "";
+
+                var rsSelected = GetSelected(rsNameBox);
+                var dcSelected = GetSelected(dcNameBox);
+                var osSelected = GetSelected(osNameBox);
+
+                bool rsIsReal = !string.IsNullOrEmpty(rsSelected) && rsSelected != DllDefaultSentinel;
+                bool dcIsReal = !string.IsNullOrEmpty(dcSelected) && dcSelected != DllDefaultSentinel;
+                bool osIsReal = !string.IsNullOrEmpty(osSelected) && osSelected != DllDefaultSentinel;
+
+                // RS: grey out DC and OS selections
+                var rsDisabled = new List<string>();
+                if (dcIsReal) rsDisabled.Add(dcSelected);
+                if (osIsReal) rsDisabled.Add(osSelected);
+                RebuildComboWithDisabled(rsNameBox, rsNames, rsDisabled);
+
+                // DC: grey out RS and OS selections
+                var dcDisabled = new List<string>();
+                if (rsIsReal) dcDisabled.Add(rsSelected);
+                if (osIsReal) dcDisabled.Add(osSelected);
+                RebuildComboWithDisabled(dcNameBox, dcNames, dcDisabled);
+
+                // OS: grey out RS and DC selections
+                var osDisabled = new List<string>();
+                if (rsIsReal) osDisabled.Add(rsSelected);
+                if (dcIsReal) osDisabled.Add(dcSelected);
+                RebuildComboWithDisabled(osNameBox, availableOsNames.Prepend(DllDefaultSentinel).ToArray(), osDisabled);
+
+                // Enable Reset button when any override is active
+                if (resetDllBtn != null)
+                    resetDllBtn.IsEnabled = _window.ViewModel.HasDllOverride(gameName);
             }
             finally { _updatingDropdowns = false; }
         }
 
-        void UpdateRsDropdownItems()
-        {
-            if (_updatingDropdowns) return;
-            _updatingDropdowns = true;
-            try
-            {
-                var dcCurrentName = (dcNameBox.SelectedItem as string ?? "").Trim();
-                bool dcIsReal = !string.IsNullOrEmpty(dcCurrentName) && dcCurrentName != DllDefaultSentinel;
-                var filtered = dcIsReal
-                    ? rsNames.Where(n => n == DllDefaultSentinel || !n.Equals(dcCurrentName, StringComparison.OrdinalIgnoreCase)).ToArray()
-                    : rsNames;
-                var currentRs = rsNameBox.SelectedItem as string;
-                if (!string.IsNullOrEmpty(currentRs) && currentRs != DllDefaultSentinel && !filtered.Contains(currentRs, StringComparer.OrdinalIgnoreCase))
-                    filtered = filtered.Append(currentRs).ToArray();
-                rsNameBox.ItemsSource = filtered;
-                if (!string.IsNullOrEmpty(currentRs) && filtered.Contains(currentRs, StringComparer.OrdinalIgnoreCase))
-                    rsNameBox.SelectedItem = filtered.First(n => n.Equals(currentRs, StringComparison.OrdinalIgnoreCase));
-            }
-            finally { _updatingDropdowns = false; }
-        }
+        // Kept for compatibility — delegate to unified helper
+        void UpdateDcDropdownItems() => UpdateAllDropdowns();
+        void UpdateRsDropdownItems() => UpdateAllDropdowns();
 
-        // Initial filter
-        UpdateDcDropdownItems();
-        UpdateRsDropdownItems();
+        // Helper — gets the string value from a combo that may contain ComboBoxItem or string
+        static string GetComboValue(ComboBox c) =>
+            c.SelectedItem is ComboBoxItem ci ? (ci.Content as string ?? "") :
+            c.SelectedItem as string ?? "";
+
+        // Initial filter — grey out colliding names across all three combos
+        UpdateAllDropdowns();
 
         // ── Auto-save: DC name box on dropdown selection (with foreign DLL check) ──
         dcNameBox.SelectionChanged += async (s, e) =>
         {
             var targetCard = card;
-            var dcName = dcNameBox.SelectedItem as string;
+            var dcName = dcNameBox.SelectedItem is ComboBoxItem dcCbi ? dcCbi.Content as string : dcNameBox.SelectedItem as string;
             if (dcName == null) return;
 
             // -------- = clear DC override, revert DLL to default name
@@ -473,9 +518,9 @@ public partial class DetailPanelBuilder
                 return;
             }
 
-            var rsName = rsNameBox.SelectedItem as string ?? "";
+            var rsName = GetComboValue(rsNameBox);
             _window.ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);
-            UpdateRsDropdownItems();
+            UpdateAllDropdowns();
         };
 
         // ── Top Row Grid (3 columns: Star | Auto | Star) ─────────────────────
@@ -597,7 +642,7 @@ public partial class DetailPanelBuilder
         topRightColumn.Children.Add(dllBoxesGrid);
 
         // Reset DLL Names button — reverts all three DLLs to defaults and clears the config
-        var resetDllBtn = new Button
+        resetDllBtn = new Button
         {
             Content = "Reset DLL Names",
             FontSize = 12,
@@ -818,9 +863,9 @@ public partial class DetailPanelBuilder
         rsNameBox.SelectionChanged += (s, e) =>
         {
             var targetCard = card;
-            var rsName = rsNameBox.SelectedItem as string;
+            var rsName = GetComboValue(rsNameBox);
             if (string.IsNullOrWhiteSpace(rsName)) return;
-            var dcName = dcNameBox.SelectedItem as string ?? "";
+            var dcName = GetComboValue(dcNameBox);
 
             // -------- = clear RS override, revert DLL to default name
             if (rsName == DllDefaultSentinel)
