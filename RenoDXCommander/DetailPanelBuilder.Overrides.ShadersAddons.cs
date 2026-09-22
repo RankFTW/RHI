@@ -521,7 +521,10 @@ public partial class DetailPanelBuilder
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (targetCard != null)
+                {
                     _window.ViewModel.DisableDllOverride(targetCard);
+                    targetCard.NotifyAll();
+                }
             }
 
             // Include all in Update All

@@ -2166,6 +2166,10 @@ public partial class DetailPanelBuilder
                     current.Add("LumeniteFX");
                 _gameNameService.PerGameShaderSelection[gameKey] = current;
                 _window.ViewModel.SetPerGameShaderMode(card.GameName, "Select", card.Source ?? "");
+                // Set ShaderModeOverride synchronously before DeployShadersForCard reads it.
+                // TryEnqueue alone is too late — DeployShadersForCard fires on the same background
+                // thread and reads card.ShaderModeOverride before the UI-thread dispatch runs.
+                card.ShaderModeOverride = "Select";
                 _window.DispatcherQueue?.TryEnqueue(() => card.ShaderModeOverride = "Select");
                 _window.ViewModel.SaveSettingsPublic();
                 // Deploy shaders with the now-persisted selection

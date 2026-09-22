@@ -919,11 +919,11 @@ public partial class DetailPanelBuilder
             var cfg = _window.ViewModel.GetDllOverride(card.GameName);
             if (cfg != null)
             {
-                if (!string.IsNullOrEmpty(cfg.ReShadeFileName))
+                if (!string.IsNullOrEmpty(cfg.ReShadeFileName) && cfg.ReShadeFileName != "--------")
                     entries.Add(("RS DLL: " + cfg.ReShadeFileName, null));
-                if (!string.IsNullOrEmpty(cfg.DcFileName))
+                if (!string.IsNullOrEmpty(cfg.DcFileName) && cfg.DcFileName != "--------")
                     entries.Add(("DC DLL: " + cfg.DcFileName, null));
-                if (!string.IsNullOrEmpty(cfg.OsFileName))
+                if (!string.IsNullOrEmpty(cfg.OsFileName) && cfg.OsFileName != "--------")
                     entries.Add(("OS DLL: " + cfg.OsFileName, null));
             }
         }
