@@ -913,6 +913,21 @@ public partial class DetailPanelBuilder
         if (!string.IsNullOrWhiteSpace(launchArgs))
             entries.Add(("Args: " + launchArgs, null));
 
+        // DLL naming overrides — show each custom filename that's set
+        if (_window.ViewModel.HasDllOverride(card.GameName))
+        {
+            var cfg = _window.ViewModel.GetDllOverride(card.GameName);
+            if (cfg != null)
+            {
+                if (!string.IsNullOrEmpty(cfg.ReShadeFileName))
+                    entries.Add(("RS DLL: " + cfg.ReShadeFileName, null));
+                if (!string.IsNullOrEmpty(cfg.DcFileName))
+                    entries.Add(("DC DLL: " + cfg.DcFileName, null));
+                if (!string.IsNullOrEmpty(cfg.OsFileName))
+                    entries.Add(("OS DLL: " + cfg.OsFileName, null));
+            }
+        }
+
         return MakeSectionSummaryInlines(entries);
     }
 

@@ -34,6 +34,13 @@ public class PcgwService : IPcgwService
     /// <summary>Normalized game name → resolved PCGW wiki URL.</summary>
     private System.Collections.Concurrent.ConcurrentDictionary<string, string> _urlCache = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// UTC timestamps for when each negative sentinel (-1) was recorded.
+    /// Used by ClearNegativeCache to only evict stale entries (>30 days old).
+    /// Not persisted — sentinels recorded before app upgrade are treated as old (cleared on next Full Refresh).
+    /// </summary>
+    private readonly Dictionary<string, DateTime> _negativeCacheTimestamps = new(StringComparer.Ordinal);
+
     /// <summary>Debounce timer — resets on every <see cref="SaveCacheAsync"/> call.</summary>
     private Timer? _saveDebounceTimer;
 
@@ -185,6 +192,7 @@ public class PcgwService : IPcgwService
             {
                 // Cache negative result so we don't retry HTTP calls next session.
                 _appIdCache[normalized] = -1;
+                _negativeCacheTimestamps[normalized] = DateTime.UtcNow;
                 await SaveCacheAsync().ConfigureAwait(false);
             }
         }
@@ -237,13 +245,21 @@ public class PcgwService : IPcgwService
         => $"https://www.pcgamingwiki.com/wiki/{pageTitle.Replace(' ', '_')}";
 
     /// <summary>
+    /// Rate-limits OpenSearch calls to one every 500ms — shared across all callers.
+    /// Prevents back-to-back requests that hammer PCGW when many games miss the cache.
+    /// </summary>
+    private static readonly SemaphoreSlim _openSearchLimiter = new(1, 1);
+
+    /// <summary>
     /// Queries the PCGW OpenSearch API and returns the wiki URL for the first result,
     /// or null if no results or an error occurs.
+    /// Rate-limited to one request per 500ms.
     /// </summary>
     private async Task<string?> OpenSearchFallbackAsync(string gameName)
     {
         if (_pcgwDown) return null;
 
+        await _openSearchLimiter.WaitAsync().ConfigureAwait(false);
         try
         {
             var encodedName = Uri.EscapeDataString(gameName);
@@ -293,18 +309,40 @@ public class PcgwService : IPcgwService
             try { _pcgwCts.Cancel(); } catch { }
             return null;
         }
+        finally
+        {
+            // Hold the rate limiter for 500ms after each request before releasing.
+            // This enforces a minimum 500ms gap between OpenSearch calls across all callers.
+            await Task.Delay(500).ConfigureAwait(false);
+            _openSearchLimiter.Release();
+        }
     }
 
     /// <inheritdoc />
     public void ClearNegativeCache()
     {
-        var negativeKeys = _appIdCache.Where(kv => kv.Value == -1).Select(kv => kv.Key).ToList();
-        foreach (var key in negativeKeys)
+        // Only clear negative sentinels that are older than 30 days.
+        // Recent misses (games confirmed not on PCGW) are kept so they don't
+        // hammer PCGW again immediately after a Full Refresh.
+        var cutoff = DateTime.UtcNow.AddDays(-30);
+        var toRemove = _appIdCache
+            .Where(kv => kv.Value == -1)
+            .Where(kv => !_negativeCacheTimestamps.TryGetValue(kv.Key, out var ts) || ts < cutoff)
+            .Select(kv => kv.Key)
+            .ToList();
+        foreach (var key in toRemove)
+        {
             _appIdCache.Remove(key);
-        if (negativeKeys.Count > 0)
+            _negativeCacheTimestamps.Remove(key);
+        }
+        if (toRemove.Count > 0)
         {
             WriteCacheToDisk();
-            CrashReporter.Log($"[PcgwService.ClearNegativeCache] Cleared {negativeKeys.Count} negative sentinel(s)");
+            CrashReporter.Log($"[PcgwService.ClearNegativeCache] Cleared {toRemove.Count} stale negative sentinel(s) (>30 days old)");
+        }
+        else
+        {
+            CrashReporter.Log("[PcgwService.ClearNegativeCache] No stale negative sentinels to clear (all recent)");
         }
     }
 

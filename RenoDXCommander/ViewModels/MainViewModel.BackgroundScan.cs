@@ -450,22 +450,25 @@ public partial class MainViewModel
 
                 // Fire-and-forget: scrape PCGW API info for games that have a URL but no cached info yet.
                 // Runs after BuildCards so _allCards is fully populated.
+                // Capped at 20 per session — spreads the load across multiple launches.
                 _ = Task.Run(async () =>
                 {
                     try
                     {
+                        const int ApiScrapeCap = 20;
                         int scraped = 0;
                         foreach (var card in _allCards)
                         {
+                            if (scraped >= ApiScrapeCap) break;
                             if (string.IsNullOrEmpty(card.PcgwUrl)) continue;
                             if (_pcgwService.GetCachedApiInfo(card.GameName) != null) continue;
                             await _pcgwService.FetchApiInfoAsync(card.GameName, card.PcgwUrl).ConfigureAwait(false);
                             scraped++;
                             // Gentle rate limit — avoid hammering PCGW
-                            await Task.Delay(300).ConfigureAwait(false);
+                            await Task.Delay(500).ConfigureAwait(false);
                         }
                         if (scraped > 0)
-                            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Scraped PCGW API info for {scraped} game(s)");
+                            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Scraped PCGW API info for {scraped} game(s) (cap={ApiScrapeCap})");
                     }
                     catch (Exception ex)
                     {

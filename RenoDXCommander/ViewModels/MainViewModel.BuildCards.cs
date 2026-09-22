@@ -1401,16 +1401,20 @@ public partial class MainViewModel
         // ── Post-loop PCGW URL resolution for cache misses ────────────────────
         // TryResolveUrlFromCache returns null for any game not yet in the local cache.
         // Resolve those in the background so the cache warms up for this and future sessions.
-        // Cards are updated in-place when their URL comes back.
+        // Capped at 15 per session to limit PCGW request volume — remaining misses resolve
+        // on the next launch after the cache is warm enough.
         var pcgwMissCards = cards
             .Where(c => c.PcgwUrl == null && !string.IsNullOrEmpty(c.InstallPath))
             .ToList();
+        const int PcgwPostLoopCap = 15;
         if (pcgwMissCards.Count > 0)
         {
+            var pcgwBatch = pcgwMissCards.Take(PcgwPostLoopCap).ToList();
+            int skipped = pcgwMissCards.Count - pcgwBatch.Count;
             _ = Task.Run(async () =>
             {
-                _crashReporter.Log($"[BuildCards] PCGW post-loop resolving {pcgwMissCards.Count} cache miss(es)");
-                foreach (var card in pcgwMissCards)
+                _crashReporter.Log($"[BuildCards] PCGW post-loop resolving {pcgwBatch.Count} cache miss(es) (cap={PcgwPostLoopCap}, skipped={skipped})");
+                foreach (var card in pcgwBatch)
                 {
                     try
                     {
