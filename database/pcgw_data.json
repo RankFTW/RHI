@@ -178556,5 +178556,25 @@
     "＜/reality＞": {
       "steam_appid": 562280
     }
+  },
+  "name_overrides": {
+    "AFOP": "Avatar: Frontiers of Pandora",
+    "Alan Wake 2": "Alan Wake 2",
+    "Batman™: Arkham Knight": "Batman: Arkham Knight",
+    "DARK SOULS™ II: Scholar of the First Sin": "Dark Souls II: Scholar of the First Sin",
+    "DOOM (DOS)": "Doom (1993)",
+    "DOOM + DOOM II": "Doom + Doom II",
+    "Denshattack!": "Denshattack!",
+    "Far Cry 2 Fortune's Edition": "Far Cry 2",
+    "Far Cry® 2: Fortune's Edition": "Far Cry 2",
+    "Fortnite": "Fortnite",
+    "Forza Horizon 6": "Forza Horizon 6",
+    "Halo: Campaign Evolved": "Halo: Campaign Evolved",
+    "Halo: The Master Chief Collection": "Halo: The Master Chief Collection",
+    "Kingdoms of Amalur: Reckoning™": "Kingdoms of Amalur: Reckoning",
+    "Reckoning": "Kingdoms of Amalur: Reckoning",
+    "Stellar Blade™": "Stellar Blade",
+    "The Sinking City Remastered": "The Sinking City Remastered",
+    "Tomb Raider": "Tomb Raider (2013)"
   }
 }
