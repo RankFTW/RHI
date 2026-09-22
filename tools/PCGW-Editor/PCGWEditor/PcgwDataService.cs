@@ -64,7 +64,16 @@ public static class PcgwDataService
     {
         try
         {
-            return JsonSerializer.Deserialize<PcgwDataFile>(json, s_readOpts);
+            var data = JsonSerializer.Deserialize<PcgwDataFile>(json, s_readOpts);
+            if (data == null) return null;
+
+            // Re-key with OrdinalIgnoreCase to handle any case-variant duplicates from PCGW
+            // (e.g. both "Cube" and "cube" — last one wins)
+            var deduped = new Dictionary<string, PcgwEntryRaw>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in data.Games) deduped[kv.Key] = kv.Value;
+            data.Games = deduped;
+
+            return data;
         }
         catch { return null; }
     }
@@ -77,9 +86,11 @@ public static class PcgwDataService
         data.GameCount = data.Games.Count;
 
         // Re-sort games and name_overrides alphabetically for clean diffs
-        data.Games = new Dictionary<string, PcgwEntryRaw>(
-            data.Games.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase),
-            StringComparer.OrdinalIgnoreCase);
+        // Deduplicate during sort — OrdinalIgnoreCase dict throws on case-variant duplicates
+        var sortedGames = new Dictionary<string, PcgwEntryRaw>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in data.Games.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase))
+            sortedGames[kv.Key] = kv.Value;
+        data.Games = sortedGames;
 
         data.NameOverrides = new Dictionary<string, string>(
             data.NameOverrides.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase),
