@@ -449,13 +449,13 @@ public partial class DetailPanelBuilder
                 // Turning unified override ON
                 var existingCfgNow = _window.ViewModel.GetDllOverride(capturedName);
 
-                string rsName;
-                string dcName;
+                string rsName = "";
+                string dcName = "";
 
                 if (existingCfgNow != null
                     && (!string.IsNullOrEmpty(existingCfgNow.ReShadeFileName) || !string.IsNullOrEmpty(existingCfgNow.DcFileName)))
                 {
-                    // Prior config exists — restore saved filenames
+                    // Prior config exists — restore saved filenames and re-apply the renames
                     rsName = existingCfgNow.ReShadeFileName ?? "";
                     dcName = existingCfgNow.DcFileName ?? "";
 
@@ -490,44 +490,25 @@ public partial class DetailPanelBuilder
                             dcNameBox.SelectedItem = dcName;
                         }
                     }
+
+                    // File I/O off the UI thread — re-apply the saved renames
+                    await Task.Run(() => _window.ViewModel.EnableDllOverride(targetCard, rsName, dcName));
                 }
                 else
                 {
-                    // No prior config — auto-select safe defaults
-                    rsName = targetCard.Is32Bit
-                        ? Services.AuxInstallService.RsStaged32
-                        : Services.AuxInstallService.RsStaged64;
+                    // No prior config — enable combos without selecting anything or renaming DLLs.
+                    // The user must explicitly pick a name from each combo to trigger a rename.
+                    // (SelectionChanged handlers call EnableDllOverride when a name is chosen.)
+                    rsNameBox.SelectedIndex = -1;
+                    dcNameBox.SelectedIndex = -1;
+                    // OS combo: leave at current effective name (no rename until user changes it)
 
-                    if (DllOverrideConstants.CommonDllNames.Contains(rsName, StringComparer.OrdinalIgnoreCase))
-                    {
-                        rsNameBox.SelectedItem = DllOverrideConstants.CommonDllNames
-                            .First(n => n.Equals(rsName, StringComparison.OrdinalIgnoreCase));
-                    }
-                    else
-                    {
-                        var extended = DllOverrideConstants.CommonDllNames.Append(rsName).ToArray();
-                        rsNameBox.ItemsSource = extended;
-                        rsNameBox.SelectedItem = rsName;
-                    }
-
-                    dcName = MainViewModel.GetDcFileName(targetCard.Is32Bit);
-
-                    if (DcDllOverrideNames.Contains(dcName, StringComparer.OrdinalIgnoreCase))
-                    {
-                        dcNameBox.SelectedItem = DcDllOverrideNames
-                            .First(n => n.Equals(dcName, StringComparison.OrdinalIgnoreCase));
-                    }
-                    else
-                    {
-                        var extendedDc = DcDllOverrideNames.Append(dcName).ToArray();
-                        dcNameBox.ItemsSource = extendedDc;
-                        dcNameBox.SelectedItem = dcName;
-                    }
+                    // Mark override as logically enabled so combos are active,
+                    // but do NOT rename any files yet.
+                    card.DllOverrideEnabled = true;
+                    card.NotifyAll();
                 }
-
-                // File I/O off the UI thread
-                await Task.Run(() => _window.ViewModel.EnableDllOverride(targetCard, rsName, dcName));
-            }
+            } // end if (dllOverrideToggle.IsOn)
             else
             {
                 // Turning unified override OFF
