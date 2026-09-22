@@ -237,7 +237,7 @@ def fetch_config_paths(session, test_limit=None):
                   "GameData.Platform=Platform,"
                   "GameData.Paths=Paths",
         join_on = "Game._pageID=GameData._pageID",
-        where   = "GameData.Type='Config' AND (GameData.Platform='Steam' OR GameData.Platform='Microsoft Store')",
+        where   = "GameData.Type='Config' AND (GameData.Platform='Windows' OR GameData.Platform='Steam' OR GameData.Platform='Microsoft Store')",
         limit   = test_limit,
     )
     print(f"  Parsing {len(rows):,} config rows...")
@@ -251,8 +251,10 @@ def fetch_config_paths(session, test_limit=None):
             continue
 
         entry = result.setdefault(page, {})
-        if platform == "Steam":
-            entry["config_path"] = paths
+        if platform in ("Windows", "Steam"):
+            # Windows wins over Steam if both exist
+            if "config_path" not in entry or platform == "Windows":
+                entry["config_path"] = paths
         elif platform == "Microsoft Store":
             entry["config_path_xbox"] = paths
 
