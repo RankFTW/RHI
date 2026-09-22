@@ -661,6 +661,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             : $"Fetch updates complete — {result.Added} new, {result.Updated} updated ({result.Total:N0} total).";
         StatusBar.Text = summary;
 
+        // Show detailed results dialog for incremental fetch
+        if (!fullRefresh)
+        {
+            var dlg = new FetchSummaryWindow(
+                result.AddedNames   ?? new(),
+                result.UpdatedNames ?? new())
+            { Owner = this };
+            dlg.ShowDialog();
+        }
+
         // Auto-save to local path
         SaveToPath(_currentFilePath ?? PcgwDataService.LocalPath);
     }

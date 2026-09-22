@@ -19,7 +19,9 @@ public record FetchResult(
     int    Added,
     int    Updated,
     int    Total,
-    string? Error);
+    string? Error,
+    List<string>? AddedNames   = null,
+    List<string>? UpdatedNames = null);
 
 /// <summary>
 /// C# port of fetch_pcgw_data.py.
@@ -295,6 +297,17 @@ public class PcgwFetchService
         return result;
     }
 
+    private static bool EntriesEqual(PcgwEntryRaw a, PcgwEntryRaw b) =>
+        a.SteamAppId    == b.SteamAppId    &&
+        a.Dx9           == b.Dx9           &&
+        a.Dx10          == b.Dx10          &&
+        a.Dx11          == b.Dx11          &&
+        a.Dx12          == b.Dx12          &&
+        a.Vulkan        == b.Vulkan        &&
+        a.OpenGL        == b.OpenGL        &&
+        a.ConfigPath    == b.ConfigPath    &&
+        a.ConfigPathXbox == b.ConfigPathXbox;
+
     private static void MergeConfigRows(
         IEnumerable<Dictionary<string, string>> rows,
         Dictionary<string, PcgwEntryRaw> target)
@@ -365,13 +378,16 @@ public class PcgwFetchService
             var newEntries = ParseApiRows(apiRows);
             MergeConfigRows(cfgRows, newEntries);
 
-            int added   = newEntries.Keys.Count(k => !existing.ContainsKey(k));
-            int updated = newEntries.Keys.Count(k =>  existing.ContainsKey(k));
+            var addedNames   = newEntries.Keys.Where(k => !existing.ContainsKey(k)).OrderBy(k => k).ToList();
+            var updatedNames = newEntries.Keys.Where(k =>  existing.ContainsKey(k)
+                                                        && !EntriesEqual(existing[k], newEntries[k]))
+                                             .OrderBy(k => k).ToList();
 
             foreach (var (key, val) in newEntries)
                 existing[key] = val;
 
-            return new FetchResult(true, added, updated, existing.Count, null);
+            return new FetchResult(true, addedNames.Count, updatedNames.Count,
+                existing.Count, null, addedNames, updatedNames);
         }
         catch (OperationCanceledException)
         {
