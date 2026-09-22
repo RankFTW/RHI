@@ -132,6 +132,9 @@ public partial class ShaderPackService
         else
         {
             downloadUrl = pack.Url;
+            // Empty URL = pack is seeded by other means (e.g. DLSS5Feeder seeded from addon zip).
+            // Nothing to download — skip silently.
+            if (string.IsNullOrEmpty(downloadUrl)) return;
             versionToken = await ResolveDirectUrlVersion(pack);
         }
 
