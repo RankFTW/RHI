@@ -22,7 +22,7 @@ public partial class DetailPanelBuilder
         public required TextBox DetectedBox;
         public required TextBox WikiBox;
         public required ComboBox WikiExcludeCombo;
-        public required ToggleSwitch DllOverrideToggle;
+        public Action? ResetDllOverrides; // clears all DLL name overrides (replaces old ToggleSwitch reset path)
         public required string? OriginalStoreName;
         public ComboBox? RenderPathCombo;
         public ComboBox ChannelCombo = null!;
@@ -197,18 +197,6 @@ public partial class DetailPanelBuilder
         bool is32Bit = card.Is32Bit;
         var defaultRsName = is32Bit ? "ReShade32.dll" : "ReShade64.dll";
 
-        var dllOverrideToggle = new ToggleSwitch
-        {
-            Header = "DLL naming overrides",
-            IsOn = isDllOverride,
-            IsEnabled = true,
-            OnContent = "Custom filenames enabled",
-            OffContent = "Override DLL filenames",
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-        };
-        ToolTipService.SetToolTip(dllOverrideToggle,
-            "Override the filenames ReShade is installed as. When enabled, existing RS files are renamed to the custom filenames.");
         var existingRsName = existingCfg?.ReShadeFileName ?? "";
 
         var rsNameBox = new ComboBox
@@ -216,7 +204,7 @@ public partial class DetailPanelBuilder
             PlaceholderText = "Select ReShade DLL name",
             Header = (object?)null,
             FontSize = 12,
-            IsEnabled = isDllOverride,
+            IsEnabled = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             ItemsSource = DllOverrideConstants.CommonDllNames,
         };
@@ -240,13 +228,12 @@ public partial class DetailPanelBuilder
         }
         // ── DC DLL naming override ─────────────────────────────────────────
         var existingDcName = existingCfg?.DcFileName ?? "";
-        bool isDcDllOverrideOn = isDllOverride && !string.IsNullOrEmpty(existingDcName);
 
         var dcNameBox = new ComboBox
         {
             PlaceholderText = "Select DC DLL name",
             FontSize = 12,
-            IsEnabled = isDcDllOverrideOn,
+            IsEnabled = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             ItemsSource = DcDllOverrideNames,
         };
@@ -270,8 +257,7 @@ public partial class DetailPanelBuilder
         // Track previous OS selection for revert
         // ── OptiScaler DLL naming override ─────────────────────────────────────
         var existingOsName = existingCfg?.OsFileName ?? "";
-        if (string.IsNullOrEmpty(existingOsName))
-            existingOsName = _dllOverrideService.GetEffectiveOsName(gameName);
+        // Do NOT fall back to GetEffectiveOsName — leave the combo unselected when no saved value
         var availableOsNames = _dllOverrideService
             .GetAvailableOsDllNames(gameName, is32Bit,
                 rsInstalledAs: !string.IsNullOrEmpty(card.RsInstalledFile)
@@ -285,7 +271,7 @@ public partial class DetailPanelBuilder
         {
             PlaceholderText = "Select OptiScaler DLL name",
             FontSize = 12,
-            IsEnabled = isDllOverride,
+            IsEnabled = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             ItemsSource = availableOsNames,
         };
@@ -312,7 +298,6 @@ public partial class DetailPanelBuilder
         osNameBox.SelectionChanged += (s, e) =>
         {
             if (_osComboInitializing) return;
-            if (!dllOverrideToggle.IsOn) return;
             var osName = osNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(osName)) return;
             CrashReporter.Log($"[DetailPanelBuilder] OS DLL combo changed → '{osName}' for '{capturedName}' (OsInstalledFile='{card.OsInstalledFile}', RsInstalledFile='{card.RsInstalledFile}')");
@@ -384,9 +369,7 @@ public partial class DetailPanelBuilder
             _updatingDropdowns = true;
             try
             {
-                var rsCurrentName = dllOverrideToggle.IsOn
-                    ? (rsNameBox.SelectedItem as string ?? "").Trim()
-                    : Services.AuxInstallService.RsNormalName;
+                var rsCurrentName = (rsNameBox.SelectedItem as string ?? "").Trim();
                 var filtered = string.IsNullOrEmpty(rsCurrentName)
                     ? DcDllOverrideNames
                     : DcDllOverrideNames.Where(n => !n.Equals(rsCurrentName, StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -407,9 +390,7 @@ public partial class DetailPanelBuilder
             _updatingDropdowns = true;
             try
             {
-                var dcCurrentName = dllOverrideToggle.IsOn
-                    ? (dcNameBox.SelectedItem as string ?? "").Trim()
-                    : "";
+                var dcCurrentName = (dcNameBox.SelectedItem as string ?? "").Trim();
                 // Only exclude the DC name — OS name is allowed to appear in the RS list
                 // (the save handler blocks the rename if RS and OS would collide)
                 var filtered = DllOverrideConstants.CommonDllNames
@@ -430,197 +411,15 @@ public partial class DetailPanelBuilder
         UpdateDcDropdownItems();
         UpdateRsDropdownItems();
 
-        dllOverrideToggle.Toggled += async (s, ev) =>
-        {
-            rsNameBox.IsEnabled = dllOverrideToggle.IsOn;
-            dcNameBox.IsEnabled = dllOverrideToggle.IsOn;
-            osNameBox.IsEnabled = dllOverrideToggle.IsOn;
-
-            // Disable toggle during file operations to prevent re-entrancy
-            dllOverrideToggle.IsEnabled = false;
-
-            // Use card directly to avoid multi-store lookup picking the wrong card
-            var targetCard = card;
-
-            try
-            {
-            if (dllOverrideToggle.IsOn)
-            {
-                // Turning unified override ON
-                var existingCfgNow = _window.ViewModel.GetDllOverride(capturedName);
-
-                string rsName = "";
-                string dcName = "";
-
-                if (existingCfgNow != null
-                    && (!string.IsNullOrEmpty(existingCfgNow.ReShadeFileName) || !string.IsNullOrEmpty(existingCfgNow.DcFileName)))
-                {
-                    // Prior config exists — restore saved filenames and re-apply the renames
-                    rsName = existingCfgNow.ReShadeFileName ?? "";
-                    dcName = existingCfgNow.DcFileName ?? "";
-
-                    // Restore RS dropdown
-                    if (!string.IsNullOrEmpty(rsName))
-                    {
-                        if (DllOverrideConstants.CommonDllNames.Contains(rsName, StringComparer.OrdinalIgnoreCase))
-                        {
-                            rsNameBox.SelectedItem = DllOverrideConstants.CommonDllNames
-                                .First(n => n.Equals(rsName, StringComparison.OrdinalIgnoreCase));
-                        }
-                        else
-                        {
-                            var extended = DllOverrideConstants.CommonDllNames.Append(rsName).ToArray();
-                            rsNameBox.ItemsSource = extended;
-                            rsNameBox.SelectedItem = rsName;
-                        }
-                    }
-
-                    // Restore DC dropdown
-                    if (!string.IsNullOrEmpty(dcName))
-                    {
-                        if (DcDllOverrideNames.Contains(dcName, StringComparer.OrdinalIgnoreCase))
-                        {
-                            dcNameBox.SelectedItem = DcDllOverrideNames
-                                .First(n => n.Equals(dcName, StringComparison.OrdinalIgnoreCase));
-                        }
-                        else
-                        {
-                            var extendedDc = DcDllOverrideNames.Append(dcName).ToArray();
-                            dcNameBox.ItemsSource = extendedDc;
-                            dcNameBox.SelectedItem = dcName;
-                        }
-                    }
-
-                    // File I/O off the UI thread — re-apply the saved renames
-                    await Task.Run(() => _window.ViewModel.EnableDllOverride(targetCard, rsName, dcName));
-                }
-                else
-                {
-                    // No prior config — enable combos without selecting anything or renaming DLLs.
-                    // The user must explicitly pick a name from each combo to trigger a rename.
-                    // (SelectionChanged handlers call EnableDllOverride when a name is chosen.)
-                    rsNameBox.SelectedIndex = -1;
-                    dcNameBox.SelectedIndex = -1;
-                    // OS combo: leave at current effective name (no rename until user changes it)
-
-                    // Mark override as logically enabled so combos are active,
-                    // but do NOT rename any files yet.
-                    card.DllOverrideEnabled = true;
-                    card.NotifyAll();
-                }
-            } // end if (dllOverrideToggle.IsOn)
-            else
-            {
-                // Turning unified override OFF
-                CrashReporter.Log($"[DetailPanelBuilder] DLL override toggle OFF for '{capturedName}' — OsInstalledFile='{targetCard.OsInstalledFile}', IsOsInstalled={targetCard.IsOsInstalled}");
-
-                // All file I/O off the UI thread
-                DllDisableResult result = default;
-                await Task.Run(() =>
-                {
-                    // ── Step 1: Revert OptiScaler DLL FIRST so dxgi.dll is free before RS tries to reclaim it ──
-                    var osCfg = _dllOverrideService.GetDllOverride(capturedName)?.OsFileName;
-                    CrashReporter.Log($"[DetailPanelBuilder] Toggle OFF — osCfg='{osCfg}'");
-                    if (!string.IsNullOrEmpty(osCfg) && targetCard.IsOsInstalled
-                        && !string.IsNullOrEmpty(targetCard.OsInstalledFile)
-                        && !string.IsNullOrEmpty(targetCard.InstallPath))
-                    {
-                        var defaultOsName = OptiScalerService.DefaultDllName; // "dxgi.dll"
-                        var osOldPath = System.IO.Path.Combine(targetCard.InstallPath, targetCard.OsInstalledFile);
-                        var osNewPath = System.IO.Path.Combine(targetCard.InstallPath, defaultOsName);
-                        try
-                        {
-                            if (!osOldPath.Equals(osNewPath, StringComparison.OrdinalIgnoreCase)
-                                && System.IO.File.Exists(osOldPath))
-                            {
-                                // If dxgi.dll is occupied by ReShade (RS is at its default name),
-                                // move RS out of the way first using the coexist name (ReShade64.dll)
-                                if (System.IO.File.Exists(osNewPath)
-                                    && targetCard.RsRecord != null
-                                    && System.IO.Path.GetFileName(osNewPath).Equals(targetCard.RsRecord.InstalledAs, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    var rsCoexistPath = System.IO.Path.Combine(targetCard.InstallPath, Services.OptiScalerService.ReShadeCoexistName);
-                                    if (!System.IO.File.Exists(rsCoexistPath))
-                                    {
-                                        System.IO.File.Move(osNewPath, rsCoexistPath);
-                                        targetCard.RsRecord.InstalledAs = Services.OptiScalerService.ReShadeCoexistName;
-                                        targetCard.RsInstalledFile = Services.OptiScalerService.ReShadeCoexistName;
-                                        var rsRec = _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, Services.AuxInstallService.TypeReShade)
-                                                 ?? _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, Services.AuxInstallService.TypeReShadeNormal);
-                                        if (rsRec != null) { rsRec.InstalledAs = Services.OptiScalerService.ReShadeCoexistName; _auxInstallService.SaveAuxRecord(rsRec); }
-                                        CrashReporter.Log($"[DetailPanelBuilder] Moved ReShade '{System.IO.Path.GetFileName(osNewPath)}' → '{Services.OptiScalerService.ReShadeCoexistName}' to free up '{defaultOsName}' for OptiScaler revert");
-                                    }
-                                }
-                                if (!System.IO.File.Exists(osNewPath))
-                                {
-                                    var prevOsName = targetCard.OsInstalledFile ?? osCfg!;
-                                    System.IO.File.Move(osOldPath, osNewPath);
-                                    targetCard.OsInstalledFile = defaultOsName;
-                                    var osRecord = _auxInstallService.FindRecord(capturedName, targetCard.InstallPath, "OptiScaler");
-                                    if (osRecord != null) { osRecord.InstalledAs = defaultOsName; _auxInstallService.SaveAuxRecord(osRecord); }
-                                    CrashReporter.Log($"[DetailPanelBuilder] Reverted OptiScaler DLL '{osCfg}' → '{defaultOsName}' for '{capturedName}'");
-                                    // Update rhi_install.txt and rename the .original sentinel
-                                    RhiInstallManifest.UpdateInstalledAs(targetCard.InstallPath, prevOsName, defaultOsName);
-                                }
-                            }
-                        }
-                        catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] Failed to revert OptiScaler DLL for '{capturedName}' — {ex.Message}"); }
-                    }
-                    _dllOverrideService.SetOsDllOverride(capturedName, "");
-
-                    // ── Step 2: Revert RS and DC ──
-                    result = _window.ViewModel.DisableDllOverride(targetCard);
-                });
-
-                // Back on UI thread — update dropdowns and tooltips
-                rsNameBox.SelectedIndex = -1;
-                dcNameBox.SelectedIndex = -1;
-
-                if (!result.RsReverted)
-                {
-                    ToolTipService.SetToolTip(dllOverrideToggle,
-                        "Could not revert ReShade to dxgi.dll — the filename is occupied by another file. ReShade was renamed to a fallback name instead.");
-                }
-                else if (!result.DcReverted)
-                {
-                    ToolTipService.SetToolTip(dllOverrideToggle,
-                        "Could not revert Display Commander to its default name — the filename is occupied by another file. DC was kept under its current name.");
-                }
-                else
-                {
-                    ToolTipService.SetToolTip(dllOverrideToggle,
-                        "Override the filenames ReShade is installed as. When enabled, existing RS files are renamed to the custom filenames.");
-                }
-            } // end if/else dllOverrideToggle.IsOn
-            } // end try body
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[DetailPanelBuilder] DLL override toggle failed — {ex.Message}");
-            }
-            finally
-            {
-                dllOverrideToggle.IsEnabled = true;
-            }
-        };
-
         // ── Auto-save: DC name box on dropdown selection (with foreign DLL check) ──
         dcNameBox.SelectionChanged += async (s, e) =>
         {
-            if (!dllOverrideToggle.IsOn) return;
-            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
+            var targetCard = card;
             var dcName = dcNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(dcName)) return;
 
             // Collision check: reject if selected DC name matches the current RS name
-            string currentRsName;
-            if (dllOverrideToggle.IsOn)
-                currentRsName = (rsNameBox.SelectedItem as string ?? "").Trim();
-            else if (targetCard.RsRecord != null || !string.IsNullOrEmpty(targetCard.RsInstalledFile))
-                currentRsName = Services.AuxInstallService.RsNormalName;
-            else
-                currentRsName = "";
+            var currentRsName = (rsNameBox.SelectedItem as string ?? "").Trim();
             if (!string.IsNullOrEmpty(currentRsName) && dcName.Equals(currentRsName, StringComparison.OrdinalIgnoreCase))
             {
                 dcNameBox.SelectedIndex = -1;
@@ -723,10 +522,17 @@ public partial class DetailPanelBuilder
 
         // Column 2: DLL naming override
         var topRightColumn = new StackPanel { Spacing = 6 };
-        topRightColumn.Children.Add(dllOverrideToggle);
 
-        // 3 DLL name boxes side by side, hidden when toggle is off
-        var dllBoxesGrid = new Grid { ColumnSpacing = 8, RowSpacing = 4, Visibility = isDllOverride ? Visibility.Visible : Visibility.Collapsed };
+        var dllOverrideLabel = new TextBlock
+        {
+            Text = "DLL naming overrides",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+        };
+        topRightColumn.Children.Add(dllOverrideLabel);
+
+        // 3 DLL name boxes side by side, always visible
+        var dllBoxesGrid = new Grid { ColumnSpacing = 8, RowSpacing = 4 };
         dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -752,11 +558,89 @@ public partial class DetailPanelBuilder
         dllBoxesGrid.Children.Add(osNameBox);
         topRightColumn.Children.Add(dllBoxesGrid);
 
-        // Show/hide DLL boxes when toggle changes
-        dllOverrideToggle.Toggled += (s, ev) =>
+        // Reset DLL Names button — reverts all three DLLs to defaults and clears the config
+        var resetDllBtn = new Button
         {
-            dllBoxesGrid.Visibility = dllOverrideToggle.IsOn ? Visibility.Visible : Visibility.Collapsed;
+            Content = "Reset DLL Names",
+            FontSize = 12,
+            Height = 28,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Padding = new Thickness(10, 4, 10, 4),
+            IsEnabled = _window.ViewModel.HasDllOverride(gameName),
+            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
         };
+        ToolTipService.SetToolTip(resetDllBtn,
+            "Revert all DLL names back to defaults and clear saved overrides.");
+        resetDllBtn.Click += async (s, e) =>
+        {
+            resetDllBtn.IsEnabled = false;
+            CrashReporter.Log($"[DetailPanelBuilder] Reset DLL Names clicked for '{capturedName}'");
+
+            DllDisableResult result = default;
+            await Task.Run(() =>
+            {
+                // ── Step 1: Revert OptiScaler DLL FIRST so dxgi.dll is free before RS tries to reclaim it ──
+                var osCfg = _dllOverrideService.GetDllOverride(capturedName)?.OsFileName;
+                if (!string.IsNullOrEmpty(osCfg) && card.IsOsInstalled
+                    && !string.IsNullOrEmpty(card.OsInstalledFile)
+                    && !string.IsNullOrEmpty(card.InstallPath))
+                {
+                    var defaultOsName = OptiScalerService.DefaultDllName; // "dxgi.dll"
+                    var osOldPath = System.IO.Path.Combine(card.InstallPath, card.OsInstalledFile);
+                    var osNewPath = System.IO.Path.Combine(card.InstallPath, defaultOsName);
+                    try
+                    {
+                        if (!osOldPath.Equals(osNewPath, StringComparison.OrdinalIgnoreCase)
+                            && System.IO.File.Exists(osOldPath))
+                        {
+                            // If dxgi.dll is occupied by ReShade, move RS out of the way first
+                            if (System.IO.File.Exists(osNewPath)
+                                && card.RsRecord != null
+                                && System.IO.Path.GetFileName(osNewPath).Equals(card.RsRecord.InstalledAs, StringComparison.OrdinalIgnoreCase))
+                            {
+                                var rsCoexistPath = System.IO.Path.Combine(card.InstallPath, Services.OptiScalerService.ReShadeCoexistName);
+                                if (!System.IO.File.Exists(rsCoexistPath))
+                                {
+                                    System.IO.File.Move(osNewPath, rsCoexistPath);
+                                    card.RsRecord.InstalledAs = Services.OptiScalerService.ReShadeCoexistName;
+                                    card.RsInstalledFile = Services.OptiScalerService.ReShadeCoexistName;
+                                    var rsRec = _auxInstallService.FindRecord(capturedName, card.InstallPath, Services.AuxInstallService.TypeReShade)
+                                             ?? _auxInstallService.FindRecord(capturedName, card.InstallPath, Services.AuxInstallService.TypeReShadeNormal);
+                                    if (rsRec != null) { rsRec.InstalledAs = Services.OptiScalerService.ReShadeCoexistName; _auxInstallService.SaveAuxRecord(rsRec); }
+                                    CrashReporter.Log($"[DetailPanelBuilder] Moved ReShade '{System.IO.Path.GetFileName(osNewPath)}' → '{Services.OptiScalerService.ReShadeCoexistName}' to free '{defaultOsName}' for OS revert");
+                                }
+                            }
+                            if (!System.IO.File.Exists(osNewPath))
+                            {
+                                var prevOsName = card.OsInstalledFile ?? osCfg!;
+                                System.IO.File.Move(osOldPath, osNewPath);
+                                card.OsInstalledFile = defaultOsName;
+                                var osRecord = _auxInstallService.FindRecord(capturedName, card.InstallPath, "OptiScaler");
+                                if (osRecord != null) { osRecord.InstalledAs = defaultOsName; _auxInstallService.SaveAuxRecord(osRecord); }
+                                CrashReporter.Log($"[DetailPanelBuilder] Reverted OptiScaler DLL '{osCfg}' → '{defaultOsName}' for '{capturedName}'");
+                                RhiInstallManifest.UpdateInstalledAs(card.InstallPath, prevOsName, defaultOsName);
+                            }
+                        }
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] Failed to revert OptiScaler DLL for '{capturedName}' — {ex.Message}"); }
+                }
+                _dllOverrideService.SetOsDllOverride(capturedName, "");
+
+                // ── Step 2: Revert RS and DC ──
+                result = _window.ViewModel.DisableDllOverride(card);
+            });
+
+            // Back on UI thread — clear combos
+            rsNameBox.SelectedIndex = -1;
+            dcNameBox.SelectedIndex = -1;
+            osNameBox.SelectedIndex = -1;
+            resetDllBtn.IsEnabled = false; // nothing to reset now
+        };
+        topRightColumn.Children.Add(resetDllBtn);
 
         Grid.SetColumn(topRightColumn, 2);
         topRowGrid.Children.Add(topRightColumn);
@@ -898,13 +782,10 @@ public partial class DetailPanelBuilder
         // ── Auto-save: RS name box on dropdown selection ─────────────────────────
         rsNameBox.SelectionChanged += (s, e) =>
         {
-            if (!dllOverrideToggle.IsOn) return;
-            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-            if (targetCard == null) return;
+            var targetCard = card;
             var rsName = rsNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(rsName)) return;
-            var dcName = dllOverrideToggle.IsOn ? (dcNameBox.SelectedItem as string ?? "") : "";
+            var dcName = dcNameBox.SelectedItem as string ?? "";
             CrashReporter.Log($"[DetailPanelBuilder] RS DLL combo changed → '{rsName}' for '{capturedName}'");
 
             // Collision guard: block if RS name matches the installed OS name
@@ -1151,11 +1032,22 @@ public partial class DetailPanelBuilder
             DetectedBox = detectedBox,
             WikiBox = wikiBox,
             WikiExcludeCombo = wikiExcludeCombo,
-            DllOverrideToggle = dllOverrideToggle,
             OriginalStoreName = originalStoreName,
             RenderPathCombo = renderPathCombo,
             ShaderModeCombo = shaderModeCombo,
             ShaderComboInitializing = shaderComboInitializing,
+        };
+
+        // Wire the reset delegate so the Reset Overrides action can clear DLL overrides too
+        ctx.ResetDllOverrides = () =>
+        {
+            resetDllBtn.IsEnabled = false;
+            rsNameBox.SelectedIndex = -1;
+            dcNameBox.SelectedIndex = -1;
+            osNameBox.SelectedIndex = -1;
+            // The persist / file I/O is sync here (called from the reset action which is already on UI thread)
+            _dllOverrideService.SetOsDllOverride(capturedName, "");
+            _window.ViewModel.DisableDllOverride(card);
         };
 
         BuildRsChannelSection(ctx);

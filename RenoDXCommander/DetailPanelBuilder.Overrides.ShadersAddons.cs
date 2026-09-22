@@ -469,7 +469,7 @@ public partial class DetailPanelBuilder
             addonModeCombo.SelectedItem = "Global";
             addonComboInitializing = false;
             if (ctx.RenderPathCombo != null) ctx.RenderPathCombo.SelectedItem = "DirectX";
-            ctx.DllOverrideToggle.IsOn = false;
+            ctx.ResetDllOverrides?.Invoke();
             // Reset update inclusion to all-included
             if (_window.ViewModel.IsUpdateAllExcludedReShade(ctx.CapturedName, card.Source))
                 _window.ViewModel.ToggleUpdateAllExclusionReShade(ctx.CapturedName, card.Source);
