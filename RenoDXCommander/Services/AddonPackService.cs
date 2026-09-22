@@ -280,11 +280,12 @@ public class AddonPackService : IAddonPackService
             foreach (var (path, files) in deployments)
             {
                 if (!files.Contains(dlss5Addon)) continue;
-                // Only remove if the NR section manages this game with SF or Feeder
+                // Only remove if NR is managed by ShortFuse — SF has its own renodx-dlss.addon64
+                // and renodx-dlss5.addon64 is genuinely redundant there.
+                // For Feeder, renodx-dlss5.addon64 IS the neural consumer — do NOT remove it.
                 var manifest = Models.RhiInstallManifest.Read(path);
                 var nrMethod = manifest?.NrMethod;
-                bool nrSectionOwnsGame = string.Equals(nrMethod, "ShortFuse", StringComparison.OrdinalIgnoreCase)
-                                      || string.Equals(nrMethod, "Feeder", StringComparison.OrdinalIgnoreCase);
+                bool nrSectionOwnsGame = string.Equals(nrMethod, "ShortFuse", StringComparison.OrdinalIgnoreCase);
                 if (!nrSectionOwnsGame) continue;
                 var gameFile = Path.Combine(path, dlss5Addon);
                 try { if (File.Exists(gameFile)) { File.Delete(gameFile); CrashReporter.Log($"[AddonPackService] Removed spurious '{dlss5Addon}' (NR={nrMethod}) from '{path}'"); } } catch { }
