@@ -197,16 +197,19 @@ public partial class DetailPanelBuilder
         bool is32Bit = card.Is32Bit;
         var defaultRsName = is32Bit ? "ReShade32.dll" : "ReShade64.dll";
 
+        const string DllDefaultSentinel = "--------";
+
         var existingRsName = existingCfg?.ReShadeFileName ?? "";
+        var rsNames = DllOverrideConstants.CommonDllNames.Prepend(DllDefaultSentinel).ToArray();
 
         var rsNameBox = new ComboBox
         {
-            PlaceholderText = "Select ReShade DLL name",
             Header = (object?)null,
             FontSize = 12,
             IsEnabled = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            ItemsSource = DllOverrideConstants.CommonDllNames,
+            ItemsSource = rsNames,
+            SelectedItem = DllDefaultSentinel, // default = no override
         };
         if (card.IsOsInstalled)
         {
@@ -215,40 +218,34 @@ public partial class DetailPanelBuilder
         }
         if (!string.IsNullOrEmpty(existingRsName))
         {
-            if (DllOverrideConstants.CommonDllNames.Contains(existingRsName, StringComparer.OrdinalIgnoreCase))
-            {
-                rsNameBox.SelectedItem = DllOverrideConstants.CommonDllNames.First(n => n.Equals(existingRsName, StringComparison.OrdinalIgnoreCase));
-            }
+            if (rsNames.Contains(existingRsName, StringComparer.OrdinalIgnoreCase))
+                rsNameBox.SelectedItem = rsNames.First(n => n.Equals(existingRsName, StringComparison.OrdinalIgnoreCase));
             else
             {
-                var extendedRsNames = DllOverrideConstants.CommonDllNames.Append(existingRsName).ToArray();
+                var extendedRsNames = rsNames.Append(existingRsName).ToArray();
                 rsNameBox.ItemsSource = extendedRsNames;
                 rsNameBox.SelectedItem = existingRsName;
             }
         }
         // ── DC DLL naming override ─────────────────────────────────────────
         var existingDcName = existingCfg?.DcFileName ?? "";
+        var dcNames = DcDllOverrideNames.Prepend(DllDefaultSentinel).ToArray();
 
         var dcNameBox = new ComboBox
         {
-            PlaceholderText = "Select DC DLL name",
             FontSize = 12,
             IsEnabled = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            ItemsSource = DcDllOverrideNames,
+            ItemsSource = dcNames,
+            SelectedItem = DllDefaultSentinel,
         };
         if (!string.IsNullOrEmpty(existingDcName))
         {
-            if (DcDllOverrideNames.Contains(existingDcName, StringComparer.OrdinalIgnoreCase))
-            {
-                dcNameBox.SelectedItem = DcDllOverrideNames.First(n => n.Equals(existingDcName, StringComparison.OrdinalIgnoreCase));
-            }
+            if (dcNames.Contains(existingDcName, StringComparer.OrdinalIgnoreCase))
+                dcNameBox.SelectedItem = dcNames.First(n => n.Equals(existingDcName, StringComparison.OrdinalIgnoreCase));
             else
             {
-                // Add the custom name as a temporary item so SelectedItem works reliably.
-                // The Loaded event approach is unreliable in WinUI 3 — the deferred Text
-                // assignment can be overwritten by the ComboBox's internal state reset.
-                var extendedDcNames = DcDllOverrideNames.Append(existingDcName).ToArray();
+                var extendedDcNames = dcNames.Append(existingDcName).ToArray();
                 dcNameBox.ItemsSource = extendedDcNames;
                 dcNameBox.SelectedItem = existingDcName;
             }
@@ -257,8 +254,8 @@ public partial class DetailPanelBuilder
         // Track previous OS selection for revert
         // ── OptiScaler DLL naming override ─────────────────────────────────────
         var existingOsName = existingCfg?.OsFileName ?? "";
-        // Do NOT fall back to GetEffectiveOsName — leave the combo unselected when no saved value
-        var availableOsNames = _dllOverrideService
+        // Do NOT fall back to GetEffectiveOsName — leave the combo at sentinel when no saved value
+        var osBaseNames = _dllOverrideService
             .GetAvailableOsDllNames(gameName, is32Bit,
                 rsInstalledAs: !string.IsNullOrEmpty(card.RsInstalledFile)
                     ? card.RsInstalledFile
@@ -266,6 +263,7 @@ public partial class DetailPanelBuilder
                 dcInstalledAs: !string.IsNullOrEmpty(card.DcInstalledFile)
                     ? card.DcInstalledFile
                     : existingCfg?.DcFileName);
+        var availableOsNames = osBaseNames.Prepend(DllDefaultSentinel).ToArray();
 
         var osNameBox = new ComboBox
         {
@@ -274,16 +272,14 @@ public partial class DetailPanelBuilder
             IsEnabled = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             ItemsSource = availableOsNames,
+            SelectedItem = DllDefaultSentinel,
         };
         if (!string.IsNullOrEmpty(existingOsName))
         {
             if (availableOsNames.Contains(existingOsName, StringComparer.OrdinalIgnoreCase))
-            {
                 osNameBox.SelectedItem = availableOsNames.First(n => n.Equals(existingOsName, StringComparison.OrdinalIgnoreCase));
-            }
             else
             {
-                // Add the custom name as a temporary item so SelectedItem works reliably.
                 var extendedOsNames = availableOsNames.Append(existingOsName).ToArray();
                 osNameBox.ItemsSource = extendedOsNames;
                 osNameBox.SelectedItem = existingOsName;
@@ -300,9 +296,38 @@ public partial class DetailPanelBuilder
             if (_osComboInitializing) return;
             var osName = osNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(osName)) return;
-            CrashReporter.Log($"[DetailPanelBuilder] OS DLL combo changed → '{osName}' for '{capturedName}' (OsInstalledFile='{card.OsInstalledFile}', RsInstalledFile='{card.RsInstalledFile}')");
 
-            // Collision guard: block OS name if it matches the RS or DC installed/configured name
+            // -------- = clear OS override, revert DLL to default name
+            if (osName == DllDefaultSentinel)
+            {
+                if (!string.IsNullOrEmpty(existingCfg?.OsFileName))
+                {
+                    _dllOverrideService.SetOsDllOverride(capturedName, "");
+                    // Rename back to default if OS is installed
+                    if (card.IsOsInstalled && !string.IsNullOrEmpty(card.OsInstalledFile)
+                        && !string.IsNullOrEmpty(card.InstallPath))
+                    {
+                        var defName = OptiScalerService.DefaultDllName;
+                        var oldP = System.IO.Path.Combine(card.InstallPath, card.OsInstalledFile);
+                        var newP = System.IO.Path.Combine(card.InstallPath, defName);
+                        try
+                        {
+                            if (System.IO.File.Exists(oldP) && !oldP.Equals(newP, StringComparison.OrdinalIgnoreCase)
+                                && !System.IO.File.Exists(newP))
+                            {
+                                System.IO.File.Move(oldP, newP);
+                                card.OsInstalledFile = defName;
+                                var rec = _auxInstallService.FindRecord(capturedName, card.InstallPath, "OptiScaler");
+                                if (rec != null) { rec.InstalledAs = defName; _auxInstallService.SaveAuxRecord(rec); }
+                                RhiInstallManifest.UpdateInstalledAs(card.InstallPath, card.OsInstalledFile, defName);
+                            }
+                        }
+                        catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] OS revert failed — {ex.Message}"); }
+                    }
+                }
+                _previousOsSelection = DllDefaultSentinel;
+                return;
+            }
             // Use card directly (not a re-lookup by name) to avoid multi-store card mismatch
             var effectiveRsName = !string.IsNullOrEmpty(card.RsInstalledFile)
                 ? card.RsInstalledFile
@@ -370,12 +395,13 @@ public partial class DetailPanelBuilder
             try
             {
                 var rsCurrentName = (rsNameBox.SelectedItem as string ?? "").Trim();
-                var filtered = string.IsNullOrEmpty(rsCurrentName)
-                    ? DcDllOverrideNames
-                    : DcDllOverrideNames.Where(n => !n.Equals(rsCurrentName, StringComparison.OrdinalIgnoreCase)).ToArray();
+                // Don't filter on sentinel or empty
+                bool rsIsReal = !string.IsNullOrEmpty(rsCurrentName) && rsCurrentName != DllDefaultSentinel;
+                var filtered = rsIsReal
+                    ? dcNames.Where(n => n == DllDefaultSentinel || !n.Equals(rsCurrentName, StringComparison.OrdinalIgnoreCase)).ToArray()
+                    : dcNames;
                 var currentDc = dcNameBox.SelectedItem as string;
-                // Preserve custom DC name that isn't in the base list
-                if (currentDc != null && !filtered.Contains(currentDc, StringComparer.OrdinalIgnoreCase))
+                if (currentDc != null && currentDc != DllDefaultSentinel && !filtered.Contains(currentDc, StringComparer.OrdinalIgnoreCase))
                     filtered = filtered.Append(currentDc).ToArray();
                 dcNameBox.ItemsSource = filtered;
                 if (currentDc != null && filtered.Contains(currentDc, StringComparer.OrdinalIgnoreCase))
@@ -391,14 +417,12 @@ public partial class DetailPanelBuilder
             try
             {
                 var dcCurrentName = (dcNameBox.SelectedItem as string ?? "").Trim();
-                // Only exclude the DC name — OS name is allowed to appear in the RS list
-                // (the save handler blocks the rename if RS and OS would collide)
-                var filtered = DllOverrideConstants.CommonDllNames
-                    .Where(n => string.IsNullOrEmpty(dcCurrentName) || !n.Equals(dcCurrentName, StringComparison.OrdinalIgnoreCase))
-                    .ToArray();
+                bool dcIsReal = !string.IsNullOrEmpty(dcCurrentName) && dcCurrentName != DllDefaultSentinel;
+                var filtered = dcIsReal
+                    ? rsNames.Where(n => n == DllDefaultSentinel || !n.Equals(dcCurrentName, StringComparison.OrdinalIgnoreCase)).ToArray()
+                    : rsNames;
                 var currentRs = rsNameBox.SelectedItem as string;
-                // Preserve custom RS name that isn't in the base list
-                if (!string.IsNullOrEmpty(currentRs) && !filtered.Contains(currentRs, StringComparer.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(currentRs) && currentRs != DllDefaultSentinel && !filtered.Contains(currentRs, StringComparer.OrdinalIgnoreCase))
                     filtered = filtered.Append(currentRs).ToArray();
                 rsNameBox.ItemsSource = filtered;
                 if (!string.IsNullOrEmpty(currentRs) && filtered.Contains(currentRs, StringComparer.OrdinalIgnoreCase))
@@ -416,9 +440,23 @@ public partial class DetailPanelBuilder
         {
             var targetCard = card;
             var dcName = dcNameBox.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(dcName)) return;
+            if (dcName == null) return;
 
-            // Collision check: reject if selected DC name matches the current RS name
+            // -------- = clear DC override, revert DLL to default name
+            if (dcName == DllDefaultSentinel)
+            {
+                if (!string.IsNullOrEmpty(existingCfg?.DcFileName))
+                {
+                    var effRs = (rsNameBox.SelectedItem as string ?? "");
+                    effRs = effRs == DllDefaultSentinel ? "" : effRs;
+                    // Revert DC by updating with empty DC name — DisableDllOverride handles the rename
+                    _window.ViewModel.UpdateDllOverrideNames(targetCard, effRs, MainViewModel.GetDcFileName(targetCard.Is32Bit));
+                    _window.ViewModel.SetDllOverrideNames(targetCard.GameName, effRs, "");
+                }
+                UpdateRsDropdownItems();
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(dcName)) return;
             var currentRsName = (rsNameBox.SelectedItem as string ?? "").Trim();
             if (!string.IsNullOrEmpty(currentRsName) && dcName.Equals(currentRsName, StringComparison.OrdinalIgnoreCase))
             {
@@ -579,7 +617,6 @@ public partial class DetailPanelBuilder
         {
             resetDllBtn.IsEnabled = false;
             CrashReporter.Log($"[DetailPanelBuilder] Reset DLL Names clicked for '{capturedName}'");
-
             DllDisableResult result = default;
             await Task.Run(() =>
             {
@@ -634,11 +671,12 @@ public partial class DetailPanelBuilder
                 result = _window.ViewModel.DisableDllOverride(card);
             });
 
-            // Back on UI thread — clear combos
-            rsNameBox.SelectedIndex = -1;
-            dcNameBox.SelectedIndex = -1;
-            osNameBox.SelectedIndex = -1;
-            resetDllBtn.IsEnabled = false; // nothing to reset now
+            // Back on UI thread — set combos to sentinel and rebuild the panel
+            rsNameBox.SelectedItem = DllDefaultSentinel;
+            dcNameBox.SelectedItem = DllDefaultSentinel;
+            osNameBox.SelectedItem = DllDefaultSentinel;
+            // Rebuild the overrides panel so the reset state is reflected immediately
+            _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
         };
         topRightColumn.Children.Add(resetDllBtn);
 
@@ -786,6 +824,36 @@ public partial class DetailPanelBuilder
             var rsName = rsNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(rsName)) return;
             var dcName = dcNameBox.SelectedItem as string ?? "";
+
+            // -------- = clear RS override, revert DLL to default name
+            if (rsName == DllDefaultSentinel)
+            {
+                if (!string.IsNullOrEmpty(existingCfg?.ReShadeFileName) && targetCard.RsRecord != null
+                    && !string.IsNullOrEmpty(targetCard.InstallPath))
+                {
+                    var defName = AuxInstallService.RsNormalName;
+                    var oldP = System.IO.Path.Combine(targetCard.InstallPath, targetCard.RsRecord.InstalledAs);
+                    var newP = System.IO.Path.Combine(targetCard.InstallPath, defName);
+                    try
+                    {
+                        if (System.IO.File.Exists(oldP) && !oldP.Equals(newP, StringComparison.OrdinalIgnoreCase)
+                            && !System.IO.File.Exists(newP))
+                        {
+                            System.IO.File.Move(oldP, newP);
+                            targetCard.RsRecord.InstalledAs = defName;
+                            _auxInstallService.SaveAuxRecord(targetCard.RsRecord);
+                            targetCard.RsInstalledFile = defName;
+                        }
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] RS revert failed — {ex.Message}"); }
+                    // Clear RS from config — keep DC/OS if set
+                    var effDc = (dcName == DllDefaultSentinel || string.IsNullOrEmpty(dcName)) ? "" : dcName;
+                    _window.ViewModel.SetDllOverrideNames(targetCard.GameName, "", effDc);
+                }
+                UpdateDcDropdownItems();
+                return;
+            }
+
             CrashReporter.Log($"[DetailPanelBuilder] RS DLL combo changed → '{rsName}' for '{capturedName}'");
 
             // Collision guard: block if RS name matches the installed OS name

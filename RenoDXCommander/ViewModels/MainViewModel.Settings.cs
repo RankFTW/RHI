@@ -993,6 +993,10 @@ public partial class MainViewModel
     public void EnableDllOverride(GameCardViewModel card, string reshadeFileName, string dcFileName)
         => _dllOverrideService.EnableDllOverride(card, reshadeFileName, dcFileName);
 
+    /// <summary>Updates the persisted RS and DC filenames without doing any file renames.</summary>
+    public void SetDllOverrideNames(string gameName, string rsFileName, string dcFileName)
+        => _dllOverrideService.SetDllOverride(gameName, rsFileName, dcFileName);
+
     /// <summary>
     /// Called when DLL override is already ON and the filenames are updated —
     /// renames existing files on disk to the new custom names.
