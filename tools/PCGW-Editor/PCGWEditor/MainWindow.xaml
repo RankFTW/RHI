@@ -180,6 +180,21 @@
                         IsEnabled="False" ToolTip="Push current file to GitHub"/>
                 <Button x:Name="TokenBtn"  Content="🔑 Token"        Click="Token_Click"
                         Padding="11,5" Margin="6,0,0,0"/>
+                <Button x:Name="PcgwCredsBtn" Content="🔑 PCGW"    Click="PcgwCreds_Click"
+                        Padding="11,5" Margin="6,0,0,0"
+                        ToolTip="Set PCGW bot credentials for fetching data"/>
+                <Separator Width="1" Background="#444466" Margin="10,0"/>
+                <Button x:Name="FetchUpdatesBtn" Content="⬇ Fetch Updates" Click="FetchUpdates_Click"
+                        Padding="11,5"
+                        ToolTip="Fetch only pages changed since the last run (fast, ~30 seconds)"/>
+                <Button x:Name="FetchAllBtn"     Content="⬇ Full Refresh"  Click="FetchAll_Click"
+                        Padding="11,5" Margin="6,0,0,0"
+                        ToolTip="Fetch all games from PCGW (~5 minutes)"/>
+                <Button x:Name="CancelFetchBtn"  Content="✕ Cancel"        Click="CancelFetch_Click"
+                        Style="{StaticResource DangerButton}"
+                        Padding="11,5" Margin="6,0,0,0"
+                        Visibility="Collapsed"
+                        ToolTip="Cancel the in-progress fetch"/>
                 <Separator Width="1" Background="#444466" Margin="10,0"/>
                 <TextBlock Text="Search:" Foreground="#AAAACC" VerticalAlignment="Center" Margin="0,0,6,0"/>
                 <TextBox x:Name="SearchBox" Width="200" TextChanged="Search_Changed"

@@ -17,6 +17,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string?       _currentFilePath;
     private bool          _isDirty;
     private string        _githubToken = "";
+    private CancellationTokenSource? _fetchCts;
 
     // Games tab
     private ObservableCollection<PcgwEntryVm> _allGames  = new();
@@ -542,5 +543,136 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_isDirty && !ConfirmDiscard()) e.Cancel = true;
         base.OnClosing(e);
+    }
+
+    // ── PCGW fetch ────────────────────────────────────────────────────────────
+
+    private void PcgwCreds_Click(object sender, RoutedEventArgs e)
+    {
+        var (u, p) = PcgwFetchService.LoadCredentials();
+        var win = new PcgwCredentialsWindow(u, p) { Owner = this };
+        if (win.ShowDialog() == true)
+            PcgwFetchService.SaveCredentials(win.Username, win.Password);
+    }
+
+    private void FetchUpdates_Click(object sender, RoutedEventArgs e) => _ = RunFetchAsync(fullRefresh: false);
+    private void FetchAll_Click(object sender, RoutedEventArgs e)
+    {
+        var answer = MessageBox.Show(
+            "Full Refresh fetches all 55,000+ games from PCGW and takes ~5–8 minutes.\n\nProceed?",
+            "Full Refresh", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer == MessageBoxResult.Yes)
+            _ = RunFetchAsync(fullRefresh: true);
+    }
+
+    private void CancelFetch_Click(object sender, RoutedEventArgs e)
+    {
+        _fetchCts?.Cancel();
+    }
+
+    private async Task RunFetchAsync(bool fullRefresh)
+    {
+        // Check credentials
+        var (username, password) = PcgwFetchService.LoadCredentials();
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            MessageBox.Show(
+                "No PCGW bot credentials set.\nClick 🔑 PCGW to configure them.",
+                "Credentials Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // Ensure a file is open (load local cache if needed)
+        if (!HasFile)
+        {
+            if (System.IO.File.Exists(PcgwDataService.LocalPath))
+                LoadFile(PcgwDataService.LocalPath);
+            else
+            {
+                MessageBox.Show(
+                    "No pcgw_data.json loaded. Click Sync first to download the current file.",
+                    "No File", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
+        // Disable buttons, show cancel
+        SetFetchUiActive(true);
+        _fetchCts = new CancellationTokenSource();
+        var svc   = new PcgwFetchService(_fetchCts.Token);
+
+        var progress = new Progress<FetchProgress>(fp =>
+            Dispatcher.Invoke(() => StatusBar.Text = fp.Message));
+
+        FetchResult result;
+        try
+        {
+            if (fullRefresh)
+            {
+                result = await Task.Run(() => svc.FetchAllAsync(
+                    username, password, _data!.Games, progress));
+            }
+            else
+            {
+                var since = _data!.Generated;
+                if (string.IsNullOrEmpty(since))
+                {
+                    MessageBox.Show(
+                        "The current file has no 'generated' timestamp — cannot determine what's new.\nRun a Full Refresh instead.",
+                        "No Timestamp", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    SetFetchUiActive(false);
+                    return;
+                }
+                result = await Task.Run(() => svc.FetchUpdatesAsync(
+                    username, password, _data!.Games, since, progress));
+            }
+        }
+        finally
+        {
+            SetFetchUiActive(false);
+        }
+
+        if (!result.Success)
+        {
+            if (result.Error != "Cancelled")
+                MessageBox.Show($"Fetch failed:\n{result.Error}", "Fetch Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusBar.Text = $"Fetch {(result.Error == "Cancelled" ? "cancelled" : "failed")}.";
+            return;
+        }
+
+        // Update timestamp
+        _data!.Generated = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+        // Reload the view models from the updated _data.Games
+        _allGames = new System.Collections.ObjectModel.ObservableCollection<PcgwEntryVm>(
+            _data.Games
+                .Select(kv => PcgwEntryVm.FromRaw(kv.Key, kv.Value))
+                .OrderBy(v => v.PageName, StringComparer.OrdinalIgnoreCase));
+        _gamesView = CollectionViewSource.GetDefaultView(_allGames);
+        _gamesView.Filter = FilterGame;
+        GameList.ItemsSource = _gamesView;
+
+        MarkDirty();
+        UpdateCount();
+
+        var summary = fullRefresh
+            ? $"Full refresh complete — {result.Total:N0} games."
+            : $"Fetch updates complete — {result.Added} new, {result.Updated} updated ({result.Total:N0} total).";
+        StatusBar.Text = summary;
+
+        // Auto-save to local path
+        SaveToPath(_currentFilePath ?? PcgwDataService.LocalPath);
+    }
+
+    private void SetFetchUiActive(bool active)
+    {
+        FetchUpdatesBtn.IsEnabled = !active;
+        FetchAllBtn.IsEnabled     = !active;
+        SyncBtn.IsEnabled         = !active;
+        PushBtn.IsEnabled         = !active && HasFile;
+        CancelFetchBtn.Visibility = active
+            ? System.Windows.Visibility.Visible
+            : System.Windows.Visibility.Collapsed;
     }
 }
