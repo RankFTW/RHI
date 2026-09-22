@@ -296,7 +296,7 @@ public partial class DetailPanelBuilder
         osNameBox.SelectionChanged += (s, e) =>
         {
             if (_osComboInitializing) return;
-            var osName = osNameBox.SelectedItem is ComboBoxItem osCbi ? osCbi.Content as string : osNameBox.SelectedItem as string;
+            var osName = osNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(osName)) return;
 
             // -------- = clear OS override, revert DLL to default name
@@ -392,38 +392,29 @@ public partial class DetailPanelBuilder
 
         // ── Cross-exclusion: filter out the other component's current name ───────
 
-        // Rebuilds a combo's ItemsSource using ComboBoxItem so colliding names are greyed
-        // rather than removed — the user can see them but not select them.
-        void RebuildComboWithDisabled(ComboBox combo, string[] baseNames, IEnumerable<string> disabledNames)
+        // Rebuilds a combo's ItemsSource removing colliding names entirely.
+        // Called after every selection change so all three combos stay in sync.
+        void RebuildComboFiltered(ComboBox combo, string[] baseNames, IEnumerable<string> excludedNames)
         {
-            var disabled = new HashSet<string>(disabledNames, StringComparer.OrdinalIgnoreCase);
-            var current = combo.SelectedItem is ComboBoxItem ci ? ci.Content as string : combo.SelectedItem as string;
-            combo.ItemsSource = baseNames.Select(n =>
-            {
-                if (n == DllDefaultSentinel)
-                    return (object)n; // sentinel stays as plain string
-                var item = new ComboBoxItem { Content = n };
-                if (disabled.Contains(n))
-                {
-                    item.IsEnabled = false;
-                    item.Opacity   = 0.4;
-                }
-                return item;
-            }).ToArray();
+            var excluded = new HashSet<string>(excludedNames, StringComparer.OrdinalIgnoreCase);
+            var current = GetComboValue(combo);
+            var filtered = baseNames.Where(n => n == DllDefaultSentinel || !excluded.Contains(n)).ToArray();
+            // If the current selection would be excluded (active collision), keep it visible but leave selected
+            if (!string.IsNullOrEmpty(current) && current != DllDefaultSentinel
+                && !filtered.Contains(current, StringComparer.OrdinalIgnoreCase))
+                filtered = filtered.Append(current).ToArray(); // preserve current even if now excluded
+            combo.ItemsSource = filtered;
             // Restore selection
-            if (current != null)
+            if (!string.IsNullOrEmpty(current))
             {
-                foreach (var obj in (System.Collections.IEnumerable)combo.ItemsSource)
-                {
-                    var label = obj is ComboBoxItem cbi ? cbi.Content as string : obj as string;
-                    if (string.Equals(label, current, StringComparison.OrdinalIgnoreCase))
-                    {
-                        combo.SelectedItem = obj;
-                        break;
-                    }
-                }
+                var match = filtered.FirstOrDefault(n => string.Equals(n, current, StringComparison.OrdinalIgnoreCase));
+                if (match != null) combo.SelectedItem = match;
             }
         }
+
+        // Keep old signature for compatibility
+        void RebuildComboWithDisabled(ComboBox combo, string[] baseNames, IEnumerable<string> disabledNames)
+            => RebuildComboFiltered(combo, baseNames, disabledNames);
 
         void UpdateAllDropdowns()
         {
@@ -473,9 +464,7 @@ public partial class DetailPanelBuilder
         void UpdateRsDropdownItems() => UpdateAllDropdowns();
 
         // Helper — gets the string value from a combo that may contain ComboBoxItem or string
-        static string GetComboValue(ComboBox c) =>
-            c.SelectedItem is ComboBoxItem ci ? (ci.Content as string ?? "") :
-            c.SelectedItem as string ?? "";
+        static string GetComboValue(ComboBox c) => c.SelectedItem as string ?? "";
 
         // Initial filter — grey out colliding names across all three combos
         UpdateAllDropdowns();
@@ -484,7 +473,7 @@ public partial class DetailPanelBuilder
         dcNameBox.SelectionChanged += async (s, e) =>
         {
             var targetCard = card;
-            var dcName = dcNameBox.SelectedItem is ComboBoxItem dcCbi ? dcCbi.Content as string : dcNameBox.SelectedItem as string;
+            var dcName = dcNameBox.SelectedItem as string;
             if (dcName == null) return;
 
             // -------- = clear DC override, revert DLL to default name
