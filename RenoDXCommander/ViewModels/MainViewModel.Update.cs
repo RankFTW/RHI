@@ -9,6 +9,22 @@ namespace RenoDXCommander.ViewModels;
 public partial class MainViewModel
 {
     private System.Threading.Timer? _updateCheckTimer;
+    private System.Threading.Timer? _heartbeatTimer;
+
+    /// <summary>
+    /// Starts a 10-second heartbeat timer that logs the UI thread responsiveness.
+    /// Runs on a thread-pool thread so it keeps ticking even if the UI is frozen.
+    /// If the log stops between heartbeat entries, the freeze happened in that window.
+    /// </summary>
+    internal void StartHeartbeatTimer()
+    {
+        _heartbeatTimer = new System.Threading.Timer(_ =>
+        {
+            // This runs on a background thread — always ticks even when UI is frozen.
+            // Log the current wall-clock time so we can pinpoint exactly when a freeze starts.
+            _crashReporter.Log($"[Heartbeat] {DateTime.Now:HH:mm:ss.fff} — alive");
+        }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+    }
 
     /// <summary>
     /// Starts a repeating 4-hour timer that re-runs all update checks.

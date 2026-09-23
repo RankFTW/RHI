@@ -453,6 +453,10 @@ public partial class MainViewModel
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();
 
+                // Start heartbeat timer (fires every 10s on a background thread)
+                // Keeps logging even when the UI is frozen — lets us pinpoint freeze timing.
+                StartHeartbeatTimer();
+
                 // Fire-and-forget: scrape PCGW API info for games that have a URL but no cached info yet.
                 // Runs after BuildCards so _allCards is fully populated.
                 // Capped at 20 per session — spreads the load across multiple launches.
