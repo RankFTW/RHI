@@ -1890,7 +1890,7 @@ public sealed partial class MainWindow
         };
 
         // ── Column header row ─────────────────────────────────────────────────
-        var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+        var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 4), Width = 500 };
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
@@ -1922,6 +1922,7 @@ public sealed partial class MainWindow
             IsItemClickEnabled   = false,
             ItemContainerStyle   = null,
             Height               = 480,
+            Width                = 500,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
         };
 

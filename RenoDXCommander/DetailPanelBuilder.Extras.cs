@@ -564,7 +564,11 @@ public partial class DetailPanelBuilder
                 var dest = Path.Combine(installPath, DeployFileName);
                 File.Copy(stagedPath, dest, overwrite: true);
                 CrashReporter.Log($"[BuildMfgAdaUnlockRow] Installed '{DeployFileName}' to '{installPath}'");
-                _window.DispatcherQueue?.TryEnqueue(() => RequestExtrasRebuild(card));
+                _window.DispatcherQueue?.TryEnqueue(() =>
+                {
+                    card.SetMfgState(mfgAdaInstalled: true, mfgAdaRtx40Conflict: card.Rtx40MfgInstalled, rtx40MfgInstalled: card.Rtx40MfgInstalled);
+                    RequestExtrasRebuild(card);
+                });
             }
             catch (Exception ex)
             {
@@ -665,6 +669,7 @@ public partial class DetailPanelBuilder
                     CrashReporter.Log($"[BuildMfgAdaUnlockRow] Removed '{PackName}' from per-game addon selection for '{card.GameName}'");
                 }
 
+                card.SetMfgState(mfgAdaInstalled: false, mfgAdaRtx40Conflict: card.Rtx40MfgInstalled, rtx40MfgInstalled: card.Rtx40MfgInstalled);
                 RequestExtrasRebuild(card);
             }
             catch (Exception ex)
@@ -1469,6 +1474,7 @@ public partial class DetailPanelBuilder
                 if (ok)
                 {
                     _window.ViewModel.SetRtx40MfgInstalledAs(gameName, chosen, store);
+                    card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: card.MfgAdaInstalled, rtx40MfgInstalled: true);
                     RequestExtrasRebuild(card);
                 }
                 else
@@ -1551,6 +1557,7 @@ public partial class DetailPanelBuilder
             if (string.IsNullOrEmpty(installPath)) return;
             mfgSvc.Uninstall(installPath, currentDllName);
             _window.ViewModel.SetRtx40MfgInstalledAs(gameName, null, store);
+            card.SetMfgState(mfgAdaInstalled: card.MfgAdaInstalled, mfgAdaRtx40Conflict: false, rtx40MfgInstalled: false);
             RequestExtrasRebuild(card);
         };
         Grid.SetColumn(removeBtn, 5);
