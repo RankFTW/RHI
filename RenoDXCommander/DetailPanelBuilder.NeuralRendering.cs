@@ -190,7 +190,7 @@ public partial class DetailPanelBuilder
                 _                       => effectiveMethod,
             };
             if (nrAnyInstalled)
-                nrSummaryEntries.Add((methodLabel, null));
+                nrSummaryEntries.Add(("NR Method", methodLabel));
             if (nrDllPresent)
                 nrSummaryEntries.Add(("NR DLL", nrDllVersion));
             nrSummary = DetailPanelBuilder.MakeSectionSummaryInlines(nrSummaryEntries);
@@ -263,8 +263,12 @@ public partial class DetailPanelBuilder
             CornerRadius = new CornerRadius(6),
         };
         // Pack version combo — populate from staged version list, wire persistence
+        bool addonSwapInProgress  = false;  // shared guard — prevents re-entrant swaps across both combo handlers
         bool packComboInitializing = true;
         SelectionChangedEventHandler? packVersionHandler = null;
+        // Forward declarations — assigned later in the method before any swap handler can execute
+        Button installBtn       = null!;
+        StackPanel statusPanel  = null!;
 
         void PopulatePackVersionCombo(string methodKey)
         {
@@ -278,8 +282,9 @@ public partial class DetailPanelBuilder
             }
 
             packVersionCombo.Items.Clear();
-            packVersionCombo.Items.Add("Latest");
             var packAddonType = methodKey == NrMethodFeeder ? Renodx5AddonService.FeederSubDir : Renodx5AddonService.BridgeSubDir;
+            var latestPackVer = rdx5Svc.GetLatestAvailableVersion(packAddonType);
+            packVersionCombo.Items.Add(string.IsNullOrEmpty(latestPackVer) ? "Latest" : $"Latest ({latestPackVer})");
             var versions = rdx5Svc.GetAvailableVersions(packAddonType);
             foreach (var v in versions)
                 packVersionCombo.Items.Add(v);
@@ -305,12 +310,109 @@ public partial class DetailPanelBuilder
             packVersionCombo.Opacity = 1.0;
             packComboInitializing = false;
 
-            packVersionHandler = (s2, ev2) =>
+            packVersionHandler = async (s2, ev2) =>
             {
-                if (packComboInitializing) return;
+                if (packComboInitializing || addonSwapInProgress) return;
                 var sel = packVersionCombo.SelectedItem as string;
-                _window.ViewModel.SetNrPackVersion(gameName,
-                    string.IsNullOrEmpty(sel) || sel == "Latest" ? null : sel, store);
+                bool useLatest = string.IsNullOrEmpty(sel) || sel.StartsWith("Latest");
+
+                // Persist the selection
+                _window.ViewModel.SetNrPackVersion(gameName, useLatest ? null : sel, store);
+
+                // If installed, swap the pack addon file in-place
+                var selKey = (methodCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? effectiveMethod;
+                bool packInstalled = selKey switch
+                {
+                    NrMethodFeeder          => File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64)),
+                    NrMethodDlss5ToolBridge => File.Exists(Path.Combine(installPath, BridgeDeployFile)),
+                    _                       => false,
+                };
+                if (!packInstalled) return;
+
+                // 32-bit Feeder: versioned staging only has .addon64, skip in-place swap
+                if (selKey == NrMethodFeeder && card.Is32Bit)
+                {
+                    CrashReporter.Log($"[NeuralRendering.PackSwap] 32-bit Feeder — no versioned .addon32 staging, swap skipped. Reinstall to apply v{sel ?? "Latest"}.");
+                    return;
+                }
+
+                addonSwapInProgress = true;
+                var prevContent = installBtn.Content;
+                _window.DispatcherQueue?.TryEnqueue(() =>
+                {
+                    installBtn.IsEnabled = false;
+                    installBtn.Content   = "Swapping addon...";
+                });
+
+                try
+                {
+                    await Task.Run(async () =>
+                    {
+                        string? sourcePath = null;
+                        string addonType   = selKey == NrMethodFeeder ? Renodx5AddonService.FeederSubDir : Renodx5AddonService.BridgeSubDir;
+                        string destFile    = selKey == NrMethodFeeder ? FeederDeployFile64 : BridgeDeployFile;
+
+                        if (useLatest)
+                        {
+                            // For Feeder latest use AddonPackService staging; Bridge uses versioned flat
+                            if (selKey == NrMethodFeeder)
+                            {
+                                var bitnessExt = ".addon64";
+                                sourcePath = FindStagedAddon(FeederPackageName, bitnessExt);
+                                if (sourcePath == null)
+                                {
+                                    var entry = App.Services.GetRequiredService<IAddonPackService>()
+                                        .AvailablePacks.FirstOrDefault(p =>
+                                            p.PackageName.Equals(FeederPackageName, StringComparison.OrdinalIgnoreCase));
+                                    if (entry != null)
+                                        await App.Services.GetRequiredService<IAddonPackService>()
+                                            .DownloadAddonAsync(entry).ConfigureAwait(false);
+                                    sourcePath = FindStagedAddon(FeederPackageName, bitnessExt);
+                                }
+                            }
+                            else
+                            {
+                                // Bridge latest — use first available versioned file or re-download
+                                var latestVer = rdx5Svc.GetLatestAvailableVersion(addonType);
+                                if (!string.IsNullOrEmpty(latestVer))
+                                {
+                                    var staged = await rdx5Svc.EnsureVersionStagedAsync(addonType, latestVer).ConfigureAwait(false);
+                                    sourcePath = staged ? rdx5Svc.GetVersionedStagedFilePath(addonType, latestVer) : null;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var staged = await rdx5Svc.EnsureVersionStagedAsync(addonType, sel!).ConfigureAwait(false);
+                            sourcePath = staged ? rdx5Svc.GetVersionedStagedFilePath(addonType, sel!) : null;
+                        }
+
+                        if (sourcePath == null || !File.Exists(sourcePath))
+                        {
+                            CrashReporter.Log($"[NeuralRendering.PackSwap] Source not available for v{sel ?? "Latest"} ({addonType}) — swap aborted");
+                            return;
+                        }
+
+                        var destPath = Path.Combine(installPath, destFile);
+                        File.Copy(sourcePath, destPath, overwrite: true);
+                        CrashReporter.Log($"[NeuralRendering.PackSwap] Swapped {destFile} to v{(useLatest ? "latest" : sel)} at '{destPath}'");
+
+                    }).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[NeuralRendering.PackSwap] Swap failed — {ex.Message}");
+                }
+                finally
+                {
+                    addonSwapInProgress = false;
+                    _window.DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        installBtn.IsEnabled = true;
+                        installBtn.Content   = prevContent;
+                    });
+                    RefreshStatus();
+                }
             };
             packVersionCombo.SelectionChanged += packVersionHandler;
         }
@@ -341,12 +443,15 @@ public partial class DetailPanelBuilder
             CornerRadius = new CornerRadius(6),
         };
 
+        // Swap-in-progress guard — declared above near PackVersionCombo (shared across both handlers)
+
         // Helper: populate addonVersionCombo for the given addonType ("dlss5tool" or "dlsstool")
         void PopulateAddonVersionCombo(string addonType)
         {
             bool addonComboInit = true;
             addonVersionCombo.Items.Clear();
-            addonVersionCombo.Items.Add("Latest");
+            var latestAddonVer = rdx5Svc.GetLatestAvailableVersion(addonType);
+            addonVersionCombo.Items.Add(string.IsNullOrEmpty(latestAddonVer) ? "Latest" : $"Latest ({latestAddonVer})");
             foreach (var v in rdx5Svc.GetAvailableVersions(addonType))
                 addonVersionCombo.Items.Add(v);
 
@@ -368,12 +473,108 @@ public partial class DetailPanelBuilder
             addonVersionCombo.SelectionChanged -= AddonVersionCombo_SelectionChanged;
             addonVersionCombo.SelectionChanged += AddonVersionCombo_SelectionChanged;
 
-            void AddonVersionCombo_SelectionChanged(object s2, SelectionChangedEventArgs ev2)
+            async void AddonVersionCombo_SelectionChanged(object s2, SelectionChangedEventArgs ev2)
             {
-                if (addonComboInit) return;
+                if (addonComboInit || addonSwapInProgress) return;
                 var sel = addonVersionCombo.SelectedItem as string;
-                _window.ViewModel.SetNrAddonVersion(gameName,
-                    string.IsNullOrEmpty(sel) || sel == "Latest" ? null : sel, store);
+                bool useLatest = string.IsNullOrEmpty(sel) || sel.StartsWith("Latest");
+
+                // Persist the selection first (same as before)
+                _window.ViewModel.SetNrAddonVersion(gameName, useLatest ? null : sel, store);
+
+                // If installed, swap the addon file in-place — no full uninstall needed
+                var selKey = (methodCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? effectiveMethod;
+                bool currentlyInstalled = selKey switch
+                {
+                    NrMethodDlss5Tool       => rdx5Svc.IsInstalledIn(installPath),
+                    NrMethodDlss5ToolBridge => rdx5Svc.IsInstalledIn(installPath),
+                    NrMethodShortFuse       => rdx5Svc.IsSfInstalledIn(installPath),
+                    NrMethodFeeder          => File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64)),
+                    _                       => false,
+                };
+                if (!currentlyInstalled) return;
+
+                addonSwapInProgress = true;
+                var prevContent = installBtn.Content;
+                _window.DispatcherQueue?.TryEnqueue(() =>
+                {
+                    installBtn.IsEnabled = false;
+                    installBtn.Content   = "Swapping addon...";
+                });
+
+                try
+                {
+                    await Task.Run(async () =>
+                    {
+                        // Resolve source path
+                        string? sourcePath = null;
+                        if (useLatest)
+                        {
+                            if (selKey == NrMethodShortFuse)
+                            {
+                                await rdx5Svc.EnsureSfStagingAsync().ConfigureAwait(false);
+                                sourcePath = rdx5Svc.IsSfStagingReady ? rdx5Svc.SfStagedFilePath : null;
+                            }
+                            else
+                            {
+                                await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
+                                sourcePath = rdx5Svc.IsStagingReady ? rdx5Svc.StagedFilePath : null;
+                            }
+                        }
+                        else
+                        {
+                            var type   = selKey == NrMethodShortFuse ? "dlsstool" : "dlss5tool";
+                            var staged = await rdx5Svc.EnsureVersionStagedAsync(type, sel!).ConfigureAwait(false);
+                            sourcePath = staged ? rdx5Svc.GetVersionedStagedFilePath(type, sel!) : null;
+                        }
+
+                        if (sourcePath == null || !File.Exists(sourcePath))
+                        {
+                            CrashReporter.Log($"[NeuralRendering.AddonSwap] Source not available for version '{sel ?? "Latest"}' — swap aborted");
+                            return;
+                        }
+
+                        // Destination depends on method
+                        string deployDir;
+                        string destFileName;
+                        if (selKey == NrMethodShortFuse)
+                        {
+                            deployDir    = ModInstallService.GetAddonDeployPath(installPath);
+                            destFileName = "renodx-dlss.addon64";
+                        }
+                        else if (selKey == NrMethodFeeder && card.Is32Bit)
+                        {
+                            // 32-bit: neural consumer lives in host64\
+                            deployDir    = Path.Combine(installPath, "host64");
+                            destFileName = "renodx-dlss5.addon64";
+                        }
+                        else
+                        {
+                            deployDir    = ModInstallService.GetAddonDeployPath(installPath);
+                            destFileName = "renodx-dlss5.addon64";
+                        }
+
+                        Directory.CreateDirectory(deployDir);
+                        var destPath = Path.Combine(deployDir, destFileName);
+                        File.Copy(sourcePath, destPath, overwrite: true);
+                        CrashReporter.Log($"[NeuralRendering.AddonSwap] Swapped {destFileName} to v{(useLatest ? "latest" : sel)} at '{destPath}'");
+
+                    }).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[NeuralRendering.AddonSwap] Swap failed — {ex.Message}");
+                }
+                finally
+                {
+                    addonSwapInProgress = false;
+                    _window.DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        installBtn.IsEnabled = true;
+                        installBtn.Content   = prevContent;
+                    });
+                    RefreshStatus();
+                }
             }
         }
 
@@ -412,7 +613,7 @@ public partial class DetailPanelBuilder
         nrBody.Children.Add(row1);
 
         // ── Status line ───────────────────────────────────────────────────────
-        var statusPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
+        statusPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
         nrBody.Children.Add(statusPanel);
 
         void RefreshStatus()
@@ -656,7 +857,7 @@ public partial class DetailPanelBuilder
         btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // cog (ShortFuse only)
 
-        var installBtn = new Button
+        installBtn = new Button
         {
             FontSize = 12,
             Height = 34,
@@ -809,21 +1010,16 @@ public partial class DetailPanelBuilder
             // DLSS5 Tool / SF version label
             addonVersionLabel.Text = selKey == NrMethodShortFuse ? "SF Version" : "DLSS5 Tool Version";
 
-            // Addon version combo relevant for all methods (controls renodx-dlss5.addon64 version)
-            // For Feeder: controls the neural consumer (renodx-dlss5.addon64) — feeder addon itself always latest
-            // Greyed out when already installed — version cannot be changed without uninstalling first
-            bool addonVersionEditable = !anyInstalled;
-            addonVersionStack.Opacity   = anyInstalled ? 0.4 : 1.0;
-            addonVersionCombo.IsEnabled = addonVersionEditable;
-            ToolTipService.SetToolTip(addonVersionStack, anyInstalled
-                ? "Uninstall Neural Rendering first to change the addon version."
-                : selKey == NrMethodFeeder
-                    ? "Version of renodx-dlss5.addon64 deployed as the neural consumer. The Feeder addon itself always uses the latest version."
-                    : null);
+            // Addon version combo — enabled always (swap-in-place supported while installed)
+            addonVersionStack.Opacity   = 1.0;
+            addonVersionCombo.IsEnabled = true;
+            ToolTipService.SetToolTip(addonVersionStack, selKey == NrMethodFeeder
+                ? "Version of renodx-dlss5.addon64 deployed as the neural consumer. Changing while installed swaps the file in-place."
+                : "Addon version to install. Changing while installed swaps the file in-place without a full reinstall.");
 
-            // Pack version also greyed when installed
-            packVersionStack.Opacity   = anyInstalled ? 0.4 : 1.0;
-            packVersionCombo.IsEnabled = !anyInstalled && showPackVersion;
+            // Pack version combo — enabled always when visible (swap-in-place supported while installed)
+            packVersionStack.Opacity   = showPackVersion ? 1.0 : 0.4;
+            packVersionCombo.IsEnabled = showPackVersion;
 
             // Remove button visibility
             removeBtn.Visibility = anyInstalled ? Visibility.Visible : Visibility.Collapsed;
@@ -1343,7 +1539,7 @@ public partial class DetailPanelBuilder
         // Resolve requested addon version
         var requestedVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
             () => addonVersionCombo.SelectedItem as string).ConfigureAwait(false);
-        bool useLatest = string.IsNullOrEmpty(requestedVersion) || requestedVersion == "Latest";
+        bool useLatest = string.IsNullOrEmpty(requestedVersion) || requestedVersion.StartsWith("Latest");
 
         string addonSourcePath;
         if (useLatest)
@@ -1574,7 +1770,7 @@ public partial class DetailPanelBuilder
             requestedBridgeVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
                 () => packVersionCombo.SelectedItem as string).ConfigureAwait(false);
         }
-        bool useLatestBridge = string.IsNullOrEmpty(requestedBridgeVersion) || requestedBridgeVersion == "Latest";
+        bool useLatestBridge = string.IsNullOrEmpty(requestedBridgeVersion) || requestedBridgeVersion.StartsWith("Latest");
 
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Downloading DX11 Bridge...");
 
@@ -1638,7 +1834,7 @@ public partial class DetailPanelBuilder
         // Resolve requested addon version
         var requestedVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
             () => addonVersionCombo.SelectedItem as string).ConfigureAwait(false);
-        bool useLatest = string.IsNullOrEmpty(requestedVersion) || requestedVersion == "Latest";
+        bool useLatest = string.IsNullOrEmpty(requestedVersion) || requestedVersion.StartsWith("Latest");
 
         string sfSourcePath;
         if (useLatest)
@@ -1831,7 +2027,7 @@ public partial class DetailPanelBuilder
             requestedFeederVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
                 () => packVersionCombo.SelectedItem as string).ConfigureAwait(false);
         }
-        bool useLatestFeeder = string.IsNullOrEmpty(requestedFeederVersion) || requestedFeederVersion == "Latest";
+        bool useLatestFeeder = string.IsNullOrEmpty(requestedFeederVersion) || requestedFeederVersion.StartsWith("Latest");
 
         // Resolve requested DLSS5 Tool version (neural consumer) — Latest or pinned
         string? requestedVersion = null;
@@ -1840,7 +2036,7 @@ public partial class DetailPanelBuilder
             requestedVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
                 () => addonVersionCombo.SelectedItem as string).ConfigureAwait(false);
         }
-        bool useLatestConsumer = string.IsNullOrEmpty(requestedVersion) || requestedVersion == "Latest";
+        bool useLatestConsumer = string.IsNullOrEmpty(requestedVersion) || requestedVersion.StartsWith("Latest");
 
         _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Downloading Feeder...");
 

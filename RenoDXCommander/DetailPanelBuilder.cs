@@ -838,7 +838,7 @@ public partial class DetailPanelBuilder
         if (card.IsDcInstalled)
             entries.Add(("DC", card.DcInstalledVersion));
         if (card.IsLumaInstalled)
-            entries.Add(("Luma", null));
+            entries.Add(("Luma", "On"));
 
         if (entries.Count == 0) return false;
 
@@ -886,7 +886,7 @@ public partial class DetailPanelBuilder
         if (card.IsDcInstalled)
             entries.Add(("DC", card.DcInstalledVersion));
         if (card.IsLumaInstalled)
-            entries.Add(("Luma", null));
+            entries.Add(("Luma", "On"));
 
         return MakeSectionSummaryInlines(entries);
     }
@@ -902,16 +902,16 @@ public partial class DetailPanelBuilder
 
         var channel = _window.ViewModel.GetReShadeChannelOverride(card.GameName, card.Source ?? "");
         if (!string.IsNullOrEmpty(channel))
-            entries.Add(($"RS: {channel}", null));
+            entries.Add(("RS:", channel));
 
         var apis = _window.ViewModel.GetApiOverride(card.GameName, card.Source ?? "");
         if (apis is { Count: > 0 })
-            entries.Add(("API: " + string.Join("+", apis), null));
+            entries.Add(("API:", string.Join("+", apis)));
 
         var launchArgs = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var la)
             ? la : null;
         if (!string.IsNullOrWhiteSpace(launchArgs))
-            entries.Add(("Args: " + launchArgs, null));
+            entries.Add(("Args:", launchArgs));
 
         // DLL naming overrides — show each custom filename that's set
         if (_window.ViewModel.HasDllOverride(card.GameName))
@@ -920,11 +920,11 @@ public partial class DetailPanelBuilder
             if (cfg != null)
             {
                 if (!string.IsNullOrEmpty(cfg.ReShadeFileName) && cfg.ReShadeFileName != "--------")
-                    entries.Add(("RS DLL: " + cfg.ReShadeFileName, null));
+                    entries.Add(("RS DLL:", cfg.ReShadeFileName));
                 if (!string.IsNullOrEmpty(cfg.DcFileName) && cfg.DcFileName != "--------")
-                    entries.Add(("DC DLL: " + cfg.DcFileName, null));
+                    entries.Add(("DC DLL:", cfg.DcFileName));
                 if (!string.IsNullOrEmpty(cfg.OsFileName) && cfg.OsFileName != "--------")
-                    entries.Add(("OS DLL: " + cfg.OsFileName, null));
+                    entries.Add(("OS DLL:", cfg.OsFileName));
             }
         }
 

@@ -2,39 +2,52 @@
 
 ### New
 
-- Collapsed detail panel sections now show a compact summary of what's installed. Components shows installed versions (ReShade 6.8.0 · RenoDX · ReLimiter 3.3.5), Nvidia Profile shows DLSS and Streamline versions, Neural Rendering shows the active method and NR DLL version, Extras shows OptiScaler and DXVK, and Game Overrides shows any active channel, API, or launch arg overrides.
-- Added "Combo" to the OptiScaler FG Nvngx Override dropdown (writes `FGNvngxReplacement=Combo` to OptiScaler.ini). Requires Streamline, Nukem's, Arturs, and FFX.
-- Added Preset F to the OptiScaler DLSS RR preset dropdown.
-- Added an "Available HDR Mods" button next to Quick Start. Opens a searchable list of every supported game, with columns for RenoDX, Luma, and a direct download link.
-- DLL naming overrides have been redesigned. The enable/disable toggle is gone — ReShade, Display Commander, and OptiScaler each have their own dropdown. Selecting a name renames the DLL immediately. Selecting `--------` reverts it. A "Reset DLL Names" button reverts all three at once.
-- Luma mods from GitHub release assets that aren't yet published on the wiki now show up automatically in RHI.
-- PCGamingWiki data is now fetched as a single file covering 55,000+ games instead of per-game requests. PCGW links, API detection, and Engine.ini path detection all work as before.
-- Added a separator labelled "HDR Mods" in the Components panel, consistent across all games.
+- **Available HDR Mods** — new button next to Quick Start. Opens a searchable list of every supported game, showing which of RenoDX, Luma, and OptiScaler are available, with direct download links.
+- **DLL naming overrides redesigned** — the old enable/disable toggle is gone. ReShade, Display Commander, and OptiScaler each have their own dropdown in the Game Overrides panel. Selecting a name renames the file immediately; selecting `--------` reverts it. A Reset button reverts all three at once.
+- **Collapsed sections now show a live summary** — when a detail panel section is collapsed, key info is shown inline: installed component versions (Components), active DLSS/Streamline versions (NVIDIA Profile), active NR method (Neural Rendering), installed extras (Extras), and any active overrides (Game Overrides).
+- **Luma mods from GitHub release assets** — mods that have been released as a build but not yet published on the Luma wiki now appear automatically in RHI.
+- **PCGamingWiki data now loaded as a single file** — replaces per-game requests. Covers 55,000+ games. PCGW links, API detection, and Engine.ini paths all work as before, just faster.
+
+### Neural Rendering
+
+- **Swap addon version while installed** — changing the version dropdown while Neural Rendering is installed now swaps the addon file in-place. No need to uninstall first. Only the addon file is replaced — DLSS DLLs, configs, and shaders are left alone.
+  - DLSS5 Tool / DLSS5 Tool + Bridge: swaps `renodx-dlss5.addon64`
+  - ShortFuse (DLSS Tool): swaps `renodx-dlss.addon64`
+  - Feeder: swaps the neural consumer (`renodx-dlss5.addon64`) and/or the Feeder addon itself (`dlss5-feed.addon64`) independently
+  - Bridge: swaps `dlss5-bridge.addon64`
+- **Version dropdown shows latest version number** — "Latest" now shows the actual version in brackets, e.g. `Latest (7.0.0-rc1)`.
 
 ### Changes
 
-- Simple View has been removed. The app is now always in Detail View.
-- DLSS5 Tool, ShortFuse, DLSS5 Feeder, DX11 Bridge, and MFG Ada Unlock have been removed from the addon picker — install them from the Neural Rendering and Extras sections instead. Existing per-game selections are cleaned up silently; the components themselves are not uninstalled.
+- Simple View removed — the app is always in Detail View.
+- DLSS5 Tool, ShortFuse, DLSS5 Feeder, DX11 Bridge, and MFG Ada Unlock removed from the addon picker — use the Neural Rendering and Extras sections instead. Existing per-game selections are cleaned up silently; nothing is uninstalled.
+- "HDR Mods" separator added to the Components section.
+- "Combo" added to the OptiScaler FG Nvngx Override dropdown.
+- Preset F added to the OptiScaler DLSS RR preset dropdown.
 
 ### Bug Fixes
 
-**DLSS5 Feeder**
-- Fixed `DLSS5_Feed.fx` and `lumenite_Kernel.fx` disappearing from the game folder immediately after Feeder was installed. The shader mode was being set asynchronously, so the background sync ran before the selection was visible and wiped the shaders.
+**Neural Rendering**
+- Fixed `DLSS5_Feed.fx` and `lumenite_Kernel.fx` not deploying on games with no prior shader selection (e.g. Dragon Age Inquisition on a fresh install). The shader selection is now written before the ReShade install step runs.
+
+**Startup hang**
+- Fixed RHI hanging indefinitely on "Building cards..." for users with RTX Remix installed on a game (e.g. Fallout New Vegas). RTX Remix creates circular directory symlinks that the DLSS scanner would follow forever. The scanner now stops at depth 8 and bails on paths over 300 characters.
 
 **Sleep/wake freeze**
-- Fixed the app freezing after the PC wakes from sleep when a game card with DLSS or driver profile settings was selected. NVAPI reads now run with a 5-second timeout.
+- Fixed the app freezing after waking from sleep when a game with DLSS or driver profile settings was selected. NVAPI reads now run with a 5-second timeout.
 
 **Other**
-- Fixed the "New Mods" notification not firing for Nexus-only mods.
-- Fixed spurious `renodx-dlss5.addon64` files left in game folders after clearing the global addon picker on ShortFuse or Feeder games.
-- Clicking the OptiScaler version or Info button now opens the correct releases page when the DLSS NR variant is installed.
+- Fixed the "New Mods" notification not showing for Nexus-only mods.
+- Fixed leftover `renodx-dlss5.addon64` files in game folders after clearing the global addon picker on ShortFuse or Feeder games.
+- Fixed the OptiScaler version/Info button opening the wrong releases page when the DLSS NR variant was installed.
 
 ### Manifest Updates
 
-- Added install warnings for 21 Luma mods that are available as release builds but not yet published on the wiki.
+- Added dgVoodoo2 v2.87.5 (released by the author specifically to avoid false-positive Defender detections of D3D9.dll).
+- Added install warnings for 21 Luma mods available as release builds but not yet on the wiki.
 - Added `L.A. Noire` name mapping for Luma release asset matching.
 - Added Overwatch install subpath (`_retail_`).
-- Added SILENT HILL: Townfall install subpath (`Townfall\Binaries\Win64`).
+- Added SILENT HILL: Townfall engine hint (UE 5.6.1) and install subpath.
 
 ## v2.7.5
 

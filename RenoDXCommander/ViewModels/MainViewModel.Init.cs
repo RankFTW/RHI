@@ -340,6 +340,12 @@ public partial class MainViewModel
                     _shaderPackService.ClearPackRegistration("DLSS5Feeder");
                     _crashReporter.Log("[MainViewModel.InitializeAsync] Cleared stale DLSS5Feeder settings entries — file missing from staging");
                 }
+                else if (!_shaderPackService.IsPackCached("DLSS5Feeder"))
+                {
+                    // File is staged but settings.json record is missing — re-register so SyncGameFolder can deploy it.
+                    await Task.Run(() => _shaderPackService.RecordExtractedFilesFromDir("DLSS5Feeder"));
+                    _crashReporter.Log("[MainViewModel.InitializeAsync] Re-registered DLSS5Feeder staging files — settings.json record was missing");
+                }
             }
             catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS5Feeder migration failed — {ex.Message}"); }
 

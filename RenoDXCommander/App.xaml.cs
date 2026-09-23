@@ -51,6 +51,11 @@ public partial class App : Application
 
             var client = new HttpClient(handler);
             client.DefaultRequestHeaders.Add("User-Agent", "RHI/2.0");
+            // GitHub API token — raises rate limit from 60 to 5000 req/hour for all services.
+            // Set as a default header so every service inherits it without per-request wiring.
+            var ghToken = DevUnlockService.GitHubApiToken;
+            if (!string.IsNullOrEmpty(ghToken))
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ghToken}");
             // Per-request timeout — generous enough for large files on slow connections.
             // Individual services can set per-request timeouts via CancellationTokenSource
             // if they need tighter control.

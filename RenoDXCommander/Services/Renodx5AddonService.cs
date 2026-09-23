@@ -96,8 +96,20 @@ public class Renodx5AddonService
     {
         if (IsStagingReady && !HasUpdate)
         {
-            _crashReporter.Log("[Renodx5AddonService.EnsureStagingAsync] Staging already valid — skipping");
-            return;
+            // Also check against the in-memory version list — the list may know about a newer
+            // version than what CheckForUpdateAsync last reported (e.g. cooldown was active).
+            var knownLatest = GetLatestAvailableVersion(Dlss5ToolSubDir);
+            if (!string.IsNullOrEmpty(knownLatest) &&
+                !string.Equals(StagedVersion, knownLatest, StringComparison.OrdinalIgnoreCase))
+            {
+                _crashReporter.Log($"[Renodx5AddonService.EnsureStagingAsync] Flat file is v{StagedVersion ?? "(none)"} but known latest is v{knownLatest} — re-downloading");
+                // fall through to DownloadAndStageAsync
+            }
+            else
+            {
+                _crashReporter.Log("[Renodx5AddonService.EnsureStagingAsync] Staging already valid — skipping");
+                return;
+            }
         }
         await DownloadAndStageAsync(TagPrefix, StagedFileName, "renodx-dlss5", _versionFile,
             "RenoDX DLSS5 addon", progress,
@@ -254,8 +266,17 @@ public class Renodx5AddonService
     {
         if (IsSfStagingReady && !SfHasUpdate)
         {
-            _crashReporter.Log("[Renodx5AddonService.EnsureSfStagingAsync] Staging already valid — skipping");
-            return;
+            var knownLatest = GetLatestAvailableVersion(DlssToolSubDir);
+            if (!string.IsNullOrEmpty(knownLatest) &&
+                !string.Equals(SfStagedVersion, knownLatest, StringComparison.OrdinalIgnoreCase))
+            {
+                _crashReporter.Log($"[Renodx5AddonService.EnsureSfStagingAsync] Flat file is v{SfStagedVersion ?? "(none)"} but known latest is v{knownLatest} — re-downloading");
+            }
+            else
+            {
+                _crashReporter.Log("[Renodx5AddonService.EnsureSfStagingAsync] Staging already valid — skipping");
+                return;
+            }
         }
         await DownloadAndStageAsync(SfTagPrefix, SfStagedFileName, "renodx-dlss", _sfVersionFile,
             "DLSS Tool (ShortFuse)", progress,
@@ -598,7 +619,6 @@ public class Renodx5AddonService
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GitHubApiUrl);
-            request.Headers.Add("User-Agent", "RHI");
             request.Headers.Add("Accept", "application/vnd.github+json");
 
             using var response = await _http.SendAsync(request).ConfigureAwait(false);
@@ -643,7 +663,7 @@ public class Renodx5AddonService
 
                 if (string.IsNullOrEmpty(downloadUrl)) continue;
 
-                candidates.Add(Version.TryParse(version, out var parsed)
+                candidates.Add(Version.TryParse(version.Contains('-') ? version.Substring(0, version.IndexOf('-')) : version, out var parsed)
                     ? (version, downloadUrl!, parsed)
                     : (version, downloadUrl!, new Version(0, 0)));
             }
@@ -748,7 +768,6 @@ public class Renodx5AddonService
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GitHubApiUrl);
-            request.Headers.Add("User-Agent", "RHI");
             request.Headers.Add("Accept", "application/vnd.github+json");
 
             using var response = await _http.SendAsync(request).ConfigureAwait(false);
@@ -805,7 +824,9 @@ public class Renodx5AddonService
                 }
                 if (string.IsNullOrEmpty(downloadUrl)) continue;
 
-                var parsed = System.Version.TryParse(version, out var p) ? p : new System.Version(0, 0);
+                // Strip pre-release suffix (e.g. "7.0.0-rc1" → "7.0.0") for version comparison only
+                var versionForParse = version.Contains('-') ? version.Substring(0, version.IndexOf('-')) : version;
+                var parsed = System.Version.TryParse(versionForParse, out var p) ? p : new System.Version(0, 0);
 
                 if (addonType == Dlss5ToolSubDir)
                     dlss5.Add((version, downloadUrl!, parsed));
@@ -928,7 +949,6 @@ public class Renodx5AddonService
         try
         {
             using var req = new HttpRequestMessage(HttpMethod.Get, apiUrl);
-            req.Headers.Add("User-Agent", "RHI");
             req.Headers.Add("Accept", "application/vnd.github+json");
             using var resp = await _http.SendAsync(req).ConfigureAwait(false);
             if (!resp.IsSuccessStatusCode)

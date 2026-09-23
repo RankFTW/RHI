@@ -68,14 +68,14 @@ public partial class DetailPanelBuilder
         var gs = card.Source ?? "";
         var installPath = card.InstallPath ?? "";
         var exSummaryEntries = new List<(string, string?)>();
-        if (!string.IsNullOrEmpty(vm.GetUalInstalledAs(gn, gs)))                           exSummaryEntries.Add(("ASI Loader", null));
-        if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("RTX 40 MFG", null));
+        if (!string.IsNullOrEmpty(vm.GetUalInstalledAs(gn, gs)))                           exSummaryEntries.Add(("ASI Loader", vm.GetUalInstalledAs(gn, gs)));
+        if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("RTX 40 MFG", "On"));
         if (!string.IsNullOrEmpty(installPath) && File.Exists(Path.Combine(installPath, "renodx-mfgunlock.addon64")))
-                                                                                            exSummaryEntries.Add(("MFG Ada", null));
-        if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", null));
+                                                                                            exSummaryEntries.Add(("MFG Ada", "On"));
+        if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", "On"));
         if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
-        if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", null));
-        if (card.IsDxvkInstalled)                                                           exSummaryEntries.Add(("DXVK", null));
+        if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", "On"));
+        if (card.IsDxvkInstalled)                                                           exSummaryEntries.Add(("DXVK", card.DxvkInstalledVersion ?? "On"));
         var exSummary = DetailPanelBuilder.MakeSectionSummaryInlines(exSummaryEntries);
         if (exSummary != null)
         {

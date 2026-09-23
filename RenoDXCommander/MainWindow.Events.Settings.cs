@@ -1890,33 +1890,42 @@ public sealed partial class MainWindow
         {
             var tb = new TextBlock
             {
-                Text              = text,
-                FontSize          = 11,
-                FontWeight        = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground        = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                Text                = text,
+                FontSize            = 11,
+                FontWeight          = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground          = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 HorizontalAlignment = col == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
+                VerticalAlignment   = VerticalAlignment.Center,
             };
             Grid.SetColumn(tb, col);
             headerGrid.Children.Add(tb);
         }
-        AddHeader("Game",    0);
-        AddHeader("RenoDX",  1);
-        AddHeader("Luma",    2);
-        AddHeader("Download",3);
+        AddHeader("Game",     0);
+        AddHeader("RenoDX",   1);
+        AddHeader("Luma",     2);
+        AddHeader("Download", 3);
 
-        // ── List panel ────────────────────────────────────────────────────────
-        var listPanel = new StackPanel { Spacing = 2 };
-
-        Grid MakeRow(RenoDXCommander.Models.HdrModEntry entry)
+        // ── Virtualised ListView — only renders visible rows ──────────────────
+        var listView = new ListView
         {
-            var row = new Grid { ColumnSpacing = 8 };
+            SelectionMode        = ListViewSelectionMode.None,
+            IsItemClickEnabled   = false,
+            ItemContainerStyle   = null,
+            Height               = 480,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+        };
+
+        // Remove default item container padding/hover highlight
+        listView.ItemContainerStyle = BuildFlatItemStyle();
+
+        Grid MakeRowGrid(RenoDXCommander.Models.HdrModEntry entry)
+        {
+            var row = new Grid { ColumnSpacing = 8, Padding = new Thickness(0, 2, 0, 2) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
 
-            // Game name
             var nameBlock = new TextBlock
             {
                 Text              = entry.Name,
@@ -1928,43 +1937,32 @@ public sealed partial class MainWindow
             Grid.SetColumn(nameBlock, 0);
             row.Children.Add(nameBlock);
 
-            // RenoDX tick
             var rdxTick = new TextBlock
             {
-                Text                = entry.RenoDXStatus == "Done" ? "✓"
-                                    : entry.RenoDXStatus == "WIP"  ? "🔨"
-                                    : "✗",
+                Text                = entry.RenoDXStatus == "Done" ? "✓" : entry.RenoDXStatus == "WIP" ? "🔨" : "✗",
                 FontSize            = 13,
-                Foreground          = entry.RenoDXStatus == "Done"
-                    ? UIFactory.GetBrush("#5ECB7D")
-                    : entry.RenoDXStatus == "WIP"
-                        ? UIFactory.GetBrush("#D4A856")
-                        : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                Foreground          = entry.RenoDXStatus == "Done" ? UIFactory.GetBrush("#5ECB7D")
+                                    : entry.RenoDXStatus == "WIP"  ? UIFactory.GetBrush("#D4A856")
+                                    : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment   = VerticalAlignment.Center,
             };
             Grid.SetColumn(rdxTick, 1);
             row.Children.Add(rdxTick);
 
-            // Luma tick
             var lumaTick = new TextBlock
             {
-                Text                = entry.LumaStatus == "Done" ? "✓"
-                                    : entry.LumaStatus == "WIP"  ? "🔨"
-                                    : "✗",
+                Text                = entry.LumaStatus == "Done" ? "✓" : entry.LumaStatus == "WIP" ? "🔨" : "✗",
                 FontSize            = 13,
-                Foreground          = entry.LumaStatus == "Done"
-                    ? UIFactory.GetBrush("#B898E8")
-                    : entry.LumaStatus == "WIP"
-                        ? UIFactory.GetBrush("#D4A856")
-                        : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                Foreground          = entry.LumaStatus == "Done" ? UIFactory.GetBrush("#B898E8")
+                                    : entry.LumaStatus == "WIP"  ? UIFactory.GetBrush("#D4A856")
+                                    : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment   = VerticalAlignment.Center,
             };
             Grid.SetColumn(lumaTick, 2);
             row.Children.Add(lumaTick);
 
-            // Download link — prefer RenoDX URL, fall back to Luma URL
             var url = entry.RenoDXUrl ?? entry.LumaUrl;
             if (!string.IsNullOrEmpty(url) && Uri.TryCreate(url, UriKind.Absolute, out var parsedUri))
             {
@@ -1997,47 +1995,40 @@ public sealed partial class MainWindow
             return row;
         }
 
-        void RebuildList(string filter)
+        // ListView with virtualisation — DataTemplate is a plain border so WinUI doesn't
+        // render the record's ToString(). ContainerContentChanging then populates the real grid.
+        listView.ItemTemplate = (DataTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(
+            "<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><Border/></DataTemplate>");
+
+        listView.ContainerContentChanging += (lv, args) =>
         {
-            listPanel.Children.Clear();
+            if (args.Phase == 0 && args.Item is RenoDXCommander.Models.HdrModEntry entry)
+            {
+                if (args.ItemContainer.ContentTemplateRoot is Border border)
+                    border.Child = MakeRowGrid(entry);
+            }
+        };
+
+        void ApplyFilter(string filter)
+        {
             var filtered = string.IsNullOrWhiteSpace(filter)
                 ? allEntries
                 : allEntries.Where(e => e.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            foreach (var entry in filtered)
-                listPanel.Children.Add(MakeRow(entry));
-
-            if (listPanel.Children.Count == 0)
-            {
-                listPanel.Children.Add(new TextBlock
-                {
-                    Text       = "No mods found.",
-                    FontSize   = 12,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                    Margin     = new Thickness(0, 8, 0, 0),
-                });
-            }
+            listView.ItemsSource = filtered;
         }
 
         // Initial populate
-        RebuildList("");
+        ApplyFilter("");
 
-        searchBox.TextChanged += (s, _) => RebuildList(searchBox.Text);
+        searchBox.TextChanged += (s, _) => ApplyFilter(searchBox.Text);
 
         // ── Assemble dialog content ───────────────────────────────────────────
         var countLabel = new TextBlock
         {
-            Text      = $"{allEntries.Count} games with HDR mods",
-            FontSize  = 11,
+            Text       = $"{allEntries.Count} games with HDR mods",
+            FontSize   = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            Margin    = new Thickness(0, 0, 0, 10),
-        };
-
-        var scrollViewer = new ScrollViewer
-        {
-            Content                   = listPanel,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Height                    = 480,
+            Margin     = new Thickness(0, 0, 0, 10),
         };
 
         var content = new StackPanel { Spacing = 0, MinWidth = 480, MaxWidth = 520 };
@@ -2050,18 +2041,28 @@ public sealed partial class MainWindow
             Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             Margin     = new Thickness(0, 0, 0, 6),
         });
-        content.Children.Add(scrollViewer);
+        content.Children.Add(listView);
 
         var dlg = new ContentDialog
         {
-            Title              = "Available HDR Mods",
-            Content            = content,
-            CloseButtonText    = "Close",
-            XamlRoot           = Content.XamlRoot,
-            DefaultButton      = ContentDialogButton.Close,
+            Title           = "Available HDR Mods",
+            Content         = content,
+            CloseButtonText = "Close",
+            XamlRoot        = Content.XamlRoot,
+            DefaultButton   = ContentDialogButton.Close,
         };
 
         await DialogService.ShowSafeAsync(dlg);
+    }
+
+    private static Style BuildFlatItemStyle()
+    {
+        var style = new Style(typeof(ListViewItem));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(0)));
+        style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(0)));
+        style.Setters.Add(new Setter(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch));
+        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+        return style;
     }
 
 }
