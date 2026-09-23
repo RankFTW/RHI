@@ -342,6 +342,7 @@ public partial class MainViewModel : ObservableObject
                     : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
 
                 var effectiveSelection = ResolveShaderSelection(gameName, card.ShaderModeOverride, card.Source ?? "");
+                _crashReporter.Log($"[DeployShadersForCard] '{gameName}' Source='{card.Source}' ShaderMode='{card.ShaderModeOverride}' sel={(effectiveSelection == null ? "null" : string.Join(",", effectiveSelection))}");
 
                 // Ensure needed packs are downloaded before deploying
                 if (effectiveSelection != null)

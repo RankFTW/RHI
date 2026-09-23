@@ -973,6 +973,23 @@ public partial class DetailPanelBuilder
 
             try
             {
+                // Pre-seed PerGameShaderSelection before installing ReShade so the
+                // SyncGameFolder call inside InstallReShadeAsync deploys shaders correctly
+                // instead of wiping them (it reads ShaderModeOverride at call time).
+                if (selKey == NrMethodFeeder)
+                {
+                    var preGameKey = Models.GameKey.From(card.GameName, card.Source ?? "").ToKey();
+                    var preCurrent = _gameNameService.PerGameShaderSelection.TryGetValue(preGameKey, out var preSel)
+                        ? preSel.ToList() : new List<string>();
+                    if (!preCurrent.Contains("DLSS5Feeder", StringComparer.OrdinalIgnoreCase))
+                        preCurrent.Add("DLSS5Feeder");
+                    if (!preCurrent.Contains("LumeniteFX", StringComparer.OrdinalIgnoreCase))
+                        preCurrent.Add("LumeniteFX");
+                    _gameNameService.PerGameShaderSelection[preGameKey] = preCurrent;
+                    _window.ViewModel.SetPerGameShaderMode(card.GameName, "Select", card.Source ?? "");
+                    card.ShaderModeOverride = "Select";
+                }
+
                 // Ensure ReShade is installed first — all NR methods require it
                 if (!card.IsRsInstalled)
                 {
@@ -2165,6 +2182,7 @@ public partial class DetailPanelBuilder
                 if (!current.Contains("LumeniteFX", StringComparer.OrdinalIgnoreCase))
                     current.Add("LumeniteFX");
                 _gameNameService.PerGameShaderSelection[gameKey] = current;
+                CrashReporter.Log($"[NeuralRendering.FeederShaders] Wrote PerGameShaderSelection['{gameKey}'] = [{string.Join(", ", current)}]");
                 _window.ViewModel.SetPerGameShaderMode(card.GameName, "Select", card.Source ?? "");
                 // Set ShaderModeOverride synchronously before DeployShadersForCard reads it.
                 // TryEnqueue alone is too late — DeployShadersForCard fires on the same background
@@ -2197,8 +2215,14 @@ public partial class DetailPanelBuilder
                     var dgSvc = App.Services.GetRequiredService<DgVoodooService>();
                     var versionEntry = manifest.DgVoodooVersions.First();
                     await dgSvc.EnsureStagedAsync(versionEntry.Key, versionEntry.Value).ConfigureAwait(false);
-                    dgSvc.DeployToGame(installPath, versionEntry.Key, is64Bit: !card.Is32Bit);
-                    CrashReporter.Log($"[NeuralRendering] dgVoodoo2 v{versionEntry.Key} deployed for Feeder on '{card.GameName}'");
+                    var dgDeployed = dgSvc.DeployToGame(installPath, versionEntry.Key, is64Bit: !card.Is32Bit);
+                    if (dgDeployed.Count > 0)
+                        CrashReporter.Log($"[NeuralRendering] dgVoodoo2 v{versionEntry.Key} deployed for Feeder on '{card.GameName}'");
+                    else
+                    {
+                        CrashReporter.Log($"[NeuralRendering] dgVoodoo2 deploy returned no files for '{card.GameName}' — Windows Defender may be blocking the zip. Add %LocalAppData%\\RHI\\dgvoodoo\\ to Defender exclusions.");
+                        _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "⚠ dgVoodoo2 blocked by Defender");
+                    }
                 }
                 catch (Exception dgEx)
                 {

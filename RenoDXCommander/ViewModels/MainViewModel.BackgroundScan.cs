@@ -580,6 +580,8 @@ public partial class MainViewModel
                         .Select(card =>
                         {
                             var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
+                            if (CrashReporter.VerboseLogging || effectiveSelection == null)
+                                _crashReporter.Log($"[BackgroundScan.SyncShaders] '{card.GameName}' — ShaderMode={card.ShaderModeOverride ?? "null"}, sel={(effectiveSelection == null ? "null" : string.Join(",", effectiveSelection))}");
                             return Task.Run(() =>
                             {
                                 var exclusions = effectiveSelection?
