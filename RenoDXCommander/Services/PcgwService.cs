@@ -399,7 +399,7 @@ public class PcgwService : IPcgwService
                 return BuildAppIdUrl(appId.Value);
 
             // appid.php currently unreliable — use OpenSearch for the actual wiki URL.
-            var wikiUrl = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
+            var (wikiUrl, _) = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
 
             if (!string.IsNullOrEmpty(norm) && wikiUrl != null)
             {
@@ -411,7 +411,7 @@ public class PcgwService : IPcgwService
         }
 
         // 6. OpenSearch fallback (no AppID resolved).
-        var result = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
+        var (result, definitiveMiss) = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
 
         if (!string.IsNullOrEmpty(norm))
         {
@@ -420,9 +420,11 @@ public class PcgwService : IPcgwService
                 _urlCache[norm] = result;
                 SaveUrlCacheToDisk();
             }
-            else
+            else if (definitiveMiss)
             {
-                // Cache negative result so we don't retry HTTP calls next session.
+                // Only negative-cache when PCGW definitively answered "no such page".
+                // Circuit-open / HTTP errors / timeouts must NOT be persisted — they
+                // would suppress the game long after the breaker has recovered.
                 _appIdCache[norm] = -1;
                 _negativeCacheTimestamps[norm] = DateTime.UtcNow;
                 await SaveCacheAsync().ConfigureAwait(false);
@@ -495,17 +497,22 @@ public class PcgwService : IPcgwService
     private const int PcgwMinGapMs = 500;
 
     /// <summary>
-    /// Queries the PCGW OpenSearch API and returns the wiki URL for the first result,
-    /// or null if no results or an error occurs.
-    /// Rate-limited to one request per 500ms.
+    /// Queries the PCGW OpenSearch API and returns the wiki URL for the first result.
+    /// The DefinitiveMiss flag is true only when PCGW answered successfully with zero
+    /// results — circuit-open, HTTP errors, rate limits, timeouts and parse failures
+    /// return (null, false) so callers never negative-cache a transient failure.
+    /// Rate-limited to the shared PCGW minimum gap.
     /// </summary>
-    private async Task<string?> OpenSearchFallbackAsync(string gameName)
+    private async Task<(string? Url, bool DefinitiveMiss)> OpenSearchFallbackAsync(string gameName)
     {
-        if (IsPcgwDown) return null;
+        if (IsPcgwDown) return (null, false);
 
         await _pcgwRequestLimiter.WaitAsync().ConfigureAwait(false);
         try
         {
+            // Recheck — another caller may have tripped the breaker while we queued.
+            if (IsPcgwDown) return (null, false);
+
             var encodedName = Uri.EscapeDataString(gameName);
             var url = $"https://www.pcgamingwiki.com/w/api.php?action=opensearch&search={encodedName}&limit=5&format=json";
 
@@ -520,7 +527,7 @@ public class PcgwService : IPcgwService
                     CrashReporter.Log($"[PcgwService.OpenSearchFallback] Rate limited — PCGW paused for {breakFor.TotalSeconds:0}s");
                 }
                 CrashReporter.Log($"[PcgwService.OpenSearchFallback] OpenSearch returned {(int)response.StatusCode} for '{gameName}'");
-                return null;
+                return (null, false);
             }
 
             var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -534,27 +541,32 @@ public class PcgwService : IPcgwService
             catch (JsonException ex)
             {
                 CrashReporter.Log($"[PcgwService.OpenSearchFallback] Malformed JSON — {ex.Message}");
-                return null;
+                return (null, false);
             }
 
             if (parsed == null || parsed.Length < 2)
-                return null;
+                return (null, false);
 
             var titles = parsed[1];
-            if (titles.ValueKind != JsonValueKind.Array || titles.GetArrayLength() == 0)
-                return null;
+            if (titles.ValueKind != JsonValueKind.Array)
+                return (null, false);
+
+            // PCGW answered successfully and has no matching page — a definitive miss
+            // that is safe to negative-cache.
+            if (titles.GetArrayLength() == 0)
+                return (null, true);
 
             var firstTitle = titles[0].GetString();
             if (string.IsNullOrEmpty(firstTitle))
-                return null;
+                return (null, false);
 
-            return BuildWikiUrl(firstTitle);
+            return (BuildWikiUrl(firstTitle), false);
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[PcgwService.OpenSearchFallback] Failed — {ex.Message} — pausing PCGW for {DefaultBreakDuration.TotalMinutes:0} min");
             TripCircuitBreaker(DefaultBreakDuration);
-            return null;
+            return (null, false);
         }
         finally
         {
@@ -857,6 +869,9 @@ public class PcgwService : IPcgwService
         await _pcgwRequestLimiter.WaitAsync().ConfigureAwait(false);
         try
         {
+            // Recheck — another caller may have tripped the breaker while we queued.
+            if (IsPcgwDown) return null;
+
             return await FetchApiInfoCoreAsync(gameName, wikiUrl, normalized).ConfigureAwait(false);
         }
         finally
@@ -923,12 +938,14 @@ public class PcgwService : IPcgwService
         }
         catch (OperationCanceledException)
         {
-            CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Timeout for '{gameName}'");
+            CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Timeout for '{gameName}' — pausing PCGW for {DefaultBreakDuration.TotalMinutes:0} min");
+            TripCircuitBreaker(DefaultBreakDuration);
             return null;
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Failed for '{gameName}' — {ex.Message}");
+            CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Failed for '{gameName}' — {ex.Message} — pausing PCGW for {DefaultBreakDuration.TotalMinutes:0} min");
+            TripCircuitBreaker(DefaultBreakDuration);
             return null;
         }
     }
