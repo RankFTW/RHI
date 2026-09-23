@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55271,
-  "generated": "2026-09-22T19:35:49Z",
+  "game_count": 55280,
+  "generated": "2026-09-23T20:31:04Z",
   "name_overrides": {
     "AFOP": "Avatar: Frontiers of Pandora",
     "Alan Wake 2": "Alan Wake 2",
@@ -12623,6 +12623,7 @@
     "Axion": {
       "steam_appid": 380570
     },
+    "Axis & Allies": {},
     "Axis & Allies (2004)": {
       "dx9": true
     },
@@ -12630,6 +12631,7 @@
       "steam_appid": 898920,
       "config_path": "%APPDATA%\\axisandalliesonline-desktop\\local-settings\\"
     },
+    "Axis & Allies: Iron Blitz": {},
     "Axis Football 2015": {
       "steam_appid": 370090
     },
@@ -13992,6 +13994,7 @@
       "dx9": true
     },
     "Barbie as the Princess and the Pauper": {},
+    "Barbie Beach Vacation": {},
     "Barbie Beauty Boutique": {},
     "Barbie Diaries: High School Mystery": {
       "config_path": "<path-to-game>\\Barbie\\game\\EeSettings.xml, <path-to-game>\\Barbie\\game\\logspec.xml, HKEY_CURRENT_USER\\SOFTWARE\\SuperEgo\\Barbie\\GameSettings\\"
@@ -30601,7 +30604,8 @@
     },
     "Control Resonant": {
       "steam_appid": 3669870,
-      "dx12": true
+      "dx12": true,
+      "config_path": "%LOCALAPPDATA%\\Remedy\\CONTROLResonant\\renderer.ini"
     },
     "Control Room Alpha": {
       "dx11": true
@@ -33429,6 +33433,7 @@
       "steam_appid": 1149850
     },
     "Cube": {
+      "vulkan": true,
       "config_path": "<path-to-game>\\autoexec.cfg, <path-to-game>\\data"
     },
     "Cube & Star: An Arbitrary Love": {
@@ -39715,7 +39720,7 @@
       "dx11": true,
       "config_path": "%LOCALAPPDATA%\\Packages\\39C668CD.DeusExGO_r7bfsmp40f67j\\LocalState"
     },
-    "Deus Ex Machina": {
+    "DEUS EX MACHINA": {
       "steam_appid": 508910
     },
     "Deus Ex Machina 2": {
@@ -45322,6 +45327,7 @@
     },
     "Dungeon Siege II": {
       "steam_appid": 39200,
+      "dx9": true,
       "config_path": "%USERPROFILE%\\Documents\\My Games\\Dungeon Siege 2\\DungeonSiege2.ini, %USERPROFILE%\\Documents\\My Games\\Dungeon Siege 2 Broken World\\DungeonSiege2BrokenWorld.ini"
     },
     "Dungeon Siege III": {
@@ -51081,7 +51087,7 @@
     "Export Simulator": {
       "steam_appid": 856790
     },
-    "Exposure": {
+    "EXPOSURE": {
       "steam_appid": 788810
     },
     "Express Car Wash Simulator": {
@@ -53938,6 +53944,7 @@
       "config_path": "%USERPROFILE%\\Documents\\FIFA 19\\"
     },
     "FIFA 20": {
+      "dx11": true,
       "dx12": true,
       "config_path": "%USERPROFILE%\\Documents\\FIFA 20\\"
     },
@@ -54801,7 +54808,7 @@
       "steam_appid": 420560
     },
     "Fireflies": {
-      "steam_appid": 396530
+      "steam_appid": 952600
     },
     "Fireflies (2018)": {
       "steam_appid": 915440
@@ -56889,7 +56896,7 @@
       "config_path": "%LOCALAPPDATA%\\FORSPOKEN\\Steam\\<user-id>\\savestorage\\",
       "config_path_xbox": "%LOCALAPPDATA%\\Packages\\39EA002F.FORSPOKEN_n746a19ndrrjg\\SystemAppData\\wgs, %LOCALAPPDATA%\\FORSPOKEN\\MicrosoftStore\\<user-id>\\savestorage\\GraphicsOption.txt"
     },
-    "Fort": {
+    "FORT": {
       "steam_appid": 905020
     },
     "Fort Awesome": {
@@ -63642,6 +63649,8 @@
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Navegante Entertainment\\Greak_ Memories of Azur\\Data\\"
     },
     "Great Adventures by Fisher-Price: Castle": {},
+    "Great Adventures by Fisher-Price: Pirate Ship": {},
+    "Great Adventures by Fisher-Price: Wild Western Town": {},
     "Great Ball of Fire": {
       "steam_appid": 1061970
     },
@@ -64054,6 +64063,9 @@
     },
     "Grim Tales: The Wishes": {
       "steam_appid": 758580
+    },
+    "Grim Trials": {
+      "steam_appid": 2621930
     },
     "Grim Wanderings": {
       "steam_appid": 799620
@@ -65970,7 +65982,7 @@
       "steam_appid": 1538970,
       "config_path": "<path-to-game>\\HW2.exe.cfg, <path-to-game>\\res\\controls.cfg"
     },
-    "Hammy": {
+    "HAMMY": {
       "steam_appid": 817120
     },
     "Hamster Daily": {
@@ -66101,7 +66113,7 @@
     "Hanger World": {
       "steam_appid": 484390
     },
-    "Hangman": {
+    "HANGMAN": {
       "steam_appid": 717520
     },
     "Hangover": {
@@ -68347,7 +68359,7 @@
       "steam_appid": 1045350
     },
     "Hentai Puzzle": {
-      "steam_appid": 857440
+      "steam_appid": 914850
     },
     "Hentai Puzzle Classic": {
       "steam_appid": 968450
@@ -68394,7 +68406,7 @@
     "Hentai Shooter 3D: Christmas Party": {
       "steam_appid": 975240
     },
-    "Hentai Sisters": {
+    "HENTAI SISTERS": {
       "steam_appid": 989990
     },
     "HENTAI SNIPER: Middle East": {
@@ -75473,7 +75485,9 @@
     "Interstate '76": {
       "config_path": "<path-to-game>\\"
     },
-    "Interstate '82": {},
+    "Interstate '82": {
+      "config_path": "<path-to-game>\\config.def, <path-to-game>\\i82perf.ini, <path-to-game>\\bindings.usr"
+    },
     "Interstate Drifter 1999": {
       "steam_appid": 1383770,
       "dx9": true,
@@ -80879,6 +80893,7 @@
     },
     "Knights of Honor II: Sovereign": {
       "steam_appid": 736820,
+      "dx11": true,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\BlackSeaGames\\Sovereign"
     },
     "Knights of Legend": {},
@@ -82619,7 +82634,7 @@
       "steam_appid": 804460
     },
     "Last Warrior": {
-      "steam_appid": 1107440
+      "steam_appid": 1109700
     },
     "Last Week": {
       "steam_appid": 1216050
@@ -85610,8 +85625,7 @@
       "steam_appid": 490250
     },
     "LocoMotion": {
-      "steam_appid": 2123510,
-      "dx11": true
+      "steam_appid": 898790
     },
     "LocoMotives": {
       "steam_appid": 1041100
@@ -88044,6 +88058,9 @@
     },
     "Mad Hunting Simulator VR": {
       "steam_appid": 988340
+    },
+    "Mad King Redemption": {
+      "steam_appid": 2369580
     },
     "Mad Machines": {
       "steam_appid": 611260,
@@ -105022,6 +105039,9 @@
     "Operation Lovecraft: Fallen Doll": {
       "steam_appid": 1685960
     },
+    "Operation Night Strikers": {
+      "steam_appid": 3099790
+    },
     "Operation Osama Bin Laden": {
       "steam_appid": 834920
     },
@@ -113103,7 +113123,8 @@
     },
     "Prince of Persia: The Lost Crown": {
       "steam_appid": 2751000,
-      "dx11": true
+      "dx11": true,
+      "config_path": "HKEY_CURRENT_USER\\Software\\Ubisoft\\Prince Of Persia The Lost Crown"
     },
     "Prince of Persia: The Sands of Time": {
       "steam_appid": 13600,
@@ -124382,7 +124403,7 @@
     "Russian Roads": {
       "steam_appid": 610660
     },
-    "Russian Roulette": {
+    "Russian roulette": {
       "steam_appid": 951180,
       "config_path": "HKEY_CURRENT_USER\\Software\\DefaultCompany\\Russian 3D\\"
     },
@@ -124750,6 +124771,7 @@
     },
     "Sacred 2: Fallen Angel": {
       "steam_appid": 225640,
+      "dx9": true,
       "config_path": "%LOCALAPPDATA%\\Ascaron Entertainment\\Sacred 2"
     },
     "Sacred 2: Remaster": {
@@ -128451,6 +128473,9 @@
     },
     "Shadow Warrior (2013)": {
       "steam_appid": 233130,
+      "dx9": true,
+      "dx11": true,
+      "opengl": true,
       "config_path": "%USERPROFILE%\\Documents\\Shadow Warrior\\profiles.cfg, %USERPROFILE%\\Documents\\Shadow Warrior\\profiles\\, %USERPROFILE%\\Documents\\Shadow Warrior DX11\\profiles.cfg, %USERPROFILE%\\Documents\\Shadow Warrior DX11\\profiles\\"
     },
     "Shadow Warrior 2": {
@@ -130496,7 +130521,8 @@
     "Silent Hill: Play Novel": {},
     "Silent Hill: The Arcade": {},
     "Silent Hill: Townfall": {
-      "steam_appid": 1636440
+      "steam_appid": 1636440,
+      "config_path": "%USERPROFILE%/AppData/Local/Townfall/Saved/Config/Windows"
     },
     "Silent Hope": {
       "steam_appid": 1960110,
@@ -133882,7 +133908,7 @@
     "Somnium Space": {
       "steam_appid": 875480
     },
-    "Somos": {
+    "SOMOS": {
       "steam_appid": 706510
     },
     "Son and Bone": {
@@ -137723,7 +137749,7 @@
     "Star Girl Proxima": {
       "steam_appid": 1135370
     },
-    "Star Girls": {
+    "Star girls": {
       "steam_appid": 842430
     },
     "Star Goddess": {
@@ -154274,6 +154300,9 @@
       "dx9": true,
       "config_path": "%PUBLIC%\\Documents\\City Interactive\\Royal Marines Commando\\settings.cfg"
     },
+    "The Royal Writ": {
+      "steam_appid": 3333700
+    },
     "The Rugrats Movie: Activity Challenge": {},
     "The Ruins: VR Escape the Room": {
       "steam_appid": 592320,
@@ -155478,7 +155507,7 @@
       "dx12": true
     },
     "The Time Machine: Trapped in Time": {},
-    "The Time Of Awakening": {
+    "The Time of Awakening": {
       "steam_appid": 951090
     },
     "The Time Warp of Dr. Brain": {},
@@ -167364,7 +167393,7 @@
       "config_path": "%LOCALAPPDATA%\\VotV\\Saved\\SaveGames\\data.sav, %LOCALAPPDATA%\\VotV\\Saved\\Config\\WindowsNoEditor"
     },
     "Void": {
-      "steam_appid": 503710
+      "steam_appid": 716330
     },
     "Void & Nothingness": {
       "steam_appid": 543290
@@ -169810,7 +169839,7 @@
       "steam_appid": 789520
     },
     "WarZone": {
-      "steam_appid": 1084660
+      "steam_appid": 712230
     },
     "Warzone 2100": {
       "steam_appid": 1241950,
@@ -169894,7 +169923,7 @@
       "steam_appid": 1044200
     },
     "Watch": {
-      "steam_appid": 1053950
+      "steam_appid": 1228410
     },
     "Watch Dogs": {
       "steam_appid": 243470,
@@ -170885,7 +170914,7 @@
       "steam_appid": 453860
     },
     "What The Duck": {
-      "steam_appid": 1034590
+      "steam_appid": 1076970
     },
     "What The Fog": {
       "steam_appid": 2139020
@@ -174272,6 +174301,7 @@
     },
     "Xenonauts": {
       "steam_appid": 223830,
+      "dx9": true,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Goldhawk Interactive\\Xenonauts\\, %APPDATA%\\Goldhawk Interactive\\Xenonauts\\"
     },
     "Xenonauts 2": {
