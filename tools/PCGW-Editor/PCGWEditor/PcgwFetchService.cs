@@ -41,7 +41,13 @@ public class PcgwFetchService
 
     public PcgwFetchService(CancellationToken ct = default)
     {
-        _http = new HttpClient();
+        // Must use a handler with cookies enabled so login session persists
+        var handler = new HttpClientHandler
+        {
+            UseCookies = true,
+            CookieContainer = new CookieContainer()
+        };
+        _http = new HttpClient(handler);
         _http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         _ct   = ct;
     }
@@ -126,15 +132,17 @@ public class PcgwFetchService
         string? joinOn = null, string? where = null,
         int offset = 0, int limit = CargoLimit)
     {
+        // Note: Do NOT Uri.EscapeDataString the params - MediaWiki API handles them raw
+        // and escaping causes issues with the Cargo query parser
         var url = new StringBuilder(ApiUrl)
             .Append("?action=cargoquery")
             .Append("&format=json")
-            .Append($"&tables={Uri.EscapeDataString(tables)}")
-            .Append($"&fields={Uri.EscapeDataString(fields)}")
+            .Append($"&tables={tables}")
+            .Append($"&fields={fields}")
             .Append($"&limit={limit}")
             .Append($"&offset={offset}");
-        if (joinOn != null) url.Append($"&join_on={Uri.EscapeDataString(joinOn)}");
-        if (where  != null) url.Append($"&where={Uri.EscapeDataString(where)}");
+        if (joinOn != null) url.Append($"&join_on={joinOn}");
+        if (where  != null) url.Append($"&where={Uri.EscapeDataString(where)}");  // WHERE needs escaping for quotes
 
         HttpResponseMessage resp;
         // Handle 429 with a single retry after 61s
@@ -196,7 +204,8 @@ public class PcgwFetchService
         {
             _ct.ThrowIfCancellationRequested();
             var chunk  = pages.Skip(i).Take(ChunkSize);
-            var inList = string.Join(",", chunk.Select(p => $"\"{p.Replace("\"", "'")}\""));
+            // Escape quotes and build IN list - use Game._pageName with table prefix
+            var inList = string.Join(",", chunk.Select(p => $"\"{p.Replace("\"", "'").Replace("\\", "\\\\")}\""));
             var where  = $"Game._pageName IN ({inList})";
             var batch  = await CargoQueryPageAsync(tables, fields, joinOn, where);
             results.AddRange(batch);
