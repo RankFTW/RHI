@@ -3,6 +3,8 @@
 ### New
 
 - Collapsed detail panel sections now show a compact summary of what's installed. Components shows installed versions (ReShade 6.8.0 · RenoDX · ReLimiter 3.3.5), Nvidia Profile shows DLSS and Streamline versions, Neural Rendering shows the active method and NR DLL version, Extras shows OptiScaler and DXVK, and Game Overrides shows any active channel, API, or launch arg overrides.
+- Added "Combo" to the OptiScaler FG Nvngx Override dropdown (writes `FGNvngxReplacement=Combo` to OptiScaler.ini). Requires Streamline, Nukem's, Arturs, and FFX.
+- Added Preset F to the OptiScaler DLSS RR preset dropdown.
 - Added an "Available HDR Mods" button next to Quick Start. Opens a searchable list of every supported game, with columns for RenoDX, Luma, and a direct download link.
 - DLL naming overrides have been redesigned. The enable/disable toggle is gone — ReShade, Display Commander, and OptiScaler each have their own dropdown. Selecting a name renames the DLL immediately. Selecting `--------` reverts it. A "Reset DLL Names" button reverts all three at once.
 - Luma mods from GitHub release assets that aren't yet published on the wiki now show up automatically in RHI.

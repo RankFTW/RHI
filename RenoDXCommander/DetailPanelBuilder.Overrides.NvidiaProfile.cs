@@ -160,6 +160,16 @@ public partial class DetailPanelBuilder
                     return;
 
                 var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                // Update card cached driver override flags so the collapsed summary shows "NV Override"
+                if (dlssData != null)
+                {
+                    capturedCard.CachedSrDriverOverride = dlssData.SrDriverOverride;
+                    capturedCard.CachedRrDriverOverride = dlssData.RrDriverOverride;
+                    capturedCard.CachedFgDriverOverride = dlssData.FgDriverOverride;
+                    capturedCard.CachedNrDriverOverride = dlssData.NrDriverOverride;
+                }
+
                 // Build into a throwaway container first, then swap atomically.
                 var tempBody = new StackPanel { Spacing = dlssContainer.Spacing };
                 BuildNvidiaProfileBody(capturedCard, capturedName, tempBody, dlssData,
@@ -822,13 +832,13 @@ public partial class DetailPanelBuilder
 
             var nvSummaryEntries = new List<(string, string?)>();
             if (card.HasDlss)
-                nvSummaryEntries.Add(("SR", card.DlssInstalledVersion));
+                nvSummaryEntries.Add(("SR", card.CachedSrDriverOverride ? "NV Override" : card.DlssInstalledVersion));
             if (card.HasDlssd)
-                nvSummaryEntries.Add(("RR", card.DlssdInstalledVersion));
+                nvSummaryEntries.Add(("RR", card.CachedRrDriverOverride ? "NV Override" : card.DlssdInstalledVersion));
             if (card.HasDlssg)
-                nvSummaryEntries.Add(("FG", card.DlssgInstalledVersion));
+                nvSummaryEntries.Add(("FG", card.CachedFgDriverOverride ? "NV Override" : card.DlssgInstalledVersion));
             if (FeatureFlags.DlssNr && card.HasDlssnr)
-                nvSummaryEntries.Add(("NR", card.DlssnrInstalledVersion));
+                nvSummaryEntries.Add(("NR", card.CachedNrDriverOverride ? "NV Override" : card.DlssnrInstalledVersion));
             if (card.HasStreamline)
                 nvSummaryEntries.Add(("SL", card.StreamlineInstalledVersion));
 

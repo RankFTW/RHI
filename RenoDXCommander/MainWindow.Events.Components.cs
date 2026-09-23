@@ -2178,10 +2178,10 @@ public sealed partial class MainWindow
             // ── INI value converters ───────────────────────────────────────
             FgInputToIni  = (string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
             FgOutputToIni = (string d) => d switch { "FSR FG" => "fsrfg", "DLSSG" => "dlssg", "XeFG" => "xefg", _ => "auto" };
-            FgNvngxToIni  = (string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", _ => "None" };
+            FgNvngxToIni  = (string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", "Combo" => "Combo", _ => "None" };
             string IniToFgInput(string v) => v switch { "upscaler" => "OptiFG (Upscaler)", "dlssg" => "DLSSG via Streamline", "nvngxfg" => "DLSSG via Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => "Auto (Default)" };
             string IniToFgOutput(string v) => v switch { "fsrfg" => "FSR FG", "dlssg" => "DLSSG", "xefg" => "XeFG", _ => "Auto (Default)" };
-            string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", _ => "None (Real DLSSG)" };
+            string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", "Combo" => "Combo", _ => "None (Real DLSSG)" };
 
             // Separator row between version and nightly settings (spans all 4 columns)
             unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -2245,7 +2245,7 @@ public sealed partial class MainWindow
             // Row 5: FG Output (left) | FG Nvngx Override (right)
             fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
             bool enablerAvail = true; // Always allow Enabler — requires Streamline deployed, user responsibility
-            var nvngxItems = new List<object> { "None (Real DLSSG)", "Nukem's", new ComboBoxItem { Content = "Enabler", IsEnabled = enablerAvail }, "FSR 3/4 FG" };
+            var nvngxItems = new List<object> { "None (Real DLSSG)", "Nukem's", new ComboBoxItem { Content = "Enabler", IsEnabled = enablerAvail }, "FSR 3/4 FG", "Combo" };
             var currentNvngxDisplay = IniToFgNvngx(ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? ""));
             object? nvngxSelected = nvngxItems.FirstOrDefault(i => i is ComboBoxItem cb ? (cb.Content as string) == currentNvngxDisplay : (i as string) == currentNvngxDisplay) ?? nvngxItems[0];
             fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
@@ -2364,8 +2364,8 @@ public sealed partial class MainWindow
             srPresetCombo = new ComboBox { ItemsSource = srPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = srSelected };
             ToolTipService.SetToolTip(srPresetCombo!, "DLSS Super Resolution render preset. J-M are the recommended modern presets.");
 
-            // DLSS RR preset: 3=D, 4=E
-            rrPresetMap = new[] { ("Default", "auto"), ("D", "3"), ("E", "4") };
+            // DLSS RR preset: 3=D, 4=E, 5=F
+            rrPresetMap = new[] { ("Default", "auto"), ("D", "3"), ("E", "4"), ("F", "5") };
             var rrCurrent = ReadIniValue("DLSSD", "RenderPresetForAll");
             var rrSelected = rrPresetMap.FirstOrDefault(p => p.Item2 == rrCurrent).Item1 ?? "Default";
             rrPresetCombo = new ComboBox { ItemsSource = rrPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = rrSelected };

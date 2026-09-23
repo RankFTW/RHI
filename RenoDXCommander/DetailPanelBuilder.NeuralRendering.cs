@@ -690,7 +690,7 @@ public partial class DetailPanelBuilder
             Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
             Visibility = effectiveMethod == NrMethodShortFuse ? Visibility.Visible : Visibility.Collapsed,
         };
-        ToolTipService.SetToolTip(sfCogBtn, "ShortFuse settings — auto-configure ReShade for FrameGen");
+        ToolTipService.SetToolTip(sfCogBtn, "ShortFuse DLSS addon settings — auto-configure ReShade for FrameGen");
         sfCogBtn.Click += async (s, e) =>
         {
             bool currentEnabled = _window.ViewModel.GetSfAutoConfigEnabled(gameName, store);
@@ -717,12 +717,12 @@ public partial class DetailPanelBuilder
 
             var desc = new TextBlock
             {
-                Text = "When On, installing ShortFuse will automatically:\n" +
+                Text = "When On, RHI will automatically configure ReShade when installing the ShortFuse DLSS addon:\n" +
                        "• Rename ReShade to Reshade64.asi\n" +
                        "• Install ASI Loader (winmm → version → dinput8)\n" +
                        "• Write HookStreamline=1 and HookDirectX=1 to reshade.ini\n\n" +
                        "These steps are needed for FrameGen to work correctly after ReShade.\n\n" +
-                       "Note: no longer required on ShortFuse v0.54 and above.",
+                       "Note: no longer required on ShortFuse DLSS addon v0.54 and above.",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 TextWrapping = TextWrapping.Wrap,
@@ -737,7 +737,7 @@ public partial class DetailPanelBuilder
 
             var dlg = new ContentDialog
             {
-                Title = "ShortFuse Settings",
+                Title = "ShortFuse DLSS Addon Settings",
                 Content = content,
                 PrimaryButtonText = "Save",
                 CloseButtonText = "Cancel",
