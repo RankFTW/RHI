@@ -454,6 +454,9 @@ public partial class MainViewModel
 
         var cards = new List<GameCardViewModel>(allGames.Count);
 
+        // Check Vulkan layer status once before the loop (avoid registry reads per-card)
+        var vulkanLayerInstalled = VulkanLayerService.IsLayerInstalled();
+
         foreach (var game in allGames)
         {
             var rootKey = game.InstallPath.TrimEnd('\\', '/').ToLowerInvariant();
@@ -992,10 +995,30 @@ public partial class MainViewModel
                 }
             }
 
+            // Set cached Vulkan layer state (checked once before the loop)
+            newCard.SetVulkanLayerInstalled(vulkanLayerInstalled);
+
+            // Set cached MFG state for Extras panel (avoid File.Exists on UI thread)
+            {
+                var installPathForMfg = newCard.InstallPath ?? "";
+                var mfgAdaPath = !string.IsNullOrEmpty(installPathForMfg)
+                    ? Path.Combine(installPathForMfg, "renodx-mfgunlock.addon64")
+                    : null;
+                bool mfgAdaInstalled = mfgAdaPath != null && File.Exists(mfgAdaPath);
+
+                var rtx40MfgDll = GetRtx40MfgInstalledAs(game.Name, game.Source ?? "");
+                bool rtx40MfgInstalled = !string.IsNullOrEmpty(rtx40MfgDll)
+                    && !string.IsNullOrEmpty(installPathForMfg)
+                    && File.Exists(Path.Combine(installPathForMfg, rtx40MfgDll));
+
+                newCard.SetMfgState(mfgAdaInstalled, rtx40MfgInstalled, rtx40MfgInstalled);
+            }
+
             cards.Add(newCard);
         }
 
         _allCards = cards;
+        PropagateDispatcherToCards();
         _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Lightweight card build complete: {_allCards.Count} cards");
 
         // 10. Apply card overrides and manifest card overrides

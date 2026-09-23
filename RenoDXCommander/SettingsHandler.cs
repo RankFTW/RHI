@@ -130,19 +130,20 @@ public class SettingsHandler
         else
             rsChannelCombo.SelectedIndex = 0;
 
-        // Initialize DLSS Indicator combo from registry
-        try
+        // Initialize DLSS Indicator combo from registry (read on background thread)
+        bool dlssIndicatorEnabled = false;
+        await Task.Run(() =>
         {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NVIDIA Corporation\Global\NGXCore");
-            var val = key?.GetValue("ShowDlssIndicator");
-            // 0x400 = enabled, 0 = disabled. Default to disabled if key doesn't exist.
-            bool indicatorEnabled = val is int intVal && intVal != 0;
-            _window.DlssIndicatorCombo.SelectedIndex = indicatorEnabled ? 0 : 1; // 0=Enabled, 1=Disabled
-        }
-        catch
-        {
-            _window.DlssIndicatorCombo.SelectedIndex = 1; // Default to Disabled if registry unreadable
-        }
+            try
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NVIDIA Corporation\Global\NGXCore");
+                var val = key?.GetValue("ShowDlssIndicator");
+                // 0x400 = enabled, 0 = disabled. Default to disabled if key doesn't exist.
+                dlssIndicatorEnabled = val is int intVal && intVal != 0;
+            }
+            catch { }
+        });
+        _window.DlssIndicatorCombo.SelectedIndex = dlssIndicatorEnabled ? 0 : 1; // 0=Enabled, 1=Disabled
         _window._dlssIndicatorInitializing = false;
 
         // Initialize DLSS/Streamline auto-update combos
@@ -209,8 +210,8 @@ public class SettingsHandler
         }
         _window._shaderCacheComboInit = false;
 
-        // Initialize admin mode combo
-        InitAdminModeCombo(_window.AdminModeCombo);
+        // Initialize admin mode combo (async to avoid blocking on schtasks query)
+        await InitAdminModeComboAsync(_window.AdminModeCombo);
 
         // Initialize drop helper combo (greyed out when not in admin mode — not needed)
         _window.DropHelperCombo.SelectedIndex = ViewModel.Settings.DropHelperEnabled ? 1 : 0;
@@ -428,41 +429,49 @@ public class SettingsHandler
 
         // Iterate all game cards and apply screenshot path + hotkeys to eligible games
         int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
+        var allCards = ViewModel.AllCards.ToList(); // Snapshot the list for background processing
+        var currentOverlayHotkey = _currentHotkeyString;
+        var currentScreenshotHotkey = _currentScreenshotHotkeyString;
+        var rsVariableListUseTabs = ViewModel.Settings.RsVariableListUseTabs;
+        
+        await Task.Run(() =>
         {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-            // Find all reshade*.ini files (reshade.ini, reshade2.ini, reshade3.ini, etc.)
-            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (iniFiles.Count == 0) continue;
-
-            // Skip games where the user has locked reshade.ini updates
-            if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
-
-            try
+            foreach (var card in allCards)
             {
-                var savePath = string.IsNullOrEmpty(screenshotPath)
-                    ? null
-                    : perGame ? BuildSavePath(screenshotPath, card.GameName) : screenshotPath;
-                var overlayHotkey = AuxInstallService.IsRdr2(card.GameName)
-                    ? null
-                    : _currentHotkeyString;
+                if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                if (!System.IO.Directory.Exists(card.InstallPath)) continue;
 
-                foreach (var iniFile in iniFiles)
-                    ApplyScreenshotSettingsToIni(iniFile, savePath, overlayHotkey,
-                        _currentScreenshotHotkeyString, ViewModel.Settings.RsVariableListUseTabs);
-                updatedCount++;
+                // Find all reshade*.ini files (reshade.ini, reshade2.ini, reshade3.ini, etc.)
+                var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                    .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
+                             && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (iniFiles.Count == 0) continue;
+
+                // Skip games where the user has locked reshade.ini updates
+                if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
+
+                try
+                {
+                    var savePath = string.IsNullOrEmpty(screenshotPath)
+                        ? null
+                        : perGame ? BuildSavePath(screenshotPath, card.GameName) : screenshotPath;
+                    var overlayHotkey = AuxInstallService.IsRdr2(card.GameName)
+                        ? null
+                        : currentOverlayHotkey;
+
+                    foreach (var iniFile in iniFiles)
+                        ApplyScreenshotSettingsToIni(iniFile, savePath, overlayHotkey,
+                            currentScreenshotHotkey, rsVariableListUseTabs);
+                    updatedCount++;
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[SettingsHandler.ApplyScreenshotPath_Click] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyScreenshotPath_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
 
         // Show confirmation dialog
         var appliedSettings = string.IsNullOrEmpty(screenshotPath)
@@ -533,32 +542,37 @@ public class SettingsHandler
         }
 
         int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
+        var allCards = ViewModel.AllCards.ToList(); // Snapshot the list for background processing
+        
+        await Task.Run(() =>
         {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (iniFiles.Count == 0) continue;
-
-            // Skip games where reshade.ini updates are locked
-            if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
-
-            try
+            foreach (var card in allCards)
             {
-                foreach (var iniFile in iniFiles)
-                    AuxInstallService.ApplyPeakNits(iniFile, peakNits);
-                updatedCount++;
+                if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                if (!System.IO.Directory.Exists(card.InstallPath)) continue;
+
+                var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                    .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
+                             && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (iniFiles.Count == 0) continue;
+
+                // Skip games where reshade.ini updates are locked
+                if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
+
+                try
+                {
+                    foreach (var iniFile in iniFiles)
+                        AuxInstallService.ApplyPeakNits(iniFile, peakNits);
+                    updatedCount++;
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[SettingsHandler.ApplyPeakNitsToAll_Click] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyPeakNitsToAll_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
 
         var dialog = new ContentDialog
         {
@@ -588,14 +602,17 @@ public class SettingsHandler
     /// Checks if the scheduled task exists and sets the combo box accordingly.
     /// Called during settings page initialization.
     /// </summary>
-    public void InitAdminModeCombo(ComboBox combo)
+    public async Task InitAdminModeComboAsync(ComboBox combo)
     {
         _adminComboInit = true;
         // When UAC is disabled or the task exists, show as On
-        bool isOn = IsUacDisabled() || IsAdminTaskRegistered();
+        // Run the schtasks query on a background thread to avoid blocking UI
+        bool isUacDisabled = await Task.Run(() => IsUacDisabled());
+        bool taskRegistered = !isUacDisabled && await IsAdminTaskRegisteredAsync();
+        bool isOn = isUacDisabled || taskRegistered;
         combo.SelectedIndex = isOn ? 1 : 0;
         // Grey out when UAC is off — no task needed, state can't be changed
-        if (IsUacDisabled()) combo.IsEnabled = false;
+        if (isUacDisabled) combo.IsEnabled = false;
         _adminComboInit = false;
     }
 
@@ -608,7 +625,7 @@ public class SettingsHandler
         CrashReporter.Log($"[SettingsHandler.AdminModeCombo] Admin mode = {(enable ? "On" : "Off")}");
 
         // When UAC is disabled, all processes already run as admin — no task needed.
-        if (IsUacDisabled())
+        if (await Task.Run(() => IsUacDisabled()))
         {
             await DialogService.ShowSafeAsync(new ContentDialog
             {
@@ -626,10 +643,11 @@ public class SettingsHandler
 
         try
         {
+            // Run schtasks operations on background thread to avoid blocking UI
             if (enable)
-                CreateAdminTask();
+                await Task.Run(() => CreateAdminTask());
             else
-                DeleteAdminTask();
+                await Task.Run(() => DeleteAdminTask());
 
             // Show restart notice
             await DialogService.ShowSafeAsync(new ContentDialog
@@ -653,11 +671,11 @@ public class SettingsHandler
         }
     }
 
-    private static bool IsAdminTaskRegistered()
+    private static async Task<bool> IsAdminTaskRegisteredAsync()
     {
         try
         {
-            var result = RunSchtasks($"/Query /TN \"{AdminTaskName}\" /FO LIST");
+            var result = await RunSchtasksAsync($"/Query /TN \"{AdminTaskName}\" /FO LIST");
             return result.ExitCode == 0;
         }
         catch { return false; }
@@ -686,20 +704,21 @@ public class SettingsHandler
         // Uses /SC ONCE with a past date so the task exists but never auto-triggers.
         // RHI launches itself through the task via "schtasks /Run" for UAC-free elevation.
         var args = $"/Create /TN \"{AdminTaskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONCE /ST 00:00 /SD 01/01/2000 /RL HIGHEST /F";
-        var result = RunSchtasksElevated(args);
+        var result = RunSchtasksElevatedSync(args);
         if (result != 0)
             throw new InvalidOperationException($"schtasks /Create failed (exit {result})");
     }
 
     private static void DeleteAdminTask()
     {
-        var result = RunSchtasksElevated($"/Delete /TN \"{AdminTaskName}\" /F");
+        var result = RunSchtasksElevatedSync($"/Delete /TN \"{AdminTaskName}\" /F");
         if (result != 0)
             throw new InvalidOperationException($"schtasks /Delete failed (exit {result})");
     }
 
-    /// <summary>Runs schtasks.exe elevated (UAC prompt) and waits for completion.</summary>
-    private static int RunSchtasksElevated(string arguments)
+    /// <summary>Runs schtasks.exe elevated (UAC prompt) and waits for completion synchronously.
+    /// This is acceptable since it's called from a background thread.</summary>
+    private static int RunSchtasksElevatedSync(string arguments)
     {
         var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", arguments)
         {
@@ -712,7 +731,7 @@ public class SettingsHandler
         return proc.ExitCode;
     }
 
-    private static (int ExitCode, string Output) RunSchtasks(string arguments)
+    private static async Task<(int ExitCode, string Output)> RunSchtasksAsync(string arguments)
     {
         var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", arguments)
         {
@@ -722,9 +741,24 @@ public class SettingsHandler
             CreateNoWindow = true,
         };
         using var proc = System.Diagnostics.Process.Start(psi)!;
-        var output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
-        proc.WaitForExit(5000);
-        return (proc.ExitCode, output.Trim());
+        
+        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+        var stderrTask = proc.StandardError.ReadToEndAsync();
+        
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try
+        {
+            await proc.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            try { proc.Kill(); } catch { }
+            return (-1, "Timeout");
+        }
+        
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+        return (proc.ExitCode, (stdout + stderr).Trim());
     }
 
     public void OpenAppDataFolder_Click(object sender, RoutedEventArgs e)
@@ -1970,7 +2004,7 @@ public class SettingsHandler
                                 CrashReporter.Log("[SettingsHandler.ReShadeChannelCombo] Direct copy denied, attempting elevated copy...");
                                 try
                                 {
-                                    ElevatedFileCopy(stagedPath64, layer64);
+                                    await ElevatedFileCopyAsync(stagedPath64, layer64);
                                     CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 64-bit DLL via elevated copy to {newChannel} build");
                                 }
                                 catch (Exception elevEx)
@@ -1999,7 +2033,7 @@ public class SettingsHandler
                             {
                                 try
                                 {
-                                    ElevatedFileCopy(stagedPath32, layer32);
+                                    await ElevatedFileCopyAsync(stagedPath32, layer32);
                                     CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 32-bit DLL via elevated copy to {newChannel} build");
                                 }
                                 catch (Exception elevEx)
@@ -2067,7 +2101,7 @@ public class SettingsHandler
     /// Copies a file using an elevated cmd.exe process (UAC prompt).
     /// Used when direct File.Copy fails due to permissions on C:\ProgramData\ReShade.
     /// </summary>
-    private static void ElevatedFileCopy(string source, string destination)
+    private static async Task ElevatedFileCopyAsync(string source, string destination)
     {
         var psi = new System.Diagnostics.ProcessStartInfo
         {
@@ -2079,8 +2113,18 @@ public class SettingsHandler
             WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
         };
         using var proc = System.Diagnostics.Process.Start(psi);
-        proc?.WaitForExit(10_000);
-        if (proc != null && proc.ExitCode != 0)
+        if (proc == null) throw new IOException("Failed to start elevated copy process");
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        try
+        {
+            await proc.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            proc.Kill();
+            throw new IOException("Elevated copy timed out after 10 seconds");
+        }
+        if (proc.ExitCode != 0)
             throw new IOException($"Elevated copy exited with code {proc.ExitCode}");
     }
 

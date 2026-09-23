@@ -147,11 +147,12 @@ public partial class DetailPanelBuilder
             {
                 // Vulkan layer install path — RS is "installed" when reshade.ini exists
                 // in the game folder (the Vulkan layer needs it to function for this game).
-                bool rsIniExists = File.Exists(Path.Combine(card.InstallPath, "reshade.ini"));
+                // Use cached property from card instead of File.Exists on UI thread.
+                bool rsIniExists = card.VulkanRsIniExists;
                 if (rsIniExists)
                 {
-                    var vulkanVersion = AuxInstallService.ReadInstalledVersion(
-                        VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+                    // Use cached Vulkan layer version from card instead of reading from disk
+                    var vulkanVersion = card.VulkanLayerInstalledVersion;
                     _window.DetailRsStatus.Text = (vulkanVersion ?? "Installed") + "\n(Vulkan)";
                     _window.DetailRsStatus.Foreground = UIFactory.GetBrush("#5ECB7D");
                     _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.Underline;

@@ -196,6 +196,9 @@ public partial class MainViewModel
         var slowGameThresholdMs = 500; // Log games that take longer than this
         var gameTimings = new ConcurrentBag<(string name, long ms)>();
 
+        // Check Vulkan layer status once before the parallel loop (avoid registry reads per-card)
+        var vulkanLayerInstalled = VulkanLayerService.IsLayerInstalled();
+
         Parallel.ForEach(gameInfos, (item) =>
         {
             var gameStopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -1386,6 +1389,24 @@ public partial class MainViewModel
                 newCard.UltraPlusUrl = _ultraPlusService.ResolveUrl(game.Name, _manifest);
             }
             catch (Exception ex) { _crashReporter.Log($"[BuildCards] UltraPlusUrl resolve failed for '{game.Name}' — {ex.Message}"); }
+
+            // Set cached Vulkan layer state (checked once before parallel loop)
+            newCard.SetVulkanLayerInstalled(vulkanLayerInstalled);
+
+            // Set cached MFG state for Extras panel (avoid File.Exists on UI thread)
+            {
+                var mfgAdaPath = !string.IsNullOrEmpty(installPath)
+                    ? Path.Combine(installPath, "renodx-mfgunlock.addon64")
+                    : null;
+                bool mfgAdaInstalled = mfgAdaPath != null && File.Exists(mfgAdaPath);
+
+                var rtx40MfgDll = GetRtx40MfgInstalledAs(game.Name, game.Source ?? "");
+                bool rtx40MfgInstalled = !string.IsNullOrEmpty(rtx40MfgDll)
+                    && !string.IsNullOrEmpty(installPath)
+                    && File.Exists(Path.Combine(installPath, rtx40MfgDll));
+
+                newCard.SetMfgState(mfgAdaInstalled, rtx40MfgInstalled, rtx40MfgInstalled);
+            }
 
             cardBag.Add(newCard);
 

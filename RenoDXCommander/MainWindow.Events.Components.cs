@@ -24,6 +24,39 @@ public sealed partial class MainWindow
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 
+        // Read all file state on background thread to avoid blocking UI
+        var installPath = card.InstallPath;
+        bool rsPresetExists = false;
+        bool reshadeIniExists = false;
+        bool reshadeLogExists = false;
+        string currentHotkey = ViewModel.Settings.OverlayHotkey;
+        string currentScreenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
+        
+        await Task.Run(() =>
+        {
+            rsPresetExists = File.Exists(AuxInstallService.RsPresetIniPath);
+            reshadeIniExists = File.Exists(Path.Combine(installPath, "reshade.ini"));
+            reshadeLogExists = File.Exists(Path.Combine(installPath, "ReShade.log"));
+            
+            // Read current keys from reshade.ini (game folder)
+            var iniPath = Path.Combine(installPath, "reshade.ini");
+            if (reshadeIniExists)
+            {
+                try
+                {
+                    var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                    if (ini.TryGetValue("INPUT", out var inputSection))
+                    {
+                        if (inputSection.TryGetValue("KeyOverlay", out var ko) && !string.IsNullOrWhiteSpace(ko))
+                            currentHotkey = ko;
+                        if (inputSection.TryGetValue("KeyScreenshot", out var ks2) && !string.IsNullOrWhiteSpace(ks2))
+                            currentScreenshotHotkey = ks2;
+                    }
+                }
+                catch { /* use fallback */ }
+            }
+        });
+
         var content = new StackPanel { Spacing = 8 };
 
         // Deploy ReShade.ini
@@ -77,7 +110,7 @@ public sealed partial class MainWindow
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            IsEnabled = File.Exists(AuxInstallService.RsPresetIniPath),
+            IsEnabled = rsPresetExists,
         };
         deployPresetBtn.Click += (s, ev) =>
         {
@@ -88,7 +121,7 @@ public sealed partial class MainWindow
             }
             catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
         };
-        if (!File.Exists(AuxInstallService.RsPresetIniPath))
+        if (!rsPresetExists)
             ToolTipService.SetToolTip(deployPresetBtn, "No ReShadePreset.ini found in RHI config folder");
         content.Children.Add(deployPresetBtn);
 
@@ -102,7 +135,7 @@ public sealed partial class MainWindow
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            IsEnabled = File.Exists(Path.Combine(card.InstallPath, "reshade.ini")),
+            IsEnabled = reshadeIniExists,
         };
         openIniBtn.Click += async (s, ev) =>
         {
@@ -122,7 +155,7 @@ public sealed partial class MainWindow
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            IsEnabled = File.Exists(Path.Combine(card.InstallPath, "ReShade.log")),
+            IsEnabled = reshadeLogExists,
         };
         openLogBtn.Click += async (s, ev) =>
         {
@@ -142,7 +175,7 @@ public sealed partial class MainWindow
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            IsEnabled = File.Exists(Path.Combine(card.InstallPath, "ReShade.log")),
+            IsEnabled = reshadeLogExists,
         };
         copyLogBtn.Click += async (s, ev) =>
         {
@@ -174,26 +207,6 @@ public sealed partial class MainWindow
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 6) });
 
         // ── Overlay Key + Screenshot Key — side by side ───────────────────────
-        // Read current keys from reshade.ini (game folder)
-        var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-        string currentHotkey = ViewModel.Settings.OverlayHotkey;
-        string currentScreenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-        if (File.Exists(iniPath))
-        {
-            try
-            {
-                var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-                if (ini.TryGetValue("INPUT", out var inputSection))
-                {
-                    if (inputSection.TryGetValue("KeyOverlay", out var ko) && !string.IsNullOrWhiteSpace(ko))
-                        currentHotkey = ko;
-                    if (inputSection.TryGetValue("KeyScreenshot", out var ks2) && !string.IsNullOrWhiteSpace(ks2))
-                        currentScreenshotHotkey = ks2;
-                }
-            }
-            catch { /* use fallback */ }
-        }
-
         var hotkeyString = currentHotkey;
         var screenshotHotkeyString = currentScreenshotHotkey;
 
@@ -221,19 +234,30 @@ public sealed partial class MainWindow
         hotkeyBox.LostFocus += (s, ev) => { if (hotkeyBox.Text == "Press a key...") hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString); };
 
         var applyKeyBtn = new Button { Content = "Apply", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
-        applyKeyBtn.Click += (s, ev) =>
+        applyKeyBtn.Click += async (s, ev) =>
         {
             if (string.IsNullOrEmpty(card.InstallPath)) return;
             try
             {
-                var iniFiles = Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                    .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
-                             && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-                foreach (var file in iniFiles)
-                    AuxInstallService.ApplyOverlayHotkey(file, hotkeyString);
+                var installPath = card.InstallPath;
+                var hotkey = hotkeyString;
+                var (count, error) = await Task.Run(() =>
+                {
+                    try
+                    {
+                        var iniFiles = Directory.EnumerateFiles(installPath, "reshade*.ini")
+                            .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
+                                     && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                        foreach (var file in iniFiles)
+                            AuxInstallService.ApplyOverlayHotkey(file, hotkey);
+                        return (iniFiles.Count, (string?)null);
+                    }
+                    catch (Exception ex) { return (0, ex.Message); }
+                });
+                if (error != null) { card.RsActionMessage = $"❌ {error}"; return; }
                 applyKeyBtn.Content = "Applied!";
-                _crashReporter.Log($"[RsCogButton_Click] Applied overlay key '{hotkeyString}' to {iniFiles.Count} ini file(s) for '{card.GameName}'");
+                _crashReporter.Log($"[RsCogButton_Click] Applied overlay key '{hotkeyString}' to {count} ini file(s) for '{card.GameName}'");
             }
             catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
         };
@@ -262,19 +286,30 @@ public sealed partial class MainWindow
         screenshotHotkeyBox.LostFocus += (s, ev) => { if (screenshotHotkeyBox.Text == "Press a key...") screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString); };
 
         var applyScreenshotKeyBtn = new Button { Content = "Apply", FontSize = 12, Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Right };
-        applyScreenshotKeyBtn.Click += (s, ev) =>
+        applyScreenshotKeyBtn.Click += async (s, ev) =>
         {
             if (string.IsNullOrEmpty(card.InstallPath)) return;
             try
             {
-                var iniFiles2 = Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                    .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
-                             && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-                foreach (var file in iniFiles2)
-                    AuxInstallService.ApplyScreenshotHotkey(file, screenshotHotkeyString);
+                var installPath = card.InstallPath;
+                var hotkey = screenshotHotkeyString;
+                var (count, error) = await Task.Run(() =>
+                {
+                    try
+                    {
+                        var iniFiles2 = Directory.EnumerateFiles(installPath, "reshade*.ini")
+                            .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
+                                     && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                        foreach (var file in iniFiles2)
+                            AuxInstallService.ApplyScreenshotHotkey(file, hotkey);
+                        return (iniFiles2.Count, (string?)null);
+                    }
+                    catch (Exception ex) { return (0, ex.Message); }
+                });
+                if (error != null) { card.RsActionMessage = $"❌ {error}"; return; }
                 applyScreenshotKeyBtn.Content = "Applied!";
-                _crashReporter.Log($"[RsCogButton_Click] Applied screenshot key '{screenshotHotkeyString}' to {iniFiles2.Count} ini file(s) for '{card.GameName}'");
+                _crashReporter.Log($"[RsCogButton_Click] Applied screenshot key '{screenshotHotkeyString}' to {count} ini file(s) for '{card.GameName}'");
             }
             catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
         };
@@ -360,8 +395,42 @@ public sealed partial class MainWindow
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 
-        var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-        var presetPath = Path.Combine(card.InstallPath, "RHI-RenoDX-Preset.txt");
+        var installPath = card.InstallPath;
+        var iniPath = Path.Combine(installPath, "reshade.ini");
+        var presetPath = Path.Combine(installPath, "RHI-RenoDX-Preset.txt");
+        
+        // Read file state on background thread before building dialog
+        bool iniExists = false;
+        bool presetExists = false;
+        AuxInstallService.OrderedDict? renodxSection = null;
+        string currentNits = "";
+        
+        await Task.Run(() =>
+        {
+            iniExists = File.Exists(iniPath);
+            presetExists = File.Exists(presetPath);
+            
+            if (iniExists)
+            {
+                try
+                {
+                    var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                    
+                    // Extract current nits value
+                    var presetWithNits = ini.FirstOrDefault(kv =>
+                        kv.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase)
+                        && kv.Value.ContainsKey("ToneMapPeakNits"));
+                    if (presetWithNits.Value != null && presetWithNits.Value.TryGetValue("ToneMapPeakNits", out var nv))
+                        currentNits = double.TryParse(nv, out var dv) ? ((int)dv).ToString() : nv;
+                    
+                    // Extract renodx section
+                    if (ini.TryGetValue("renodx", out var section))
+                        renodxSection = section;
+                }
+                catch { /* use fallback */ }
+            }
+        });
+        
         var content = new StackPanel { Spacing = 8 };
         bool hasRenoDxMod = !card.IsRtxHdrEnabled && (card.Mod?.SnapshotUrl != null || card.Status == GameStatus.Installed || card.Status == GameStatus.UpdateAvailable);
 
@@ -408,16 +477,8 @@ public sealed partial class MainWindow
         }
 
         // ── Peak Nits row (inside topGrid for alignment) ──────────────────────
-        if (hasRenoDxMod && File.Exists(iniPath))
+        if (hasRenoDxMod && iniExists)
         {
-            var peakIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-            var presetWithNits = peakIni.FirstOrDefault(kv =>
-                kv.Key.StartsWith("renodx-preset", StringComparison.OrdinalIgnoreCase)
-                && kv.Value.ContainsKey("ToneMapPeakNits"));
-            string currentNits = "";
-            if (presetWithNits.Value != null && presetWithNits.Value.TryGetValue("ToneMapPeakNits", out var nv))
-                currentNits = double.TryParse(nv, out var dv) ? ((int)dv).ToString() : nv;
-
             topGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             // Label in column 0
@@ -536,162 +597,172 @@ public sealed partial class MainWindow
         content.Children.Add(topGrid);
 
         // ── Compatibility Settings from [renodx] section ──────────────────────
-        if (File.Exists(iniPath))
+        if (iniExists && renodxSection != null)
         {
-            var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
-            if (ini.TryGetValue("renodx", out var renodxSection))
+            var upgradeKeys = renodxSection
+                .Where(kv => (kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase)
+                              && !kv.Key.Equals("Upgrade_UseSCRGB", StringComparison.OrdinalIgnoreCase)
+                              && !kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
+                              && !kv.Key.Equals("Upgrade_SwapChainCompatibility", StringComparison.OrdinalIgnoreCase))
+                          || kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(kv => kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase) ? 1 : 0) // DumpLUT last
+                .ThenBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (upgradeKeys.Count > 0)
             {
-                var upgradeKeys = renodxSection
-                    .Where(kv => (kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase)
-                                  && !kv.Key.Equals("Upgrade_UseSCRGB", StringComparison.OrdinalIgnoreCase)
-                                  && !kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
-                                  && !kv.Key.Equals("Upgrade_SwapChainCompatibility", StringComparison.OrdinalIgnoreCase))
-                              || kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase)
-                              || kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(kv => kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase) ? 1 : 0) // DumpLUT last
-                    .ThenBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                if (upgradeKeys.Count > 0)
+                content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
+                content.Children.Add(new TextBlock
                 {
-                    content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
-                    content.Children.Add(new TextBlock
+                    Text = "Compatibility Settings",
+                    FontSize = 13,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                    Margin = new Thickness(0, 4, 0, 0),
+                });
+
+                var settingsGrid = new Grid { ColumnSpacing = 12, RowSpacing = 6 };
+                settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+                settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+
+                int totalRows = (upgradeKeys.Count + 1) / 2;
+                for (int r = 0; r < totalRows; r++)
+                    settingsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                for (int i = 0; i < upgradeKeys.Count; i++)
+                {
+                    var kv = upgradeKeys[i];
+                    int row = i / 2;
+                    int col = (i % 2) * 2; // 0 or 2
+
+                    bool isSetPath = kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase);
+                    bool isDumpLut = kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase);
+                    bool isBinaryToggle = isSetPath || isDumpLut;
+
+                    var label = new TextBlock
                     {
-                        Text = "Compatibility Settings",
-                        FontSize = 13,
-                        Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                        Margin = new Thickness(0, 4, 0, 0),
-                    });
+                        Text = isSetPath ? "Upgrade Path" : isDumpLut ? "Dump LUT Shaders" : kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase) ? kv.Key.Substring(8) : kv.Key,
+                        FontSize = 11,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                        VerticalAlignment = VerticalAlignment.Center,
+                    };
+                    Grid.SetRow(label, row);
+                    Grid.SetColumn(label, col);
+                    settingsGrid.Children.Add(label);
 
-                    var settingsGrid = new Grid { ColumnSpacing = 12, RowSpacing = 6 };
-                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
-                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+                    var combo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
 
-                    int totalRows = (upgradeKeys.Count + 1) / 2;
-                    for (int r = 0; r < totalRows; r++)
+                    if (isSetPath) { combo.Items.Add("HDR / Off"); combo.Items.Add("SDR / On"); }
+                    else if (isDumpLut) { combo.Items.Add("Off"); combo.Items.Add("On"); }
+                    else { combo.Items.Add("Off"); combo.Items.Add("Output size"); combo.Items.Add("Output ratio"); combo.Items.Add("Any size"); }
+
+                    int.TryParse(kv.Value, out var currentVal);
+                    combo.SelectedIndex = isBinaryToggle
+                        ? (currentVal >= 0 && currentVal <= 1 ? currentVal : 0)
+                        : (currentVal >= 0 && currentVal <= 3 ? currentVal : 0);
+
+                    var capturedKey = kv.Key;
+                    combo.SelectionChanged += (s, ev) =>
+                    {
+                        if (combo.SelectedIndex < 0) return;
+                        try
+                        {
+                            var iniForWrite = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                            if (iniForWrite.TryGetValue("renodx", out var section))
+                            {
+                                section[capturedKey] = combo.SelectedIndex.ToString();
+                                AuxInstallService.WriteIni(iniPath, iniForWrite);
+                            }
+                        }
+                        catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
+                    };
+
+                    Grid.SetRow(combo, row);
+                    Grid.SetColumn(combo, col + 1);
+                    settingsGrid.Children.Add(combo);
+                }
+
+                content.Children.Add(settingsGrid);
+
+                // ── Manifest-driven extra settings ──────────────────────────────────
+                var extraSettings = AuxInstallService.GlobalManifest?.RenodxExtraSettings;
+                if (extraSettings?.Count > 0)
+                {
+                    // Append to the existing settings grid (continue from where hardcoded keys left off)
+                    int startIdx = upgradeKeys.Count;
+                    int extraRows = (startIdx + extraSettings.Count + 1) / 2 - settingsGrid.RowDefinitions.Count;
+                    for (int r = 0; r < extraRows; r++)
                         settingsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                    for (int i = 0; i < upgradeKeys.Count; i++)
+                    for (int i = 0; i < extraSettings.Count; i++)
                     {
-                        var kv = upgradeKeys[i];
-                        int row = i / 2;
-                        int col = (i % 2) * 2; // 0 or 2
+                        var setting = extraSettings[i];
+                        int idx = startIdx + i;
+                        int row = idx / 2;
+                        int col = (idx % 2) * 2;
 
-                        bool isSetPath = kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase);
-                        bool isDumpLut = kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase);
-                        bool isBinaryToggle = isSetPath || isDumpLut;
-
-                        var label = new TextBlock
+                        var extraLabel = new TextBlock
                         {
-                            Text = isSetPath ? "Upgrade Path" : isDumpLut ? "Dump LUT Shaders" : kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase) ? kv.Key.Substring(8) : kv.Key,
+                            Text = setting.Label ?? setting.Key,
                             FontSize = 11,
                             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                             VerticalAlignment = VerticalAlignment.Center,
                         };
-                        Grid.SetRow(label, row);
-                        Grid.SetColumn(label, col);
-                        settingsGrid.Children.Add(label);
+                        Grid.SetRow(extraLabel, row);
+                        Grid.SetColumn(extraLabel, col);
+                        settingsGrid.Children.Add(extraLabel);
 
-                        var combo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+                        var extraCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
 
-                        if (isSetPath) { combo.Items.Add("HDR / Off"); combo.Items.Add("SDR / On"); }
-                        else if (isDumpLut) { combo.Items.Add("Off"); combo.Items.Add("On"); }
-                        else { combo.Items.Add("Off"); combo.Items.Add("Output size"); combo.Items.Add("Output ratio"); combo.Items.Add("Any size"); }
+                        var options = setting.Options?.Count > 0
+                            ? setting.Options
+                            : new List<RenodxExtraOption> { new() { Value = "0", Name = "Off" }, new() { Value = "1", Name = "On" } };
 
-                        int.TryParse(kv.Value, out var currentVal);
-                        combo.SelectedIndex = isBinaryToggle
-                            ? (currentVal >= 0 && currentVal <= 1 ? currentVal : 0)
-                            : (currentVal >= 0 && currentVal <= 3 ? currentVal : 0);
+                        foreach (var opt in options)
+                            extraCombo.Items.Add(opt.Name);
 
-                        var capturedKey = kv.Key;
-                        combo.SelectionChanged += (s, ev) =>
+                        string currentExtraVal = setting.Default;
+                        if (renodxSection.TryGetValue(setting.Key, out var existingVal))
+                            currentExtraVal = existingVal;
+                        var selectedIdx = options.FindIndex(o => o.Value == currentExtraVal);
+                        extraCombo.SelectedIndex = selectedIdx >= 0 ? selectedIdx : 0;
+
+                        var capturedSetting = setting;
+                        var capturedOptions = options;
+                        extraCombo.SelectionChanged += (s, ev) =>
                         {
-                            if (combo.SelectedIndex < 0) return;
-                            renodxSection[capturedKey] = combo.SelectedIndex.ToString();
-                            try { AuxInstallService.WriteIni(iniPath, ini); }
+                            if (extraCombo.SelectedIndex < 0 || extraCombo.SelectedIndex >= capturedOptions.Count) return;
+                            try
+                            {
+                                var iniForWrite = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                                if (iniForWrite.TryGetValue("renodx", out var section))
+                                {
+                                    section[capturedSetting.Key] = capturedOptions[extraCombo.SelectedIndex].Value;
+                                    AuxInstallService.WriteIni(iniPath, iniForWrite);
+                                }
+                            }
                             catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
                         };
 
-                        Grid.SetRow(combo, row);
-                        Grid.SetColumn(combo, col + 1);
-                        settingsGrid.Children.Add(combo);
-                    }
-
-                    content.Children.Add(settingsGrid);
-
-                    // ── Manifest-driven extra settings ──────────────────────────────────
-                    var extraSettings = AuxInstallService.GlobalManifest?.RenodxExtraSettings;
-                    if (extraSettings?.Count > 0)
-                    {
-                        // Append to the existing settings grid (continue from where hardcoded keys left off)
-                        int startIdx = upgradeKeys.Count;
-                        int extraRows = (startIdx + extraSettings.Count + 1) / 2 - settingsGrid.RowDefinitions.Count;
-                        for (int r = 0; r < extraRows; r++)
-                            settingsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-                        for (int i = 0; i < extraSettings.Count; i++)
-                        {
-                            var setting = extraSettings[i];
-                            int idx = startIdx + i;
-                            int row = idx / 2;
-                            int col = (idx % 2) * 2;
-
-                            var extraLabel = new TextBlock
-                            {
-                                Text = setting.Label ?? setting.Key,
-                                FontSize = 11,
-                                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                                VerticalAlignment = VerticalAlignment.Center,
-                            };
-                            Grid.SetRow(extraLabel, row);
-                            Grid.SetColumn(extraLabel, col);
-                            settingsGrid.Children.Add(extraLabel);
-
-                            var extraCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
-
-                            var options = setting.Options?.Count > 0
-                                ? setting.Options
-                                : new List<RenodxExtraOption> { new() { Value = "0", Name = "Off" }, new() { Value = "1", Name = "On" } };
-
-                            foreach (var opt in options)
-                                extraCombo.Items.Add(opt.Name);
-
-                            string currentExtraVal = setting.Default;
-                            if (renodxSection.TryGetValue(setting.Key, out var existingVal))
-                                currentExtraVal = existingVal;
-                            var selectedIdx = options.FindIndex(o => o.Value == currentExtraVal);
-                            extraCombo.SelectedIndex = selectedIdx >= 0 ? selectedIdx : 0;
-
-                            var capturedSetting = setting;
-                            var capturedOptions = options;
-                            extraCombo.SelectionChanged += (s, ev) =>
-                            {
-                                if (extraCombo.SelectedIndex < 0 || extraCombo.SelectedIndex >= capturedOptions.Count) return;
-                                renodxSection[capturedSetting.Key] = capturedOptions[extraCombo.SelectedIndex].Value;
-                                try { AuxInstallService.WriteIni(iniPath, ini); }
-                                catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
-                            };
-
-                            Grid.SetRow(extraCombo, row);
-                            Grid.SetColumn(extraCombo, col + 1);
-                            settingsGrid.Children.Add(extraCombo);
-                        }
+                        Grid.SetRow(extraCombo, row);
+                        Grid.SetColumn(extraCombo, col + 1);
+                        settingsGrid.Children.Add(extraCombo);
                     }
                 }
             }
-            else
+        }
+        else if (iniExists)
+        {
+            content.Children.Add(new TextBlock
             {
-                content.Children.Add(new TextBlock
-                {
-                    Text = "Run the game once with RenoDX installed to generate settings.",
-                    FontSize = 11,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                    FontStyle = Windows.UI.Text.FontStyle.Italic,
-                    Margin = new Thickness(0, 4, 0, 0),
-                });
-            }
+                Text = "Run the game once with RenoDX installed to generate settings.",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                FontStyle = Windows.UI.Text.FontStyle.Italic,
+                Margin = new Thickness(0, 4, 0, 0),
+            });
         }
         else
         {
@@ -869,7 +940,7 @@ public sealed partial class MainWindow
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            IsEnabled = File.Exists(iniPath),
+            IsEnabled = iniExists,
         };
         exportBtn.Click += async (s, ev) =>
         {
@@ -936,7 +1007,7 @@ public sealed partial class MainWindow
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
-            IsEnabled = File.Exists(presetPath) && File.Exists(iniPath),
+            IsEnabled = presetExists && iniExists,
         };
         importBtn.Click += (s, ev) =>
         {
@@ -982,7 +1053,7 @@ public sealed partial class MainWindow
             }
             catch (Exception ex) { card.ActionMessage = $"❌ {ex.Message}"; }
         };
-        if (!File.Exists(presetPath))
+        if (!presetExists)
             ToolTipService.SetToolTip(importBtn, "No RHI-RenoDX-Preset.txt file found. Export first.");
         else
             ToolTipService.SetToolTip(importBtn, "Restore presets from the exported backup file into reshade.ini.");

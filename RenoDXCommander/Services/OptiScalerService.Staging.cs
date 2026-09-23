@@ -171,7 +171,19 @@ public partial class OptiScalerService
 
                     var stdoutTask = proc.StandardOutput.ReadToEndAsync();
                     var stderrTask = proc.StandardError.ReadToEndAsync();
-                    proc.WaitForExit(120_000); // 120 second timeout for ~53 MB archive
+
+                    // Use async wait with 120 second timeout for ~53 MB archive
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+                    try
+                    {
+                        await proc.WaitForExitAsync(cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        proc.Kill();
+                        CrashReporter.Log("[OptiScalerService.EnsureStagingAsync] 7z process timed out — killed");
+                        return;
+                    }
 
                     var stderr = await stderrTask;
                     if (!string.IsNullOrWhiteSpace(stderr))
@@ -952,7 +964,19 @@ public partial class OptiScalerService
 
                     var stdoutTask = proc.StandardOutput.ReadToEndAsync();
                     var stderrTask = proc.StandardError.ReadToEndAsync();
-                    proc.WaitForExit(120_000);
+
+                    // Use async wait with 120 second timeout for archive extraction
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+                    try
+                    {
+                        await proc.WaitForExitAsync(cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        proc.Kill();
+                        CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] 7z process timed out — killed");
+                        return;
+                    }
 
                     var stderr = await stderrTask;
                     if (!string.IsNullOrWhiteSpace(stderr))

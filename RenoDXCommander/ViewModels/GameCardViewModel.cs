@@ -1,10 +1,14 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.UI.Dispatching;
 using RenoDXCommander.Models;
 
 namespace RenoDXCommander.ViewModels;
 
 public partial class GameCardViewModel : ObservableObject
 {
+    // ── Dispatcher for UI thread access from background tasks ─────────────────────
+    public DispatcherQueue? DispatcherQueue { get; set; }
+
     // ── Core observable properties ────────────────────────────────────────────────
     [ObservableProperty] private string _gameName = "";
     [ObservableProperty] private string _maintainer = "";
@@ -97,6 +101,27 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private string     _refActionMessage = "";
     [ObservableProperty] private string?    _refInstalledVersion;
 
+    // ── MFG Ada Unlock cached state (Extras section) ─────────────────────────────
+    // Pre-computed in BuildCards/CacheLoad so File.Exists() doesn't run on UI thread
+    private bool _mfgAdaInstalled;
+    public bool MfgAdaInstalled => _mfgAdaInstalled;
+
+    private bool _mfgAdaRtx40Conflict;
+    public bool MfgAdaRtx40Conflict => _mfgAdaRtx40Conflict;
+
+    private bool _rtx40MfgInstalled;
+    public bool Rtx40MfgInstalled => _rtx40MfgInstalled;
+
+    /// <summary>
+    /// Sets the cached MFG state. Called from BuildCards/CacheLoad on background threads.
+    /// </summary>
+    public void SetMfgState(bool mfgAdaInstalled, bool mfgAdaRtx40Conflict, bool rtx40MfgInstalled)
+    {
+        _mfgAdaInstalled = mfgAdaInstalled;
+        _mfgAdaRtx40Conflict = mfgAdaRtx40Conflict;
+        _rtx40MfgInstalled = rtx40MfgInstalled;
+    }
+
     // ── DLL Naming Override ─────────────────────────────────────────────────────
     [ObservableProperty] private bool _dllOverrideEnabled = false;
 
@@ -174,7 +199,12 @@ public partial class GameCardViewModel : ObservableObject
         {
             await Task.Delay(delayMs);
             if (_fadeTokens.TryGetValue(tokenKey, out var current) && current == token)
-                setter("");
+            {
+                if (DispatcherQueue != null)
+                    DispatcherQueue.TryEnqueue(() => setter(""));
+                else
+                    setter("");  // Fallback (rare) — if dispatcher not set, risk PropertyChanged on bg thread
+            }
         });
     }
 
@@ -369,6 +399,28 @@ public partial class GameCardViewModel : ObservableObject
         NotifyOnce(nameof(OsMessageVisibility));
         NotifyOnce(nameof(IsOsNotInstalling));
         NotifyOnce(nameof(OsIniExists));
+
+        // ── INI existence cached properties ──────────────────────────
+        NotifyOnce(nameof(DcIniExists));
+        NotifyOnce(nameof(UlIniExists));
+        NotifyOnce(nameof(VulkanRsIniExists));
+
+        // ── DLSS/Streamline backup cached properties ─────────────────
+        NotifyOnce(nameof(DlssHasBackup));
+        NotifyOnce(nameof(DlssdHasBackup));
+        NotifyOnce(nameof(DlssgHasBackup));
+        NotifyOnce(nameof(DlssnrHasBackup));
+        NotifyOnce(nameof(StreamlineHasBackup));
+        NotifyOnce(nameof(HasAnyDlssBackup));
+
+        // ── Vulkan layer cached properties ───────────────────────────
+        NotifyOnce(nameof(VulkanLayerInstalled));
+        NotifyOnce(nameof(VulkanLayerInstalledVersion));
+
+        // ── MFG Ada cached properties ────────────────────────────────
+        NotifyOnce(nameof(MfgAdaInstalled));
+        NotifyOnce(nameof(MfgAdaRtx40Conflict));
+        NotifyOnce(nameof(Rtx40MfgInstalled));
 
         // ── DXVK: DxvkStatus dependents ─────────────────────────────
         NotifyOnce(nameof(DxvkStatusDot));

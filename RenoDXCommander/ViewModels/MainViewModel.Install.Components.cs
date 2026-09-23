@@ -229,9 +229,9 @@ public partial class MainViewModel
                     : $"✅ {installed} installed, {failed} failed.";
                 card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
                 card.NotifyAll();
-                SaveLibrary();
                 _filterViewModel.UpdateCounts();
             });
+            _ = Task.Run(() => SaveLibrary());
         }
         catch (Exception ex)
         {

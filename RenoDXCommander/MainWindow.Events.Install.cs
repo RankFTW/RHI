@@ -601,20 +601,20 @@ public sealed partial class MainWindow
             ViewModel.ToggleHideGameCommand.Execute(card);
     }
 
-    internal void LaunchGame_Click(object sender, RoutedEventArgs e)
+    internal async void LaunchGame_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender) ?? ViewModel.SelectedGame;
         if (card == null) return;
-        LaunchGame(card);
+        await LaunchGameAsync(card);
     }
 
-    private void GameList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    private async void GameList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         if (ViewModel.SelectedGame is { } card)
-            LaunchGame(card);
+            await LaunchGameAsync(card);
     }
 
-    internal void LaunchGame(GameCardViewModel card)
+    internal async Task LaunchGameAsync(GameCardViewModel card)
     {
         try
         {
@@ -637,14 +637,14 @@ public sealed partial class MainWindow
             if (shouldToggleHdr)
             {
                 hdrWasAlreadyOn = HdrToggleService.IsHdrEnabled();
-                _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: shouldToggle={shouldToggleHdr}, wasAlreadyOn={hdrWasAlreadyOn}, override='{hdrOverride}'");
+                _crashReporter.Log($"[MainWindow.LaunchGameAsync] HDR toggle: shouldToggle={shouldToggleHdr}, wasAlreadyOn={hdrWasAlreadyOn}, override='{hdrOverride}'");
                 // Always attempt to enable — IsHdrEnabled can report false positives on some configs
                 hdrTargets = ViewModel.Settings.HdrTargetDisplays;
                 HdrToggleService.EnableHdr(hdrTargets.Count > 0 ? hdrTargets : null);
             }
             else
             {
-                _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: disabled for '{gameName}' (override='{hdrOverride}', global={ViewModel.Settings.HdrAutoToggle})");
+                _crashReporter.Log($"[MainWindow.LaunchGameAsync] HDR toggle: disabled for '{gameName}' (override='{hdrOverride}', global={ViewModel.Settings.HdrAutoToggle})");
             }
 
             // ── Resolution Auto-Toggle (dev-only) ──
@@ -664,13 +664,13 @@ public sealed partial class MainWindow
                     if (targetRes != null)
                     {
                         resolutionToRestore = ResolutionToggleService.GetCurrentResolution();
-                        _crashReporter.Log($"[MainWindow.LaunchGame] Resolution toggle: switching to {targetRes.Label}, was {resolutionToRestore?.Label}");
+                        _crashReporter.Log($"[MainWindow.LaunchGameAsync] Resolution toggle: switching to {targetRes.Label}, was {resolutionToRestore?.Label}");
                         ResolutionToggleService.SetResolution(targetRes);
                     }
                 }
                 else if (shouldToggleRes)
                 {
-                    _crashReporter.Log($"[MainWindow.LaunchGame] Resolution toggle: enabled but no target resolution set — skipping");
+                    _crashReporter.Log($"[MainWindow.LaunchGameAsync] Resolution toggle: enabled but no target resolution set — skipping");
                     shouldToggleRes = false;
                 }
             }
@@ -679,7 +679,7 @@ public sealed partial class MainWindow
             if (_gameNameService.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
                 && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
             {
-                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via user override: {userExe} {launchArgs}");
+                _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via user override: {userExe} {launchArgs}");
                 var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe)
                 {
                     Arguments = launchArgs ?? "",
@@ -697,7 +697,7 @@ public sealed partial class MainWindow
                 var fullPath = Path.Combine(card.InstallPath, manifestExe);
                 if (File.Exists(fullPath))
                 {
-                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via manifest override: {fullPath} {launchArgs}");
+                    _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via manifest override: {fullPath} {launchArgs}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath)
                     {
                         Arguments = launchArgs ?? "",
@@ -716,7 +716,7 @@ public sealed partial class MainWindow
                     var steamExe = GetSteamExePath();
                     if (steamExe != null)
                     {
-                        _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam -applaunch {steamAppId} {launchArgs}");
+                        _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Steam -applaunch {steamAppId} {launchArgs}");
                         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamExe)
                         {
                             Arguments = $"-applaunch {steamAppId} {launchArgs}",
@@ -727,14 +727,14 @@ public sealed partial class MainWindow
                     {
                         // Fallback: use URL protocol (args may not pass reliably)
                         var steamUri = $"steam://rungameid/{steamAppId}";
-                        _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam URL (args may not apply): {steamUri}");
+                        _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Steam URL (args may not apply): {steamUri}");
                         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                     }
                 }
                 else
                 {
                     var steamUri = $"steam://rungameid/{steamAppId}";
-                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
+                    _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Steam: {steamUri}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
@@ -745,7 +745,7 @@ public sealed partial class MainWindow
             if (!string.IsNullOrEmpty(card.DetectedGame?.EpicAppName) && string.IsNullOrEmpty(launchArgs))
             {
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
-                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
+                _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                 return;
@@ -757,7 +757,7 @@ public sealed partial class MainWindow
             if (!string.IsNullOrEmpty(card.DetectedGame?.XboxAumid))
             {
                 var uri = $"shell:AppsFolder\\{card.DetectedGame.XboxAumid}";
-                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Xbox AUMID: {card.DetectedGame.XboxAumid}");
+                _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Xbox AUMID: {card.DetectedGame.XboxAumid}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri) { UseShellExecute = true });
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                 return;
@@ -766,17 +766,23 @@ public sealed partial class MainWindow
             // 6. Direct exe — find the game exe in InstallPath
             if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
             {
-                var exes = Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly);
                 var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                     { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "CrashReportClient", "launcher" };
-                var gameExe = exes
-                    .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
-                    .OrderByDescending(e => new FileInfo(e).Length)
-                    .FirstOrDefault();
+                var installPath = card.InstallPath;
+
+                // Run file enumeration on background thread to avoid UI freeze
+                var gameExe = await Task.Run(() =>
+                {
+                    var exes = Directory.GetFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly);
+                    return exes
+                        .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
+                        .OrderByDescending(e => new FileInfo(e).Length)
+                        .FirstOrDefault();
+                });
 
                 if (gameExe != null)
                 {
-                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via auto-detected exe: {gameExe} {launchArgs}");
+                    _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via auto-detected exe: {gameExe} {launchArgs}");
                     var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe)
                     {
                         Arguments = launchArgs ?? "",
@@ -787,11 +793,11 @@ public sealed partial class MainWindow
                 }
             }
 
-            _crashReporter.Log($"[MainWindow.LaunchGame] No launch method found for '{gameName}'");
+            _crashReporter.Log($"[MainWindow.LaunchGameAsync] No launch method found for '{gameName}'");
         }
         catch (Exception ex)
         {
-            _crashReporter.Log($"[MainWindow.LaunchGame] Failed to launch '{card.GameName}' — {ex.Message}");
+            _crashReporter.Log($"[MainWindow.LaunchGameAsync] Failed to launch '{card.GameName}' — {ex.Message}");
         }
     }
 

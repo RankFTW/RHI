@@ -9,7 +9,7 @@ public static class FileHelper
 {
     /// <summary>
     /// Writes <paramref name="content"/> to <paramref name="path"/> with up to 3 attempts.
-    /// On transient <see cref="IOException"/>, waits 50ms × (attempt + 1) before retrying.
+    /// On transient <see cref="IOException"/>, retries immediately without blocking.
     /// On non-IOException or final failure, logs via <see cref="CrashReporter"/> using
     /// <paramref name="callerTag"/> and returns without throwing.
     /// </summary>
@@ -33,9 +33,10 @@ public static class FileHelper
                 writeAction(path, content);
                 return;
             }
-            catch (IOException) when (attempt < 2)
+            catch (IOException ex) when (attempt < 2)
             {
-                Thread.Sleep(50 * (attempt + 1));
+                // Log and retry immediately — no Thread.Sleep to avoid blocking UI thread
+                CrashReporter.Log($"[{callerTag}] IO retry {attempt + 1}: {ex.Message}");
             }
             catch (Exception ex)
             {

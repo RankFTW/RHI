@@ -244,6 +244,15 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game 20/30 FG Unlock GPU generation. Key = "GameName|Store", Value = "RTX 30 Series" or "RTX 20 Series".</summary>
     public Dictionary<string, string> Dlssg2030GpuGen => _dlssg2030GpuGen;
 
+    // ── Debounce infrastructure for SaveNameMappings ─────────────────────────
+    private Timer? _saveDebounceTimer;
+    private readonly object _saveLock = new();
+    private IDllOverrideService? _pendingDllOverride;
+    private SettingsViewModel? _pendingSettings;
+    private ViewLayout _pendingViewLayout;
+    private string _pendingFilterMode = "";
+    private List<CustomFilter> _pendingCustomFilters = new();
+
     public GameNameService(
         IGameDetectionService gameDetectionService,
         IModInstallService installer,
@@ -660,6 +669,95 @@ public class GameNameService : IGameNameService
     {
         if (isLoadingSettings) return;
 
+        // Capture latest parameters for the debounced save
+        lock (_saveLock)
+        {
+            _pendingDllOverride = dllOverrideService;
+            _pendingSettings = settingsViewModel;
+            _pendingViewLayout = currentViewLayout;
+            _pendingFilterMode = filterMode;
+            _pendingCustomFilters = customFilters.ToList();
+
+            // Reset or start the debounce timer (250ms delay)
+            if (_saveDebounceTimer != null)
+            {
+                _saveDebounceTimer.Change(250, Timeout.Infinite);
+            }
+            else
+            {
+                _saveDebounceTimer = new Timer(_ => DoSaveNameMappings(), null, 250, Timeout.Infinite);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Performs the actual disk write. Called from the debounce timer callback.
+    /// Also call this directly when immediate persistence is required (e.g. game rename, app shutdown).
+    /// </summary>
+    public void SaveNameMappingsImmediate(
+        IDllOverrideService dllOverrideService,
+        SettingsViewModel settingsViewModel,
+        ViewLayout currentViewLayout,
+        string filterMode,
+        List<CustomFilter> customFilters)
+    {
+        // Cancel any pending debounced save — we're doing it now
+        lock (_saveLock)
+        {
+            _saveDebounceTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        DoSaveNameMappingsInternal(dllOverrideService, settingsViewModel, currentViewLayout, filterMode, customFilters);
+    }
+
+    /// <summary>
+    /// Flushes any pending debounced save immediately. Call on app shutdown.
+    /// </summary>
+    public void FlushPendingSave()
+    {
+        Timer? timer;
+        lock (_saveLock)
+        {
+            timer = _saveDebounceTimer;
+            _saveDebounceTimer = null;
+        }
+
+        if (timer != null)
+        {
+            timer.Dispose();
+            DoSaveNameMappings();
+        }
+    }
+
+    private void DoSaveNameMappings()
+    {
+        IDllOverrideService? dllOverride;
+        SettingsViewModel? settings;
+        ViewLayout viewLayout;
+        string filterMode;
+        List<CustomFilter> customFilters;
+
+        lock (_saveLock)
+        {
+            dllOverride = _pendingDllOverride;
+            settings = _pendingSettings;
+            viewLayout = _pendingViewLayout;
+            filterMode = _pendingFilterMode;
+            customFilters = _pendingCustomFilters;
+        }
+
+        if (dllOverride == null || settings == null) return;
+
+        DoSaveNameMappingsInternal(dllOverride, settings, viewLayout, filterMode, customFilters);
+    }
+
+    private void DoSaveNameMappingsInternal(
+        IDllOverrideService dllOverrideService,
+        SettingsViewModel settingsViewModel,
+        ViewLayout currentViewLayout,
+        string filterMode,
+        List<CustomFilter> customFilters)
+    {
         // Retry with short delays to handle file contention from concurrent background tasks
         for (int attempt = 0; attempt < 3; attempt++)
         {
@@ -753,9 +851,10 @@ public class GameNameService : IGameNameService
                 SettingsViewModel.SaveSettingsFile(s);
                 return;
             }
-            catch (IOException) when (attempt < 2)
+            catch (IOException ex) when (attempt < 2)
             {
-                Thread.Sleep(50 * (attempt + 1)); // 50ms, 100ms
+                CrashReporter.Log($"[GameNameService.SaveNameMappings] IO retry {attempt + 1}: {ex.Message}");
+                // Don't sleep on UI thread — just log and retry immediately on next attempt
             }
             catch (Exception ex)
             {

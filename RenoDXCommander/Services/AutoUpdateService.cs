@@ -20,7 +20,6 @@ public class AutoUpdateService
     // Lazily assigned by the wiring code in MainViewModel.BackgroundScan.cs
     // so that we don't create a circular DI dependency.
     private MainViewModel? _viewModel;
-    private Microsoft.UI.Dispatching.DispatcherQueue? _dispatcher;
 
     // Cards whose update was deferred because the game was running.
     // Simple string key "GameName|Source|Component" so we know what to retry.
@@ -45,10 +44,6 @@ public class AutoUpdateService
     public void SetViewModel(MainViewModel viewModel)
     {
         _viewModel = viewModel;
-        // Capture the dispatcher at setup time via the public SetDispatcher pattern.
-        // We use Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread() since
-        // SetViewModel is called from MainViewModel's constructor which runs on the UI thread.
-        _dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
     }
 
     // ── Public entry point ────────────────────────────────────────────────────────
@@ -78,15 +73,9 @@ public class AutoUpdateService
         try
         {
             _crashReporter.Log("[AutoUpdateService] Silent auto-update pass started");
-            // Run on the UI dispatcher — UpdateAll* methods set card properties that fire
-            // PropertyChanged, which must happen on the UI thread to avoid threading exceptions.
-            var dispatcher = _dispatcher;
-            if (dispatcher == null)
-            {
-                _crashReporter.Log("[AutoUpdateService] DispatcherQueue unavailable — skipping pass");
-                return;
-            }
-            await DispatchAsync(dispatcher, RunUpdatePassAsync);
+            // Run on background thread — the UpdateAll* methods internally dispatch
+            // property changes to the UI thread via DispatcherQueue.TryEnqueue().
+            await RunUpdatePassAsync().ConfigureAwait(false);
             _crashReporter.Log("[AutoUpdateService] Silent auto-update pass complete");
         }
         catch (Exception ex)
@@ -118,8 +107,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "RenoDX"); continue; }
             await TryUpdateOneAsync("RenoDX", card,
-                () => _viewModel.UpdateAllRenoDxAsync());
-            await Pause();
+                () => _viewModel.UpdateAllRenoDxAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // ── ReShade ─────────────────────────────────────────────────────────────
@@ -134,8 +123,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "ReShade"); continue; }
             await TryUpdateOneAsync("ReShade", card,
-                () => _viewModel.UpdateAllReShadeAsync());
-            await Pause();
+                () => _viewModel.UpdateAllReShadeAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // Vulkan ReShade — treat Vulkan cards as a group; skip the whole group if any is running.
@@ -159,13 +148,13 @@ public class AutoUpdateService
                 try
                 {
                     _crashReporter.Log($"[AutoUpdateService] Updating ReShade (Vulkan, {vulkanCards.Count} game(s))");
-                    await _viewModel.UpdateAllReShadeAsync();
+                    await _viewModel.UpdateAllReShadeAsync().ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     _crashReporter.Log($"[AutoUpdateService] Vulkan ReShade update failed — {ex.Message}");
                 }
-                await Pause();
+                await Pause().ConfigureAwait(false);
             }
         }
 
@@ -180,8 +169,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "ReLimiter"); continue; }
             await TryUpdateOneAsync("ReLimiter", card,
-                () => _viewModel.UpdateAllUlAsync());
-            await Pause();
+                () => _viewModel.UpdateAllUlAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // ── Display Commander ────────────────────────────────────────────────────
@@ -195,8 +184,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "DC"); continue; }
             await TryUpdateOneAsync("DC", card,
-                () => _viewModel.UpdateAllDcAsync());
-            await Pause();
+                () => _viewModel.UpdateAllDcAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // ── OptiScaler ───────────────────────────────────────────────────────────
@@ -210,8 +199,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "OptiScaler"); continue; }
             await TryUpdateOneAsync("OptiScaler", card,
-                () => _viewModel.UpdateAllOsAsync());
-            await Pause();
+                () => _viewModel.UpdateAllOsAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // ── RE Framework ─────────────────────────────────────────────────────────
@@ -225,8 +214,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "REFramework"); continue; }
             await TryUpdateOneAsync("REFramework", card,
-                () => _viewModel.UpdateAllRefAsync());
-            await Pause();
+                () => _viewModel.UpdateAllRefAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // ── DXVK ─────────────────────────────────────────────────────────────────
@@ -240,8 +229,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "DXVK"); continue; }
             await TryUpdateOneAsync("DXVK", card,
-                () => _viewModel.UpdateAllDxvkAsync());
-            await Pause();
+                () => _viewModel.UpdateAllDxvkAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // ── Luma ─────────────────────────────────────────────────────────────────
@@ -255,8 +244,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "Luma"); continue; }
             await TryUpdateOneAsync("Luma", card,
-                () => _viewModel.UpdateAllLumaAsync());
-            await Pause();
+                () => _viewModel.UpdateAllLumaAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // ── DOF Fix ──────────────────────────────────────────────────────────────
@@ -270,8 +259,8 @@ public class AutoUpdateService
         {
             if (card.IsRunning) { EnqueueRetry(card, "DofFix"); continue; }
             await TryUpdateOneAsync("DofFix", card,
-                () => _viewModel.UpdateAllDofFixAsync());
-            await Pause();
+                () => _viewModel.UpdateAllDofFixAsync()).ConfigureAwait(false);
+            await Pause().ConfigureAwait(false);
         }
 
         // If anything was deferred, start the retry watcher.
@@ -299,8 +288,8 @@ public class AutoUpdateService
                 {
                     if (card.IsRunning) { EnqueueRetry(card, "Nexus"); continue; }
                     await TryUpdateOneAsync("Nexus", card,
-                        () => _viewModel.UpdateNexusModAsync(card));
-                    await Pause();
+                        () => _viewModel.UpdateNexusModAsync(card)).ConfigureAwait(false);
+                    await Pause().ConfigureAwait(false);
                 }
             }
         }
@@ -317,7 +306,7 @@ public class AutoUpdateService
         try
         {
             _crashReporter.Log($"[AutoUpdateService] Updating {component} for '{card.GameName}'");
-            await updateAll();
+            await updateAll().ConfigureAwait(false);
         }
         catch (IOException ioEx)
         {
@@ -364,9 +353,6 @@ public class AutoUpdateService
             return;
         }
 
-        var dispatcher = _dispatcher;
-        if (dispatcher == null) return;
-
         // Drain the queue into a snapshot to avoid infinite loops on persistent failures.
         var snapshot = new List<RetryEntry>();
         while (_retryQueue.TryDequeue(out var entry))
@@ -388,7 +374,9 @@ public class AutoUpdateService
             try
             {
                 _crashReporter.Log($"[AutoUpdateService] Retry: {entry.Component} for '{entry.Card.GameName}'");
-                await DispatchAsync(dispatcher, () => RunRetryUpdateAsync(entry));
+                // Run on background thread — UpdateAll* methods internally dispatch
+                // property changes to the UI thread via DispatcherQueue.TryEnqueue().
+                await RunRetryUpdateAsync(entry).ConfigureAwait(false);
             }
             catch (IOException ioEx)
             {
@@ -400,7 +388,7 @@ public class AutoUpdateService
                 _crashReporter.Log($"[AutoUpdateService] Retry: {entry.Component} for '{entry.Card.GameName}' — failed ({ex.Message}), dropping");
             }
 
-            await Pause();
+            await Pause().ConfigureAwait(false);
         }
 
         // Re-enqueue anything still pending.
@@ -440,32 +428,4 @@ public class AutoUpdateService
 
     /// <summary>2-second breathing gap between individual card updates — keeps the pass non-disruptive.</summary>
     private static Task Pause() => Task.Delay(TimeSpan.FromSeconds(2));
-
-    /// <summary>
-    /// Marshals an async operation onto the given DispatcherQueue and awaits its completion.
-    /// This ensures card property changes (ObservableProperty setters) fire PropertyChanged
-    /// on the UI thread, preventing cross-thread WinUI exceptions.
-    ///
-    /// Note: While TryEnqueue(async lambda) is generally unsafe because it returns immediately,
-    /// this pattern is safe because: (1) the TaskCompletionSource ensures the caller awaits full
-    /// completion, and (2) WinUI's SynchronizationContext ensures async continuations resume on
-    /// the UI thread. Do NOT add ConfigureAwait(false) to any awaits in the work delegate.
-    /// </summary>
-    private static Task DispatchAsync(Microsoft.UI.Dispatching.DispatcherQueue dispatcher, Func<Task> work)
-    {
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        dispatcher.TryEnqueue(async () =>
-        {
-            try
-            {
-                await work();
-                tcs.TrySetResult();
-            }
-            catch (Exception ex)
-            {
-                tcs.TrySetException(ex);
-            }
-        });
-        return tcs.Task;
-    }
 }

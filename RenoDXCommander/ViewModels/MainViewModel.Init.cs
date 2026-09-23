@@ -337,7 +337,7 @@ public partial class MainViewModel
                 var feederFxStaged = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder", "DLSS5_Feed.fx");
                 if (!File.Exists(feederFxStaged))
                 {
-                    _shaderPackService.ClearPackRegistration("DLSS5Feeder");
+                    await _shaderPackService.ClearPackRegistrationAsync("DLSS5Feeder");
                     _crashReporter.Log("[MainViewModel.InitializeAsync] Cleared stale DLSS5Feeder settings entries — file missing from staging");
                 }
                 else if (!_shaderPackService.IsPackCached("DLSS5Feeder"))
@@ -648,6 +648,7 @@ public partial class MainViewModel
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
             progress?.Report($"Building cards for {allGames.Count} games...");
             _allCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));
+            PropagateDispatcherToCards();
             _crashReporter.Log($"[MainViewModel.InitializeAsync] BuildCards complete: {_allCards.Count} cards");
             GraphicsApiDetector.SaveCache();
             SaveGameApiCache();

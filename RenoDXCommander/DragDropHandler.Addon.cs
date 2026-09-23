@@ -27,7 +27,7 @@ public partial class DragDropHandler
         var archiveName = Path.GetFileName(archivePath);
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] Received '{archiveName}'");
 
-        var sevenZipExe = App.Services.GetRequiredService<ISevenZipExtractor>().Find7ZipExe();
+        var sevenZipExe = await App.Services.GetRequiredService<ISevenZipExtractor>().Find7ZipExeAsync();
         if (sevenZipExe == null)
         {
             var errDialog = new ContentDialog
@@ -70,7 +70,18 @@ public partial class DragDropHandler
             // Read output asynchronously to prevent deadlock
             var stdoutTask = proc.StandardOutput.ReadToEndAsync();
             var stderrTask = proc.StandardError.ReadToEndAsync();
-            proc.WaitForExit(60_000); // 60 second timeout for large archives
+            
+            // Wait asynchronously with 60 second timeout for large archives
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            try
+            {
+                await proc.WaitForExitAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                _crashReporter.Log("[DragDropHandler.ProcessDroppedArchive] 7z timed out after 60 seconds — killing process");
+                proc.Kill();
+            }
 
             var stderr = await stderrTask;
             if (!string.IsNullOrWhiteSpace(stderr))

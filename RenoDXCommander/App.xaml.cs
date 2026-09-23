@@ -348,7 +348,7 @@ public partial class App : Application
                     mw.Activate();
                     var card = mw.ViewModel.AllCards.FirstOrDefault(c =>
                         c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-                    if (card != null) mw.LaunchGame(card);
+                    if (card != null) _ = mw.LaunchGameAsync(card);
                 });
             return;
         }

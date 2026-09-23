@@ -531,7 +531,9 @@ public partial class DetailPanelBuilder
                             dlssService.RecordDlssFound(tc.GameName);
                             dlssService.RecordTrustedPath(tc.GameName, detection);
                         }
-                        _window.DispatcherQueue?.TryEnqueue(() =>
+                        _window.DispatcherQueue?.TryEnqueue(
+                            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                            () =>
                         {
                             tc.DlssDetection = detection;
                             tc.ApplyDlssDetection(detection);
@@ -560,7 +562,9 @@ public partial class DetailPanelBuilder
                             dlssService.RecordTrustedPath(tc.GameName, detection);
                         else
                             dlssService.RecordNoDlssFound(tc.GameName);
-                        _window.DispatcherQueue?.TryEnqueue(() =>
+                        _window.DispatcherQueue?.TryEnqueue(
+                            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                            () =>
                         {
                             tc.DlssDetection = detection;
                             tc.ApplyDlssDetection(detection);

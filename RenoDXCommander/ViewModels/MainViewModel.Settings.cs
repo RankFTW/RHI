@@ -1820,6 +1820,9 @@ public partial class MainViewModel
     /// <summary>Public entry point to persist all settings to disk.</summary>
     public void SaveSettingsPublic() => SaveNameMappings();
 
+    /// <summary>Flush any pending debounced saves. Call on app shutdown.</summary>
+    public void FlushPendingSaves() => _gameNameService.FlushPendingSave();
+
     private void SaveNameMappings()
     {
         _gameNameService.SaveNameMappings(

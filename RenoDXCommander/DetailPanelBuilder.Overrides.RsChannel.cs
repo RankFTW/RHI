@@ -179,7 +179,9 @@ public partial class DetailPanelBuilder
                 var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCard != null)
-                    BuildOverridesPanel(refreshCard);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCard));
                 return;
             }
 
@@ -385,7 +387,9 @@ public partial class DetailPanelBuilder
                 var refreshCardCustom = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCardCustom != null)
-                    BuildOverridesPanel(refreshCardCustom);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCardCustom));
                 return;
             }
 
@@ -409,7 +413,9 @@ public partial class DetailPanelBuilder
                 var refreshCardNoAddon = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCardNoAddon != null)
-                    BuildOverridesPanel(refreshCardNoAddon);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCardNoAddon));
                 return;
             }
 
@@ -498,7 +504,9 @@ public partial class DetailPanelBuilder
                 var refreshCardVulkan = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCardVulkan != null)
-                    BuildOverridesPanel(refreshCardVulkan);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCardVulkan));
             }
             else
             {
@@ -516,7 +524,9 @@ public partial class DetailPanelBuilder
                 var refreshCard2 = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCard2 != null)
-                    BuildOverridesPanel(refreshCard2);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCard2));
             }
 
             _window.ViewModel.NotifyUpdateButtonChanged();
@@ -544,7 +554,9 @@ public partial class DetailPanelBuilder
                 if (refreshCard != null)
                 {
                     _window.PopulateDetailPanel(refreshCard);
-                    BuildOverridesPanel(refreshCard);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCard));
                 }
             },
             isDxvkEnabled: card.DxvkEnabled,

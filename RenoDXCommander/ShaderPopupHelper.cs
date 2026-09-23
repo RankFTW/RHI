@@ -71,7 +71,7 @@ public static class ShaderPopupHelper
 
         // Build the include map once — used for dependency auto-select
         Dictionary<string, HashSet<string>> includeMap;
-        try { includeMap = shaderPackService.BuildIncludeMap(); }
+        try { includeMap = await Task.Run(() => shaderPackService.BuildIncludeMap()); }
         catch { includeMap = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase); }
 
         // Build a fallback ownership map for uncached packs — filename → packId.

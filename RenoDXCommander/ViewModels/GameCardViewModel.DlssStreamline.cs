@@ -30,13 +30,18 @@ public partial class GameCardViewModel
 
     // ── Whether backups exist (indicates a swap was done) ─────────────────────
 
-    public bool DlssHasBackup => DlssDetection?.DlssPath != null && File.Exists(DlssDetection.DlssPath + ".original");
-    public bool DlssdHasBackup => DlssDetection?.DlssdPath != null && File.Exists(DlssDetection.DlssdPath + ".original");
-    public bool DlssgHasBackup => DlssDetection?.DlssgPath != null && File.Exists(DlssDetection.DlssgPath + ".original");
-    public bool DlssnrHasBackup => DlssDetection?.DlssnrPath != null && File.Exists(DlssDetection.DlssnrPath + ".original");
-    public bool StreamlineHasBackup => DlssDetection?.StreamlineFolder != null
-        && Directory.Exists(DlssDetection.StreamlineFolder)
-        && Directory.EnumerateFiles(DlssDetection.StreamlineFolder, "*.original").Any();
+    // Cached backup state fields (populated by RefreshBackupState, called from background threads)
+    private bool _dlssHasBackup;
+    private bool _dlssdHasBackup;
+    private bool _dlssgHasBackup;
+    private bool _dlssnrHasBackup;
+    private bool _streamlineHasBackup;
+
+    public bool DlssHasBackup => _dlssHasBackup;
+    public bool DlssdHasBackup => _dlssdHasBackup;
+    public bool DlssgHasBackup => _dlssgHasBackup;
+    public bool DlssnrHasBackup => _dlssnrHasBackup;
+    public bool StreamlineHasBackup => _streamlineHasBackup;
 
     public bool HasAnyDlssBackup => DlssHasBackup || DlssdHasBackup || DlssgHasBackup || DlssnrHasBackup || StreamlineHasBackup;
 
@@ -81,7 +86,52 @@ public partial class GameCardViewModel
                 ? DlssStreamlineService.FormatVersion(detection.StreamlineVersion) : null;
         }
 
+        // Refresh backup state from disk (safe to call here since ApplyDlssDetection runs on background threads)
+        RefreshBackupState();
+
         NotifyDlssStreamlineDependents();
+    }
+
+    /// <summary>
+    /// Re-evaluates all backup existence flags by checking the filesystem.
+    /// Call from background threads only - this method does synchronous I/O.
+    /// </summary>
+    public void RefreshBackupState()
+    {
+        // DLSS backup checks
+        _dlssHasBackup = DlssDetection?.DlssPath != null && File.Exists(DlssDetection.DlssPath + ".original");
+        _dlssdHasBackup = DlssDetection?.DlssdPath != null && File.Exists(DlssDetection.DlssdPath + ".original");
+        _dlssgHasBackup = DlssDetection?.DlssgPath != null && File.Exists(DlssDetection.DlssgPath + ".original");
+        _dlssnrHasBackup = DlssDetection?.DlssnrPath != null && File.Exists(DlssDetection.DlssnrPath + ".original");
+
+        // Streamline backup check
+        _streamlineHasBackup = DlssDetection?.StreamlineFolder != null
+            && Directory.Exists(DlssDetection.StreamlineFolder)
+            && Directory.EnumerateFiles(DlssDetection.StreamlineFolder, "*.original").Any();
+
+        // INI existence checks (also cached here for efficiency)
+        _rsIniExists = File.Exists(Services.AuxInstallService.RsIniPath);
+        _dcIniExists = File.Exists(Services.AuxInstallService.DcIniPath);
+        _ulIniExists = File.Exists(Services.AuxInstallService.UlIniPath);
+        _osIniExists = File.Exists(Path.Combine(Services.AuxInstallService.InisDir, "OptiScaler.ini"));
+
+        // Vulkan-specific checks
+        if (!string.IsNullOrEmpty(InstallPath))
+        {
+            _vulkanRsIniExists = File.Exists(Path.Combine(InstallPath, "reshade.ini"));
+        }
+
+        // Vulkan layer version (for detail panel display)
+        var layerDllPath = Path.Combine(VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+        if (File.Exists(layerDllPath))
+        {
+            _vulkanLayerInstalledVersion = Services.AuxInstallService.ReadInstalledVersion(
+                VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+        }
+        else
+        {
+            _vulkanLayerInstalledVersion = null;
+        }
     }
 
     /// <summary>

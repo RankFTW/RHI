@@ -841,7 +841,22 @@ public partial class MainViewModel : ObservableObject
 
     // Dispatcher reference for cross-thread UI updates
     private Microsoft.UI.Dispatching.DispatcherQueue? DispatcherQueue { get; set; }
-    public void SetDispatcher(Microsoft.UI.Dispatching.DispatcherQueue dq) => DispatcherQueue = dq;
+    public void SetDispatcher(Microsoft.UI.Dispatching.DispatcherQueue dq)
+    {
+        DispatcherQueue = dq;
+        PropagateDispatcherToCards();
+    }
+
+    /// <summary>
+    /// Propagates the DispatcherQueue to all cards so FadeMessage can dispatch to the UI thread.
+    /// Called after SetDispatcher and whenever _allCards is reassigned.
+    /// </summary>
+    private void PropagateDispatcherToCards()
+    {
+        if (DispatcherQueue == null) return;
+        foreach (var card in _allCards)
+            card.DispatcherQueue = DispatcherQueue;
+    }
 
     /// <summary>Store the background shader-pack download task so InitializeAsync can await it.</summary>
     public void SetShaderPackReadyTask(Task task) => _shaderPackReadyTask = task;

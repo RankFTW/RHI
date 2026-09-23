@@ -225,7 +225,9 @@ public partial class DetailPanelBuilder
                             var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                                 c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                             if (refreshCard != null)
-                                BuildOverridesPanel(refreshCard);
+                                _window.DispatcherQueue?.TryEnqueue(
+                                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                                    () => BuildOverridesPanel(refreshCard));
                         }
                     }
                 }

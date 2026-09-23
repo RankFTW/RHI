@@ -544,8 +544,9 @@ public partial class ShaderPackService
     private static void WriteSettings(Dictionary<string, string> d)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-        // Retry up to 3 times with short delays — settings.json can be momentarily locked
+        // Retry up to 3 times — settings.json can be momentarily locked
         // by another process (e.g. back-to-back installs both writing exclusions at once).
+        // No Thread.Sleep — the debounced save in GameNameService will retry on the next tick.
         for (int attempt = 0; attempt < 3; attempt++)
         {
             try
@@ -554,9 +555,9 @@ public partial class ShaderPackService
                 _settingsCache = d;
                 return;
             }
-            catch (IOException) when (attempt < 2)
+            catch (IOException ex) when (attempt < 2)
             {
-                Thread.Sleep(50 * (attempt + 1)); // 50ms, 100ms
+                CrashReporter.Log($"[ShaderPackService.WriteSettings] Attempt {attempt + 1} failed — {ex.Message}");
             }
         }
         // Final attempt — let it throw if still locked
@@ -654,6 +655,23 @@ public partial class ShaderPackService
             WriteSettings(d);
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.ClearPackRegistration] Failed for '{packId}' — {ex.Message}"); }
+        finally { _settingsLock.Release(); }
+    }
+
+    /// <summary>Clears the settings.json registration entries for a pack (async-safe version).</summary>
+    public async Task ClearPackRegistrationAsync(string packId)
+    {
+        await _settingsLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var d = new Dictionary<string, string>(ReadSettings());
+            d.Remove($"ShaderPack_{packId}_Files");
+            d.Remove($"ShaderPack_{packId}_Version");
+            d.Remove($"ShaderPack_{packId}_CacheTimestamp");
+            d.Remove(ExcludedFilesKey(packId));
+            WriteSettings(d);
+        }
+        catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.ClearPackRegistrationAsync] Failed for '{packId}' — {ex.Message}"); }
         finally { _settingsLock.Release(); }
     }
 

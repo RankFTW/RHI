@@ -214,8 +214,8 @@ public class NormalReShadeUpdateService : INormalReShadeUpdateService
         progress?.Report(("Extracting Normal ReShade DLLs...", 80));
         try
         {
-            _extractor.ExtractFile(exePath, "ReShade64.dll", stagedPath64);
-            _extractor.ExtractFile(exePath, "ReShade32.dll", stagedPath32);
+            await _extractor.ExtractFileAsync(exePath, "ReShade64.dll", stagedPath64);
+            await _extractor.ExtractFileAsync(exePath, "ReShade32.dll", stagedPath32);
         }
         catch (Exception ex)
         {

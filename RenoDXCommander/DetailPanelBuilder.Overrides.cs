@@ -725,7 +725,9 @@ public partial class DetailPanelBuilder
             card.NotifyAll();
 
             // Rebuild the panel — re-reads HasDllOverride (now false) so all combos show --------
-            BuildOverridesPanel(card);
+            _window.DispatcherQueue?.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => BuildOverridesPanel(card));
         };
         topRightColumn.Children.Add(resetDllBtn);
 

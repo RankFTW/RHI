@@ -70,8 +70,7 @@ public partial class DetailPanelBuilder
         var exSummaryEntries = new List<(string, string?)>();
         if (!string.IsNullOrEmpty(vm.GetUalInstalledAs(gn, gs)))                           exSummaryEntries.Add(("ASI Loader", vm.GetUalInstalledAs(gn, gs)));
         if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("RTX 40 MFG", "On"));
-        if (!string.IsNullOrEmpty(installPath) && File.Exists(Path.Combine(installPath, "renodx-mfgunlock.addon64")))
-                                                                                            exSummaryEntries.Add(("MFG Ada", "On"));
+        if (card.MfgAdaInstalled)                                                          exSummaryEntries.Add(("MFG Ada", "On"));
         if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", "On"));
         if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
         if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", "On"));
@@ -421,17 +420,16 @@ public partial class DetailPanelBuilder
         var installPath = card.InstallPath ?? "";
 
         const string DeployFileName  = "renodx-mfgunlock.addon64";
-        const string StagedFileName  = "MFG Ada Unlock.addon64";
         var stagedPath  = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "RHI", "addons", StagedFileName);
+            "RHI", "addons", "MFG Ada Unlock.addon64");
 
-        bool isInstalled   = !string.IsNullOrEmpty(installPath) && File.Exists(Path.Combine(installPath, DeployFileName));
+        // Use cached state from card instead of File.Exists on UI thread
+        bool isInstalled   = card.MfgAdaInstalled;
         bool rsInstalled   = card.IsRsInstalled;
-        var mfgInstalledAs = _window.ViewModel.GetRtx40MfgInstalledAs(card.GameName, card.Source ?? "");
-        bool rtx40Conflict = !string.IsNullOrEmpty(mfgInstalledAs) &&
-            !string.IsNullOrEmpty(installPath) && File.Exists(Path.Combine(installPath, mfgInstalledAs));
-        bool staged        = File.Exists(stagedPath);
+        bool rtx40Conflict = card.Rtx40MfgInstalled;
+        // Use AddonPackService.IsDownloaded instead of File.Exists
+        bool staged        = _window.ViewModel.AddonPackServiceInstance.IsDownloaded("MFG Ada Unlock");
 
         var   addonVersion = AddonPackService.LoadAddonVersion("MFG Ada Unlock");
         string statusText  = isInstalled ? (string.IsNullOrEmpty(addonVersion) ? "Installed" : $"v{addonVersion}") : "Ready";
@@ -1009,8 +1007,8 @@ public partial class DetailPanelBuilder
 
         var currentDllName = _window.ViewModel.GetDlssg2030InstalledAs(gameName, store);
         bool isInstalled   = svc.IsInstalledIn(installPath, currentDllName);
-        bool addonConflict = !string.IsNullOrEmpty(installPath) &&
-            File.Exists(Path.Combine(installPath, "renodx-mfgunlock.addon64"));
+        // Use cached state from card instead of File.Exists on UI thread
+        bool addonConflict = card.MfgAdaInstalled;
 
         string statusText  = isInstalled ? (svc.StagedVersion ?? "Installed") : "Ready";
         string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
@@ -1343,12 +1341,10 @@ public partial class DetailPanelBuilder
         var store        = card.Source ?? "";
         var installPath  = card.InstallPath ?? "";
 
+        // Use cached state from card instead of File.Exists on UI thread
+        bool isInstalled   = card.Rtx40MfgInstalled;
+        bool addonConflict = card.MfgAdaInstalled;
         var currentDllName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store);
-        bool isInstalled   = !string.IsNullOrEmpty(currentDllName)
-                             && !string.IsNullOrEmpty(installPath)
-                             && File.Exists(Path.Combine(installPath, currentDllName));
-        bool addonConflict = !string.IsNullOrEmpty(installPath) &&
-            File.Exists(Path.Combine(installPath, "renodx-mfgunlock.addon64"));
 
         // Status
         string statusText  = isInstalled ? (mfgSvc.StagedVersion ?? "Installed") : "Ready";

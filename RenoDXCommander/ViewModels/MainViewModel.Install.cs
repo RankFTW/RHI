@@ -793,6 +793,7 @@ public partial class MainViewModel
         }
 
         _allCards.Add(card);
+        card.DispatcherQueue = DispatcherQueue;  // Set dispatcher for newly added card
         _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
         SaveLibrary();
         _filterViewModel.SetAllCards(_allCards);

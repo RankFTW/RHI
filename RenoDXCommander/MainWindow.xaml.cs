@@ -137,7 +137,7 @@ public sealed partial class MainWindow : Window
                         c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
                     if (card != null)
                     {
-                        DispatcherQueue.TryEnqueue(() => LaunchGame(card));
+                        DispatcherQueue.TryEnqueue(async () => await LaunchGameAsync(card));
                     }
                 });
             TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentGamesMenu ? ViewModel.Settings.RecentLaunches : new List<string>());
@@ -262,7 +262,7 @@ public sealed partial class MainWindow : Window
                 launchTimer.Stop();
                 var card = ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
-                if (card != null) LaunchGame(card);
+                if (card != null) _ = LaunchGameAsync(card);
             };
             launchTimer.Start();
         }
@@ -316,7 +316,7 @@ public sealed partial class MainWindow : Window
                     c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
                 if (card != null)
                 {
-                    DispatcherQueue.TryEnqueue(() => LaunchGame(card));
+                    DispatcherQueue.TryEnqueue(async () => await LaunchGameAsync(card));
                 }
             });
         TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentGamesMenu ? ViewModel.Settings.RecentLaunches : new List<string>());
@@ -362,6 +362,7 @@ public sealed partial class MainWindow : Window
         _windowStateManager.CleanupOleDragDrop();
         TrayIconService.Dispose();
         SingleInstanceService.Stop();
+        ViewModel.FlushPendingSaves(); // Flush any debounced saves before final save
         ViewModel.SaveSettingsPublic();
         ViewModel.SaveLibraryPublic();
         _windowStateManager.SaveWindowBounds();

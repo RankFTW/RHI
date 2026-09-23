@@ -62,8 +62,11 @@ public partial class GameCardViewModel
     /// </summary>
     public bool OsInstallEnabled => !OsIsInstalling && !Is32Bit;
 
+    // Cached INI existence (populated by RefreshBackupState, called from background threads)
+    private bool _osIniExists;
+
     /// <summary>True when OptiScaler.ini exists in the inis folder.</summary>
-    public bool OsIniExists => File.Exists(Path.Combine(Services.AuxInstallService.InisDir, "OptiScaler.ini"));
+    public bool OsIniExists => _osIniExists;
 
     /// <summary>OptiScaler row is always visible for all games.</summary>
     public Visibility OsRowVisibility => Visibility.Visible;

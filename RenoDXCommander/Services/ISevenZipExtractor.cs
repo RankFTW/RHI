@@ -8,7 +8,7 @@ namespace RenoDXCommander.Services;
 public interface ISevenZipExtractor
 {
     /// <summary>
-    /// Extracts a single file from the ReShade installer exe.
+    /// Extracts a single file from the ReShade installer exe asynchronously.
     /// Tries System.IO.Compression (ZIP) first, then 7-Zip for NSIS.
     /// </summary>
     /// <param name="exePath">Path to the ReShade installer executable.</param>
@@ -17,13 +17,13 @@ public interface ISevenZipExtractor
     /// <exception cref="FileNotFoundException">
     /// Thrown when the installer is not found or the entry cannot be extracted.
     /// </exception>
-    void ExtractFile(string exePath, string entryName, string outputPath);
+    Task ExtractFileAsync(string exePath, string entryName, string outputPath);
 
     /// <summary>
-    /// Finds 7z.exe on the system. Checks the bundled copy, common install locations, and PATH.
+    /// Finds 7z.exe on the system asynchronously. Checks the bundled copy, common install locations, and PATH.
     /// </summary>
     /// <returns>Path to 7z.exe, or <c>null</c> if not found.</returns>
-    string? Find7ZipExe();
+    Task<string?> Find7ZipExeAsync();
 
     /// <summary>
     /// Lists all entry names found inside the archive (for diagnostics).

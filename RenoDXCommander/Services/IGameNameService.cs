@@ -194,7 +194,7 @@ public interface IGameNameService
         Action<string> setFilterMode,
         Action<List<CustomFilter>> setCustomFilters);
 
-    /// <summary>Persists all settings to disk.</summary>
+    /// <summary>Persists all settings to disk (debounced — 250ms delay coalesces rapid calls).</summary>
     void SaveNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
@@ -202,6 +202,22 @@ public interface IGameNameService
         bool isLoadingSettings,
         string filterMode,
         List<CustomFilter> customFilters);
+
+    /// <summary>
+    /// Persists all settings to disk immediately (bypasses debounce).
+    /// Use for game rename and app shutdown where immediate persistence is required.
+    /// </summary>
+    void SaveNameMappingsImmediate(
+        IDllOverrideService dllOverrideService,
+        SettingsViewModel settingsViewModel,
+        ViewLayout currentViewLayout,
+        string filterMode,
+        List<CustomFilter> customFilters);
+
+    /// <summary>
+    /// Flushes any pending debounced save immediately. Call on app shutdown.
+    /// </summary>
+    void FlushPendingSave();
 
     // ── Name mapping CRUD ─────────────────────────────────────────────────────
 

@@ -801,6 +801,8 @@ public partial class MainViewModel
                 _allCards.Remove(stale);
 
             // Add new games
+            foreach (var newCard in cardsToAdd)
+                newCard.DispatcherQueue = DispatcherQueue;
             _allCards.AddRange(cardsToAdd);
 
             // Preserve SelectedGame: if still in list keep it, if removed select first card

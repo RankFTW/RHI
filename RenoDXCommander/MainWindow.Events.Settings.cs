@@ -585,13 +585,23 @@ public sealed partial class MainWindow
         var presetService = App.Services.GetRequiredService<DlssPresetService>();
         if (!presetService.IsSupported) return;
 
-        var created = new List<string>();
-        foreach (var card in ViewModel.AllCards)
+        // Copy card data for background thread
+        var cardData = ViewModel.AllCards
+            .Where(c => !c.IsHidden && !string.IsNullOrEmpty(c.InstallPath))
+            .Select(c => (c.GameName, c.InstallPath))
+            .ToList();
+
+        // Run profile creation on background thread — may involve exe scanning
+        var created = await Task.Run(() =>
         {
-            if (card.IsHidden || string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (presetService.EnsureProfileExists(card.GameName, card.InstallPath))
-                created.Add(card.GameName);
-        }
+            var list = new List<string>();
+            foreach (var (gameName, installPath) in cardData)
+            {
+                if (presetService.EnsureProfileExists(gameName, installPath))
+                    list.Add(gameName);
+            }
+            return list;
+        });
 
         var content = created.Count > 0
             ? $"Created {created.Count} profile(s):\n\n• " + string.Join("\n• ", created)
@@ -1285,7 +1295,7 @@ public sealed partial class MainWindow
                     var card = ViewModel.AllCards.FirstOrDefault(c =>
                         c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
                     if (card != null)
-                        DispatcherQueue.TryEnqueue(() => LaunchGame(card));
+                        DispatcherQueue.TryEnqueue(async () => await LaunchGameAsync(card));
                 });
             TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentGamesMenu ? ViewModel.Settings.RecentLaunches : new List<string>());
         }
