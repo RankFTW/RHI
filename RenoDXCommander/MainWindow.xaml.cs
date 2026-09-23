@@ -333,14 +333,25 @@ public sealed partial class MainWindow : Window
             // Only restore once
             this.Activated -= MainWindow_Activated;
 
-            // If starting minimized, hide instead of restoring
+            // Always restore saved bounds — even when starting minimized, so the
+            // window has the correct size/position when the user later shows it from tray.
+            _windowStateManager.TryRestoreWindowBounds();
+
+            // If starting minimized, hide after restoring bounds
             if (App._startMinimized)
             {
                 AppWindow.Hide();
                 return;
             }
 
-            _windowStateManager.TryRestoreWindowBounds();
+            // Apply bounds a second time deferred — on some systems (especially after reboot)
+            // WinUI's layout system resizes the window after Activated fires. The deferred
+            // re-apply ensures our saved size wins over the default layout size.
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                try { _windowStateManager.TryRestoreWindowBounds(); }
+                catch { }
+            });
         }
         catch (Exception ex) { _crashReporter.Log($"[MainWindow.MainWindow_Activated] Failed to restore window bounds — {ex.Message}"); }
     }
