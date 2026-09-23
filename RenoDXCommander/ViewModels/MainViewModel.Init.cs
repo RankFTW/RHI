@@ -848,7 +848,7 @@ public partial class MainViewModel
             var offlineMode = wikiFetchFailed;
             StatusText    = offlineMode
                 ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
-                : $"{detectedGames.Count} games detected · {InstalledCount} mods installed";
+                : $"{detectedGames.Count} games detected · {InstalledCount} ReShade installs";
             SubStatusText = "";
         }
         catch (Exception ex)

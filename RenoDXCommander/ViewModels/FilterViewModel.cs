@@ -387,7 +387,7 @@ public partial class FilterViewModel : ObservableObject
 
     public void UpdateCounts()
     {
-        InstalledCount  = _allCards.Count(c => c.Status == GameStatus.Installed || c.Status == GameStatus.UpdateAvailable);
+        InstalledCount  = _allCards.Count(c => c.RsStatus == GameStatus.Installed || c.RsStatus == GameStatus.UpdateAvailable);
         HiddenCount     = _allCards.Count(c => c.IsHidden);
         FavouriteCount  = _allCards.Count(c => c.IsFavourite);
         TotalGames      = _displayedGames?.Count ?? 0;

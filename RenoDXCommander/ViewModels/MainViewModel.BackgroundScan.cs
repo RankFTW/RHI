@@ -491,7 +491,7 @@ public partial class MainViewModel
             {
                 StatusText = offlineMode
                     ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
-                    : $"{detectedGames.Count} games detected · {InstalledCount} mods installed";
+                    : $"{detectedGames.Count} games detected · {InstalledCount} ReShade installs";
                 SubStatusText = "";
 
                 // Re-scroll to selected game after merge (cards may have shifted)
