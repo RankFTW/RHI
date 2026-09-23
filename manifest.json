@@ -783,6 +783,7 @@
     "Vanquish"
   ],
   "dgVoodooVersions": {
+    "2.87.5": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.5/dgVoodoo2_87_5.zip",
     "2.87.4": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.4/dgVoodoo2_87_4.zip",
     "2.87.3": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.3/dgVoodoo2_87_3.zip",
     "2.81.3": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.81.3/dgVoodoo2_81_3.zip"
