@@ -52,6 +52,14 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _globalSkipOsUpdates;
     [ObservableProperty] private bool _globalSkipRefUpdates;
     [ObservableProperty] private bool _cacheAllShaders = true;
+
+    // ── Custom Game Folders ───────────────────────────────────────────────────
+    /// <summary>User-chosen folders scanned for games (normalised paths; offline drives are kept).</summary>
+    [ObservableProperty] private List<string> _customGameFolders = new();
+    /// <summary>When true, a normal Refresh also scans the custom folders. Startup and Full Refresh always do.</summary>
+    [ObservableProperty] private bool _customFoldersAutoScan = true;
+    /// <summary>Candidate paths the user declined in the review dialog, so they are not re-suggested on every scan.</summary>
+    [ObservableProperty] private List<string> _customFolderDismissed = new();
     [ObservableProperty] private string _lastUpdateCheckUtc = "";
     [ObservableProperty] private string _dxvkVariant = "Development";
     [ObservableProperty] private string _reShadeChannel = "Stable";
@@ -312,6 +320,17 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("GlobalSkipOsUpdates", out var gsoVal)) GlobalSkipOsUpdates = gsoVal == "true";
         if (s.TryGetValue("GlobalSkipRefUpdates", out var gsrefVal)) GlobalSkipRefUpdates = gsrefVal == "true";
         if (s.TryGetValue("CacheAllShaders", out var casVal)) CacheAllShaders = casVal != "false"; // default true
+        if (s.TryGetValue("CustomGameFolders", out var cgfVal))
+        {
+            try { CustomGameFolders = CustomFolderPaths.NormalizeList(JsonSerializer.Deserialize<List<string>>(cgfVal)); }
+            catch { CustomGameFolders = new(); }
+        }
+        if (s.TryGetValue("CustomFoldersAutoScan", out var cfasVal)) CustomFoldersAutoScan = cfasVal != "false"; // default true
+        if (s.TryGetValue("CustomFolderDismissed", out var cfdVal))
+        {
+            try { CustomFolderDismissed = CustomFolderPaths.NormalizeList(JsonSerializer.Deserialize<List<string>>(cfdVal)); }
+            catch { CustomFolderDismissed = new(); }
+        }
         if (s.TryGetValue("LastUpdateCheckUtc", out var luc)) LastUpdateCheckUtc = luc;
         if (s.TryGetValue("DxvkVariant", out var dvVal)) DxvkVariant = dvVal ?? "Development";
         if (s.TryGetValue("ReShadeChannel", out var rscVal)) ReShadeChannel = rscVal ?? "Stable";
@@ -465,6 +484,14 @@ public partial class SettingsViewModel : ObservableObject
         s["GlobalSkipOsUpdates"] = GlobalSkipOsUpdates ? "true" : "false";
         s["GlobalSkipRefUpdates"] = GlobalSkipRefUpdates ? "true" : "false";
         s["CacheAllShaders"] = CacheAllShaders ? "true" : "false";
+        // Custom folder keys are only written when they differ from the defaults, so settings.json is
+        // left exactly as it was for anyone who never uses the feature.
+        if (CustomGameFolders.Count > 0) s["CustomGameFolders"] = JsonSerializer.Serialize(CustomGameFolders);
+        else s.Remove("CustomGameFolders");
+        if (!CustomFoldersAutoScan) s["CustomFoldersAutoScan"] = "false";
+        else s.Remove("CustomFoldersAutoScan");
+        if (CustomFolderDismissed.Count > 0) s["CustomFolderDismissed"] = JsonSerializer.Serialize(CustomFolderDismissed);
+        else s.Remove("CustomFolderDismissed");
         s["LastUpdateCheckUtc"] = LastUpdateCheckUtc;
         s["DxvkVariant"] = DxvkVariant;
         s["ReShadeChannel"] = ReShadeChannel;

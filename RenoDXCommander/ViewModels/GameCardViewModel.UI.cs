@@ -140,7 +140,7 @@ public partial class GameCardViewModel
     public string SourceIcon => Source switch
     {
         "Steam" => "🟦", "GOG" => "🟣", "Epic" => "🟤", "EA App" => "🟧",
-        "Ubisoft" => "🟠", "Manual" => "🔧", _ => "🎮"
+        "Ubisoft" => "🟠", "Manual" => "🔧", "Custom" => "📁", _ => "🎮"
     };
 
     public string? SourceIconPath => Source switch

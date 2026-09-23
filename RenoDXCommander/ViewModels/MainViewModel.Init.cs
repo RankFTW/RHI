@@ -157,7 +157,10 @@ public partial class MainViewModel
         }
         catch (Exception ex) { _crashReporter.Log($"[FullRefreshAsync] Install record validation failed — {ex.Message}"); }
 
-        await InitializeAsync(forceRescan: true, progress: progress);
+        // Full Refresh always includes the custom game folders, regardless of "Auto-scan on Refresh".
+        _fullRefreshInProgress = true;
+        try { await InitializeAsync(forceRescan: true, progress: progress); }
+        finally { _fullRefreshInProgress = false; }
     }
 
     /// <summary>Forces the next update check to bypass the 4-hour cooldown.</summary>
@@ -302,7 +305,9 @@ public partial class MainViewModel
             var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? _renoDxDbService.FetchAllAsync()
                 : Task.FromResult<(List<GameMod>, Dictionary<string, RenoDXDbUnrealEntry>)>((new(), new(StringComparer.OrdinalIgnoreCase)));
-            var detectTask   = DetectAllGamesDedupedAsync();
+            var detectTask   = DetectAllGamesDedupedAsync(
+                !forceRescan ? CustomScanTrigger.Startup
+                : _fullRefreshInProgress ? CustomScanTrigger.FullRefresh : CustomScanTrigger.Refresh);
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }
@@ -869,9 +874,6 @@ public partial class MainViewModel
             IsLoading = false;
         }
     }
-
-    private Task<List<DetectedGame>> DetectAllGamesDedupedAsync()
-        => _gameInitializationService.DetectAllGamesDedupedAsync();
 
     // ── Card building ─────────────────────────────────────────────────────────────
 

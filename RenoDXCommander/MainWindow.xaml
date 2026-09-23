@@ -44,6 +44,14 @@
 
                 <!-- Action buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button x:Name="CustomReviewBtn"
+                            Content="{x:Bind ViewModel.CustomReviewButtonText, Mode=OneWay}"
+                            Click="CustomReviewButton_Click"
+                            Visibility="{x:Bind ViewModel.CustomReviewButtonVisibility, Mode=OneWay}"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentAmberBrush}"
+                            BorderBrush="{StaticResource AccentAmberDimBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Review games found in your custom game folders that RHI wasn't sure about"/>
                     <Button x:Name="NewModsBtn" Content="New Mods Available"
                             Click="NewModsButton_Click"
                             Visibility="{x:Bind ViewModel.NewWikiModsButtonVisibility, Mode=OneWay}"
@@ -1122,6 +1130,55 @@
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <StackPanel Padding="32,24,32,40" Spacing="14" MaxWidth="800"
                                 HorizontalAlignment="Center">
+
+                        <!-- ═══════════════════════════════════════════════
+                             GAME LIBRARY: CUSTOM GAME FOLDERS
+                             ═══════════════════════════════════════════════ -->
+                        <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Game Library" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Custom Game Folders" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Folders RHI scans for games that aren't installed through a store launcher (for example D:\Games). Only the folders listed here are scanned - on startup and on Refresh. A folder on a drive that is unplugged stays in the list and is skipped until it is back."/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button x:Name="AddCustomGameFolderBtn" Content="Add Folder"
+                                            Click="AddCustomGameFolder_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"/>
+                                    <Button x:Name="ScanCustomFoldersBtn" Content="Scan Now"
+                                            Click="ScanCustomGameFolders_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            ToolTipService.ToolTip="Scan only your custom folders now and review what was found"/>
+                                </StackPanel>
+                                <StackPanel x:Name="CustomFolderListPanel" Spacing="6"/>
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Auto-scan on Refresh" FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               ToolTipService.ToolTip="When On, the Refresh button also scans your custom folders. Startup and Full Refresh always do."/>
+                                    <ComboBox Grid.Column="1" x:Name="CustomGameFoldersAutoScanCombo" MinWidth="110" FontSize="12"
+                                              SelectionChanged="CustomGameFoldersAutoScanCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Off"/>
+                                        <ComboBoxItem Content="On"/>
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock x:Name="CustomFolderStatusText" TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource AccentTealBrush}" Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Border>
 
                         <!-- ══════════════════════════════════════════════════════════
                              CARD 1: GAME LIBRARY

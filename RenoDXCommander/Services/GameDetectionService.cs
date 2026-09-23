@@ -14,7 +14,7 @@ public partial class GameDetectionService : IGameDetectionService
     /// Maximum directory depth for file system scans when searching for game executables.
     /// Prevents scanning deeply nested folders that are unlikely to contain game binaries.
     /// </summary>
-    private const int MaxScanDepth = 4;
+    internal const int MaxScanDepth = 4;
 
     /// <summary>
     /// Caches engine detection results keyed by root install path to avoid redundant file system scans
