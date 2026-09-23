@@ -1,7 +1,7 @@
 {
   "version": 1,
   "game_count": 55280,
-  "generated": "2026-09-23T20:31:04Z",
+  "generated": "2026-09-23T21:21:45Z",
   "name_overrides": {
     "AFOP": "Avatar: Frontiers of Pandora",
     "Alan Wake 2": "Alan Wake 2",
@@ -48399,6 +48399,7 @@
     },
     "Endless Space 2": {
       "steam_appid": 392110,
+      "dx11": true,
       "config_path": "%USERPROFILE%\\Documents\\Endless Space 2\\Users\\<user-id>\\Registry.xml"
     },
     "Endless Tower": {
@@ -169284,6 +169285,7 @@
     },
     "Warhammer 40,000: Dawn of War II: Retribution": {
       "steam_appid": 56437,
+      "dx9": true,
       "config_path": "%USERPROFILE%\\Documents\\My Games\\Dawn of War II - Retribution\\Settings\\"
     },
     "Warhammer 40,000: Dawn of War III": {
