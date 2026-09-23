@@ -493,8 +493,13 @@ public class PcgwService : IPcgwService
     /// </summary>
     private static readonly SemaphoreSlim _pcgwRequestLimiter = new(1, 1);
 
-    /// <summary>Minimum gap between two PCGW requests, enforced by <see cref="_pcgwRequestLimiter"/>.</summary>
-    private const int PcgwMinGapMs = 500;
+    /// <summary>
+    /// Minimum gap between two PCGW requests, enforced by <see cref="_pcgwRequestLimiter"/>.
+    /// 1000 ms keeps worst-case sustained traffic below PCGW's documented limit of
+    /// 60 requests/minute — exceeding it returns HTTP 429 and blocks the IP.
+    /// See https://www.pcgamingwiki.com/wiki/PCGamingWiki:API
+    /// </summary>
+    private const int PcgwMinGapMs = 1000;
 
     /// <summary>
     /// Queries the PCGW OpenSearch API and returns the wiki URL for the first result.
