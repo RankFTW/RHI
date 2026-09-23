@@ -470,10 +470,10 @@ public partial class MainViewModel
                             // the centralized data is authoritative and the per-page scrape is redundant.
                             if (_pcgwService.IsInCentralData(card.GameName, card.DetectedGame?.SteamAppId)) continue;
                             if (_pcgwService.GetCachedApiInfo(card.GameName) != null) continue;
+                            // Rate limiting (serialization + minimum gap between requests)
+                            // is enforced inside PcgwService — no caller-side delay needed.
                             await _pcgwService.FetchApiInfoAsync(card.GameName, card.PcgwUrl).ConfigureAwait(false);
                             scraped++;
-                            // Gentle rate limit — avoid hammering PCGW
-                            await Task.Delay(500).ConfigureAwait(false);
                         }
                         if (scraped > 0)
                             _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Scraped PCGW API info for {scraped} game(s) (cap={ApiScrapeCap})");

@@ -156,17 +156,22 @@ public class PcgwService : IPcgwService
     private readonly object _saveLock = new();
 
     /// <summary>
-    /// Circuit breaker: once PCGW returns an error or times out, skip all further
-    /// lookups for the rest of the session to avoid blocking card builds.
+    /// Circuit breaker deadline (UTC ticks) — while in the future, all PCGW lookups
+    /// are skipped to avoid blocking card builds. The break expires automatically,
+    /// so a transient outage or a 429 Retry-After window recovers without an app
+    /// restart (was: permanent kill for the rest of the session).
     /// </summary>
-    private volatile bool _pcgwDown;
+    private long _pcgwBreakUntilTicksUtc;
 
-    /// <summary>
-    /// Shared cancellation source — cancelled when the circuit breaker trips so
-    /// all in-flight PCGW requests abort immediately instead of each waiting
-    /// their own 5-second timeout.
-    /// </summary>
-    private readonly CancellationTokenSource _pcgwCts = new();
+    /// <summary>True while the circuit breaker is active.</summary>
+    private bool IsPcgwDown => DateTime.UtcNow.Ticks < Volatile.Read(ref _pcgwBreakUntilTicksUtc);
+
+    /// <summary>Backoff used when PCGW fails without a usable Retry-After header.</summary>
+    private static readonly TimeSpan DefaultBreakDuration = TimeSpan.FromMinutes(5);
+
+    /// <summary>Lower/upper bounds for any break (server-supplied or default).</summary>
+    private static readonly TimeSpan MinBreakDuration = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan MaxBreakDuration = TimeSpan.FromMinutes(15);
 
     public PcgwService(HttpClient http, ISteamAppIdResolver steamAppIdResolver, IGameDetectionService gameDetection)
     {
@@ -480,10 +485,14 @@ public class PcgwService : IPcgwService
         => $"https://www.pcgamingwiki.com/wiki/{pageTitle.Replace(' ', '_')}";
 
     /// <summary>
-    /// Rate-limits OpenSearch calls to one every 500ms — shared across all callers.
-    /// Prevents back-to-back requests that hammer PCGW when many games miss the cache.
+    /// Shared rate limiter for ALL PCGW HTTP requests (OpenSearch and page/API
+    /// fetches) — serializes them and enforces a minimum gap between requests
+    /// across every caller, so no call path can bypass throttling.
     /// </summary>
-    private static readonly SemaphoreSlim _openSearchLimiter = new(1, 1);
+    private static readonly SemaphoreSlim _pcgwRequestLimiter = new(1, 1);
+
+    /// <summary>Minimum gap between two PCGW requests, enforced by <see cref="_pcgwRequestLimiter"/>.</summary>
+    private const int PcgwMinGapMs = 500;
 
     /// <summary>
     /// Queries the PCGW OpenSearch API and returns the wiki URL for the first result,
@@ -492,20 +501,24 @@ public class PcgwService : IPcgwService
     /// </summary>
     private async Task<string?> OpenSearchFallbackAsync(string gameName)
     {
-        if (_pcgwDown) return null;
+        if (IsPcgwDown) return null;
 
-        await _openSearchLimiter.WaitAsync().ConfigureAwait(false);
+        await _pcgwRequestLimiter.WaitAsync().ConfigureAwait(false);
         try
         {
             var encodedName = Uri.EscapeDataString(gameName);
             var url = $"https://www.pcgamingwiki.com/w/api.php?action=opensearch&search={encodedName}&limit=5&format=json";
 
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_pcgwCts.Token);
-            cts.CancelAfter(TimeSpan.FromSeconds(5));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var response = await _http.GetAsync(url, cts.Token).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
+                if ((int)response.StatusCode == 429)
+                {
+                    var breakFor = TripCircuitBreaker(response);
+                    CrashReporter.Log($"[PcgwService.OpenSearchFallback] Rate limited — PCGW paused for {breakFor.TotalSeconds:0}s");
+                }
                 CrashReporter.Log($"[PcgwService.OpenSearchFallback] OpenSearch returned {(int)response.StatusCode} for '{gameName}'");
                 return null;
             }
@@ -539,18 +552,72 @@ public class PcgwService : IPcgwService
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[PcgwService.OpenSearchFallback] Failed — {ex.Message} — disabling PCGW for this session");
-            _pcgwDown = true;
-            try { _pcgwCts.Cancel(); } catch { }
+            CrashReporter.Log($"[PcgwService.OpenSearchFallback] Failed — {ex.Message} — pausing PCGW for {DefaultBreakDuration.TotalMinutes:0} min");
+            TripCircuitBreaker(DefaultBreakDuration);
             return null;
         }
         finally
         {
-            // Hold the rate limiter for 500ms after each request before releasing.
-            // This enforces a minimum 500ms gap between OpenSearch calls across all callers.
-            await Task.Delay(500).ConfigureAwait(false);
-            _openSearchLimiter.Release();
+            // Hold the rate limiter the minimum gap after each request before releasing.
+            // This enforces a minimum gap between PCGW calls across all callers.
+            await Task.Delay(PcgwMinGapMs).ConfigureAwait(false);
+            _pcgwRequestLimiter.Release();
         }
+    }
+
+    /// <summary>
+    /// Trips the circuit breaker using the response's Retry-After header when
+    /// present, otherwise <see cref="DefaultBreakDuration"/>. Returns the break
+    /// duration actually applied (clamped).
+    /// </summary>
+    private TimeSpan TripCircuitBreaker(HttpResponseMessage response)
+        => TripCircuitBreaker(ParseRetryAfter(response) ?? DefaultBreakDuration);
+
+    /// <summary>
+    /// Trips the circuit breaker for the requested duration, clamped to
+    /// [<see cref="MinBreakDuration"/>, <see cref="MaxBreakDuration"/>].
+    /// Returns the clamped duration.
+    /// </summary>
+    private TimeSpan TripCircuitBreaker(TimeSpan requested)
+    {
+        var breakFor = ClampBreakDuration(requested);
+        Volatile.Write(ref _pcgwBreakUntilTicksUtc, DateTime.UtcNow.Add(breakFor).Ticks);
+        return breakFor;
+    }
+
+    /// <summary>
+    /// Clamps a break duration to sane bounds so a bogus Retry-After value can
+    /// neither disable PCGW for hours nor resume instantly in a hot loop.
+    /// Exposed as internal static for testability.
+    /// </summary>
+    internal static TimeSpan ClampBreakDuration(TimeSpan requested)
+    {
+        if (requested < MinBreakDuration) return MinBreakDuration;
+        if (requested > MaxBreakDuration) return MaxBreakDuration;
+        return requested;
+    }
+
+    /// <summary>
+    /// Reads the Retry-After header from a 429 response (delta-seconds or
+    /// HTTP-date form). Returns null when absent or unparseable so callers
+    /// fall back to <see cref="DefaultBreakDuration"/>.
+    /// Exposed as internal static for testability.
+    /// </summary>
+    internal static TimeSpan? ParseRetryAfter(HttpResponseMessage response)
+    {
+        var header = response.Headers.RetryAfter;
+        if (header == null) return null;
+
+        if (header.Delta.HasValue)
+            return header.Delta.Value;
+
+        if (header.Date.HasValue)
+        {
+            var delta = header.Date.Value - DateTimeOffset.UtcNow;
+            return delta > TimeSpan.Zero ? delta : TimeSpan.Zero;
+        }
+
+        return null;
     }
 
     /// <inheritdoc />
@@ -776,26 +843,46 @@ public class PcgwService : IPcgwService
     /// </summary>
     public async Task<PcgwApiInfo?> FetchApiInfoAsync(string gameName, string wikiUrl)
     {
-        if (_pcgwDown) return null;
+        if (IsPcgwDown) return null;
 
         var normalized = _gameDetection.NormalizeName(gameName);
 
-        // Return cached result if we already have it
+        // Return cached result if we already have it — no rate-limit slot consumed.
         if (_apiInfoCache.TryGetValue(normalized, out var cached))
             return cached;
 
+        // Serialize with every other PCGW request (OpenSearch, page fetches) and
+        // enforce the minimum gap — throttling lives in the service so no caller
+        // can bypass it.
+        await _pcgwRequestLimiter.WaitAsync().ConfigureAwait(false);
         try
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_pcgwCts.Token);
-            cts.CancelAfter(TimeSpan.FromSeconds(8));
+            return await FetchApiInfoCoreAsync(gameName, wikiUrl, normalized).ConfigureAwait(false);
+        }
+        finally
+        {
+            await Task.Delay(PcgwMinGapMs).ConfigureAwait(false);
+            _pcgwRequestLimiter.Release();
+        }
+    }
+
+    /// <summary>
+    /// Performs the actual PCGW page fetch + parse. Caller must already hold
+    /// <see cref="_pcgwRequestLimiter"/>.
+    /// </summary>
+    private async Task<PcgwApiInfo?> FetchApiInfoCoreAsync(string gameName, string wikiUrl, string normalized)
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
 
             var response = await _http.GetAsync(wikiUrl, cts.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
                 if ((int)response.StatusCode == 429)
                 {
-                    CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Rate limited — flushing {_apiInfoCache.Count} entries");
-                    _pcgwDown = true;
+                    var breakFor = TripCircuitBreaker(response);
+                    CrashReporter.Log($"[PcgwService.FetchApiInfoAsync] Rate limited — PCGW paused for {breakFor.TotalSeconds:0}s, saving {_apiInfoCache.Count} cached entries");
                     SaveApiCacheToDisk();
                 }
                 else
