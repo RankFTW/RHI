@@ -161,6 +161,8 @@ public partial class DetailPanelBuilder
 
                 var sw = System.Diagnostics.Stopwatch.StartNew();
 
+                _window.ViewModel.SetLastUiAction($"BuildNvidiaProfileBody({gameName})");
+
                 // Update card cached driver override flags so the collapsed summary shows "NV Override"
                 if (dlssData != null)
                 {

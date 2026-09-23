@@ -10,19 +10,32 @@ public partial class MainViewModel
 {
     private System.Threading.Timer? _updateCheckTimer;
     private System.Threading.Timer? _heartbeatTimer;
+    private volatile string _lastUiAction = "none";
+
+    /// <summary>Tracks the last action dispatched to the UI thread for freeze diagnostics.</summary>
+    internal void SetLastUiAction(string action) => _lastUiAction = action;
 
     /// <summary>
-    /// Starts a 10-second heartbeat timer that logs the UI thread responsiveness.
-    /// Runs on a thread-pool thread so it keeps ticking even if the UI is frozen.
-    /// If the log stops between heartbeat entries, the freeze happened in that window.
+    /// Starts a 10-second heartbeat timer. On each tick it posts a quick probe to the UI thread.
+    /// If the probe doesn't come back within 3 seconds, logs the last known UI action — that's
+    /// what the UI thread was doing when it froze.
     /// </summary>
     internal void StartHeartbeatTimer()
     {
         _heartbeatTimer = new System.Threading.Timer(_ =>
         {
-            // This runs on a background thread — always ticks even when UI is frozen.
-            // Log the current wall-clock time so we can pinpoint exactly when a freeze starts.
-            _crashReporter.Log($"[Heartbeat] {DateTime.Now:HH:mm:ss.fff} — alive");
+            var probeReceived = false;
+            DispatcherQueue?.TryEnqueue(() => { probeReceived = true; });
+
+            // Wait up to 3 seconds for the UI thread to process the probe
+            var deadline = Environment.TickCount64 + 3000;
+            while (!probeReceived && Environment.TickCount64 < deadline)
+                System.Threading.Thread.Sleep(100);
+
+            if (probeReceived)
+                _crashReporter.Log($"[Heartbeat] UI responsive — last action: {_lastUiAction}");
+            else
+                _crashReporter.Log($"[Heartbeat] *** UI FROZEN *** last action before freeze: {_lastUiAction}");
         }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
     }
 
