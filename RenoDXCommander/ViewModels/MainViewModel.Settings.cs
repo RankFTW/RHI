@@ -302,6 +302,29 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    /// <summary>Returns the persisted NR DLL version for a game. Empty string = use latest.</summary>
+    public string GetNrDllVersion(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.NrDllVersion.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.NrDllVersion.TryGetValue(gameName, out var vL) && !string.IsNullOrEmpty(vL)) return vL;
+        return "";
+    }
+
+    /// <summary>Sets the persisted NR DLL version for a game. Null or empty clears the override (use latest).</summary>
+    public void SetNrDllVersion(string gameName, string? version, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(version))
+        {
+            _gameNameService.NrDllVersion.Remove(key);
+            _gameNameService.NrDllVersion.Remove(gameName);
+        }
+        else
+            _gameNameService.NrDllVersion[key] = version;
+        SaveNameMappings();
+    }
+
     /// <summary>Returns the persisted NR pack version (Feeder or Bridge) for a game. Empty string = use latest.</summary>
     public string GetNrPackVersion(string gameName, string store = "")
     {

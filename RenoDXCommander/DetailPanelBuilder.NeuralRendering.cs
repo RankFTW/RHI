@@ -634,7 +634,19 @@ public partial class DetailPanelBuilder
             nrVersionCombo.Items.Add(string.IsNullOrEmpty(latestVer) ? "Latest" : $"Latest ({latestVer})");
             foreach (var v in versions)
                 nrVersionCombo.Items.Add(v);
-            nrVersionCombo.SelectedIndex = 0;
+
+            // Restore persisted selection — find the item that matches the saved version
+            var savedNrDllVer = _window.ViewModel.GetNrDllVersion(gameName, store);
+            int selIdx = 0; // default: Latest
+            if (!string.IsNullOrEmpty(savedNrDllVer))
+            {
+                for (int i = 1; i < nrVersionCombo.Items.Count; i++)
+                {
+                    if ((nrVersionCombo.Items[i] as string ?? "").Equals(savedNrDllVer, StringComparison.OrdinalIgnoreCase))
+                    { selIdx = i; break; }
+                }
+            }
+            nrVersionCombo.SelectedIndex = selIdx;
             nrComboInit = false;
         }
         PopulateNrVersionCombo();
@@ -648,6 +660,9 @@ public partial class DetailPanelBuilder
             if (nrComboInit || addonSwapInProgress) return;
             var sel = nrVersionCombo.SelectedItem as string;
             bool useLatest = string.IsNullOrEmpty(sel) || sel.StartsWith("Latest");
+
+            // Persist selection
+            _window.ViewModel.SetNrDllVersion(gameName, useLatest ? null : sel, store);
 
             // Check if NR DLL is currently installed
             bool nrInstalled = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
@@ -1380,6 +1395,9 @@ public partial class DetailPanelBuilder
                     _nrDllOwnedByRhi = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original"));
                     UpdateInstallBtnAppearance();
                     RefreshStatus();
+                    // Persist NR DLL version selection
+                    var nrSel = nrVersionCombo.SelectedItem as string;
+                    _window.ViewModel.SetNrDllVersion(gameName, (string.IsNullOrEmpty(nrSel) || nrSel.StartsWith("Latest")) ? null : nrSel, store);
                     // Rebuild the full overrides panel so shader mode combo + NR section both refresh
                     var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                         c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&

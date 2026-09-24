@@ -109,6 +109,9 @@ public interface IGameNameService
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
     Dictionary<string, string> NrAddonVersion { get; }
 
+    /// <summary>Per-game NR DLL version override.</summary>
+    Dictionary<string, string> NrDllVersion { get; }
+
     /// <summary>Per-game NR pack (Feeder/Bridge) version override. Key = "GameName|Store", Value = version tag. Absent = use latest.</summary>
     Dictionary<string, string> NrPackVersion { get; }
 

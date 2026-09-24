@@ -63,6 +63,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1" / "0.55". Absent = use latest.</summary>
     private Dictionary<string, string> _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game NR DLL version override. Key = "GameName|Store", Value = version string e.g. "310.8.0". Absent = use latest.</summary>
+    private Dictionary<string, string> _nrDllVersion = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game NR pack version override (Feeder or Bridge). Key = "GameName|Store", Value = version tag e.g. "v1.16.0-beta.4". Absent = use latest.</summary>
     private Dictionary<string, string> _nrPackVersion = new(StringComparer.OrdinalIgnoreCase);
 
@@ -182,6 +185,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> NrMethodOverrides => _nrMethodOverrides;
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
     public Dictionary<string, string> NrAddonVersion => _nrAddonVersion;
+    /// <summary>Per-game NR DLL version override.</summary>
+    public Dictionary<string, string> NrDllVersion => _nrDllVersion;
     /// <summary>Per-game NR pack (Feeder/Bridge) version override. Key = "GameName|Store", Value = version tag. Absent = use latest.</summary>
     public Dictionary<string, string> NrPackVersion => _nrPackVersion;
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
@@ -523,6 +528,11 @@ public class GameNameService : IGameNameService
         _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in nrAddonVersionDict) _nrAddonVersion[kv.Key] = kv.Value;
 
+        var nrDllVersionDict = Load<Dictionary<string, string>>("NrDllVersion",
+            new(StringComparer.OrdinalIgnoreCase));
+        _nrDllVersion = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in nrDllVersionDict) _nrDllVersion[kv.Key] = kv.Value;
+
         var nrPackVersionDict = Load<Dictionary<string, string>>("NrPackVersion",
             new(StringComparer.OrdinalIgnoreCase));
         _nrPackVersion = new(StringComparer.OrdinalIgnoreCase);
@@ -807,6 +817,8 @@ public class GameNameService : IGameNameService
                 s["NrMethodOverrides"] = JsonSerializer.Serialize(_nrMethodOverrides);
                 if (_nrAddonVersion.Count > 0) s["NrAddonVersion"] = JsonSerializer.Serialize(_nrAddonVersion);
                 else s.Remove("NrAddonVersion");
+                if (_nrDllVersion.Count > 0) s["NrDllVersion"] = JsonSerializer.Serialize(_nrDllVersion);
+                else s.Remove("NrDllVersion");
                 if (_nrPackVersion.Count > 0) s["NrPackVersion"] = JsonSerializer.Serialize(_nrPackVersion);
                 else s.Remove("NrPackVersion");
                 s["HdrToggleOverrides"] = JsonSerializer.Serialize(_hdrToggleOverrides);
@@ -1009,6 +1021,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         MigrateCompositeDict(_nrMethodOverrides, oldName, newName);
         MigrateCompositeDict(_nrAddonVersion, oldName, newName);
+        MigrateCompositeDict(_nrDllVersion, oldName, newName);
         MigrateCompositeDict(_nrPackVersion, oldName, newName);
         // These four are name-only (not per-store) — use name-only migration
         MigrateDict(_hdrToggleOverrides, oldName, newName);
