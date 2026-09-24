@@ -54,6 +54,7 @@
     { "version": "2.7.32.0", "url": "https://github.com/RankFTW/rhi-repo/releases/download/streamline-2.7.32.0/streamline_2.7.32.0.zip" }
   ],
   "dlssnr": [
+    { "version": "310.8.3 (50xx)", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssnr-310.8.Lecram/nvngx_dlssnr_310.8.Lecram.zip" },
     { "version": "310.8.2 (20/30/40/50)", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssnr-310.8.SF-v2/nvngx_dlssnr_310.8.SF-v2.zip" },
     { "version": "310.8.0 (50xx)", "url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssnr-310.8.0/nvngx_dlssnr_310.8.0.zip" }
   ]
