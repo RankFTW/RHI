@@ -4,6 +4,10 @@
 
 - Fixed switching to a game whose NVIDIA driver profile had never been looked up before (e.g. first time selecting it after a Full Refresh) causing a multi-second UI freeze. The profile lookup now uses a cancellable 4-second timeout on the folder scan, which prevents thread pool starvation from cascading into a frozen UI.
 
+### Manifest Updates
+
+- Added Nexus Mods link for CONTROL Resonant.
+
 ## v2.7.6
 
 ### New
