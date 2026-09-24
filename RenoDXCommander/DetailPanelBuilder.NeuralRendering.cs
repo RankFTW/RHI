@@ -981,7 +981,7 @@ public partial class DetailPanelBuilder
 
             // NR version combo only relevant for DLSS5 Tool / Bridge / Feeder (not ShortFuse)
             // Greyed when already installed — can't change without uninstalling
-            bool nrVersionRelevant = selKey == NrMethodDlss5Tool || selKey == NrMethodDlss5ToolBridge || selKey == NrMethodFeeder;
+            bool nrVersionRelevant = selKey == NrMethodDlss5Tool || selKey == NrMethodDlss5ToolBridge || selKey == NrMethodFeeder || selKey == NrMethodShortFuse;
             nrVersionStack.Opacity   = (!nrVersionRelevant || anyInstalled) ? 0.4 : 1.0;
             nrVersionCombo.IsEnabled = nrVersionRelevant && !anyInstalled;
 
@@ -1226,7 +1226,7 @@ public partial class DetailPanelBuilder
                         break;
 
                     case NrMethodShortFuse:
-                        await InstallShortFuseAsync(card, installBtn, addonVersionCombo, rdx5Svc, dlssSvc);
+                        await InstallShortFuseAsync(card, installBtn, addonVersionCombo, nrVersionCombo, rdx5Svc, dlssSvc);
                         break;
 
                     case NrMethodFeeder:
@@ -1815,6 +1815,7 @@ public partial class DetailPanelBuilder
         GameCardViewModel card,
         Button statusBtn,
         ComboBox addonVersionCombo,
+        ComboBox nrVersionCombo,
         Renodx5AddonService rdx5Svc,
         IDlssStreamlineService dlssSvc)
     {
@@ -1878,6 +1879,40 @@ public partial class DetailPanelBuilder
         // Co-deploy DLSS/Streamline DLLs using sentinel .original pattern
         var detection = dlssSvc.Detect(installPath);
         await rdx5Svc.InstallSfDllsOnlyAsync(installPath, detection.HasAny ? detection : null).ConfigureAwait(false);
+
+        // Deploy NR DLL at requested version (or latest)
+        _window.DispatcherQueue?.TryEnqueue(() => statusBtn.Content = "Deploying NR DLL...");
+        var nrSelectedVersion = await DispatchAsync<string?>(_window.DispatcherQueue!,
+            () => nrVersionCombo.SelectedItem as string).ConfigureAwait(false);
+        bool nrUseLatest = string.IsNullOrEmpty(nrSelectedVersion) || nrSelectedVersion.StartsWith("Latest");
+        var nrDestPath = Path.Combine(installPath, "nvngx_dlssnr.dll");
+        try
+        {
+            string? cachedNr;
+            if (nrUseLatest)
+                cachedNr = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+            else
+            {
+                var nrDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "RHI", "DLSS-NR", nrSelectedVersion!);
+                cachedNr = Path.Combine(nrDir, "nvngx_dlssnr.dll");
+                if (!File.Exists(cachedNr))
+                    cachedNr = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+            }
+
+            if (cachedNr != null)
+            {
+                var backup = nrDestPath + ".original";
+                if (File.Exists(nrDestPath) && !File.Exists(backup))
+                    File.Copy(nrDestPath, backup);
+                File.Copy(cachedNr, nrDestPath, overwrite: true);
+                CrashReporter.Log($"[NeuralRendering] Deployed nvngx_dlssnr.dll (v{(nrUseLatest ? "latest" : nrSelectedVersion)}) to '{installPath}'");
+            }
+            else
+                CrashReporter.Log($"[NeuralRendering] NR DLL not available — skipping");
+        }
+        catch (Exception ex) { CrashReporter.Log($"[NeuralRendering] NR DLL deploy failed — {ex.Message}"); }
 
         // Update DLSS detection cache
         var newDetection = dlssSvc.Detect(installPath);
