@@ -115,10 +115,7 @@ public class ModInstallService : IModInstallService
         {
             var cacheSize = new FileInfo(cachePath).Length;
             bool sizeOk   = remoteSize.HasValue && remoteSize.Value == cacheSize;
-            // Trust the cache when: size matches, OR remote size unavailable (GitHub Pages omits Content-Length on HEAD)
-            // and the cached file is a valid PE binary. Re-download only if size explicitly mismatches.
-            bool sizeExplicitMismatch = remoteSize.HasValue && remoteSize.Value != cacheSize;
-            if (!sizeExplicitMismatch && HasPeSignature(cachePath))
+            if (sizeOk && HasPeSignature(cachePath))
             {
                 progress?.Report(("Installing from cache...", 50));
                 File.Copy(cachePath, destPath, overwrite: true);
