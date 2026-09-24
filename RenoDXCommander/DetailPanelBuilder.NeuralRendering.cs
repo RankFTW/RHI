@@ -108,6 +108,14 @@ public partial class DetailPanelBuilder
         var dlssSvc     = _dlssStreamlineService;
         bool hasDlss  = card.HasAnyDlssStreamline;
         bool isDx12   = card.GraphicsApi == GraphicsApiType.DirectX12;
+
+        // Mutable install state — updated after install/uninstall so UpdateInstallBtnAppearance
+        // never needs to re-check the filesystem (which blocks the UI thread).
+        bool _dlss5Installed  = dlss5Installed;
+        bool _sfInstalled     = sfInstalled;
+        bool _bridgePresent   = bridgePresent;
+        bool _feederPresent   = feederPresent;
+        bool _nrDllOwnedByRhi = nrDllOwnedByRhi;
         bool isDx11   = card.GraphicsApi == GraphicsApiType.DirectX11;
         bool isVulkan = card.GraphicsApi == GraphicsApiType.Vulkan;
         bool isDx9    = card.GraphicsApi == GraphicsApiType.DirectX9;
@@ -1025,12 +1033,13 @@ public partial class DetailPanelBuilder
             var selKey = (methodCombo.SelectedItem as ComboBoxItem)?.Tag as string
                       ?? methodItems.ElementAtOrDefault(methodCombo.SelectedIndex)?.Key
                       ?? effectiveMethod;
+            // Use pre-computed install state from the background scan — no File.Exists on UI thread
             bool anyInstalled = selKey switch
             {
-                NrMethodDlss5Tool       => rdx5Svc.IsInstalledIn(installPath) || File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original")),
-                NrMethodDlss5ToolBridge => rdx5Svc.IsInstalledIn(installPath) || File.Exists(Path.Combine(installPath, BridgeDeployFile)),
-                NrMethodShortFuse       => rdx5Svc.IsSfInstalledIn(installPath),
-                NrMethodFeeder          => File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64)),
+                NrMethodDlss5Tool       => _dlss5Installed || _nrDllOwnedByRhi,
+                NrMethodDlss5ToolBridge => _dlss5Installed || _bridgePresent,
+                NrMethodShortFuse       => _sfInstalled,
+                NrMethodFeeder          => _feederPresent,
                 _                       => false,
             };
 
@@ -1363,6 +1372,12 @@ public partial class DetailPanelBuilder
                 {
                     installBtn.IsEnabled = true;
                     removeBtn.IsEnabled  = true;
+                    // Update cached install state so UpdateInstallBtnAppearance reads correct values
+                    _dlss5Installed = rdx5Svc.IsInstalledIn(installPath);
+                    _sfInstalled    = rdx5Svc.IsSfInstalledIn(installPath);
+                    _bridgePresent  = File.Exists(Path.Combine(installPath, BridgeDeployFile));
+                    _feederPresent  = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+                    _nrDllOwnedByRhi = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original"));
                     UpdateInstallBtnAppearance();
                     RefreshStatus();
                     // Rebuild the full overrides panel so shader mode combo + NR section both refresh
@@ -1485,6 +1500,12 @@ public partial class DetailPanelBuilder
                 {
                     removeBtn.IsEnabled  = true;
                     installBtn.IsEnabled = true;
+                    // Update cached install state after removal
+                    _dlss5Installed = rdx5Svc.IsInstalledIn(installPath);
+                    _sfInstalled    = rdx5Svc.IsSfInstalledIn(installPath);
+                    _bridgePresent  = File.Exists(Path.Combine(installPath, BridgeDeployFile));
+                    _feederPresent  = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+                    _nrDllOwnedByRhi = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original"));
                     UpdateInstallBtnAppearance();
                     RefreshStatus();
                     // Rebuild full overrides panel so DLSS versions + shader mode reflect new state
