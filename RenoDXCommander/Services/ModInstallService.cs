@@ -285,8 +285,8 @@ public class ModInstallService : IModInstallService
         // the override table existed (their stored URL may be the generic CDN).
         var checkUrl = ResolveSnapshotUrl(record.SnapshotUrl);
 
-        // For CDNs that don't serve reliable Content-Length on HEAD (e.g. marat569
-        // github.io), fall back to a full download comparison.
+        // For CDNs that don't serve reliable Content-Length on HEAD (e.g. github.io, /snapshot/ paths),
+        // fall back to a full download comparison — do this check FIRST before any HEAD request.
         if (ShouldUseDownloadCheck(checkUrl))
             return await CheckForUpdateByDownloadAsync(record, checkUrl, localFile);
 
