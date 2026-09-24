@@ -119,7 +119,12 @@ public class ModInstallService : IModInstallService
         {
             var cacheSize = new FileInfo(cachePath).Length;
             bool sizeOk   = remoteSize.HasValue && remoteSize.Value == cacheSize;
-            if (sizeOk && HasPeSignature(cachePath))
+            // Trust the cache when size matches, OR when remote returns no Content-Length
+            // (GitHub Releases redirects to S3 which drops Content-Length on HEAD).
+            // An explicit size mismatch (remote returned a size AND it differs) still triggers re-download.
+            bool sizeExplicitMismatch = remoteSize.HasValue && remoteSize.Value != cacheSize;
+            CrashReporter.Log($"[ModInstallService.InstallAsync] Cache check for '{fileName}': cacheSize={cacheSize}, remoteSize={remoteSize?.ToString() ?? "null"}, sizeOk={sizeOk}, sizeExplicitMismatch={sizeExplicitMismatch}, isPE={HasPeSignature(cachePath)}");
+            if (!sizeExplicitMismatch && HasPeSignature(cachePath))
             {
                 progress?.Report(("Installing from cache...", 50));
                 File.Copy(cachePath, destPath, overwrite: true);
