@@ -82,22 +82,35 @@ public partial class DetailPanelBuilder
             DriverProfileData? data = null;
             try
             {
+                // Use a 4s cancellation token for the exe scan inside FindProfile.
+                // This is shorter than the 5s WhenAny timeout so the scan thread exits
+                // cleanly before the outer timeout fires — preventing thread pool starvation.
+                using var scanCts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
+                var scanCt = scanCts.Token;
+
                 // Wrap NVAPI reads in a timeout — they can hang indefinitely after sleep/wake
-                var nvapiTask = Task.Run(() => new DriverProfileData(
-                    VSyncMode:              svc.GetVSyncMode(gameName, installPath),
-                    GlobalVSyncMode:        svc.GetGlobalVSyncMode(),
-                    VSyncTearControl:       svc.GetVSyncTearControl(gameName, installPath),
-                    LowLatencyMode:         svc.GetLowLatencyMode(gameName, installPath),
-                    SmoothMotionEnable:     svc.GetSmoothMotionEnable(gameName, installPath),
-                    SmoothMotionApis:       svc.GetSmoothMotionApis(gameName, installPath),
-                    SmoothMotionFlipPacingFs: svc.GetSmoothMotionFlipPacingFs(gameName, installPath),
-                    PowerManagementMode:    svc.GetPowerManagementMode(gameName, installPath),
-                    PerGameGSyncEnabled:    svc.GetPerGameGSyncEnabled(gameName, installPath),
-                    ReBarSizeLimit:         svc.GetReBarSizeLimit(gameName, installPath),
-                    ReBarEnableMode:        svc.GetReBarEnableMode(gameName, installPath),
-                    ReBarMode:              svc.GetReBarMode(gameName, installPath),
-                    GlobalReBarSizeLimit:   svc.GetGlobalReBarSizeLimit(),
-                    IsAdmin:                VulkanLayerService.IsRunningAsAdmin()));
+                var nvapiTask = Task.Run(() =>
+                {
+                    // Prime the profile lookup cache with the cancellable token first.
+                    // All subsequent Get* calls will hit the in-memory _profileLookupCache
+                    // and never run the expensive exe scan again.
+                    svc.PrimeProfileCache(gameName, installPath, scanCt);
+                    return new DriverProfileData(
+                        VSyncMode:              svc.GetVSyncMode(gameName, installPath),
+                        GlobalVSyncMode:        svc.GetGlobalVSyncMode(),
+                        VSyncTearControl:       svc.GetVSyncTearControl(gameName, installPath),
+                        LowLatencyMode:         svc.GetLowLatencyMode(gameName, installPath),
+                        SmoothMotionEnable:     svc.GetSmoothMotionEnable(gameName, installPath),
+                        SmoothMotionApis:       svc.GetSmoothMotionApis(gameName, installPath),
+                        SmoothMotionFlipPacingFs: svc.GetSmoothMotionFlipPacingFs(gameName, installPath),
+                        PowerManagementMode:    svc.GetPowerManagementMode(gameName, installPath),
+                        PerGameGSyncEnabled:    svc.GetPerGameGSyncEnabled(gameName, installPath),
+                        ReBarSizeLimit:         svc.GetReBarSizeLimit(gameName, installPath),
+                        ReBarEnableMode:        svc.GetReBarEnableMode(gameName, installPath),
+                        ReBarMode:              svc.GetReBarMode(gameName, installPath),
+                        GlobalReBarSizeLimit:   svc.GetGlobalReBarSizeLimit(),
+                        IsAdmin:                VulkanLayerService.IsRunningAsAdmin());
+                }, scanCt);
                 var completed = await Task.WhenAny(nvapiTask, Task.Delay(5000)).ConfigureAwait(false);
                 if (completed == nvapiTask)
                     data = await nvapiTask.ConfigureAwait(false);

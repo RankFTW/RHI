@@ -122,19 +122,27 @@ public partial class DetailPanelBuilder
                 if (hasAnyDlss && _dlssPresetService.IsSupported)
                 {
                     var svc = _dlssPresetService;
+                    // Use a 4s cancellation token for the exe scan inside FindProfile.
+                    using var scanCts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
+                    var scanCt = scanCts.Token;
                     // Wrap NVAPI reads in a timeout — they can hang indefinitely after sleep/wake
-                    var nvapiTask = Task.Run(() => new DlssProfileData(
-                        SrDriverOverride: svc.IsSrDriverOverrideActive(gameName, installPath),
-                        RrDriverOverride: svc.IsRrDriverOverrideActive(gameName, installPath),
-                        FgDriverOverride: svc.IsFgDriverOverrideActive(gameName, installPath),
-                        NrDriverOverride: FeatureFlags.DlssNr && svc.IsNrDriverOverrideActive(gameName, installPath),
-                        SrPreset:         hasDlss  ? svc.GetSrPreset(gameName, installPath)  : 0u,
-                        RrPreset:         hasDlssd ? svc.GetRrPreset(gameName, installPath)  : 0u,
-                        FgPreset:         hasDlssg ? svc.GetFgPreset(gameName, installPath)  : 0u,
-                        NrPreset:         hasDlssnr && FeatureFlags.DlssNr ? svc.GetNrPreset(gameName, installPath) : 0u,
-                        SrRenderScale:    hasDlss  ? svc.GetSrRenderScale(gameName, installPath) : 0u,
-                        RrRenderScale:    hasDlssd ? svc.GetRrRenderScale(gameName, installPath) : 0u,
-                        MfgMode:          hasDlssg ? svc.GetMfgMode(gameName, installPath)   : 0u));
+                    var nvapiTask = Task.Run(() =>
+                    {
+                        // Prime the profile cache so all subsequent Get* calls hit the in-memory cache.
+                        svc.PrimeProfileCache(gameName, installPath, scanCt);
+                        return new DlssProfileData(
+                            SrDriverOverride: svc.IsSrDriverOverrideActive(gameName, installPath),
+                            RrDriverOverride: svc.IsRrDriverOverrideActive(gameName, installPath),
+                            FgDriverOverride: svc.IsFgDriverOverrideActive(gameName, installPath),
+                            NrDriverOverride: FeatureFlags.DlssNr && svc.IsNrDriverOverrideActive(gameName, installPath),
+                            SrPreset:         hasDlss  ? svc.GetSrPreset(gameName, installPath)  : 0u,
+                            RrPreset:         hasDlssd ? svc.GetRrPreset(gameName, installPath)  : 0u,
+                            FgPreset:         hasDlssg ? svc.GetFgPreset(gameName, installPath)  : 0u,
+                            NrPreset:         hasDlssnr && FeatureFlags.DlssNr ? svc.GetNrPreset(gameName, installPath) : 0u,
+                            SrRenderScale:    hasDlss  ? svc.GetSrRenderScale(gameName, installPath) : 0u,
+                            RrRenderScale:    hasDlssd ? svc.GetRrRenderScale(gameName, installPath) : 0u,
+                            MfgMode:          hasDlssg ? svc.GetMfgMode(gameName, installPath)   : 0u);
+                    }, scanCt);
                     var completed = await Task.WhenAny(nvapiTask, Task.Delay(5000)).ConfigureAwait(false);
                     if (completed == nvapiTask)
                         dlssData = await nvapiTask.ConfigureAwait(false);
