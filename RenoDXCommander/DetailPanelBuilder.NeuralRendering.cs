@@ -1782,6 +1782,21 @@ public partial class DetailPanelBuilder
         if (cachedFg  != null) dlss5Files.Add("nvngx_dlssg.dll");
         if (cachedNr  != null) dlss5Files.Add("nvngx_dlssnr.dll");
         Models.RhiInstallManifest.SetComponent(installPath, "Dlss5Tool", dlss5Files);
+
+        // Re-detect DLSS so the card and Nvidia Profile section see the newly deployed DLLs.
+        // Without this, DlssDetection still has the pre-install state and the profile panel shows "None".
+        var newDetection = dlssSvc.Detect(installPath);
+        if (newDetection.HasAny)
+        {
+            dlssSvc.RecordDlssFound(card.GameName);
+            dlssSvc.RecordTrustedPath(card.GameName, newDetection);
+        }
+        _window.DispatcherQueue?.TryEnqueue(() =>
+        {
+            card.DlssDetection = newDetection;
+            card.ApplyDlssDetection(newDetection);
+            card.RefreshDlssVersions(dlssSvc);
+        });
     }
 
     /// <summary>Deploys src → dest with sentinel backup. If dest exists, backs up the original. If dest doesn't exist, writes a 0-byte sentinel so uninstall knows to delete it entirely.</summary>
@@ -2673,6 +2688,14 @@ public partial class DetailPanelBuilder
             Models.RhiInstallManifest.SetComponent(installPath, "Feeder", feederFiles);
         }
 
+        // Re-detect DLSS so the Nvidia Profile section shows the newly deployed DLLs.
+        var feederDetection = _dlssStreamlineService.Detect(card.InstallPath ?? "");
+        if (feederDetection.HasAny)
+        {
+            _dlssStreamlineService.RecordDlssFound(card.GameName);
+            _dlssStreamlineService.RecordTrustedPath(card.GameName, feederDetection);
+        }
+
         // Rebuild panel one final time now that shaders are deployed — status will show ✓ Feed.fx / ✓ LumeniteFX
         _window.DispatcherQueue?.TryEnqueue(() =>
         {
@@ -2680,7 +2703,12 @@ public partial class DetailPanelBuilder
                 c.GameName.Equals(card.GameName, StringComparison.OrdinalIgnoreCase) &&
                 (string.IsNullOrEmpty(card.Source) || c.Source == card.Source));
             if (targetCard != null)
+            {
+                targetCard.DlssDetection = feederDetection;
+                targetCard.ApplyDlssDetection(feederDetection);
+                targetCard.RefreshDlssVersions(_dlssStreamlineService);
                 BuildOverridesPanel(targetCard);
+            }
         });
     }
 
