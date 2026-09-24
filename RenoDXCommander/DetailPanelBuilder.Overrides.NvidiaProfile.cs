@@ -162,6 +162,7 @@ public partial class DetailPanelBuilder
                 var sw = System.Diagnostics.Stopwatch.StartNew();
 
                 _window.ViewModel.SetLastUiAction($"BuildNvidiaProfileBody({gameName})");
+                CrashReporter.Log($"[BuildNvidiaProfileBody] Starting UI build for '{gameName}' hasDlss={hasDlss} hasDlssd={hasDlssd} hasDlssg={hasDlssg} hasDlssnr={hasDlssnr} hasStreamline={hasStreamline}");
 
                 // Update card cached driver override flags so the collapsed summary shows "NV Override"
                 if (dlssData != null)
@@ -197,6 +198,7 @@ public partial class DetailPanelBuilder
     {
         // Clear the loading indicator (or any stale content from a previous build pass)
         nvBody.Children.Clear();
+        CrashReporter.Log($"[BuildNvidiaProfileBody] Body cleared, HasAnyDlssStreamline={card.HasAnyDlssStreamline} for '{card.GameName}'");
 
         if (card.HasAnyDlssStreamline)
         {
@@ -347,8 +349,7 @@ public partial class DetailPanelBuilder
 
                 // Determine NR installed version — show "Custom" if sidecar marker exists
                 var nrDllPath = card.DlssDetection?.DlssnrPath;
-                var nrInstalledVersion = (hasDlssnr && nrDllPath != null
-                    && File.Exists(nrDllPath + ".rhi_custom"))
+                var nrInstalledVersion = (hasDlssnr && card.DlssnrIsCustom)
                     ? "Custom"
                     : card.DlssnrInstalledVersion;
 
@@ -607,8 +608,7 @@ public partial class DetailPanelBuilder
             // Check if custom Streamline marker exists — override version to "Custom"
             // Only show "Custom" if we can't read a real version from the DLL
             var slVersionFromDll = card.StreamlineInstalledVersion;
-            var slInstalledVersion = (hasStreamline && !string.IsNullOrEmpty(card.DlssDetection?.StreamlineFolder)
-                && DlssStreamlineService.IsCustomStreamlineActive(card.DlssDetection.StreamlineFolder)
+            var slInstalledVersion = (hasStreamline && card.StreamlineIsCustom
                 && (string.IsNullOrEmpty(slVersionFromDll) || slVersionFromDll == "Unknown"))
                 ? "Custom"
                 : slVersionFromDll;
@@ -827,6 +827,7 @@ public partial class DetailPanelBuilder
             nvBody.Children.Add(dlssRowGrid);
         }
 
+        CrashReporter.Log($"[BuildNvidiaProfileBody] DLSS grid built for '{card.GameName}', calling BuildDriverProfileSection");
         BuildDriverProfileSection(card, capturedName);
 
         // ── Update collapsed summary now that DLSS versions are known ─────────

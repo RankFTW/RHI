@@ -31,6 +31,10 @@
 - Fixed UI freezing during navigation, installs, uninstalls, and menu interactions. Moved 20+ blocking operations off the UI thread: async logging, cached filesystem state on game cards, debounced settings saves, async 7-Zip extraction, async mass-deploy loops, async cog dialog reads, async auto-update pass, async Settings page init, and more.
 - Fixed window size and position not being restored when RHI starts minimized to tray (e.g. on Windows startup). The window now opens at the correct size and position when shown from the tray.
 
+**PCGW reliability**
+- Fixed PCGamingWiki lookups permanently failing for the rest of a session after a single timeout or rate limit error. The service now pauses temporarily and retries automatically after recovery. Respects the `Retry-After` header on 429 responses.
+- Fixed transient PCGW failures being persisted as permanent "no result" cache entries, which would suppress a game's PCGW link even after the service recovered.
+
 **Neural Rendering**
 - Fixed `DLSS5_Feed.fx` and `lumenite_Kernel.fx` not deploying on games with no prior shader selection (e.g. Dragon Age Inquisition on a fresh install). The shader selection is now written before the ReShade install step runs.
 

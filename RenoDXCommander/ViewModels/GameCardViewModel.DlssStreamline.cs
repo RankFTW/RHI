@@ -36,12 +36,18 @@ public partial class GameCardViewModel
     private bool _dlssgHasBackup;
     private bool _dlssnrHasBackup;
     private bool _streamlineHasBackup;
+    private bool _dlssnrIsCustom;
+    private bool _streamlineIsCustom;
 
     public bool DlssHasBackup => _dlssHasBackup;
     public bool DlssdHasBackup => _dlssdHasBackup;
     public bool DlssgHasBackup => _dlssgHasBackup;
     public bool DlssnrHasBackup => _dlssnrHasBackup;
     public bool StreamlineHasBackup => _streamlineHasBackup;
+    /// <summary>True when a custom NR DLL marker exists alongside nvngx_dlssnr.dll.</summary>
+    public bool DlssnrIsCustom => _dlssnrIsCustom;
+    /// <summary>True when the custom Streamline marker file exists in the Streamline folder.</summary>
+    public bool StreamlineIsCustom => _streamlineIsCustom;
 
     public bool HasAnyDlssBackup => DlssHasBackup || DlssdHasBackup || DlssgHasBackup || DlssnrHasBackup || StreamlineHasBackup;
 
@@ -108,6 +114,12 @@ public partial class GameCardViewModel
         _streamlineHasBackup = DlssDetection?.StreamlineFolder != null
             && Directory.Exists(DlssDetection.StreamlineFolder)
             && Directory.EnumerateFiles(DlssDetection.StreamlineFolder, "*.original").Any();
+
+        // Custom marker checks (used by BuildNvidiaProfileBody on UI thread — must be cached)
+        _dlssnrIsCustom = DlssDetection?.DlssnrPath != null
+            && File.Exists(DlssDetection.DlssnrPath + ".rhi_custom");
+        _streamlineIsCustom = DlssDetection?.StreamlineFolder != null
+            && DlssStreamlineService.IsCustomStreamlineActive(DlssDetection.StreamlineFolder);
 
         // INI existence checks (also cached here for efficiency)
         _rsIniExists = File.Exists(Services.AuxInstallService.RsIniPath);
