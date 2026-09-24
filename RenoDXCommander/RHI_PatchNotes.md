@@ -62,6 +62,7 @@
 - Added Overwatch install subpath (`_retail_`).
 - Added SILENT HILL: Townfall engine hint (UE 5.6.1) and install subpath.
 - Added engine hint for CONTROL Resonant (Northlight Engine).
+- Fixed Unity addon games (AI Limit, Death's Door, Outer Wilds, etc.) re-downloading the addon on every install instead of using the cached file. The download URL now points to GitHub Releases which returns a reliable file size, allowing the cache to be used correctly.
 
 ## v2.7.5
 
