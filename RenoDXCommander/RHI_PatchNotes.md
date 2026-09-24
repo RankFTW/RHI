@@ -12,16 +12,16 @@
 
 - **Swap addon version while installed** — changing the version dropdown while Neural Rendering is installed now swaps the addon file in-place. No need to uninstall first. Only the addon file is replaced — DLSS DLLs, configs, and shaders are left alone.
   - DLSS5 Tool / DLSS5 Tool + Bridge: swaps `renodx-dlss5.addon64`
-  - ShortFuse (DLSS Tool): swaps `renodx-dlss.addon64`
+  - ShortFuse DLSS Tool: swaps `renodx-dlss.addon64`
   - Feeder: swaps the neural consumer (`renodx-dlss5.addon64`) and/or the Feeder addon itself (`dlss5-feed.addon64`) independently
   - Bridge: swaps `dlss5-bridge.addon64`
-- **NR DLL version selection** — the NR DLL Version dropdown is now active for all four NR methods (previously only DLSS5 Tool, Bridge, and Feeder). ShortFuse can now target a specific NR DLL version before or during install. Changing the version while NR is installed swaps the DLL in-place for all methods.
+- **NR DLL version selection** — the NR DLL Version dropdown is now active for all four NR methods (previously only DLSS5 Tool, Bridge, and Feeder). ShortFuse DLSS Tool can now target a specific NR DLL version before or during install. Changing the version while NR is installed swaps the DLL in-place for all methods.
 - **Version dropdowns show latest version number** — "Latest" now shows the actual version in brackets, e.g. `Latest (310.8.2 (20/30/40/50))`.
 
 ### Changes
 
 - Simple View removed — the app is always in Detail View.
-- DLSS5 Tool, ShortFuse, DLSS5 Feeder, DX11 Bridge, and MFG Ada Unlock removed from the addon picker — use the Neural Rendering and Extras sections instead. Existing per-game selections are cleaned up silently; nothing is uninstalled.
+- DLSS5 Tool, ShortFuse DLSS Tool, DLSS5 Feeder, DX11 Bridge, and MFG Ada Unlock removed from the addon picker — use the Neural Rendering and Extras sections instead. Existing per-game selections are cleaned up silently; nothing is uninstalled.
 - "HDR Mods" separator added to the Components section.
 - "Combo" added to the OptiScaler FG Nvngx Override dropdown.
 - Preset F added to the OptiScaler DLSS RR preset dropdown.
@@ -50,7 +50,7 @@
 
 **Other**
 - Fixed the "New Mods" notification not showing for Nexus-only mods.
-- Fixed leftover `renodx-dlss5.addon64` files in game folders after clearing the global addon picker on ShortFuse or Feeder games.
+- Fixed leftover `renodx-dlss5.addon64` files in game folders after clearing the global addon picker on ShortFuse DLSS Tool or Feeder games.
 - Fixed the OptiScaler version/Info button opening the wrong releases page when the DLSS NR variant was installed.
 - Fixed RTX 40 MFG Unlock and MFG Ada Unlock not updating their row status immediately after install or uninstall — a refresh was previously required.
 

@@ -1,6 +1,6 @@
 // DetailPanelBuilder.NeuralRendering.cs — Self-contained Neural Rendering section.
 // Shown between Game Overrides and NVIDIA Profile Overrides.
-// Handles DLSS5 Tool, DLSS5 Tool + DX11 Bridge, DLSS Tool (ShortFuse), and DLSS5 Feeder.
+// Handles DLSS5 Tool, DLSS5 Tool + DX11 Bridge, ShortFuse DLSS Tool, and DLSS5 Feeder.
 // All files are deployed automatically — no addon picker required.
 
 using Microsoft.Extensions.DependencyInjection;
@@ -130,7 +130,7 @@ public partial class DetailPanelBuilder
         // ── Build method combo items (show all, disable inapplicable) ─────────
         var methodItems = new[]
         {
-            new { Name = "DLSS Tool (ShortFuse)",      Key = NrMethodShortFuse,       Enabled = !is32Bit && card.GraphicsApi != GraphicsApiType.OpenGL },
+            new { Name = "ShortFuse DLSS Tool",          Key = NrMethodShortFuse,       Enabled = !is32Bit && card.GraphicsApi != GraphicsApiType.OpenGL },
             new { Name = "DLSS5 Tool",                 Key = NrMethodDlss5Tool,       Enabled = hasDlss && !is32Bit },
             new { Name = "DLSS5 Tool + DX11 Bridge",   Key = NrMethodDlss5ToolBridge, Enabled = hasDlss && (isDx11 || isVulkan) && !is32Bit },
             new { Name = "DLSS5 Feeder",               Key = NrMethodFeeder,          Enabled = true },
@@ -245,7 +245,7 @@ public partial class DetailPanelBuilder
         ToolTipService.SetToolTip(methodCombo,
             "DLSS5 Tool: for DX12 native-DLSS games.\n" +
             "DLSS5 Tool + DX11 Bridge: for DX11/Vulkan native-DLSS games.\n" +
-            "DLSS Tool (ShortFuse): alternative full-stack install for native-DLSS games.\n" +
+            "ShortFuse DLSS Tool: alternative full-stack install for native-DLSS games.\n" +
             "DLSS5 Feeder: for games with no native DLSS (DX11, DX12, Vulkan, 32-bit).");
         methodStack.Children.Add(methodCombo);
         Grid.SetColumn(methodStack, 0);
@@ -819,7 +819,7 @@ public partial class DetailPanelBuilder
                     Tag(nrOk ? $"✓ NR DLL {nrv2}" : "✗ NR DLL", nrOk);
                     break;
                 case NrMethodShortFuse:
-                    Tag(sfi    ? "✓ DLSS Tool (ShortFuse)"  : "✗ DLSS Tool (ShortFuse)", sfi);
+                    Tag(sfi    ? "✓ ShortFuse DLSS Tool"  : "✗ ShortFuse DLSS Tool", sfi);
                     Tag(srOk   ? $"✓ DLSS SR {srv}"   : "✗ DLSS SR",  srOk);
                     Tag(rrOk   ? $"✓ DLSS RR {rrv}"   : "✗ DLSS RR", rrOk);
                     Tag(fgOk   ? $"✓ DLSS FG {fgv}"   : "✗ DLSS FG", fgOk);
@@ -885,8 +885,8 @@ public partial class DetailPanelBuilder
             {
                 case NrMethodDlss5Tool:
                     descText.Text = hasDlss
-                        ? "For DX12 games with native DLSS. Deploys the DLSS5 Tool ReShade addon and nvngx_dlssnr.dll. Lighter alternative to ShortFuse when you don't need the full Streamline stack."
-                        : "For DX12 games with native DLSS. This game has no detected DLSS — consider DLSS Tool (ShortFuse) instead.";
+                        ? "For DX12 games with native DLSS. Deploys the DLSS5 Tool ReShade addon and nvngx_dlssnr.dll. Lighter alternative to ShortFuse DLSS Tool when you don't need the full Streamline stack."
+                        : "For DX12 games with native DLSS. This game has no detected DLSS — consider ShortFuse DLSS Tool instead.";
                     descLink.Content = "DLSS5 Tool info →";
                     descLink.NavigateUri = new Uri("https://discord.com/channels/1408098019194310818/1543802634991968366");
                     break;
@@ -897,7 +897,7 @@ public partial class DetailPanelBuilder
                     break;
                 case NrMethodShortFuse:
                     descText.Text = "Recommended for most games with native DLSS. Deploys the full DLSS SR/RR/FG/NR stack and Streamline alongside the ReShade addon. Supports DX12, DX11, DX9, and Vulkan.";
-                    descLink.Content = "ShortFuse info →";
+                    descLink.Content = "ShortFuse DLSS Tool info →";
                     descLink.NavigateUri = new Uri("https://discord.com/channels/1408098019194310818/1543975158937821315");
                     break;
                 case NrMethodFeeder:
@@ -952,7 +952,7 @@ public partial class DetailPanelBuilder
             Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
             Visibility = effectiveMethod == NrMethodShortFuse ? Visibility.Visible : Visibility.Collapsed,
         };
-        ToolTipService.SetToolTip(sfCogBtn, "ShortFuse DLSS addon settings — auto-configure ReShade for FrameGen");
+        ToolTipService.SetToolTip(sfCogBtn, "ShortFuse DLSS Tool settings — auto-configure ReShade for FrameGen");
         sfCogBtn.Click += async (s, e) =>
         {
             bool currentEnabled = _window.ViewModel.GetSfAutoConfigEnabled(gameName, store);
@@ -979,12 +979,12 @@ public partial class DetailPanelBuilder
 
             var desc = new TextBlock
             {
-                Text = "When On, RHI will automatically configure ReShade when installing the ShortFuse DLSS addon:\n" +
+                Text = "When On, RHI will automatically configure ReShade when installing ShortFuse DLSS Tool:\n" +
                        "• Rename ReShade to Reshade64.asi\n" +
                        "• Install ASI Loader (winmm → version → dinput8)\n" +
                        "• Write HookStreamline=1 and HookDirectX=1 to reshade.ini\n\n" +
                        "These steps are needed for FrameGen to work correctly after ReShade.\n\n" +
-                       "Note: no longer required on ShortFuse DLSS addon v0.54 and above.",
+                       "Note: no longer required on ShortFuse DLSS Tool v0.54 and above.",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 TextWrapping = TextWrapping.Wrap,
@@ -999,7 +999,7 @@ public partial class DetailPanelBuilder
 
             var dlg = new ContentDialog
             {
-                Title = "ShortFuse DLSS Addon Settings",
+                Title = "ShortFuse DLSS Tool Settings",
                 Content = content,
                 PrimaryButtonText = "Save",
                 CloseButtonText = "Cancel",
@@ -1325,7 +1325,7 @@ public partial class DetailPanelBuilder
                 // that conflict with the NR section. Remove them from the global set so they don't
                 // get re-deployed on every refresh.
                 var globalAddons = _window.ViewModel.Settings.EnabledGlobalAddons;
-                var conflicting  = new[] { "DLSS5 Tool", "DLSS Tool (ShortFuse)" };
+                var conflicting  = new[] { "DLSS5 Tool", "ShortFuse DLSS Tool" };
                 bool removedAny  = false;
                 foreach (var c in conflicting)
                     if (globalAddons.RemoveAll(a => a.Equals(c, StringComparison.OrdinalIgnoreCase)) > 0)
@@ -1455,7 +1455,7 @@ public partial class DetailPanelBuilder
                     Models.RhiInstallManifest.SetNrMethod(installPath, null);
 
                     // Remove conflicting addons from global and per-game selections
-                    var conflictingRemove = new[] { "DLSS5 Tool", "DLSS Tool (ShortFuse)" };
+                    var conflictingRemove = new[] { "DLSS5 Tool", "ShortFuse DLSS Tool" };
                     var globalAddonsRemove = _window.ViewModel.Settings.EnabledGlobalAddons;
                     bool removedGlobal = false;
                     foreach (var c in conflictingRemove)
