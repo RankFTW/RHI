@@ -15,7 +15,8 @@
   - ShortFuse (DLSS Tool): swaps `renodx-dlss.addon64`
   - Feeder: swaps the neural consumer (`renodx-dlss5.addon64`) and/or the Feeder addon itself (`dlss5-feed.addon64`) independently
   - Bridge: swaps `dlss5-bridge.addon64`
-- **Version dropdown shows latest version number** — "Latest" now shows the actual version in brackets, e.g. `Latest (7.0.0-rc1)`.
+- **NR DLL version selection** — the NR DLL Version dropdown is now active for all four NR methods (previously only DLSS5 Tool, Bridge, and Feeder). ShortFuse can now target a specific NR DLL version before or during install. Changing the version while NR is installed swaps the DLL in-place for all methods.
+- **Version dropdowns show latest version number** — "Latest" now shows the actual version in brackets, e.g. `Latest (310.8.2 (20/30/40/50))`.
 
 ### Changes
 
@@ -24,11 +25,13 @@
 - "HDR Mods" separator added to the Components section.
 - "Combo" added to the OptiScaler FG Nvngx Override dropdown.
 - Preset F added to the OptiScaler DLSS RR preset dropdown.
+- Available HDR Mods dialog is now a fixed width — previously the dialog would shift width slightly while scrolling through the list.
 
 ### Bug Fixes
 
 **UI responsiveness**
 - Fixed UI freezing during navigation, installs, uninstalls, and menu interactions. Moved 20+ blocking operations off the UI thread: async logging, cached filesystem state on game cards, debounced settings saves, async 7-Zip extraction, async mass-deploy loops, async cog dialog reads, async auto-update pass, async Settings page init, and more.
+- Fixed UI freezing when selecting certain games with Neural Rendering installed — the NR status panel was doing multiple filesystem reads (File.Exists, GetFileVersion per DLL) on the UI thread. These are now pre-computed on a background thread before the UI is updated.
 - Fixed window size and position not being restored when RHI starts minimized to tray (e.g. on Windows startup). The window now opens at the correct size and position when shown from the tray.
 
 **PCGW reliability** (thanks kaeldrin-gh)
@@ -37,6 +40,7 @@
 
 **Neural Rendering**
 - Fixed `DLSS5_Feed.fx` and `lumenite_Kernel.fx` not deploying on games with no prior shader selection (e.g. Dragon Age Inquisition on a fresh install). The shader selection is now written before the ReShade install step runs.
+- Fixed `renodx-mfgunlock.addon64` being detected as a RenoDX HDR mod — it is now correctly excluded from the game-specific addon scan.
 
 **Startup hang**
 - Fixed RHI hanging indefinitely on "Building cards..." for users with RTX Remix installed on a game (e.g. Fallout New Vegas). RTX Remix creates circular directory symlinks that the DLSS scanner would follow forever. The scanner now stops at depth 8 and bails on paths over 300 characters.
@@ -48,6 +52,7 @@
 - Fixed the "New Mods" notification not showing for Nexus-only mods.
 - Fixed leftover `renodx-dlss5.addon64` files in game folders after clearing the global addon picker on ShortFuse or Feeder games.
 - Fixed the OptiScaler version/Info button opening the wrong releases page when the DLSS NR variant was installed.
+- Fixed RTX 40 MFG Unlock and MFG Ada Unlock not updating their row status immediately after install or uninstall — a refresh was previously required.
 
 ### Manifest Updates
 
@@ -56,6 +61,7 @@
 - Added `L.A. Noire` name mapping for Luma release asset matching.
 - Added Overwatch install subpath (`_retail_`).
 - Added SILENT HILL: Townfall engine hint (UE 5.6.1) and install subpath.
+- Added engine hint for CONTROL Resonant (Northlight Engine).
 
 ## v2.7.5
 
