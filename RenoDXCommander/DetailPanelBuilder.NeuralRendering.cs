@@ -601,7 +601,8 @@ public partial class DetailPanelBuilder
             CornerRadius = new CornerRadius(6),
         };
         var nrVersions = dlssSvc.DlssnrVersions.ToList();
-        nrVersions.Insert(0, "Latest");
+        var latestNrVer = nrVersions.FirstOrDefault();
+        nrVersionCombo.Items.Add(string.IsNullOrEmpty(latestNrVer) ? "Latest" : $"Latest ({latestNrVer})");
         foreach (var v in nrVersions)
             nrVersionCombo.Items.Add(v);
         nrVersionCombo.SelectedIndex = 0;
