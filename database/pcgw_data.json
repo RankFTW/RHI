@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55282,
-  "generated": "2026-09-24T04:24:43Z",
+  "game_count": 55283,
+  "generated": "2026-09-24T13:08:04Z",
   "name_overrides": {
     "AFOP": "Avatar: Frontiers of Pandora",
     "Alan Wake 2": "Alan Wake 2",
@@ -28308,6 +28308,7 @@
     "Clid the Snail": {
       "steam_appid": 1597580
     },
+    "Clif Danger": {},
     "Cliff Empire": {
       "steam_appid": 809140
     },
@@ -75489,7 +75490,7 @@
       "config_path": "<path-to-game>\\"
     },
     "Interstate '82": {
-      "config_path": "<path-to-game>\\config.def, <path-to-game>\\i82perf.ini, <path-to-game>\\bindings.usr"
+      "config_path": "<path-to-game>\\config.def, <path-to-game>\\i82perf.ini, <path-to-game>\\bindings.usr, <path-to-game>\\Bindings\\"
     },
     "Interstate Drifter 1999": {
       "steam_appid": 1383770,
