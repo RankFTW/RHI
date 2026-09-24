@@ -2,7 +2,7 @@
 
 ### New
 
-- **Available HDR Mods** — new button next to Quick Start. Opens a searchable list of every supported game, showing which of RenoDX, Luma, and OptiScaler are available, with direct download links.
+- **Available HDR Mods** — new button next to Quick Start. Opens a searchable list of every supported game, showing which of RenoDX and Luma are available, with direct download links.
 - **DLL naming overrides redesigned** — the old enable/disable toggle is gone. ReShade, Display Commander, and OptiScaler each have their own dropdown in the Game Overrides panel. Selecting a name renames the file immediately; selecting `--------` reverts it. A Reset button reverts all three at once.
 - **Collapsed sections now show a live summary** — when a detail panel section is collapsed, key info is shown inline: installed component versions (Components), active DLSS/Streamline versions (NVIDIA Profile), active NR method (Neural Rendering), installed extras (Extras), and any active overrides (Game Overrides).
 - **Luma mods from GitHub release assets** — mods that have been released as a build but not yet published on the Luma wiki now appear automatically in RHI.
