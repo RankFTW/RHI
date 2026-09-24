@@ -53,6 +53,7 @@
 - Fixed leftover `renodx-dlss5.addon64` files in game folders after clearing the global addon picker on ShortFuse DLSS Tool or Feeder games.
 - Fixed the OptiScaler version/Info button opening the wrong releases page when the DLSS NR variant was installed.
 - Fixed RTX 40 MFG Unlock and MFG Ada Unlock not updating their row status immediately after install or uninstall — a refresh was previously required.
+- Fixed Unity addon games (AI Limit, Death's Door, Outer Wilds, etc.) re-downloading the addon on every install instead of using the cached file. The addon URL is now resolved to GitHub Releases (which returns a reliable file size) regardless of what URL the wiki or manifest provided.
 
 ### Manifest Updates
 
@@ -62,7 +63,6 @@
 - Added Overwatch install subpath (`_retail_`).
 - Added SILENT HILL: Townfall engine hint (UE 5.6.1) and install subpath.
 - Added engine hint for CONTROL Resonant (Northlight Engine).
-- Fixed Unity addon games (AI Limit, Death's Door, Outer Wilds, etc.) re-downloading the addon on every install instead of using the cached file. The download URL now points to GitHub Releases which returns a reliable file size, allowing the cache to be used correctly.
 
 ## v2.7.5
 

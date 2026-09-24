@@ -40,6 +40,10 @@ public class ModInstallService : IModInstallService
     {
         // Extended UE addon maintained by marat569 at a separate repo
         ["renodx-ue-extended.addon64"] = "https://marat569.github.io/renodx/renodx-ue-extended.addon64",
+        // Unity addon — GitHub Releases returns reliable Content-Length; GitHub Pages does not,
+        // causing the cache to be bypassed and the file re-downloaded on every install.
+        ["renodx-unityengine.addon64"] = "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
+        ["renodx-unityengine.addon32"] = "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon32",
     };
 
     /// <summary>
