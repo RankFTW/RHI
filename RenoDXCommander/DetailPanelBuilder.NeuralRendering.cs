@@ -605,10 +605,70 @@ public partial class DetailPanelBuilder
         foreach (var v in nrVersions)
             nrVersionCombo.Items.Add(v);
         nrVersionCombo.SelectedIndex = 0;
-        ToolTipService.SetToolTip(nrVersionCombo, "NR DLL version to deploy. 'Latest' always uses the newest available.");
+        ToolTipService.SetToolTip(nrVersionCombo, "NR DLL version to deploy. 'Latest' always uses the newest available. Change while installed to swap the NR DLL in-place.");
         nrVersionStack.Children.Add(nrVersionCombo);
         Grid.SetColumn(nrVersionStack, 3);
         row1.Children.Add(nrVersionStack);
+
+        // Wire NR DLL version swap — same pattern as addon version swap
+        bool nrComboInit = true;
+        nrVersionCombo.SelectionChanged += NrVersionCombo_SelectionChanged;
+        nrComboInit = false;
+
+        async void NrVersionCombo_SelectionChanged(object s2, SelectionChangedEventArgs ev2)
+        {
+            if (nrComboInit || addonSwapInProgress) return;
+            var sel = nrVersionCombo.SelectedItem as string;
+            bool useLatest = string.IsNullOrEmpty(sel) || sel.StartsWith("Latest");
+
+            // Check if NR DLL is currently installed
+            bool nrInstalled = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
+            if (!nrInstalled) return;
+
+            addonSwapInProgress = true;
+            var prevContent = installBtn.Content;
+            _window.DispatcherQueue?.TryEnqueue(() =>
+            {
+                installBtn.IsEnabled = false;
+                installBtn.Content   = "Swapping NR DLL...";
+            });
+
+            try
+            {
+                await Task.Run(async () =>
+                {
+                    string? cachedNr;
+                    if (useLatest)
+                        cachedNr = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                    else
+                    {
+                        var nrDir = Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                            "RHI", "DLSS-NR", sel!);
+                        cachedNr = Path.Combine(nrDir, "nvngx_dlssnr.dll");
+                        if (!File.Exists(cachedNr))
+                            cachedNr = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                    }
+
+                    if (cachedNr == null) { CrashReporter.Log($"[NeuralRendering.NrDllSwap] Version '{sel ?? "Latest"}' not available — swap aborted"); return; }
+
+                    var destPath = Path.Combine(installPath, "nvngx_dlssnr.dll");
+                    File.Copy(cachedNr, destPath, overwrite: true);
+                    CrashReporter.Log($"[NeuralRendering.NrDllSwap] Swapped nvngx_dlssnr.dll to v{(useLatest ? "latest" : sel)} at '{destPath}'");
+                }).ConfigureAwait(false);
+            }
+            catch (Exception ex) { CrashReporter.Log($"[NeuralRendering.NrDllSwap] Swap failed — {ex.Message}"); }
+            finally
+            {
+                addonSwapInProgress = false;
+                _window.DispatcherQueue?.TryEnqueue(() =>
+                {
+                    installBtn.IsEnabled = true;
+                    installBtn.Content   = prevContent;
+                });
+                RefreshStatus();
+            }
+        }
 
         nrBody.Children.Add(row1);
 
@@ -982,8 +1042,8 @@ public partial class DetailPanelBuilder
             // NR version combo only relevant for DLSS5 Tool / Bridge / Feeder (not ShortFuse)
             // Greyed when already installed — can't change without uninstalling
             bool nrVersionRelevant = selKey == NrMethodDlss5Tool || selKey == NrMethodDlss5ToolBridge || selKey == NrMethodFeeder || selKey == NrMethodShortFuse;
-            nrVersionStack.Opacity   = (!nrVersionRelevant || anyInstalled) ? 0.4 : 1.0;
-            nrVersionCombo.IsEnabled = nrVersionRelevant && !anyInstalled;
+            nrVersionStack.Opacity   = nrVersionRelevant ? 1.0 : 0.4;
+            nrVersionCombo.IsEnabled = nrVersionRelevant;
 
             // Pack version column (Feeder/Bridge only)
             bool showPackVersion = selKey == NrMethodFeeder || selKey == NrMethodDlss5ToolBridge;
