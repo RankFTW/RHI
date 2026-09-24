@@ -648,12 +648,48 @@ public partial class DetailPanelBuilder
                 string? dlssdv = dlssdi ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssd.dll")))  : null;
                 string? dlssgv = dlssgi ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssg.dll")))  : null;
 
+                // Pre-compute all per-method file checks on the background thread so the
+                // UI thread (RefreshStatusWithData) does zero I/O.
+                // DlssDetection paths (may differ from install root for deep-plugin games)
+                var det = card.DlssDetection;
+                var srPath = det?.DlssPath  ?? Path.Combine(installPath, "nvngx_dlss.dll");
+                var rrPath = det?.DlssdPath ?? Path.Combine(installPath, "nvngx_dlssd.dll");
+                var fgPath = det?.DlssgPath ?? Path.Combine(installPath, "nvngx_dlssg.dll");
+                var nrPath = det?.DlssnrPath ?? Path.Combine(installPath, "nvngx_dlssnr.dll");
+                bool srOk = File.Exists(srPath);
+                bool rrOk = File.Exists(rrPath);
+                bool fgOk = File.Exists(fgPath);
+                bool nrOk = File.Exists(nrPath);
+                string? srv   = srOk ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(srPath))   : null;
+                string? rrv   = rrOk ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(rrPath))   : null;
+                string? fgv   = fgOk ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(fgPath))   : null;
+                string? nrv2  = nrOk ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(nrPath))   : null;
+
+                // ASI Loader (ShortFuse)
+                var ualName = _window.ViewModel.GetUalInstalledAs(gameName, store);
+                bool ualOk  = !string.IsNullOrEmpty(ualName)
+                           && File.Exists(Path.Combine(installPath, ualName));
+
+                // Feeder shader files
+                var shadersDir = Path.Combine(installPath, ShaderPackService.GameReShadeShaders, "Shaders");
+                bool feedFxPresent = Directory.Exists(shadersDir) &&
+                    Directory.GetFiles(shadersDir, "DLSS5_Feed.fx", SearchOption.AllDirectories).Length > 0;
+                bool lumeniteFxPresent = Directory.Exists(shadersDir) &&
+                    Directory.GetFiles(shadersDir, "lumenite_Kernel.fx", SearchOption.AllDirectories).Length > 0;
+
+                // dgVoodoo2 (DX9 Feeder)
+                bool isDx9Feeder = card.DetectedApis.Contains(GraphicsApiType.DirectX9)
+                                || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9);
+                bool dgVoodooOk = isDx9Feeder && App.Services.GetRequiredService<DgVoodooService>().IsDeployed(installPath);
+
                 _window.DispatcherQueue?.TryEnqueue(() =>
                 {
                     if (_window.ViewModel.SelectedGame != card) return;
                     bool rsi = card.IsRsInstalled;
                     CrashReporter.Log($"[NeuralRendering.RefreshStatus] Updating status for '{card.GameName}'");
-                    RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv, hostExeOk);
+                    RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv, hostExeOk,
+                        srOk, rrOk, fgOk, nrOk, srv, rrv, fgv, nrv2,
+                        ualName, ualOk, feedFxPresent, lumeniteFxPresent, isDx9Feeder, dgVoodooOk);
                 });
                 }
                 finally { _panelScanSemaphore.Release(); }
@@ -664,7 +700,12 @@ public partial class DetailPanelBuilder
             bool d5i, bool sfi, bool nri, bool bri, bool fei, bool rsi,
             bool dlssi, bool dlssdi, bool dlssgi,
             string? nrv, string? dlssv, string? dlssdv, string? dlssgv,
-            bool hostExeOk = true)
+            bool hostExeOk,
+            bool srOk, bool rrOk, bool fgOk, bool nrOk,
+            string? srv, string? rrv, string? fgv, string? nrv2,
+            string? ualName, bool ualOk,
+            bool feedFxPresent, bool lumeniteFxPresent,
+            bool isDx9Feeder, bool dgVoodooOk)
         {
             statusPanel.Children.Clear();
 
@@ -688,71 +729,32 @@ public partial class DetailPanelBuilder
             {
                 case NrMethodDlss5Tool:
                     Tag(d5i ? "✓ DLSS5 Tool" : "✗ DLSS5 Tool", d5i);
-                {
-                    var det = card.DlssDetection;
-                    var srPath2 = det?.DlssPath  ?? Path.Combine(installPath, "nvngx_dlss.dll");
-                    var rrPath2 = det?.DlssdPath ?? Path.Combine(installPath, "nvngx_dlssd.dll");
-                    var fgPath2 = det?.DlssgPath ?? Path.Combine(installPath, "nvngx_dlssg.dll");
-                    var nrPath3 = det?.DlssnrPath ?? Path.Combine(installPath, "nvngx_dlssnr.dll");
-                    bool srOk2 = File.Exists(srPath2); bool rrOk2 = File.Exists(rrPath2);
-                    bool fgOk2 = File.Exists(fgPath2); bool nrOk3 = File.Exists(nrPath3);
                     if (card.HasDlss)
                     {
-                        Tag(srOk2 ? $"✓ DLSS SR {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(srPath2))}" : "✗ DLSS SR", srOk2);
-                        Tag(rrOk2 ? $"✓ DLSS RR {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(rrPath2))}" : "✗ DLSS RR", rrOk2);
-                        Tag(fgOk2 ? $"✓ DLSS FG {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(fgPath2))}" : "✗ DLSS FG", fgOk2);
+                        Tag(srOk ? $"✓ DLSS SR {srv}" : "✗ DLSS SR", srOk);
+                        Tag(rrOk ? $"✓ DLSS RR {rrv}" : "✗ DLSS RR", rrOk);
+                        Tag(fgOk ? $"✓ DLSS FG {fgv}" : "✗ DLSS FG", fgOk);
                     }
-                    Tag(nrOk3 ? $"✓ NR DLL {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(nrPath3))}" : "✗ NR DLL", nrOk3);
-                }
+                    Tag(nrOk ? $"✓ NR DLL {nrv2}" : "✗ NR DLL", nrOk);
                     break;
                 case NrMethodDlss5ToolBridge:
                     Tag(d5i ? "✓ DLSS5 Tool" : "✗ DLSS5 Tool", d5i);
                     Tag(bri ? "✓ DX11 Bridge" : "✗ DX11 Bridge", bri);
-                {
-                    var det = card.DlssDetection;
-                    var srPath3 = det?.DlssPath  ?? Path.Combine(installPath, "nvngx_dlss.dll");
-                    var rrPath3 = det?.DlssdPath ?? Path.Combine(installPath, "nvngx_dlssd.dll");
-                    var fgPath3 = det?.DlssgPath ?? Path.Combine(installPath, "nvngx_dlssg.dll");
-                    var nrPath4 = det?.DlssnrPath ?? Path.Combine(installPath, "nvngx_dlssnr.dll");
-                    bool srOk3 = File.Exists(srPath3); bool rrOk3 = File.Exists(rrPath3);
-                    bool fgOk3 = File.Exists(fgPath3); bool nrOk4 = File.Exists(nrPath4);
                     if (card.HasDlss)
                     {
-                        Tag(srOk3 ? $"✓ DLSS SR {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(srPath3))}" : "✗ DLSS SR", srOk3);
-                        Tag(rrOk3 ? $"✓ DLSS RR {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(rrPath3))}" : "✗ DLSS RR", rrOk3);
-                        Tag(fgOk3 ? $"✓ DLSS FG {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(fgPath3))}" : "✗ DLSS FG", fgOk3);
+                        Tag(srOk ? $"✓ DLSS SR {srv}" : "✗ DLSS SR", srOk);
+                        Tag(rrOk ? $"✓ DLSS RR {rrv}" : "✗ DLSS RR", rrOk);
+                        Tag(fgOk ? $"✓ DLSS FG {fgv}" : "✗ DLSS FG", fgOk);
                     }
-                    Tag(nrOk4 ? $"✓ NR DLL {DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(nrPath4))}" : "✗ NR DLL", nrOk4);
-                }
+                    Tag(nrOk ? $"✓ NR DLL {nrv2}" : "✗ NR DLL", nrOk);
                     break;
                 case NrMethodShortFuse:
                     Tag(sfi    ? "✓ DLSS Tool (ShortFuse)"  : "✗ DLSS Tool (ShortFuse)", sfi);
-                {
-                    // Use detected DLL paths — ShortFuse deploys to wherever DLSS lives (deep plugin folders on UE games)
-                    var det    = card.DlssDetection;
-                    var srPath = det?.DlssPath  ?? Path.Combine(installPath, "nvngx_dlss.dll");
-                    var rrPath = det?.DlssdPath ?? Path.Combine(installPath, "nvngx_dlssd.dll");
-                    var fgPath = det?.DlssgPath ?? Path.Combine(installPath, "nvngx_dlssg.dll");
-                    var nrSfPath = det?.DlssnrPath ?? Path.Combine(installPath, "nvngx_dlssnr.dll");
-                    bool srOk = File.Exists(srPath);
-                    bool rrOk = File.Exists(rrPath);
-                    bool fgOk = File.Exists(fgPath);
-                    bool nrSfOk = File.Exists(nrSfPath);
-                    string? srv   = srOk   ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(srPath))   : null;
-                    string? rrvSf = rrOk   ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(rrPath))   : null;
-                    string? fgvSf = fgOk   ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(fgPath))   : null;
-                    string? nrvSf = nrSfOk ? DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(nrSfPath)) : null;
                     Tag(srOk   ? $"✓ DLSS SR {srv}"   : "✗ DLSS SR",  srOk);
-                    Tag(rrOk   ? $"✓ DLSS RR {rrvSf}" : "✗ DLSS RR", rrOk);
-                    Tag(fgOk   ? $"✓ DLSS FG {fgvSf}" : "✗ DLSS FG", fgOk);
-                    Tag(nrSfOk ? $"✓ NR DLL {nrvSf}"  : "✗ NR DLL",  nrSfOk);
-
-                    // ASI Loader status
-                    var ualName = _window.ViewModel.GetUalInstalledAs(gameName, store);
-                    bool ualOk  = !string.IsNullOrEmpty(ualName)
-                               && File.Exists(Path.Combine(installPath, ualName));
-                    Tag(ualOk ? $"✓ ASI Loader ({ualName})" : "✗ ASI Loader", ualOk);
-                }
+                    Tag(rrOk   ? $"✓ DLSS RR {rrv}"   : "✗ DLSS RR", rrOk);
+                    Tag(fgOk   ? $"✓ DLSS FG {fgv}"   : "✗ DLSS FG", fgOk);
+                    Tag(nrOk   ? $"✓ NR DLL {nrv2}"   : "✗ NR DLL",  nrOk);
+                    Tag(ualOk  ? $"✓ ASI Loader ({ualName})" : "✗ ASI Loader", ualOk);
                     break;
                 case NrMethodFeeder:
                     Tag(fei   ? "✓ Feeder Addon"            : "✗ Feeder Addon",  fei);
@@ -768,21 +770,10 @@ public partial class DetailPanelBuilder
                     }
                     Tag(dlssi ? $"✓ DLSS SR {dlssv}"        : "✗ DLSS SR",       dlssi);
                     Tag(nri   ? $"✓ NR DLL {nrv}"           : "✗ NR DLL",        nri);
-                    var shadersDir = Path.Combine(installPath, ShaderPackService.GameReShadeShaders, "Shaders");
-                    bool feedFxPresent = Directory.Exists(shadersDir) &&
-                        Directory.GetFiles(shadersDir, "DLSS5_Feed.fx", SearchOption.AllDirectories).Length > 0;
-                    bool lumeniteFxPresent = Directory.Exists(shadersDir) &&
-                        Directory.GetFiles(shadersDir, "lumenite_Kernel.fx", SearchOption.AllDirectories).Length > 0;
                     Tag(feedFxPresent    ? "✓ Feed.fx"    : "✗ Feed.fx",    feedFxPresent);
                     Tag(lumeniteFxPresent ? "✓ LumeniteFX" : "✗ LumeniteFX", lumeniteFxPresent);
-                    // dgVoodoo2 required for DX9 games (D3D9→DX11 translation layer)
-                    bool isDx9Feeder = card.DetectedApis.Contains(GraphicsApiType.DirectX9)
-                                    || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9);
                     if (isDx9Feeder)
-                    {
-                        bool dgVoodooOk = App.Services.GetRequiredService<DgVoodooService>().IsDeployed(installPath);
                         Tag(dgVoodooOk ? "✓ dgVoodoo2" : "✗ dgVoodoo2", dgVoodooOk);
-                    }
                     break;
                 default:
                     Tag("Not installed", false);
