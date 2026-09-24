@@ -96,6 +96,8 @@ public partial class MainViewModel
             return false;
         if (fileName.StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase))
             return false;
+        if (fileName.StartsWith("renodx-mfgunlock", StringComparison.OrdinalIgnoreCase))
+            return false;
         if (fileName.StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase))
             return false;
         if (fileName.StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase))

@@ -808,6 +808,7 @@ public partial class MainViewModel
                                 && !fn.StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-upgrade", StringComparison.OrdinalIgnoreCase)
+                                && !fn.StartsWith("renodx-mfgunlock", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase))
