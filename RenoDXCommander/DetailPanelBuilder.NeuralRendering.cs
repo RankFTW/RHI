@@ -600,19 +600,28 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
             CornerRadius = new CornerRadius(6),
         };
-        var nrVersions = dlssSvc.DlssnrVersions.ToList();
-        var latestNrVer = nrVersions.FirstOrDefault();
-        nrVersionCombo.Items.Add(string.IsNullOrEmpty(latestNrVer) ? "Latest" : $"Latest ({latestNrVer})");
-        foreach (var v in nrVersions)
-            nrVersionCombo.Items.Add(v);
-        nrVersionCombo.SelectedIndex = 0;
         ToolTipService.SetToolTip(nrVersionCombo, "NR DLL version to deploy. 'Latest' always uses the newest available. Change while installed to swap the NR DLL in-place.");
         nrVersionStack.Children.Add(nrVersionCombo);
         Grid.SetColumn(nrVersionStack, 3);
         row1.Children.Add(nrVersionStack);
 
-        // Wire NR DLL version swap — same pattern as addon version swap
+        // Helper: populate nrVersionCombo — called at build time and whenever the manifest is available
         bool nrComboInit = true;
+        void PopulateNrVersionCombo()
+        {
+            nrComboInit = true;
+            nrVersionCombo.Items.Clear();
+            var versions = dlssSvc.DlssnrVersions.ToList();
+            var latestVer = versions.FirstOrDefault();
+            nrVersionCombo.Items.Add(string.IsNullOrEmpty(latestVer) ? "Latest" : $"Latest ({latestVer})");
+            foreach (var v in versions)
+                nrVersionCombo.Items.Add(v);
+            nrVersionCombo.SelectedIndex = 0;
+            nrComboInit = false;
+        }
+        PopulateNrVersionCombo();
+
+        // Wire NR DLL version swap — same pattern as addon version swap
         nrVersionCombo.SelectionChanged += NrVersionCombo_SelectionChanged;
         nrComboInit = false;
 
@@ -1101,6 +1110,7 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.SetNrMethodOverride(gameName, selKey, store);
                 // Repopulate addon version combo in case it wasn't populated yet
                 PopulateAddonVersionCombo(selKey == NrMethodShortFuse ? "dlsstool" : "dlss5tool");
+                PopulateNrVersionCombo();
                 UpdateInstallBtnAppearance();
                 UpdateDescription(selKey);
                 RefreshStatus();
@@ -1109,6 +1119,7 @@ public partial class DetailPanelBuilder
 
             // Repopulate addon version combo for the new method's addon type
             PopulateAddonVersionCombo(selKey == NrMethodShortFuse ? "dlsstool" : "dlss5tool");
+            PopulateNrVersionCombo();
 
             // Different method selected — check installed state off the UI thread (File.Exists on
             // WindowsApps paths can block), then uninstall if needed
