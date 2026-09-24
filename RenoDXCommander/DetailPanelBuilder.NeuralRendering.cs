@@ -21,6 +21,16 @@ public partial class DetailPanelBuilder
     private const string FeederDeployFile64 = "dlss5-feed.addon64";
     private const string FeederDeployFile32 = "dlss5-feed.addon32";
 
+    /// <summary>
+    /// Strips a display-only parenthetical suffix from a version string so it can be used
+    /// as a staging directory name. e.g. "310.8.0 (50xx)" → "310.8.0".
+    /// </summary>
+    private static string StripVersionSuffix(string version)
+    {
+        var idx = version.IndexOf('(');
+        return idx > 0 ? version[..idx].TrimEnd() : version;
+    }
+
     // ── Method constants ──────────────────────────────────────────────────────
     private const string NrMethodDlss5Tool        = "DLSS5Tool";
     private const string NrMethodDlss5ToolBridge  = "DLSS5ToolBridge";
@@ -654,7 +664,7 @@ public partial class DetailPanelBuilder
                     {
                         var nrDir = Path.Combine(
                             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                            "RHI", "DLSS-NR", sel!);
+                            "RHI", "DLSS-NR", StripVersionSuffix(sel!));
                         cachedNr = Path.Combine(nrDir, "nvngx_dlssnr.dll");
                         if (!File.Exists(cachedNr))
                             cachedNr = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
@@ -1687,7 +1697,7 @@ public partial class DetailPanelBuilder
         {
             var nrDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "RHI", "DLSS-NR", nrSelectedVersion);
+                "RHI", "DLSS-NR", StripVersionSuffix(nrSelectedVersion));
             cachedNr = Path.Combine(nrDir, "nvngx_dlssnr.dll");
             if (!File.Exists(cachedNr))
                 cachedNr = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
