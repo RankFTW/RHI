@@ -134,8 +134,8 @@ public class UnrealEntry : INotifyPropertyChanged
         ("Off (0)",               "0"),
         ("On (1)",                "1"),
         ("On - Compat (2)",       "2"),
-        ("scRGB",                 "scRGB"),
-        ("Gamma",                 "Gamma"),
+        ("Linear (0)",            "0"),
+        ("Gamma (1)",             "1"),
     ];
 
     /// <summary>

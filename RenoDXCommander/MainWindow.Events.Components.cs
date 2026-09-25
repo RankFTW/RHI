@@ -683,7 +683,7 @@ public sealed partial class MainWindow
                     if (isSetPath) { combo.Items.Add("HDR / Off"); combo.Items.Add("SDR / On"); }
                     else if (isDumpLut) { combo.Items.Add("Off"); combo.Items.Add("On"); }
                     else if (isSwapchainProxy) { combo.Items.Add("Off"); combo.Items.Add("On"); combo.Items.Add("On (Compat)"); }
-                    else if (isSwapchainEncoding) { combo.Items.Add("Gamma"); combo.Items.Add("scRGB"); }
+                    else if (isSwapchainEncoding) { combo.Items.Add("Linear"); combo.Items.Add("Gamma"); }
                     else if (isUnityBool) { combo.Items.Add("Off"); combo.Items.Add("On"); }
                     else { combo.Items.Add("Off"); combo.Items.Add("Output size"); combo.Items.Add("Output ratio"); combo.Items.Add("Any size"); }
 
