@@ -7,13 +7,14 @@ namespace RenoDXCommander.Services;
 /// <summary>
 /// Fetches the RHI-maintained RenoDX database JSON files from GitHub.
 /// These replace wiki scraping as the primary source for named mod info and
-/// UE-Extended configuration.
+/// engine-specific configuration.
 ///
-/// Two files are fetched:
-///   RenoDXdb.json       — named mods (snapshotUrl, nexusUrl, author, notes, etc.)
+/// Three files are fetched:
+///   RenoDXdb.json        — named mods (snapshotUrl, nexusUrl, author, notes, etc.)
 ///   RenoDXdb-unreal.json — UE-Extended games (Method → Set_Path / Engine.ini / Upgrades)
+///   RenoDXdb-unity.json  — Unity games (Upgrades → per-game [renodx] INI overrides)
 ///
-/// Both use ETag caching via GitHubETagCache — no re-download when files haven't changed.
+/// All use ETag caching via GitHubETagCache — no re-download when files haven't changed.
 /// </summary>
 public class RenoDXDbService : IRenoDXDbService
 {
@@ -26,6 +27,9 @@ public class RenoDXDbService : IRenoDXDbService
     private const string UnrealUrl =
         "https://raw.githubusercontent.com/RankFTW/rhi-repo/main/database/RenoDXdb-unreal.json";
 
+    private const string UnityUrl =
+        "https://raw.githubusercontent.com/RankFTW/rhi-repo/main/database/RenoDXdb-unity.json";
+
     private static readonly JsonSerializerOptions _jsonOpts = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -36,9 +40,12 @@ public class RenoDXDbService : IRenoDXDbService
     private List<GameMod> _cachedMods = new();
     private Dictionary<string, RenoDXDbUnrealEntry> _cachedUnreal =
         new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, RenoDXDbUnityEntry> _cachedUnity =
+        new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<GameMod> CachedMods => _cachedMods;
     public IReadOnlyDictionary<string, RenoDXDbUnrealEntry> CachedUnrealEntries => _cachedUnreal;
+    public IReadOnlyDictionary<string, RenoDXDbUnityEntry> CachedUnityEntries => _cachedUnity;
 
     public RenoDXDbService(HttpClient http, GitHubETagCache etagCache)
     {
@@ -47,7 +54,7 @@ public class RenoDXDbService : IRenoDXDbService
     }
 
     /// <summary>
-    /// Clears the ETag cache entries for both DB URLs so the next
+    /// Clears the ETag cache entries for all three DB URLs so the next
     /// <see cref="FetchAllAsync"/> call sends unconditional GETs and picks up
     /// any changes made to the remote files since the last fetch.
     /// </summary>
@@ -55,26 +62,29 @@ public class RenoDXDbService : IRenoDXDbService
     {
         _etagCache.Invalidate(NamedModsUrl);
         _etagCache.Invalidate(UnrealUrl);
-        CrashReporter.Log("[RenoDXDbService.InvalidateCache] ETag cache cleared for both DB URLs");
+        _etagCache.Invalidate(UnityUrl);
+        CrashReporter.Log("[RenoDXDbService.InvalidateCache] ETag cache cleared for all three DB URLs");
     }
 
-    public async Task<(List<GameMod> Mods, Dictionary<string, RenoDXDbUnrealEntry> UnrealEntries)>
-        FetchAllAsync()
+    public async Task<DbFetchResult> FetchAllAsync()
     {
         var modsTask   = FetchNamedModsAsync();
         var unrealTask = FetchUnrealEntriesAsync();
+        var unityTask  = FetchUnityEntriesAsync();
 
-        await Task.WhenAll(modsTask, unrealTask).ConfigureAwait(false);
+        await Task.WhenAll(modsTask, unrealTask, unityTask).ConfigureAwait(false);
 
         var mods   = modsTask.Result;
         var unreal = unrealTask.Result;
+        var unity  = unityTask.Result;
 
         // Update in-memory cache on success
         if (mods.Count > 0)   _cachedMods   = mods;
         if (unreal.Count > 0) _cachedUnreal  = unreal;
+        if (unity.Count > 0)  _cachedUnity   = unity;
 
-        CrashReporter.Log($"[RenoDXDbService.FetchAllAsync] Named mods: {mods.Count}, UE entries: {unreal.Count}");
-        return (mods, unreal);
+        CrashReporter.Log($"[RenoDXDbService.FetchAllAsync] Named mods: {mods.Count}, UE entries: {unreal.Count}, Unity entries: {unity.Count}");
+        return new DbFetchResult(mods, unreal, unity);
     }
 
     // ── Private fetch helpers ─────────────────────────────────────────────────
@@ -156,6 +166,37 @@ public class RenoDXDbService : IRenoDXDbService
         {
             CrashReporter.Log($"[RenoDXDbService.FetchUnrealEntriesAsync] Failed — {ex.Message}");
             return _cachedUnreal;
+        }
+    }
+
+    private async Task<Dictionary<string, RenoDXDbUnityEntry>> FetchUnityEntriesAsync()
+    {
+        try
+        {
+            var json = await _etagCache.GetWithETagAsync(_http, UnityUrl).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                CrashReporter.Log("[RenoDXDbService.FetchUnityEntriesAsync] Empty or null response");
+                return _cachedUnity;
+            }
+
+            var entries = JsonSerializer.Deserialize<List<RenoDXDbUnityEntry>>(json, _jsonOpts);
+            if (entries == null) return _cachedUnity;
+
+            var result = new Dictionary<string, RenoDXDbUnityEntry>(StringComparer.OrdinalIgnoreCase);
+            foreach (var e in entries)
+            {
+                if (string.IsNullOrWhiteSpace(e.Name)) continue;
+                result[e.Name.Trim()] = e;
+            }
+
+            CrashReporter.Log($"[RenoDXDbService.FetchUnityEntriesAsync] Parsed {result.Count} Unity entries");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[RenoDXDbService.FetchUnityEntriesAsync] Failed — {ex.Message}");
+            return _cachedUnity;
         }
     }
 

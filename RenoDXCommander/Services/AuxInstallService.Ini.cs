@@ -524,6 +524,47 @@ public partial class AuxInstallService
     }
 
     /// <summary>
+    /// Applies per-game [renodx] INI upgrades from the Unity DB to the game's reshade.ini.
+    /// Each (Key, Value) pair is force-written into the [renodx] section, overwriting any
+    /// existing value. Keys not present in the list are left untouched.
+    /// No-op when upgrades is empty or reshade.ini doesn't exist.
+    /// </summary>
+    /// <param name="gameDir">Game install directory.</param>
+    /// <param name="upgrades">Parsed upgrade pairs from RenoDXDbUnityEntry.ParsedUpgrades.</param>
+    public static void ApplyUnityRenodxUpgrades(string gameDir, List<(string Key, string Value)> upgrades)
+    {
+        if (upgrades == null || upgrades.Count == 0) return;
+
+        var iniFilePath = Path.Combine(gameDir, "reshade.ini");
+        if (!File.Exists(iniFilePath)) return;
+
+        try
+        {
+            var ini = ParseIni(File.ReadAllLines(iniFilePath));
+            const string section = "renodx";
+
+            if (!ini.TryGetValue(section, out var keys))
+            {
+                keys = new OrderedDict();
+                ini[section] = keys;
+            }
+
+            foreach (var (key, value) in upgrades)
+            {
+                keys[key] = value;
+                CrashReporter.Log($"[AuxInstallService.ApplyUnityRenodxUpgrades] {key}={value} in '{gameDir}'");
+            }
+
+            WriteIni(iniFilePath, ini);
+            CrashReporter.Log($"[AuxInstallService.ApplyUnityRenodxUpgrades] Applied {upgrades.Count} upgrade(s) to '{iniFilePath}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.ApplyUnityRenodxUpgrades] Failed for '{gameDir}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Removes the [renodx] section from reshade.ini when UE-Extended is uninstalled.
     /// </summary>
     public static void RemoveRenoDxNativeHdrSettings(string gameDir)

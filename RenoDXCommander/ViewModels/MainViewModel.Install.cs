@@ -900,7 +900,21 @@ public partial class MainViewModel
             if (!card.UseUeExtended && card.EngineHint?.Contains("Unreal") == true)
                 AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unreal");
             else if (!card.UseUeExtended && card.EngineHint?.Contains("Unity") == true)
+            {
                 AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unity");
+
+                // Apply per-game DB upgrades on top of the placeholders (dev-gated)
+                if (DevUnlockService.IsUnlocked)
+                {
+                    var unityEntry = GetDbUnityEntry(card.GameName);
+                    var upgrades   = unityEntry?.ParsedUpgrades;
+                    if (upgrades?.Count > 0)
+                    {
+                        AuxInstallService.ApplyUnityRenodxUpgrades(card.InstallPath, upgrades);
+                        _crashReporter.Log($"[MainViewModel.InstallModAsync] Unity DB upgrades applied for '{card.GameName}': {upgrades.Count} key(s)");
+                    }
+                }
+            }
 
             // Apply per-game [renodx] INI overrides from manifest
             if (_manifest?.RenodxIniOverrides != null

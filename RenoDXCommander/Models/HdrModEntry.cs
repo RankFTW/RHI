@@ -2,7 +2,7 @@ namespace RenoDXCommander.Models;
 
 /// <summary>
 /// A single row in the Available HDR Mods dialog.
-/// Represents a game that has a RenoDX mod, a UE-Extended entry, a Luma mod, or any combination.
+/// Represents a game that has a RenoDX mod, a UE-Extended entry, a Unity entry, a Luma mod, or any combination.
 /// </summary>
 public record HdrModEntry(
     string  Name,

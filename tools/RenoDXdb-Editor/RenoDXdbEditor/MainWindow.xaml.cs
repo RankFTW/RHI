@@ -479,7 +479,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Unity DB: strip the "Method" field entirely from the JSON
                 if (_activeDb == DbType.Unity)
                     json = System.Text.RegularExpressions.Regex.Replace(
-                        json, @",?\s*""Method""\s*:\s*(?:null|""[^""]*""),?", "");
+                        json, @",?\s*""Method""\s*:\s*(?:null|""[^""]*"")", "");
             }
             else
                 json = JsonSerializer.Serialize(_allMods.ToList(), opts);

@@ -100,7 +100,21 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 if (!card.UseUeExtended && card.EngineHint?.Contains("Unreal") == true)
                     AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unreal");
                 else if (!card.UseUeExtended && card.EngineHint?.Contains("Unity") == true)
+                {
                     AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unity");
+
+                    // Apply per-game DB upgrades on top of the placeholders (dev-gated)
+                    if (DevUnlockService.IsUnlocked
+                        && AuxInstallService.GlobalUnityEntries.TryGetValue(card.GameName, out var unityEntry))
+                    {
+                        var upgrades = unityEntry.ParsedUpgrades;
+                        if (upgrades.Count > 0)
+                        {
+                            AuxInstallService.ApplyUnityRenodxUpgrades(card.InstallPath, upgrades);
+                            CrashReporter.Log($"[UpdateOrchestrationService] Unity DB upgrades applied for '{card.GameName}': {upgrades.Count} key(s)");
+                        }
+                    }
+                }
 
                 // Apply per-game [renodx] INI overrides from manifest
                 if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null

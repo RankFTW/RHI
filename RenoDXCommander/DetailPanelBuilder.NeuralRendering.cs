@@ -59,17 +59,30 @@ public partial class DetailPanelBuilder
             try { await _panelScanSemaphore.WaitAsync(scanToken).ConfigureAwait(false); }
             catch (OperationCanceledException) { CrashReporter.Log($"[BuildNeuralRenderingSection] Semaphore cancelled: '{card.GameName}'"); return; }
             CrashReporter.Log($"[BuildNeuralRenderingSection] Semaphore acquired, scanning files: '{card.GameName}'");
+
+            bool dlss5Installed, sfInstalled, nrDllPresent, nrDllOwnedByRhi, bridgePresent, feederPresent;
+            string? nrDllVersion;
             try
             {
-            bool dlss5Installed  = rdx5Svc.IsInstalledIn(installPath);
-            bool sfInstalled     = rdx5Svc.IsSfInstalledIn(installPath);
-            bool nrDllPresent    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
-            bool nrDllOwnedByRhi = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original"));
-            string? nrDllVersion = null;
-            if (nrDllPresent)
-                nrDllVersion = DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll")));
-            bool bridgePresent = File.Exists(Path.Combine(installPath, BridgeDeployFile));
-            bool feederPresent = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+                dlss5Installed  = rdx5Svc.IsInstalledIn(installPath);
+                sfInstalled     = rdx5Svc.IsSfInstalledIn(installPath);
+                nrDllPresent    = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll"));
+                nrDllOwnedByRhi = File.Exists(Path.Combine(installPath, "nvngx_dlssnr.dll.original"));
+                nrDllVersion    = null;
+                if (nrDllPresent)
+                    nrDllVersion = DlssStreamlineService.FormatVersion(dlssSvc.GetFileVersion(Path.Combine(installPath, "nvngx_dlssnr.dll")));
+                bridgePresent = File.Exists(Path.Combine(installPath, BridgeDeployFile));
+                feederPresent = File.Exists(Path.Combine(installPath, card.Is32Bit ? FeederDeployFile32 : FeederDeployFile64));
+            }
+            finally
+            {
+                // Release the semaphore immediately after file scans — before TryEnqueue.
+                // Holding it across the TryEnqueue causes a dispatcher deadlock when the UI thread
+                // is busy running BuildNvidiaProfileBody (which calls BuildDriverProfileSection,
+                // which waits on this semaphore via Task.Run, starving the dispatcher).
+                _panelScanSemaphore.Release();
+                CrashReporter.Log($"[BuildNeuralRenderingSection] Semaphore released: '{card.GameName}'");
+            }
 
             _window.DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
@@ -82,8 +95,6 @@ public partial class DetailPanelBuilder
                 else
                     CrashReporter.Log($"[BuildNeuralRenderingSectionWithData] done: '{card.GameName}' in {__sw.ElapsedMilliseconds}ms");
             });
-            }
-            finally { _panelScanSemaphore.Release(); }
         });
     }
 

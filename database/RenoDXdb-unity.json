@@ -1,0 +1,2498 @@
+[
+  {
+    "Name": "420BLAZEIT2: GAME OF THE YEAR -=Dank Dreams and Goated Memes=- [#wow/11 Like and Subscribe] Poggerz Edition",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "60 Parsecs!",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "7 Days to Die",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "If using basic upscaler (Dynamic Resolution or Scale)"
+  },
+  {
+    "Name": "9 Years of Shadows",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "A Difficult Game About Climbing",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "AER Memories of Old",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Aeterna Noctis",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Output Ratio`",
+    "Comments": null
+  },
+  {
+    "Name": "Afterparty",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Agatha Christie - Death on the Nile",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Agent A: A puzzle in disguise",
+    "Status": "Done",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "AI LIMIT",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Output Size` `Upgrade_R8G8B8A8_UNORM` `Output Ratio` `Upgrade_R8G8B8A8_UNORM_SRGB` `Any Size` `Upgrade_CopyDestinations` `1` `ForceBorderless` `0` `Use_Resource_Cloning` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "AK-Xolotl Together",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "AKIBA'S TRIP: Hellbound & Debriefed",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "All We Need",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Altheia: The Wrath of Aferi",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "American Fugitive",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "Game's Graphics Quality setting to Medium or above"
+  },
+  {
+    "Name": "Amerzone - The Explorer's Legacy (2025)",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Among the Sleep - Enhanced Edition",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "An Airport for Aliens Currently Run by Dogs",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Anger Foot",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Anodyne 2: Return to Dust",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": "32-bit. , . Both compatibility offsets +1"
+  },
+  {
+    "Name": "Another Crab's Treasure",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Aragami",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Tonemap/CG not in real time (restart level to reload)"
+  },
+  {
+    "Name": "Aragami 2",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Arkham Horror: Mother's Embrace",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size` `Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "art of rally",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Assault Android Cactus+",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Astrea: Six-Sided Oracles",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Atelier Resleriana: The Red Alchemist & the White Guardian",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "ATLYSS",
+    "Status": "Done",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "Atomic Owl",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Au Revoir",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Autonauts",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Autonauts vs Piratebots",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "AWAKEN - Astral Blade",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Baby Steps",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Bad North: Jotunn Edition",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Ball x Pit",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "Bandle Tale: A League of Legends Story",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Batbarian: Testament of the Primordials",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Any Size` `Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Battlestar Galactica Deadlock",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "BATTLETECH",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Becalm",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Becastled",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Before We Leave",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Before Your Eyes",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Beholder",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Any Size` `Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Beholder 2",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Beholder 3",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Ben 10: Power Trip",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Bendy and the Dark Revival",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Bendy and the Ink Machine",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "Bendy: Lone Wolf",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Bendy: Secrets of the Machine",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Besiege",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "BETON BRUTAL",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Beyond Galaxyland",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "Big Walk",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Bionic Bay",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Not entirely playable yet"
+  },
+  {
+    "Name": "Biped",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Tonemap/color grading not in real time (Load Save Point to refresh)"
+  },
+  {
+    "Name": "Blackwind",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "BlazBlue Entropy Effect",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Bloody Hell",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Both compatibility offsets +1"
+  },
+  {
+    "Name": "Blue Prince",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "BOOMEROAD",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Bounty Star",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Boxes: Lost Fragments",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Breachway",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Bread & Fred",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Bubsy 4D",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Bō: Path of the Teal Lotus",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Cairn",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Cakey's Twisted Bakery",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Cat Quest III",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Children of Morta",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Children of the Sun",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Circuit Superstars",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Citizen Sleeper",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Cloudpunk",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Cloverpit",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Use DX11 (Second launch option)"
+  },
+  {
+    "Name": "Content Warning",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "CONVERGENCE: A League of Legends Story™",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Copycat",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": null
+  },
+  {
+    "Name": "Core Keeper",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Coridden",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Crab Game",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Creature Kitchen",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Any Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Ctrl Alt Ego",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Cult of the Lamb",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Cuphead",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Darkwood",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "DAVE THE DIVER",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "DEAD LETTER DEPT.",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "DeadCore Redux Demo",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "Death's Door",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Deep Rock Survivor",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Deliver At All Costs",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Descenders",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Digimon World: Next Order",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "Dino Topia",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Diplomacy is Not an Option",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Disco Elysium",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Distance",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "DRACOMATON",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "DRAGON QUEST BUILDERS",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Enable Bloom in-game (can be disabled in addon)"
+  },
+  {
+    "Name": "Dread Delusion",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Dread Templar",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Works out of the box. Crashes when any settings are applied/saved but settings are saved anyways"
+  },
+  {
+    "Name": "Dreamfall Chapters - The Final Cut",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "Game save preview pictures are broken"
+  },
+  {
+    "Name": "DREDGE",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "DROS",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Drova Forsaken Kin",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0` `ForceBorderless` `1`",
+    "Comments": "Swapchain"
+  },
+  {
+    "Name": "Dungeons 2",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Scaling AND Tonemap offset = 1. Main Menu will be black, but everything is fine once loaded in game"
+  },
+  {
+    "Name": "Dungeons 3",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Swampchain proxy on"
+  },
+  {
+    "Name": "Dungeons 4",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Change game's Brightness (Gamma) setting to refresh LUT"
+  },
+  {
+    "Name": "Dustborn",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Dyson Sphere Program",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Dystopika",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": "& R11G11B10_FLOAT"
+  },
+  {
+    "Name": "Eastern Exorcist",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Both compatibility offsets +1"
+  },
+  {
+    "Name": "Eastshade",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Click Game Brightness setting and save to refresh LUT"
+  },
+  {
+    "Name": "Easy Delivery Co.",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Egging On",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": null
+  },
+  {
+    "Name": "Eiyuden Chronicle: Hundred Heroes",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Eiyuden Chronicle: Rising",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "El Paso, Elsewhere",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "ELDERBORN",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Encased",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "End Transmission?",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": "& R11G11B10_FLOAT"
+  },
+  {
+    "Name": "Enigma of Fear",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Enter The Gungeon",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Epistory - Typing Chronicles",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "Ereban - Shadow Legacy",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Escape Academy",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Eternal Threads",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Exit The Gungeon",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Exo One",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Fabledom",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "(If game's Anti-aliasing is enabled, Compatibility Blit Copy: Scaling only)"
+  },
+  {
+    "Name": "Fallen Aces",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Both compatibilty offsets +1"
+  },
+  {
+    "Name": "Fantasy General II",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "FAR: Lone Sails",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Fe",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Feed the Deep",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Figment",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Figment 2: Creed Valley",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Firewatch",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Five Nights at Freddy's: Into the Pit",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Flashback 2",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "For The King",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "For The King II",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "Forgotten 23",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "FRONT MISSION 2: Remake",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": null
+  },
+  {
+    "Name": "FUMES",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Gamble With Your Friends",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Force_Pipeline_Cloning` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Gang Beasts",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Gatekeeper",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Gedonia",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Ghost of a Tale",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "Enable Bloom in-game (can be disabled in addon)"
+  },
+  {
+    "Name": "Giggleland: Terry’s Vegetable Patch",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Gods Trigger",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Going Under",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Golf With Your Friends",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Upgrade ??????????????"
+  },
+  {
+    "Name": "Great God Grove",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Ratio`",
+    "Comments": null
+  },
+  {
+    "Name": "GRIME",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Gunfire Reborn",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Upgrade ??????????????"
+  },
+  {
+    "Name": "GUNTOUCHABLES",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Halve Demo",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Hardspace: Shipbreaker",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Haste",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Have a Nice Death",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Heart of the Machine",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Compatibility Scaling Offset +1"
+  },
+  {
+    "Name": "Hell Clock",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Herdling",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Disable games's native HDR from game's config file"
+  },
+  {
+    "Name": "Heroes of Might and Magic: Olden Era",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Hextech Mayhem: A League of Legends Story™",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Hollow Cocoon",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Game's Rendering Quality setting should be 100%"
+  },
+  {
+    "Name": "Hollowbody",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Hordelord",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "House Flipper",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "House Flipper 2",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Tonemap/color grading not in real time (change game Saturation setting to refresh)"
+  },
+  {
+    "Name": "Hover",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "How to Fish",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Human Fall Flat",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "32-bit. . Both compatibilty offsets +1"
+  },
+  {
+    "Name": "HUMANKIND",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "HUNTER×HUNTER NEN×IMPACT",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Hymer 2000",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "ICEY",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "In Sound Mind",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "INCISION",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Inertial Drift",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Iron Lung",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "IRON NEST: Heavy Turret Simulator",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "ISLANDERS",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "It Steals",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "ITORAH",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Jaded",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Jotunnslayer: Hordes of Hel",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "Katamari Damacy REROLL",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Kaze and the Wild Masks",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Any Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Keep Talking and Nobody Explodes",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Kerbal Space Program",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "KeyWe",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "KILL KNIGHT",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Killer Frequency",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Kingdoms and Castles",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Klonoa Phantasy Reverie Series",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Kona",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Kona II: Brume",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "LASERS",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Last Epoch",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "LEGO® Bricktales",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Upgrade ??????????????"
+  },
+  {
+    "Name": "LEGO® Voyagers",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Little Big Adventure - Twinsen's Quest",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Little Goody Two Shoes",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Little Kitty, Big City",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Little Noah: Scion of Paradise",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Little Witch in the Woods",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Lonely Mountains: Downhill",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Lost At Sea",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Lost In Random",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Lost In Random: The Eternal Die",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Lost In Vivo",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Lost Ruins",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Lost Words: Beyond the Page",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Lumines Arise",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "by Output Ratio"
+  },
+  {
+    "Name": "Lysfanga: The Time Shift Warrior",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Compatibilty Scaling offset +1"
+  },
+  {
+    "Name": "Mages of Mystralia",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Mai: Child of Ages",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Maid of Sker",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Make Way",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Mars Attracts",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Megabonk",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Metal: Hellsinger",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Mind Over Magic",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Minds Beneath Us",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "MiSide",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Mon Bazou",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Monster Train",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Upgrade ??????????????"
+  },
+  {
+    "Name": "Monster Train 2",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Monument Valley",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "Monument Valley 2",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "Moonlighter",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "swapchain (enable proxy ?)"
+  },
+  {
+    "Name": "Morbid Metal (demo)",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Upgrade ??????????????"
+  },
+  {
+    "Name": "Mouthwashing",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Output Ratio` `ForceBorderless` `1`",
+    "Comments": "Both compatibilty offsets +1"
+  },
+  {
+    "Name": "My Friend Pedro",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "Tonemap/CG not in real time (restart level to reload)"
+  },
+  {
+    "Name": "My Friendly Neighborhood",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Mycopunk",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "NECROPOLIS: BRUTAL EDITION",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit. ReShade can be asi-loaded"
+  },
+  {
+    "Name": "Neon Abyss",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "Upgrade Upgrade_R16G16B16A16_TYPELESS"
+  },
+  {
+    "Name": "NEOVERSE",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "New Super Lucky's Tale",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "NIGHT-RUNNERS PROLOGUE",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Nine Sols",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Nocturnal",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": null
+  },
+  {
+    "Name": "NODE: The Last Favor of the Antarii",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "NOTTOLOT",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Both compatibilty offsets +1"
+  },
+  {
+    "Name": "Nova Lands",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "swapchain (enable proxy ?)"
+  },
+  {
+    "Name": "Oblivion Override",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Observation",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Oddworld: Soulstorm Enhanced Edition",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": "Tonemap/CG not in real time (restart checkpoint/level to reload)"
+  },
+  {
+    "Name": "Old School Rally",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Once Upon a Puppet",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "One-Eyed Likho",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Operation Wolf Returns: First Mission",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "ORDER 13",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Tonemap/color grading not in real time (change Brightness in game settings to reload)"
+  },
+  {
+    "Name": "Osiris: New Dawn",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Outer Wilds",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "Outward Definitive Edition",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Overcooked",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Overcooked! 2",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Overcooked! All You Can Eat",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": "64-bit. , . R8G8B8A8_TYPELESS Upgrade to Output ratio or Any Size"
+  },
+  {
+    "Name": "Oxenfree",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "OXENFREE II: Lost Signals",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Parkitect",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Party Club",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": "& R11G11B10_FLOAT"
+  },
+  {
+    "Name": "Pathfinder: Kingmaker",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "PEAK",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Use DX11"
+  },
+  {
+    "Name": "People Playground",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Phasmophobia",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Upgrade ??????????????"
+  },
+  {
+    "Name": "Phoenix Point",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Pillars of Eternity",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "Set swapchain encoding to Gamma. Set scaling and tonemap offset to 1"
+  },
+  {
+    "Name": "Pillars of Eternity II: Deadfire",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Plan B: Terraform",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Planet of Lana 2",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Plasma",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Playing Kafka",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Poly Bridge 3",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "POOLS",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "POSTAL: Brain Damaged",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "PowerWash Simulator",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Praey for the Gods",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Prince of Persia: The Lost Crown",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Color grading unaffected (other than Peak and UI Brightness). Use the Luma Framework mod below"
+  },
+  {
+    "Name": "Pummel Party",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Quern - Undying Thoughts",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "R.E.P.O.",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Any Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Raft",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "ReCore: Definitive Edition",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "REKA",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Republique",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "REVEIL",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "RimWorld",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Risk of Rain 2",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Road 96: Mile 0",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Road Redemption",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "ROUNDS",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Ruined King: A League of Legends Story™",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Pause menu background is broken"
+  },
+  {
+    "Name": "SaGa Emerald Beyond",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Satellite Reign",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Saturnalia",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Schedule I",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Sea of Solitude",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Sektori",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Shadow Labyrinth",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Shadow of the Road (demo)",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Shadows of Doubt",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Shadows: Awakening",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Tonemap/color grading not in real time"
+  },
+  {
+    "Name": "Shady Knight",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Shape of Dreams",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Both compatibility offsets +1"
+  },
+  {
+    "Name": "Shift 87",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Skate Story",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Disable in-game HDR"
+  },
+  {
+    "Name": "Sker Ritual",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Open game graphic settings and hit Apply to refresh Tonemap/Color grading"
+  },
+  {
+    "Name": "Sledders",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "SNØ: Ultimate Freeriding",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Soda Crisis",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Solasta: Crown of the Magister",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Song of the Deep",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Songs Of Silence",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": "& R11G11B10_FLOAT. Compatibility Scaling offset +2"
+  },
+  {
+    "Name": "Soulstone Survivors",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Space Crew",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Spacebase Startopia",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Spark the Electric Jester 3",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "SpeedRunners 2: King of Speed (Demo)",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Spellforce Conquest of Eo",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "swapchain (enable proxy ?)"
+  },
+  {
+    "Name": "Spiritfall",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size` `Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Spooky's Jump Scare Mansion: HD Renovation",
+    "Status": "Done",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": "Both Compatibility Offsets +1"
+  },
+  {
+    "Name": "STAR OCEAN THE SECOND STORY R",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Star Trucker",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "SteamWorld Build",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Stick Fight: The Game",
+    "Status": "Done",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Streets of Rogue",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Subnautica",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Subnautica : Below Zero",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "SuchArt: Genius Artist Simulator",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Summoner's War: Chronicles",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Enable Bloom in game settings"
+  },
+  {
+    "Name": "Sunless Skies: Sovereign Edition",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Super Bunny Man",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "SUPER CRAZY RHYTHM CASTLE",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "SUPERHOT",
+    "Status": "WIP",
+    "Upgrades": "`Swapchain_Encoding` `0`",
+    "Comments": "64 bit"
+  },
+  {
+    "Name": "SUPERHOT: MIND CONTROL DELETE",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": "32 bit"
+  },
+  {
+    "Name": "Superliminal",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "SWORN",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Syberia - Remastered",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Syberia - The World Before",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Tainted Grail: Conquest",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Tainted Grail: The Fall of Avalon",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Tales of Berseria Remastered",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": "64-bit. , FMV anime cutscenes also affected"
+  },
+  {
+    "Name": "Tales of the Shire: A The Lord of The Rings™ Game",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": "64-bit"
+  },
+  {
+    "Name": "Tales of Xillia Remastered",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R8G8B8A8_TYPELESS` `Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": "64-bit"
+  },
+  {
+    "Name": "Teenage Mutant Ninja Turtles: Mutants Unleashed",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "TerraTech",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1` `Swapchain_Encoding` `0`",
+    "Comments": null
+  },
+  {
+    "Name": "The Dungeon Of Naheulbeuk: The Amulet Of Chaos",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "The First Tree",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "The Forest",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "The Karters 2: Turbo Charged",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "The Knightling",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "The Last Stand: Aftermath",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "The Long Dark",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "The Long Drive",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "The Looker",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "The Pedestrian",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "The Precinct",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "The Rogue Prince of Persia",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "The Universim",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "The Upturned",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Compatibility Scaling offset +1"
+  },
+  {
+    "Name": "Timelie",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Tin Can",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Tinykin",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Tormented Souls",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Total Chaos (Demo)",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Totally Accurate Battle Simulator",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Totally Reliable Delivery Service",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Towa and the Guardians of the Sacred Tree",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": "& R11G11B10_FLOAT"
+  },
+  {
+    "Name": "Towaga: Among Shadows",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "32-bit. . Enable Post-processing in game settings"
+  },
+  {
+    "Name": "Trailmakers",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Enable Post Processing (any quality) and Internal HDR in game settings"
+  },
+  {
+    "Name": "TRY AGAIN",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Tunguska The Visitation",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Turbo Dismount 2",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Turbo Golf Racing",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Enable Post-Processing in game's graphics settings"
+  },
+  {
+    "Name": "Turbo Overkill",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Two Point Hospital",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Ultros",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "Enable Color Grading in game settings"
+  },
+  {
+    "Name": "UNDYING",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "(>= Output_Ratio) if using FSR1"
+  },
+  {
+    "Name": "Unruly Heroes",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "V Rising",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": "Toggle Pause or Options menu in solo to refresh LUT. In multi stay under the sun or in Graphic settings Calibrate Brightness > Confirm (leave 50 default value)"
+  },
+  {
+    "Name": "Valley",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Viewfinder",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "Enable Post-processing in game settings"
+  },
+  {
+    "Name": "Vigil: The Longest Night",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Void Crew",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": "DLSS clamps colors to bt709"
+  },
+  {
+    "Name": "War for the Overlord",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Warhammer 40,000: Battlesector",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Warhammer 40,000: Mechanicus",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Warhammer 40,000: Rogue Trader",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Warhammer 40,000: Shootas, Blood & Teef",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": "32-bit"
+  },
+  {
+    "Name": "Warpips",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Wasteland 2 Directors Cut",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": null
+  },
+  {
+    "Name": "Wasteland 3",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size` `Use_Swapchain_Proxy` `1`",
+    "Comments": "Compatibility Scaling offset +1"
+  },
+  {
+    "Name": "Wavetale",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "We Were Here Expeditions: The FriendShip",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Wheel World",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Whisper of the House",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Wildmender",
+    "Status": "WIP",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Windblown",
+    "Status": "Done",
+    "Upgrades": "`Upgrade_R10G10B10A2_TYPELESS`",
+    "Comments": "& R11G11B10_FLOAT if using FSR1"
+  },
+  {
+    "Name": "Windbound",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "WitchSpring R - The Story of Pieberry",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "Wizard with a Gun",
+    "Status": "WIP",
+    "Upgrades": "`Use_Swapchain_Proxy` `1`",
+    "Comments": "Recommend raising highlights quite a bit as highlights are quite dim otherwise"
+  },
+  {
+    "Name": "XF Extreme Formula",
+    "Status": "Done",
+    "Upgrades": null,
+    "Comments": null
+  },
+  {
+    "Name": "Yooka-Replaylee",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  },
+  {
+    "Name": "东方异域见闻 ~ Touhou Dystopian",
+    "Status": "WIP",
+    "Upgrades": "`Upgrade_R11G11B10_FLOAT` `Output Size`",
+    "Comments": null
+  }
+]

@@ -25,6 +25,14 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     public static Models.RemoteManifest? GlobalManifest { get; set; }
 
     /// <summary>
+    /// Unity DB entries published by MergeDbSources so UpdateOrchestrationService can apply
+    /// per-game [renodx] upgrades without a direct reference to MainViewModel.
+    /// Keyed by game name (OrdinalIgnoreCase). Empty when dev-locked or not yet fetched.
+    /// </summary>
+    public static Dictionary<string, Models.RenoDXDbUnityEntry> GlobalUnityEntries { get; set; }
+        = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Delegate to resolve per-game custom ReShade DLL selection. Set during app initialization
     /// to read from GameNameService.CustomReShadeSelection. Returns the filename (not full path) or null.
     /// </summary>

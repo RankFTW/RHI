@@ -13,6 +13,7 @@ public partial class DetailPanelBuilder
     /// <summary>Builds RS Channel Override, Update Inclusion, and Middle Row Grid.</summary>
     private void BuildRsChannelSection(OverridesPanelCtx ctx)
     {
+        CrashReporter.Log($"[BuildRsChannelSection] Enter: '{ctx.Card.GameName}'");
         var card = ctx.Card;
         var gameName = ctx.GameName;
         var isLumaMode = ctx.IsLumaMode;
@@ -540,6 +541,8 @@ public partial class DetailPanelBuilder
         channelComboInitializing = false;
         ctx.ChannelComboInitializing = false;
 
+        CrashReporter.Log($"[BuildRsChannelSection] ChannelCombo done, building UpdateInclusion: '{ctx.Card.GameName}'");
+
         // ── Global update inclusion (compact: button + summary) ──────────────────
         var capturedCard = card;
 
@@ -605,5 +608,6 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(middleRowGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
+        CrashReporter.Log($"[BuildRsChannelSection] Exit: '{ctx.Card.GameName}'");
     }
 }

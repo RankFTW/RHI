@@ -301,7 +301,7 @@ public partial class MainViewModel
                 _renoDxDbService.InvalidateCache();
             var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? _renoDxDbService.FetchAllAsync()
-                : Task.FromResult<(List<GameMod>, Dictionary<string, RenoDXDbUnrealEntry>)>((new(), new(StringComparer.OrdinalIgnoreCase)));
+                : Task.FromResult(new DbFetchResult(new(), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase)));
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -472,15 +472,16 @@ public partial class MainViewModel
             // Extract DB results and merge with wiki according to source setting
             try
             {
-                var (dbMods, dbUnreal) = await dbTask;
-                _dbMods = dbMods;
-                _dbUnrealEntries = dbUnreal;
-                _crashReporter.Log($"[MainViewModel.InitializeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries");
+                var dbResult = await dbTask;
+                _dbMods = dbResult.Mods;
+                _dbUnrealEntries = dbResult.UnrealEntries;
+                _dbUnityEntries  = dbResult.UnityEntries;
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries, {_dbUnityEntries.Count} Unity entries");
             }
             catch (Exception ex)
             {
                 _crashReporter.Log($"[MainViewModel.InitializeAsync] DB fetch failed — {ex.Message}");
-                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase);
+                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase); _dbUnityEntries = new(StringComparer.OrdinalIgnoreCase);
             }
             MergeDbSources();
             try

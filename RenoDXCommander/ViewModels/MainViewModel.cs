@@ -425,6 +425,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>UE-Extended entries from the last DB fetch. Empty when source is WikiOnly.</summary>
     private Dictionary<string, RenoDXDbUnrealEntry> _dbUnrealEntries =
         new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Unity entries from the last DB fetch. Empty when source is WikiOnly or dev-locked.</summary>
+    private Dictionary<string, RenoDXDbUnityEntry> _dbUnityEntries =
+        new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Returns the effective UE-Extended db entry for a game, or null when source is WikiOnly
     /// or the game isn't in the db.
@@ -435,6 +438,17 @@ public partial class MainViewModel : ObservableObject
         // Strip trademark symbols and retry — detected names may include ®, ™, © that the DB omits
         var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
         if (stripped != gameName && _dbUnrealEntries.TryGetValue(stripped, out e)) return e;
+        return null;
+    }
+    /// <summary>
+    /// Returns the Unity db entry for a game, or null when dev-locked or the game isn't in the db.
+    /// Applies the same trademark-strip retry as GetDbUnrealEntry.
+    /// </summary>
+    public RenoDXDbUnityEntry? GetDbUnityEntry(string gameName)
+    {
+        if (_dbUnityEntries.TryGetValue(gameName, out var u)) return u;
+        var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
+        if (stripped != gameName && _dbUnityEntries.TryGetValue(stripped, out u)) return u;
         return null;
     }
 
@@ -455,6 +469,11 @@ public partial class MainViewModel : ObservableObject
             foreach (var (name, entry) in _dbUnrealEntries)
                 if (!string.IsNullOrEmpty(entry.Comments))
                     _genericNotes[name] = entry.Comments;
+            foreach (var (name, entry) in _dbUnityEntries)
+                if (!string.IsNullOrEmpty(entry.Comments))
+                    _genericNotes[name] = entry.Comments;
+            // Publish Unity entries so UpdateOrchestrationService can access them
+            AuxInstallService.GlobalUnityEntries = _dbUnityEntries;
             _crashReporter.Log("[MergeDbSources] Source=WikiOnly — using wiki mods only, DB comments merged");
             return;
         }
@@ -466,6 +485,11 @@ public partial class MainViewModel : ObservableObject
         foreach (var (name, entry) in _dbUnrealEntries)
             if (!string.IsNullOrEmpty(entry.Comments))
                 _genericNotes[name] = entry.Comments;
+        foreach (var (name, entry) in _dbUnityEntries)
+            if (!string.IsNullOrEmpty(entry.Comments))
+                _genericNotes[name] = entry.Comments;
+        // Publish Unity entries so UpdateOrchestrationService can access them
+        AuxInstallService.GlobalUnityEntries = _dbUnityEntries;
         _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db, {_genericNotes.Count} generic notes from DB Comments");
     }
 
@@ -511,6 +535,21 @@ public partial class MainViewModel : ObservableObject
                     LumaUrl:     null);
             }
             // If a named mod already exists, don't overwrite it — named mod takes priority
+        }
+
+        // Unity entries — same RenoDX column (generic Unity addon is a RenoDX mod)
+        foreach (var kv in _dbUnityEntries)
+        {
+            if (string.IsNullOrWhiteSpace(kv.Key)) continue;
+            if (dict.ContainsKey(kv.Key)) continue; // named mod already covers it
+            var unityStatus = string.Equals(kv.Value.Status, "WIP", StringComparison.OrdinalIgnoreCase)
+                ? "WIP" : "Done";
+            dict[kv.Key] = new HdrModEntry(
+                Name:        kv.Value.Name,
+                RenoDXStatus: unityStatus,
+                RenoDXUrl:   null,
+                LumaStatus:  null,
+                LumaUrl:     null);
         }
 
         // Luma mods — merge into existing entries or add new ones
