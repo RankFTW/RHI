@@ -52,10 +52,18 @@ public class RhiInstallManifest
     public List<string> Folders { get; set; } = [];
 
     /// <summary>
+    /// Tracks which RHI components have deployed each shared file (e.g. nvngx_dlss.dll, nvngx_dlssnr.dll).
+    /// Key = filename, Value = list of component names ("OptiScaler", "ShortFuse", "Dlss5Tool", etc.)
+    /// A file is only deleted on uninstall when the uninstalling component is the LAST owner.
+    /// This prevents OptiScaler uninstall from deleting dlss files that ShortFuse NR still needs,
+    /// and vice versa.
+    /// </summary>
+    [JsonPropertyName("sharedFiles")]
+    public Dictionary<string, List<string>> SharedFiles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The Neural Rendering method currently installed in this game folder, if any.
-    /// Populated by the NR section install. Allows other components (e.g. OptiScaler uninstall)
-    /// to detect that nvngx_dlssnr.dll is owned by NR and should not be removed.
-    /// Values: "Dlss5Tool", "ShortFuse", "Feeder", "Bridge" — or null/absent if NR is not installed.
+    /// Kept for backwards compatibility — use SharedFiles for ownership tracking.
     /// </summary>
     [JsonPropertyName("nrMethod")]
     public string? NrMethod { get; set; }
@@ -142,6 +150,68 @@ public class RhiInstallManifest
         catch (Exception ex)
         {
             CrashReporter.Log($"[RhiInstallManifest.SetNrMethod] Failed in '{gameDir}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Registers <paramref name="component"/> as an owner of <paramref name="fileName"/>
+    /// in the shared files tracking dict. Creates the manifest if it doesn't exist yet.
+    /// Call this when a component deploys a shared file (e.g. nvngx_dlss.dll).
+    /// </summary>
+    public static void AddSharedFileOwner(string gameDir, string fileName, string component)
+    {
+        try
+        {
+            // Read existing manifest, or create a minimal one to hold sharedFiles
+            var manifest = Read(gameDir) ?? new RhiInstallManifest { Component = "RHI" };
+            if (!manifest.SharedFiles.TryGetValue(fileName, out var owners))
+            {
+                owners = new List<string>();
+                manifest.SharedFiles[fileName] = owners;
+            }
+            if (!owners.Contains(component, StringComparer.OrdinalIgnoreCase))
+                owners.Add(component);
+            Write(gameDir, manifest);
+            CrashReporter.Log($"[RhiInstallManifest] SharedFile '{fileName}' owner added: {component}");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[RhiInstallManifest.AddSharedFileOwner] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes <paramref name="component"/> from the owner list of <paramref name="fileName"/>.
+    /// Returns <c>true</c> if the file now has NO remaining owners and is safe to delete/restore.
+    /// Returns <c>false</c> if other components still own it (leave it alone).
+    /// </summary>
+    public static bool RemoveSharedFileOwner(string gameDir, string fileName, string component)
+    {
+        try
+        {
+            var manifest = Read(gameDir);
+            if (manifest == null) return true; // no manifest — assume safe to delete
+            if (!manifest.SharedFiles.TryGetValue(fileName, out var owners))
+                return true; // no ownership tracking for this file — safe to delete
+
+            owners.RemoveAll(o => o.Equals(component, StringComparison.OrdinalIgnoreCase));
+
+            if (owners.Count == 0)
+                manifest.SharedFiles.Remove(fileName);
+
+            Write(gameDir, manifest);
+
+            bool safeToDelete = owners.Count == 0;
+            if (!safeToDelete)
+                CrashReporter.Log($"[RhiInstallManifest] SharedFile '{fileName}': {component} removed, still owned by [{string.Join(", ", owners)}] — skip delete");
+            else
+                CrashReporter.Log($"[RhiInstallManifest] SharedFile '{fileName}': {component} was last owner — safe to delete");
+            return safeToDelete;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[RhiInstallManifest.RemoveSharedFileOwner] Failed — {ex.Message}");
+            return true; // on error, default to allowing delete
         }
     }
     /// has been renamed on disk (e.g. via DLL naming overrides).

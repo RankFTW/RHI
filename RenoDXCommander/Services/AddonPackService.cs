@@ -888,7 +888,7 @@ public class AddonPackService : IAddonPackService
                         || fileName.Equals("renodx-dlss5.addon32", StringComparison.OrdinalIgnoreCase))
                     {
                         var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
-                        rdx5Svc.RemoveNrDll(installPath);
+                        rdx5Svc.RemoveNrDll(installPath, "Dlss5Tool");
                     }
                 }
                 catch (Exception ex)
