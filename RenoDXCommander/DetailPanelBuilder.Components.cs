@@ -171,10 +171,11 @@ public partial class DetailPanelBuilder
                 _window.DetailRsInstallBtn.BorderBrush = UIFactory.GetBrush(card.RsBtnBorderBrush);
                 _window.DetailRsInstallBtn.BorderThickness = new Thickness(1);
                 _window.DetailRsIniBtn.Tag = card;
-                _window.DetailRsIniBtn.IsEnabled = card.RsIniExists;
-                _window.DetailRsIniBtn.Opacity = card.RsIniExists ? 1 : 0.3;
+                _window.DetailRsIniBtn.IsEnabled = card.RsIniExists || card.VulkanRsIniExists;
+                _window.DetailRsIniBtn.Opacity = (card.RsIniExists || card.VulkanRsIniExists) ? 1 : 0.3;
                 _window.DetailRsDeleteBtn.Tag = card;
                 _window.DetailRsDeleteBtn.Opacity = rsIniExists ? 1 : 0;
+                _window.DetailRsDeleteBtn.IsHitTestVisible = rsIniExists;
                 _window.DetailRsDeleteBtn.IsHitTestVisible = rsIniExists;
             }
             else
@@ -193,8 +194,8 @@ public partial class DetailPanelBuilder
                 _window.DetailRsInstallBtn.BorderBrush = UIFactory.GetBrush(card.RsBtnBorderBrush);
                 _window.DetailRsInstallBtn.BorderThickness = new Thickness(1);
                 _window.DetailRsIniBtn.Tag = card;
-                _window.DetailRsIniBtn.IsEnabled = card.RsIniExists;
-                _window.DetailRsIniBtn.Opacity = card.RsIniExists ? 1 : 0.3;
+                _window.DetailRsIniBtn.IsEnabled = card.RsIniExists || card.VulkanRsIniExists;
+                _window.DetailRsIniBtn.Opacity = (card.RsIniExists || card.VulkanRsIniExists) ? 1 : 0.3;
                 _window.DetailRsDeleteBtn.Tag = card;
                 var rsShow = card.RsDeleteVisibility == Visibility.Visible;
                 _window.DetailRsDeleteBtn.Opacity = rsShow ? 1 : 0;

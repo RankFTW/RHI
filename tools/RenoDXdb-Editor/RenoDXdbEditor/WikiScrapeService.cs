@@ -442,3 +442,187 @@ public static class WikiUeExtendedScrapeService
         return s.Trim();
     }
 }
+
+/// <summary>A Unity game entry scraped from the wiki — Name / Status / raw Notes.</summary>
+public record WikiUnityEntry(string Name, string Status, string? Notes);
+
+public static class WikiUnityScrapeService
+{
+    private const string WikiUrl = "https://github.com/clshortfuse/renodx/wiki/Mods";
+    private static readonly HttpClient _http = new();
+
+    // Known upgrade format tokens — maps lowercase keyword to canonical value
+    private static readonly Dictionary<string, string> UpgradeFormats = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "R11G11B10_FLOAT",         "R11G11B10_FLOAT" },
+        { "R10G10B10A2_TYPELESS",    "R10G10B10A2_TYPELESS" },
+        { "R8G8B8A8_TYPELESS",       "R8G8B8A8_TYPELESS" },
+        { "R8G8B8A8_UNORM",          "R8G8B8A8_UNORM" },
+        { "R16G16B16A16_TYPELESS",   "R16G16B16A16_TYPELESS" },
+        { "R16G16B16A16_FLOAT",      "R16G16B16A16_FLOAT" },
+        { "R16G16B16A16_UNORM",      "R16G16B16A16_UNORM" },
+        { "R32G32B32A32_TYPELESS",   "R32G32B32A32_TYPELESS" },
+        { "R32G32B32A32_FLOAT",      "R32G32B32A32_FLOAT" },
+        { "B8G8R8A8_TYPELESS",       "B8G8R8A8_TYPELESS" },
+        { "B8G8R8A8_UNORM",          "B8G8R8A8_UNORM" },
+        { "B8G8R8A8_UNORM_SRGB",     "B8G8R8A8_UNORM_SRGB" },
+        { "R10G10B10A2_UNORM",       "R10G10B10A2_UNORM" },
+    };
+
+    private static readonly string[] SizeTokens = { "Output Size", "Output Ratio", "Any Size", "Any size", "Output ratio" };
+
+    public static async Task<List<WikiUnityEntry>> FetchUnityAllAsync(string? githubToken = null)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, WikiUrl);
+        req.Headers.UserAgent.ParseAdd("RenoDXdb-Editor/2.0");
+        if (!string.IsNullOrEmpty(githubToken))
+            req.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", githubToken);
+        var resp = await _http.SendAsync(req);
+        resp.EnsureSuccessStatusCode();
+        var html = await resp.Content.ReadAsStringAsync();
+        var all = ParseUnity(html);
+        return all;
+    }
+
+    private static List<WikiUnityEntry> ParseUnity(string html)
+    {
+        // Find the Unity Engine heading
+        int unityPos = FindHeadingPos(html, @"Unity\s+Engine");
+        if (unityPos < 0) return new();
+
+        // End at the next heading after unityPos
+        int endPos = FindHeadingPosAfter(html, unityPos + 1, @"Related\s+Mods|Deprecated");
+        if (endPos < 0) endPos = html.Length;
+
+        var slice = html.Substring(unityPos, endPos - unityPos);
+
+        // The Unity table uses <tbody> with <tr><td>Name</td><td>emoji</td><td>Notes</td></tr>
+        var entries = new List<WikiUnityEntry>();
+
+        var rowMatches = Regex.Matches(slice, @"(?s)<tr[^>]*>(.*?)</tr>", RegexOptions.IgnoreCase);
+        foreach (Match rowMatch in rowMatches)
+        {
+            var cells = Regex.Matches(rowMatch.Groups[1].Value,
+                @"(?s)<td[^>]*>(.*?)</td>", RegexOptions.IgnoreCase);
+            if (cells.Count < 2) continue;
+
+            string name = StripUnity(cells[0].Groups[1].Value);
+            if (string.IsNullOrWhiteSpace(name)) continue;
+
+            string statusRaw = StripUnity(cells[1].Groups[1].Value);
+            string status = statusRaw.Contains("🚧") ? "WIP" : "Done";
+
+            string? notes = cells.Count >= 3
+                ? NullIfEmpty(StripUnity(cells[2].Groups[1].Value))
+                : null;
+
+            entries.Add(new WikiUnityEntry(name, status, notes));
+        }
+
+        return entries;
+    }
+
+    /// <summary>
+    /// Parses a raw Notes string into (Upgrades string, Comments string).
+    /// Upgrades are encoded as backtick tokens matching UnrealEntry format.
+    /// Remaining text goes to Comments.
+    /// </summary>
+    public static (string? Upgrades, string? Comments) ParseNotes(string? rawNotes)
+    {
+        if (string.IsNullOrWhiteSpace(rawNotes)) return (null, null);
+
+        var upgradeParts = new List<string>();
+        var commentParts = new List<string>();
+
+        // Split by sentence separators (. or ,) but preserve context
+        // Strategy: scan for "Upgrade <FORMAT>" patterns, extract them; rest → comments
+        var remaining = rawNotes;
+
+        // Match "Upgrade R11G11B10_FLOAT" patterns (with optional size suffix)
+        var upgradePattern = new Regex(
+            @"Upgrade\s+([A-Z0-9_]+)(?:\s+to\s+(Output\s+(?:Size|Ratio|ratio)|Any\s+[Ss]ize))?",
+            RegexOptions.IgnoreCase);
+
+        var matches = upgradePattern.Matches(remaining);
+        var consumedRanges = new List<(int start, int end)>();
+
+        foreach (Match m in matches)
+        {
+            var formatKey = m.Groups[1].Value.Trim().TrimEnd('.');
+            if (!UpgradeFormats.TryGetValue(formatKey, out var canonicalFormat))
+                continue;
+
+            string? sizeToken = null;
+            if (m.Groups[2].Success)
+            {
+                var sizeRaw = m.Groups[2].Value.Trim();
+                sizeToken = sizeRaw.ToLowerInvariant() switch
+                {
+                    var s when s.Contains("output") && s.Contains("size") => "Output Size",
+                    var s when s.Contains("output") && s.Contains("ratio") => "Output Ratio",
+                    var s when s.Contains("any") => "Any Size",
+                    _ => null
+                };
+            }
+
+            upgradeParts.Add(sizeToken != null
+                ? $"`{canonicalFormat}` `{sizeToken}`"
+                : $"`{canonicalFormat}`");
+            consumedRanges.Add((m.Index, m.Index + m.Length));
+        }
+
+        // Build comment from what's left after removing upgrade mentions
+        var comment = remaining;
+        // Remove upgrade fragments in reverse order to preserve indices
+        foreach (var (start, end) in consumedRanges.OrderByDescending(r => r.start))
+        {
+            if (start < comment.Length)
+                comment = comment[..start] + comment[Math.Min(end, comment.Length)..];
+        }
+        // Clean up the comment
+        comment = Regex.Replace(comment, @"\s{2,}", " ");
+        comment = comment.Trim('.', ',', ' ', '\n');
+        comment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
+
+        string? upgradesStr = upgradeParts.Count > 0
+            ? string.Join(" ", upgradeParts)
+            : null;
+
+        return (upgradesStr, comment);
+    }
+
+    private static int FindHeadingPos(string html, string pattern)
+    {
+        var matches = Regex.Matches(html, @"<h[1-6][^>]*>.*?</h[1-6]>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        foreach (Match m in matches)
+            if (Regex.IsMatch(StripUnity(m.Value), pattern, RegexOptions.IgnoreCase))
+                return m.Index;
+        return -1;
+    }
+
+    private static int FindHeadingPosAfter(string html, int afterPos, string pattern)
+    {
+        var matches = Regex.Matches(html, @"<h[1-6][^>]*>.*?</h[1-6]>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        foreach (Match m in matches)
+        {
+            if (m.Index <= afterPos) continue;
+            if (Regex.IsMatch(StripUnity(m.Value), pattern, RegexOptions.IgnoreCase))
+                return m.Index;
+        }
+        return -1;
+    }
+
+    private static string StripUnity(string html)
+    {
+        var s = Regex.Replace(html, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+        s = Regex.Replace(s, @"<[^>]+>", "");
+        s = System.Web.HttpUtility.HtmlDecode(s);
+        return s.Trim();
+    }
+
+    private static string? NullIfEmpty(string? s)
+        => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+}

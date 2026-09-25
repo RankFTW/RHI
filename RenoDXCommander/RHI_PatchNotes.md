@@ -10,6 +10,9 @@
 - Fixed the ReShade X button doing nothing after uninstalling DXVK without refreshing first. DXVK uninstall now saves a fresh ReShade tracking record when it restores the DLL.
 - Fixed a phantom VLK badge appearing after DXVK was uninstalled and the app was restarted. The API cache is now updated immediately on uninstall.
 - Fixed DXVK install not deploying the shader folder when ReShade wasn't already installed.
+- Fixed the ReShade settings cog (⚙) being greyed out on Vulkan/Unity games. The cog was gated on the inis folder reshade.ini existing, but Vulkan games keep their ini in the game folder. Now enabled whenever ReShade is installed in either location.
+- Added Unity engine settings (Swapchain Proxy, Swapchain Encoding, Force Pipeline Cloning, Force Borderless etc.) to the RenoDX cog Compatibility Settings section. These appear automatically when present in the game's reshade.ini.
+- Fixed UI freezing when rapidly scrolling through games with NVIDIA driver profiles. A `Task.Delay(5000)` timer was left running after each NVAPI read completed, accumulating thread pool threads during fast navigation. The delay is now cancelled immediately when the NVAPI scan finishes.
 
 ### Manifest Updates
 

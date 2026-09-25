@@ -629,6 +629,10 @@ public partial class MainViewModel
             // Dual-API state
             newCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(newCard.DetectedApis);
 
+            // Populate cached INI/backup state — must run on background thread (does I/O).
+            // Games without DLSS never call ApplyDlssDetection so this is the only guaranteed path.
+            newCard.RefreshBackupState();
+
             // ── Emulator detection (cached path) ───────────────────────────────
             if (game.Name.Equals("Ryubing", StringComparison.OrdinalIgnoreCase))
             {

@@ -65,7 +65,7 @@ public class UnrealEntry : INotifyPropertyChanged
     // ── Upgrades helpers ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Valid format tokens (left column).
+    /// Valid format tokens for UE-Extended entries (bare pixel format names).
     /// </summary>
     public static readonly string[] FormatValues =
     [
@@ -85,13 +85,57 @@ public class UnrealEntry : INotifyPropertyChanged
     ];
 
     /// <summary>
-    /// Valid size tokens (right column).
+    /// Valid format/key tokens for Unity entries (Upgrade_ prefixed + boolean settings).
+    /// </summary>
+    public static readonly string[] UnityFormatValues =
+    [
+        "Upgrade_R8G8B8A8_TYPELESS",
+        "Upgrade_R8G8B8A8_UNORM",
+        "Upgrade_R8G8B8A8_UNORM_SRGB",
+        "Upgrade_R10G10B10A2_TYPELESS",
+        "Upgrade_R10G10B10A2_UNORM",
+        "Upgrade_R11G11B10_FLOAT",
+        "Upgrade_R16G16B16A16_TYPELESS",
+        "Upgrade_R16G16B16A16_FLOAT",
+        "Upgrade_R16G16B16A16_UNORM",
+        "Upgrade_CopyDestinations",
+        "Upgrade_UseSCRGB",
+        "Use_Swapchain_Proxy",
+        "Use_Resource_Cloning",
+        "Force_Pipeline_Cloning",
+        "ForceBorderless",
+        "PreventFullscreen",
+        "Swapchain_Encoding",
+        "SettingsMode",
+        "Blit_Copy_Hack",
+        "Tonemap_Offset",
+        "Scaling_Offset",
+    ];
+
+    /// <summary>
+    /// Valid size tokens for UE-Extended entries.
     /// </summary>
     public static readonly string[] SizeValues =
     [
         "Output Size",
         "Output Ratio",
         "Any Size",
+    ];
+
+    /// <summary>
+    /// Valid value tokens for Unity entries — (DisplayLabel, StoredValue) pairs.
+    /// Format upgrade sizes use the same text as UE-Extended. Boolean settings use 0/1/2.
+    /// </summary>
+    public static readonly (string Label, string Value)[] UnitySizeValuePairs =
+    [
+        ("Output Size",           "Output Size"),
+        ("Output Ratio",          "Output Ratio"),
+        ("Any Size",              "Any Size"),
+        ("Off (0)",               "0"),
+        ("On (1)",                "1"),
+        ("On - Compat (2)",       "2"),
+        ("scRGB",                 "scRGB"),
+        ("Gamma",                 "Gamma"),
     ];
 
     /// <summary>
@@ -103,16 +147,29 @@ public class UnrealEntry : INotifyPropertyChanged
         var result = new List<(string, string)>();
         if (string.IsNullOrWhiteSpace(Upgrades)) return result;
 
-        // Each entry may be space-separated backtick tokens on one line,
-        // or multiple entries separated by newlines.
+        // Try newline-separated first (UE-Extended format: one "`Format` `Size`" per line)
         var lines = Upgrades.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        foreach (var line in lines)
+        if (lines.Length > 1)
         {
-            var tokens = ParseBacktickTokens(line.Trim());
-            if (tokens.Count >= 2)
-                result.Add((tokens[0], tokens[1]));
-            else if (tokens.Count == 1)
-                result.Add((tokens[0], ""));
+            foreach (var line in lines)
+            {
+                var tokens = ParseBacktickTokens(line.Trim());
+                if (tokens.Count >= 2)
+                    result.Add((tokens[0], tokens[1]));
+                else if (tokens.Count == 1)
+                    result.Add((tokens[0], ""));
+            }
+        }
+        else
+        {
+            // All pairs on one line (Unity format): consume backtick tokens in pairs
+            var tokens = ParseBacktickTokens(Upgrades);
+            for (int i = 0; i < tokens.Count; i += 2)
+            {
+                var format = tokens[i];
+                var size   = i + 1 < tokens.Count ? tokens[i + 1] : "";
+                result.Add((format, size));
+            }
         }
         return result;
     }

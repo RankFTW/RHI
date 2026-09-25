@@ -286,7 +286,7 @@
             <Grid x:Name="SelectorPanel" Visibility="Visible">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Margin="0,40,0,40" Width="520">
+                                Margin="0,40,0,40" Width="620">
 
                         <TextBlock Text="RenoDXdb Editor" FontSize="26" FontWeight="Bold"
                                    Foreground="#8888FF" HorizontalAlignment="Center"/>
@@ -306,9 +306,11 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- DB choice cards -->
+                        <!-- DB choice cards — all three in one row -->
                         <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="16"/>
                                 <ColumnDefinition Width="*"/>
@@ -316,9 +318,11 @@
 
                             <!-- Named Mods card -->
                             <Button Grid.Column="0" Click="OpenNamedMods_Click"
-                                    Padding="0" BorderThickness="0" Background="Transparent">
+                                    Padding="0" BorderThickness="0" Background="Transparent"
+                                    VerticalAlignment="Stretch">
                                 <Border Background="#1E1E3A" BorderBrush="#444488"
-                                        BorderThickness="1" CornerRadius="8" Padding="20,18">
+                                        BorderThickness="1" CornerRadius="8" Padding="20,18"
+                                        Height="178" VerticalAlignment="Stretch">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Style.Triggers>
@@ -349,9 +353,11 @@
 
                             <!-- Unreal card -->
                             <Button Grid.Column="2" Click="OpenUnreal_Click"
-                                    Padding="0" BorderThickness="0" Background="Transparent">
+                                    Padding="0" BorderThickness="0" Background="Transparent"
+                                    VerticalAlignment="Stretch">
                                 <Border Background="#1E2E2E" BorderBrush="#448844"
-                                        BorderThickness="1" CornerRadius="8" Padding="20,18">
+                                        BorderThickness="1" CornerRadius="8" Padding="20,18"
+                                        Height="178" VerticalAlignment="Stretch">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Style.Triggers>
@@ -374,6 +380,41 @@
                                                 Background="#1A2A1A" CornerRadius="4" Padding="8,4">
                                             <TextBlock x:Name="UnrealStatusLabel"
                                                        Text="Not synced" Foreground="#446644"
+                                                       FontSize="11"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Button>
+
+                            <!-- Unity card -->
+                            <Button Grid.Column="4" Click="OpenUnity_Click"
+                                    Padding="0" BorderThickness="0" Background="Transparent"
+                                    VerticalAlignment="Stretch">
+                                <Border Background="#1E1E2E" BorderBrush="#886644"
+                                        BorderThickness="1" CornerRadius="8" Padding="20,18"
+                                        Height="178" VerticalAlignment="Stretch">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#BBAA66"/>
+                                                    <Setter Property="Background"  Value="#2A2A1A"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <TextBlock Text="🎲 Unity Games" FontSize="16" FontWeight="SemiBold"
+                                                   Foreground="#FFDDAA"/>
+                                        <TextBlock Text="RenoDXdb-unity.json" Foreground="#886644"
+                                                   FontSize="11" Margin="0,4,0,8"/>
+                                        <TextBlock Text="Unity engine game entries — upgrade format, comments."
+                                                   Foreground="#AAAACC" FontSize="11"
+                                                   TextWrapping="Wrap"/>
+                                        <Border Margin="0,12,0,0"
+                                                Background="#1A1A14" CornerRadius="4" Padding="8,4">
+                                            <TextBlock x:Name="UnityStatusLabel"
+                                                       Text="Not synced" Foreground="#664422"
                                                        FontSize="11"/>
                                         </Border>
                                     </StackPanel>
@@ -462,7 +503,7 @@
                                 <ComboBoxItem Content="WIP"/>
                             </ComboBox>
 
-                            <Label Content="Method" Margin="0,8,0,0"/>
+                            <Label x:Name="UMethodLabel" Content="Method" Margin="0,8,0,0"/>
                             <ComboBox x:Name="UMethodCombo" SelectionChanged="Field_Changed">
                                 <ComboBoxItem Content="(none)" Tag=""/>
                                 <ComboBoxItem Content="native"/>

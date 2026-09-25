@@ -6,7 +6,7 @@ using System.IO;
 
 namespace RenoDXdbEditor;
 
-public enum DbType { NamedMods, Unreal }
+public enum DbType { NamedMods, Unreal, Unity }
 
 public record SyncResult(
     bool Success,
@@ -26,9 +26,18 @@ public static class DbSyncService
 
     private static string RemotePath(DbType db) => db switch
     {
-        DbType.NamedMods => "database/RenoDXdb.json",
-        DbType.Unreal    => "database/RenoDXdb-unreal.json",
-        _                => throw new ArgumentOutOfRangeException()
+        DbType.NamedMods  => "database/RenoDXdb.json",
+        DbType.Unreal     => "database/RenoDXdb-unreal.json",
+        DbType.Unity      => "database/RenoDXdb-unity.json",
+        _                 => throw new ArgumentOutOfRangeException()
+    };
+
+    public static string LocalFileName(DbType db) => db switch
+    {
+        DbType.NamedMods  => "RenoDXdb.json",
+        DbType.Unreal     => "RenoDXdb-unreal.json",
+        DbType.Unity      => "RenoDXdb-unity.json",
+        _                 => throw new ArgumentOutOfRangeException()
     };
 
     public static string RawUrl(DbType db) =>
@@ -41,7 +50,7 @@ public static class DbSyncService
     {
         var dir = Path.GetDirectoryName(Environment.ProcessPath)
                ?? AppContext.BaseDirectory;
-        return Path.Combine(dir, db == DbType.NamedMods ? "RenoDXdb.json" : "RenoDXdb-unreal.json");
+        return Path.Combine(dir, LocalFileName(db));
     }
 
     /// <summary>

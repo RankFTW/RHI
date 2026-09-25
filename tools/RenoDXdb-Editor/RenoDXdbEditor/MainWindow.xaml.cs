@@ -80,16 +80,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         var namedTask  = DbSyncService.FetchAsync(DbType.NamedMods, _githubToken);
         var unrealTask = DbSyncService.FetchAsync(DbType.Unreal,    _githubToken);
-        await Task.WhenAll(namedTask, unrealTask);
+        var unityTask  = DbSyncService.FetchAsync(DbType.Unity,     _githubToken);
+        await Task.WhenAll(namedTask, unrealTask, unityTask);
 
         var named  = namedTask.Result;
         var unreal = unrealTask.Result;
+        var unity  = unityTask.Result;
 
-        // Cache remote content for use when opening from selector
         _namedModsRemoteContent = named.Success  ? named.RemoteContent  : null;
         _unrealRemoteContent    = unreal.Success ? unreal.RemoteContent : null;
 
-        // Save to local if first sync (no local file yet) or if identical (no diff)
         if (named.Success)
         {
             if (!File.Exists(DbSyncService.LocalCachePath(DbType.NamedMods)) || !named.HasDiff)
@@ -100,22 +100,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (!File.Exists(DbSyncService.LocalCachePath(DbType.Unreal)) || !unreal.HasDiff)
                 await DbSyncService.SaveLocalAsync(DbType.Unreal, unreal.RemoteContent!);
         }
-
-        // Update selector cards
-        Dispatcher.Invoke(() => UpdateSelectorCards(named, unreal));
-
-        // If diff detected and not startup, prompt immediately
-        if (!isStartup)
+        if (unity.Success)
         {
-            if (named.Success && named.HasDiff)
-                Dispatcher.Invoke(() => HandleDiff(DbType.NamedMods, named));
-            if (unreal.Success && unreal.HasDiff)
-                Dispatcher.Invoke(() => HandleDiff(DbType.Unreal, unreal));
+            if (!File.Exists(DbSyncService.LocalCachePath(DbType.Unity)) || !unity.HasDiff)
+                await DbSyncService.SaveLocalAsync(DbType.Unity, unity.RemoteContent!);
         }
 
-        if (!named.Success && !unreal.Success)
-            SetSyncStatus($"Sync failed — {named.Error ?? unreal.Error}", "#EE5555");
-        else if (!named.Success || !unreal.Success)
+        Dispatcher.Invoke(() => UpdateSelectorCards(named, unreal, unity));
+
+        if (!isStartup)
+        {
+            if (named.Success  && named.HasDiff)  Dispatcher.Invoke(() => HandleDiff(DbType.NamedMods, named));
+            if (unreal.Success && unreal.HasDiff) Dispatcher.Invoke(() => HandleDiff(DbType.Unreal,    unreal));
+            if (unity.Success  && unity.HasDiff)  Dispatcher.Invoke(() => HandleDiff(DbType.Unity,     unity));
+        }
+
+        if (!named.Success && !unreal.Success && !unity.Success)
+            SetSyncStatus($"Sync failed — {named.Error ?? unreal.Error ?? unity.Error}", "#EE5555");
+        else if (!named.Success || !unreal.Success || !unity.Success)
             SetSyncStatus("Sync partially failed — using local copies where available", "#FFCC44");
         else
             SetSyncStatus($"Synced at {DateTime.Now:HH:mm:ss}", "#55CC77");
@@ -131,16 +133,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         });
     }
 
-    private void UpdateSelectorCards(SyncResult named, SyncResult unreal)
+    private void UpdateSelectorCards(SyncResult named, SyncResult unreal, SyncResult unity)
     {
         if (named.Success)
         {
-            NamedModsStatusLabel.Text       = named.HasDiff
-                ? "⚠ Remote differs from local — open to review"
-                : "✓ Up to date";
-            NamedModsStatusLabel.Foreground = named.HasDiff
-                ? new SolidColorBrush(Colors.Orange)
-                : new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
+            NamedModsStatusLabel.Text       = named.HasDiff ? "⚠ Remote differs from local — open to review" : "✓ Up to date";
+            NamedModsStatusLabel.Foreground = named.HasDiff ? new SolidColorBrush(Colors.Orange) : new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
         }
         else
         {
@@ -150,17 +148,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (unreal.Success)
         {
-            UnrealStatusLabel.Text       = unreal.HasDiff
-                ? "⚠ Remote differs from local — open to review"
-                : "✓ Up to date";
-            UnrealStatusLabel.Foreground = unreal.HasDiff
-                ? new SolidColorBrush(Colors.Orange)
-                : new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
+            UnrealStatusLabel.Text       = unreal.HasDiff ? "⚠ Remote differs from local — open to review" : "✓ Up to date";
+            UnrealStatusLabel.Foreground = unreal.HasDiff ? new SolidColorBrush(Colors.Orange) : new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
         }
         else
         {
             UnrealStatusLabel.Text       = $"✗ Fetch failed — {unreal.Error}";
             UnrealStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0x55, 0x55));
+        }
+
+        if (UnityStatusLabel != null)
+        {
+            if (unity.Success)
+            {
+                UnityStatusLabel.Text       = unity.HasDiff ? "⚠ Remote differs from local — open to review" : "✓ Up to date";
+                UnityStatusLabel.Foreground = unity.HasDiff ? new SolidColorBrush(Colors.Orange) : new SolidColorBrush(Color.FromRgb(0x55, 0xCC, 0x77));
+            }
+            else
+            {
+                UnityStatusLabel.Text       = $"✗ Fetch failed — {unity.Error}";
+                UnityStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0x55, 0x55));
+            }
         }
     }
 
@@ -320,6 +328,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 "File Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
+    private void OpenUnity_Click(object sender, RoutedEventArgs e)
+    {
+        _activeDb = DbType.Unity;
+        var local = DbSyncService.LocalCachePath(DbType.Unity);
+
+        if (File.Exists(local))
+            LoadFile(local, DbType.Unity);
+        else
+            MessageBox.Show("No local cache found for Unity DB.\n\nUse Sync to download it, or use Open JSON to load a local file.",
+                "File Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
     private void BackToSelector_Click(object sender, RoutedEventArgs e)
     {
         if (_isDirty && !ConfirmDiscard()) return;
@@ -351,9 +371,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Infer DB type from filename
         var fn = Path.GetFileName(dlg.FileName);
-        var db = fn.Contains("unreal", StringComparison.OrdinalIgnoreCase)
-            ? DbType.Unreal
-            : DbType.NamedMods;
+        DbType db;
+        if (fn.Contains("unity", StringComparison.OrdinalIgnoreCase))
+            db = DbType.Unity;
+        else if (fn.Contains("unreal", StringComparison.OrdinalIgnoreCase))
+            db = DbType.Unreal;
+        else
+            db = DbType.NamedMods;
         LoadFile(dlg.FileName, db);
     }
 
@@ -365,7 +389,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             var db   = dbOverride ?? _activeDb;
             _activeDb = db;
 
-            if (db == DbType.Unreal)
+            if (db == DbType.Unreal || db == DbType.Unity)
             {
                 var entries = JsonSerializer.Deserialize<List<UnrealEntry>>(json,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
@@ -395,7 +419,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Show the right fields
             NamedModsFields.Visibility = _isUnrealMode ? Visibility.Collapsed : Visibility.Visible;
             UnrealFields.Visibility    = _isUnrealMode ? Visibility.Visible   : Visibility.Collapsed;
-            EditorTitle.Text = _isUnrealMode ? "Unreal Game Details" : "Game Details";
+            EditorTitle.Text = db == DbType.Unity ? "Unity Game Details"
+                : _isUnrealMode ? "Unreal Game Details"
+                : "Game Details";
+
+            // Hide Method field for Unity — it has no Method
+            UMethodLabel.Visibility = db == DbType.Unity ? Visibility.Collapsed : Visibility.Visible;
+            UMethodCombo.Visibility  = db == DbType.Unity ? Visibility.Collapsed : Visibility.Visible;
 
             _currentFilePath = path;
             _isDirty         = false;
@@ -444,7 +474,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             };
             string json;
             if (_isUnrealMode)
+            {
                 json = JsonSerializer.Serialize(_allUnreal.ToList(), opts);
+                // Unity DB: strip the "Method" field entirely from the JSON
+                if (_activeDb == DbType.Unity)
+                    json = System.Text.RegularExpressions.Regex.Replace(
+                        json, @",?\s*""Method""\s*:\s*(?:null|""[^""]*""),?", "");
+            }
             else
                 json = JsonSerializer.Serialize(_allMods.ToList(), opts);
 
@@ -708,19 +744,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
 
-        // Format combo
+        // Format combo — use Unity keys when Unity DB is open
         var fmtCombo = new ComboBox { Margin = new Thickness(0) };
         fmtCombo.Items.Add(new ComboBoxItem { Content = "(none)", Tag = "" });
-        foreach (var v in UnrealEntry.FormatValues)
+        var fmtValues = _activeDb == DbType.Unity ? UnrealEntry.UnityFormatValues : UnrealEntry.FormatValues;
+        foreach (var v in fmtValues)
             fmtCombo.Items.Add(new ComboBoxItem { Content = v, Tag = v });
         SelectComboByTag(fmtCombo, format);
         Grid.SetColumn(fmtCombo, 0);
 
-        // Size combo
+        // Size combo — use Unity values when Unity DB is open
         var sizeCombo = new ComboBox { Margin = new Thickness(0) };
         sizeCombo.Items.Add(new ComboBoxItem { Content = "(none)", Tag = "" });
-        foreach (var v in UnrealEntry.SizeValues)
-            sizeCombo.Items.Add(new ComboBoxItem { Content = v, Tag = v });
+        if (_activeDb == DbType.Unity)
+        {
+            foreach (var (label, val) in UnrealEntry.UnitySizeValuePairs)
+                sizeCombo.Items.Add(new ComboBoxItem { Content = label, Tag = val });
+        }
+        else
+        {
+            foreach (var v in UnrealEntry.SizeValues)
+                sizeCombo.Items.Add(new ComboBoxItem { Content = v, Tag = v });
+        }
         SelectComboByTag(sizeCombo, size);
         Grid.SetColumn(sizeCombo, 2);
 
@@ -842,6 +887,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (!HasFile) return;
 
         // Route to the correct wiki check based on which DB is open
+        if (_isUnrealMode && _activeDb == DbType.Unity)
+        {
+            await WikiCheckUnityAsync();
+            return;
+        }
         if (_isUnrealMode)
         {
             await WikiCheckUeExtendedAsync();
@@ -987,5 +1037,66 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Collapse whitespace
         s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", " ").Trim();
         return s;
+    }
+
+    // ── Wiki check — Unity ────────────────────────────────────────────────────
+
+    private async Task WikiCheckUnityAsync()
+    {
+        WikiCheckBtn.IsEnabled = false;
+        StatusBar.Text = "Fetching RenoDX wiki (Unity Engine section)…";
+
+        List<WikiUnityEntry> wikiEntries;
+        try
+        {
+            wikiEntries = await WikiUnityScrapeService.FetchUnityAllAsync(_githubToken);
+        }
+        catch (Exception ex)
+        {
+            StatusBar.Text = $"Wiki fetch failed: {ex.Message}";
+            MessageBox.Show($"Failed to fetch the wiki:\n\n{ex.Message}",
+                "Wiki Fetch Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+        finally
+        {
+            WikiCheckBtn.IsEnabled = CanCheckWiki;
+        }
+
+        var inDb = new HashSet<string>(
+            _allUnreal.Select(u => NormaliseModName(u.Name)),
+            StringComparer.Ordinal);
+
+        var newEntries = wikiEntries
+            .Where(w => !inDb.Contains(NormaliseModName(w.Name)))
+            .OrderBy(w => w.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (newEntries.Count == 0)
+        {
+            StatusBar.Text = $"Wiki check complete — no new Unity games found ({wikiEntries.Count} checked).";
+            MessageBox.Show(
+                $"All {wikiEntries.Count} completed wiki entries are already in the DB.\n\nNothing to review.",
+                "Up to Date", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        StatusBar.Text = $"Found {newEntries.Count} new Unity game(s) — opening review…";
+
+        var review = new UnityReviewWindow(newEntries) { Owner = this };
+        review.ShowDialog();
+
+        if (review.AcceptedEntries.Count == 0)
+        {
+            StatusBar.Text = "Wiki review closed — no entries accepted.";
+            return;
+        }
+
+        foreach (var entry in review.AcceptedEntries)
+            InsertUnrealAlpha(entry);
+
+        _isDirty = true;
+        UpdateStatusBar();
+        StatusBar.Text = $"Added {review.AcceptedEntries.Count} Unity game(s) from wiki. Save to persist.";
     }
 }

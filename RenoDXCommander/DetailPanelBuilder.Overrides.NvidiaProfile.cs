@@ -143,7 +143,10 @@ public partial class DetailPanelBuilder
                             RrRenderScale:    hasDlssd ? svc.GetRrRenderScale(gameName, installPath) : 0u,
                             MfgMode:          hasDlssg ? svc.GetMfgMode(gameName, installPath)   : 0u);
                     }, scanCt);
-                    var completed = await Task.WhenAny(nvapiTask, Task.Delay(5000)).ConfigureAwait(false);
+                    using var delayCts = new CancellationTokenSource();
+                    var delayTask = Task.Delay(5000, delayCts.Token);
+                    var completed = await Task.WhenAny(nvapiTask, delayTask).ConfigureAwait(false);
+                    delayCts.Cancel(); // cancel the delay timer so it doesn't hold a thread pool thread
                     if (completed == nvapiTask)
                         dlssData = await nvapiTask.ConfigureAwait(false);
                     else

@@ -605,8 +605,18 @@ public sealed partial class MainWindow
                               && !kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
                               && !kv.Key.Equals("Upgrade_SwapChainCompatibility", StringComparison.OrdinalIgnoreCase))
                           || kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase)
-                          || kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(kv => kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase) ? 1 : 0) // DumpLUT last
+                          || kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase)
+                          // Unity engine settings
+                          || kv.Key.Equals("Use_Swapchain_Proxy",    StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("Swapchain_Encoding",     StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("Force_Pipeline_Cloning", StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("ForceBorderless",        StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("PreventFullscreen",      StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("Blit_Copy_Hack",         StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("Use_Resource_Cloning",   StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("Upgrade_UseSCRGB",       StringComparison.OrdinalIgnoreCase))
+                .OrderBy(kv => kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
                 .ThenBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
@@ -639,16 +649,32 @@ public sealed partial class MainWindow
 
                     bool isSetPath = kv.Key.Equals("Set_Path", StringComparison.OrdinalIgnoreCase);
                     bool isDumpLut = kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase);
-                    bool isBinaryToggle = isSetPath || isDumpLut;
+                    bool isSwapchainProxy = kv.Key.Equals("Use_Swapchain_Proxy", StringComparison.OrdinalIgnoreCase);
+                    bool isSwapchainEncoding = kv.Key.Equals("Swapchain_Encoding", StringComparison.OrdinalIgnoreCase);
+                    bool isUnityBool = kv.Key.Equals("Force_Pipeline_Cloning", StringComparison.OrdinalIgnoreCase)
+                                    || kv.Key.Equals("ForceBorderless",        StringComparison.OrdinalIgnoreCase)
+                                    || kv.Key.Equals("PreventFullscreen",      StringComparison.OrdinalIgnoreCase)
+                                    || kv.Key.Equals("Blit_Copy_Hack",         StringComparison.OrdinalIgnoreCase)
+                                    || kv.Key.Equals("Use_Resource_Cloning",   StringComparison.OrdinalIgnoreCase)
+                                    || kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
+                                    || kv.Key.Equals("Upgrade_UseSCRGB",       StringComparison.OrdinalIgnoreCase);
+                    bool isBinaryToggle = isSetPath || isDumpLut || isUnityBool;
+
+                    // Label text
+                    string labelText = isSetPath ? "Upgrade Path"
+                        : isDumpLut          ? "Dump LUT Shaders"
+                        : isSwapchainProxy   ? "Swapchain Proxy"
+                        : isSwapchainEncoding? "Swapchain Encoding"
+                        : kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase) ? kv.Key.Substring(8)
+                        : kv.Key.Replace('_', ' ');
 
                     var label = new TextBlock
                     {
-                        Text = isSetPath ? "Upgrade Path" : isDumpLut ? "Dump LUT Shaders" : kv.Key.StartsWith("Upgrade_", StringComparison.OrdinalIgnoreCase) ? kv.Key.Substring(8) : kv.Key,
+                        Text = labelText,
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                         VerticalAlignment = VerticalAlignment.Center,
-                    };
-                    Grid.SetRow(label, row);
+                    };                    Grid.SetRow(label, row);
                     Grid.SetColumn(label, col);
                     settingsGrid.Children.Add(label);
 
@@ -656,11 +682,14 @@ public sealed partial class MainWindow
 
                     if (isSetPath) { combo.Items.Add("HDR / Off"); combo.Items.Add("SDR / On"); }
                     else if (isDumpLut) { combo.Items.Add("Off"); combo.Items.Add("On"); }
+                    else if (isSwapchainProxy) { combo.Items.Add("Off"); combo.Items.Add("On"); combo.Items.Add("On (Compat)"); }
+                    else if (isSwapchainEncoding) { combo.Items.Add("Gamma"); combo.Items.Add("scRGB"); }
+                    else if (isUnityBool) { combo.Items.Add("Off"); combo.Items.Add("On"); }
                     else { combo.Items.Add("Off"); combo.Items.Add("Output size"); combo.Items.Add("Output ratio"); combo.Items.Add("Any size"); }
 
                     int.TryParse(kv.Value, out var currentVal);
-                    combo.SelectedIndex = isBinaryToggle
-                        ? (currentVal >= 0 && currentVal <= 1 ? currentVal : 0)
+                    combo.SelectedIndex = (isBinaryToggle || isSwapchainProxy || isSwapchainEncoding)
+                        ? (currentVal >= 0 && currentVal < combo.Items.Count ? currentVal : 0)
                         : (currentVal >= 0 && currentVal <= 3 ? currentVal : 0);
 
                     var capturedKey = kv.Key;

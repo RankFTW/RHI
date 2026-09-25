@@ -111,12 +111,14 @@ public partial class DetailPanelBuilder
                         GlobalReBarSizeLimit:   svc.GetGlobalReBarSizeLimit(),
                         IsAdmin:                VulkanLayerService.IsRunningAsAdmin());
                 }, scanCt);
-                var completed = await Task.WhenAny(nvapiTask, Task.Delay(5000)).ConfigureAwait(false);
+                using var delayCts = new CancellationTokenSource();
+                var delayTask = Task.Delay(5000, delayCts.Token);
+                var completed = await Task.WhenAny(nvapiTask, delayTask).ConfigureAwait(false);
+                delayCts.Cancel(); // cancel the delay timer immediately so it doesn't hold a thread
                 if (completed == nvapiTask)
                     data = await nvapiTask.ConfigureAwait(false);
                 else
-                    CrashReporter.Log($"[BuildDriverProfileSection] NVAPI reads timed out for '{gameName}' — using defaults");
-            }
+                    CrashReporter.Log($"[BuildDriverProfileSection] NVAPI reads timed out for '{gameName}' — using defaults");            }
             finally
             {
                 CrashReporter.Log($"[BuildDriverProfileSection] Semaphore releasing: '{gameName}'");
@@ -717,3 +719,5 @@ public partial class DetailPanelBuilder
 
     }
 }
+
+// v2.7.7 fix: cancel Task.Delay on NVAPI completion to prevent thread pool starvation
