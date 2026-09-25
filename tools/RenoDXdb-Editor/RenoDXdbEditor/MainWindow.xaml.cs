@@ -92,18 +92,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (named.Success)
         {
-            if (!File.Exists(DbSyncService.LocalCachePath(DbType.NamedMods)) || !named.HasDiff)
-                await DbSyncService.SaveLocalAsync(DbType.NamedMods, named.RemoteContent!);
+            await DbSyncService.SaveLocalAsync(DbType.NamedMods, named.RemoteContent!);
         }
         if (unreal.Success)
         {
-            if (!File.Exists(DbSyncService.LocalCachePath(DbType.Unreal)) || !unreal.HasDiff)
-                await DbSyncService.SaveLocalAsync(DbType.Unreal, unreal.RemoteContent!);
+            await DbSyncService.SaveLocalAsync(DbType.Unreal, unreal.RemoteContent!);
         }
         if (unity.Success)
         {
-            if (!File.Exists(DbSyncService.LocalCachePath(DbType.Unity)) || !unity.HasDiff)
-                await DbSyncService.SaveLocalAsync(DbType.Unity, unity.RemoteContent!);
+            await DbSyncService.SaveLocalAsync(DbType.Unity, unity.RemoteContent!);
         }
 
         Dispatcher.Invoke(() => UpdateSelectorCards(named, unreal, unity));
