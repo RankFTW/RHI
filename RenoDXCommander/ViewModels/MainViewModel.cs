@@ -198,6 +198,12 @@ public partial class MainViewModel : ObservableObject
     public Action<GameCardViewModel>? RequestOverridesPanelRebuild { get; set; }
 
     /// <summary>
+    /// Callback set by the UI layer to trigger a full detail panel rebuild (Components + Overrides).
+    /// Called after operations that change GraphicsApi or RS state (e.g. DXVK install/uninstall).
+    /// </summary>
+    public Action<GameCardViewModel>? RequestDetailPanelRebuild { get; set; }
+
+    /// <summary>
     /// Callback set by the UI layer to trigger a single-card rebuild after API override changes.
     /// Re-evaluates Luma injection and UE5 DX11 suppression for the affected card.
     /// </summary>

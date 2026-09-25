@@ -53,7 +53,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _globalSkipRefUpdates;
     [ObservableProperty] private bool _cacheAllShaders = true;
     [ObservableProperty] private string _lastUpdateCheckUtc = "";
-    [ObservableProperty] private string _dxvkVariant = "Development";
+    [ObservableProperty] private string _dxvkVariant = "LiliumHdr";
     [ObservableProperty] private string _reShadeChannel = "Stable";
     [ObservableProperty] private int _peakNits;
     [ObservableProperty] private bool _peakNitsEnabled = true;
@@ -313,7 +313,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("GlobalSkipRefUpdates", out var gsrefVal)) GlobalSkipRefUpdates = gsrefVal == "true";
         if (s.TryGetValue("CacheAllShaders", out var casVal)) CacheAllShaders = casVal != "false"; // default true
         if (s.TryGetValue("LastUpdateCheckUtc", out var luc)) LastUpdateCheckUtc = luc;
-        if (s.TryGetValue("DxvkVariant", out var dvVal)) DxvkVariant = dvVal ?? "Development";
+        if (s.TryGetValue("DxvkVariant", out var dvVal)) DxvkVariant = dvVal ?? "LiliumHdr";
         if (s.TryGetValue("ReShadeChannel", out var rscVal)) ReShadeChannel = rscVal ?? "Stable";
         if (s.TryGetValue("PeakNits", out var pnVal) && int.TryParse(pnVal, out var pnInt)) PeakNits = pnInt;
         if (s.TryGetValue("PeakNitsEnabled", out var pneVal)) PeakNitsEnabled = pneVal != "false"; // default true

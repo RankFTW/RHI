@@ -2,8 +2,14 @@
 
 ### Bug Fixes
 
-- Fixed switching to a game whose NVIDIA driver profile had never been looked up before (e.g. first time selecting it after a Full Refresh) causing a multi-second UI freeze. The profile lookup now uses a cancellable 4-second timeout on the folder scan, which prevents thread pool starvation from cascading into a frozen UI.
-- Fixed the Shaders combo in Game Overrides being disabled when the ReShade Channel is set to "No Addons". Shaders can still be selected independently — only the Addons combo is blocked by the No Addons channel.
+- Fixed switching to a game whose NVIDIA driver profile had never been looked up before (e.g. first time selecting it after a Full Refresh) causing a multi-second UI freeze. The profile lookup now cancels after 4 seconds instead of blocking the thread pool indefinitely.
+- Fixed the Shaders combo in Game Overrides being disabled when the ReShade Channel is set to "No Addons". Shaders can still be selected independently — only the Addons combo is blocked.
+- Fixed DXVK defaulting to the Development variant instead of Lilium HDR when installing without first changing the cog setting.
+- Fixed DXVK-installed DX9 games not appearing in DX9 searches. The card now shows "DX9 / VLK" and matches searches for either API.
+- Fixed ReShade not showing as installed after installing DXVK on a DX9 game (e.g. Mass Effect 2007, Diablo). Multiple issues: wrong folder checked for games with install path subdirectory overrides, a cached display flag not populated on load, and the panel not rebuilding after install.
+- Fixed the ReShade X button doing nothing after uninstalling DXVK without refreshing first. DXVK uninstall now saves a fresh ReShade tracking record when it restores the DLL.
+- Fixed a phantom VLK badge appearing after DXVK was uninstalled and the app was restarted. The API cache is now updated immediately on uninstall.
+- Fixed DXVK install not deploying the shader folder when ReShade wasn't already installed.
 
 ### Manifest Updates
 

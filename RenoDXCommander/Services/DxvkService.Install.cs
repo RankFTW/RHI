@@ -189,6 +189,13 @@ public partial class DxvkService
                 card.DxvkStatus = GameStatus.Installed;
                 card.DxvkRecord = dx9Record;
                 card.VulkanRenderingPath = "Vulkan";
+
+                // Update DetectedApis to include both the original native API and Vulkan
+                // so the badge shows "DX9 / VLK" and searches for either API find this game.
+                // Keep original API in DetectedApis if present; seed DX9 if empty.
+                if (!card.DetectedApis.Any(a => a is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9 or GraphicsApiType.DirectX10))
+                    card.DetectedApis.Add(GraphicsApiType.DirectX9);
+                card.DetectedApis.Add(GraphicsApiType.Vulkan);
                 card.GraphicsApi = GraphicsApiType.Vulkan;
                 HasUpdate = false;
 
@@ -197,6 +204,7 @@ public partial class DxvkService
                     VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
                 card.RsInstalledVersion = vulkanVersion;
                 card.RsStatus = GameStatus.Installed;
+                card.RefreshBackupState(); // populate VulkanRsIniExists so panel shows correctly
                 card.NotifyAll();
 
                 progress?.Report(("DXVK installed!", 100));
@@ -473,10 +481,29 @@ public partial class DxvkService
                 // Reset card to non-Vulkan — re-apply API from detection/override
                 card.VulkanRenderingPath = "DirectX";
                 card.GraphicsApi = GraphicsApiType.DirectX9; // Safe default for DX8/DX9 games
+                // Restore DetectedApis: remove Vulkan, keep DX9
+                card.DetectedApis.Remove(GraphicsApiType.Vulkan);
                 // Update RS version to reflect the restored local DLL
                 var restoredRsVersion = AuxInstallService.ReadInstalledVersion(gameDir, "d3d9.dll");
                 if (restoredRsVersion != null)
                     card.RsInstalledVersion = restoredRsVersion;
+                // Restore the RsRecord so UninstallReShade can find it (was cleared by DXVK install/CacheLoad)
+                if (File.Exists(d3d9Path))
+                {
+                    var restoredRecord = new AuxInstalledRecord
+                    {
+                        GameName    = card.GameName,
+                        InstallPath = gameDir,
+                        Store       = card.Source ?? "",
+                        AddonType   = AuxInstallService.TypeReShade,
+                        InstalledAs = "d3d9.dll",
+                        InstalledAt = File.GetLastWriteTimeUtc(d3d9Path),
+                    };
+                    _auxInstaller.SaveAuxRecord(restoredRecord);
+                    card.RsRecord      = restoredRecord;
+                    card.RsInstalledFile = "d3d9.dll";
+                    CrashReporter.Log("[DxvkService.Uninstall] Direct DX9: restored RsRecord for d3d9.dll");
+                }
                 // Lilium HDR only: clear NVIDIA profile present method settings
                 if (record.IsLiliumHdrMode)
                 {

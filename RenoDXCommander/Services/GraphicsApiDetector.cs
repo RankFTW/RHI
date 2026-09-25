@@ -534,9 +534,17 @@ public static class GraphicsApiDetector
         var hasDx = apis.Contains(GraphicsApiType.DirectX11) || apis.Contains(GraphicsApiType.DirectX12);
         var hasVlk = apis.Contains(GraphicsApiType.Vulkan);
 
-        // Only DX11/12 + VLK is a valid multi-label combo
+        // DX11/12 + Vulkan (native dual-API games)
         if (hasDx && hasVlk)
             return "DX11/12 / VLK";
+
+        // Legacy DX (8/9/10) + Vulkan via DXVK — show original API alongside VLK
+        if (hasVlk)
+        {
+            if (apis.Contains(GraphicsApiType.DirectX9))  return "DX9 / VLK";
+            if (apis.Contains(GraphicsApiType.DirectX10)) return "DX10 / VLK";
+            if (apis.Contains(GraphicsApiType.DirectX8))  return "DX8 / VLK";
+        }
 
         // Otherwise just show the primary
         return GetLabel(primary);

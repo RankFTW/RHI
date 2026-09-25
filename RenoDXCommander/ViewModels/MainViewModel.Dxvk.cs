@@ -109,6 +109,15 @@ public partial class MainViewModel
             // Persist Vulkan rendering path if direct DX9 mode switched the game to Vulkan
             if (card.DxvkRecord?.InstalledDlls.Contains("d3d9.dll") == true && card.VulkanRenderingPath == "Vulkan")
                 SetVulkanRenderingPath(card.GameName, "Vulkan", card.Source ?? "");
+
+            // Deploy shaders — DXVK sets up a Vulkan ReShade environment so the
+            // reshade-shaders folder is needed even when ReShade wasn't installed before.
+            if (!string.IsNullOrEmpty(card.InstallPath))
+                DeployShadersForCard(card.GameName);
+
+            // Rebuild the detail panel — DXVK install changes GraphicsApi, RsStatus, and badge.
+            // DetailPanelBuilder is imperative so NotifyAll alone won't update it.
+            RequestDetailPanelRebuild?.Invoke(card);
         }
         catch (Exception ex)
         {
@@ -140,11 +149,25 @@ public partial class MainViewModel
             
             // Clear persisted Vulkan rendering path — Lilium HDR uninstall resets to DirectX
             SetVulkanRenderingPath(card.GameName, "DirectX", card.Source ?? "");
+
+            // Update API cache — DXVK set it to Vulkan, now it needs to go back to DX9
+            // so the next launch doesn't show a phantom VLK badge.
+            if (!string.IsNullOrEmpty(card.InstallPath))
+            {
+                var dx9Set = new System.Collections.Generic.HashSet<GraphicsApiType>(card.DetectedApis);
+                dx9Set.Remove(GraphicsApiType.Vulkan);
+                if (dx9Set.Count == 0) dx9Set.Add(GraphicsApiType.DirectX9);
+                CacheGameApi(card.InstallPath, GraphicsApiType.DirectX9, dx9Set);
+                SaveGameApiCache();
+            }
             
             card.DxvkActionMessage = "✖ DXVK removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);
             SaveLibrary();
+
+            // Rebuild the detail panel — uninstall reverts GraphicsApi and RS state.
+            RequestDetailPanelRebuild?.Invoke(card);
         }
         catch (Exception ex)
         {

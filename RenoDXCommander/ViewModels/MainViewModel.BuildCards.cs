@@ -1184,11 +1184,39 @@ public partial class MainViewModel
                     newCard.DxvkStatus = GameStatus.Installed;
                     newCard.DxvkInstalledVersion = dxvkRec.DxvkVersion;
 
-                    // Direct DX9 mode (any variant): game is operating in Vulkan mode via DXVK
+                    // Direct DX9 mode (any variant): game runs Vulkan via DXVK.
+                    // Keep the original native API in DetectedApis so it still shows in
+                    // DX9 searches and the badge shows "DX9 / VLK" instead of just "VLK".
+                    // If no API was detected (e.g. manually-added game with no PE scan), seed
+                    // DX9 from the tracking record — d3d9.dll proves it's a DX9 game.
+                    // IsDualApiGame is forced false — DXVK controls Vulkan, the user didn't
+                    // toggle it; we don't want the rendering-path toggle to appear.
                     if (dxvkRec.IsLiliumHdrMode || dxvkRec.InstalledDlls.Contains("d3d9.dll"))
                     {
+                        // Seed original API before overwriting GraphicsApi
+                        var originalApi = newCard.GraphicsApi;
+                        if (originalApi is GraphicsApiType.DirectX8
+                                        or GraphicsApiType.DirectX9
+                                        or GraphicsApiType.DirectX10)
+                            newCard.DetectedApis.Add(originalApi);
+                        else if (newCard.DetectedApis.Count == 0 || !newCard.DetectedApis.Any(
+                            a => a is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9 or GraphicsApiType.DirectX10))
+                            newCard.DetectedApis.Add(GraphicsApiType.DirectX9); // d3d9.dll install implies DX9
+
                         newCard.VulkanRenderingPath = "Vulkan";
                         newCard.GraphicsApi = GraphicsApiType.Vulkan;
+                        newCard.DetectedApis.Add(GraphicsApiType.Vulkan);
+                        newCard.IsDualApiGame = false; // not a native dual-API game
+
+                        // The old DX aux record (e.g. d3d9.dll) is now stale — DXVK owns that
+                        // file. Clear it so the Vulkan RS re-check (reshade.ini) fires below.
+                        if (newCard.RsRecord != null
+                            && dxvkRec.InstalledDlls.Any(d => d.Equals(newCard.RsRecord.InstalledAs, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            newCard.RsRecord = null;
+                            newCard.RsStatus = GameStatus.NotInstalled;
+                            newCard.RsInstalledFile = null;
+                        }
                     }
                 }
                 else
@@ -1225,6 +1253,7 @@ public partial class MainViewModel
                     newCard.RsStatus = GameStatus.Installed;
                     newCard.RsInstalledVersion = AuxInstallService.ReadInstalledVersion(
                         VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
+                    newCard.RefreshBackupState(); // populate VulkanRsIniExists so the panel shows correctly
                 }
             }
 

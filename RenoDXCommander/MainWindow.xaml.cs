@@ -185,6 +185,23 @@ public sealed partial class MainWindow : Window
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
         ViewModel.RequestOverridesPanelRebuild = card =>
             DispatcherQueue.TryEnqueue(() => { BuildOverridesPanel(card); _detailPanelBuilder.ApplySectionOrder(); });
+        ViewModel.RequestDetailPanelRebuild = card =>
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    // Re-find the card by name+store in case BuildCards replaced it concurrently
+                    var live = ViewModel.AllCards.FirstOrDefault(c =>
+                        c.GameName.Equals(card.GameName, StringComparison.OrdinalIgnoreCase)
+                        && c.Source == card.Source)
+                        ?? card;
+                    PopulateDetailPanel(live);
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter?.Log($"[RequestDetailPanelRebuild] Exception: {ex.Message}");
+                }
+            });
         ViewModel.RequestCardRebuild = card =>
             DispatcherQueue.TryEnqueue(() =>
             {
