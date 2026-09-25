@@ -54,8 +54,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         set { _hasSelection = value; OnPropertyChanged(nameof(HasSelection)); }
     }
 
-    /// <summary>True only when the Named Mods DB is open (not Unreal mode).</summary>
-    public bool CanCheckWiki => _hasFile && !_isUnrealMode;
+    /// <summary>True when a DB is open that supports wiki checking.</summary>
+    public bool CanCheckWiki => _hasFile;
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged(string name) =>
@@ -839,7 +839,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void WikiCheck_Click(object sender, RoutedEventArgs e)
     {
-        if (!HasFile || _isUnrealMode) return;
+        if (!HasFile) return;
+
+        // Route to the correct wiki check based on which DB is open
+        if (_isUnrealMode)
+        {
+            await WikiCheckUeExtendedAsync();
+            return;
+        }
 
         WikiCheckBtn.IsEnabled = false;
         StatusBar.Text = "Fetching RenoDX wiki…";
@@ -893,13 +900,74 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        // Insert all accepted mods into the list, alphabetically
         foreach (var mod in review.AcceptedMods)
             InsertModAlpha(mod);
 
         _isDirty = true;
         UpdateStatusBar();
         StatusBar.Text = $"Added {review.AcceptedMods.Count} mod(s) from wiki. Save to persist.";
+    }
+
+    // ── Wiki check — UE-Extended ──────────────────────────────────────────────
+
+    private async Task WikiCheckUeExtendedAsync()
+    {
+        WikiCheckBtn.IsEnabled = false;
+        StatusBar.Text = "Fetching RenoDX wiki (UE-Extended section)…";
+
+        List<WikiUeExtEntry> wikiEntries;
+        try
+        {
+            wikiEntries = await WikiUeExtendedScrapeService.FetchUeExtendedDoneAsync(_githubToken);
+        }
+        catch (Exception ex)
+        {
+            StatusBar.Text = $"Wiki fetch failed: {ex.Message}";
+            MessageBox.Show($"Failed to fetch the wiki:\n\n{ex.Message}",
+                "Wiki Fetch Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+        finally
+        {
+            WikiCheckBtn.IsEnabled = CanCheckWiki;
+        }
+
+        // Compare against the current Unreal DB by normalised name
+        var inDb = new HashSet<string>(
+            _allUnreal.Select(u => NormaliseModName(u.Name)),
+            StringComparer.Ordinal);
+
+        var newEntries = wikiEntries
+            .Where(w => !inDb.Contains(NormaliseModName(w.Name)))
+            .OrderBy(w => w.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (newEntries.Count == 0)
+        {
+            StatusBar.Text = $"Wiki check complete — no new UE-Extended games found ({wikiEntries.Count} checked).";
+            MessageBox.Show(
+                $"All {wikiEntries.Count} completed wiki entries are already in the DB.\n\nNothing to review.",
+                "Up to Date", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        StatusBar.Text = $"Found {newEntries.Count} new UE-Extended game(s) — opening review…";
+
+        var review = new UeExtReviewWindow(newEntries) { Owner = this };
+        review.ShowDialog();
+
+        if (review.AcceptedEntries.Count == 0)
+        {
+            StatusBar.Text = "Wiki review closed — no entries accepted.";
+            return;
+        }
+
+        foreach (var entry in review.AcceptedEntries)
+            InsertUnrealAlpha(entry);
+
+        _isDirty = true;
+        UpdateStatusBar();
+        StatusBar.Text = $"Added {review.AcceptedEntries.Count} UE-Extended game(s) from wiki. Save to persist.";
     }
 
     /// <summary>

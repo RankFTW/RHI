@@ -246,3 +246,199 @@ public static class WikiScrapeService
         return mods;
     }
 }
+
+/// <summary>
+/// A UE-Extended game entry as scraped from the wiki engine table.
+/// The table has Name / Status / Notes columns (no Links column).
+/// </summary>
+public record WikiUeExtEntry(
+    string  Name,
+    string  Status,   // "Done" or "WIP"
+    string? Notes);
+
+public static class WikiUeExtendedScrapeService
+{
+    private const string WikiUrl = "https://github.com/clshortfuse/renodx/wiki/Mods";
+
+    private static readonly HttpClient _http = new();
+
+    /// <summary>
+    /// Downloads the wiki page and returns all UE-Extended entries with status "Done".
+    /// </summary>
+    public static async Task<List<WikiUeExtEntry>> FetchUeExtendedDoneAsync(string? githubToken = null)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, WikiUrl);
+        req.Headers.UserAgent.ParseAdd("RenoDXdb-Editor/2.0");
+        if (!string.IsNullOrEmpty(githubToken))
+            req.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", githubToken);
+
+        var resp = await _http.SendAsync(req);
+        resp.EnsureSuccessStatusCode();
+        var html = await resp.Content.ReadAsStringAsync();
+
+        var all = ParseUeExtended(html);
+        return all.Where(e => e.Status == "Done").ToList();
+    }
+
+    // ── Parser ────────────────────────────────────────────────────────────────
+
+    private static List<WikiUeExtEntry> ParseUeExtended(string html)
+    {
+        // Find the "Unreal Engine Extended" heading
+        int ueExtPos = FindHeadingPos(html, @"Unreal\s+Engine\s+Extended");
+        if (ueExtPos < 0) return new List<WikiUeExtEntry>();
+
+        // End at the next section after ueExtPos ("Unreal Engine" but NOT "Unreal Engine Extended")
+        int ueLegacyPos = FindHeadingPosAfter(html, ueExtPos + 1, @"Unreal\s+Engine(?!\s+Extended)");
+        int unityPos    = FindHeadingPosAfter(html, ueExtPos + 1, @"Unity\s+Engine");
+        int depPos      = FindHeadingPosAfter(html, ueExtPos + 1, @"deprecated");
+
+        var candidates = new[] { ueLegacyPos, unityPos, depPos }.Where(p => p > ueExtPos).ToArray();
+        int endPos = candidates.Length > 0 ? candidates.Min() : -1;
+
+        var entries = new List<WikiUeExtEntry>();
+
+        var tableMatches = Regex.Matches(html,
+            @"(?s)<table[^>]*>(.*?)</table>", RegexOptions.IgnoreCase);
+
+        foreach (Match tableMatch in tableMatches)
+        {
+            int tStart = tableMatch.Index;
+            if (tStart < ueExtPos) continue;
+            if (endPos >= 0 && tStart >= endPos) continue;
+
+            var tableHtml = tableMatch.Groups[1].Value;
+
+            // Parse header row
+            var headerRowMatch = Regex.Match(tableHtml,
+                @"(?s)<tr[^>]*>(.*?)</tr>", RegexOptions.IgnoreCase);
+            if (!headerRowMatch.Success) continue;
+
+            var headerCells = Regex.Matches(headerRowMatch.Groups[1].Value,
+                @"(?s)<t[hd][^>]*>(.*?)</t[hd]>", RegexOptions.IgnoreCase);
+            if (headerCells.Count < 2) continue;
+
+            var headers = headerCells.Cast<Match>()
+                .Select(m => StripTagsUe(m.Groups[1].Value).ToLowerInvariant())
+                .ToArray();
+
+            // Engine table: has Status, does NOT have Links/Downloads column
+            bool hasStatus = headers.Any(h => Regex.IsMatch(h, @"status"));
+            bool hasLinks  = headers.Any(h => Regex.IsMatch(h, @"link|download"));
+            if (!hasStatus || hasLinks) continue;
+
+            // Column indices
+            int nameCol = 0, statusCol = -1, notesCol = -1;
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var h = headers[i];
+                if      (Regex.IsMatch(h, @"status")) statusCol = i;
+                else if (Regex.IsMatch(h, @"note"))   notesCol  = i;
+            }
+
+            // Data rows
+            var rowMatches = Regex.Matches(tableHtml,
+                @"(?s)<tr[^>]*>(.*?)</tr>", RegexOptions.IgnoreCase);
+            bool firstRow = true;
+            foreach (Match rowMatch in rowMatches)
+            {
+                if (firstRow) { firstRow = false; continue; }
+
+                var cells = Regex.Matches(rowMatch.Groups[1].Value,
+                    @"(?s)<td[^>]*>(.*?)</td>", RegexOptions.IgnoreCase);
+                if (cells.Count < 2) continue;
+
+                var cellArr = cells.Cast<Match>()
+                    .Select(m => m.Groups[1].Value)
+                    .ToArray();
+
+                string name = StripTagsUe(cellArr[nameCol]);
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                // Status
+                string status = "Done";
+                if (statusCol >= 0 && statusCol < cellArr.Length)
+                {
+                    if (StripTagsUe(cellArr[statusCol]).Contains("🚧"))
+                        status = "WIP";
+                }
+
+                // Notes — tooltip first, then plain status cell text after emoji, then notes col
+                string? notes = null;
+                if (statusCol >= 0 && statusCol < cellArr.Length)
+                {
+                    var tooltip = Regex.Match(cellArr[statusCol], @"title=""([^""]+)""");
+                    if (tooltip.Success)
+                        notes = tooltip.Groups[1].Value.Trim();
+
+                    if (notes == null)
+                    {
+                        var plain = StripTagsUe(cellArr[statusCol])
+                            .Replace("✅", "").Replace("🚧", "").Trim();
+                        if (!string.IsNullOrWhiteSpace(plain))
+                            notes = plain;
+                    }
+                }
+                if (notes == null && notesCol >= 0 && notesCol < cellArr.Length)
+                {
+                    var n = StripTagsUe(cellArr[notesCol]);
+                    if (!string.IsNullOrWhiteSpace(n)) notes = n.Trim();
+                }
+                // Any remaining non-name cell
+                if (notes == null)
+                {
+                    for (int i = 1; i < cellArr.Length; i++)
+                    {
+                        if (i == statusCol || i == notesCol) continue;
+                        var n = StripTagsUe(cellArr[i]);
+                        if (!string.IsNullOrWhiteSpace(n)) { notes = n.Trim(); break; }
+                    }
+                }
+                if (string.IsNullOrWhiteSpace(notes)) notes = null;
+
+                entries.Add(new WikiUeExtEntry(name, status, notes));
+            }
+        }
+
+        return entries;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static int FindHeadingPos(string html, string pattern)
+    {
+        var matches = Regex.Matches(html, @"<h[1-6][^>]*>.*?</h[1-6]>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        foreach (Match m in matches)
+        {
+            if (Regex.IsMatch(StripTagsUe(m.Value), pattern, RegexOptions.IgnoreCase))
+                return m.Index;
+        }
+        return -1;
+    }
+
+    private static int FindHeadingPosAfter(string html, int afterPos, string pattern)
+    {
+        var matches = Regex.Matches(html, @"<h[1-6][^>]*>.*?</h[1-6]>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        foreach (Match m in matches)
+        {
+            if (m.Index <= afterPos) continue;
+            if (Regex.IsMatch(StripTagsUe(m.Value), pattern, RegexOptions.IgnoreCase))
+                return m.Index;
+        }
+        return -1;
+    }
+
+    private static string StripTagsUe(string html)
+    {
+        var s = Regex.Replace(html, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+        s = Regex.Replace(s, @"<li[^>]*>", "\n• ", RegexOptions.IgnoreCase);
+        s = Regex.Replace(s, @"<[^>]+>", "");
+        s = System.Web.HttpUtility.HtmlDecode(s);
+        s = s.Replace('\u2018', '\'').Replace('\u2019', '\'')
+             .Replace('\u201C', '"').Replace('\u201D', '"');
+        return s.Trim();
+    }
+}
