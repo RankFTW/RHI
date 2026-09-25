@@ -476,10 +476,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (_isUnrealMode)
             {
                 json = JsonSerializer.Serialize(_allUnreal.ToList(), opts);
-                // Unity DB: strip the "Method" field entirely from the JSON
+                // Unity DB: serialize without the Method field using a dedicated model
                 if (_activeDb == DbType.Unity)
-                    json = System.Text.RegularExpressions.Regex.Replace(
-                        json, @",?\s*""Method""\s*:\s*(?:null|""[^""]*"")", "");
+                    json = JsonSerializer.Serialize(
+                        _allUnreal.Select(e => new UnityEntry(e.Name, e.Status, e.Upgrades, e.Comments)).ToList(),
+                        opts);
             }
             else
                 json = JsonSerializer.Serialize(_allMods.ToList(), opts);
