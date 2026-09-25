@@ -3,10 +3,12 @@
 ### Bug Fixes
 
 - Fixed switching to a game whose NVIDIA driver profile had never been looked up before (e.g. first time selecting it after a Full Refresh) causing a multi-second UI freeze. The profile lookup now uses a cancellable 4-second timeout on the folder scan, which prevents thread pool starvation from cascading into a frozen UI.
+- Fixed the Shaders combo in Game Overrides being disabled when the ReShade Channel is set to "No Addons". Shaders can still be selected independently — only the Addons combo is blocked by the No Addons channel.
 
 ### Manifest Updates
 
 - Added Nexus Mods link for CONTROL Resonant.
+- Added UltrawideSideGlass shader pack by NickFirzen — fills ultrawide pillarboxes with zoom/mirror/frosted glass effects, HDR-aware. Available in the Shader picker.
 
 ## v2.7.6
 

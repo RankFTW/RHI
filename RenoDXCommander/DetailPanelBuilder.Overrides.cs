@@ -791,7 +791,6 @@ public partial class DetailPanelBuilder
             SelectedItem = effectiveShaderDisplay,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            IsEnabled = !card.UseNormalReShade,
         };
         ToolTipService.SetToolTip(shaderModeCombo,
             "Global = use global shader selection. Custom = use custom shader directories. Select = pick per-game packs. Off = no shaders.");

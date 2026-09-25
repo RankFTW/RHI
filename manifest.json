@@ -1416,6 +1416,14 @@
       "requires": [
         "CrosireMaster"
       ]
+    },
+    "UltrawideSideGlass": {
+      "displayName": "UltrawideSideGlass by NickFirzen",
+      "kind": "GhRelease",
+      "url": "https://api.github.com/repos/NickFirzen/Ultrawide-Side-Glass-Reshade-Shader/releases/latest",
+      "assetExt": ".fx",
+      "description": "Fills ultrawide black pillarboxes with zoomed, mirrored, or frosted glass effects while preserving the centre image and HDR metadata. Supports 21:9, 32:9, and many other aspect ratios.",
+      "category": "Extra"
     }
   },
   "addonPacks": {
