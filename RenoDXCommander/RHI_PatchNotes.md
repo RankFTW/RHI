@@ -16,6 +16,7 @@
 - Added Nexus Mods link for CONTROL Resonant.
 - Added UltrawideSideGlass shader pack by NickFirzen — fills ultrawide pillarboxes with zoom/mirror/frosted glass effects, HDR-aware. Available in the Shader picker.
 - Added name mapping for FINAL FANTASY XV WINDOWS EDITION → Final Fantasy XV.
+- Added Nexus Mods link for FINAL FANTASY XV WINDOWS EDITION.
 
 ## v2.7.6
 
