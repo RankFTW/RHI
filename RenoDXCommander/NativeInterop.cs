@@ -303,6 +303,43 @@ internal static class NativeInterop
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool AllowSetForegroundWindow(int dwProcessId);
 
+    [DllImport("user32.dll")]
+    internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("user32.dll")]
+    internal static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, [MarshalAs(UnmanagedType.Bool)] bool fAttach);
+
+    [DllImport("user32.dll")]
+    internal static extern IntPtr GetForegroundWindow();
+
+    /// <summary>
+    /// Forces a window to the foreground by temporarily attaching to the foreground thread's
+    /// input queue. This is the only reliable way to steal focus on launch without a user event.
+    /// </summary>
+    internal static void ForceToForeground(IntPtr hwnd)
+    {
+        var foregroundHwnd = GetForegroundWindow();
+        var foregroundThread = GetWindowThreadProcessId(foregroundHwnd, out _);
+        var currentThread = GetCurrentThreadId();
+
+        if (foregroundThread != currentThread)
+            AttachThreadInput(currentThread, foregroundThread, true);
+
+        SetForegroundWindow(hwnd);
+        BringWindowToTop(hwnd);
+
+        if (foregroundThread != currentThread)
+            AttachThreadInput(currentThread, foregroundThread, false);
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool BringWindowToTop(IntPtr hWnd);
+
     // ── Win32 Open File Dialog (fallback for WinRT FileOpenPicker COM failures) ──
 
     [DllImport("comdlg32.dll", SetLastError = true, CharSet = CharSet.Unicode)]

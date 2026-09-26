@@ -406,8 +406,7 @@ public sealed partial class MainWindow : Window
     {
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         AppWindow.Show();                               // unhide if hidden (CloseToTray / start-minimized)
-        NativeInterop.SwitchToThisWindow(hwnd, true);  // bypasses Windows foreground-lock restrictions
-        NativeInterop.SetForegroundWindow(hwnd);        // belt-and-suspenders: explicit foreground request
+        NativeInterop.ForceToForeground(hwnd);          // AttachThreadInput trick — bypasses foreground lock
         this.Activate();                                // update WinUI internal state
     }
 
