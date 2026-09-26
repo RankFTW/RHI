@@ -98,6 +98,9 @@ internal static class NativeInterop
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool SetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct WINDOWPLACEMENT
     {
