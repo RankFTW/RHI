@@ -13,7 +13,7 @@
 - Fixed the ReShade settings cog (⚙) being greyed out on Vulkan/Unity games. The cog was gated on the inis folder reshade.ini existing, but Vulkan games keep their ini in the game folder. Now enabled whenever ReShade is installed in either location.
 - Added Unity engine settings (Swapchain Proxy, Swapchain Encoding, Force Pipeline Cloning, Force Borderless etc.) to the RenoDX cog Compatibility Settings section. These appear automatically when present in the game's reshade.ini.
 - Fixed UI freezing when rapidly scrolling through games with NVIDIA driver profiles. A `Task.Delay(5000)` timer was left running after each NVAPI read completed, accumulating thread pool threads during fast navigation. The delay is now cancelled immediately when the NVAPI scan finishes.
-- Fixed a random UI freeze when clicking certain games (e.g. Unity games without DLSS). The Neural Rendering background scan was holding a semaphore while waiting for a dispatcher queue callback to run, which deadlocked when the NVIDIA profile section ran concurrently and tried to acquire the same semaphore. The semaphore is now released immediately after file scans complete, before any UI callback is queued.
+- Fixed a random UI freeze when clicking certain games (e.g. Unity games without DLSS). The Neural Rendering background scan was holding a semaphore while waiting for a dispatcher queue callback to run, which deadlocked when the NVIDIA profile section ran concurrently and tried to acquire the same semaphore. Fixed in two places: the initial scan (`BuildNeuralRenderingSection`) and the status refresh (`RefreshStatus`) — both now release the semaphore immediately after file scans complete, before any UI callback is queued.
 
 ### Manifest Updates
 

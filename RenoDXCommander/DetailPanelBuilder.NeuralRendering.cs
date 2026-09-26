@@ -796,6 +796,8 @@ public partial class DetailPanelBuilder
                                 || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9);
                 bool dgVoodooOk = isDx9Feeder && App.Services.GetRequiredService<DgVoodooService>().IsDeployed(installPath);
 
+                _panelScanSemaphore.Release();
+
                 _window.DispatcherQueue?.TryEnqueue(() =>
                 {
                     if (_window.ViewModel.SelectedGame != card) return;
@@ -806,7 +808,7 @@ public partial class DetailPanelBuilder
                         ualName, ualOk, feedFxPresent, lumeniteFxPresent, isDx9Feeder, dgVoodooOk);
                 });
                 }
-                finally { _panelScanSemaphore.Release(); }
+                finally { /* semaphore already released above */ }
             });
         }
 
