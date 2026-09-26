@@ -204,11 +204,11 @@ public class PcgwFetchService
         {
             _ct.ThrowIfCancellationRequested();
             var chunk  = pages.Skip(i).Take(ChunkSize);
-            // Escape single quotes and build IN list with single-quoted string literals.
-            // Double-quoted values can be misinterpreted by Cargo as column references
-            // when a game name matches a column name (e.g. a page named "Series").
-            var inList = string.Join(",", chunk.Select(p => $"'{p.Replace("'", "\\'").Replace("\\", "\\\\")}'" ));
-            var where  = $"Game._pageName IN ({inList})";
+            // Use OR conditions instead of IN to avoid Cargo's column-name substitution bug:
+            // Cargo replaces string values in IN lists that match a column name (e.g. "Series")
+            // with a column reference, then errors because list fields require HOLDS operators.
+            var conditions = chunk.Select(p => $"Game._pageName='{p.Replace("'", "\\'").Replace("\\", "\\\\")}'" );
+            var where  = string.Join(" OR ", conditions);
             var batch  = await CargoQueryPageAsync(tables, fields, joinOn, where);
             results.AddRange(batch);
             progress?.Report(new FetchProgress($"  {results.Count:N0} rows fetched…"));
