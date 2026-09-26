@@ -27,6 +27,9 @@
 
 **Other**
 - Fixed MFG Ada Unlock being removed from the game folder when a RenoDX addon was drag-dropped onto the same game. It was incorrectly included in the cleanup sweep of old addon files.
+- Fixed games using NW.js or Electron runtimes (e.g. CrossCode) showing as DX9 when they are actually DX11. The PE scanner picks up legacy D3D shims from the runtime — PCGW data now corrects this when it confirms the game doesn't support DX9.
+- Fixed switching a game's Graphics API override to Vulkan (or back to Auto when the manifest sets Vulkan) not removing the DX ReShade DLL from the game folder. The DLL is now uninstalled automatically on the transition. Switching away from Vulkan also removes the Vulkan ReShade footprint.
+- Fixed Vulkan ReShade install/uninstall not updating the panel status immediately — required a Refresh to reflect the change.
 - Fixed a multi-second delay when clicking a game whose NVIDIA driver profile had never been scanned before.
 - Fixed the Shaders dropdown in Game Overrides being disabled when ReShade Channel was set to "No Addons".
 
