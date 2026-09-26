@@ -734,80 +734,9 @@ public partial class DetailPanelBuilder
                     c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
                 if (targetCard?.DlssDetection == null) return;
 
-                var settings = _window.ViewModel.Settings;
                 var svc = _dlssStreamlineService;
-                var pSvc = _dlssPresetService;
-
-                // Check driver override state — skip DLL swaps for overridden components
-                bool srOverride = pSvc.IsSupported && pSvc.IsSrDriverOverrideActive(targetCard.GameName, targetCard.InstallPath ?? "");
-                bool rrOverride = pSvc.IsSupported && pSvc.IsRrDriverOverrideActive(targetCard.GameName, targetCard.InstallPath ?? "");
-                bool fgOverride = pSvc.IsSupported && pSvc.IsFgDriverOverrideActive(targetCard.GameName, targetCard.InstallPath ?? "");
-
-                // Apply driver override defaults if configured — takes priority over version defaults
-                if (pSvc.IsSupported && settings.DefaultSrDriverOverride && targetCard.HasDlss)
-                    pSvc.SetSrDriverOverride(targetCard.GameName, targetCard.InstallPath ?? "", true);
-                if (pSvc.IsSupported && settings.DefaultRrDriverOverride && targetCard.HasDlssd)
-                    pSvc.SetRrDriverOverride(targetCard.GameName, targetCard.InstallPath ?? "", true);
-                if (pSvc.IsSupported && settings.DefaultFgDriverOverride && targetCard.HasDlssg)
-                    pSvc.SetFgDriverOverride(targetCard.GameName, targetCard.InstallPath ?? "", true);
-
-                // Re-read override state after applying defaults (may have just been enabled above)
-                srOverride = pSvc.IsSupported && (srOverride || settings.DefaultSrDriverOverride);
-                rrOverride = pSvc.IsSupported && (rrOverride || settings.DefaultRrDriverOverride);
-                fgOverride = pSvc.IsSupported && (fgOverride || settings.DefaultFgDriverOverride);
-
-                if (!string.IsNullOrEmpty(settings.DefaultDlssVersion) && targetCard.HasDlss && targetCard.DlssDetection.DlssPath != null
-                    && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true) && !srOverride)
-                {
-                    if (settings.DefaultDlssVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
-                        await svc.SwapDlssCustomAsync(targetCard.DlssDetection.DlssPath);
-                    else
-                        await svc.SwapDlssAsync(targetCard.DlssDetection.DlssPath, settings.DefaultDlssVersion);
-                }
-                if (!string.IsNullOrEmpty(settings.DefaultDlssdVersion) && targetCard.HasDlssd && targetCard.DlssDetection.DlssdPath != null
-                    && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true) && !rrOverride)
-                {
-                    if (settings.DefaultDlssdVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
-                        await svc.SwapDlssCustomAsync(targetCard.DlssDetection.DlssdPath);
-                    else
-                        await svc.SwapDlssdAsync(targetCard.DlssDetection.DlssdPath, settings.DefaultDlssdVersion);
-                }
-                if (!string.IsNullOrEmpty(settings.DefaultDlssgVersion) && targetCard.HasDlssg && targetCard.DlssDetection.DlssgPath != null
-                    && !fgOverride)
-                {
-                    if (settings.DefaultDlssgVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
-                        await svc.SwapDlssCustomAsync(targetCard.DlssDetection.DlssgPath);
-                    else
-                        await svc.SwapDlssgAsync(targetCard.DlssDetection.DlssgPath, settings.DefaultDlssgVersion);
-                }
-                if (!string.IsNullOrEmpty(settings.DefaultStreamlineVersion) && targetCard.HasStreamline && targetCard.DlssDetection.StreamlineFolder != null
-                    && !(targetCard.StreamlineInstalledVersion?.StartsWith("1.") == true))
-                {
-                    if (settings.DefaultStreamlineVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
-                        await svc.SwapStreamlineCustomAsync(targetCard.DlssDetection.StreamlineFolder);
-                    else
-                        await svc.SwapStreamlineAsync(targetCard.DlssDetection.StreamlineFolder, settings.DefaultStreamlineVersion);
-                }
-
-                if (settings.DefaultSrPreset != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);
-                if (settings.DefaultRrPreset != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
-                if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg)
-                    pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
-
-                if (FeatureFlags.DlssNr)
-                {
-                    if (!string.IsNullOrEmpty(settings.DefaultDlssnrVersion) && targetCard.HasDlssnr && targetCard.DlssDetection?.DlssnrPath != null)
-                        await svc.SwapDlssnrAsync(targetCard.DlssDetection.DlssnrPath, settings.DefaultDlssnrVersion);
-                    if (settings.DefaultNrPreset != 0 && targetCard.HasDlssnr)
-                        pSvc.SetNrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultNrPreset);
-                }
-
-                if (settings.DefaultSrRenderScale != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrRenderScale);
-                if (settings.DefaultRrRenderScale != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetRrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrRenderScale);
+                // The apply logic lives in DlssDefaultsApplier so Quick Apply and One-Click Optimize share it.
+                await new DlssDefaultsApplier(svc, new DlssPresetProfileAdapter(_dlssPresetService)).ApplyAsync(targetCard, _window.ViewModel.Settings);
 
                 targetCard.RefreshDlssVersions(svc);
                 _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));
