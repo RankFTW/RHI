@@ -6,6 +6,8 @@
 - Fixed UI freezing when rapidly scrolling through games with NVIDIA driver profiles. A `Task.Delay(5000)` timer was left running after each NVAPI read completed, accumulating thread pool threads during fast navigation. The delay is now cancelled immediately when the NVAPI scan finishes.
 - Fixed a random UI freeze when clicking certain games (e.g. Unity games without DLSS). The Neural Rendering background scan was holding a semaphore while waiting for a dispatcher queue callback to run, which deadlocked when the NVIDIA profile section ran concurrently and tried to acquire the same semaphore. Fixed in two places: the initial scan (`BuildNeuralRenderingSection`) and the status refresh (`RefreshStatus`) — both now release the semaphore immediately after file scans complete, before any UI callback is queued.
 - Fixed the window appearing behind other windows when restored from the system tray or activated by a second instance. The window now always comes to the foreground.
+- Fixed the window appearing behind other windows on fresh launch.
+- Fixed a maximized window not restoring to maximized state on relaunch — it would appear in a pseudo-maximized state (no border, maximize button active, but not actually maximized). Now uses `SetWindowPlacement` to restore both position and maximize state atomically.
 
 **DXVK**
 - Fixed DXVK defaulting to the Development variant instead of Lilium HDR when installing without first changing the cog setting.
@@ -19,6 +21,9 @@
 - Added Unity engine settings (Swapchain Proxy, Swapchain Encoding, Force Pipeline Cloning, Force Borderless etc.) to the Compatibility Settings section. These appear automatically when present in the game's reshade.ini.
 - Fixed Swapchain Encoding labels — was showing "Gamma/scRGB", now correctly shows "Linear/Gamma".
 - Fixed the ReShade settings cog (⚙) being greyed out on Vulkan/Unity games. The cog was gated on the inis folder reshade.ini existing, but Vulkan games keep their ini in the game folder. Now enabled whenever ReShade is installed in either location.
+
+**OptiScaler**
+- Fixed the OptiScaler variant (DLSS NR / Nightly) being silently reset to Stable every time the OptiScaler cog was opened. The variant combo was firing `SelectionChanged` during dialog construction, before the dialog was shown, writing null ("Stable") over the saved variant. This caused all reinstalls and updates to use the wrong staging folder and write incorrect version info to the game folder.
 
 **Other**
 - Fixed switching to a game whose NVIDIA driver profile had never been looked up before (e.g. first time selecting it after a Full Refresh) causing a multi-second UI freeze. The profile lookup now cancels after 4 seconds instead of blocking the thread pool indefinitely.
