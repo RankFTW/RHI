@@ -129,7 +129,7 @@ public sealed partial class MainWindow : Window
         {
             TrayIconService.Initialize(
                 _windowStateManager.Hwnd,
-                onShowWindow: () => { this.Activate(); },
+                onShowWindow: () => { BringToFront(); },
                 onExit: () => { _forceClose = true; this.Close(); },
                 onLaunchGame: (name) =>
                 {
@@ -325,7 +325,7 @@ public sealed partial class MainWindow : Window
         // Force tray icon initialization regardless of setting (user explicitly wants to start minimized)
         TrayIconService.Initialize(
             _windowStateManager.Hwnd,
-            onShowWindow: () => { this.Activate(); },
+            onShowWindow: () => { BringToFront(); },
             onExit: () => { _forceClose = true; this.Close(); },
             onLaunchGame: (name) =>
             {
@@ -399,7 +399,18 @@ public sealed partial class MainWindow : Window
     // ── Addon file handling (Downloads watcher + file association) ───────────────
 
     /// <summary>
-    /// Handles an addon file detected by the Downloads watcher or passed via command-line.
+    /// Reliably brings the window to the foreground from any state (hidden, behind other windows).
+    /// Must be called on the UI thread.
+    /// </summary>
+    internal void BringToFront()
+    {
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        AppWindow.Show();                          // unhide if hidden (CloseToTray / start-minimized)
+        NativeInterop.SetForegroundWindow(hwnd);   // promote to foreground
+        this.Activate();                           // update WinUI internal state
+    }
+
+    /// <summary>
     /// Waits for initialization to complete, then delegates to the drag-drop handler.
     /// </summary>
     internal async void HandleAddonFile(string filePath)

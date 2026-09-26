@@ -1288,7 +1288,7 @@ public sealed partial class MainWindow
         {
             TrayIconService.Initialize(
                 _windowStateManager.Hwnd,
-                onShowWindow: () => { this.Activate(); },
+                onShowWindow: () => { BringToFront(); },
                 onExit: () => { _forceClose = true; this.Close(); },
                 onLaunchGame: (name) =>
                 {

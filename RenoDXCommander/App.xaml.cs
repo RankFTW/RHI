@@ -336,7 +336,7 @@ public partial class App : Application
         if (path == "--activate")
         {
             if (_window is MainWindow mw0)
-                mw0.DispatcherQueue.TryEnqueue(() => mw0.Activate());
+                mw0.DispatcherQueue.TryEnqueue(() => mw0.BringToFront());
             return;
         }
         if (path.StartsWith("--launch:"))
@@ -345,7 +345,7 @@ public partial class App : Application
             if (_window is MainWindow mw)
                 mw.DispatcherQueue.TryEnqueue(() =>
                 {
-                    mw.Activate();
+                    mw.BringToFront();
                     var card = mw.ViewModel.AllCards.FirstOrDefault(c =>
                         c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
                     if (card != null) _ = mw.LaunchGameAsync(card);

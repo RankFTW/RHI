@@ -189,8 +189,8 @@
     "Nioh: Complete Edition": "Nioh",
     "Trine 5: A Clockwork Conspiracy": "Trine 5",
     "L.A. Noire": "L.A. Noire",
-    "Sekiro™: Shadows Die Twice": "Sekiro",
-    "Sekiro™: Shadows Die Twice - GOTY Edition": "Sekiro"
+    "Sekiro™: Shadows Die Twice": "Sekiro: Shadows Die Twice",
+    "Sekiro™: Shadows Die Twice - GOTY Edition": "Sekiro: Shadows Die Twice"
   },
   "installPathOverrides": {
     "Warhammer 40,000: Space Marine 2": "client_pc\\root\\bin\\pc",
@@ -925,7 +925,7 @@
     "Terraria": "C:\\Windows\\Microsoft.NET\\assembly\\GAC_32\\Microsoft.Xna.Framework.Graphics\\v4.0_4.0.0.0__842cf8be1de50553"
   },
   "launchExeOverrides": {
-    "Arma Reforger": "ArmaReforgerSteam.exe",
+    "Arma Reforger": "ArmaReforger_BE.exe",
     "Warhammer 40,000: Space Marine 2": "Warhammer 40000 Space Marine 2 - Retail.exe",
     "Crysis Remastered": "CrysisRemastered.exe",
     "Returnal\u2122": "Returnal-Win64-Shipping.exe",
