@@ -400,7 +400,8 @@
     }
   },
   "_comment_engine": "=== ENGINE \u0026 GRAPHICS API ===\nOverride the auto-detected engine type, display label, and graphics API for games where detection fails or gives the wrong result.\nengineOverrides controls mod fallback logic (Unreal/Unity/RE Engine). engineHintOverrides is display/hint only.\ngraphicsApiOverrides forces the API badge and controls which ReShade DLL is deployed.",
-  "engineOverrides": {
+  "_engineOverrides_disabled": "disabled — engine names now sourced from pcgw_data.json",
+  "_engineOverrides": {
     "007 First Light": "Glacier 2",
     "Assassin\u0027s Creed Black Flag Resynced": "Anvil",
     "CrossCode": "NW.js",
