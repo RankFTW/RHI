@@ -905,6 +905,25 @@ public partial class MainViewModel
                         newCard.DetectedApis.Add(pcgwApi);
                     }
                 }
+                else if (pcgwInfo != null
+                    && newCard.GraphicsApi == GraphicsApiType.DirectX9
+                    && !pcgwInfo.HasDirectX9
+                    && (pcgwInfo.HasDirectX11 || pcgwInfo.HasDirectX12 || pcgwInfo.HasVulkan))
+                {
+                    // PE scan returned DX9 but PCGW says the game doesn't support DX9 at all.
+                    // Common for NW.js/Electron games whose runtime imports legacy D3D shims.
+                    var pcgwApi =
+                        pcgwInfo.HasDirectX12 ? GraphicsApiType.DirectX12 :
+                        pcgwInfo.HasVulkan    ? GraphicsApiType.Vulkan    :
+                        pcgwInfo.HasDirectX11 ? GraphicsApiType.DirectX11 :
+                        GraphicsApiType.Unknown;
+                    if (pcgwApi != GraphicsApiType.Unknown)
+                    {
+                        newCard.GraphicsApi = pcgwApi;
+                        newCard.DetectedApis.Remove(GraphicsApiType.DirectX9);
+                        newCard.DetectedApis.Add(pcgwApi);
+                    }
+                }
 
                 // Apply scraped config file path to EngineIniProjectOverride for UE games —
                 // only when manifest hasn't already set one (same logic as BuildCards).

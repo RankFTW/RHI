@@ -840,6 +840,29 @@ public partial class MainViewModel
                         _crashReporter.Log($"[BuildCards] '{game.Name}': PE scan returned Unknown, PCGW set API to {pcgwApi}");
                     }
                 }
+                else if (pcgwInfo != null
+                    && newCard.GraphicsApi == GraphicsApiType.DirectX9
+                    && !pcgwInfo.HasDirectX9
+                    && (pcgwInfo.HasDirectX11 || pcgwInfo.HasDirectX12 || pcgwInfo.HasVulkan))
+                {
+                    // PE scan returned DX9 but PCGW says the game doesn't support DX9 at all.
+                    // Common for NW.js/Electron games whose runtime DLLs import legacy D3D shims
+                    // but the game itself runs on DX11/DX12. Trust PCGW.
+                    var pcgwApi =
+                        pcgwInfo.HasDirectX12 ? GraphicsApiType.DirectX12 :
+                        pcgwInfo.HasVulkan    ? GraphicsApiType.Vulkan    :
+                        pcgwInfo.HasDirectX11 ? GraphicsApiType.DirectX11 :
+                        GraphicsApiType.Unknown;
+                    if (pcgwApi != GraphicsApiType.Unknown)
+                    {
+                        newCard.GraphicsApi = pcgwApi;
+                        newCard.DetectedApis.Remove(GraphicsApiType.DirectX9);
+                        newCard.DetectedApis.Add(pcgwApi);
+                        if (!string.IsNullOrEmpty(installPath))
+                            CacheGameApi(installPath, newCard.GraphicsApi, newCard.DetectedApis);
+                        _crashReporter.Log($"[BuildCards] '{game.Name}': PE scan returned DX9 but PCGW says {pcgwApi} — corrected");
+                    }
+                }
 
                 // Apply scraped config file path to EngineIniProjectOverride for UE games —
                 // only when manifest hasn't already set one. Allows correct Engine.ini placement
