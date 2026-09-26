@@ -89,6 +89,7 @@ public class AddonPackService : IAddonPackService
     public AddonPackService(HttpClient http)
     {
         _http = http;
+        try { Directory.CreateDirectory(StagingDir); } catch { }
         try { Directory.CreateDirectory(CustomAddonsDir); } catch { }
 
         // One-time migration: eagerly remove stale "RenoDX DLSS5.addon64" at construction time
