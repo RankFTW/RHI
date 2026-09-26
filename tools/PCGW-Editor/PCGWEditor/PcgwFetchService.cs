@@ -200,18 +200,43 @@ public class PcgwFetchService
     {
         var results = new List<Dictionary<string, string>>();
         var pages   = pageNames.OrderBy(p => p).ToList();
-        for (int i = 0; i < pages.Count; i += ChunkSize)
+
+        // Cargo list-field column names — if a page name contains these as substrings,
+        // Cargo replaces the value in the WHERE clause with a column reference and errors.
+        // Split such pages into individual queries to avoid the substitution.
+        static bool HasCargoConflict(string name) =>
+            name.Contains("Series",     StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Genres",     StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Themes",     StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Developers", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Publishers", StringComparison.OrdinalIgnoreCase);
+
+        var safePages      = pages.Where(p => !HasCargoConflict(p)).ToList();
+        var conflictPages  = pages.Where(HasCargoConflict).ToList();
+
+        // Batch safe pages normally
+        for (int i = 0; i < safePages.Count; i += ChunkSize)
         {
             _ct.ThrowIfCancellationRequested();
-            var chunk  = pages.Skip(i).Take(ChunkSize);
-            // Use OR conditions instead of IN to avoid Cargo's column-name substitution bug:
-            // Cargo replaces string values in IN lists that match a column name (e.g. "Series")
-            // with a column reference, then errors because list fields require HOLDS operators.
-            var conditions = chunk.Select(p => $"Game._pageName='{p.Replace("'", "\\'").Replace("\\", "\\\\")}'" );
-            var where  = string.Join(" OR ", conditions);
+            var chunk = safePages.Skip(i).Take(ChunkSize);
+            var inList = string.Join(",", chunk.Select(p => $"\"{p.Replace("\"", "\\\"")}\""));
+            var where  = $"Game._pageName IN ({inList})";
             var batch  = await CargoQueryPageAsync(tables, fields, joinOn, where);
             results.AddRange(batch);
             progress?.Report(new FetchProgress($"  {results.Count:N0} rows fetched…"));
+            await Task.Delay(RequestDelay, _ct);
+        }
+
+        // Conflict pages: use LIKE with % anchors so Cargo can't substitute the value
+        foreach (var page in conflictPages)
+        {
+            _ct.ThrowIfCancellationRequested();
+            // LIKE with exact match (no wildcards) — avoids the column substitution
+            var escaped = page.Replace("'", "\\'").Replace("%", "\\%").Replace("_", "\\_").Replace("\\", "\\\\");
+            var where   = $"Game._pageName LIKE '{escaped}'";
+            var batch   = await CargoQueryPageAsync(tables, fields, joinOn, where);
+            results.AddRange(batch);
+            progress?.Report(new FetchProgress($"  {results.Count:N0} rows fetched (incl. conflict page)…"));
             await Task.Delay(RequestDelay, _ct);
         }
         return results;
