@@ -1126,6 +1126,24 @@ public partial class DetailPanelBuilder
                 c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
             if (targetCard != null)
             {
+                bool wasVulkan = targetCard.RequiresVulkanInstall;
+                bool willBeVulkan = apiEnumNames?.Contains("Vulkan") == true;
+
+                // ── Clean up ReShade when switching between DX and Vulkan ──────────────
+                // Switching TO Vulkan: uninstall any DX ReShade DLL (dxgi.dll, d3d12.dll etc.)
+                // — leaving it behind causes conflicts with the Vulkan layer.
+                if (!wasVulkan && willBeVulkan && targetCard.IsRsInstalled)
+                {
+                    CrashReporter.Log($"[ApiOverride] Switching '{capturedName}' to Vulkan — uninstalling DX ReShade ({targetCard.RsInstalledFile})");
+                    _window.ViewModel.UninstallReShade(targetCard);
+                }
+                // Switching FROM Vulkan: uninstall Vulkan ReShade footprint if present.
+                else if (wasVulkan && !willBeVulkan && targetCard.VulkanRsIniExists)
+                {
+                    CrashReporter.Log($"[ApiOverride] Switching '{capturedName}' from Vulkan — uninstalling Vulkan ReShade");
+                    _window.ViewModel.UninstallVulkanReShadeCommand.Execute(targetCard);
+                }
+
                 if (apiEnumNames != null)
                 {
                     var newApis = new HashSet<GraphicsApiType>();
