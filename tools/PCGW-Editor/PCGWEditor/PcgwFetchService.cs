@@ -204,8 +204,10 @@ public class PcgwFetchService
         {
             _ct.ThrowIfCancellationRequested();
             var chunk  = pages.Skip(i).Take(ChunkSize);
-            // Escape quotes and build IN list - use Game._pageName with table prefix
-            var inList = string.Join(",", chunk.Select(p => $"\"{p.Replace("\"", "'").Replace("\\", "\\\\")}\""));
+            // Escape single quotes and build IN list with single-quoted string literals.
+            // Double-quoted values can be misinterpreted by Cargo as column references
+            // when a game name matches a column name (e.g. a page named "Series").
+            var inList = string.Join(",", chunk.Select(p => $"'{p.Replace("'", "\\'").Replace("\\", "\\\\")}'" ));
             var where  = $"Game._pageName IN ({inList})";
             var batch  = await CargoQueryPageAsync(tables, fields, joinOn, where);
             results.AddRange(batch);
