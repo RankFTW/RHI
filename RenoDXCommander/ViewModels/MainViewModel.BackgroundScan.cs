@@ -140,6 +140,26 @@ public partial class MainViewModel
                 try { await _dofFixService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DOF Fix staging task failed — {ex.Message}"); }
             });
+            var rdx5Task = Task.Run(async () => {
+                try
+                {
+                    var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
+                    bool hasUpdate = await rdx5Svc.CheckForUpdateAsync().ConfigureAwait(false);
+                    if (hasUpdate)
+                    {
+                        _crashReporter.Log("[RunBackgroundScanAndMergeAsync] DLSS5 Tool update available — downloading");
+                        await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
+                    }
+                    bool sfHasUpdate = await rdx5Svc.CheckForSfUpdateAsync().ConfigureAwait(false);
+                    if (sfHasUpdate)
+                    {
+                        _crashReporter.Log("[RunBackgroundScanAndMergeAsync] ShortFuse DLSS Tool update available — downloading");
+                        await rdx5Svc.EnsureSfStagingAsync().ConfigureAwait(false);
+                    }
+                    await rdx5Svc.FetchAndCacheAvailableVersionsAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS5 Tool staging task failed — {ex.Message}"); }
+            });
             var nrCostScalerTask = Task.Run(async () => {
                 try
                 {
