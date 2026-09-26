@@ -428,11 +428,17 @@ public partial class MainViewModel
             });
             // Fire-and-forget: fetch available NR addon versions for the version picker.
             // Uses a 1-hour cooldown so it's a no-op on most launches. Not awaited — doesn't block cards.
+            // After fetching, if the known latest is newer than what's staged, download it silently.
             _ = Task.Run(async () => {
                 try
                 {
                     var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
                     await rdx5Svc.FetchAndCacheAvailableVersionsAsync().ConfigureAwait(false);
+                    // If the version list shows a newer version than what's staged, download it.
+                    // This handles the case where the user has "Latest" selected but hasn't run
+                    // the update check yet (4-hour cooldown) — the version list fetch is independent.
+                    await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
+                    await rdx5Svc.EnsureSfStagingAsync().ConfigureAwait(false);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] NR addon versions fetch failed — {ex.Message}"); }
             });
