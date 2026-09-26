@@ -1486,6 +1486,7 @@ public class AddonPackService : IAddonPackService
             }
             var json = JsonSerializer.Serialize(raw, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(DeploymentsJsonPath, json);
+            _staticDeploymentCache = null; // invalidate cache so AutoRedeployAsync reads fresh data
         }
         catch (Exception ex)
         {
