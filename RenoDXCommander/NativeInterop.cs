@@ -291,6 +291,18 @@ internal static class NativeInterop
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool SetForegroundWindow(IntPtr hWnd);
 
+    /// <summary>
+    /// Forces a window to the foreground, bypassing Windows' foreground-lock restrictions.
+    /// More reliable than SetForegroundWindow when called outside the foreground time window.
+    /// fAltTab=true mimics Alt+Tab behaviour (activates and shows the window).
+    /// </summary>
+    [DllImport("user32.dll")]
+    internal static extern void SwitchToThisWindow(IntPtr hWnd, [MarshalAs(UnmanagedType.Bool)] bool fAltTab);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool AllowSetForegroundWindow(int dwProcessId);
+
     // ── Win32 Open File Dialog (fallback for WinRT FileOpenPicker COM failures) ──
 
     [DllImport("comdlg32.dll", SetLastError = true, CharSet = CharSet.Unicode)]

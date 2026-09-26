@@ -285,7 +285,7 @@ public partial class App : Application
                         _window.Activate();
                         if (_window is MainWindow mwSetup)
                             mwSetup.DispatcherQueue.TryEnqueue(
-                                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                                Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal,
                                 () => mwSetup.BringToFront());
                     }
                     SingleInstanceService.StartListening();
@@ -314,7 +314,7 @@ public partial class App : Application
             // Deferred so the HWND is valid and WinUI has presented the window first.
             if (_window is MainWindow mwFront)
                 mwFront.DispatcherQueue.TryEnqueue(
-                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal,
                     () => mwFront.BringToFront());
             CrashReporter.Log("[App.OnLaunched] MainWindow activated");
         }

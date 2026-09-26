@@ -405,9 +405,10 @@ public sealed partial class MainWindow : Window
     internal void BringToFront()
     {
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-        AppWindow.Show();                          // unhide if hidden (CloseToTray / start-minimized)
-        NativeInterop.SetForegroundWindow(hwnd);   // promote to foreground
-        this.Activate();                           // update WinUI internal state
+        AppWindow.Show();                               // unhide if hidden (CloseToTray / start-minimized)
+        NativeInterop.SwitchToThisWindow(hwnd, true);  // bypasses Windows foreground-lock restrictions
+        NativeInterop.SetForegroundWindow(hwnd);        // belt-and-suspenders: explicit foreground request
+        this.Activate();                                // update WinUI internal state
     }
 
     /// <summary>
