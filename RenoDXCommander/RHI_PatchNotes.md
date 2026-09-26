@@ -26,6 +26,7 @@
 - Fixed the DLSS NR and Nightly variant selections being silently reset to Stable every time the OptiScaler cog was opened. This caused reinstalls and updates to use the wrong version and display the wrong version number.
 
 **Other**
+- Fixed MFG Ada Unlock being removed from the game folder when a RenoDX addon was drag-dropped onto the same game. It was incorrectly included in the cleanup sweep of old addon files.
 - Fixed a multi-second delay when clicking a game whose NVIDIA driver profile had never been scanned before.
 - Fixed the Shaders dropdown in Game Overrides being disabled when ReShade Channel was set to "No Addons".
 
