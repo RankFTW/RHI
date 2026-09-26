@@ -281,13 +281,7 @@ public partial class App : Application
                 {
                     _window = Services.GetRequiredService<MainWindow>();
                     if (!startMinimized)
-                    {
                         _window.Activate();
-                        if (_window is MainWindow mwSetup)
-                            mwSetup.DispatcherQueue.TryEnqueue(
-                                Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal,
-                                () => mwSetup.BringToFront());
-                    }
                     SingleInstanceService.StartListening();
                     SingleInstanceService.FileReceived += OnFileReceived;
                     if (addonArg != null && _window is MainWindow mwAddon)
@@ -310,12 +304,6 @@ public partial class App : Application
         if (!startMinimized)
         {
             _window.Activate();
-            // Ensure window comes to front even if another app is currently foreground.
-            // Deferred so the HWND is valid and WinUI has presented the window first.
-            if (_window is MainWindow mwFront)
-                mwFront.DispatcherQueue.TryEnqueue(
-                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal,
-                    () => mwFront.BringToFront());
             CrashReporter.Log("[App.OnLaunched] MainWindow activated");
         }
         else

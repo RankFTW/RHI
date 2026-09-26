@@ -361,6 +361,11 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
+            // Bring to front now that WinUI has presented the window — Activate() alone
+            // doesn't steal focus from whichever app was foreground when RHI launched.
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            NativeInterop.ForceToForeground(hwnd);
+
             // Apply bounds a second time deferred — on some systems (especially after reboot)
             // WinUI's layout system resizes the window after Activated fires. The deferred
             // re-apply ensures our saved size wins over the default layout size.
