@@ -212,6 +212,8 @@ public partial class MainViewModel
                     // Deploy managed addons now that ReShade is present
                     DeployAddonsForCard(card.GameName);
                 };
+                // Refresh cached VulkanRsIniExists before notifying UI — panel reads this directly
+                await Task.Run(() => card.RefreshBackupState());
                 if (DispatchUiAction != null) DispatchUiAction(updateCard);
                 else DispatcherQueue?.TryEnqueue(() => updateCard());
             }
@@ -290,6 +292,8 @@ public partial class MainViewModel
                 // Deploy managed addons now that ReShade is present
                 DeployAddonsForCard(card.GameName);
             };
+            // Refresh cached VulkanRsIniExists before notifying UI — panel reads this directly
+            await Task.Run(() => card.RefreshBackupState());
             if (DispatchUiAction != null) DispatchUiAction(updateCard);
             else DispatcherQueue?.TryEnqueue(() => updateCard());
         }
@@ -451,7 +455,7 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    public void UninstallVulkanReShade(GameCardViewModel? card)
+    public async Task UninstallVulkanReShade(GameCardViewModel? card)
     {
         if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
@@ -483,6 +487,8 @@ public partial class MainViewModel
                 useGlobalSet: true, perGameSelection: new List<string>());
 
             // 6. Update card status — do NOT touch the global Vulkan layer
+            // Refresh cached VulkanRsIniExists before notifying UI — panel reads this directly
+            await Task.Run(() => card.RefreshBackupState());
             card.RsStatus        = GameStatus.NotInstalled;
             card.RsActionMessage = "✖ Vulkan ReShade removed.";
             card.NotifyAll();
