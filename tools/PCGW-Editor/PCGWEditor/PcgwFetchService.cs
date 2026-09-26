@@ -313,11 +313,32 @@ public class PcgwFetchService
             var vk  = (row.TryGetValue("Vulkan", out var v) ? v : "").ToLowerInvariant();
             var ogl = (row.TryGetValue("OpenGL", out var o) ? o : "").ToLowerInvariant();
             var steamRaw = (row.TryGetValue("SteamAppID", out var s) ? s : "").Trim();
+            var engRaw   = (row.TryGetValue("Engines",    out var e) ? e : "").Trim();
 
             int steamId = 0;
             if (!string.IsNullOrEmpty(steamRaw))
                 foreach (var part in steamRaw.Split(','))
                     if (int.TryParse(part.Trim(), out var val) && val > 0) { steamId = val; break; }
+
+            // Engines is a multi-value list field — take the first non-empty entry and normalise.
+            // Cargo returns page titles in the form "Engine:Unreal_Engine_4" — strip the namespace
+            // prefix and replace underscores with spaces to get a human-readable name.
+            string? engineName = null;
+            if (!string.IsNullOrEmpty(engRaw))
+            {
+                var firstEngine = engRaw.Split(',')[0].Trim();
+                if (!string.IsNullOrEmpty(firstEngine))
+                {
+                    // Strip "Engine:" namespace prefix if present
+                    var colonIdx = firstEngine.IndexOf(':');
+                    if (colonIdx >= 0)
+                        firstEngine = firstEngine[(colonIdx + 1)..];
+                    // Replace underscores with spaces (wiki page title format)
+                    firstEngine = firstEngine.Replace('_', ' ').Trim();
+                    if (!string.IsNullOrEmpty(firstEngine))
+                        engineName = firstEngine;
+                }
+            }
 
             result[page] = new PcgwEntryRaw
             {
@@ -328,6 +349,7 @@ public class PcgwFetchService
                 Dx12       = dx.Contains("12"),
                 Vulkan     = !string.IsNullOrEmpty(vk)  && vk  is not ("" or "false" or "none"),
                 OpenGL     = !string.IsNullOrEmpty(ogl) && ogl is not ("" or "false" or "none"),
+                Engine     = engineName,
             };
         }
         return result;
@@ -342,7 +364,8 @@ public class PcgwFetchService
         a.Vulkan        == b.Vulkan        &&
         a.OpenGL        == b.OpenGL        &&
         a.ConfigPath    == b.ConfigPath    &&
-        a.ConfigPathXbox == b.ConfigPathXbox;
+        a.ConfigPathXbox == b.ConfigPathXbox &&
+        a.Engine        == b.Engine;
 
     private static void MergeConfigRows(
         IEnumerable<Dictionary<string, string>> rows,
@@ -398,7 +421,7 @@ public class PcgwFetchService
             progress?.Report(new FetchProgress($"Fetching API data for {changedPages.Count:N0} pages…"));
             var apiRows = await CargoQuerySpecificPagesAsync(
                 "Game,API",
-                "Game._pageName=Page,Game.Steam_AppID=SteamAppID,API.Direct3D_versions=DX,API.Vulkan_versions=Vulkan,API.OpenGL_versions=OpenGL",
+                "Game._pageName=Page,Game.Steam_AppID=SteamAppID,Game.Engines=Engines,API.Direct3D_versions=DX,API.Vulkan_versions=Vulkan,API.OpenGL_versions=OpenGL",
                 "Game._pageID=API._pageID",
                 changedPages, progress);
 
@@ -452,7 +475,7 @@ public class PcgwFetchService
             progress?.Report(new FetchProgress("Fetching API data (DX/VK/OGL + Steam AppIDs)…"));
             var apiRows = await CargoQueryAllAsync(
                 "Game,API",
-                "Game._pageName=Page,Game.Steam_AppID=SteamAppID,API.Direct3D_versions=DX,API.Vulkan_versions=Vulkan,API.OpenGL_versions=OpenGL",
+                "Game._pageName=Page,Game.Steam_AppID=SteamAppID,Game.Engines=Engines,API.Direct3D_versions=DX,API.Vulkan_versions=Vulkan,API.OpenGL_versions=OpenGL",
                 joinOn: "Game._pageID=API._pageID",
                 progress: progress);
 

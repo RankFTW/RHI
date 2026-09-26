@@ -265,6 +265,13 @@
                             <TextBlock Text="e.g. %LOCALAPPDATA%\GameName\Saved\Config\WinGDK"
                                        Foreground="#555577" FontSize="11" Margin="0,2,0,0"/>
 
+                            <!-- Engine name -->
+                            <Label Content="Engine" Margin="0,8,0,0"/>
+                            <TextBox x:Name="EngineBox" TextChanged="GameField_Changed"
+                                     TextWrapping="Wrap"/>
+                            <TextBlock Text="e.g. Unreal Engine 5, Unity, NW.js, Northlight"
+                                       Foreground="#555577" FontSize="11" Margin="0,2,0,0"/>
+
                             <!-- PCGW wiki link -->
                             <Label Content="PCGW Wiki URL (derived)" Margin="0,12,0,0"/>
                             <TextBlock x:Name="WikiUrlBlock" Foreground="#8899CC" FontSize="11"

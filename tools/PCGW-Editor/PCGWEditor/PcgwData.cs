@@ -71,6 +71,14 @@ public class PcgwEntryRaw
     [JsonPropertyName("config_path_xbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ConfigPathXbox { get; set; }
+
+    /// <summary>
+    /// Engine name scraped from the PCGW infobox (e.g. "Unreal Engine 5", "Unity", "NW.js").
+    /// Null when absent or unknown.
+    /// </summary>
+    [JsonPropertyName("engine")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Engine { get; set; }
 }
 
 // ── View model (bound to the list and editor) ─────────────────────────────────
@@ -80,7 +88,7 @@ public class PcgwEntryVm : INotifyPropertyChanged
     private string  _pageName = "";
     private int     _steamAppId;
     private bool    _dx9, _dx10, _dx11, _dx12, _vulkan, _openGL;
-    private string? _configPath, _configPathXbox;
+    private string? _configPath, _configPathXbox, _engine;
 
     public string PageName
     {
@@ -113,6 +121,12 @@ public class PcgwEntryVm : INotifyPropertyChanged
         set { _configPathXbox = value; OnPropertyChanged(nameof(ConfigPathXbox)); }
     }
 
+    public string? Engine
+    {
+        get => _engine;
+        set { _engine = value; OnPropertyChanged(nameof(Engine)); }
+    }
+
     /// <summary>Display label shown in the list — API flags summary.</summary>
     public string DisplayName
     {
@@ -142,6 +156,7 @@ public class PcgwEntryVm : INotifyPropertyChanged
         OpenGL        = raw.OpenGL,
         ConfigPath    = raw.ConfigPath,
         ConfigPathXbox = raw.ConfigPathXbox,
+        Engine        = raw.Engine,
     };
 
     public PcgwEntryRaw ToRaw() => new()
@@ -155,6 +170,7 @@ public class PcgwEntryVm : INotifyPropertyChanged
         OpenGL        = OpenGL,
         ConfigPath    = string.IsNullOrWhiteSpace(ConfigPath)     ? null : ConfigPath.Trim(),
         ConfigPathXbox = string.IsNullOrWhiteSpace(ConfigPathXbox) ? null : ConfigPathXbox.Trim(),
+        Engine        = string.IsNullOrWhiteSpace(Engine)         ? null : Engine.Trim(),
     };
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -220,28 +220,38 @@ public partial class DetailPanelBuilder
             _window.DetailSepModPlatform.Visibility = Visibility.Collapsed;
         }
 
-        // Mod status icon — green ✓ for Done, 🔨 for WIP (from db unreal entry)
+        // Mod status icon — green ✓ for Done, 🔨 for WIP.
+        // Sourced from the DB unreal entry (UE-Extended games) or the DB named mod entry.
+        // Named mod Status is stored as emoji ("✅"/"🚧") after MapStatus(); UE entries use "Done"/"WIP" text.
+        string? modStatusText = null;
         var dbEntry = _window.ViewModel.GetDbUnrealEntry(card.GameName);
         if (dbEntry != null)
         {
-            if (string.Equals(dbEntry.Status, "Done", StringComparison.OrdinalIgnoreCase))
+            modStatusText = dbEntry.Status; // "Done" or "WIP"
+        }
+        else
+        {
+            var dbMod = _window.ViewModel.GetDbNamedMod(card.GameName);
+            if (dbMod != null)
             {
-                _window.DetailModStatusIcon.Text = "✓";
-                _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);
-                _window.DetailModStatusIcon.Visibility = Visibility.Visible;
-                ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod complete");
+                // MapStatus converts "Done"→"✅" and "WIP"→"🚧", so normalise back to text
+                modStatusText = dbMod.Status == "🚧" ? "WIP" : dbMod.Status == "✅" ? "Done" : null;
             }
-            else if (string.Equals(dbEntry.Status, "WIP", StringComparison.OrdinalIgnoreCase))
-            {
-                _window.DetailModStatusIcon.Text = "🔨";
-                _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
-                _window.DetailModStatusIcon.Visibility = Visibility.Visible;
-                ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod in progress");
-            }
-            else
-            {
-                _window.DetailModStatusIcon.Visibility = Visibility.Collapsed;
-            }
+        }
+
+        if (string.Equals(modStatusText, "Done", StringComparison.OrdinalIgnoreCase))
+        {
+            _window.DetailModStatusIcon.Text = "✓";
+            _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);
+            _window.DetailModStatusIcon.Visibility = Visibility.Visible;
+            ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod complete");
+        }
+        else if (string.Equals(modStatusText, "WIP", StringComparison.OrdinalIgnoreCase))
+        {
+            _window.DetailModStatusIcon.Text = "🔨";
+            _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
+            _window.DetailModStatusIcon.Visibility = Visibility.Visible;
+            ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod in progress");
         }
         else
         {

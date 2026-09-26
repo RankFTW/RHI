@@ -69,8 +69,15 @@ public static class PcgwDataService
 
             // Re-key with OrdinalIgnoreCase to handle any case-variant duplicates from PCGW
             // (e.g. both "Cube" and "cube" — last one wins)
+            // Also normalise engine names stored in the raw Cargo format ("Engine:Unreal_Engine_4" → "Unreal Engine 4").
             var deduped = new Dictionary<string, PcgwEntryRaw>(StringComparer.OrdinalIgnoreCase);
-            foreach (var kv in data.Games) deduped[kv.Key] = kv.Value;
+            foreach (var kv in data.Games)
+            {
+                var entry = kv.Value;
+                if (entry.Engine != null)
+                    entry.Engine = NormaliseEngineName(entry.Engine);
+                deduped[kv.Key] = entry;
+            }
             data.Games = deduped;
 
             return data;
@@ -209,5 +216,22 @@ public static class PcgwDataService
     public static void SaveToken(string token)
     {
         try { File.WriteAllText(TokenPath, token); } catch { }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Normalises a raw PCGW Cargo engine string to a human-readable name.
+    /// Cargo returns page titles like "Engine:Unreal_Engine_4" — strips the namespace
+    /// prefix and replaces underscores with spaces.
+    /// </summary>
+    public static string? NormaliseEngineName(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        var s = raw.Trim();
+        var colonIdx = s.IndexOf(':');
+        if (colonIdx >= 0) s = s[(colonIdx + 1)..];
+        s = s.Replace('_', ' ').Trim();
+        return string.IsNullOrEmpty(s) ? null : s;
     }
 }

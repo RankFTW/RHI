@@ -28,4 +28,11 @@ public class PcgwApiInfo
     /// Falls back to ConfigPath when null.
     /// </summary>
     public string? ConfigPathXbox { get; set; }
+
+    /// <summary>
+    /// Engine name from the PCGW infobox (e.g. "Unreal Engine 5", "Unity", "NW.js").
+    /// First engine listed when the page has multiple. Null when absent.
+    /// Used as fallback EngineHint when PE detection returns empty.
+    /// </summary>
+    public string? Engine { get; set; }
 }

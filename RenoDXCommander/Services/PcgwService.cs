@@ -19,6 +19,7 @@ internal sealed class PcgwCentralEntry
     [JsonPropertyName("opengl")]         public bool    OpenGL        { get; set; }
     [JsonPropertyName("config_path")]     public string? ConfigPath    { get; set; }
     [JsonPropertyName("config_path_xbox")]public string? ConfigPathXbox { get; set; }
+    [JsonPropertyName("engine")]          public string? Engine         { get; set; }
 }
 
 /// <summary>Top-level wrapper for pcgw_data.json.</summary>
@@ -73,6 +74,21 @@ internal sealed class PcgwCentralData
             && Games.TryGetValue(appIdTitle, out var appIdEntry))
             return (appIdTitle, appIdEntry);
 
+        // 4. Retry with straight apostrophe ↔ curly apostrophe normalisation.
+        // PCGW stores names with Unicode right single quotation mark (U+2019 ''')
+        // while Steam detects names with a straight apostrophe (U+0027 '\'').
+        // OrdinalIgnoreCase doesn't bridge this gap, so we normalise the detected
+        // name to use curly apostrophes (matching the PCGW database keys) and retry.
+        var normalised = gameName.Replace('\'', '\u2019');
+        if (!string.Equals(normalised, gameName, StringComparison.Ordinal))
+        {
+            if (NameOverrides.TryGetValue(normalised, out mappedTitle)
+                && Games.TryGetValue(mappedTitle, out mappedEntry))
+                return (mappedTitle, mappedEntry);
+            if (Games.TryGetValue(normalised, out directEntry))
+                return (normalised, directEntry);
+        }
+
         return (null, null);
     }
 
@@ -87,7 +103,23 @@ internal sealed class PcgwCentralData
         HasOpenGL     = e.OpenGL,
         ConfigPath    = e.ConfigPath,
         ConfigPathXbox = e.ConfigPathXbox,
+        Engine        = NormaliseEngineName(e.Engine),
     };
+
+    /// <summary>
+    /// Normalises a raw PCGW engine string to a human-readable name.
+    /// Cargo returns page titles like "Engine:Unreal_Engine_4" — strips the namespace
+    /// prefix and replaces underscores with spaces.
+    /// </summary>
+    internal static string? NormaliseEngineName(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        var s = raw.Trim();
+        var colonIdx = s.IndexOf(':');
+        if (colonIdx >= 0) s = s[(colonIdx + 1)..];
+        s = s.Replace('_', ' ').Trim();
+        return string.IsNullOrEmpty(s) ? null : s;
+    }
 }
 
 /// <summary>
@@ -784,7 +816,7 @@ public class PcgwService : IPcgwService
         "RHI", "pcgw_api_cache.json");
 
     /// <summary>Bump when ParseApiSection or ParseConfigFilesSection logic changes to force a full rescrape.</summary>
-    private const int ApiCacheVersion = 15;
+    private const int ApiCacheVersion = 16;
     private static readonly string ApiCacheVersionPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "pcgw_api_cache_v.txt");
@@ -812,7 +844,8 @@ public class PcgwService : IPcgwService
             {
                 var info = PcgwCentralData.ToApiInfo(entry);
                 if (info.HasDirectX9 || info.HasDirectX10 || info.HasDirectX11 || info.HasDirectX12
-                    || info.HasVulkan || info.HasOpenGL || info.ConfigPath != null || info.ConfigPathXbox != null)
+                    || info.HasVulkan || info.HasOpenGL || info.ConfigPath != null || info.ConfigPathXbox != null
+                    || info.Engine != null)
                     return info;
             }
         }
@@ -922,6 +955,14 @@ public class PcgwService : IPcgwService
                 info.ConfigPathXbox = configPathXbox;
             }
 
+            // Always attempt engine parsing from the infobox — even when API section wasn't found
+            var engine = ParseEngineFromInfobox(html);
+            if (engine != null)
+            {
+                info ??= new PcgwApiInfo();
+                info.Engine = engine;
+            }
+
             if (info != null)
             {
                 _apiInfoCache[normalized] = info;
@@ -930,7 +971,8 @@ public class PcgwService : IPcgwService
                     $"DX9={info.HasDirectX9} DX10={info.HasDirectX10} DX11={info.HasDirectX11} " +
                     $"DX12={info.HasDirectX12} Vulkan={info.HasVulkan} OGL={info.HasOpenGL}" +
                     (info.ConfigPath != null ? $" ConfigPath='{info.ConfigPath}'" : "") +
-                    (info.ConfigPathXbox != null ? $" ConfigPathXbox='{info.ConfigPathXbox}'" : ""));
+                    (info.ConfigPathXbox != null ? $" ConfigPathXbox='{info.ConfigPathXbox}'" : "") +
+                    (info.Engine != null ? $" Engine='{info.Engine}'" : ""));
             }
             else
             {
@@ -1051,6 +1093,53 @@ public class PcgwService : IPcgwService
         catch (Exception ex)
         {
             CrashReporter.Log($"[PcgwService.ParseApiSection] Parse failed — {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Parses the engine name from the PCGW infobox at the top of the page.
+    /// Returns the first engine listed, or null if not found.
+    /// PCGW renders the infobox as a table where each row is a label/value pair.
+    /// The "Engines" row contains the engine name(s) as text inside the value cell.
+    /// </summary>
+    private static string? ParseEngineFromInfobox(string html)
+    {
+        try
+        {
+            var doc = new HtmlAgilityPack.HtmlDocument();
+            doc.LoadHtml(html);
+
+            // PCGW infobox: table rows where th contains "Engines"
+            var rows = doc.DocumentNode.SelectNodes("//table//tr");
+            if (rows == null) return null;
+
+            foreach (var row in rows)
+            {
+                var th = row.SelectSingleNode("th | td[contains(@class,'table-game-head')]");
+                if (th == null) continue;
+                var label = HtmlAgilityPack.HtmlEntity.DeEntitize(th.InnerText).Trim();
+                if (!label.Equals("Engines", StringComparison.OrdinalIgnoreCase)) continue;
+
+                // Value is in the next td sibling within the same row
+                var td = row.SelectSingleNode("td[not(contains(@class,'table-game-head'))]");
+                if (td == null) continue;
+
+                var engine = HtmlAgilityPack.HtmlEntity.DeEntitize(td.InnerText).Trim();
+                if (string.IsNullOrEmpty(engine)) continue;
+
+                // May have multiple engines separated by newlines — take the first non-empty line
+                foreach (var line in engine.Split('\n', '\r'))
+                {
+                    var trimmed = PcgwCentralData.NormaliseEngineName(line);
+                    if (!string.IsNullOrEmpty(trimmed))
+                        return trimmed;
+                }
+            }
+            return null;
+        }
+        catch
+        {
             return null;
         }
     }

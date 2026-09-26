@@ -773,6 +773,15 @@ public partial class MainViewModel
             if (newCard.EngineHint == "Unreal Engine" && _gameNameService.EngineVersionOverrides.TryGetValue(game.Name, out var evOverride2))
                 newCard.EngineHint = evOverride2;
 
+            // PCGW engine fallback — fills EngineHint when PE detection returned nothing.
+            // Only applies when EngineHint is still empty after all other sources.
+            if (string.IsNullOrEmpty(newCard.EngineHint))
+            {
+                var pcgwEngineInfo = _pcgwService.GetCachedApiInfo(game.Name);
+                if (pcgwEngineInfo?.Engine != null)
+                    newCard.EngineHint = pcgwEngineInfo.Engine;
+            }
+
             // Engine.ini path manifest override — fixes UE-Extended deployment to wrong folder
             // during Phase 1 (cache display) for games that have an engineIniPathOverrides entry.
             if (cachedManifest?.EngineIniPathOverrides != null

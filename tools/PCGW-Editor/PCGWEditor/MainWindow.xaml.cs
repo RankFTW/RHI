@@ -257,6 +257,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OpenGLCheck.IsChecked = vm.OpenGL;
         ConfigPathBox.Text     = vm.ConfigPath     ?? "";
         ConfigPathXboxBox.Text = vm.ConfigPathXbox ?? "";
+        EngineBox.Text         = vm.Engine         ?? "";
 
         WikiUrlBlock.Text = $"https://www.pcgamingwiki.com/wiki/{vm.PageName.Replace(" ", "_")}";
         GameStatusLabel.Text = "";
@@ -273,6 +274,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Dx12Check.IsChecked = VulkanCheck.IsChecked = OpenGLCheck.IsChecked = false;
         ConfigPathBox.Text     = "";
         ConfigPathXboxBox.Text = "";
+        EngineBox.Text         = "";
         WikiUrlBlock.Text      = "";
         GameStatusLabel.Text   = "";
         _gameEditorLoading     = false;
@@ -304,6 +306,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         vm.OpenGL        = OpenGLCheck.IsChecked == true;
         vm.ConfigPath    = NullIfEmpty(ConfigPathBox.Text);
         vm.ConfigPathXbox = NullIfEmpty(ConfigPathXboxBox.Text);
+        vm.Engine        = NullIfEmpty(EngineBox.Text);
 
         // Sync back to _data
         _data.Games[vm.PageName] = vm.ToRaw();

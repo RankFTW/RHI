@@ -1,4 +1,4 @@
-## v2.7.7 beta
+## v2.7.7
 
 ### Bug Fixes
 
@@ -24,7 +24,7 @@
 
 **OptiScaler**
 - Fixed the DLSS NR and Nightly variant selections being silently reset to Stable every time the OptiScaler cog was opened. This caused reinstalls and updates to use the wrong version and display the wrong version number.
-
+ 
 **Neural Rendering**
 - Fixed the DLSS5 Tool and ShortFuse DLSS Tool not redeploying the updated addon to game folders when a new "Latest" version was released. The deployment tracker cache was never refreshed after install, so the auto-redeploy skipped every game.
 - Fixed new DLSS5 Tool versions not downloading automatically when "Latest" is selected. The version list could show a newer version but the file wasn't staged until the 4-hour update check ran.
@@ -38,6 +38,13 @@
 - Fixed the ReShade install count in the bottom status bar not updating immediately after install or uninstall.
 - Fixed a multi-second delay when clicking a game whose NVIDIA driver profile had never been scanned before.
 - Fixed the Shaders dropdown in Game Overrides being disabled when ReShade Channel was set to "No Addons".
+
+### Changes
+- Named mods from the RHI database now show a green ✓ or 🔨 status icon in the game header — the same indicators used for UE-Extended games. ✓ means the mod is complete; 🔨 means it's a work in progress.
+
+### Maintenance
+- The centralized PCGW database (`pcgw_data.json`) now includes engine names scraped from PCGamingWiki. When PE detection can't identify an engine (common for Game Pass games and some store installations), the engine badge is filled from PCGW data instead of left blank. Works automatically for all ~55k games in the database — no refresh needed once the database is updated.
+- The `engineOverrides` manifest field has been disabled. Engine display names for custom engines (Frostbite, Decima, Northlight etc.) are now sourced from the PCGW database instead of the manifest, reducing manifest maintenance overhead.
 
 ### Manifest Updates
 

@@ -462,6 +462,23 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Returns the named mod DB entry for a game, or null when dev-locked or the game isn't in the db.
+    /// Used to show the ✓/🔨 status icon on named mod cards, same as UE-Extended games.
+    /// Only returns an entry when the DB source is active (not WikiOnly).
+    /// </summary>
+    public GameMod? GetDbNamedMod(string gameName)
+    {
+        if (!DevUnlockService.IsUnlocked) return null;
+        // _dbMods is the raw DB list before wiki merge — search by Name field
+        var mod = _dbMods.FirstOrDefault(m => m.Name.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        if (mod != null) return mod;
+        var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
+        if (stripped != gameName)
+            mod = _dbMods.FirstOrDefault(m => m.Name.Equals(stripped, StringComparison.OrdinalIgnoreCase));
+        return mod;
+    }
+
+    /// <summary>
     /// Merges wiki and DB mod lists according to the current RenoDxDbSource setting.
     /// Must be called after both _allMods (wiki) and _dbMods (db) are populated.
     ///

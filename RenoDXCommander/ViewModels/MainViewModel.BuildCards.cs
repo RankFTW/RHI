@@ -1293,6 +1293,19 @@ public partial class MainViewModel
             if (newCard.EngineHint == "Unreal Engine" && _gameNameService.EngineVersionOverrides.TryGetValue(game.Name, out var evOverride))
                 newCard.EngineHint = evOverride;
 
+            // ── PCGW engine fallback — fills EngineHint when PE detection returned nothing ──
+            // Only applies when EngineHint is still empty (PE scan didn't identify a known engine).
+            // Manifest engineHintOverrides and user overrides take precedence and are already set above.
+            if (string.IsNullOrEmpty(newCard.EngineHint))
+            {
+                var pcgwInfoForEngine = _pcgwService.GetCachedApiInfo(game.Name);
+                if (pcgwInfoForEngine?.Engine != null)
+                {
+                    newCard.EngineHint = pcgwInfoForEngine.Engine;
+                    _crashReporter.Log($"[BuildCards] '{game.Name}': EngineHint from PCGW = '{pcgwInfoForEngine.Engine}'");
+                }
+            }
+
             // ── DOF Fix detection ────────────────────────────────────────────────
             LogPhase("DXVK");
             newCard.IsDofFixEligible = _dofFixService.IsGameEligible(newCard.EngineHint, newCard.Is32Bit, game.Name);
