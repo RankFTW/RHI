@@ -13,6 +13,7 @@ public partial class DetailPanelBuilder
     /// <summary>Builds the Shaders/Addons row, Launch executable, and Reset Overrides handler.</summary>
     private void BuildShadersAddonsSection(OverridesPanelCtx ctx)
     {
+        _window.ViewModel.SetLastUiAction($"BuildShadersAddonsSection({ctx.Card.GameName})");
         var card = ctx.Card;
         var gameName = ctx.GameName;
         var isLumaMode = ctx.IsLumaMode;

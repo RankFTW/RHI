@@ -18,6 +18,7 @@ public partial class DetailPanelBuilder
 
     private void BuildManagementSection(GameCardViewModel card, string capturedName, OverridesPanelCtx ctx)
     {
+        _window.ViewModel.SetLastUiAction($"BuildManagementSection({card.GameName})");
         // ── Management section (single row: 4 buttons side by side with separators) ──
         _window.ManagementPanel.Children.Clear();
 

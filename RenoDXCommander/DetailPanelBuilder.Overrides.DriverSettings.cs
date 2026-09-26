@@ -136,6 +136,7 @@ public partial class DetailPanelBuilder
                     || currentCard.Source != gameSource)
                     return;
 
+                _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData({gameName})");
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 // Build into a throwaway container first, then swap atomically.
                 var tempDriver = new StackPanel();

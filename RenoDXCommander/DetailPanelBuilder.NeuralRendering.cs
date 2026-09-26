@@ -86,6 +86,7 @@ public partial class DetailPanelBuilder
 
             _window.DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
+                _window.ViewModel.SetLastUiAction($"BuildNeuralRenderingSectionWithData({card.GameName})");
                 var __sw = System.Diagnostics.Stopwatch.StartNew();
                 BuildNeuralRenderingSectionWithData(card, dlss5Installed, sfInstalled,
                     nrDllPresent, nrDllOwnedByRhi, nrDllVersion, bridgePresent, feederPresent);
@@ -802,6 +803,7 @@ public partial class DetailPanelBuilder
                 {
                     if (_window.ViewModel.SelectedGame != card) return;
                     bool rsi = card.IsRsInstalled;
+                    _window.ViewModel.SetLastUiAction($"NeuralRendering.RefreshStatusWithData({card.GameName})");
                     CrashReporter.Log($"[NeuralRendering.RefreshStatus] Updating status for '{card.GameName}'");
                     RefreshStatusWithData(d5i, sfi, nri, bri, fei, rsi, dlssi, dlssdi, dlssgi, nrv, dlssv, dlssdv, dlssgv, hostExeOk,
                         srOk, rrOk, fgOk, nrOk, srv, rrv, fgv, nrv2,

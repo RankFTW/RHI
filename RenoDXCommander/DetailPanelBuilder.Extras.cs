@@ -20,6 +20,7 @@ public partial class DetailPanelBuilder
 {
     public void BuildExtrasSection(GameCardViewModel card)
     {
+        _window.ViewModel.SetLastUiAction($"BuildExtrasSection({card.GameName})");
         var __exSw = System.Diagnostics.Stopwatch.StartNew();
         _window.ExtrasPanel.Children.Clear();
         _window.ExtrasContainer.Visibility = Visibility.Visible;
@@ -207,6 +208,7 @@ public partial class DetailPanelBuilder
 
     private void BuildUalRow(GameCardViewModel card, StackPanel body)
     {
+        _window.ViewModel.SetLastUiAction($"BuildUalRow({card.GameName})");
         var ualSvc    = _window.ViewModel.UalServiceInstance;
         var gameName  = card.GameName;
         var store     = card.Source ?? "";
@@ -415,6 +417,7 @@ public partial class DetailPanelBuilder
 
     private void BuildMfgAdaUnlockRow(GameCardViewModel card, StackPanel body)
     {
+        _window.ViewModel.SetLastUiAction($"BuildMfgAdaUnlockRow({card.GameName})");
         var gameName    = card.GameName;
         var store       = card.Source ?? "";
         var installPath = card.InstallPath ?? "";
@@ -685,6 +688,7 @@ public partial class DetailPanelBuilder
 
     private void BuildOsRow(GameCardViewModel card, StackPanel body)
     {
+        _window.ViewModel.SetLastUiAction($"BuildOsRow({card.GameName})");
         // Only add the row when it should be visible
         if (card.OsRowVisibility != Visibility.Visible) return;
 
@@ -1005,6 +1009,7 @@ public partial class DetailPanelBuilder
 
     private void BuildDlssg2030Row(GameCardViewModel card, StackPanel body)
     {
+        _window.ViewModel.SetLastUiAction($"BuildDlssg2030Row({card.GameName})");
         var svc         = App.Services.GetRequiredService<Dlssg20_30Service>();
         var gameName    = card.GameName;
         var store       = card.Source ?? "";
@@ -1341,6 +1346,7 @@ public partial class DetailPanelBuilder
 
     private void BuildRtx40MfgRow(GameCardViewModel card, StackPanel body)
     {
+        _window.ViewModel.SetLastUiAction($"BuildRtx40MfgRow({card.GameName})");
         var mfgSvc       = App.Services.GetRequiredService<Rtx40MfgService>();
         var gameName     = card.GameName;
         var store        = card.Source ?? "";
@@ -1571,6 +1577,7 @@ public partial class DetailPanelBuilder
 
     private void BuildDlssEnablerRow(GameCardViewModel card, StackPanel body)
     {
+        _window.ViewModel.SetLastUiAction($"BuildDlssEnablerRow({card.GameName})");
         var deSvc       = App.Services.GetRequiredService<DlssEnablerService>();
         var gameName    = card.GameName;
         var store       = card.Source ?? "";
@@ -2006,6 +2013,7 @@ public partial class DetailPanelBuilder
 
     private void BuildDxvkRow(GameCardViewModel card, StackPanel body)
     {
+        _window.ViewModel.SetLastUiAction($"BuildDxvkRow({card.GameName})");
         // Col 0: label (120)  Col 1: status (80)  Col 2: Info (36)
         // Col 3: install (*)  Col 4: cog (36)     Col 5: delete (36)
         var row = new Grid { ColumnSpacing = 8 };

@@ -13,6 +13,7 @@ public partial class DetailPanelBuilder
     /// <summary>Builds RS Channel Override, Update Inclusion, and Middle Row Grid.</summary>
     private void BuildRsChannelSection(OverridesPanelCtx ctx)
     {
+        _window.ViewModel.SetLastUiAction($"BuildRsChannelSection({ctx.Card.GameName})");
         CrashReporter.Log($"[BuildRsChannelSection] Enter: '{ctx.Card.GameName}'");
         var card = ctx.Card;
         var gameName = ctx.GameName;

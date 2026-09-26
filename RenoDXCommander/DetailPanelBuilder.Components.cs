@@ -115,6 +115,7 @@ public partial class DetailPanelBuilder
     }
     public void UpdateDetailComponentRows(GameCardViewModel card)
     {
+        _window.ViewModel.SetLastUiAction($"UpdateDetailComponentRows({card.GameName})");
         bool isLumaMode = card.LumaFeatureEnabled && card.IsLumaMode;
 
         // RE Framework row — visible only for RE Engine games when not in Luma mode
