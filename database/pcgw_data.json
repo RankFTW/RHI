@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55283,
-  "generated": "2026-09-24T13:08:04Z",
+  "game_count": 55292,
+  "generated": "2026-09-26T13:02:03Z",
   "name_overrides": {
     "AFOP": "Avatar: Frontiers of Pandora",
     "Alan Wake 2": "Alan Wake 2",
@@ -11644,8 +11644,7 @@
       "steam_appid": 1096590
     },
     "AtmaSphere": {
-      "steam_appid": 753660,
-      "config_path": "HKEY_CURRENT_USER\\Software\\MazenGames\\AtmaSphereFinal"
+      "steam_appid": 753660
     },
     "Atmocity": {
       "steam_appid": 779380
@@ -12080,7 +12079,8 @@
       "steam_appid": 964390
     },
     "Australian Trip": {
-      "steam_appid": 757870
+      "steam_appid": 757870,
+      "config_path": ":<div title=\"Information\" class=\"svg-icon svg-16 info-icon\"></div> Configuration files are in the same folder as the save files."
     },
     "Author Clicker": {
       "steam_appid": 1038830
@@ -12430,7 +12430,8 @@
       "config_path_xbox": "%LOCALAPPDATA%\\Alabama\\Saved\\Config\\WinGDK\\"
     },
     "AVSEQ": {
-      "steam_appid": 207670
+      "steam_appid": 207670,
+      "config_path": ":<div title=\"Information\" class=\"svg-icon svg-16 info-icon\"></div> Configuration files are in the same location as the save files."
     },
     "Aw Nutz": {
       "steam_appid": 707000
@@ -12462,7 +12463,8 @@
       "steam_appid": 760000
     },
     "Awakened": {
-      "steam_appid": 493770
+      "steam_appid": 493770,
+      "config_path": "HKEY_CURRENT_USER\\Software\\GenuineFlipFlopsGames(www.Genuineflip-flops.com)\\Awakened"
     },
     "Awakening of Celestial": {
       "steam_appid": 812590
@@ -12507,7 +12509,8 @@
     },
     "Away": {
       "steam_appid": 757910,
-      "dx11": true
+      "dx11": true,
+      "config_path": "HKEY_CURRENT_USER\\Software\\Inversion Software\\Away"
     },
     "Away from beauty 色即是空": {
       "steam_appid": 806540
@@ -12713,7 +12716,8 @@
       "steam_appid": 3014460
     },
     "Aztaka": {
-      "steam_appid": 37100
+      "steam_appid": 37100,
+      "config_path": "<path-to-game>\\Aztaka.cfg"
     },
     "Aztec Number": {
       "steam_appid": 864370
@@ -23847,6 +23851,7 @@
     "Captain Curve's Intergalactic Space Adventure": {
       "steam_appid": 494790
     },
+    "Captain Dynamo": {},
     "Captain Firebeard and the Bay of Crows": {
       "steam_appid": 722760
     },
@@ -54990,6 +54995,7 @@
     "Fisher-Price Read & Play: The Lie": {},
     "Fisher-Price Read & Play: Yolanda Yellsalot": {},
     "Fisher-Price Ready for School: Kindergarten": {},
+    "Fisher-Price Ready for School: Kindergarten Edition": {},
     "Fisher-Price: Dream DollHouse: Where Dreams Come To Life": {},
     "Fishermurs": {
       "steam_appid": 564210
@@ -65960,6 +65966,7 @@
       "steam_appid": 730620,
       "config_path": "HKEY_CURRENT_USER\\Software\\RewindApp\\Hammer2\\"
     },
+    "Hammer Boy": {},
     "Hammer Heads": {
       "steam_appid": 3400
     },
@@ -69977,6 +69984,9 @@
     },
     "Hirogami": {
       "steam_appid": 3135840
+    },
+    "Hirotonfa's American Revolution Smuggler": {
+      "steam_appid": 3789080
     },
     "HIS (Heroes In the Sky)": {
       "steam_appid": 342570
@@ -85990,7 +86000,8 @@
       "steam_appid": 1119710
     },
     "Look Outside": {
-      "steam_appid": 3373660
+      "steam_appid": 3373660,
+      "config_path": "<path-to-game>\\save\\config.rmmzsave"
     },
     "Looking Back": {
       "steam_appid": 1068680
@@ -86253,7 +86264,8 @@
       "config_path": "HKEY_CURRENT_USER\\Software\\Harvester Games\\Lorelai\\"
     },
     "Lorelei and the Laser Eyes": {
-      "steam_appid": 2008920
+      "steam_appid": 2008920,
+      "dx11": true
     },
     "Loren The Amazon Princess": {
       "steam_appid": 257970,
@@ -87451,6 +87463,9 @@
     },
     "Luminous Combat": {
       "steam_appid": 827410
+    },
+    "Luminous Nights": {
+      "steam_appid": 1949610
     },
     "Lumo": {
       "steam_appid": 345480,
@@ -108789,7 +108804,9 @@
       "steam_appid": 405720,
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\willsykes\\perfectuniverse\\PlayerPrefs.txt"
     },
-    "Perfect Weapon": {},
+    "Perfect Weapon": {
+      "config_path": "HKEY_LOCAL_MACHINE\\Software\\American Softworks\\Perfect Weapon"
+    },
     "Perfect World International": {
       "steam_appid": 442110
     },
@@ -130530,6 +130547,7 @@
     "Silent Hill: The Arcade": {},
     "Silent Hill: Townfall": {
       "steam_appid": 1636440,
+      "dx12": true,
       "config_path": "%USERPROFILE%/AppData/Local/Townfall/Saved/Config/Windows"
     },
     "Silent Hope": {
@@ -130895,7 +130913,9 @@
       "steam_appid": 1173040
     },
     "SiN Reloaded": {
-      "steam_appid": 632950
+      "steam_appid": 632950,
+      "dx11": true,
+      "vulkan": true
     },
     "Sin Slayers": {
       "steam_appid": 783190
@@ -137109,7 +137129,8 @@
       "config_path": "%LOCALAPPDATA%\\SPRAWL\\Saved\\Config\\WindowsNoEditor"
     },
     "Sprawl Zero": {
-      "steam_appid": 3748520
+      "steam_appid": 3748520,
+      "config_path": "%LOCALAPPDATA%\\Silas\\Saved\\Config\\Windows\\GameUserSettings.ini, %LOCALAPPDATA%\\Silas\\Saved\\SaveGames\\Settings.sav"
     },
     "Spray Dynamite X Radioactive Insects": {
       "steam_appid": 967960
@@ -152649,6 +152670,9 @@
     "The Magnificent Trufflepigs": {
       "steam_appid": 1529550
     },
+    "The Magus Circle": {
+      "steam_appid": 2796640
+    },
     "The Mahjong Huntress": {
       "steam_appid": 474910
     },
@@ -153163,6 +153187,9 @@
     },
     "The New Universes: ~ Eine Neue Reise Beginnt ~ Chapter 1": {
       "steam_appid": 1073990
+    },
+    "The NewZealand Story: Untold Adventure": {
+      "steam_appid": 4193730
     },
     "The Next Big Thing": {
       "steam_appid": 58570,
@@ -154883,6 +154910,7 @@
     },
     "The Sinking City 2": {
       "steam_appid": 2825860,
+      "dx12": true,
       "config_path": "%LOCALAPPDATA%\\TSC2\\Saved\\Config\\Windows\\"
     },
     "The Sinking City Remastered": {
@@ -160725,7 +160753,8 @@
       "config_path_xbox": "%USERPROFILE%\\Documents\\My Games\\TrainSimWorld6WGDK\\Saved\\Config"
     },
     "Train Sim World 7": {
-      "steam_appid": 4678800
+      "steam_appid": 4678800,
+      "config_path": "%USERPROFILE%\\Documents\\My Games\\TrainSimWorld7\\Saved\\Config"
     },
     "Train Simulator": {
       "dx9": true,
@@ -162199,6 +162228,7 @@
     },
     "Trucks & Trailers": {
       "steam_appid": 302060,
+      "dx9": true,
       "config_path": "%USERPROFILE%\\Documents\\Trucks & Trailers\\config.cfg"
     },
     "True Blades": {
@@ -172205,6 +172235,7 @@
       "dx11": true,
       "config_path": "%USERPROFILE%\\Documents\\My Games\\Wintermoor\\Saves\\PlayerPrefs, HKEY_CURRENT_USER\\Software\\EVC\\Wintermoor Tactics Club\\"
     },
+    "WinWorm": {},
     "Winx Club": {
       "dx9": true,
       "config_path": "<path-to-game>\\config.ini, <path-to-game>\\winx.ini"
@@ -174796,6 +174827,9 @@
     },
     "Yerah": {
       "steam_appid": 717380
+    },
+    "Yerba Buena": {
+      "steam_appid": 2330110
     },
     "Yes, Master!": {
       "steam_appid": 1090900,
