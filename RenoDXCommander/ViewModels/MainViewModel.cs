@@ -240,9 +240,18 @@ public partial class MainViewModel : ObservableObject
     public void DismissNewWikiMods()
     {
         if (NewWikiMods.Count == 0) return;
-        _seenWikiModsService.MarkAsSeen(NewWikiMods);
-        NewWikiMods = new List<string>();
+        _seenWikiModsService.MarkAsSeen(NewWikiMods);        NewWikiMods = new List<string>();
         _crashReporter.Log("[MainViewModel.DismissNewWikiMods] Marked new mods as seen");
+    }
+
+    /// <summary>
+    /// Refreshes the bottom status bar text to reflect the current ReShade install count.
+    /// Call after any operation that changes RsStatus on any card.
+    /// </summary>
+    public void RefreshStatusBarText()
+    {
+        if (!string.IsNullOrEmpty(StatusText) && StatusText.Contains("games detected"))
+            StatusText = $"{_allCards.Count} games detected · {InstalledCount} ReShade installs";
     }
 
     /// <summary>

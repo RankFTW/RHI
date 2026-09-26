@@ -162,6 +162,8 @@ public partial class MainViewModel
                 card.RsActionMessage    = "✅ ReShade installed!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+                _filterViewModel.UpdateCounts();
+                RefreshStatusBarText();
 
                 // Deploy managed addons now that ReShade is present
                 DeployAddonsForCard(card.GameName);
@@ -208,6 +210,8 @@ public partial class MainViewModel
                     card.RsActionMessage = "✅ Vulkan ReShade installed!";
                     card.NotifyAll();
                     card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+                    _filterViewModel.UpdateCounts();
+                    RefreshStatusBarText();
 
                     // Deploy managed addons now that ReShade is present
                     DeployAddonsForCard(card.GameName);
@@ -288,6 +292,8 @@ public partial class MainViewModel
                 card.RsActionMessage = "✅ ReShade installed (Vulkan Layer)!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+                _filterViewModel.UpdateCounts();
+                RefreshStatusBarText();
 
                 // Deploy managed addons now that ReShade is present
                 DeployAddonsForCard(card.GameName);
@@ -446,6 +452,8 @@ public partial class MainViewModel
             card.RsActionMessage    = "✖ ReShade removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+            _filterViewModel.UpdateCounts();
+            RefreshStatusBarText();
         }
         catch (Exception ex)
         {
@@ -493,6 +501,8 @@ public partial class MainViewModel
             card.RsActionMessage = "✖ Vulkan ReShade removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+            _filterViewModel.UpdateCounts();
+            RefreshStatusBarText();
         }
         catch (Exception ex)
         {
