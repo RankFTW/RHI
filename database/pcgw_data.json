@@ -11,18 +11,19 @@
     "Crimson Desert Enhanced": "Crimson Desert",
     "DARK SOULS™ II: Scholar of the First Sin": "Dark Souls II: Scholar of the First Sin",
     "Denshattack!": "Denshattack!",
-    "Dragon Age Inquisition": "Dragon Age: Inquisition",
-    "Mass Effect Andromeda": "Mass Effect: Andromeda",
     "DOOM (DOS)": "Doom (1993)",
     "DOOM + DOOM II": "Doom + Doom II",
+    "Dragon Age Inquisition": "Dragon Age: Inquisition",
     "Far Cry 2 Fortune's Edition": "Far Cry 2",
     "Far Cry® 2: Fortune's Edition": "Far Cry 2",
     "FINAL FANTASY XV WINDOWS EDITION": "Final Fantasy XV",
     "Fortnite": "Fortnite",
     "Forza Horizon 6": "Forza Horizon 6",
+    "Gothic II: Gold Classic": "Gothic II",
     "Halo: Campaign Evolved": "Halo: Campaign Evolved",
     "Halo: The Master Chief Collection": "Halo: The Master Chief Collection",
     "Kingdoms of Amalur: Reckoning™": "Kingdoms of Amalur: Reckoning",
+    "Mass Effect Andromeda": "Mass Effect: Andromeda",
     "Reckoning": "Kingdoms of Amalur: Reckoning",
     "SILENT HILL: Townfall": "Silent Hill: Townfall",
     "Stellar Blade™": "Stellar Blade",
@@ -36719,10 +36720,10 @@
       "engine": "Clausewitz"
     },
     "Crusader: No Regret": {
-      "engine": "Enhanced Ultima VIII: Pagan engine"
+      "engine": "Pagan engine"
     },
     "Crusader: No Remorse": {
-      "engine": "Enhanced Ultima VIII: Pagan engine"
+      "engine": "Pagan engine"
     },
     "Crusaders of Light": {
       "steam_appid": 775220
@@ -71770,7 +71771,7 @@
     "Guitar Hero: Aerosmith": {
       "dx9": true,
       "config_path": "%LOCALAPPDATA%\\Aspyr\\Guitar Hero Aerosmith\\AspyrConfig.xml",
-      "engine": "Guitar Hero III: Legends of Rock"
+      "engine": "Legends of Rock"
     },
     "Guitar Hero: World Tour": {
       "dx9": true,
@@ -103252,7 +103253,7 @@
     "Miku'n POP": {
       "dx9": true,
       "config_path": "<path-to-game>\\Config.sav",
-      "engine": "GameMaker: Studio"
+      "engine": "Studio"
     },
     "Milano's Odd Job Collection": {
       "steam_appid": 3582980,
