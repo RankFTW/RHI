@@ -2224,8 +2224,10 @@ public sealed partial class MainWindow
         content.Children.Add(unifiedGrid);
 
         ContentDialog? osCogDialog = null;
+        bool variantComboInitializing = true;
         variantCombo.SelectionChanged += (s, ev) =>
         {
+            if (variantComboInitializing) return;
             var selected = variantCombo.SelectedItem as string ?? "Stable";
             // Map display name to internal value
             var internalValue = selected switch { "DLSS NR" => "DlssNr", "Stable" => null, _ => selected };
@@ -3094,6 +3096,7 @@ public sealed partial class MainWindow
         };
         dialog.Resources["ContentDialogMaxWidth"] = 680.0;
         osCogDialog = dialog;
+        variantComboInitializing = false;
         await DialogService.ShowSafeAsync(dialog);
     }
     internal async void DxvkCogButton_Click(object sender, RoutedEventArgs e)
