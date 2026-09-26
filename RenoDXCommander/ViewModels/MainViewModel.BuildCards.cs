@@ -1076,7 +1076,7 @@ public partial class MainViewModel
                     // Prefer the version recorded in rhi_install.txt (written at actual install/update
                     // time) so the displayed version matches what was deployed, not the current staging
                     // version (which may differ after a new download between restarts).
-                    var osGameManifest = RhiInstallManifest.Read(osRec.InstallPath);
+                    var osGameManifest = RhiInstallManifest.Read(installPath);
                     newCard.OsInstalledVersion = !string.IsNullOrEmpty(osGameManifest?.Version)
                         ? osGameManifest.Version
                         : osRec.OsVariant switch {
