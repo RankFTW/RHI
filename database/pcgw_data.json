@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55292,
-  "generated": "2026-09-26T13:02:03Z",
+  "game_count": 55295,
+  "generated": "2026-09-26T19:22:06Z",
   "name_overrides": {
     "AFOP": "Avatar: Frontiers of Pandora",
     "Alan Wake 2": "Alan Wake 2",
@@ -14792,6 +14792,9 @@
     },
     "Battle Species": {
       "steam_appid": 910750
+    },
+    "Battle Squadron: The Destruction of the Barrax Empire": {
+      "steam_appid": 383110
     },
     "Battle Squares": {
       "steam_appid": 681990
@@ -34144,6 +34147,7 @@
     "Cutthroat Gunboat": {
       "steam_appid": 661220
     },
+    "Cutthroats: Terror on the High Seas": {},
     "CuVRball": {
       "steam_appid": 539190
     },
@@ -78774,6 +78778,10 @@
     },
     "Kalonline": {
       "steam_appid": 475100
+    },
+    "KALPA: Cosmic Symphony": {
+      "steam_appid": 2717010,
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\QueseraGames\\KALPA CosmicSymphony\\"
     },
     "Kalzor: 2000": {
       "steam_appid": 656640
