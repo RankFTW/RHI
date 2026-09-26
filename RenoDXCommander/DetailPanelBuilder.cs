@@ -221,8 +221,9 @@ public partial class DetailPanelBuilder
         }
 
         // Mod status icon — green ✓ for Done, 🔨 for WIP.
-        // Sourced from the DB unreal entry (UE-Extended games) or the DB named mod entry.
-        // Named mod Status is stored as emoji ("✅"/"🚧") after MapStatus(); UE entries use "Done"/"WIP" text.
+        // Priority: DB unreal entry → DB named mod (by detected name) → card.WikiStatus (already
+        // resolved from the correct mod regardless of name mapping).
+        // WikiStatus is "✅"/"🚧" for named mods, "—"/"?"/"💬" for others — only show icon for ✅/🚧.
         string? modStatusText = null;
         var dbEntry = _window.ViewModel.GetDbUnrealEntry(card.GameName);
         if (dbEntry != null)
@@ -236,6 +237,14 @@ public partial class DetailPanelBuilder
             {
                 // MapStatus converts "Done"→"✅" and "WIP"→"🚧", so normalise back to text
                 modStatusText = dbMod.Status == "🚧" ? "WIP" : dbMod.Status == "✅" ? "Done" : null;
+            }
+            else if (!card.IsGenericMod)
+            {
+                // Fallback: WikiStatus is already correctly resolved for this card (handles
+                // games detected by folder name like "AFOP" whose DB entry uses the full title)
+                modStatusText = card.WikiStatus == "🚧" ? "WIP"
+                              : card.WikiStatus == "✅" ? "Done"
+                              : null;
             }
         }
 

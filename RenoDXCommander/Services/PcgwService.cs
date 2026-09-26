@@ -89,6 +89,27 @@ internal sealed class PcgwCentralData
                 return (normalised, directEntry);
         }
 
+        // 5. Trademark strip — detected names may include ™, ®, © that the PCGW database omits.
+        var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
+        if (!string.Equals(stripped, gameName, StringComparison.Ordinal))
+        {
+            if (NameOverrides.TryGetValue(stripped, out mappedTitle)
+                && Games.TryGetValue(mappedTitle, out mappedEntry))
+                return (mappedTitle, mappedEntry);
+            if (Games.TryGetValue(stripped, out directEntry))
+                return (stripped, directEntry);
+            // Also try trademark-stripped + apostrophe normalisation combined
+            var strippedNorm = stripped.Replace('\'', '\u2019');
+            if (!string.Equals(strippedNorm, stripped, StringComparison.Ordinal))
+            {
+                if (NameOverrides.TryGetValue(strippedNorm, out mappedTitle)
+                    && Games.TryGetValue(mappedTitle, out mappedEntry))
+                    return (mappedTitle, mappedEntry);
+                if (Games.TryGetValue(strippedNorm, out directEntry))
+                    return (strippedNorm, directEntry);
+            }
+        }
+
         return (null, null);
     }
 

@@ -1,60 +1,62 @@
 ## v2.7.7
 
+### Changes
+- Named mods from the RHI database now show a green ✓ or 🔨 status icon in the game header, the same as UE-Extended games.
+- Unity engine compatibility settings (Swapchain Proxy, Swapchain Encoding, Force Pipeline Cloning, Force Borderless etc.) now appear in the RenoDX ⚙ cog Compatibility Settings section for games that use them.
+
 ### Bug Fixes
 
 **Freezes & window behaviour**
-- Fixed random UI freezes when navigating between games. Caused by a background scan holding a lock that blocked the NVIDIA profile section from loading.
+- Fixed random UI freezes when navigating between games. A background scan was holding a lock that blocked the NVIDIA profile section from loading.
 - Fixed UI freezing when rapidly scrolling through games with NVIDIA driver profiles.
 - Fixed RHI opening behind other windows on launch.
-- Fixed RHI appearing behind other windows when restored from the system tray or opened by a second instance.
-- Fixed a maximized window not opening maximized on relaunch — it would appear borderless and seemingly maximized but wasn't, requiring two clicks to fix.
+- Fixed RHI not coming to the front when restored from the system tray or opened by a second instance.
+- Fixed a maximised window not restoring as maximised on relaunch — it would appear borderless but wasn't actually maximised.
+
+**PCGW links & engine badges**
+- Fixed PCGW link and engine badge not showing for games with trademark symbols (™, ®, ©) in their detected name that the PCGamingWiki database omits — e.g. Deus Ex: Mankind Divided™.
+- Fixed PCGW link and engine badge not showing for games where Steam uses a straight apostrophe but the PCGamingWiki database uses a curly one — e.g. Assassin's Creed titles.
+- Fixed PCGW link and engine badge not showing for EA App games where the folder name omits the subtitle colon — Dragon Age Inquisition and Mass Effect Andromeda now resolve correctly.
+- Fixed engine badge not showing for DX9 false-positive games (e.g. CrossCode) — NW.js and Electron games that import legacy D3D shims were being flagged as DX9. PCGW data now corrects this.
 
 **DXVK**
-- Fixed DXVK always defaulting to the Development variant instead of Lilium HDR.
-- Fixed DX9 games with DXVK installed not showing up in DX9 searches. The card now correctly shows "DX9 / VLK".
+- Fixed DXVK defaulting to Development variant instead of Lilium HDR.
+- Fixed DX9 games with DXVK installed not appearing in DX9 searches. The card now correctly shows "DX9 / VLK".
 - Fixed ReShade showing as not installed after installing DXVK on a DX9 game (e.g. Mass Effect, Diablo).
 - Fixed the ReShade uninstall button doing nothing after uninstalling DXVK without refreshing.
-- Fixed a VLK badge persisting on a game after DXVK was uninstalled.
-- Fixed shaders not being deployed when DXVK was installed without ReShade already present.
+- Fixed a VLK badge persisting after DXVK was uninstalled.
+- Fixed shaders not deploying when DXVK was installed without ReShade already present.
 
-**RenoDX cog**
-- Added Unity engine compatibility settings (Swapchain Proxy, Swapchain Encoding, Force Pipeline Cloning, Force Borderless etc.) to the Compatibility Settings section. These show automatically when the game uses them.
-- Fixed the Swapchain Encoding label showing "Gamma" instead of "Linear" for the default value.
+**ReShade**
+- Fixed switching a game's Graphics API override to Vulkan not removing the DX ReShade DLL. The DLL is now uninstalled automatically on the transition, and vice versa.
+- Fixed Vulkan ReShade install/uninstall status not updating the panel immediately.
+- Fixed the ReShade install count in the status bar not updating immediately after install or uninstall.
 - Fixed the ReShade ⚙ cog being greyed out on Vulkan and Unity games.
 
 **OptiScaler**
-- Fixed the DLSS NR and Nightly variant selections being silently reset to Stable every time the OptiScaler cog was opened. This caused reinstalls and updates to use the wrong version and display the wrong version number.
- 
+- Fixed the DLSS NR and Nightly variant selections being silently reset to Stable every time the OptiScaler ⚙ cog was opened, causing installs and updates to use the wrong version.
+
 **Neural Rendering**
-- Fixed the DLSS5 Tool and ShortFuse DLSS Tool not redeploying the updated addon to game folders when a new "Latest" version was released. The deployment tracker cache was never refreshed after install, so the auto-redeploy skipped every game.
-- Fixed new DLSS5 Tool versions not downloading automatically when "Latest" is selected. The version list could show a newer version but the file wasn't staged until the 4-hour update check ran.
-- Fixed Feeder install failing on first launch with a "directory not found" error. The addon staging folder is now created at startup.
+- Fixed the DLSS5 Tool and ShortFuse DLSS Tool not redeploying to game folders when a new "Latest" version was released. The deployment tracker cache was never refreshed after install.
+- Fixed new DLSS5 Tool versions not staging automatically when "Latest" is selected. The file wasn't downloaded until the 4-hour update check ran.
+- Fixed Feeder install failing on first launch with a "directory not found" error.
 
 **Other**
-- Fixed MFG Ada Unlock being removed from the game folder when a RenoDX addon was drag-dropped onto the same game. It was incorrectly included in the cleanup sweep of old addon files.
-- Fixed games using NW.js or Electron runtimes (e.g. CrossCode) showing as DX9 when they are actually DX11. The PE scanner picks up legacy D3D shims from the runtime — PCGW data now corrects this when it confirms the game doesn't support DX9.
-- Fixed switching a game's Graphics API override to Vulkan (or back to Auto when the manifest sets Vulkan) not removing the DX ReShade DLL from the game folder. The DLL is now uninstalled automatically on the transition. Switching away from Vulkan also removes the Vulkan ReShade footprint.
-- Fixed Vulkan ReShade install/uninstall not updating the panel status immediately — required a Refresh to reflect the change.
-- Fixed the ReShade install count in the bottom status bar not updating immediately after install or uninstall.
+- Fixed MFG Ada Unlock being removed when a RenoDX addon was drag-dropped onto the same game.
+- Fixed the ✓/🔨 status icon not appearing for named mods on games detected by folder name (e.g. Avatar: Frontiers of Pandora detected as "AFOP").
 - Fixed a multi-second delay when clicking a game whose NVIDIA driver profile had never been scanned before.
 - Fixed the Shaders dropdown in Game Overrides being disabled when ReShade Channel was set to "No Addons".
-
-### Changes
-- Named mods from the RHI database now show a green ✓ or 🔨 status icon in the game header — the same indicators used for UE-Extended games. ✓ means the mod is complete; 🔨 means it's a work in progress.
+- Fixed the Swapchain Encoding label showing "Gamma" instead of "Linear".
 
 ### Maintenance
-- The centralized PCGW database (`pcgw_data.json`) now includes engine names scraped from PCGamingWiki. When PE detection can't identify an engine (common for Game Pass games and some store installations), the engine badge is filled from PCGW data instead of left blank. Works automatically for all ~55k games in the database — no refresh needed once the database is updated.
-- The `engineOverrides` manifest field has been disabled. Engine display names for custom engines (Frostbite, Decima, Northlight etc.) are now sourced from the PCGW database instead of the manifest, reducing manifest maintenance overhead.
+- Engine names from PCGamingWiki are now included in the centralized `pcgw_data.json` database. When PE scan can't identify an engine (common for Game Pass and EA App installs), the engine badge is now filled from PCGW data for all 55,000+ games in the database.
 
 ### Manifest Updates
-
-- Fixed Mount & Blade II: Bannerlord — RHI was detecting the wrong subfolder, causing Feeder and other components to install to the wrong location.
+- Fixed Mount & Blade II: Bannerlord install path — RHI was detecting the wrong subfolder.
 - Fixed Sekiro™: Shadows Die Twice not showing its Luma mod.
 - Fixed Arma Reforger NVIDIA profile pointing to the wrong exe.
-- Added Nexus Mods link for CONTROL Resonant.
-- Added UltrawideSideGlass shader pack — fills ultrawide pillarboxes with zoom/mirror/frosted glass effects. Available in the Shader picker.
-- Added name mapping for FINAL FANTASY XV WINDOWS EDITION.
-- Added Nexus Mods link for FINAL FANTASY XV WINDOWS EDITION.
+- Added Nexus Mods links for CONTROL Resonant and FINAL FANTASY XV WINDOWS EDITION.
+- Added UltrawideSideGlass shader pack — fills ultrawide pillarboxes with zoom/mirror/frosted glass effects.
 
 ## v2.7.6
 
