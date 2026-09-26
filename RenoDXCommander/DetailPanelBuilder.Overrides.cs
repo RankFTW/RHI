@@ -1127,22 +1127,6 @@ public partial class DetailPanelBuilder
             if (targetCard != null)
             {
                 bool wasVulkan = targetCard.RequiresVulkanInstall;
-                bool willBeVulkan = apiEnumNames?.Contains("Vulkan") == true;
-
-                // ── Clean up ReShade when switching between DX and Vulkan ──────────────
-                // Switching TO Vulkan: uninstall any DX ReShade DLL (dxgi.dll, d3d12.dll etc.)
-                // — leaving it behind causes conflicts with the Vulkan layer.
-                if (!wasVulkan && willBeVulkan && targetCard.IsRsInstalled)
-                {
-                    CrashReporter.Log($"[ApiOverride] Switching '{capturedName}' to Vulkan — uninstalling DX ReShade ({targetCard.RsInstalledFile})");
-                    _window.ViewModel.UninstallReShade(targetCard);
-                }
-                // Switching FROM Vulkan: uninstall Vulkan ReShade footprint if present.
-                else if (wasVulkan && !willBeVulkan && targetCard.VulkanRsIniExists)
-                {
-                    CrashReporter.Log($"[ApiOverride] Switching '{capturedName}' from Vulkan — uninstalling Vulkan ReShade");
-                    _window.ViewModel.UninstallVulkanReShadeCommand.Execute(targetCard);
-                }
 
                 if (apiEnumNames != null)
                 {
@@ -1162,6 +1146,24 @@ public partial class DetailPanelBuilder
                 targetCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(targetCard.DetectedApis);
                 targetCard.GraphicsApi = _window.ViewModel.DetectGraphicsApi(
                     targetCard.InstallPath, EngineType.Unknown, capturedName, targetCard.Source);
+
+                // Now that GraphicsApi is resolved, check if Vulkan state changed
+                bool willBeVulkan = targetCard.GraphicsApi == GraphicsApiType.Vulkan && !targetCard.IsDualApiGame;
+
+                // ── Clean up ReShade when switching between DX and Vulkan ──────────────
+                // Switching TO Vulkan: uninstall any DX ReShade DLL (dxgi.dll, d3d12.dll etc.)
+                // — leaving it behind causes conflicts with the Vulkan layer.
+                if (!wasVulkan && willBeVulkan && targetCard.IsRsInstalled)
+                {
+                    CrashReporter.Log($"[ApiOverride] Switching '{capturedName}' to Vulkan — uninstalling DX ReShade ({targetCard.RsInstalledFile})");
+                    _window.ViewModel.UninstallReShade(targetCard);
+                }
+                // Switching FROM Vulkan: uninstall Vulkan ReShade footprint if present.
+                else if (wasVulkan && !willBeVulkan && targetCard.VulkanRsIniExists)
+                {
+                    CrashReporter.Log($"[ApiOverride] Switching '{capturedName}' from Vulkan — uninstalling Vulkan ReShade");
+                    _window.ViewModel.UninstallVulkanReShadeCommand.Execute(targetCard);
+                }
 
                 // Re-evaluate Luma injection inline (synchronous) so LumaMod is updated
                 // before the panel rebuilds.
