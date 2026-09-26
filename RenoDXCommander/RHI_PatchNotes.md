@@ -18,6 +18,7 @@
 ### Manifest Updates
 
 - Fixed Mount & Blade II: Bannerlord install path detection — RHI was resolving to the `CrashUploader.Publish` subfolder instead of `bin\Win64_Shipping_Client`, causing Feeder and other components to install to the wrong location.
+- Added name mapping for Sekiro™: Shadows Die Twice and Sekiro™: Shadows Die Twice - GOTY Edition → Sekiro.
 - Added UltrawideSideGlass shader pack by NickFirzen — fills ultrawide pillarboxes with zoom/mirror/frosted glass effects, HDR-aware. Available in the Shader picker.
 - Added name mapping for FINAL FANTASY XV WINDOWS EDITION → Final Fantasy XV.
 - Added Nexus Mods link for FINAL FANTASY XV WINDOWS EDITION.
