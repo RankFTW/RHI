@@ -2,41 +2,41 @@
 
 ### Bug Fixes
 
-**UI responsiveness**
-- Fixed UI freezing when rapidly scrolling through games with NVIDIA driver profiles. A `Task.Delay(5000)` timer was left running after each NVAPI read completed, accumulating thread pool threads during fast navigation. The delay is now cancelled immediately when the NVAPI scan finishes.
-- Fixed a random UI freeze when clicking certain games (e.g. Unity games without DLSS). The Neural Rendering background scan was holding a semaphore while waiting for a dispatcher queue callback to run, which deadlocked when the NVIDIA profile section ran concurrently and tried to acquire the same semaphore. Fixed in two places: the initial scan (`BuildNeuralRenderingSection`) and the status refresh (`RefreshStatus`) — both now release the semaphore immediately after file scans complete, before any UI callback is queued.
-- Fixed the window appearing behind other windows when restored from the system tray or activated by a second instance. The window now always comes to the foreground.
-- Fixed the window appearing behind other windows on fresh launch.
-- Fixed a maximized window not restoring to maximized state on relaunch — it would appear in a pseudo-maximized state (no border, maximize button active, but not actually maximized). Now uses `SetWindowPlacement` to restore both position and maximize state atomically.
+**Freezes & window behaviour**
+- Fixed random UI freezes when navigating between games. Caused by a background scan holding a lock that blocked the NVIDIA profile section from loading.
+- Fixed UI freezing when rapidly scrolling through games with NVIDIA driver profiles.
+- Fixed RHI opening behind other windows on launch.
+- Fixed RHI appearing behind other windows when restored from the system tray or opened by a second instance.
+- Fixed a maximized window not opening maximized on relaunch — it would appear borderless and seemingly maximized but wasn't, requiring two clicks to fix.
 
 **DXVK**
-- Fixed DXVK defaulting to the Development variant instead of Lilium HDR when installing without first changing the cog setting.
-- Fixed DXVK-installed DX9 games not appearing in DX9 searches. The card now shows "DX9 / VLK" and matches searches for either API.
-- Fixed ReShade not showing as installed after installing DXVK on a DX9 game (e.g. Mass Effect 2007, Diablo). Multiple issues: wrong folder checked for games with install path subdirectory overrides, a cached display flag not populated on load, and the panel not rebuilding after install.
-- Fixed the ReShade X button doing nothing after uninstalling DXVK without refreshing first. DXVK uninstall now saves a fresh ReShade tracking record when it restores the DLL.
-- Fixed a phantom VLK badge appearing after DXVK was uninstalled and the app was restarted. The API cache is now updated immediately on uninstall.
-- Fixed DXVK install not deploying the shader folder when ReShade wasn't already installed.
+- Fixed DXVK always defaulting to the Development variant instead of Lilium HDR.
+- Fixed DX9 games with DXVK installed not showing up in DX9 searches. The card now correctly shows "DX9 / VLK".
+- Fixed ReShade showing as not installed after installing DXVK on a DX9 game (e.g. Mass Effect, Diablo).
+- Fixed the ReShade uninstall button doing nothing after uninstalling DXVK without refreshing.
+- Fixed a VLK badge persisting on a game after DXVK was uninstalled.
+- Fixed shaders not being deployed when DXVK was installed without ReShade already present.
 
 **RenoDX cog**
-- Added Unity engine settings (Swapchain Proxy, Swapchain Encoding, Force Pipeline Cloning, Force Borderless etc.) to the Compatibility Settings section. These appear automatically when present in the game's reshade.ini.
-- Fixed Swapchain Encoding labels — was showing "Gamma/scRGB", now correctly shows "Linear/Gamma".
-- Fixed the ReShade settings cog (⚙) being greyed out on Vulkan/Unity games. The cog was gated on the inis folder reshade.ini existing, but Vulkan games keep their ini in the game folder. Now enabled whenever ReShade is installed in either location.
+- Added Unity engine compatibility settings (Swapchain Proxy, Swapchain Encoding, Force Pipeline Cloning, Force Borderless etc.) to the Compatibility Settings section. These show automatically when the game uses them.
+- Fixed the Swapchain Encoding label showing "Gamma" instead of "Linear" for the default value.
+- Fixed the ReShade ⚙ cog being greyed out on Vulkan and Unity games.
 
 **OptiScaler**
-- Fixed the OptiScaler variant (DLSS NR / Nightly) being silently reset to Stable every time the OptiScaler cog was opened. The variant combo was firing `SelectionChanged` during dialog construction, before the dialog was shown, writing null ("Stable") over the saved variant. This caused all reinstalls and updates to use the wrong staging folder and write incorrect version info to the game folder.
+- Fixed the DLSS NR and Nightly variant selections being silently reset to Stable every time the OptiScaler cog was opened. This caused reinstalls and updates to use the wrong version and display the wrong version number.
 
 **Other**
-- Fixed switching to a game whose NVIDIA driver profile had never been looked up before (e.g. first time selecting it after a Full Refresh) causing a multi-second UI freeze. The profile lookup now cancels after 4 seconds instead of blocking the thread pool indefinitely.
-- Fixed the Shaders combo in Game Overrides being disabled when the ReShade Channel is set to "No Addons". Shaders can still be selected independently — only the Addons combo is blocked.
+- Fixed a multi-second delay when clicking a game whose NVIDIA driver profile had never been scanned before.
+- Fixed the Shaders dropdown in Game Overrides being disabled when ReShade Channel was set to "No Addons".
 
 ### Manifest Updates
 
-- Fixed Mount & Blade II: Bannerlord install path detection — RHI was resolving to the `CrashUploader.Publish` subfolder instead of `bin\Win64_Shipping_Client`, causing Feeder and other components to install to the wrong location.
-- Fixed Sekiro™: Shadows Die Twice Luma mod not appearing — added name mapping to match the Luma wiki entry.
-- Fixed Arma Reforger NVIDIA profile exe override to use `ArmaReforger_BE.exe`.
+- Fixed Mount & Blade II: Bannerlord — RHI was detecting the wrong subfolder, causing Feeder and other components to install to the wrong location.
+- Fixed Sekiro™: Shadows Die Twice not showing its Luma mod.
+- Fixed Arma Reforger NVIDIA profile pointing to the wrong exe.
 - Added Nexus Mods link for CONTROL Resonant.
-- Added UltrawideSideGlass shader pack by NickFirzen — fills ultrawide pillarboxes with zoom/mirror/frosted glass effects, HDR-aware. Available in the Shader picker.
-- Added name mapping for FINAL FANTASY XV WINDOWS EDITION → Final Fantasy XV.
+- Added UltrawideSideGlass shader pack — fills ultrawide pillarboxes with zoom/mirror/frosted glass effects. Available in the Shader picker.
+- Added name mapping for FINAL FANTASY XV WINDOWS EDITION.
 - Added Nexus Mods link for FINAL FANTASY XV WINDOWS EDITION.
 
 ## v2.7.6
