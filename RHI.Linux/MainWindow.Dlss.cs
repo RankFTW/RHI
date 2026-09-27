@@ -57,6 +57,8 @@ public sealed partial class MainWindow
         try { await _releases.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException) { CrashReporter.Log("NR releases: " + ex.Message); }
         if (_games.Any(g => g.IsREEngine))
             try { await _ref.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException) { CrashReporter.Log("RE Framework releases: " + ex.Message); }
+        if (_states.Values.Any(s => s.Components.ContainsKey(OptiScaler.Component)))
+            try { await _os.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException) { CrashReporter.Log("OptiScaler releases: " + ex.Message); }
     }
 
     // ── Shared building blocks ───────────────────────────────────────────────

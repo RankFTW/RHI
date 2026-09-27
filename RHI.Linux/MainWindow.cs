@@ -24,6 +24,7 @@ public sealed partial class MainWindow : Window
     private readonly NeuralRenderingSetup _nr;
     private readonly DlssSwap _swap;
     private readonly REFramework _ref;
+    private readonly OptiScaler _os;
     private Settings _settings;
     private List<Game> _games = [];
     private readonly Dictionary<string, InstallationStatus> _states = [];
@@ -48,7 +49,7 @@ public sealed partial class MainWindow : Window
         Title = "RHI — Simplified PC Gaming"; Width = 1180; Height = 900; MinWidth = 1000; MinHeight = 660;
         SystemDecorations = SystemDecorations.None;
         _catalog = new(_http); _downloads = new(_http); _setup = new(_downloads, _catalog);
-        _dlss = new(_http, _downloads); _releases = new(_http, _downloads); _nr = new(_downloads, _dlss, _releases, _catalog); _swap = new(_dlss); _ref = new(_http, _downloads);
+        _dlss = new(_http, _downloads); _releases = new(_http, _downloads); _nr = new(_downloads, _dlss, _releases, _catalog); _swap = new(_dlss); _ref = new(_http, _downloads); _os = new(_http, _downloads, _dlss);
         DlssProfile.ApplyManifestPresets(_catalog.ManifestRoot("dlssPresets"));
         try { _settings = Settings.Load(); } catch { _settings = new(); }
         var shell = new Grid { RowDefinitions = new("56,*,Auto,32") };

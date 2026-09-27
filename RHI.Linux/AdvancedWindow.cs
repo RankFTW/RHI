@@ -181,7 +181,7 @@ public sealed class AdvancedWindow : Window
                 try
                 {
                     var compiler = await _downloads.ShaderCompiler(game.Architecture, Progress);
-                    await Task.Run(() => install.Install("ReShade", version, [new(proxy, File.ReadAllBytes(path)), Installation.DefaultIni(), compiler], _replaceForeign, proxy));
+                    await Task.Run(() => install.Install("ReShade", version, [new(install.ReShadeFile(proxy), File.ReadAllBytes(path)), Installation.DefaultIni(), compiler], _replaceForeign, proxy));
                 }
                 finally { File.Delete(path); }
                 ShowGame(); _status.Text = $"ReShade {version} installed. Set the Proton launch options below before starting the game.";
@@ -200,7 +200,7 @@ public sealed class AdvancedWindow : Window
                 {
                     Downloads.ValidatePe(payload, game.Architecture);
                     var compiler = await _downloads.ShaderCompiler(game.Architecture, Progress);
-                    await Task.Run(() => install.Install("ReShade", "Local", [new(proxy, File.ReadAllBytes(payload)), Installation.DefaultIni(), compiler], _replaceForeign, proxy));
+                    await Task.Run(() => install.Install("ReShade", "Local", [new(install.ReShadeFile(proxy), File.ReadAllBytes(payload)), Installation.DefaultIni(), compiler], _replaceForeign, proxy));
                 }
                 finally { if (payload != file) File.Delete(payload); }
                 ShowGame(); _status.Text = "Local ReShade installed. Set the Proton launch options below.";

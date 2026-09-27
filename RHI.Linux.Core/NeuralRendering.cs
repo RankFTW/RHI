@@ -584,7 +584,9 @@ public sealed class NeuralRenderingSetup(Downloads downloads, DlssCatalog dlss, 
         await Task.Run(() =>
         {
             UninstallCostScaler(dir, record?.CostScaler == true);
-            if (record != null) foreach (var dll in Enumerable.Reverse(record.Dlls)) Sentinel.Restore(dll);
+            // DLSS DLLs OptiScaler also placed stay for it; its own removal restores them.
+            var osOwned = OptiScaler.LoadRecord(dir)?.Dlls ?? [];
+            if (record != null) { foreach (var dll in Enumerable.Reverse(record.Dlls)) if (!osOwned.Contains(dll)) Sentinel.Restore(dll); }
             else RemoveLegacy(game);
             var install = new Installation(dir);
             if (install.ReadState().Components.ContainsKey(Component)) install.Remove(Component);

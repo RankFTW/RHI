@@ -42,6 +42,26 @@ public sealed class GamePreferences
     public string? NrDllVersion { get; set; }
     public bool NrCostScaler { get; set; }
     public bool SfAutoConfig { get; set; }
+    // OptiScaler (null = Stable / automatic DLL name / Auto frame generation).
+    public string? OsVariant { get; set; }
+    public string? OsDllName { get; set; }
+    public bool OsDeployStreamline { get; set; }
+    public string? OsStreamlineVersion { get; set; }
+    public string? OsNrRuntime { get; set; }
+    public string? OsFgInput { get; set; }
+    public string? OsFgOutput { get; set; }
+    public string? OsFgNvngx { get; set; }
+    public string? OsFsrCrashFix { get; set; }
+}
+
+// Settings → OptiScaler: chooses the bundled INI template and the overlay hotkey, as on Windows.
+public sealed class OptiScalerSettings
+{
+    public string? Gpu { get; set; }
+    public bool DlssInputs { get; set; } = true;
+    public string Hotkey { get; set; } = "Insert";
+    public bool SetupConfirmed { get; set; }
+    [JsonIgnore] public string EffectiveGpu => Gpu ?? OptiScaler.DetectGpu();
 }
 
 // Settings → DLSS defaults: what Quick Apply and "Apply to all games" deploy.
@@ -64,6 +84,7 @@ public sealed class Settings
     public HashSet<string> CollapsedSections { get; set; } = [];
     public DlssDefaults DlssDefaults { get; set; } = new();
     public bool MfgWarningDismissed { get; set; }
+    public OptiScalerSettings OptiScaler { get; set; } = new();
     private static string FilePath => Path.Combine(LinuxPaths.Data, "settings.json");
     public static Settings Load() => File.Exists(FilePath)
         ? System.Text.Json.JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath), LinuxPaths.Json) ?? new()

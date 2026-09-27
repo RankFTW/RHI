@@ -113,6 +113,7 @@ public sealed partial class MainWindow
         overrides.Children.Add(setup); _details.Children.Add(Card(overrides));
         _details.Children.Add(NeuralRenderingSection(game, state));
         _details.Children.Add(NvidiaProfileSection(game, state));
+        _details.Children.Add(ExtrasSection(game, state));
         var advanced = Action("Advanced settings  ›", OpenAdvanced, "", "AdvancedSettings"); advanced.HorizontalAlignment = HorizontalAlignment.Left;
         ToolTip.SetTip(advanced, "Executable, Proton prefix, manual mods, launch options and recovery"); _details.Children.Add(advanced);
     }
@@ -178,6 +179,7 @@ public sealed partial class MainWindow
         GameSetup.RequireClosed(game);
         if (component is "RenoDX" or "ReShade") GameSetup.RestoreHdr(game);
         if (component == REFramework.Component) await REFramework.Remove(game);
+        else if (component == OptiScaler.Component) { await OptiScaler.Remove(game); ClearOptiScalerPreferences(_settings.For(game)); _settings.Save(); InvalidateDlss(game); }
         else await Task.Run(() => new Installation(game.InstallDirectory).Remove(component));
         await Changed(game, component + " removed", offerSteam: false);
     }
@@ -193,10 +195,12 @@ public sealed partial class MainWindow
             if (state.Get("ReShade").Version is { } rs && rs != "Local") await _setup.InstallReShade(game, prefs, Progress);
             if (state.Get("RenoDX").Version is { } rdx && rdx != "Local") await _setup.InstallRenoDx(game, prefs, Progress);
             if (_ref.UpdateAvailable(state.Get(REFramework.Component))) await _ref.Install(game, Progress);
+            if (_os.UpdateAvailable(game) && OptiScaler.Record(game)?.Variant == OsVariant.Of(prefs))
+            { await _os.Install(game, prefs, _settings.OptiScaler, _setup.Api(game, prefs), Progress); InvalidateDlss(game); }
             // Neural Rendering set to "Latest" follows new releases, as the Windows app auto-updates it.
             if (NeuralRenderingSetup.LoadRecord(game.InstallDirectory) is { } nr && prefs.NrAddonVersion == null && prefs.NrPackVersion == null && prefs.NrDllVersion == null)
             { await _nr.Install(game, prefs, nr.Method, _setup.Api(game, prefs), prefs.Channel, Progress); InvalidateDlss(game); }
         }
-        _settings.Save(); await ReadStates(); Filter(); _status.Text = "Installed RE Framework, ReShade, RenoDX and Neural Rendering components updated.";
+        _settings.Save(); await ReadStates(); Filter(); _status.Text = "Installed RE Framework, ReShade, RenoDX, Neural Rendering and OptiScaler components updated.";
     }
 }

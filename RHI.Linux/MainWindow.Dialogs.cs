@@ -155,6 +155,9 @@ public sealed partial class MainWindow
         body.Children.Add(Label("Default DLSS versions and presets used by Quick Apply in the Nvidia Profile Overrides section. " + _dlss.Status + " " + _releases.Status, 12, Muted));
         body.Children.Add(DialogAction("DLSS defaults…", body, ShowDlssDefaults));
         body.Children.Add(Plain("Open custom DLSS folder", () => { Directory.CreateDirectory(DlssFiles.CustomDirectory); Directory.CreateDirectory(DlssFiles.CustomStreamlineDirectory); Proton.Open(Path.GetDirectoryName(DlssFiles.CustomDirectory)!); }));
+        body.Children.Add(Label("OptiScaler", 13, null, true));
+        body.Children.Add(Label("Used for every OptiScaler install. " + _os.Status, 12, Muted));
+        body.Children.Add(OptiScalerGlobalFields());
         body.Children.Add(Plain("Open RHI data folder", () => Proton.Open(LinuxPaths.Data)));
         body.Children.Add(Plain("Linux guide", () => Proton.Open(Path.Combine(AppContext.BaseDirectory, "LINUX.md"))));
         await Dialog("Settings", body).ShowDialog(this);

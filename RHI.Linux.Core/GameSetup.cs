@@ -36,8 +36,11 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
         {
             var compiler = await downloads.ShaderCompiler(game.Architecture, progress);
             RequireClosed(game);
-            await Task.Run(() => new Installation(game.InstallDirectory).Install("ReShade", version,
-                [new(proxy, File.ReadAllBytes(path)), Installation.DefaultIni(), compiler], proxy: proxy));
+            await Task.Run(() =>
+            {
+                var installation = new Installation(game.InstallDirectory);
+                installation.Install("ReShade", version, [new(installation.ReShadeFile(proxy), File.ReadAllBytes(path)), Installation.DefaultIni(), compiler], proxy: proxy);
+            });
         }
         finally { File.Delete(path); }
     }

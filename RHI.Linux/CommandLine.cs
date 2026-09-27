@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using RHI.Linux.Core;
 using RenoDXCommander.Services;
@@ -29,6 +30,7 @@ internal static class CommandLine
         }
         if (args[0] == "--smoke-test") return await SmokeTest(http, catalog);
         if (args[0] == "--nr-smoke-test") return await NeuralRenderingSmokeTest(http, catalog);
+        if (args[0] == "--os-smoke-test") return await OptiScalerSmokeTest(http);
         if (args[0] == "--prepare" && args.Length >= 2) return await Prepare(args[1], args.Contains("--ue-hdr"), args.Contains("--nightly"), http, catalog);
         if (args[0] == "--save-launch-options" && args.Length == 2)
         {
@@ -47,7 +49,7 @@ internal static class CommandLine
             IniSettings.Restore(LinuxPaths.ResolveCase(game.InstallDirectory, "ReShade.ini"));
             Console.WriteLine("Previous HDR settings and file permissions restored."); return 0;
         }
-        Console.WriteLine("RHI Linux\n  (no arguments)    Open the desktop app\n  --scan            Print detected games, executable paths and Proton prefixes as JSON\n  --catalog-check   Fetch and validate the live RenoDX catalogue\n  --smoke-test      Test real ReShade, RenoDX, shader and RE Framework downloads, install/update/remove in an isolated temporary directory\n  --nr-smoke-test   Install, swap and remove every Neural Rendering (DLSS 5) method in a temporary game\n  --prepare APPID [--ue-hdr] [--nightly]  Install ReShade using the saved channel, matched RenoDX and shaders\n  --save-launch-options APPID  Save its DLL override with Steam fully closed\n  --restore-hdr APPID  Restore previous HDR settings and Engine.ini permissions\n");
+        Console.WriteLine("RHI Linux\n  (no arguments)    Open the desktop app\n  --scan            Print detected games, executable paths and Proton prefixes as JSON\n  --catalog-check   Fetch and validate the live RenoDX catalogue\n  --smoke-test      Test real ReShade, RenoDX, shader and RE Framework downloads, install/update/remove in an isolated temporary directory\n  --nr-smoke-test   Install, swap and remove every Neural Rendering (DLSS 5) method in a temporary game\n  --os-smoke-test   Install, update and remove every OptiScaler version beside ReShade in a temporary game\n  --prepare APPID [--ue-hdr] [--nightly]  Install ReShade using the saved channel, matched RenoDX and shaders\n  --save-launch-options APPID  Save its DLL override with Steam fully closed\n  --restore-hdr APPID  Restore previous HDR settings and Engine.ini permissions\n");
         return args[0] is "--help" or "-h" ? 0 : 2;
     }
 
@@ -84,7 +86,7 @@ internal static class CommandLine
             foreach (var pack in new[] { "Standard", "Lilium HDR" }) shaderPayloads[pack] = await downloads.Shaders(pack, progress);
             var install = new Installation(game.InstallDirectory);
             var compiler = await downloads.ShaderCompiler(game.Architecture, progress);
-            install.Install("ReShade", version, [new(proxy, File.ReadAllBytes(reshade)), Installation.DefaultIni(), compiler], proxy: proxy);
+            install.Install("ReShade", version, [new(install.ReShadeFile(proxy), File.ReadAllBytes(reshade)), Installation.DefaultIni(), compiler], proxy: proxy);
             install.Install("RenoDX", mod.Name + " • " + DateTime.UtcNow.ToString("yyyy-MM-dd"), [new(Path.GetFileName(new Uri(url).AbsolutePath), File.ReadAllBytes(addon))]);
             foreach (var (pack, payload) in shaderPayloads) install.Install("Shaders: " + pack, DateTime.UtcNow.ToString("yyyy-MM-dd"), payload);
             if (hdr)
@@ -252,5 +254,67 @@ internal static class CommandLine
         }
         finally { Directory.Delete(temp, true); }
     }
-}
 
+    private static async Task<int> OptiScalerSmokeTest(HttpClient http)
+    {
+        var temp = Path.Combine(Path.GetTempPath(), "rhi-os-smoke-" + Guid.NewGuid().ToString("N"));
+        // Keep INI templates out of the user's data folder; downloads still use the shared cache.
+        Environment.SetEnvironmentVariable("XDG_DATA_HOME", Path.Combine(temp, "data"));
+        var progress = new Progress<string>(Console.WriteLine);
+        var downloads = new Downloads(http);
+        var dlss = new DlssCatalog(http, downloads);
+        var os = new OptiScaler(http, downloads, dlss);
+        await dlss.Refresh(); await os.Refresh(true);
+        Console.WriteLine(dlss.Status + " " + os.Status);
+        static Dictionary<string, string> Snapshot(string root) => Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+            .Where(f => !Path.GetRelativePath(root, f).StartsWith(".rhi-linux")).ToDictionary(f => Path.GetRelativePath(root, f), f => Installation.Hash(File.ReadAllBytes(f)));
+        static bool IsOptiScaler(string path) => File.Exists(path) && Encoding.ASCII.GetString(File.ReadAllBytes(path)).Contains("OptiScaler");
+        var settings = new OptiScalerSettings { Gpu = "NVIDIA", Hotkey = "Delete" };
+        try
+        {
+            foreach (var variant in OsVariant.All)
+            {
+                var root = Path.Combine(temp, variant); Directory.CreateDirectory(root);
+                var exe = Path.Combine(root, "Game.exe"); File.WriteAllBytes(exe, PeStub());
+                // Game-owned files OptiScaler replaces must be backed up and restored.
+                File.WriteAllText(Path.Combine(root, "amd_fidelityfx_dx12.dll"), "game original");
+                File.WriteAllText(Path.Combine(root, "nvngx_dlss.dll"), "game dlss");
+                var game = new Game { Name = "OptiScaler " + variant, Root = root, Executable = exe, Executables = [exe] };
+                var install = new Installation(root);
+                install.Install("ReShade", "smoke", [new("dxgi.dll", PeStub()), Installation.DefaultIni()], proxy: "dxgi.dll");
+                var before = Snapshot(root);
+                var prefs = new GamePreferences { OsVariant = variant == OsVariant.Stable ? null : variant };
+                await os.Install(game, prefs, settings, RenoDXCommander.Models.GraphicsApiType.DirectX12, progress);
+                var record = OptiScaler.Record(game) ?? throw new Exception(variant + ": no install record.");
+                var status = InstallationStatus.Read(game);
+                if (!status.Get(OptiScaler.Component).Installed || !status.Get("ReShade").Installed) throw new Exception(variant + ": components not verified after install.");
+                if (!IsOptiScaler(Path.Combine(root, "dxgi.dll"))) throw new Exception(variant + ": dxgi.dll is not OptiScaler.");
+                if (!File.Exists(Path.Combine(root, "ReShade64.dll"))) throw new Exception(variant + ": ReShade was not moved to ReShade64.dll.");
+                var ini = File.ReadAllText(Path.Combine(root, OptiScaler.IniName));
+                foreach (var key in new[] { "LoadReshade=true", "LoadAsiPlugins=true", "ShortcutKey=0x2E" })
+                    if (!ini.Contains(key)) throw new Exception(variant + ": OptiScaler.ini is missing " + key);
+                if (!File.Exists(Path.Combine(root, OptiScaler.OptiPatcherPath))) throw new Exception(variant + ": OptiPatcher was not deployed.");
+                var sr = PeVersion.Read(Path.Combine(root, DlssFiles.Sr)) ?? throw new Exception(variant + ": nvngx_dlss.dll was not deployed.");
+                if (variant == OsVariant.DlssNr && !File.Exists(Path.Combine(root, DlssFiles.Nr))) throw new Exception(variant + ": nvngx_dlssnr.dll was not deployed.");
+                var dirs = Directory.EnumerateDirectories(root).Select(Path.GetFileName).Where(d => d != ".rhi-linux");
+                Console.WriteLine($"{variant}: {OptiScaler.Label(record.Variant, record.Version)} as {record.DllName}, DLSS SR {PeVersion.Format(sr)}, folders: {string.Join(", ", dirs)}");
+                Console.WriteLine($"{variant}: launch options: " + Proton.LaunchOptions("%command%", "dxgi.dll", GameLaunch.Extras(game, prefs)));
+                // Reinstall keeps the user's INI changes; Nightly also deploys Streamline for DLSSG.
+                OptiScaler.SetSetting(game, "Upscalers", "Dx12Upscaler", "xess");
+                if (variant == OsVariant.Nightly) prefs.OsDeployStreamline = true;
+                await os.Install(game, prefs, settings, RenoDXCommander.Models.GraphicsApiType.DirectX12, progress);
+                if (OptiScaler.GetSetting(game, "Upscalers", "Dx12Upscaler") != "xess") throw new Exception(variant + ": reinstall lost the INI change.");
+                if (variant == OsVariant.Nightly && !File.Exists(Path.Combine(root, "OptiScaler", "Streamline", DlssFiles.StreamlineCommon))) throw new Exception(variant + ": Streamline was not deployed.");
+                await OptiScaler.Remove(game);
+                var after = Snapshot(root);
+                var changed = before.Keys.Union(after.Keys).Where(k => before.GetValueOrDefault(k) != after.GetValueOrDefault(k)).ToList();
+                if (changed.Count > 0) throw new Exception(variant + ": removal left differences: " + string.Join(", ", changed));
+                if (Directory.EnumerateDirectories(root).Any(d => Path.GetFileName(d) != ".rhi-linux")) throw new Exception(variant + ": removal left folders behind.");
+                Console.WriteLine($"PASS {variant}: install beside ReShade, INI, OptiPatcher, DLSS DLLs, reinstall and exact removal.");
+            }
+            Console.WriteLine("PASS: OptiScaler smoke test. No installed games were modified.");
+            return 0;
+        }
+        finally { Directory.Delete(temp, true); }
+    }
+}

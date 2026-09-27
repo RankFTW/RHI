@@ -114,13 +114,13 @@ public sealed class REFramework(HttpClient http, Downloads downloads)
     public static IEnumerable<string> LaunchDlls(Game game) => Installed(game) ? ["dinput8"] : [];
 }
 
-// All RHI-managed launch settings for a game: Neural Rendering/DLSS and RE Framework.
+// All RHI-managed launch settings for a game: Neural Rendering/DLSS, RE Framework and OptiScaler.
 public static class GameLaunch
 {
     public static LaunchExtras Extras(Game game, GamePreferences prefs)
     {
         var extras = NeuralRenderingSetup.Extras(game, prefs);
-        var dlls = extras.Dlls.Concat(REFramework.LaunchDlls(game)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var dlls = extras.Dlls.Concat(REFramework.LaunchDlls(game)).Concat(OptiScaler.LaunchDlls(game)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         return extras with { Dlls = dlls };
     }
 }

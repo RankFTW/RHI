@@ -15,5 +15,6 @@
     <Compile Include="../RenoDXCommander/Services/IWikiService.cs" Link="Shared/IWikiService.cs" />
     <Content Include="../manifest.json" Link="manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../dlss_manifest.json" Link="dlss_manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../RenoDXCommander/OptiScaler*.ini" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

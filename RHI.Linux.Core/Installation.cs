@@ -209,6 +209,42 @@ public sealed class Installation
         catch { Recover(); throw; }
     }
 
+    // Renames one managed file in place, e.g. ReShade's dxgi.dll to ReShade64.dll so OptiScaler can
+    // take the proxy name and load ReShade itself. A file that replaced a game original cannot move,
+    // since its backup belongs to the original name.
+    public void Move(string component, string from, string to)
+    {
+        using var guard = Lock();
+        var state = ReadState();
+        var source = LinuxPaths.ResolveCase(_root, from);
+        var file = state.Files.FirstOrDefault(f => f.Component == component && LinuxPaths.ResolveCase(_root, f.Path) == source)
+            ?? throw new IOException($"{from} is not managed by {component}.");
+        if (file.Backup != null) throw new IOException($"{component} replaced the game's own {from}, so it cannot be renamed. Choose another DLL name.");
+        var target = LinuxPaths.ResolveCase(_root, to);
+        if (File.Exists(target) || state.Files.Any(f => LinuxPaths.ResolveCase(_root, f.Path) == target)) throw new IOException($"{target} already exists.");
+        CheckRemoval(file);
+        Begin(state, [file.Path, Path.GetRelativePath(_root, target)]);
+        try
+        {
+            AtomicWrite(target, File.ReadAllBytes(source));
+            File.Delete(source);
+            file.Path = Path.GetRelativePath(_root, target);
+            Commit(state);
+        }
+        catch { Recover(); throw; }
+    }
+
+    public const string ReShadeBesideOptiScaler = "ReShade64.dll";
+    // Where ReShade goes for this proxy: OptiScaler owning the proxy name loads ReShade64.dll instead.
+    public string ReShadeFile(string proxy)
+    {
+        var state = ReadState();
+        var target = LinuxPaths.ResolveCase(_root, proxy);
+        return state.Files.Any(f => f.Component != "ReShade" && LinuxPaths.ResolveCase(_root, f.Path) == target)
+            || state.Files.Any(f => f.Component == "ReShade" && f.Path.Equals(ReShadeBesideOptiScaler, StringComparison.OrdinalIgnoreCase))
+            ? ReShadeBesideOptiScaler : proxy;
+    }
+
     public static string ProxyFor(GraphicsApiType api) => api switch
     {
         GraphicsApiType.DirectX9 => "d3d9.dll",
