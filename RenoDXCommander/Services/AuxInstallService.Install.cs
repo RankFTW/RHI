@@ -124,12 +124,12 @@ public partial class AuxInstallService
         progress?.Report(("ReShade installed!", 100));
 
         // ── Shader deployment ─────────────────────────────────────────────────────
-        // Always deploy shaders locally to the game folder.
-        // Uses Sync (prune + deploy) so switching shader selections properly
-        // removes files from the previous selection.
-        var exclAux = selectedPackIds?
-            .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                StringComparer.OrdinalIgnoreCase);
+        // Build exclusions off the calling thread to avoid blocking the UI thread
+        // on _settingsLock if a background shader pack check holds it concurrently.
+        var exclAux = selectedPackIds == null ? null
+            : await Task.Run(() => selectedPackIds
+                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                    StringComparer.OrdinalIgnoreCase)).ConfigureAwait(false);
         _shaderPackService.SyncGameFolder(installPath, selectedPackIds, exclAux);
 
         var record = new AuxInstalledRecord
@@ -282,7 +282,7 @@ public partial class AuxInstallService
             long? remoteSize = null;
             try
             {
-                var headResp = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, record.SourceUrl));
+                using var headResp = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, record.SourceUrl));
                 if (headResp.IsSuccessStatusCode)
                     remoteSize = headResp.Content.Headers.ContentLength;
                 CrashReporter.Log($"[AuxInstallService.CheckForUpdateAsync] [{record.AddonType}] {record.GameName}: HEAD status={headResp.StatusCode}, CL={remoteSize}");
@@ -294,15 +294,14 @@ public partial class AuxInstallService
             {
                 try
                 {
-                    var rangeReq = new HttpRequestMessage(HttpMethod.Get, record.SourceUrl);
+                    using var rangeReq = new HttpRequestMessage(HttpMethod.Get, record.SourceUrl);
                     rangeReq.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, 0);
-                    var rangeResp = await _http.SendAsync(rangeReq, HttpCompletionOption.ResponseHeadersRead);
+                    using var rangeResp = await _http.SendAsync(rangeReq, HttpCompletionOption.ResponseHeadersRead);
                     if (rangeResp.Content.Headers.ContentRange?.Length is long totalLen)
                         remoteSize = totalLen;
                     else if (rangeResp.IsSuccessStatusCode)
                         remoteSize = rangeResp.Content.Headers.ContentLength;
                     CrashReporter.Log($"[AuxInstallService.CheckForUpdateAsync] [{record.AddonType}] {record.GameName}: Range GET size={remoteSize}");
-                    rangeResp.Dispose();
                 }
                 catch (Exception ex) { CrashReporter.Log($"[AuxInstallService.CheckForUpdateAsync] [{record.AddonType}] Range failed — {ex.Message}"); }
             }
@@ -319,7 +318,7 @@ public partial class AuxInstallService
                     var tempPath = Path.Combine(DownloadPaths.Misc, cacheName + $".update-check-{Guid.NewGuid():N}");
                     Directory.CreateDirectory(DownloadPaths.Misc);
 
-                    var response = await _http.GetAsync(record.SourceUrl);
+                    using var response = await _http.GetAsync(record.SourceUrl);
                     if (response.IsSuccessStatusCode)
                     {
                         var bytes = await response.Content.ReadAsByteArrayAsync();

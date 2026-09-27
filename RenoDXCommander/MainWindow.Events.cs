@@ -54,6 +54,14 @@ public sealed partial class MainWindow
     {
         _crashReporter.Log("[MainWindow.CheckForUpdatesButton_Click] User clicked Check For Updates");
 
+        // Acquire the dialog gate before showing — use WaitDialogGateAsync so we don't skip
+        // if another dialog is briefly open (e.g. MOTD)
+        if (!await DialogService.WaitDialogGateAsync(5))
+        {
+            _crashReporter.Log("[CheckForUpdatesButton_Click] Could not acquire dialog gate");
+            return;
+        }
+
         // Show progress dialog
         var progressPanel = new StackPanel { Spacing = 8 };
         var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
@@ -70,7 +78,10 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        _ = DialogService.ShowSafeAsync(progressDialog);
+
+        // Fire-and-forget the ShowAsync — we'll Hide() it when done
+        // (ShowAsync returns when the dialog is dismissed; we dismiss it via Hide())
+        _ = progressDialog.ShowAsync();
 
         try
         {
@@ -87,13 +98,15 @@ public sealed partial class MainWindow
             // Check app update
             DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking app version...");
             await _dialogService.CheckForAppUpdateAsync();
-
-            progressDialog.Hide();
         }
         catch (Exception ex)
         {
             _crashReporter.Log($"[CheckForUpdatesButton_Click] Error: {ex.Message}");
+        }
+        finally
+        {
             progressDialog.Hide();
+            DialogService.ReleaseDialogGate();
         }
     }
 
@@ -124,7 +137,7 @@ public sealed partial class MainWindow
         _crashReporter.Log("[MainWindow] Addon watch folder reset to default Downloads");
     }
 
-    private void RsIniButton_Click(object sender, RoutedEventArgs e)
+    private async void RsIniButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
@@ -133,24 +146,35 @@ public sealed partial class MainWindow
             var screenshotPath = BuildScreenshotSavePath(card.GameName);
             var overlayHotkey = ViewModel.Settings.OverlayHotkey;
             var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-            if (card.RequiresVulkanInstall)
+            var installPath = card.InstallPath;
+            var gameName = card.GameName;
+            var requiresVulkan = card.RequiresVulkanInstall;
+            var useUeExtended = card.UseUeExtended;
+            var status = card.Status;
+
+            await Task.Run(() =>
             {
-                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
-                VulkanFootprintService.Create(card.InstallPath);
-                // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI)
-                ViewModel.DeployShadersForCard(card.GameName);
-            }
-            else
-                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
+                if (requiresVulkan)
+                {
+                    AuxInstallService.MergeRsVulkanIni(installPath, gameName, screenshotPath, overlayHotkey, screenshotHotkey);
+                    VulkanFootprintService.Create(installPath);
+                }
+                else
+                    AuxInstallService.MergeRsIni(installPath, screenshotPath, overlayHotkey, screenshotHotkey);
 
-            // Apply [renodx] section if UE-Extended is installed
-            if (card.UseUeExtended && card.Status == GameStatus.Installed)
-                AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+                // Apply [renodx] section if UE-Extended is installed
+                if (useUeExtended && status == GameStatus.Installed)
+                    AuxInstallService.ApplyRenoDxNativeHdrSettings(installPath);
 
-            // Force-apply manifest [renodx] INI overrides on redeploy
-            if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
-                && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOvr))
-                AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOvr, forceOverwrite: true);
+                // Force-apply manifest [renodx] INI overrides on redeploy
+                if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
+                    && AuxInstallService.GlobalManifest.RenodxIniOverrides.TryGetValue(gameName, out var iniOvr))
+                    AuxInstallService.ApplyRenodxIniOverrides(installPath, iniOvr, forceOverwrite: true);
+            });
+
+            // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI) — on UI thread
+            if (requiresVulkan)
+                ViewModel.DeployShadersForCard(gameName);
 
             card.RsActionMessage = "✅ reshade.ini merged into game folder.";
         }
@@ -331,64 +355,6 @@ public sealed partial class MainWindow
     }
 
 
-    // ── View toggle ─────────────────────────────────────────────────────────
-
-    private void LayoutToggle_Click(object sender, RoutedEventArgs e)
-    {
-        var previousLayout = ViewModel.CurrentViewLayout;
-        ViewModel.CurrentViewLayout = ViewModel.NextViewLayout();
-        ViewModel.SaveSettingsPublic(); // persist the chosen layout
-
-        // Handle window size locking transitions
-        if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
-        {
-            _windowStateManager.CaptureCurrentBounds();
-            _windowStateManager.ApplyCompactSize();
-            _windowStateManager.SetSizeLocked(true);
-        }
-        else if (previousLayout == ViewLayout.Compact)
-        {
-            // Leaving compact mode — restore all sections to visible first
-            _compactViewBuilder?.LeaveCompactMode();
-            _windowStateManager.SetSizeLocked(false);
-            _windowStateManager.RestoreWindowBounds();
-        }
-
-        // Rebuild content for the new layout
-        switch (ViewModel.CurrentViewLayout)
-        {
-            case ViewLayout.Detail:
-                // Switching to detail mode — repopulate detail panel for selected game if any
-                if (ViewModel.SelectedGame is { } card)
-                {
-                    PopulateDetailPanel(card);
-                    DetailPanel.Visibility = Visibility.Visible;
-                    BuildOverridesPanel(card);
-                    OverridesContainer.Visibility = Visibility.Visible;
-                    NvidiaProfileContainer.Visibility = Visibility.Visible;
-                    ManagementContainer.Visibility = Visibility.Visible;
-                    _detailPanelBuilder.ApplySectionOrder();
-                }
-                break;
-            case ViewLayout.Compact:
-                if (ViewModel.SelectedGame is { } compactCard)
-                    _compactViewBuilder?.EnterCompactMode(compactCard, ViewModel.CompactPageIndex);
-                break;
-        }
-    }
-
-    private void CompactNavLeft_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.NavigateCompactPage(-1);
-        _compactViewBuilder?.NavigateToPage(ViewModel.CompactPageIndex);
-    }
-
-    private void CompactNavRight_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.NavigateCompactPage(1);
-        _compactViewBuilder?.NavigateToPage(ViewModel.CompactPageIndex);
-    }
-
     // ── Per-component install flyout click handlers ──
 
     internal async void CardComponentInstall_Click(object sender, RoutedEventArgs e)
@@ -465,7 +431,7 @@ public sealed partial class MainWindow
         }
     }
 
-    internal void CardCopyRsIni_Click(object sender, RoutedEventArgs e)
+    internal async void CardCopyRsIni_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
@@ -474,19 +440,30 @@ public sealed partial class MainWindow
             var screenshotPath = BuildScreenshotSavePath(card.GameName);
             var overlayHotkey = ViewModel.Settings.OverlayHotkey;
             var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-            if (card.RequiresVulkanInstall)
-            {
-                AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
-                VulkanFootprintService.Create(card.InstallPath);
-                // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI)
-                ViewModel.DeployShadersForCard(card.GameName);
-            }
-            else
-                AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
+            var installPath = card.InstallPath;
+            var gameName = card.GameName;
+            var requiresVulkan = card.RequiresVulkanInstall;
+            var useUeExtended = card.UseUeExtended;
+            var status = card.Status;
 
-            // Apply [renodx] section if UE-Extended is installed
-            if (card.UseUeExtended && card.Status == GameStatus.Installed)
-                AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+            await Task.Run(() =>
+            {
+                if (requiresVulkan)
+                {
+                    AuxInstallService.MergeRsVulkanIni(installPath, gameName, screenshotPath, overlayHotkey, screenshotHotkey);
+                    VulkanFootprintService.Create(installPath);
+                }
+                else
+                    AuxInstallService.MergeRsIni(installPath, screenshotPath, overlayHotkey, screenshotHotkey);
+
+                // Apply [renodx] section if UE-Extended is installed
+                if (useUeExtended && status == GameStatus.Installed)
+                    AuxInstallService.ApplyRenoDxNativeHdrSettings(installPath);
+            });
+
+            // Deploy shaders for Vulkan games (no DLL install, so shaders go with INI) — on UI thread
+            if (requiresVulkan)
+                ViewModel.DeployShadersForCard(gameName);
 
             card.RsActionMessage = "✅ reshade.ini merged into game folder.";
         }
@@ -496,13 +473,14 @@ public sealed partial class MainWindow
         }
     }
 
-    internal void CardCopyUlIni_Click(object sender, RoutedEventArgs e)
+    internal async void CardCopyUlIni_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            AuxInstallService.CopyUlIni(card.InstallPath);
+            var installPath = card.InstallPath;
+            await Task.Run(() => AuxInstallService.CopyUlIni(installPath));
             card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
         }
         catch (Exception ex)
@@ -511,13 +489,14 @@ public sealed partial class MainWindow
         }
     }
 
-    internal void CardCopyDcIni_Click(object sender, RoutedEventArgs e)
+    internal async void CardCopyDcIni_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            AuxInstallService.CopyDcIni(card.InstallPath);
+            var installPath = card.InstallPath;
+            await Task.Run(() => AuxInstallService.CopyDcIni(installPath));
             card.DcActionMessage = "✅ DisplayCommander.ini copied to game folder.";
             card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
         }
@@ -527,7 +506,7 @@ public sealed partial class MainWindow
         }
     }
 
-    internal void CardCopyOsIni_Click(object sender, RoutedEventArgs e)
+    internal async void CardCopyOsIni_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
@@ -539,9 +518,13 @@ public sealed partial class MainWindow
                 card.OsActionMessage = "❌ No OptiScaler.ini found in INIs folder.";
                 return;
             }
-            var destIni = Path.Combine(card.InstallPath, Services.OptiScalerService.IniFileName);
-            File.Copy(sourceIni, destIni, overwrite: true);
-            Services.OptiScalerService.EnforceLoadReshade(destIni);
+            var installPath = card.InstallPath;
+            var destIni = Path.Combine(installPath, Services.OptiScalerService.IniFileName);
+            await Task.Run(() =>
+            {
+                File.Copy(sourceIni, destIni, overwrite: true);
+                Services.OptiScalerService.EnforceLoadReshade(destIni);
+            });
             card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }
@@ -734,13 +717,19 @@ public sealed partial class MainWindow
             await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
 
         // Reset Nexus baseline when user clicks the update button — they're acknowledging the update
+        // NOTE: This runs on the UI thread (LaunchUriAsync returns on the original context).
+        // The ConfigureAwait(false) above is only for the Nexus API call — after that we're back
+        // on the UI thread via the await chain. But to be explicit and safe, wrap UI mutations.
         if (card.Status == GameStatus.UpdateAvailable && card.IsExternalOnly)
         {
-            var nexusService = App.Services.GetRequiredService<INexusUpdateService>();
-            nexusService.ResetBaseline(card.GameName);
-            card.Status = GameStatus.Installed;
-            card.NotifyAll();
-            ViewModel.NotifyUpdateButtonChanged();
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                var nexusService = App.Services.GetRequiredService<INexusUpdateService>();
+                nexusService.ResetBaseline(card.GameName);
+                card.Status = GameStatus.Installed;
+                card.NotifyAll();
+                ViewModel.NotifyUpdateButtonChanged();
+            });
         }
     }
 

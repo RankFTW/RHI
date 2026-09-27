@@ -96,7 +96,7 @@ public partial class OptiScalerService
 
             try
             {
-                var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                using var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 if (!dlResp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.EnsureStagingAsync] Download failed ({dlResp.StatusCode})");
@@ -171,7 +171,19 @@ public partial class OptiScalerService
 
                     var stdoutTask = proc.StandardOutput.ReadToEndAsync();
                     var stderrTask = proc.StandardError.ReadToEndAsync();
-                    proc.WaitForExit(120_000); // 120 second timeout for ~53 MB archive
+
+                    // Use async wait with 120 second timeout for ~53 MB archive
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+                    try
+                    {
+                        await proc.WaitForExitAsync(cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        proc.Kill();
+                        CrashReporter.Log("[OptiScalerService.EnsureStagingAsync] 7z process timed out — killed");
+                        return;
+                    }
 
                     var stderr = await stderrTask;
                     if (!string.IsNullOrWhiteSpace(stderr))
@@ -479,7 +491,7 @@ public partial class OptiScalerService
             Directory.CreateDirectory(OptiPatcherStagingDir);
             try
             {
-                var dlResp = await _http.GetAsync(downloadUrl);
+                using var dlResp = await _http.GetAsync(downloadUrl);
                 if (!dlResp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.EnsureOptiPatcherStagingAsync] Download failed ({dlResp.StatusCode})");
@@ -659,9 +671,9 @@ public partial class OptiScalerService
             string manifestJson;
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, DlssManifestUrl);
+                using var req = new HttpRequestMessage(HttpMethod.Get, DlssManifestUrl);
                 req.Headers.Add("User-Agent", "RHI");
-                var resp = await _http.SendAsync(req);
+                using var resp = await _http.SendAsync(req);
                 if (!resp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.CheckDlssUpdateAsync] Manifest fetch returned {resp.StatusCode}");
@@ -879,7 +891,7 @@ public partial class OptiScalerService
 
             try
             {
-                var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                using var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 if (!dlResp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Download failed ({dlResp.StatusCode})");
@@ -952,7 +964,19 @@ public partial class OptiScalerService
 
                     var stdoutTask = proc.StandardOutput.ReadToEndAsync();
                     var stderrTask = proc.StandardError.ReadToEndAsync();
-                    proc.WaitForExit(120_000);
+
+                    // Use async wait with 120 second timeout for archive extraction
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+                    try
+                    {
+                        await proc.WaitForExitAsync(cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        proc.Kill();
+                        CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] 7z process timed out — killed");
+                        return;
+                    }
 
                     var stderr = await stderrTask;
                     if (!string.IsNullOrWhiteSpace(stderr))
@@ -1154,7 +1178,7 @@ public partial class OptiScalerService
 
             try
             {
-                var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                using var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 if (!dlResp.IsSuccessStatusCode)
                 {
                     CrashReporter.Log($"[OptiScalerService.EnsureDlssNrStagingAsync] Download failed ({dlResp.StatusCode})");

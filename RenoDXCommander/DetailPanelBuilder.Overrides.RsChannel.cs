@@ -13,6 +13,8 @@ public partial class DetailPanelBuilder
     /// <summary>Builds RS Channel Override, Update Inclusion, and Middle Row Grid.</summary>
     private void BuildRsChannelSection(OverridesPanelCtx ctx)
     {
+        _window.ViewModel.SetLastUiAction($"BuildRsChannelSection({ctx.Card.GameName})");
+        CrashReporter.Log($"[BuildRsChannelSection] Enter: '{ctx.Card.GameName}'");
         var card = ctx.Card;
         var gameName = ctx.GameName;
         var isLumaMode = ctx.IsLumaMode;
@@ -179,7 +181,9 @@ public partial class DetailPanelBuilder
                 var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCard != null)
-                    BuildOverridesPanel(refreshCard);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCard));
                 return;
             }
 
@@ -385,7 +389,9 @@ public partial class DetailPanelBuilder
                 var refreshCardCustom = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCardCustom != null)
-                    BuildOverridesPanel(refreshCardCustom);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCardCustom));
                 return;
             }
 
@@ -409,7 +415,9 @@ public partial class DetailPanelBuilder
                 var refreshCardNoAddon = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCardNoAddon != null)
-                    BuildOverridesPanel(refreshCardNoAddon);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCardNoAddon));
                 return;
             }
 
@@ -498,7 +506,9 @@ public partial class DetailPanelBuilder
                 var refreshCardVulkan = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCardVulkan != null)
-                    BuildOverridesPanel(refreshCardVulkan);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCardVulkan));
             }
             else
             {
@@ -516,7 +526,9 @@ public partial class DetailPanelBuilder
                 var refreshCard2 = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (refreshCard2 != null)
-                    BuildOverridesPanel(refreshCard2);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCard2));
             }
 
             _window.ViewModel.NotifyUpdateButtonChanged();
@@ -529,6 +541,8 @@ public partial class DetailPanelBuilder
         ctx.ChannelCombo = channelCombo;
         channelComboInitializing = false;
         ctx.ChannelComboInitializing = false;
+
+        CrashReporter.Log($"[BuildRsChannelSection] ChannelCombo done, building UpdateInclusion: '{ctx.Card.GameName}'");
 
         // ── Global update inclusion (compact: button + summary) ──────────────────
         var capturedCard = card;
@@ -544,7 +558,9 @@ public partial class DetailPanelBuilder
                 if (refreshCard != null)
                 {
                     _window.PopulateDetailPanel(refreshCard);
-                    BuildOverridesPanel(refreshCard);
+                    _window.DispatcherQueue?.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () => BuildOverridesPanel(refreshCard));
                 }
             },
             isDxvkEnabled: card.DxvkEnabled,
@@ -593,5 +609,6 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(middleRowGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
+        CrashReporter.Log($"[BuildRsChannelSection] Exit: '{ctx.Card.GameName}'");
     }
 }

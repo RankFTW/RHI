@@ -37,24 +37,31 @@ public class MassDeployHandler
         if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
 
         int count = 0;
-        foreach (var card in eligible)
+        var screenshotPath = _window.BuildScreenshotSavePath(null); // base path
+        var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
+        var screenshotHotkey = _window.ViewModel.Settings.ScreenshotHotkey;
+        
+        await Task.Run(() =>
         {
-            try
+            foreach (var card in eligible)
             {
-                var screenshotPath = _window.BuildScreenshotSavePath(card.GameName);
-                var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
-                var screenshotHotkey = _window.ViewModel.Settings.ScreenshotHotkey;
-                if (card.RequiresVulkanInstall)
-                    AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, screenshotPath, overlayHotkey, screenshotHotkey);
-                else
-                    AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
-                count++;
+                try
+                {
+                    var gameName = card.GameName;
+                    var installPath = card.InstallPath;
+                    var actualScreenshotPath = _window.BuildScreenshotSavePath(gameName);
+                    if (card.RequiresVulkanInstall)
+                        AuxInstallService.MergeRsVulkanIni(installPath, gameName, actualScreenshotPath, overlayHotkey, screenshotHotkey);
+                    else
+                        AuxInstallService.MergeRsIni(installPath, actualScreenshotPath, overlayHotkey, screenshotHotkey);
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[MassDeployRsIni] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassDeployRsIni] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
         CrashReporter.Log($"[MassDeployRsIni] Deployed reshade.ini to {count} game(s)");
         await ShowDeployResult("ReShade.ini", count);
     }
@@ -74,18 +81,21 @@ public class MassDeployHandler
         if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
 
         int count = 0;
-        foreach (var card in eligible)
+        await Task.Run(() =>
         {
-            try
+            foreach (var card in eligible)
             {
-                AuxInstallService.CopyUlIni(card.InstallPath);
-                count++;
+                try
+                {
+                    AuxInstallService.CopyUlIni(card.InstallPath);
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[MassDeployUlIni] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassDeployUlIni] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
         CrashReporter.Log($"[MassDeployUlIni] Deployed relimiter.ini to {count} game(s)");
         await ShowDeployResult("relimiter.ini", count);
     }
@@ -105,18 +115,21 @@ public class MassDeployHandler
         if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
 
         int count = 0;
-        foreach (var card in eligible)
+        await Task.Run(() =>
         {
-            try
+            foreach (var card in eligible)
             {
-                AuxInstallService.CopyDcIni(card.InstallPath);
-                count++;
+                try
+                {
+                    AuxInstallService.CopyDcIni(card.InstallPath);
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[MassDeployDcIni] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassDeployDcIni] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
         CrashReporter.Log($"[MassDeployDcIni] Deployed DisplayCommander.ini to {count} game(s)");
         await ShowDeployResult("DisplayCommander.ini", count);
     }
@@ -144,18 +157,22 @@ public class MassDeployHandler
         };
         if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
 
-        foreach (var card in eligible)
+        var osHotkey = _window.ViewModel.Settings.OsHotkey;
+        await Task.Run(() =>
         {
-            try
+            foreach (var card in eligible)
             {
-                _optiScalerService.CopyIniToGame(card, _window.ViewModel.Settings.OsHotkey);
-                count++;
+                try
+                {
+                    _optiScalerService.CopyIniToGame(card, osHotkey);
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[MassDeployOsIni] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassDeployOsIni] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
         CrashReporter.Log($"[MassDeployOsIni] Deployed OptiScaler.ini to {count} game(s)");
         await ShowDeployResult("OptiScaler.ini", count);
     }
@@ -278,18 +295,21 @@ public class MassDeployHandler
             .ToList();
 
         int totalDeployed = 0;
-        foreach (var card in selectedGames)
+        await Task.Run(() =>
         {
-            try
+            foreach (var card in selectedGames)
             {
-                int count = PresetPopupHelper.DeployPresets(selectedPresets, card.InstallPath);
-                totalDeployed += count;
+                try
+                {
+                    int count = PresetPopupHelper.DeployPresets(selectedPresets, card.InstallPath);
+                    totalDeployed += count;
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[MassPresetInstall] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[MassPresetInstall] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
         CrashReporter.Log($"[MassPresetInstall] Deployed {selectedPresets.Count} preset(s) to {selectedGames.Count} game(s) ({totalDeployed} total copies)");
 
         if (totalDeployed == 0) return;

@@ -205,8 +205,8 @@ public class ReShadeUpdateService : IReShadeUpdateService
         progress?.Report(("Extracting ReShade DLLs...", 80));
         try
         {
-            _extractor.ExtractFile(exePath, "ReShade64.dll", AuxInstallService.RsStagedPath64);
-            _extractor.ExtractFile(exePath, "ReShade32.dll", AuxInstallService.RsStagedPath32);
+            await _extractor.ExtractFileAsync(exePath, "ReShade64.dll", AuxInstallService.RsStagedPath64);
+            await _extractor.ExtractFileAsync(exePath, "ReShade32.dll", AuxInstallService.RsStagedPath32);
         }
         catch (Exception ex)
         {

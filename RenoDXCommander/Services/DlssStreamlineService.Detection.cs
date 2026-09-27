@@ -244,8 +244,13 @@ public partial class DlssStreamlineService
     /// Skips DLSS DLLs in directories containing OptiScaler.ini (those are
     /// OptiScaler's copies, not the game's originals).
     /// </summary>
-    private void SearchDirectory(string directory, DlssDetectionResult result)
+    private void SearchDirectory(string directory, DlssDetectionResult result, int depth = 0)
     {
+        // Guard against circular symlinks and excessively deep directory trees
+        if (depth > 8) return;
+        // Guard against paths that are clearly not game directories (e.g. Unreal Engine editor installs)
+        if (directory.Length > 300) return;
+
         bool hasOptiScalerIni = File.Exists(Path.Combine(directory, "OptiScaler.ini"));
 
         // Check files in the current directory
@@ -303,16 +308,18 @@ public partial class DlssStreamlineService
         }
         catch (UnauthorizedAccessException) { }
         catch (DirectoryNotFoundException) { }
+        catch (IOException) { } // catches path-too-long errors
 
         // Recurse into subdirectories, skipping any that are inaccessible
         try
         {
             foreach (var subDir in Directory.EnumerateDirectories(directory))
             {
-                SearchDirectory(subDir, result);
+                SearchDirectory(subDir, result, depth + 1);
             }
         }
         catch (UnauthorizedAccessException) { }
         catch (DirectoryNotFoundException) { }
+        catch (IOException) { } // catches path-too-long and circular symlink errors
     }
 }

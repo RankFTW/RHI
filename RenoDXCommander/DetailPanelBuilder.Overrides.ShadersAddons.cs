@@ -13,6 +13,7 @@ public partial class DetailPanelBuilder
     /// <summary>Builds the Shaders/Addons row, Launch executable, and Reset Overrides handler.</summary>
     private void BuildShadersAddonsSection(OverridesPanelCtx ctx)
     {
+        _window.ViewModel.SetLastUiAction($"BuildShadersAddonsSection({ctx.Card.GameName})");
         var card = ctx.Card;
         var gameName = ctx.GameName;
         var isLumaMode = ctx.IsLumaMode;
@@ -225,7 +226,9 @@ public partial class DetailPanelBuilder
                             var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                                 c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                             if (refreshCard != null)
-                                BuildOverridesPanel(refreshCard);
+                                _window.DispatcherQueue?.TryEnqueue(
+                                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                                    () => BuildOverridesPanel(refreshCard));
                         }
                     }
                 }
@@ -469,7 +472,7 @@ public partial class DetailPanelBuilder
             addonModeCombo.SelectedItem = "Global";
             addonComboInitializing = false;
             if (ctx.RenderPathCombo != null) ctx.RenderPathCombo.SelectedItem = "DirectX";
-            ctx.DllOverrideToggle.IsOn = false;
+            ctx.ResetDllOverrides?.Invoke();
             // Reset update inclusion to all-included
             if (_window.ViewModel.IsUpdateAllExcludedReShade(ctx.CapturedName, card.Source))
                 _window.ViewModel.ToggleUpdateAllExclusionReShade(ctx.CapturedName, card.Source);
@@ -521,7 +524,10 @@ public partial class DetailPanelBuilder
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
                 if (targetCard != null)
+                {
                     _window.ViewModel.DisableDllOverride(targetCard);
+                    targetCard.NotifyAll();
+                }
             }
 
             // Include all in Update All
@@ -548,15 +554,18 @@ public partial class DetailPanelBuilder
                     _window.ViewModel.SetUseNormalReShade(targetCard, false);
             }
 
-            // Reset DXVK toggles
-            if (ctx.DxvkToggle != null)
+            // Reset DXVK — uninstall if active, clear variant override and Lilium preset
             {
-                ctx.DxvkToggle.IsOn = false;
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                    c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase));
-                if (targetCard != null && targetCard.DxvkEnabled)
+                    c.GameName.Equals(ctx.CapturedName, StringComparison.OrdinalIgnoreCase)
+                    && (string.IsNullOrEmpty(card.Source) || c.Source == card.Source));
+                if (targetCard != null && (targetCard.DxvkEnabled
+                    || targetCard.DxvkStatus == GameStatus.Installed
+                    || targetCard.DxvkStatus == GameStatus.UpdateAvailable))
                     _ = _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
             }
+            _window.ViewModel.SetDxvkVariantOverride(ctx.CapturedName, null, ctx.Card.Source);
+            _window.ViewModel.SetLiliumPreset(ctx.CapturedName, 0, ctx.Card.Source);
 
             // Reset DXVK update exclusion via the shared Update Inclusion system
             if (_window.ViewModel.IsUpdateAllExcludedDxvk(ctx.CapturedName, card.Source))

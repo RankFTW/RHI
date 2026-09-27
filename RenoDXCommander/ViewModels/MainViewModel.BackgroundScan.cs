@@ -42,6 +42,10 @@ public partial class MainViewModel
                 try { await _pcgwService.LoadCacheAsync(); await _pcgwService.LoadApiCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
+            var pcgwCentralTask = Task.Run(async () => {
+                try { await _pcgwService.LoadCentralDataAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService central data load failed — {ex.Message}"); }
+            });
             var uwFixInitTask = Task.Run(async () => {
                 try { await _uwFixService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] UltrawideFixService init failed — {ex.Message}"); }
@@ -54,12 +58,12 @@ public partial class MainViewModel
             // Launch all background tasks (identical to InitializeAsync)
             var wikiTask        = _wikiService.FetchAllAsync();
             var lumaTask        = _lumaService.FetchCompletedModsAsync();
+            var lumaRelTask     = _lumaService.FetchReleasesModsAsync();
             var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
             var manifestTask    = _manifestService.FetchAsync();
-            // DB fetch — only when dev-unlocked and source is not WikiOnly
-            var dbTask = (DevUnlockService.IsUnlocked && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+            var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? _renoDxDbService.FetchAllAsync()
-                : Task.FromResult<(List<GameMod>, Dictionary<string, RenoDXDbUnrealEntry>)>((new(), new(StringComparer.OrdinalIgnoreCase)));
+                : Task.FromResult(new DbFetchResult(new(), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase)));
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -224,18 +228,25 @@ public partial class MainViewModel
             // Extract DB results and merge with wiki according to source setting
             try
             {
-                var (dbMods, dbUnreal) = await dbTask;
-                _dbMods = dbMods;
-                _dbUnrealEntries = dbUnreal;
-                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries");
+                var dbResult = await dbTask;
+                _dbMods = dbResult.Mods;
+                _dbUnrealEntries = dbResult.UnrealEntries;
+                _dbUnityEntries  = dbResult.UnityEntries;
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries, {_dbUnityEntries.Count} Unity entries");
             }
             catch (Exception ex)
             {
                 _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch failed — {ex.Message}");
-                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase);
+                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase); _dbUnityEntries = new(StringComparer.OrdinalIgnoreCase);
             }
             MergeDbSources();
-            try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); }
+            try
+            {
+                var wikiLuma = lumaTask.IsCompletedSuccessfully ? await lumaTask : new();
+                var relLuma  = lumaRelTask.IsCompletedSuccessfully ? await lumaRelTask : new();
+                _lumaMods = LumaService.MergeLumaMods(wikiLuma, relLuma);
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods: {wikiLuma.Count} wiki + {relLuma.Count} releases = {_lumaMods.Count} merged");
+            }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
             try { _lumaGenericEntries = lumaUeTask.IsCompletedSuccessfully ? await lumaUeTask : new(StringComparer.OrdinalIgnoreCase); }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma UE entries failed — {ex.Message}"); _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase); }
@@ -244,7 +255,7 @@ public partial class MainViewModel
             if (!wikiFetchFailed)
             {
                 var currentModNames = _allMods
-                    .Where(m => m.SnapshotUrl != null) // Only mods with downloadable addons
+                    .Where(m => m.SnapshotUrl != null || m.NexusUrl != null) // Mods with any downloadable source
                     .Select(m => m.Name)
                     .ToList();
 
@@ -365,6 +376,7 @@ public partial class MainViewModel
             _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Awaiting background init tasks...");
             await nexusInitTask;
             await pcgwCacheTask;
+            await pcgwCentralTask;
             await uwFixInitTask;
             await ultraPlusInitTask;
             _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Background init tasks complete");
@@ -442,24 +454,34 @@ public partial class MainViewModel
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();
 
+                // Start heartbeat timer (fires every 10s on a background thread)
+                // Keeps logging even when the UI is frozen — lets us pinpoint freeze timing.
+                StartHeartbeatTimer();
+
                 // Fire-and-forget: scrape PCGW API info for games that have a URL but no cached info yet.
                 // Runs after BuildCards so _allCards is fully populated.
+                // Capped at 20 per session — spreads the load across multiple launches.
                 _ = Task.Run(async () =>
                 {
                     try
                     {
+                        const int ApiScrapeCap = 20;
                         int scraped = 0;
                         foreach (var card in _allCards)
                         {
+                            if (scraped >= ApiScrapeCap) break;
                             if (string.IsNullOrEmpty(card.PcgwUrl)) continue;
+                            // Skip if the centralized pcgw_data.json already covers this game —
+                            // the centralized data is authoritative and the per-page scrape is redundant.
+                            if (_pcgwService.IsInCentralData(card.GameName, card.DetectedGame?.SteamAppId)) continue;
                             if (_pcgwService.GetCachedApiInfo(card.GameName) != null) continue;
+                            // Rate limiting (serialization + minimum gap between requests)
+                            // is enforced inside PcgwService — no caller-side delay needed.
                             await _pcgwService.FetchApiInfoAsync(card.GameName, card.PcgwUrl).ConfigureAwait(false);
                             scraped++;
-                            // Gentle rate limit — avoid hammering PCGW
-                            await Task.Delay(300).ConfigureAwait(false);
                         }
                         if (scraped > 0)
-                            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Scraped PCGW API info for {scraped} game(s)");
+                            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Scraped PCGW API info for {scraped} game(s) (cap={ApiScrapeCap})");
                     }
                     catch (Exception ex)
                     {
@@ -474,7 +496,7 @@ public partial class MainViewModel
             {
                 StatusText = offlineMode
                     ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
-                    : $"{detectedGames.Count} games detected · {InstalledCount} mods installed";
+                    : $"{detectedGames.Count} games detected · {InstalledCount} ReShade installs";
                 SubStatusText = "";
 
                 // Re-scroll to selected game after merge (cards may have shifted)
@@ -559,10 +581,15 @@ public partial class MainViewModel
                         .Select(card =>
                         {
                             var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-                            var exclusions = effectiveSelection?
-                                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                                    StringComparer.OrdinalIgnoreCase);
-                            return Task.Run(() => _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions));
+                            if (CrashReporter.VerboseLogging || effectiveSelection == null)
+                                _crashReporter.Log($"[BackgroundScan.SyncShaders] '{card.GameName}' — ShaderMode={card.ShaderModeOverride ?? "null"}, sel={(effectiveSelection == null ? "null" : string.Join(",", effectiveSelection))}");
+                            return Task.Run(() =>
+                            {
+                                var exclusions = effectiveSelection?
+                                    .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                                        StringComparer.OrdinalIgnoreCase);
+                                _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions);
+                            });
                         });
                     await Task.WhenAll(syncTasks);
                 }
@@ -648,94 +675,106 @@ public partial class MainViewModel
 
         var cardsToAdd = new List<GameCardViewModel>();
 
+        // Collect update actions — we'll batch them on the UI thread to avoid cross-thread PropertyChanged
+        var updateActions = new List<Action>();
+
         // For each fresh card: update existing or mark as new
         foreach (var fresh in freshCards)
         {
             var freshKey = GameKey.FromCard(fresh.GameName, fresh.Source).ToKey();
             if (existingByKey.TryGetValue(freshKey, out var existing))
             {
-                // Update mutable properties in-place so WinUI bindings fire
-                // Preserve UpdateAvailable status if the fresh scan shows Installed
-                // (the update check already determined an update exists — don't lose it)
-                existing.Status             = (existing.Status == GameStatus.UpdateAvailable && fresh.Status == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.Status;
-                existing.RsStatus           = (existing.RsStatus == GameStatus.UpdateAvailable && fresh.RsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.RsStatus;
-                existing.UlStatus           = (existing.UlStatus == GameStatus.UpdateAvailable && fresh.UlStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.UlStatus;
-                existing.DcStatus           = (existing.DcStatus == GameStatus.UpdateAvailable && fresh.DcStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.DcStatus;
-                existing.OsStatus           = (existing.OsStatus == GameStatus.UpdateAvailable && fresh.OsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.OsStatus;
-                existing.RefStatus          = (existing.RefStatus == GameStatus.UpdateAvailable && fresh.RefStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.RefStatus;
-                existing.LumaStatus         = (existing.LumaStatus == GameStatus.UpdateAvailable && fresh.LumaStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : fresh.LumaStatus;
-                existing.Mod                = fresh.Mod;
-                existing.InstalledRecord    = fresh.InstalledRecord;
-                existing.RsRecord           = fresh.RsRecord;
-                existing.NexusModsUrl       = fresh.NexusModsUrl;
-                existing.PcgwUrl            = fresh.PcgwUrl;
-                existing.UwFixUrl        = fresh.UwFixUrl;
-                existing.UwFixSource     = fresh.UwFixSource;
-                existing.UltraPlusUrl    = fresh.UltraPlusUrl;
-                existing.EngineHint         = fresh.EngineHint;
-                existing.GraphicsApi        = fresh.GraphicsApi;
-                existing.Is32Bit            = fresh.Is32Bit;
-                existing.WikiStatus         = fresh.WikiStatus;
-                existing.Maintainer         = fresh.Maintainer;
-                existing.InstallPath        = fresh.InstallPath;
-                existing.Source             = fresh.Source;
-                existing.IsGenericMod       = fresh.IsGenericMod;
-                existing.IsExternalOnly     = fresh.IsExternalOnly;
-                existing.ExternalUrl        = fresh.ExternalUrl;
-                existing.ExternalLabel      = fresh.ExternalLabel;
-                existing.NexusUrl           = fresh.NexusUrl;
-                existing.DiscordUrl         = fresh.DiscordUrl;
-                existing.NameUrl            = fresh.NameUrl;
-                existing.Notes              = fresh.Notes;
-                existing.NotesUrl           = fresh.NotesUrl;
-                existing.NotesUrlLabel      = fresh.NotesUrlLabel;
-                existing.UseUeExtended      = fresh.UseUeExtended;
-                existing.IsRtxHdrEnabled    = fresh.IsRtxHdrEnabled;
-                existing.InstalledAddonFileName = fresh.InstalledAddonFileName;
-                existing.RdxInstalledVersion    = fresh.RdxInstalledVersion;
-                existing.RsInstalledFile        = fresh.RsInstalledFile;
-                existing.RsInstalledVersion     = fresh.RsInstalledVersion;
-                existing.DetectedGame           = fresh.DetectedGame;
-                existing.DetectedApis           = fresh.DetectedApis;
-                existing.IsDualApiGame          = fresh.IsDualApiGame;
-                existing.LumaMod                = fresh.LumaMod;
-                existing.IsLumaMode             = false;
-                existing.LumaRecord             = fresh.LumaRecord;
-                existing.LumaNotes              = fresh.LumaNotes;
-                existing.LumaNotesUrl           = fresh.LumaNotesUrl;
-                existing.LumaNotesUrlLabel      = fresh.LumaNotesUrlLabel;
-                existing.LumaHdrSupported       = fresh.LumaHdrSupported;
-                existing.LumaDlssFsrSupported   = fresh.LumaDlssFsrSupported;
-                existing.IsNativeHdrGame        = fresh.IsNativeHdrGame;
-                existing.IsManifestUeExtended   = fresh.IsManifestUeExtended;
-                existing.LumaRenodxCompatible   = fresh.LumaMod != null;
-                existing.EngineIniProjectOverride = fresh.EngineIniProjectOverride;
-                existing.DllOverrideEnabled      = fresh.DllOverrideEnabled;
-                existing.ExcludeFromUpdateAllReShade = fresh.ExcludeFromUpdateAllReShade;
-                existing.ExcludeFromUpdateAllRenoDx  = fresh.ExcludeFromUpdateAllRenoDx;
-                existing.ExcludeFromUpdateAllUl      = fresh.ExcludeFromUpdateAllUl;
-                existing.ExcludeFromUpdateAllDc      = fresh.ExcludeFromUpdateAllDc;
-                existing.UseNormalReShade        = fresh.UseNormalReShade;
-                existing.ShaderModeOverride      = fresh.ShaderModeOverride;
-                existing.UlInstalledFile         = fresh.UlInstalledFile;
-                existing.UlInstalledVersion      = fresh.UlInstalledVersion;
-                existing.DcInstalledFile         = fresh.DcInstalledFile;
-                existing.DcInstalledVersion      = fresh.DcInstalledVersion;
-                existing.OsInstalledFile         = fresh.OsInstalledFile;
-                existing.OsInstalledVersion      = fresh.OsInstalledVersion;
-                existing.RefRecord               = fresh.RefRecord;
-                existing.RefInstalledVersion     = fresh.RefInstalledVersion;
+                // Capture for closure
+                var e = existing;
+                var f = fresh;
 
-                // ── DXVK fields ──────────────────────────────────────────
-                existing.DxvkStatus              = fresh.DxvkStatus;
-                existing.DxvkInstalledVersion    = fresh.DxvkInstalledVersion;
-                existing.DxvkRecord              = fresh.DxvkRecord;
-                existing.DxvkEnabled             = fresh.DxvkEnabled;
-                existing.ExcludeFromUpdateAllDxvk = fresh.ExcludeFromUpdateAllDxvk;
+                // Queue the property updates to run on UI thread
+                updateActions.Add(() =>
+                {
+                    // Update mutable properties in-place so WinUI bindings fire
+                    // Preserve UpdateAvailable status if the fresh scan shows Installed
+                    // (the update check already determined an update exists — don't lose it)
+                    e.Status             = (e.Status == GameStatus.UpdateAvailable && f.Status == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.Status;
+                    e.RsStatus           = (e.RsStatus == GameStatus.UpdateAvailable && f.RsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.RsStatus;
+                    e.UlStatus           = (e.UlStatus == GameStatus.UpdateAvailable && f.UlStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.UlStatus;
+                    e.DcStatus           = (e.DcStatus == GameStatus.UpdateAvailable && f.DcStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.DcStatus;
+                    e.OsStatus           = (e.OsStatus == GameStatus.UpdateAvailable && f.OsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.OsStatus;
+                    e.RefStatus          = (e.RefStatus == GameStatus.UpdateAvailable && f.RefStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.RefStatus;
+                    e.LumaStatus         = (e.LumaStatus == GameStatus.UpdateAvailable && f.LumaStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.LumaStatus;
+                    e.Mod                = f.Mod;
+                    e.InstalledRecord    = f.InstalledRecord;
+                    e.RsRecord           = f.RsRecord;
+                    e.NexusModsUrl       = f.NexusModsUrl;
+                    e.PcgwUrl            = f.PcgwUrl;
+                    e.UwFixUrl        = f.UwFixUrl;
+                    e.UwFixSource     = f.UwFixSource;
+                    e.UltraPlusUrl    = f.UltraPlusUrl;
+                    e.EngineHint         = f.EngineHint;
+                    e.GraphicsApi        = f.GraphicsApi;
+                    e.Is32Bit            = f.Is32Bit;
+                    e.WikiStatus         = f.WikiStatus;
+                    e.Maintainer         = f.Maintainer;
+                    e.InstallPath        = f.InstallPath;
+                    e.Source             = f.Source;
+                    e.IsGenericMod       = f.IsGenericMod;
+                    e.IsExternalOnly     = f.IsExternalOnly;
+                    e.ExternalUrl        = f.ExternalUrl;
+                    e.ExternalLabel      = f.ExternalLabel;
+                    e.NexusUrl           = f.NexusUrl;
+                    e.DiscordUrl         = f.DiscordUrl;
+                    e.NameUrl            = f.NameUrl;
+                    e.Notes              = f.Notes;
+                    e.NotesUrl           = f.NotesUrl;
+                    e.NotesUrlLabel      = f.NotesUrlLabel;
+                    e.UseUeExtended      = f.UseUeExtended;
+                    e.IsRtxHdrEnabled    = f.IsRtxHdrEnabled;
+                    e.InstalledAddonFileName = f.InstalledAddonFileName;
+                    e.RdxInstalledVersion    = f.RdxInstalledVersion;
+                    e.RsInstalledFile        = f.RsInstalledFile;
+                    e.RsInstalledVersion     = f.RsInstalledVersion;
+                    e.DetectedGame           = f.DetectedGame;
+                    e.DetectedApis           = f.DetectedApis;
+                    e.IsDualApiGame          = f.IsDualApiGame;
+                    e.LumaMod                = f.LumaMod;
+                    e.IsLumaMode             = false;
+                    e.LumaRecord             = f.LumaRecord;
+                    e.LumaNotes              = f.LumaNotes;
+                    e.LumaNotesUrl           = f.LumaNotesUrl;
+                    e.LumaNotesUrlLabel      = f.LumaNotesUrlLabel;
+                    e.LumaHdrSupported       = f.LumaHdrSupported;
+                    e.LumaDlssFsrSupported   = f.LumaDlssFsrSupported;
+                    e.IsNativeHdrGame        = f.IsNativeHdrGame;
+                    e.IsManifestUeExtended   = f.IsManifestUeExtended;
+                    e.LumaRenodxCompatible   = f.LumaMod != null;
+                    e.EngineIniProjectOverride = f.EngineIniProjectOverride;
+                    e.GameConfigRootPath      = f.GameConfigRootPath;
+                    e.DllOverrideEnabled      = f.DllOverrideEnabled;
+                    e.ExcludeFromUpdateAllReShade = f.ExcludeFromUpdateAllReShade;
+                    e.ExcludeFromUpdateAllRenoDx  = f.ExcludeFromUpdateAllRenoDx;
+                    e.ExcludeFromUpdateAllUl      = f.ExcludeFromUpdateAllUl;
+                    e.ExcludeFromUpdateAllDc      = f.ExcludeFromUpdateAllDc;
+                    e.UseNormalReShade        = f.UseNormalReShade;
+                    e.ShaderModeOverride      = f.ShaderModeOverride;
+                    e.UlInstalledFile         = f.UlInstalledFile;
+                    e.UlInstalledVersion      = f.UlInstalledVersion;
+                    e.DcInstalledFile         = f.DcInstalledFile;
+                    e.DcInstalledVersion      = f.DcInstalledVersion;
+                    e.OsInstalledFile         = f.OsInstalledFile;
+                    e.OsInstalledVersion      = f.OsInstalledVersion;
+                    e.RefRecord               = f.RefRecord;
+                    e.RefInstalledVersion     = f.RefInstalledVersion;
 
-                // ── DLSS / Streamline fields ─────────────────────────────
-                if (fresh.DlssDetection != null)
-                    existing.ApplyDlssDetection(fresh.DlssDetection);
+                    // ── DXVK fields ──────────────────────────────────────────
+                    e.DxvkStatus              = f.DxvkStatus;
+                    e.DxvkInstalledVersion    = f.DxvkInstalledVersion;
+                    e.DxvkRecord              = f.DxvkRecord;
+                    e.DxvkEnabled             = f.DxvkEnabled;
+                    e.ExcludeFromUpdateAllDxvk = f.ExcludeFromUpdateAllDxvk;
+
+                    // ── DLSS / Streamline fields ─────────────────────────────
+                    if (f.DlssDetection != null)
+                        e.ApplyDlssDetection(f.DlssDetection);
+                });
             }
             else
             {
@@ -749,17 +788,25 @@ public partial class MainViewModel
             .Where(c => !freshKeys.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey()) && !c.IsManuallyAdded)
             .ToList();
 
-        foreach (var stale in cardsToRemove)
-            _allCards.Remove(stale);
-
-        // Add new games
-        _allCards.AddRange(cardsToAdd);
-
         _crashReporter.Log($"[MergeCards] Updated {freshCards.Count - cardsToAdd.Count} existing, added {cardsToAdd.Count} new, removed {cardsToRemove.Count} stale");
 
-        // Preserve SelectedGame: if still in list keep it, if removed select first card
+        // Execute all mutations on the UI thread to prevent cross-thread PropertyChanged issues
         DispatcherQueue?.TryEnqueue(() =>
         {
+            // Apply all property updates
+            foreach (var action in updateActions)
+                action();
+
+            // Remove stale cards
+            foreach (var stale in cardsToRemove)
+                _allCards.Remove(stale);
+
+            // Add new games
+            foreach (var newCard in cardsToAdd)
+                newCard.DispatcherQueue = DispatcherQueue;
+            _allCards.AddRange(cardsToAdd);
+
+            // Preserve SelectedGame: if still in list keep it, if removed select first card
             if (SelectedGame != null && !_allCards.Contains(SelectedGame))
                 SelectedGame = _allCards.Count > 0 ? _allCards[0] : null;
 

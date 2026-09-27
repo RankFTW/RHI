@@ -524,6 +524,47 @@ public partial class AuxInstallService
     }
 
     /// <summary>
+    /// Applies per-game [renodx] INI upgrades from the Unity DB to the game's reshade.ini.
+    /// Each (Key, Value) pair is force-written into the [renodx] section, overwriting any
+    /// existing value. Keys not present in the list are left untouched.
+    /// No-op when upgrades is empty or reshade.ini doesn't exist.
+    /// </summary>
+    /// <param name="gameDir">Game install directory.</param>
+    /// <param name="upgrades">Parsed upgrade pairs from RenoDXDbUnityEntry.ParsedUpgrades.</param>
+    public static void ApplyUnityRenodxUpgrades(string gameDir, List<(string Key, string Value)> upgrades)
+    {
+        if (upgrades == null || upgrades.Count == 0) return;
+
+        var iniFilePath = Path.Combine(gameDir, "reshade.ini");
+        if (!File.Exists(iniFilePath)) return;
+
+        try
+        {
+            var ini = ParseIni(File.ReadAllLines(iniFilePath));
+            const string section = "renodx";
+
+            if (!ini.TryGetValue(section, out var keys))
+            {
+                keys = new OrderedDict();
+                ini[section] = keys;
+            }
+
+            foreach (var (key, value) in upgrades)
+            {
+                keys[key] = value;
+                CrashReporter.Log($"[AuxInstallService.ApplyUnityRenodxUpgrades] {key}={value} in '{gameDir}'");
+            }
+
+            WriteIni(iniFilePath, ini);
+            CrashReporter.Log($"[AuxInstallService.ApplyUnityRenodxUpgrades] Applied {upgrades.Count} upgrade(s) to '{iniFilePath}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.ApplyUnityRenodxUpgrades] Failed for '{gameDir}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Removes the [renodx] section from reshade.ini when UE-Extended is uninstalled.
     /// </summary>
     public static void RemoveRenoDxNativeHdrSettings(string gameDir)
@@ -1797,5 +1838,93 @@ public partial class AuxInstallService
         ApplyEngineIniCustomKeys(installPath, entries, projectNameOverride, gameName, store);
         CrashReporter.Log($"[AuxInstallService.ApplyEngineIniFromFileAsync] Applied {entries.Count} key(s) from '{filename}' to '{gameName ?? installPath}'");
         return true;
+    }
+
+    // ── AppData / game config root resolution ────────────────────────────────────
+
+    /// <summary>
+    /// Resolves the game's AppData / Documents config root folder.
+    /// Used to determine whether the AppData button should be shown for a game.
+    /// Pre-compute this on a background thread (BuildCards / CacheLoad) and cache
+    /// the result on <see cref="ViewModels.GameCardViewModel.GameConfigRootPath"/> so
+    /// the UI thread never performs filesystem I/O when painting the detail panel.
+    /// Returns null when no resolvable config folder is found.
+    /// </summary>
+    public static string? ResolveGameConfigRoot(string installPath, string? engineIniProjectOverride, string? gameName)
+    {
+        var projectName = engineIniProjectOverride ?? ResolveUeProjectName(installPath ?? "");
+
+        // If the override is a full path (or pipe-separated paths), resolve directly
+        if (!string.IsNullOrEmpty(engineIniProjectOverride)
+            && (engineIniProjectOverride.Contains('\\') || engineIniProjectOverride.Contains('/')))
+        {
+            var candidates = engineIniProjectOverride.Split('|');
+            foreach (var candidate in candidates)
+            {
+                var expanded = Environment.ExpandEnvironmentVariables(candidate.Trim());
+                if (Directory.Exists(expanded)) return expanded;
+            }
+            return null;
+        }
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        // Check %LocalAppData%\{projectName}\
+        if (!string.IsNullOrEmpty(projectName))
+        {
+            var dir = Path.Combine(localAppData, projectName);
+            if (Directory.Exists(dir)) return dir;
+        }
+
+        // Check Documents\My Games\{gameName}\
+        if (!string.IsNullOrEmpty(gameName))
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var myGamesDir = Path.Combine(docs, "My Games", gameName);
+            if (Directory.Exists(myGamesDir)) return myGamesDir;
+
+            // Try stripped name (® ™ ©)
+            var stripped = gameName.Replace("®", "").Replace("™", "").Replace("©", "").Trim();
+            if (stripped != gameName)
+            {
+                myGamesDir = Path.Combine(docs, "My Games", stripped);
+                if (Directory.Exists(myGamesDir)) return myGamesDir;
+            }
+        }
+
+        // Check in-game directory: {GameRoot}\{ProjectName}\Saved\
+        if (!string.IsNullOrEmpty(installPath))
+        {
+            var normalized = installPath.Replace('/', '\\').TrimEnd('\\');
+            var parts = normalized.Split('\\');
+            for (int i = parts.Length - 1; i > 0; i--)
+            {
+                if (parts[i].Equals("Binaries", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Project folder is immediately above Binaries
+                    var projectDir = string.Join('\\', parts.Take(i));
+                    var savedDir = Path.Combine(projectDir, "Saved");
+                    if (Directory.Exists(savedDir)) return projectDir;
+
+                    // Also check sibling folders in the game root
+                    if (i - 1 > 0)
+                    {
+                        var gameRoot = string.Join('\\', parts.Take(i - 1));
+                        try
+                        {
+                            foreach (var subDir in Directory.EnumerateDirectories(gameRoot))
+                            {
+                                var subSaved = Path.Combine(subDir, "Saved");
+                                if (Directory.Exists(subSaved)) return subDir;
+                            }
+                        }
+                        catch { }
+                    }
+                    break;
+                }
+            }
+        }
+
+        return null;
     }
 }

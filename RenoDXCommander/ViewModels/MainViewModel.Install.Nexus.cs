@@ -210,7 +210,7 @@ public partial class MainViewModel
             {
                 // Use 7-Zip for extraction (same as the rest of RHI)
                 var sevenZip = App.Services.GetRequiredService<ISevenZipExtractor>();
-                var sevenZipExe = sevenZip.Find7ZipExe();
+                var sevenZipExe = await sevenZip.Find7ZipExeAsync();
                 if (!string.IsNullOrEmpty(sevenZipExe))
                 {
                     var psi = new System.Diagnostics.ProcessStartInfo(sevenZipExe,
@@ -222,7 +222,9 @@ public partial class MainViewModel
                         RedirectStandardError  = true,
                     };
                     using var proc = System.Diagnostics.Process.Start(psi)!;
-                    proc.WaitForExit(60_000);
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                    try { await proc.WaitForExitAsync(cts.Token); }
+                    catch (OperationCanceledException) { try { proc.Kill(); } catch { } }
                 }
                 else
                 {
@@ -332,8 +334,8 @@ public partial class MainViewModel
                         _addonFileCache[card.InstallPath.ToLowerInvariant()] = addonFileName;
 
                     card.NotifyAll();
-                    SaveLibrary();
                 });
+                _ = Task.Run(() => SaveLibrary());
             }
             finally
             {

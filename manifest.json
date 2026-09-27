@@ -21,6 +21,7 @@
     "Apple TV",
     "iTunes",
     "Arkham Knight Rocksteady Themed Batmobile Skin",
+    "Banishers: Ghosts of New Eden - The Wanderer Set DLC",
     "Blender",
     "Battle.net.15492",
     "Battle.net.15561",
@@ -178,6 +179,7 @@
     "Dishonored 2": "Dishonored 2 \u002B Death of the Outsider",
     "Dishonored: Death of the Outsider": "Dishonored 2 \u002B Death of the Outsider",
     "FINAL FANTASY VII REMAKE INTERGRADE": "Final Fantasy VII Remake",
+    "FINAL FANTASY XV WINDOWS EDITION": "Final Fantasy XV",
     "LEGO\u00AE City Undercover": "Lego City: Undercover",
     "LEGO City Undercover": "Lego City: Undercover",
     "Mafia III: Definitive Edition": "Mafia III",
@@ -185,12 +187,18 @@
     "Metro 2033 Redux": "Metro Redux (2033 and Last Light)",
     "Metro: Last Light Redux": "Metro Redux (2033 and Last Light)",
     "Nioh: Complete Edition": "Nioh",
-    "Trine 5: A Clockwork Conspiracy": "Trine 5"
+    "Trine 5: A Clockwork Conspiracy": "Trine 5",
+    "L.A. Noire": "L.A. Noire",
+    "Sekiro™: Shadows Die Twice": "Sekiro",
+    "Sekiro™: Shadows Die Twice - GOTY Edition": "Sekiro"
   },
   "installPathOverrides": {
     "Warhammer 40,000: Space Marine 2": "client_pc\\root\\bin\\pc",
     "Anno 117 - Pax Romana": "Bin\\Win64",
     "Anno 117: Pax Romana": "Bin\\Win64",
+    "007 First Light": "Retail",
+    "Mass Effect (2007)": "Binaries",
+    "Mount & Blade II: Bannerlord": "bin\\Win64_Shipping_Client",
     "Borderlands\u00AE 4": "OakGame\\Binaries\\Win64",
     "Borderlands 4": "OakGame\\Binaries\\Win64",
     "Tom Clancy\u0027s Splinter Cell Blacklist": "src\\SYSTEM",
@@ -225,8 +233,10 @@
     "Mirror\u0027s Edge": "Binaries",
     "Mortal Kombat 11": "Binaries\\Retail",
     "Of Ash and Steel": "ofAshAndSteelGame\\Binaries\\Win64",
+    "Overwatch": "_retail_",
     "Project Motor Racing": "x64",
     "SILENT HILL 2": "SHProto\\Binaries\\Win64",
+    "SILENT HILL: Townfall": "Townfall\\Binaries\\Win64",
     "Stellar Blade\u2122": "SB\\Binaries\\Win64",
     "Satisfactory": "Engine\\Binaries\\Win64",
     "The Witcher 3: Wild Hunt": "bin\\x64_dx12",
@@ -390,10 +400,12 @@
     }
   },
   "_comment_engine": "=== ENGINE \u0026 GRAPHICS API ===\nOverride the auto-detected engine type, display label, and graphics API for games where detection fails or gives the wrong result.\nengineOverrides controls mod fallback logic (Unreal/Unity/RE Engine). engineHintOverrides is display/hint only.\ngraphicsApiOverrides forces the API badge and controls which ReShade DLL is deployed.",
-  "engineOverrides": {
+  "_engineOverrides_disabled": "disabled — engine names now sourced from pcgw_data.json",
+  "_engineOverrides": {
     "007 First Light": "Glacier 2",
     "Assassin\u0027s Creed Black Flag Resynced": "Anvil",
     "CrossCode": "NW.js",
+    "CONTROL Resonant": "Northlight Engine",
     "Cry of Fear": "GoldSrc",
     "DOOM \u002B DOOM II": "Kex Engine",
     "FATAL FRAME / PROJECT ZERO: Maiden of Black Water": "Katana",
@@ -476,6 +488,7 @@
     "Mirror\u0027s Edge\u2122 Catalyst": "Frostbite",
     "Monster Hunter Stories 3: Twisted Reflection": "RE Engine",
     "Monster Hunter Wilds": "RE Engine",
+    "Mount & Blade II: Bannerlord": "Daroya Engine",
     "Need for Speed\u2122 Heat": "Frostbite",
     "Need for Speed\u2122 Payback": "Frostbite",
     "Need for Speed\u2122 Rivals": "Frostbite",
@@ -513,7 +526,8 @@
     "Avowed": "Unreal Engine 5.3.2",
     "ACE COMBAT™7: SKIES UNKNOWN": "Unreal Engine 4.27.2",
     "Hogwarts Legacy": "Unreal Engine 4.27",
-    "METAL GEAR SOLID 4: Guns of the Patriots - Master Collection Version": "MGS4 Engine",
+    "METAL GEAR SOLID 4: Guns of the Patriots - Master Collection Version": "KojiPro Engine",
+    "METAL GEAR SOLID: Peace Walker - Master Collection Version": "KojiPro Engine",
     "Outlast": "Unreal (Legacy)",
     "Beast of Reincarnation": "Unreal Engine 5.4.4",
     "Call of the Elder Gods": "Unreal Engine 5.6.1",
@@ -523,12 +537,15 @@
     "Ghostwire: Tokyo": "Unreal Engine 4.27.2",
     "Hell is Us": "Unreal Engine 5.5.4",
     "Halo: Campaign Evolved": "Unreal Engine 5.5.4",
+    "Insurgency: Sandstorm": "Unreal Engine 4.27.2",
+    "SILENT HILL: Townfall": "Unreal Engine 5.6.1",
     "Palworld": "Unreal Engine 5.1.1",
     "Shin Megami Tensei V: Vengeance": "Unreal Engine 4.27.2",
     "Stellar Blade\u2122": "Unreal Engine 4.26.2",
     "Mistfall Hunter": "Unreal Engine 5.7.4"
   },
   "engineIniPathOverrides": {
+    "Clive Barker's Hellraiser: Revival Demo": "Hellraiser_Demo",
     "Directive 8020": "Directive8020",
     "Echoes of Aincrad": "%LOCALAPPDATA%\\EchoesofAincrad\\Saved\\Config\\WindowsClient",
     "Echoes of Aincrad DEMO Version": "%LOCALAPPDATA%\\EchoesofAincrad\\Saved\\Config\\WindowsClient",
@@ -544,6 +561,8 @@
     "The Sinking City 2": "TSC2"
   },
   "graphicsApiOverrides": {
+    "Outlast": "DX9",
+    "Outlast 2": "DX9",
     "Anno 117 - Pax Romana": "DX12",
     "ACE COMBAT™7: SKIES UNKNOWN": "DX11",
     "Clair Obscur: Expedition 33": "DX12",
@@ -574,6 +593,7 @@
     "Dying Light": "DX11",
     "Dying Light: The Beast": "DX12",
     "Indiana Jones and the Great Circle": "VLK",
+    "Mass Effect 2": "DX9",
     "Max Payne 3": "DX11",
     "Metro 2033 Redux": "DX11",
     "Metro: Last Light Redux": "DX11",
@@ -604,6 +624,7 @@
     "Anno 117 - Pax Romana",
     "Ball x Pit",
     "Baldur\u0027s Gate 3",
+    "Five Hearts Under One Roof",
     "Outlast",
     "Zero Parades",
     "BeamNG.drive",
@@ -768,7 +789,10 @@
     "Vanquish"
   ],
   "dgVoodooVersions": {
-    "2.87.3": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.3/dgVoodoo2_87_3.zip"
+    "2.87.5": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.5/dgVoodoo2_87_5.zip",
+    "2.87.4": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.4/dgVoodoo2_87_4.zip",
+    "2.87.3": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.3/dgVoodoo2_87_3.zip",
+    "2.81.3": "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.81.3/dgVoodoo2_81_3.zip"
   },
   "_comment_install_behaviour": "=== INSTALL BEHAVIOUR ===\nControls what happens when the user clicks Install for a component.\ninstallWarnings shows a blocking confirm dialog before proceeding (keys: reshade, renodx, relimiter, dc, optiscaler, luma, reframework, dxvk).\nforceExternalOnly redirects the install button to an external URL instead of downloading.\nsnapshotOverrides injects or overrides the addon download URL when wiki scraping fails.\ndllNameOverrides forces specific proxy DLL filenames (e.g. winmm.dll instead of dxgi.dll).\ngacSymlinkGames routes XNA Framework games through a GAC symlink install (requires admin).\nlaunchExeOverrides sets the relative exe path used when clicking Launch and for NVIDIA profile matching.\nrenodxIniOverrides injects keys into [renodx] reshade.ini section on install/update.\nlegacyReShadeVersions auto-assigns a locked ReShade version channel to specific games.",
   "installWarnings": {
@@ -787,6 +811,27 @@
     "REANIMAL": {
       "renodx": "REANIMAL has native HDR that is literally \u0022HDR Den made\u0022.\rThere is no need to add RenoDX to this game."
     },
+    "Batman\u2122: Arkham Knight": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Beyond Two Souls": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Blue Reflection: Second Light": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Dying Light 2 Stay Human": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Far Cry 5": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "FINAL FANTASY XV": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Halo: The Master Chief Collection": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "HEAVEN BURNS RED": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Kingdom Come: Deliverance": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "L.A. Noire": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Mirror's Edge\u2122 Catalyst": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Monster Hunter World": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Mortal Kombat 11": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "NieR:Automata\u2122": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Hatsune Miku: Project DIVA Mega Mix+": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Saints Row: The Third - Remastered": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Sekiro\u2122: Shadows Die Twice": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Shenmue I & II": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Snowbreak: Containment Zone": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "The Evil Within 2": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
+    "Titanfall\u00AE 2": { "luma": "\u26A0 This is an unreleased / work-in-progress Luma mod.\n\nProceed at your own risk. Please do not report issues to HDR Den or RHI unless you have been specifically asked to test this mod." },
     "Ori and the Blind Forest: Definitive Edition": {
       "renodx": "Generic Unity mod may have visual issues in this game. The named mod is deprecated but can be installed manually as an alternative."
     },
@@ -806,18 +851,6 @@
       "url": "https://discord.gg/gF4GRJWZ2A",
       "label": "Get on Discord"
     },
-    "Elden Ring": {
-      "url": "https://www.nexusmods.com/eldenring/mods/8163",
-      "label": "Get on Nexus"
-    },
-    "Elden Ring: Nightreign": {
-      "url": "https://www.nexusmods.com/eldenringnightreign/mods/48",
-      "label": "Get on Nexus"
-    },
-    "ELDEN RING NIGHTREIGN": {
-      "url": "https://www.nexusmods.com/eldenringnightreign/mods/48",
-      "label": "Get on Nexus"
-    },
     "Max Payne 3": {
       "url": "https://www.nexusmods.com/maxpayne3/mods/218",
       "label": "Get on Nexus"
@@ -827,32 +860,24 @@
     "ACE COMBAT™7: SKIES UNKNOWN": "https://marat569.github.io/renodx/renodx-ue-extended.addon64",
     "Hogwarts Legacy": "https://marat569.github.io/renodx/renodx-ue-extended.addon64",
     "Assassin\u0027s Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
-    "Cities: Skylines": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Cities: Skylines": "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
     "CODE VEIN II": "https://marat569.github.io/renodx/renodx-codevein2.addon64",
     "Days Gone": "https://github.com/OopyDoopy/renodx/releases/download/snapshot/renodx-daysgone.addon64",
-    "Death\u0027s Door": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "Descenders": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Death\u0027s Door": "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
+    "Descenders": "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
     "Far Cry 2": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
     "Far Cry 3": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
     "FINAL FANTASY VII REMAKE INTERGRADE": "https://clshortfuse.github.io/renodx/renodx-ff7remake.addon64",
-    "Haste": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Haste": "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
     "Jedi Fallen Order": "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64",
-    "Outer Wilds": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "Spark the Electric Jester 3": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "XF Extreme Formula": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Outer Wilds": "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
+    "Spark the Electric Jester 3": "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
+    "XF Extreme Formula": "https://github.com/NotVoosh/renodx-unity/releases/download/snapshot/renodx-unityengine.addon64",
     "RoboCop: Rogue City": "https://mqhaji.github.io/renodx/renodx-robocop.addon64",
     "Routine": "https://github.com/mqhaji/renodx/releases/download/snapshot/renodx-routine.addon64"
   },
   "dllNameOverrides": {
     "Aliens: Dark Descent": {
-      "reshade": "dxgi.dll",
-      "dc": ""
-    },
-    "Borderlands 2": {
-      "reshade": "dxgi.dll",
-      "dc": ""
-    },
-    "Borderlands: The Pre-Sequel": {
       "reshade": "dxgi.dll",
       "dc": ""
     },
@@ -901,7 +926,7 @@
     "Terraria": "C:\\Windows\\Microsoft.NET\\assembly\\GAC_32\\Microsoft.Xna.Framework.Graphics\\v4.0_4.0.0.0__842cf8be1de50553"
   },
   "launchExeOverrides": {
-    "Arma Reforger": "ArmaReforgerSteam.exe",
+    "Arma Reforger": "ArmaReforger_BE.exe",
     "Warhammer 40,000: Space Marine 2": "Warhammer 40000 Space Marine 2 - Retail.exe",
     "Crysis Remastered": "CrysisRemastered.exe",
     "Returnal\u2122": "Returnal-Win64-Shipping.exe",
@@ -1241,15 +1266,18 @@
     "XF Extreme Formula": "Voosh"
   },
   "nexusUrlOverrides": {
+    "Crimson Desert Enhanced": "https://www.nexusmods.com/games/crimsondesert",
     "Gothic II: Gold Classic": "https://www.nexusmods.com/games/gothic2",
     "Halo: Campaign Evolved": "https://www.nexusmods.com/games/halocampaignevolved",
     "FINAL FANTASY XIV Online": "https://www.nexusmods.com/games/finalfantasy14",
     "Final Fantasy XIV: A Realm Reborn": "https://www.nexusmods.com/games/finalfantasy14",
     "AFOP": "https://www.nexusmods.com/games/avatarfrontiersofpandora",
+    "CONTROL Resonant": "https://www.nexusmods.com/games/controlresonant",
     "Deadly Premonition 2": "https://www.nexusmods.com/games/deadlypremonition2ablessingindisguise",
     "DEATH STRANDING DIRECTOR\u0027S CUT": "https://www.nexusmods.com/games/deathstranding",
     "Dying Light: The Beast Restored Land": "https://www.nexusmods.com/games/dyinglightthebeast",
     "Echoes of the End: Enhanced Edition": "https://www.nexusmods.com/games/echoesoftheend",
+    "FINAL FANTASY XV WINDOWS EDITION": "https://www.nexusmods.com/games/finalfantasy15",
     "Horizon Forbidden West\u2122 Complete Edition": "https://www.nexusmods.com/games/horizonforbiddenwest",
     "Nioh: Complete Edition": "https://www.nexusmods.com/games/nioh",
     "Silent Hill 2": "https://www.nexusmods.com/games/silenthill2",
@@ -1370,18 +1398,18 @@
       "description": "Lightweight sharpening (TinySharpen), clarity, and chromatic aberration shaders",
       "category": "Extra"
     },
+    "UltraReShade": {
+      "displayName": "UltraShade by Ultra+",
+      "kind": "DirectUrl",
+      "url": "https://gitlab.com/ultra-plus/ultrashade/-/archive/master/ultrashade-master.zip",
+      "description": "\"Poor man's DLSS5\" — single-shader post-processing with bloom, contrast balancing, haze/dehaze, and saturation. Mimics the look of DLSS5 without requiring it. Highly tunable, works well for virtual photography.",
+      "category": "Recommended"
+    },
     "CubeLUT3Ddith": {
       "displayName": "CubeLUT3Ddith by aron7awol",
       "kind": "DirectUrl",
       "url": "https://github.com/aron7awol/CubeLUT3Ddith/archive/refs/heads/main.zip",
       "description": "Cube 3D LUT shader with dithering to reduce banding. Requires a .cube LUT file placed in the Textures folder.",
-      "category": "Extra"
-    },
-    "DLSS5Feeder": {
-      "displayName": "DLSS5 Feeder by jlrouzies-fr",
-      "kind": "DirectUrl",
-      "url": "https://github.com/jlrouzies-fr/DLSS5-Feeder/archive/refs/heads/main.zip",
-      "description": "Companion shader for the DLSS5 Feeder addon. Requires the DLSS5 Feeder addon and iMMERSE LaunchPad.",
       "category": "Extra"
     },
     "ReshadeMotionEstimation": {
@@ -1395,6 +1423,14 @@
       "requires": [
         "CrosireMaster"
       ]
+    },
+    "UltrawideSideGlass": {
+      "displayName": "UltrawideSideGlass by NickFirzen",
+      "kind": "GhRelease",
+      "url": "https://api.github.com/repos/NickFirzen/Ultrawide-Side-Glass-Reshade-Shader/releases/latest",
+      "assetExt": ".fx",
+      "description": "Fills ultrawide black pillarboxes with zoomed, mirrored, or frosted glass effects while preserving the centre image and HDR metadata. Supports 21:9, 32:9, and many other aspect ratios.",
+      "category": "Extra"
     }
   },
   "addonPacks": {

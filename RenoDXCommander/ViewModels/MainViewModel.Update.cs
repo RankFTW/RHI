@@ -9,6 +9,35 @@ namespace RenoDXCommander.ViewModels;
 public partial class MainViewModel
 {
     private System.Threading.Timer? _updateCheckTimer;
+    private System.Threading.Timer? _heartbeatTimer;
+    private volatile string _lastUiAction = "none";
+
+    /// <summary>Tracks the last action dispatched to the UI thread for freeze diagnostics.</summary>
+    internal void SetLastUiAction(string action) => _lastUiAction = action;
+
+    /// <summary>
+    /// Starts a 10-second heartbeat timer. On each tick it posts a quick probe to the UI thread.
+    /// If the probe doesn't come back within 3 seconds, logs the last known UI action — that's
+    /// what the UI thread was doing when it froze.
+    /// </summary>
+    internal void StartHeartbeatTimer()
+    {
+        _heartbeatTimer = new System.Threading.Timer(_ =>
+        {
+            var probeReceived = false;
+            DispatcherQueue?.TryEnqueue(() => { probeReceived = true; });
+
+            // Wait up to 3 seconds for the UI thread to process the probe
+            var deadline = Environment.TickCount64 + 3000;
+            while (!probeReceived && Environment.TickCount64 < deadline)
+                System.Threading.Thread.Sleep(100);
+
+            if (probeReceived)
+                _crashReporter.Log($"[Heartbeat] UI responsive — last action: {_lastUiAction}");
+            else
+                _crashReporter.Log($"[Heartbeat] *** UI FROZEN *** last action before freeze: {_lastUiAction}");
+        }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+    }
 
     /// <summary>
     /// Starts a repeating 4-hour timer that re-runs all update checks.
@@ -50,7 +79,7 @@ public partial class MainViewModel
 
                         // Detect new wiki mods
                         var currentModNames = _allMods
-                            .Where(m => m.SnapshotUrl != null)
+                            .Where(m => m.SnapshotUrl != null || m.NexusUrl != null)
                             .Select(m => m.Name)
                             .ToList();
                         _crashReporter.Log($"[MainViewModel] Periodic wiki mods check: {currentModNames.Count} downloadable mods");
@@ -677,7 +706,7 @@ public partial class MainViewModel
             var tempPath = GetDcCachePath(is32Bit) + ".precache.tmp";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
-            var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
+            using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
             if (!resp.IsSuccessStatusCode) return;
 
             using (var net = await resp.Content.ReadAsStreamAsync())
@@ -755,7 +784,7 @@ public partial class MainViewModel
             var tempPath = GetUlCachePath(is32Bit) + ".precache.tmp";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
-            var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
+            using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
             if (!resp.IsSuccessStatusCode) return;
 
             using (var net = await resp.Content.ReadAsStreamAsync())
@@ -1124,6 +1153,39 @@ public partial class MainViewModel
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Nexus update check failed (rate-limited path) — {ex.Message}");
             }
 
+            // ── Nexus update check for Luma mods (rate-limited path) ─────────────
+            try
+            {
+                var lumaModsToCheck = cards
+                    .Where(c => c.LumaStatus == GameStatus.Installed
+                             && !c.IsHidden
+                             && c.LumaNexusUrl != null
+                             && c.LumaRecord?.NexusFileId != null)  // only premium installs have a reliable baseline
+                    .Select(c => (c.GameName, c.LumaNexusUrl!, c.LumaRecord!.NexusFileId!.Value.ToString()))
+                    .ToList();
+
+                if (lumaModsToCheck.Count > 0)
+                {
+                    _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Checking {lumaModsToCheck.Count} Luma Nexus mod(s) for updates (rate-limited path)");
+                    var lumaUpdated = await _nexusUpdateService.CheckForUpdatesAsync(lumaModsToCheck).ConfigureAwait(false);
+                    if (lumaUpdated.Count > 0)
+                    {
+                        DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            foreach (var card in cards.Where(c => lumaUpdated.Contains(c.GameName)))
+                            {
+                                if (card.LumaStatus == GameStatus.Installed)
+                                    card.LumaStatus = GameStatus.UpdateAvailable;
+                            }
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Luma Nexus update check failed (rate-limited path) — {ex.Message}");
+            }
+
             // Record successful check time even if rate-limited, so we don't hammer the API again immediately
             _settingsViewModel.LastUpdateCheckUtc = DateTime.UtcNow.ToString("o");
             SaveSettingsPublic();
@@ -1396,7 +1458,38 @@ public partial class MainViewModel
             _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Nexus update check failed — {ex.Message}");
         }
 
-        // ── Emulator update check (check each bundled addon for size changes) ──
+        // ── Nexus Mods update check for Luma mods ─────────────────────────────
+        try
+        {
+            var lumaModsToCheck = cards
+                .Where(c => c.LumaStatus == GameStatus.Installed
+                         && !c.IsHidden
+                         && c.LumaNexusUrl != null
+                         && c.LumaRecord?.NexusFileId != null)  // only premium installs have a reliable baseline
+                .Select(c => (c.GameName, c.LumaNexusUrl!, c.LumaRecord!.NexusFileId!.Value.ToString()))
+                .ToList();
+
+            if (lumaModsToCheck.Count > 0)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Checking {lumaModsToCheck.Count} Luma Nexus mod(s) for updates");
+                var lumaUpdated = await _nexusUpdateService.CheckForUpdatesAsync(lumaModsToCheck).ConfigureAwait(false);
+                if (lumaUpdated.Count > 0)
+                {
+                    DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        foreach (var card in cards.Where(c => lumaUpdated.Contains(c.GameName)))
+                        {
+                            if (card.LumaStatus == GameStatus.Installed)
+                                card.LumaStatus = GameStatus.UpdateAvailable;
+                        }
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] Luma Nexus update check failed — {ex.Message}");
+        }
         try
         {
             var emuCards = cards.Where(c => c.IsEmulator && c.Status == GameStatus.Installed && c.EmulatorAddonNames?.Count > 0).ToList();

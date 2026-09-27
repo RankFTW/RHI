@@ -35,6 +35,12 @@ public partial class MainViewModel
     public async Task InstallReShadeAsync(GameCardViewModel? card)
     {
         if (card == null) return;
+        await InstallReShadeInternalAsync(card, null);
+    }
+
+    internal async Task InstallReShadeInternalAsync(GameCardViewModel? card, string? forceFilename)
+    {
+        if (card == null) return;
 
         if (string.IsNullOrEmpty(card.InstallPath) || !Directory.Exists(card.InstallPath))
         {
@@ -117,14 +123,16 @@ public partial class MainViewModel
             if (selectedPacks != null)
                 await _shaderPackService.EnsurePacksAsync(selectedPacks);
 
-            var rsFilenameOverride = card.DllOverrideEnabled
-                    ? (GetDllOverride(card.GameName)?.ReShadeFileName)
-                    : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs
-                        ? mRs
-                        : ResolveAutoReShadeFilename(card.DetectedApis));
+            var rsFilenameOverride = forceFilename
+                    ?? (card.DllOverrideEnabled
+                        ? (GetDllOverride(card.GameName)?.ReShadeFileName)
+                        : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs
+                            ? mRs
+                            : ResolveAutoReShadeFilename(card.DetectedApis)));
             var effectiveChannel = card.UseNormalReShade ? "(Normal/NoAddons)" : ResolveReShadeChannel(card.GameName, card.Source ?? "");
-            var filenameSource = card.DllOverrideEnabled ? "UserDllOverride"
-                : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } ? "ManifestDllOverride" : "AutoDetect");
+            var filenameSource = forceFilename != null ? "DgVoodoo2Override"
+                : (card.DllOverrideEnabled ? "UserDllOverride"
+                : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } ? "ManifestDllOverride" : "AutoDetect"));
             _crashReporter.Log($"[InstallReShadeAsync] {card.GameName}: " +
                 $"channel={effectiveChannel}, useNormalReShade={card.UseNormalReShade}, " +
                 $"DllOverrideEnabled={card.DllOverrideEnabled}, filenameSource={filenameSource}, " +
@@ -154,6 +162,8 @@ public partial class MainViewModel
                 card.RsActionMessage    = "✅ ReShade installed!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+                _filterViewModel.UpdateCounts();
+                RefreshStatusBarText();
 
                 // Deploy managed addons now that ReShade is present
                 DeployAddonsForCard(card.GameName);
@@ -164,7 +174,11 @@ public partial class MainViewModel
             card.RsActionMessage = $"❌ ReShade Failed: {ex.Message}";
             _crashReporter.WriteCrashReport("InstallReShadeAsync", ex, note: $"Game: {card.GameName}");
         }
-        finally { card.RsIsInstalling = false; }
+        finally
+        {
+            if (DispatchUiAction != null) DispatchUiAction(() => card.RsIsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false);
+        }
     }
 
     /// <summary>
@@ -183,7 +197,8 @@ public partial class MainViewModel
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
                 var selVk1 = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-                var exclVk1 = selVk1?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+                var exclVk1 = selVk1 == null ? null : await Task.Run(() =>
+                    selVk1.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase));
                 _shaderPackService.SyncGameFolder(card.InstallPath, selVk1, exclVk1);
 
                 var vulkanVersion = AuxInstallService.ReadInstalledVersion(
@@ -195,10 +210,14 @@ public partial class MainViewModel
                     card.RsActionMessage = "✅ Vulkan ReShade installed!";
                     card.NotifyAll();
                     card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+                    _filterViewModel.UpdateCounts();
+                    RefreshStatusBarText();
 
                     // Deploy managed addons now that ReShade is present
                     DeployAddonsForCard(card.GameName);
                 };
+                // Refresh cached VulkanRsIniExists before notifying UI — panel reads this directly
+                await Task.Run(() => card.RefreshBackupState());
                 if (DispatchUiAction != null) DispatchUiAction(updateCard);
                 else DispatcherQueue?.TryEnqueue(() => updateCard());
             }
@@ -207,7 +226,11 @@ public partial class MainViewModel
                 card.RsActionMessage = $"❌ Vulkan ReShade Failed: {ex.Message}";
                 _crashReporter.WriteCrashReport("InstallReShadeVulkanAsync", ex, note: $"Game: {card.GameName}");
             }
-            finally { card.RsIsInstalling = false; }
+            finally
+            {
+                if (DispatchUiAction != null) DispatchUiAction(() => card.RsIsInstalling = false);
+                else DispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false);
+            }
             return;
         }
 
@@ -252,7 +275,8 @@ public partial class MainViewModel
 
             // 5c. Deploy shaders locally to the game folder
             var selVk2 = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-            var exclVk2 = selVk2?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+            var exclVk2 = selVk2 == null ? null : await Task.Run(() =>
+                selVk2.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase));
             _shaderPackService.SyncGameFolder(card.InstallPath, selVk2, exclVk2);
 
             // 6. Mark warning as shown for this session
@@ -268,10 +292,14 @@ public partial class MainViewModel
                 card.RsActionMessage = "✅ ReShade installed (Vulkan Layer)!";
                 card.NotifyAll();
                 card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+                _filterViewModel.UpdateCounts();
+                RefreshStatusBarText();
 
                 // Deploy managed addons now that ReShade is present
                 DeployAddonsForCard(card.GameName);
             };
+            // Refresh cached VulkanRsIniExists before notifying UI — panel reads this directly
+            await Task.Run(() => card.RefreshBackupState());
             if (DispatchUiAction != null) DispatchUiAction(updateCard);
             else DispatcherQueue?.TryEnqueue(() => updateCard());
         }
@@ -280,7 +308,11 @@ public partial class MainViewModel
             card.RsActionMessage = $"❌ Vulkan ReShade Failed: {ex.Message}";
             _crashReporter.WriteCrashReport("InstallReShadeVulkanAsync", ex, note: $"Game: {card.GameName}");
         }
-        finally { card.RsIsInstalling = false; }
+        finally
+        {
+            if (DispatchUiAction != null) DispatchUiAction(() => card.RsIsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false);
+        }
     }
 
     /// <summary>
@@ -327,7 +359,8 @@ public partial class MainViewModel
 
             // Deploy shaders to the game folder
             var selGac = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-            var exclGac = selGac?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+            var exclGac = selGac == null ? null : await Task.Run(() =>
+                selGac.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase));
             _shaderPackService.SyncGameFolder(card.InstallPath, selGac, exclGac);
 
             // Read version from the staged DLL in the game folder
@@ -351,7 +384,11 @@ public partial class MainViewModel
             card.RsActionMessage = $"❌ GAC ReShade Failed: {ex.Message}";
             _crashReporter.WriteCrashReport("InstallReShadeGacAsync", ex, note: $"Game: {card.GameName}");
         }
-        finally { card.RsIsInstalling = false; }
+        finally
+        {
+            if (DispatchUiAction != null) DispatchUiAction(() => card.RsIsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false);
+        }
     }
 
     [RelayCommand]
@@ -395,7 +432,14 @@ public partial class MainViewModel
             if (isGacGame && !string.IsNullOrEmpty(card.InstallPath))
             {
                 var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-                if (File.Exists(iniPath)) File.Delete(iniPath);
+                try
+                {
+                    if (File.Exists(iniPath)) File.Delete(iniPath);
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[UninstallGacReShade] Failed to delete reshade.ini — {ex.Message}");
+                }
             }
 
             if (card.RsRecord != null)
@@ -408,6 +452,8 @@ public partial class MainViewModel
             card.RsActionMessage    = "✖ ReShade removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+            _filterViewModel.UpdateCounts();
+            RefreshStatusBarText();
         }
         catch (Exception ex)
         {
@@ -417,7 +463,7 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    public void UninstallVulkanReShade(GameCardViewModel? card)
+    public async Task UninstallVulkanReShade(GameCardViewModel? card)
     {
         if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
@@ -425,8 +471,15 @@ public partial class MainViewModel
         {
             // 1. Delete reshade.ini from the game folder
             var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
-            if (File.Exists(iniPath))
-                File.Delete(iniPath);
+            try
+            {
+                if (File.Exists(iniPath))
+                    File.Delete(iniPath);
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[ResetReShadeArtifacts] Failed to delete reshade.ini — {ex.Message}");
+            }
 
             // 2. Delete the Vulkan footprint file
             VulkanFootprintService.Delete(card.InstallPath);
@@ -442,10 +495,14 @@ public partial class MainViewModel
                 useGlobalSet: true, perGameSelection: new List<string>());
 
             // 6. Update card status — do NOT touch the global Vulkan layer
+            // Refresh cached VulkanRsIniExists before notifying UI — panel reads this directly
+            await Task.Run(() => card.RefreshBackupState());
             card.RsStatus        = GameStatus.NotInstalled;
             card.RsActionMessage = "✖ Vulkan ReShade removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
+            _filterViewModel.UpdateCounts();
+            RefreshStatusBarText();
         }
         catch (Exception ex)
         {
@@ -495,7 +552,11 @@ public partial class MainViewModel
             card.RefActionMessage = $"❌ RE Framework Failed: {ex.Message}";
             _crashReporter.WriteCrashReport("InstallREFrameworkAsync", ex, note: $"Game: {card.GameName}");
         }
-        finally { card.RefIsInstalling = false; }
+        finally
+        {
+            if (DispatchUiAction != null) DispatchUiAction(() => card.RefIsInstalling = false);
+            else DispatcherQueue?.TryEnqueue(() => card.RefIsInstalling = false);
+        }
     }
 
     [RelayCommand]
@@ -763,6 +824,7 @@ public partial class MainViewModel
                                 && !fn.StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-upgrade", StringComparison.OrdinalIgnoreCase)
+                                && !fn.StartsWith("renodx-mfgunlock", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase))
@@ -810,6 +872,40 @@ public partial class MainViewModel
     {
         if (card?.LumaMod == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
+        var mod = card.LumaMod;
+
+        // Nexus-only mod (no GitHub download URL) — either open browser or use premium CDN
+        if (mod.DownloadUrl == null && mod.NexusUrl != null)
+        {
+            var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
+            if (!FeatureFlags.NexusMods || !nexusDl.IsApiKeyConfigured || !nexusDl.IsPremium)
+            {
+                // Free user — resolve the latest file ID and open directly to the download page
+                // (same as ExternalLink_Click does for RenoDX Nexus mods)
+                _crashReporter.Log($"[InstallLumaAsync] Nexus-only mod '{mod.Name}' — resolving file ID for browser");
+                var targetUrl = mod.NexusUrl;
+                var parsed = NexusUpdateService.ParseNexusUrl(mod.NexusUrl);
+                if (parsed.HasValue && FeatureFlags.NexusMods)
+                {
+                    try
+                    {
+                        var latestFile = await nexusDl.GetLatestMainFileAsync(parsed.Value.Domain, parsed.Value.ModId).ConfigureAwait(false);
+                        if (latestFile != null)
+                            targetUrl = $"https://www.nexusmods.com/{parsed.Value.Domain}/mods/{parsed.Value.ModId}?tab=files&file_id={latestFile.FileId}&nmm=1";
+                    }
+                    catch { /* fall through to base URL */ }
+                }
+                else if (!string.IsNullOrEmpty(targetUrl) && !targetUrl.Contains("?tab=", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetUrl = targetUrl.TrimEnd('/') + "?tab=files";
+                }
+                DispatcherQueue?.TryEnqueue(() =>
+                    _ = Windows.System.Launcher.LaunchUriAsync(new Uri(targetUrl)));
+                return;
+            }
+            // Premium user — fall through to the main install flow with nexusPremiumPath set below
+        }
+
         // Check for manifest-driven install warning (skip during Update All)
         if (!skipWarning && !await CheckInstallWarningAsync(card.GameName, "luma")) return;
 
@@ -817,155 +913,266 @@ public partial class MainViewModel
         card.LumaActionMessage = "Installing Luma...";
         try
         {
+            LumaInstalledRecord record;
             var selectedPacks = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-            var record = await _lumaService.InstallAsync(
-                card.LumaMod,
-                card.InstallPath,
-                selectedPacks,
-                BuildScreenshotSavePath(card.GameName),
-                _settingsViewModel.OverlayHotkey,
-                _settingsViewModel.ScreenshotHotkey,
-                card.GameName,
-                new Progress<(string msg, double pct)>(p =>
-                {
-                    DispatcherQueue?.TryEnqueue(() =>
-                    {
-                        card.LumaActionMessage = p.msg;
-                        card.LumaProgress = p.pct;
-                    });
-                }),
-                card.Source);
 
-            card.LumaRecord = record;
-            card.LumaStatus = GameStatus.Installed;
-            card.LumaActionMessage = "Luma installed!";
-            card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
-
-            // Deploy RHI's newest DLSS version (Luma bundles its own — RHI manages it instead)
-            try
+            // ── Nexus premium path — download from CDN and install from archive ──
+            if (mod.DownloadUrl == null && mod.NexusUrl != null && FeatureFlags.NexusMods)
             {
-                card.LumaActionMessage = "Updating DLSS...";
-                var newestDlssPath = await _dlssStreamlineService.EnsureNewestDlssCachedAsync();
-                if (newestDlssPath != null && File.Exists(newestDlssPath))
+                var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
+                var parsed = NexusUpdateService.ParseNexusUrl(mod.NexusUrl);
+                if (parsed == null)
                 {
-                    var targetDlssPath = Path.Combine(card.InstallPath, "nvngx_dlss.dll");
-                    AuxInstallService.SentinelBackup(targetDlssPath);
-                    File.Copy(newestDlssPath, targetDlssPath, overwrite: true);
-                    _crashReporter.Log($"[InstallLumaAsync] Deployed newest DLSS to '{targetDlssPath}'");
+                    card.LumaActionMessage = "❌ Invalid Nexus URL.";
+                    return;
                 }
-            }
-            catch (Exception ex)
-            {
-                _crashReporter.Log($"[InstallLumaAsync] DLSS deploy failed for '{card.GameName}' — {ex.Message}");
-            }
 
-            // Write EnableHDR=1 and DisplayMode=1 to reshade.ini [Luma] section — default On, user can disable via cog
-            AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", "1");
-            AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", "1");
+                card.LumaActionMessage = "Fetching mod info...";
+                var latestFile = await nexusDl.GetLatestMainFileAsync(parsed.Value.Domain, parsed.Value.ModId).ConfigureAwait(false);
+                if (latestFile == null)
+                {
+                    _crashReporter.Log($"[InstallLumaAsync] Nexus — no MAIN file for '{card.GameName}'");
+                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "No downloadable file found on Nexus.");
+                    return;
+                }
 
-            // Now install RHI's own ReShade (respects user's channel — Stable/Nightly)
-            // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
-            card.LumaActionMessage = "Installing ReShade...";
-            await InstallReShadeAsync(card);
+                var uri = await nexusDl.GetDownloadUriAsync(parsed.Value.Domain, parsed.Value.ModId, latestFile.FileId).ConfigureAwait(false);
+                if (uri == null)
+                {
+                    _crashReporter.Log($"[InstallLumaAsync] Nexus — could not resolve CDN URI for '{card.GameName}'");
+                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Could not resolve Nexus download link.");
+                    return;
+                }
 
-            // ── dgVoodoo2 (DX9→DX11 translation layer — required for some legacy games) ────
-            // Must be deployed AFTER ReShade so we can confirm dxgi.dll is claimed by ReShade.
-            if (_manifest?.LumaRequiresDgVoodoo?.Contains(card.GameName, StringComparer.OrdinalIgnoreCase) == true
-                && _manifest.DgVoodooVersions?.Count > 0)
-            {
+                var progress = new Progress<(string msg, double pct)>(p =>
+                    DispatcherQueue?.TryEnqueue(() => { card.LumaActionMessage = p.msg; card.LumaProgress = p.pct; }));
+
+                var tempPath = await nexusDl.DownloadToTempAsync(uri, progress).ConfigureAwait(false);
+                if (tempPath == null)
+                {
+                    DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Download failed.");
+                    return;
+                }
+
                 try
                 {
-                    card.LumaActionMessage = "Installing dgVoodoo2...";
-                    var dgVoodooSvc = App.Services.GetRequiredService<DgVoodooService>();
-                    var versionEntry = _manifest.DgVoodooVersions.First();
-                    await dgVoodooSvc.EnsureStagedAsync(versionEntry.Key, versionEntry.Value).ConfigureAwait(false);
-                    var deployed = dgVoodooSvc.DeployToGame(card.InstallPath, versionEntry.Key);
-                    // Add deployed files to the tracking record so uninstall cleans them up
-                    foreach (var f in deployed)
-                        if (!record.InstalledFiles.Contains(f, StringComparer.OrdinalIgnoreCase))
-                            record.InstalledFiles.Add(f);
-                    // Re-save the record with updated file list
+                    _crashReporter.Log($"[InstallLumaAsync] Nexus premium — installing from archive '{tempPath}' for '{card.GameName}'");
+                    record = await _lumaService.InstallFromArchiveAsync(
+                        tempPath,
+                        card.InstallPath,
+                        card.Is32Bit,
+                        selectedPacks,
+                        BuildScreenshotSavePath(card.GameName),
+                        _settingsViewModel.OverlayHotkey,
+                        _settingsViewModel.ScreenshotHotkey,
+                        card.GameName,
+                        null,
+                        card.Source).ConfigureAwait(false);
+                    record.NexusFileId = latestFile.FileId;
                     _lumaService.SaveLumaRecord(record);
-                    _crashReporter.Log($"[InstallLumaAsync] dgVoodoo2 v{versionEntry.Key} deployed for '{card.GameName}'");
+                    _nexusUpdateService.ResetBaseline(card.GameName);
                 }
-                catch (Exception dgEx)
+                finally
                 {
-                    _crashReporter.Log($"[InstallLumaAsync] dgVoodoo2 deploy failed for '{card.GameName}' — {dgEx.Message}");
+                    try { File.Delete(tempPath); } catch { }
                 }
             }
-
-            // ── Generic Luma post-install actions ─────────────────────────────────
-            if (card.LumaMod?.IsGenericLuma == true)
+            else if (mod.DownloadUrl == null)
             {
-                // Write game-specific Engine.ini keys scraped from the Luma wiki
-                if (_lumaGenericEntries.TryGetValue(card.GameName, out var genericEntry)
-                    && genericEntry.EngineIniKeys.Count > 0)
-                {
-                    try
-                    {
-                        AuxInstallService.ApplyEngineIniCustomKeys(
-                            card.InstallPath,
-                            genericEntry.EngineIniKeys,
-                            card.EngineIniProjectOverride,
-                            card.GameName,
-                            card.Source);
-                        _crashReporter.Log($"[InstallLumaAsync] Wrote {genericEntry.EngineIniKeys.Count} Engine.ini key(s) for '{card.GameName}'");
-
-                        // If the wiki specified TAA keys, mark TAA as enabled so the cog shows "On"
-                        bool hasTaaKeys = genericEntry.EngineIniKeys.Any(k =>
-                            k.Key.Equals("r.DefaultFeature.AntiAliasing", StringComparison.OrdinalIgnoreCase)
-                            || k.Key.Equals("r.PostProcessAAQuality", StringComparison.OrdinalIgnoreCase));
-                        if (hasTaaKeys)
-                        {
-                            _gameNameService.LumaTaaEnabled.Add(card.GameName);
-                            SaveNameMappings();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _crashReporter.Log($"[InstallLumaAsync] Engine.ini write failed for '{card.GameName}' — {ex.Message}");
-                    }
-                }
-
-                // Auto-populate launch args if required and not already set
-                if (_lumaGenericEntries.TryGetValue(card.GameName, out var launchEntry)
-                    && !string.IsNullOrWhiteSpace(launchEntry.LaunchArgs))
-                {
-                    var existing = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var v) ? v : "";
-                    if (string.IsNullOrWhiteSpace(existing))
-                    {
-                        _gameNameService.LaunchArgsOverrides[card.GameName] = launchEntry.LaunchArgs;
-                        SaveNameMappings();
-                        _crashReporter.Log($"[InstallLumaAsync] Auto-set launch args '{launchEntry.LaunchArgs}' for '{card.GameName}'");
-                        // Rebuild overrides panel so the launch arg field shows immediately
-                        RequestOverridesPanelRebuild?.Invoke(card);
-                    }
-                }
-                else if (card.DetectedApis.Contains(GraphicsApiType.DirectX11)
-                         && card.DetectedApis.Contains(GraphicsApiType.DirectX12))
-                {
-                    // Dual-API game (DX11+DX12) — Luma requires DX11 mode, auto-set -dx11 if not already set
-                    var existing = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var vd) ? vd : "";
-                    if (string.IsNullOrWhiteSpace(existing))
-                    {
-                        _gameNameService.LaunchArgsOverrides[card.GameName] = "-dx11";
-                        SaveNameMappings();
-                        _crashReporter.Log($"[InstallLumaAsync] Auto-set -dx11 for dual-API game '{card.GameName}'");
-                        RequestOverridesPanelRebuild?.Invoke(card);
-                    }
-                }
+                // Bespoke drag-drop install — no download URL available
+                _crashReporter.Log($"[InstallLumaAsync] '{card.GameName}' Luma mod has no download URL (bespoke drag-drop install) — cannot reinstall automatically");
+                DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Drop a Luma archive onto the card to reinstall.");
+                return;
             }
+            else
+            {
+                // ── Standard GitHub path ──────────────────────────────────────────
+                record = await _lumaService.InstallAsync(
+                    mod,
+                    card.InstallPath,
+                    selectedPacks,
+                    BuildScreenshotSavePath(card.GameName),
+                    _settingsViewModel.OverlayHotkey,
+                    _settingsViewModel.ScreenshotHotkey,
+                    card.GameName,
+                    new Progress<(string msg, double pct)>(p =>
+                    {
+                        DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            card.LumaActionMessage = p.msg;
+                            card.LumaProgress = p.pct;
+                        });
+                    }),
+                    card.Source);
+            }
+
+            // Marshal card property mutations to the UI thread after ConfigureAwait(false) paths
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.LumaRecord = record;
+                card.LumaStatus = GameStatus.Installed;
+                card.LumaActionMessage = "Luma installed!";
+                card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+            });
+
+            await ApplyLumaPostInstallAsync(card, record);
         }
         catch (Exception ex)
         {
-            card.LumaActionMessage = $"❌ Install failed: {ex.Message}";
+            DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = $"❌ Install failed: {ex.Message}");
             _crashReporter.WriteCrashReport("InstallLuma", ex, note: $"Game: {card.GameName}");
         }
         finally
         {
-            card.IsLumaInstalling = false;
-            card.NotifyAll();
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.IsLumaInstalling = false;
+                card.NotifyAll();
+            });
         }
+    }
+
+    /// <summary>
+    /// Applies all post-install steps after a Luma archive has been extracted to the game folder.
+    /// Called by InstallLumaAsync, DragDropHandler.ProcessDroppedLumaArchiveAsync, and the Nexus premium path.
+    /// Steps: DLSS deploy, [Luma] reshade.ini writes, ReShade install, dgVoodoo2 (conditional),
+    /// Engine.ini keys (generic Luma), LumaTaaEnabled persistence, launch args auto-set.
+    /// </summary>
+    public async Task ApplyLumaPostInstallAsync(GameCardViewModel card, LumaInstalledRecord record)
+    {
+        // Deploy RHI's newest DLSS version (Luma bundles its own — RHI manages it instead)
+        try
+        {
+            DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Updating DLSS...");
+            var newestDlssPath = await _dlssStreamlineService.EnsureNewestDlssCachedAsync();
+            if (newestDlssPath != null && File.Exists(newestDlssPath))
+            {
+                var targetDlssPath = Path.Combine(card.InstallPath, "nvngx_dlss.dll");
+                AuxInstallService.SentinelBackup(targetDlssPath);
+                File.Copy(newestDlssPath, targetDlssPath, overwrite: true);
+                _crashReporter.Log($"[ApplyLumaPostInstall] Deployed newest DLSS to '{targetDlssPath}'");
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[ApplyLumaPostInstall] DLSS deploy failed for '{card.GameName}' — {ex.Message}");
+        }
+
+        // Write EnableHDR=1 and DisplayMode=1 to reshade.ini [Luma] section — default On, user can disable via cog
+        AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", "1");
+        AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", "1");
+
+        // Determine dgVoodoo2 need up-front so we can pass the correct ReShade filename
+        bool needsDgVoodoo = card.LumaMod?.RequiresDgVoodoo == true
+            || _manifest?.LumaRequiresDgVoodoo?.Contains(card.GameName, StringComparer.OrdinalIgnoreCase) == true;
+
+        // Now install RHI's own ReShade (respects user's channel — Stable/Nightly)
+        // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
+        // When dgVoodoo2 is being deployed: force ReShade to dxgi.dll so it hooks dgVoodoo's
+        // DX11 output rather than competing with dgVoodoo2 for the d3d9.dll slot.
+        DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Installing ReShade...");
+        await InstallReShadeInternalAsync(card, needsDgVoodoo ? "dxgi.dll" : null);
+
+        // ── dgVoodoo2 (DX9→DX11 translation layer — required for some legacy games) ────
+        // Must be deployed AFTER ReShade so we can confirm dxgi.dll is claimed by ReShade.
+        // Auto-detected from the Luma wiki SpecialNotes column (RequiresDgVoodoo flag),
+        // with the manifest list as a fallback/override for cases the scraper misses.
+        if (needsDgVoodoo && _manifest?.DgVoodooVersions?.Count > 0)
+        {
+            try
+            {
+                DispatcherQueue?.TryEnqueue(() => card.LumaActionMessage = "Installing dgVoodoo2...");
+                var dgVoodooSvc = App.Services.GetRequiredService<DgVoodooService>();
+
+                // Prefer the version recommended by the wiki for this specific mod.
+                // Fall back to the first (latest) entry if the recommended version isn't available.
+                var preferredVersion = card.LumaMod?.DgVoodooVersion;
+                KeyValuePair<string, string> versionEntry;
+                if (!string.IsNullOrEmpty(preferredVersion)
+                    && _manifest.DgVoodooVersions.TryGetValue(preferredVersion, out var preferredUrl))
+                {
+                    versionEntry = new KeyValuePair<string, string>(preferredVersion, preferredUrl);
+                    _crashReporter.Log($"[ApplyLumaPostInstall] Using wiki-recommended dgVoodoo2 v{preferredVersion} for '{card.GameName}'");
+                }
+                else
+                {
+                    versionEntry = _manifest.DgVoodooVersions.First();
+                    if (!string.IsNullOrEmpty(preferredVersion))
+                        _crashReporter.Log($"[ApplyLumaPostInstall] Wiki recommended v{preferredVersion} not in manifest — using default v{versionEntry.Key} for '{card.GameName}'");
+                }
+                await dgVoodooSvc.EnsureStagedAsync(versionEntry.Key, versionEntry.Value);
+                var deployed = dgVoodooSvc.DeployToGame(card.InstallPath, versionEntry.Key, is64Bit: !card.Is32Bit);
+                foreach (var f in deployed)
+                    if (!record.InstalledFiles.Contains(f, StringComparer.OrdinalIgnoreCase))
+                        record.InstalledFiles.Add(f);
+                _lumaService.SaveLumaRecord(record);
+                _crashReporter.Log($"[ApplyLumaPostInstall] dgVoodoo2 v{versionEntry.Key} deployed for '{card.GameName}'");
+            }
+            catch (Exception dgEx)
+            {
+                _crashReporter.Log($"[ApplyLumaPostInstall] dgVoodoo2 deploy failed for '{card.GameName}' — {dgEx.Message}");
+            }
+        }
+
+        // ── Generic Luma post-install actions ─────────────────────────────────
+        if (card.LumaMod?.IsGenericLuma == true)
+        {
+            if (_lumaGenericEntries.TryGetValue(card.GameName, out var genericEntry)
+                && genericEntry.EngineIniKeys.Count > 0)
+            {
+                try
+                {
+                    AuxInstallService.ApplyEngineIniCustomKeys(
+                        card.InstallPath,
+                        genericEntry.EngineIniKeys,
+                        card.EngineIniProjectOverride,
+                        card.GameName,
+                        card.Source);
+                    _crashReporter.Log($"[ApplyLumaPostInstall] Wrote {genericEntry.EngineIniKeys.Count} Engine.ini key(s) for '{card.GameName}'");
+
+                    bool hasTaaKeys = genericEntry.EngineIniKeys.Any(k =>
+                        k.Key.Equals("r.DefaultFeature.AntiAliasing", StringComparison.OrdinalIgnoreCase)
+                        || k.Key.Equals("r.PostProcessAAQuality", StringComparison.OrdinalIgnoreCase));
+                    if (hasTaaKeys)
+                    {
+                        _gameNameService.LumaTaaEnabled.Add(card.GameName);
+                        SaveNameMappings();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[ApplyLumaPostInstall] Engine.ini write failed for '{card.GameName}' — {ex.Message}");
+                }
+            }
+
+            if (_lumaGenericEntries.TryGetValue(card.GameName, out var launchEntry)
+                && !string.IsNullOrWhiteSpace(launchEntry.LaunchArgs))
+            {
+                var existing = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var v) ? v : "";
+                if (string.IsNullOrWhiteSpace(existing))
+                {
+                    _gameNameService.LaunchArgsOverrides[card.GameName] = launchEntry.LaunchArgs;
+                    SaveNameMappings();
+                    _crashReporter.Log($"[ApplyLumaPostInstall] Auto-set launch args '{launchEntry.LaunchArgs}' for '{card.GameName}'");
+                    RequestOverridesPanelRebuild?.Invoke(card);
+                }
+            }
+            else if (card.DetectedApis.Contains(GraphicsApiType.DirectX11)
+                     && card.DetectedApis.Contains(GraphicsApiType.DirectX12))
+            {
+                var existing = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var vd) ? vd : "";
+                if (string.IsNullOrWhiteSpace(existing))
+                {
+                    _gameNameService.LaunchArgsOverrides[card.GameName] = "-dx11";
+                    SaveNameMappings();
+                    _crashReporter.Log($"[ApplyLumaPostInstall] Auto-set -dx11 for dual-API game '{card.GameName}'");
+                    RequestOverridesPanelRebuild?.Invoke(card);
+                }
+            }
+        }
+
+        // Clear the action message — drag-drop path has no subsequent step to overwrite it
+        card.FadeMessage(m => card.LumaActionMessage = m, "✅ Luma installed!");
     }
 
     [RelayCommand]
@@ -974,6 +1181,10 @@ public partial class MainViewModel
         if (card?.LumaRecord == null) return;
         try
         {
+            // If dgVoodoo2 was deployed, D3D9.dll is in the installed files — capture before Uninstall clears it
+            bool wasDgVoodoo = card.LumaRecord.InstalledFiles.Contains("D3D9.dll", StringComparer.OrdinalIgnoreCase)
+                            || card.LumaRecord.InstalledFiles.Contains("d3d9.dll", StringComparer.OrdinalIgnoreCase);
+
             // If Feeder is also installed on this game, don't remove dgVoodoo2 — Feeder still needs it.
             // Remove D3D9.dll from the tracked file list so LumaService.Uninstall doesn't clean it up.
             if (card.LumaRecord.InstalledFiles.Contains("D3D9.dll", StringComparer.OrdinalIgnoreCase))
@@ -985,12 +1196,93 @@ public partial class MainViewModel
                     card.LumaRecord.InstalledFiles.RemoveAll(f => f.Equals("D3D9.dll", StringComparison.OrdinalIgnoreCase)
                                                                 || f.Equals("dgVoodoo.conf", StringComparison.OrdinalIgnoreCase));
                     _crashReporter.Log($"[UninstallLuma] Feeder still installed — preserving dgVoodoo2 files for '{card.GameName}'");
+                    wasDgVoodoo = false; // dgVoodoo stays — don't change ReShade filename
                 }
             }
             _lumaService.Uninstall(card.LumaRecord);
             card.LumaRecord = null;
             card.LumaStatus = GameStatus.NotInstalled;
             card.LumaActionMessage = "✖ Luma removed.";
+
+            // Clean up nvngx_dlss.dll deployed by ApplyLumaPostInstallAsync.
+            // It's not in InstalledFiles (deployed after record was saved), so handle it here.
+            // Use sentinel: 0-byte = RHI placed it (delete both), non-zero = restore original.
+            if (!string.IsNullOrEmpty(card.InstallPath))
+            {
+                var dlssPath = Path.Combine(card.InstallPath, "nvngx_dlss.dll");
+                var sentinelPath = dlssPath + ".original";
+                if (File.Exists(sentinelPath))
+                {
+                    var sentinelSize = new FileInfo(sentinelPath).Length;
+                    if (sentinelSize == 0)
+                    {
+                        try { File.Delete(dlssPath); } catch { }
+                        try { File.Delete(sentinelPath); } catch { }
+                        _crashReporter.Log($"[UninstallLuma] Removed RHI-deployed nvngx_dlss.dll from '{card.InstallPath}'");
+                    }
+                    else
+                    {
+                        AuxInstallService.SentinelRestore(dlssPath);
+                        _crashReporter.Log($"[UninstallLuma] Restored original nvngx_dlss.dll in '{card.InstallPath}'");
+                    }
+                }
+            }
+
+            // If dgVoodoo2 was deployed (DX9 game), ReShade was forced to dxgi.dll.
+            // Reinstall ReShade without the force override so it reverts to the
+            // correct auto-detected filename (d3d9.dll for DX9 games).
+            // InstallReShadeInternalAsync also redeploys reshade.ini with all RHI settings.
+            bool wasDgVoodooGame = wasDgVoodoo;
+            if (wasDgVoodooGame && card.IsRsInstalled)
+            {
+                card.LumaActionMessage = "Restoring ReShade...";
+                _ = InstallReShadeInternalAsync(card, forceFilename: null);
+            }
+            else if (card.IsRsInstalled)
+            {
+                // Redeploy a clean reshade.ini — Luma's [Luma] section is gone,
+                // restore fresh RHI defaults (hotkeys, screenshot path, peak nits, etc.)
+                if (GetKeepRsIniUpdated(card.GameName, card.Source ?? ""))
+                {
+                    try
+                    {
+                        AuxInstallService.EnsureInisDir();
+                        AuxInstallService.MergeRsIni(
+                            card.InstallPath,
+                            BuildScreenshotSavePath(card.GameName),
+                            _settingsViewModel.OverlayHotkey,
+                            _settingsViewModel.ScreenshotHotkey,
+                            card.GameName);
+                        _crashReporter.Log($"[UninstallLuma] Redeployed fresh reshade.ini for '{card.GameName}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[UninstallLuma] reshade.ini redeploy failed for '{card.GameName}' — {ex.Message}");
+                    }
+                }
+
+                // Redeploy globally managed shaders — Luma uninstall deleted the files it
+                // tracked but left the reshade-shaders folder empty. SyncGameFolder restores
+                // the global shader selection and the .rdxc-managed marker.
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
+                        if (sel != null)
+                            await _shaderPackService.EnsurePacksAsync(sel);
+                        var excl = sel == null ? null : await Task.Run(() =>
+                            sel.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                                StringComparer.OrdinalIgnoreCase));
+                        _shaderPackService.SyncGameFolder(card.InstallPath, sel, excl);
+                        _crashReporter.Log($"[UninstallLuma] Redeployed shaders for '{card.GameName}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[UninstallLuma] Shader redeploy failed for '{card.GameName}' — {ex.Message}");
+                    }
+                });
+            }
             // ReShade is managed independently by RHI — do not touch RS status on Luma uninstall.
 
             // Remove launch args if they were auto-set by Luma install

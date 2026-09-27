@@ -13,10 +13,10 @@ namespace RenoDXCommander.Services;
 public class ReShadeExtractor : ISevenZipExtractor
 {
     /// <summary>
-    /// Extracts a single file from the ReShade installer exe.
+    /// Extracts a single file from the ReShade installer exe asynchronously.
     /// Tries System.IO.Compression (ZIP) first, then 7-Zip for NSIS.
     /// </summary>
-    public void ExtractFile(string exePath, string entryName, string outputPath)
+    public async Task ExtractFileAsync(string exePath, string entryName, string outputPath)
     {
         if (!File.Exists(exePath))
             throw new FileNotFoundException($"ReShade installer not found: {exePath}");
@@ -34,33 +34,33 @@ public class ReShadeExtractor : ISevenZipExtractor
             {
                 using var src  = entry.Open();
                 using var dest = File.Create(outputPath);
-                src.CopyTo(dest);
-                CrashReporter.Log($"[ReShadeExtractor.ExtractFile] Extracted '{entryName}' via ZIP");
+                await src.CopyToAsync(dest);
+                CrashReporter.Log($"[ReShadeExtractor.ExtractFileAsync] Extracted '{entryName}' via ZIP");
                 return;
             }
 
             var zipNames = string.Join(", ", zip.Entries.Select(e => e.FullName));
-            CrashReporter.Log($"[ReShadeExtractor.ExtractFile] ZIP opened but '{entryName}' not found. Entries: [{zipNames}]");
+            CrashReporter.Log($"[ReShadeExtractor.ExtractFileAsync] ZIP opened but '{entryName}' not found. Entries: [{zipNames}]");
         }
         catch (InvalidDataException)
         {
-            CrashReporter.Log("[ReShadeExtractor.ExtractFile] Not a ZIP archive, trying 7-Zip");
+            CrashReporter.Log("[ReShadeExtractor.ExtractFileAsync] Not a ZIP archive, trying 7-Zip");
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[ReShadeExtractor.ExtractFile] ZIP failed ({ex.GetType().Name}: {ex.Message}), trying 7-Zip");
+            CrashReporter.Log($"[ReShadeExtractor.ExtractFileAsync] ZIP failed ({ex.GetType().Name}: {ex.Message}), trying 7-Zip");
         }
 
         // ── Strategy 2: 7-Zip (NSIS installer — ReShade 6.7.3+) ────────────
-        var sevenZipPath = Find7ZipExe();
+        var sevenZipPath = await Find7ZipExeAsync();
         if (sevenZipPath != null)
         {
-            if (ExtractWith7Zip(sevenZipPath, exePath, entryName, outputPath))
+            if (await ExtractWith7ZipAsync(sevenZipPath, exePath, entryName, outputPath))
                 return;
         }
         else
         {
-            CrashReporter.Log("[ReShadeExtractor.ExtractFile] 7-Zip not found. Please install 7-Zip from https://www.7-zip.org/");
+            CrashReporter.Log("[ReShadeExtractor.ExtractFileAsync] 7-Zip not found. Please install 7-Zip from https://www.7-zip.org/");
         }
 
         throw new FileNotFoundException(
@@ -70,9 +70,9 @@ public class ReShadeExtractor : ISevenZipExtractor
     }
 
     /// <summary>
-    /// Uses 7z.exe to extract a specific file from the NSIS installer.
+    /// Uses 7z.exe to extract a specific file from the NSIS installer asynchronously.
     /// </summary>
-    private static bool ExtractWith7Zip(string sevenZipExe, string archivePath, string entryName, string outputPath)
+    private static async Task<bool> ExtractWith7ZipAsync(string sevenZipExe, string archivePath, string entryName, string outputPath)
     {
         try
         {
@@ -94,29 +94,45 @@ public class ReShadeExtractor : ISevenZipExtractor
                     RedirectStandardError = true,
                 };
 
-                CrashReporter.Log($"[ReShadeExtractor.ExtractWith7Zip] Running {psi.FileName} {psi.Arguments}");
+                CrashReporter.Log($"[ReShadeExtractor.ExtractWith7ZipAsync] Running {psi.FileName} {psi.Arguments}");
 
                 using var proc = Process.Start(psi);
                 if (proc == null)
                 {
-                    CrashReporter.Log("[ReShadeExtractor.ExtractWith7Zip] Failed to start 7z process");
+                    CrashReporter.Log("[ReShadeExtractor.ExtractWith7ZipAsync] Failed to start 7z process");
                     return false;
                 }
 
-                var stdout = proc.StandardOutput.ReadToEnd();
-                var stderr = proc.StandardError.ReadToEnd();
-                proc.WaitForExit(30_000); // 30 second timeout
+                // Start async reads first
+                var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+                var stderrTask = proc.StandardError.ReadToEndAsync();
 
-                CrashReporter.Log($"[ReShadeExtractor.ExtractWith7Zip] 7z exit={proc.ExitCode}, stdout={stdout.Length} chars");
+                // Wait for process with timeout
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                try
+                {
+                    await proc.WaitForExitAsync(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    CrashReporter.Log("[ReShadeExtractor.ExtractWith7ZipAsync] 7z process timed out after 30 seconds");
+                    try { proc.Kill(); } catch { }
+                    return false;
+                }
+
+                var stdout = await stdoutTask;
+                var stderr = await stderrTask;
+
+                CrashReporter.Log($"[ReShadeExtractor.ExtractWith7ZipAsync] 7z exit={proc.ExitCode}, stdout={stdout.Length} chars");
                 if (!string.IsNullOrWhiteSpace(stderr))
-                    CrashReporter.Log($"[ReShadeExtractor.ExtractWith7Zip] 7z stderr: {stderr}");
+                    CrashReporter.Log($"[ReShadeExtractor.ExtractWith7ZipAsync] 7z stderr: {stderr}");
 
                 // Find the extracted file
                 var extracted = Path.Combine(tempDir, entryName);
                 if (File.Exists(extracted))
                 {
                     File.Copy(extracted, outputPath, overwrite: true);
-                    CrashReporter.Log($"[ReShadeExtractor.ExtractWith7Zip] Extracted '{entryName}' via 7-Zip ({new FileInfo(outputPath).Length} bytes)");
+                    CrashReporter.Log($"[ReShadeExtractor.ExtractWith7ZipAsync] Extracted '{entryName}' via 7-Zip ({new FileInfo(outputPath).Length} bytes)");
                     return true;
                 }
 
@@ -125,13 +141,13 @@ public class ReShadeExtractor : ISevenZipExtractor
                 if (found != null)
                 {
                     File.Copy(found, outputPath, overwrite: true);
-                    CrashReporter.Log($"[ReShadeExtractor.ExtractWith7Zip] Extracted '{entryName}' via 7-Zip from subdir ({new FileInfo(outputPath).Length} bytes)");
+                    CrashReporter.Log($"[ReShadeExtractor.ExtractWith7ZipAsync] Extracted '{entryName}' via 7-Zip from subdir ({new FileInfo(outputPath).Length} bytes)");
                     return true;
                 }
 
                 // List what was extracted for diagnostics
                 var files = Directory.GetFiles(tempDir, "*", SearchOption.AllDirectories);
-                CrashReporter.Log($"[ReShadeExtractor.ExtractWith7Zip] '{entryName}' not found in 7z output. Extracted files: [{string.Join(", ", files.Select(Path.GetFileName))}]");
+                CrashReporter.Log($"[ReShadeExtractor.ExtractWith7ZipAsync] '{entryName}' not found in 7z output. Extracted files: [{string.Join(", ", files.Select(Path.GetFileName))}]");
                 return false;
             }
             finally
@@ -141,21 +157,21 @@ public class ReShadeExtractor : ISevenZipExtractor
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[ReShadeExtractor.ExtractWith7Zip] 7-Zip extraction failed — {ex.GetType().Name}: {ex.Message}");
+            CrashReporter.Log($"[ReShadeExtractor.ExtractWith7ZipAsync] 7-Zip extraction failed — {ex.GetType().Name}: {ex.Message}");
             return false;
         }
     }
 
     /// <summary>
-    /// Finds 7z.exe on the system. Checks common install locations and PATH.
+    /// Finds 7z.exe on the system asynchronously. Checks common install locations and PATH.
     /// </summary>
-    public string? Find7ZipExe()
+    public async Task<string?> Find7ZipExeAsync()
     {
         // Check bundled 7z.exe next to the app exe first
         var bundled = Path.Combine(AppContext.BaseDirectory, "7z.exe");
         if (File.Exists(bundled))
         {
-            CrashReporter.Log($"[ReShadeExtractor.Find7ZipExe] Using bundled 7-Zip at {bundled}");
+            CrashReporter.Log($"[ReShadeExtractor.Find7ZipExeAsync] Using bundled 7-Zip at {bundled}");
             return bundled;
         }
 
@@ -172,7 +188,7 @@ public class ReShadeExtractor : ISevenZipExtractor
         {
             if (File.Exists(path))
             {
-                CrashReporter.Log($"[ReShadeExtractor.Find7ZipExe] Found 7-Zip at {path}");
+                CrashReporter.Log($"[ReShadeExtractor.Find7ZipExeAsync] Found 7-Zip at {path}");
                 return path;
             }
         }
@@ -191,14 +207,22 @@ public class ReShadeExtractor : ISevenZipExtractor
             using var proc = Process.Start(psi);
             if (proc != null)
             {
-                proc.WaitForExit(5000);
-                CrashReporter.Log("[ReShadeExtractor.Find7ZipExe] Found 7z.exe on PATH");
-                return "7z.exe";
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                try
+                {
+                    await proc.WaitForExitAsync(cts.Token);
+                    CrashReporter.Log("[ReShadeExtractor.Find7ZipExeAsync] Found 7z.exe on PATH");
+                    return "7z.exe";
+                }
+                catch (OperationCanceledException)
+                {
+                    try { proc.Kill(); } catch { }
+                }
             }
         }
         catch (Exception ex) { CrashReporter.Log($"[ReShadeExtractor] Operation failed — {ex.Message}"); }
 
-        CrashReporter.Log("[ReShadeExtractor.Find7ZipExe] 7-Zip not found at any known location");
+        CrashReporter.Log("[ReShadeExtractor.Find7ZipExeAsync] 7-Zip not found at any known location");
         return null;
     }
 
@@ -215,8 +239,8 @@ public class ReShadeExtractor : ISevenZipExtractor
         }
         catch (Exception ex) { CrashReporter.Log($"[ReShadeExtractor] Operation failed — {ex.Message}"); }
 
-        // Try 7z listing
-        var sevenZip = Find7ZipExe();
+        // Try 7z listing (synchronous, diagnostics only — acceptable as this method is for debugging)
+        var sevenZip = Find7ZipExeAsync().GetAwaiter().GetResult();
         if (sevenZip != null)
         {
             try

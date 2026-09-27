@@ -793,6 +793,7 @@ public partial class MainViewModel
         }
 
         _allCards.Add(card);
+        card.DispatcherQueue = DispatcherQueue;  // Set dispatcher for newly added card
         _allCards = _allCards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
         SaveLibrary();
         _filterViewModel.SetAllCards(_allCards);
@@ -870,8 +871,7 @@ public partial class MainViewModel
                 bool isUe4 = card.EngineHint?.Contains("Unreal Engine 4") == true;
 
                 // DB-driven configuration — only when dev-unlocked and source is not WikiOnly
-                var dbEntry = (DevUnlockService.IsUnlocked
-                    && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+                var dbEntry = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                     ? GetDbUnrealEntry(card.GameName)
                     : null;
 
@@ -900,7 +900,21 @@ public partial class MainViewModel
             if (!card.UseUeExtended && card.EngineHint?.Contains("Unreal") == true)
                 AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unreal");
             else if (!card.UseUeExtended && card.EngineHint?.Contains("Unity") == true)
+            {
                 AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unity");
+
+                // Apply per-game DB upgrades on top of the placeholders (dev-gated)
+                if (DevUnlockService.IsUnlocked)
+                {
+                    var unityEntry = GetDbUnityEntry(card.GameName);
+                    var upgrades   = unityEntry?.ParsedUpgrades;
+                    if (upgrades?.Count > 0)
+                    {
+                        AuxInstallService.ApplyUnityRenodxUpgrades(card.InstallPath, upgrades);
+                        _crashReporter.Log($"[MainViewModel.InstallModAsync] Unity DB upgrades applied for '{card.GameName}': {upgrades.Count} key(s)");
+                    }
+                }
+            }
 
             // Apply per-game [renodx] INI overrides from manifest
             if (_manifest?.RenodxIniOverrides != null
@@ -913,8 +927,7 @@ public partial class MainViewModel
             var compatEntry = _manifestUeExtendedCompat.TryGetValue(card.GameName, out var ce) ? ce : null;
 
             // Resolve db entry once more (already looked up above, re-use for Engine.ini decision)
-            var dbEntryForEngineIni = (DevUnlockService.IsUnlocked
-                && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+            var dbEntryForEngineIni = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? GetDbUnrealEntry(card.GameName)
                 : null;
 
@@ -980,15 +993,18 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            card.ActionMessage = $"❌ Failed: {ex.Message}";
+            DispatcherQueue?.TryEnqueue(() => card.ActionMessage = $"❌ Failed: {ex.Message}");
             _crashReporter.WriteCrashReport("InstallModAsync", ex, note: $"Game: {card.GameName}, Path: {card.InstallPath}");
         }
         finally
         {
-            card.IsInstalling = false;
-            // Restore original URL if we swapped to 32-bit for the install
-            if (swappedTo32 && card.Mod != null && originalSnapshotUrl != null)
-                card.Mod.SnapshotUrl = originalSnapshotUrl;
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                card.IsInstalling = false;
+                // Restore original URL if we swapped to 32-bit for the install
+                if (swappedTo32 && card.Mod != null && originalSnapshotUrl != null)
+                    card.Mod.SnapshotUrl = originalSnapshotUrl;
+            });
         }
     }
 

@@ -1,0 +1,98 @@
+<Window x:Class="PCGWEditor.FetchSummaryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Fetch Results" Height="560" Width="560"
+        Background="#1A1A2E" FontFamily="Segoe UI" FontSize="13"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <Style TargetType="ListBox">
+            <Setter Property="Background"  Value="#14142A"/>
+            <Setter Property="BorderBrush" Value="#333355"/>
+            <Setter Property="Foreground"  Value="#E0E0F0"/>
+        </Style>
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Foreground" Value="#E0E0F0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#252550"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#14142A" BorderBrush="#333355"
+                BorderThickness="0,0,0,1" Padding="16,12">
+            <TextBlock x:Name="TitleLabel" FontSize="14" FontWeight="SemiBold"
+                       Foreground="#BBBBFF"/>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,12,16,12">
+            <StackPanel>
+
+                <!-- Nothing changed -->
+                <TextBlock x:Name="NoChangesLabel" Visibility="Collapsed"
+                           Text="No changes found since the last fetch. Everything is up to date."
+                           Foreground="#AAAACC" FontSize="12" TextWrapping="Wrap"/>
+
+                <!-- New games -->
+                <StackPanel x:Name="NewSection" Visibility="Collapsed">
+                    <TextBlock x:Name="NewCountLabel"
+                               Foreground="#55CC77" FontSize="12" FontWeight="SemiBold"
+                               Margin="0,0,0,6"/>
+                    <ListBox x:Name="NewList" MaxHeight="180" FontSize="12"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                </StackPanel>
+
+                <!-- Separator -->
+                <Border x:Name="SectionSep" Height="1" Background="#333355"
+                        Margin="0,12,0,12" Visibility="Collapsed"/>
+
+                <!-- Updated games -->
+                <StackPanel x:Name="UpdatedSection" Visibility="Collapsed">
+                    <TextBlock x:Name="UpdatedCountLabel"
+                               Foreground="#FFCC44" FontSize="12" FontWeight="SemiBold"
+                               Margin="0,0,0,6"/>
+                    <ListBox x:Name="UpdatedList" MaxHeight="220" FontSize="12"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Close -->
+        <Border Grid.Row="2" Background="#14142A" BorderBrush="#333355"
+                BorderThickness="0,1,0,0" Padding="16,10">
+            <Button Content="Close" Click="Close_Click" HorizontalAlignment="Right"
+                    Width="100" Padding="0,6"
+                    Background="#333355" Foreground="#E0E0F0"
+                    BorderBrush="#555577" BorderThickness="1">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#444466"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Border>
+    </Grid>
+</Window>

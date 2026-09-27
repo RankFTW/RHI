@@ -16,6 +16,29 @@ public partial class GameCardViewModel
     /// </summary>
     internal static Func<bool> IsLayerInstalledFunc = VulkanLayerService.IsLayerInstalled;
 
+    // ── Cached Vulkan layer state (set via SetVulkanLayerInstalled from background threads) ────
+    private bool _vulkanLayerInstalled;
+
+    /// <summary>Cached Vulkan layer installation status. Updated by SetVulkanLayerInstalled().</summary>
+    public bool VulkanLayerInstalled => _vulkanLayerInstalled;
+
+    /// <summary>Cached Vulkan layer version string. Updated in RefreshBackupState().</summary>
+    private string? _vulkanLayerInstalledVersion;
+    public string? VulkanLayerInstalledVersion => _vulkanLayerInstalledVersion;
+
+    /// <summary>
+    /// Updates the cached Vulkan layer state and notifies dependents.
+    /// Call from background threads after checking VulkanLayerService.IsLayerInstalled().
+    /// </summary>
+    public void SetVulkanLayerInstalled(bool value)
+    {
+        if (_vulkanLayerInstalled != value)
+        {
+            _vulkanLayerInstalled = value;
+            NotifyRsStatusDependents();
+        }
+    }
+
     // ── RS computed properties ─────────────────────────────────────────────────────
 
     /// <summary>Per-component status dot for ReShade.</summary>
@@ -33,7 +56,7 @@ public partial class GameCardViewModel
                 return "⚠  RE Framework required";
             if (RequiresVulkanInstall)
             {
-                bool layerInstalled = IsLayerInstalledFunc();
+                bool layerInstalled = _vulkanLayerInstalled;
                 if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
                     return "⬆  Update Vulkan ReShade";
                 if (layerInstalled && IsVulkanRsActive) return "↺  Reinstall Vulkan ReShade";
@@ -67,8 +90,7 @@ public partial class GameCardViewModel
         : RsStatus == GameStatus.Installed       ? "#5ECB7D"
         : "#A0AABB";
     /// <summary>True when this is a Vulkan game and reshade.ini already exists in the game folder.</summary>
-    private bool IsVulkanRsActive => RequiresVulkanInstall
-        && File.Exists(Path.Combine(InstallPath, "reshade.ini"));
+    private bool IsVulkanRsActive => RequiresVulkanInstall && _vulkanRsIniExists;
 
     public string RsShortAction
     {
@@ -77,7 +99,7 @@ public partial class GameCardViewModel
             if (RsIsInstalling) return "…";
             if (RequiresVulkanInstall)
             {
-                bool layerInstalled = IsLayerInstalledFunc();
+                bool layerInstalled = _vulkanLayerInstalled;
                 if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
                     return "⬆ Update";
                 if (layerInstalled && IsVulkanRsActive) return "↺ Reinstall";
@@ -103,8 +125,16 @@ public partial class GameCardViewModel
         ? "0,0,1,0" : "0";
 
     // ── INI preset existence for RS ───────────────────────────────────────────────
+
+    // Cached INI existence (populated by RefreshBackupState, called from background threads)
+    private bool _rsIniExists;
+    private bool _vulkanRsIniExists;
+
     /// <summary>True when reshade.ini is present in the inis folder — enables the 📋 button.</summary>
-    public bool RsIniExists => File.Exists(AuxInstallService.RsIniPath);
+    public bool RsIniExists => _rsIniExists;
+
+    /// <summary>True when this is a Vulkan game and reshade.ini exists in the game folder.</summary>
+    public bool VulkanRsIniExists => _vulkanRsIniExists;
 
     // INI button corner radius: rounded right when it is the rightmost button (delete hidden)
     private bool RsDeleteVisible => RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable;

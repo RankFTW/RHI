@@ -12,6 +12,12 @@ public partial class GameCardViewModel
     /// <summary>True when a matching Luma mod exists in the wiki.</summary>
     public bool IsLumaAvailable => LumaMod != null;
 
+    /// <summary>Nexus Mods URL for this Luma mod, if available.</summary>
+    public string? LumaNexusUrl => LumaMod?.NexusUrl;
+
+    /// <summary>True when this Luma mod is only available via Nexus (no direct download URL).</summary>
+    public bool LumaIsExternalOnly => LumaMod?.NexusUrl != null && LumaMod?.DownloadUrl == null;
+
     /// <summary>True when the scraped Luma UE wiki entry shows HDR support for this game.</summary>
     public bool LumaHdrSupported { get; set; }
     /// <summary>True when the scraped Luma UE wiki entry shows DLSS/FSR support for this game.</summary>
@@ -26,7 +32,7 @@ public partial class GameCardViewModel
 
     // EffectiveLumaMode: true when Luma feature is enabled and a Luma mod is available
     private bool EffectiveLumaMode => LumaFeatureEnabled && LumaMod != null;
-    public Visibility LumaInstallVisibility => (EffectiveLumaMode && LumaMod?.DownloadUrl != null
+    public Visibility LumaInstallVisibility => (EffectiveLumaMode && (LumaMod?.DownloadUrl != null || LumaMod?.NexusUrl != null)
         && LumaStatus == GameStatus.NotInstalled) ? Visibility.Visible : Visibility.Collapsed;
     public Visibility LumaReinstallVisibility => (EffectiveLumaMode
         && (LumaStatus == GameStatus.Installed || LumaStatus == GameStatus.UpdateAvailable))
@@ -38,6 +44,7 @@ public partial class GameCardViewModel
         : (!IsRsInstalled && !ExcludeFromUpdateAllReShade && LumaStatus == GameStatus.NotInstalled) ? "⚠  ReShade required"
         : LumaStatus == GameStatus.UpdateAvailable ? "⬆  Update Luma"
         : LumaStatus == GameStatus.Installed ? "↺  Reinstall Luma"
+        : LumaIsExternalOnly ? "Get on Nexus Mods"
         : "⬇  Install Luma";
 
     // Component table: Luma short status/action (consistent with RS/DC/RDX)

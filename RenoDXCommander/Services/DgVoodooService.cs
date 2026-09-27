@@ -15,7 +15,8 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public class DgVoodooService
 {
-    private const string D3D9Entry   = "MS/x86/D3D9.dll";
+    private const string D3D9Entry32 = "MS/x86/D3D9.dll";
+    private const string D3D9Entry64 = "MS/x64/D3D9.dll";
     private const string D3D9Dll     = "D3D9.dll";
     private const string ConfFile    = "dgVoodoo.conf";
 
@@ -46,8 +47,8 @@ public class DgVoodooService
             // Check if already cached via Content-Length comparison
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Head, url);
-                var resp = await _http.SendAsync(req).ConfigureAwait(false);
+                using var req = new HttpRequestMessage(HttpMethod.Head, url);
+                using var resp = await _http.SendAsync(req).ConfigureAwait(false);
                 if (resp.IsSuccessStatusCode)
                 {
                     var remoteSize = resp.Content.Headers.ContentLength;
@@ -69,7 +70,7 @@ public class DgVoodooService
         var tempPath = zipPath + ".tmp";
         try
         {
-            var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             var buf = new byte[1024 * 1024];
             using (var net = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
@@ -105,7 +106,7 @@ public class DgVoodooService
     /// dgVoodoo.conf is always written by RHI and tracked for deletion on uninstall.
     /// Returns the list of relative paths deployed (for tracking in LumaInstalledRecord.InstalledFiles).
     /// </summary>
-    public List<string> DeployToGame(string installPath, string version)
+    public List<string> DeployToGame(string installPath, string version, bool is64Bit = false)
     {
         var deployed = new List<string>();
         var zipPath = GetCachedZipPath(version);
@@ -116,16 +117,17 @@ public class DgVoodooService
         }
 
         // ── Deploy D3D9.dll ──────────────────────────────────────────────────
+        var d3d9Entry = is64Bit ? D3D9Entry64 : D3D9Entry32;
         var d3d9Dest = Path.Combine(installPath, D3D9Dll);
         try
         {
             using var zip = ZipFile.OpenRead(zipPath);
-            var entry = zip.GetEntry(D3D9Entry)
+            var entry = zip.GetEntry(d3d9Entry)
                 ?? zip.Entries.FirstOrDefault(e =>
-                    e.FullName.Equals(D3D9Entry, StringComparison.OrdinalIgnoreCase));
+                    e.FullName.Equals(d3d9Entry, StringComparison.OrdinalIgnoreCase));
             if (entry == null)
             {
-                CrashReporter.Log($"[DgVoodooService.DeployToGame] {D3D9Entry} not found in zip");
+                CrashReporter.Log($"[DgVoodooService.DeployToGame] {d3d9Entry} not found in zip");
                 return deployed;
             }
 
@@ -135,7 +137,7 @@ public class DgVoodooService
                 src.CopyTo(dst);
 
             deployed.Add(D3D9Dll);
-            CrashReporter.Log($"[DgVoodooService.DeployToGame] Deployed {D3D9Dll} to '{installPath}'");
+            CrashReporter.Log($"[DgVoodooService.DeployToGame] Deployed {D3D9Dll} ({(is64Bit ? "x64" : "x86")}) to '{installPath}'");
         }
         catch (Exception ex)
         {
@@ -171,7 +173,14 @@ public class DgVoodooService
         var d3d9Path = Path.Combine(installPath, D3D9Dll);
         if (File.Exists(d3d9Path) || File.Exists(d3d9Path + ".original"))
         {
-            if (File.Exists(d3d9Path)) File.Delete(d3d9Path);
+            try
+            {
+                if (File.Exists(d3d9Path)) File.Delete(d3d9Path);
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Failed to delete {D3D9Dll} — {ex.Message}");
+            }
             AuxInstallService.SentinelRestore(d3d9Path);
             CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Removed/restored {D3D9Dll} in '{installPath}'");
         }
@@ -179,8 +188,15 @@ public class DgVoodooService
         var confPath = Path.Combine(installPath, ConfFile);
         if (File.Exists(confPath))
         {
-            File.Delete(confPath);
-            CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Deleted {ConfFile} in '{installPath}'");
+            try
+            {
+                File.Delete(confPath);
+                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Deleted {ConfFile} in '{installPath}'");
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DgVoodooService.RemoveFromGame] Failed to delete {ConfFile} — {ex.Message}");
+            }
         }
     }
 

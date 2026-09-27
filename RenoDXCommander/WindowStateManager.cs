@@ -244,6 +244,13 @@ public class WindowStateManager
             return IntPtr.Zero;
         }
 
+        // Save window position/size when the user finishes a resize or move drag.
+        // This means the bounds are always up to date, surviving End Task or installer-triggered restarts.
+        if (msg == (uint)NativeInterop.WM_EXITSIZEMOVE && !_sizeLocked)
+        {
+            SaveWindowBounds();
+        }
+
         if (msg == NativeInterop.WM_DROPFILES)
         {
             HandleWin32Drop(wParam);
@@ -281,71 +288,125 @@ public class WindowStateManager
             NativeInterop.DragFinish(hDrop);
 
             // Process on the UI thread via DragDropHandler
-            _window.DispatcherQueue.TryEnqueue(async () =>
-            {
-                foreach (var path in paths)
-                {
-                    var ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
-
-                    // .url shortcut files — parse the URL inside and route to ProcessDroppedUrl
-                    if (ext == ".url")
-                    {
-                        try
-                        {
-                            var url = DragDropHandler.ParseUrlFromShortcutFile(path);
-                            if (!string.IsNullOrEmpty(url))
-                            {
-                                _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] Parsed URL from .url file '{Path.GetFileName(path)}': {url}");
-                                await _dragDropHandler.ProcessDroppedUrl(url);
-                            }
-                            else
-                            {
-                                _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] No URL found in .url file '{Path.GetFileName(path)}' — skipping");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] Error processing .url file '{Path.GetFileName(path)}' — {ex.Message}");
-                        }
-                        continue;
-                    }
-
-                    if (ext is ".addon64" or ".addon32"
-                        && Path.GetFileName(path).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase)
-                        && !Path.GetFileName(path).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
-                        && !Path.GetFileName(path).StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase))
-                    {
-                        try { await _dragDropHandler.ProcessDroppedAddon(path); }
-                        catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] Addon error — {ex.Message}"); }
-                        continue;
-                    }
-
-                    if (ext == ".ini")
-                    {
-                        try { await _dragDropHandler.ProcessDroppedPreset(path); }
-                        catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] Preset error — {ex.Message}"); }
-                        continue;
-                    }
-
-                    if (DragDropHandler.AllowedExtensions.Contains(ext) && ext != ".exe"
-                        && ext is not ".addon64" and not ".addon32")
-                    {
-                        try { await _dragDropHandler.ProcessDroppedArchive(path); }
-                        catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] Archive error — {ex.Message}"); }
-                        continue;
-                    }
-
-                    if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase))
-                    {
-                        try { await _dragDropHandler.ProcessDroppedExe(path); }
-                        catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] Exe error — {ex.Message}"); }
-                    }
-                }
-            });
+            // NOTE: Use fire-and-forget pattern to avoid TryEnqueue(async) which detaches continuations
+            _window.DispatcherQueue.TryEnqueue(() => _ = ProcessWin32DropAsync(paths));
         }
         catch (Exception ex)
         {
             _crashReporter.Log($"[WindowStateManager.HandleWin32Drop] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Async helper for processing Win32 dropped files. Called from TryEnqueue to stay on UI thread.
+    /// </summary>
+    private async Task ProcessWin32DropAsync(List<string> paths)
+    {
+        foreach (var path in paths)
+        {
+            var ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
+
+            // .url shortcut files — parse the URL inside and route to ProcessDroppedUrl
+            if (ext == ".url")
+            {
+                try
+                {
+                    var url = DragDropHandler.ParseUrlFromShortcutFile(path);
+                    if (!string.IsNullOrEmpty(url))
+                    {
+                        _crashReporter.Log($"[WindowStateManager.ProcessWin32DropAsync] Parsed URL from .url file '{Path.GetFileName(path)}': {url}");
+                        await _dragDropHandler.ProcessDroppedUrl(url);
+                    }
+                    else
+                    {
+                        _crashReporter.Log($"[WindowStateManager.ProcessWin32DropAsync] No URL found in .url file '{Path.GetFileName(path)}' — skipping");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[WindowStateManager.ProcessWin32DropAsync] Error processing .url file '{Path.GetFileName(path)}' — {ex.Message}");
+                }
+                continue;
+            }
+
+            if (ext is ".addon64" or ".addon32"
+                && Path.GetFileName(path).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase)
+                && !Path.GetFileName(path).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                && !Path.GetFileName(path).StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase))
+            {
+                try { await _dragDropHandler.ProcessDroppedAddon(path); }
+                catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.ProcessWin32DropAsync] Addon error — {ex.Message}"); }
+                continue;
+            }
+
+            if (ext == ".ini")
+            {
+                try { await _dragDropHandler.ProcessDroppedPreset(path); }
+                catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.ProcessWin32DropAsync] Preset error — {ex.Message}"); }
+                continue;
+            }
+
+            if (DragDropHandler.AllowedExtensions.Contains(ext) && ext != ".exe"
+                && ext is not ".addon64" and not ".addon32")
+            {
+                try { await _dragDropHandler.ProcessDroppedArchive(path); }
+                catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.ProcessWin32DropAsync] Archive error — {ex.Message}"); }
+                continue;
+            }
+
+            if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                try { await _dragDropHandler.ProcessDroppedExe(path); }
+                catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.ProcessWin32DropAsync] Exe error — {ex.Message}"); }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Async helper for processing OLE dropped files. Called from TryEnqueue to stay on UI thread.
+    /// </summary>
+    internal async Task ProcessOleDropFilesAsync(List<string> filePaths)
+    {
+        foreach (var path in filePaths)
+        {
+            var ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
+
+            if (ext is ".addon64" or ".addon32"
+                && Path.GetFileName(path).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
+            {
+                try { await _dragDropHandler.ProcessDroppedAddon(path); }
+                catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.ProcessOleDropFilesAsync] Addon error — {ex.Message}"); }
+                continue;
+            }
+
+            if (DragDropHandler.AllowedExtensions.Contains(ext) && ext != ".exe"
+                && ext is not ".addon64" and not ".addon32")
+            {
+                try { await _dragDropHandler.ProcessDroppedArchive(path); }
+                catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.ProcessOleDropFilesAsync] Archive error — {ex.Message}"); }
+                continue;
+            }
+
+            if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                try { await _dragDropHandler.ProcessDroppedExe(path); }
+                catch (Exception ex) { _crashReporter.Log($"[WindowStateManager.ProcessOleDropFilesAsync] Exe error — {ex.Message}"); }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Async helper for processing OLE dropped URL. Called from TryEnqueue to stay on UI thread.
+    /// </summary>
+    internal async Task ProcessOleDropUrlAsync(string url)
+    {
+        try
+        {
+            await _dragDropHandler.ProcessDroppedUrl(url);
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[WindowStateManager.ProcessOleDropUrlAsync] ProcessDroppedUrl error — {ex.Message}");
         }
     }
 
@@ -375,6 +436,10 @@ public class WindowStateManager
                 doc.TryGetProperty("FullW", out var fw) && doc.TryGetProperty("FullH", out var fh))
                 _windowBounds = (fx.GetInt32(), fy.GetInt32(), fw.GetInt32(), fh.GetInt32());
 
+            bool restoreMaximized = !positionOnly
+                && doc.TryGetProperty("Maximized", out var maxProp)
+                && maxProp.GetBoolean();
+
             // Apply the bounds
             if (_windowBounds is var (x, y, w, h) && w >= 400 && h >= 300 && w <= 7680 && h <= 4320)
             {
@@ -387,24 +452,33 @@ public class WindowStateManager
                     if (NativeInterop.GetMonitorInfo(hMonitor, ref mi))
                     {
                         var work = mi.rcWork;
-                        // Ensure bottom edge doesn't exceed work area
-                        if (y + h > work.Bottom)
-                            y = work.Bottom - h;
-                        // Ensure top edge isn't above work area
-                        if (y < work.Top)
-                            y = work.Top;
-                        // Ensure right edge doesn't exceed work area
-                        if (x + w > work.Right)
-                            x = work.Right - w;
-                        // Ensure left edge isn't off-screen
-                        if (x < work.Left)
-                            x = work.Left;
+                        if (y + h > work.Bottom) y = work.Bottom - h;
+                        if (y < work.Top)        y = work.Top;
+                        if (x + w > work.Right)  x = work.Right - w;
+                        if (x < work.Left)       x = work.Left;
                     }
                 }
 
-                if (positionOnly)
+                if (restoreMaximized)
                 {
-                    // Restore position only — size will be set by ApplyCompactSize
+                    // Use SetWindowPlacement to atomically set both the restored rect and
+                    // SW_MAXIMIZE. This avoids the pseudo-maximized bug where calling
+                    // SetWindowPos on an already-maximized window produces an invalid state.
+                    var placement = new NativeInterop.WINDOWPLACEMENT();
+                    placement.length = System.Runtime.InteropServices.Marshal.SizeOf<NativeInterop.WINDOWPLACEMENT>();
+                    NativeInterop.GetWindowPlacement(_hwnd, ref placement); // read flags/min position
+                    placement.showCmd        = NativeInterop.SW_MAXIMIZE;
+                    placement.rcNormalPosition = new NativeInterop.RECT
+                    {
+                        Left   = x,
+                        Top    = y,
+                        Right  = x + w,
+                        Bottom = y + h,
+                    };
+                    NativeInterop.SetWindowPlacement(_hwnd, ref placement);
+                }
+                else if (positionOnly)
+                {
                     NativeInterop.GetWindowRect(_hwnd, out var current);
                     var curW = current.Right - current.Left;
                     var curH = current.Bottom - current.Top;
@@ -414,12 +488,6 @@ public class WindowStateManager
                 {
                     NativeInterop.SetWindowPos(_hwnd, IntPtr.Zero, x, y, w, h, 0x0040 /* SWP_NOZORDER */);
                 }
-            }
-
-            // Restore maximized state if it was saved (skip for compact mode)
-            if (!positionOnly && doc.TryGetProperty("Maximized", out var maxProp) && maxProp.GetBoolean())
-            {
-                NativeInterop.ShowWindow(_hwnd, NativeInterop.SW_MAXIMIZE);
             }
         }
         catch { }
@@ -592,35 +660,8 @@ public class WindowStateManager
                         pdwEffect = DROPEFFECT_COPY;
                         _owner._crashReporter.Log($"[OleDropTarget.Drop] Received {filePaths.Count} file(s) via CF_HDROP — routing to HandleWin32Drop logic");
 
-                        _owner._window.DispatcherQueue.TryEnqueue(async () =>
-                        {
-                            foreach (var path in filePaths)
-                            {
-                                var ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
-
-                                if (ext is ".addon64" or ".addon32"
-                                    && Path.GetFileName(path).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    try { await _owner._dragDropHandler.ProcessDroppedAddon(path); }
-                                    catch (Exception ex) { _owner._crashReporter.Log($"[OleDropTarget.Drop] Addon error — {ex.Message}"); }
-                                    continue;
-                                }
-
-                                if (DragDropHandler.AllowedExtensions.Contains(ext) && ext != ".exe"
-                                    && ext is not ".addon64" and not ".addon32")
-                                {
-                                    try { await _owner._dragDropHandler.ProcessDroppedArchive(path); }
-                                    catch (Exception ex) { _owner._crashReporter.Log($"[OleDropTarget.Drop] Archive error — {ex.Message}"); }
-                                    continue;
-                                }
-
-                                if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    try { await _owner._dragDropHandler.ProcessDroppedExe(path); }
-                                    catch (Exception ex) { _owner._crashReporter.Log($"[OleDropTarget.Drop] Exe error — {ex.Message}"); }
-                                }
-                            }
-                        });
+                        // NOTE: Use fire-and-forget pattern to avoid TryEnqueue(async) which detaches continuations
+                        _owner._window.DispatcherQueue.TryEnqueue(() => _ = _owner.ProcessOleDropFilesAsync(filePaths));
 
                         return 0;
                     }
@@ -658,17 +699,9 @@ public class WindowStateManager
                                                  || ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase)))
                                 {
                                     pdwEffect = DROPEFFECT_COPY;
-                                    _owner._window.DispatcherQueue.TryEnqueue(async () =>
-                                    {
-                                        try
-                                        {
-                                            await _owner._dragDropHandler.ProcessDroppedUrl(url);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            _owner._crashReporter.Log($"[OleDropTarget.Drop] ProcessDroppedUrl error — {ex.Message}");
-                                        }
-                                    });
+                                    // NOTE: Use fire-and-forget pattern to avoid TryEnqueue(async) which detaches continuations
+                                    var capturedUrl = url; // Capture for closure
+                                    _owner._window.DispatcherQueue.TryEnqueue(() => _ = _owner.ProcessOleDropUrlAsync(capturedUrl));
                                     return 0;
                                 }
                             }

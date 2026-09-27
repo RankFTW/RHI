@@ -225,6 +225,10 @@ public partial class MainViewModel
                 try { await _pcgwService.LoadCacheAsync(); await _pcgwService.LoadApiCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
+            var pcgwCentralTask = Task.Run(async () => {
+                try { await _pcgwService.LoadCentralDataAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] PcgwService central data load failed — {ex.Message}"); }
+            });
             var uwFixInitTask = Task.Run(async () => {
                 try { await _uwFixService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] UltrawideFixService init failed — {ex.Message}"); }
@@ -287,6 +291,7 @@ public partial class MainViewModel
             // 2. Launch all background tasks (identical for both paths)
             var wikiTask        = _wikiService.FetchAllAsync();
             var lumaTask        = _lumaService.FetchCompletedModsAsync();
+            var lumaRelTask     = _lumaService.FetchReleasesModsAsync();
             var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
             var manifestTask    = _manifestService.FetchAsync();
             // DB fetch — only when dev-unlocked and source is not WikiOnly.
@@ -294,9 +299,9 @@ public partial class MainViewModel
             // changes are picked up immediately, matching manifest/wiki behaviour.
             if (forceRescan)
                 _renoDxDbService.InvalidateCache();
-            var dbTask = (DevUnlockService.IsUnlocked && !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase))
+            var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? _renoDxDbService.FetchAllAsync()
-                : Task.FromResult<(List<GameMod>, Dictionary<string, RenoDXDbUnrealEntry>)>((new(), new(StringComparer.OrdinalIgnoreCase)));
+                : Task.FromResult(new DbFetchResult(new(), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase)));
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -309,6 +314,40 @@ public partial class MainViewModel
 
             // One-time migration: move nightly DLLs from old shared folder to new nightly folder
             MigrateNightlyStagingFolder();
+
+            // One-time migration: wipe stale DLSS5Feeder shader staging folder.
+            // The DLSS5Feeder pack was previously downloaded from the repo zip (which no longer
+            // contains DLSS5_Feed.fx). The file is now extracted from the Feeder addon zip.
+            // Delete the old pack cache zip + extracted folder so the fresh file gets seeded
+            // on the next Feeder install/download.
+            try
+            {
+                var feederPackCacheZip = Path.Combine(DownloadPaths.Shaders, "shaders_DLSS5Feeder.zip");
+                var feederShadersDir   = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder");
+                if (File.Exists(feederPackCacheZip))
+                {
+                    try { File.Delete(feederPackCacheZip); } catch { }
+                    if (Directory.Exists(feederShadersDir))
+                        try { Directory.Delete(feederShadersDir, true); } catch { }
+                    _crashReporter.Log("[MainViewModel.InitializeAsync] Wiped stale DLSS5Feeder shader pack cache — will be re-seeded from addon zip on next Feeder install");
+                }
+
+                // Also clear stale settings.json entries that point to a file that no longer exists —
+                // prevents EnsurePackAsync from treating a missing file as "up to date".
+                var feederFxStaged = Path.Combine(ShaderPackService.ShadersDir, "DLSS5Feeder", "DLSS5_Feed.fx");
+                if (!File.Exists(feederFxStaged))
+                {
+                    await _shaderPackService.ClearPackRegistrationAsync("DLSS5Feeder");
+                    _crashReporter.Log("[MainViewModel.InitializeAsync] Cleared stale DLSS5Feeder settings entries — file missing from staging");
+                }
+                else if (!_shaderPackService.IsPackCached("DLSS5Feeder"))
+                {
+                    // File is staged but settings.json record is missing — re-register so SyncGameFolder can deploy it.
+                    await Task.Run(() => _shaderPackService.RecordExtractedFilesFromDir("DLSS5Feeder"));
+                    _crashReporter.Log("[MainViewModel.InitializeAsync] Re-registered DLSS5Feeder staging files — settings.json record was missing");
+                }
+            }
+            catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS5Feeder migration failed — {ex.Message}"); }
 
             // Cleanup: remove orphaned .original sentinel files from game folders where the
             // base filename no longer matches the installed OptiScaler DLL name. These were
@@ -389,11 +428,17 @@ public partial class MainViewModel
             });
             // Fire-and-forget: fetch available NR addon versions for the version picker.
             // Uses a 1-hour cooldown so it's a no-op on most launches. Not awaited — doesn't block cards.
+            // After fetching, if the known latest is newer than what's staged, download it silently.
             _ = Task.Run(async () => {
                 try
                 {
                     var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
                     await rdx5Svc.FetchAndCacheAvailableVersionsAsync().ConfigureAwait(false);
+                    // If the version list shows a newer version than what's staged, download it.
+                    // This handles the case where the user has "Latest" selected but hasn't run
+                    // the update check yet (4-hour cooldown) — the version list fetch is independent.
+                    await rdx5Svc.EnsureStagingAsync().ConfigureAwait(false);
+                    await rdx5Svc.EnsureSfStagingAsync().ConfigureAwait(false);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] NR addon versions fetch failed — {ex.Message}"); }
             });
@@ -433,25 +478,33 @@ public partial class MainViewModel
             // Extract DB results and merge with wiki according to source setting
             try
             {
-                var (dbMods, dbUnreal) = await dbTask;
-                _dbMods = dbMods;
-                _dbUnrealEntries = dbUnreal;
-                _crashReporter.Log($"[MainViewModel.InitializeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries");
+                var dbResult = await dbTask;
+                _dbMods = dbResult.Mods;
+                _dbUnrealEntries = dbResult.UnrealEntries;
+                _dbUnityEntries  = dbResult.UnityEntries;
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries, {_dbUnityEntries.Count} Unity entries");
             }
             catch (Exception ex)
             {
                 _crashReporter.Log($"[MainViewModel.InitializeAsync] DB fetch failed — {ex.Message}");
-                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase);
+                _dbMods = new(); _dbUnrealEntries = new(StringComparer.OrdinalIgnoreCase); _dbUnityEntries = new(StringComparer.OrdinalIgnoreCase);
             }
             MergeDbSources();
-            try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
+            try
+            {
+                var wikiLuma  = lumaTask.IsCompletedSuccessfully ? await lumaTask : new();
+                var relLuma   = lumaRelTask.IsCompletedSuccessfully ? await lumaRelTask : new();
+                _lumaMods = LumaService.MergeLumaMods(wikiLuma, relLuma);
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods: {wikiLuma.Count} wiki + {relLuma.Count} releases = {_lumaMods.Count} merged");
+            }
+            catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
             try { _lumaGenericEntries = lumaUeTask.IsCompletedSuccessfully ? await lumaUeTask : new(StringComparer.OrdinalIgnoreCase); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma UE entries failed — {ex.Message}"); _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase); }
 
             // ── Detect new wiki mods ────────────────────────────────────────────
             if (!wikiFetchFailed)
             {
                 var currentModNames = _allMods
-                    .Where(m => m.SnapshotUrl != null) // Only mods with downloadable addons
+                    .Where(m => m.SnapshotUrl != null || m.NexusUrl != null) // Mods with any downloadable source
                     .Select(m => m.Name)
                     .ToList();
 
@@ -595,15 +648,48 @@ public partial class MainViewModel
             // Ensure Nexus Mods dictionary and PCGW AppID cache are ready before building cards
             await nexusInitTask;
             await pcgwCacheTask;
+            await pcgwCentralTask;
             await uwFixInitTask;
             await ultraPlusInitTask;
 
             _crashReporter.Log($"[MainViewModel.InitializeAsync] Building cards for {allGames.Count} games...");
             progress?.Report($"Building cards for {allGames.Count} games...");
             _allCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));
+            PropagateDispatcherToCards();
             _crashReporter.Log($"[MainViewModel.InitializeAsync] BuildCards complete: {_allCards.Count} cards");
             GraphicsApiDetector.SaveCache();
             SaveGameApiCache();
+
+            // Auto-reinstall ReShade for WindowsApps games whose path changed during this build.
+            // The old WindowsApps folder is deleted by Windows on game update so the DLL
+            // can't be copied across — reinstall it fresh at the new path instead.
+            if (_pendingRsReinstall.Count > 0)
+            {
+                var toReinstall = _allCards
+                    .Where(c => _pendingRsReinstall.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey())
+                             && !string.IsNullOrEmpty(c.InstallPath))
+                    .ToList();
+                _pendingRsReinstall.Clear();
+                if (toReinstall.Count > 0)
+                {
+                    _crashReporter.Log($"[MainViewModel.InitializeAsync] Auto-reinstalling ReShade for {toReinstall.Count} WindowsApps game(s) after path update");
+                    _ = Task.Run(async () =>
+                    {
+                        foreach (var card in toReinstall)
+                        {
+                            try
+                            {
+                                _crashReporter.Log($"[MainViewModel.InitializeAsync] Auto-reinstalling ReShade for '{card.GameName}' at new path '{card.InstallPath}'");
+                                await InstallReShadeInternalAsync(card, forceFilename: null);
+                            }
+                            catch (Exception ex)
+                            {
+                                _crashReporter.Log($"[MainViewModel.InitializeAsync] Auto-reinstall failed for '{card.GameName}' — {ex.Message}");
+                            }
+                        }
+                    });
+                }
+            }
 
             // Apply manifest DLL name overrides to any existing installs whose filenames don't match
             ApplyManifestDllRenames();
@@ -725,10 +811,13 @@ public partial class MainViewModel
                         .Select(card =>
                         {
                             var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-                            var exclusions = effectiveSelection?
-                                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                                    StringComparer.OrdinalIgnoreCase);
-                            return Task.Run(() => _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions));
+                            return Task.Run(() =>
+                            {
+                                var exclusions = effectiveSelection?
+                                    .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                                        StringComparer.OrdinalIgnoreCase);
+                                _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions);
+                            });
                         });
                     await Task.WhenAll(syncTasks);
                 }
@@ -773,7 +862,7 @@ public partial class MainViewModel
             var offlineMode = wikiFetchFailed;
             StatusText    = offlineMode
                 ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
-                : $"{detectedGames.Count} games detected · {InstalledCount} mods installed";
+                : $"{detectedGames.Count} games detected · {InstalledCount} ReShade installs";
             SubStatusText = "";
         }
         catch (Exception ex)

@@ -22,7 +22,7 @@ public static class AddonManagerDialog
         List<string> enabledAddons, Action onEnabledChanged)
     {
         var packs = addonPackService.AvailablePacks
-            .Where(e => GetActionType(e) == "download")
+            .Where(e => !e.HideFromPicker && GetActionType(e) == "download")
             .ToList();
 
         if (packs.Count == 0)

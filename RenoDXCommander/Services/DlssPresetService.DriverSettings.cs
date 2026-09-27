@@ -1314,4 +1314,68 @@ $session.Save()
     public bool SetRtxHdrMiddleGrey(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_MIDDLE_GREY_ID, value);
     public bool SetRtxHdrDebanding(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_DEBANDING_ID, value);
 
+    // ── Bulk fetch for Settings page ──────────────────────────────────────────
+
+    /// <summary>
+    /// Fetches all global NVAPI settings on a background thread with a timeout.
+    /// Returns <see cref="NvApiSettingsSnapshot.Default"/> if the fetch times out or fails.
+    /// This prevents the UI from freezing if NVAPI becomes unresponsive after GPU sleep/wake.
+    /// </summary>
+    /// <param name="timeoutMs">Timeout in milliseconds (default 5 seconds).</param>
+    public async Task<NvApiSettingsSnapshot> FetchNvApiSettingsAsync(int timeoutMs = 5000)
+    {
+        if (!_isSupported)
+        {
+            CrashReporter.Log("[DlssPresetService.FetchNvApiSettingsAsync] NVAPI not supported, returning defaults");
+            return NvApiSettingsSnapshot.Default;
+        }
+
+        try
+        {
+            var fetchTask = Task.Run(() =>
+            {
+                CrashReporter.Log("[DlssPresetService.FetchNvApiSettingsAsync] Starting NVAPI reads on background thread");
+                var sw = Stopwatch.StartNew();
+
+                var snapshot = new NvApiSettingsSnapshot
+                {
+                    ShaderCacheSize = GetShaderCacheSize(),
+                    ShaderPrecompile = GetShaderPrecompile(),
+                    GSyncMode = GetGSyncMode(),
+                    GSyncEnabled = GetGlobalGSyncEnabled(),
+                    GSyncIndicator = GetGSyncIndicator(),
+                    FpsLimit = GetGlobalFpsLimit(),
+                    PreferredRefreshRate = GetPreferredRefreshRate(),
+                    DmfgFrameCount = GetGlobalDmfgFrameCount(),
+                    DmfgTargetFps = GetGlobalDmfgTargetFps(),
+                    ReBarEnableMode = GetGlobalReBarEnableMode(),
+                    ReBarSizeLimit = GetGlobalReBarSizeLimit(),
+                    VSyncMode = GetGlobalVSyncMode(),
+                    PowerMode = GetGlobalPowerMode()
+                };
+
+                sw.Stop();
+                CrashReporter.Log($"[DlssPresetService.FetchNvApiSettingsAsync] NVAPI reads completed in {sw.ElapsedMilliseconds}ms");
+                return snapshot;
+            });
+
+            var completedTask = await Task.WhenAny(fetchTask, Task.Delay(timeoutMs));
+
+            if (completedTask == fetchTask)
+            {
+                return await fetchTask;
+            }
+            else
+            {
+                CrashReporter.Log($"[DlssPresetService.FetchNvApiSettingsAsync] NVAPI reads timed out after {timeoutMs}ms — returning defaults");
+                return NvApiSettingsSnapshot.Default;
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.FetchNvApiSettingsAsync] Exception: {ex.Message}");
+            return NvApiSettingsSnapshot.Default;
+        }
+    }
+
 }

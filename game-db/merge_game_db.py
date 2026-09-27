@@ -16,7 +16,8 @@ Games are keyed by (name, store) — treated as case-insensitive.
 
 Fields merged by majority vote:
   api, all_apis, bitness, engine, install_subpath, exe_relative,
-  steam_appid, xbox_aumid, epic_app_name, pcgw_url
+  steam_appid, xbox_aumid, epic_app_name, pcgw_url,
+  config_path, config_path_xbox, engine_ini_project_override
 
 Majority vote rules:
   - Plurality wins (most common value across all submissions for that field).
@@ -49,6 +50,9 @@ SCALAR_FIELDS = [
     "xbox_aumid",
     "epic_app_name",
     "pcgw_url",
+    "config_path",
+    "config_path_xbox",
+    "engine_ini_project_override",
 ]
 
 LIST_FIELDS = [

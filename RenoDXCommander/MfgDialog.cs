@@ -319,40 +319,66 @@ public static class MfgDialog
                 2 => MODE_DYNAMIC,
                 _ => MODE_OFF,
             };
-            presetService.SetMfgMode(gameName, installPath, modeValue);
 
-            // Reset dependent settings when mode changes
+            // Reset dependent UI state on the UI thread before any NVAPI calls
             if (modeValue == MODE_OFF)
             {
-                presetService.SetMfgGenerationFactor(gameName, installPath, 0);
-                presetService.DeleteMfgDynamicMaxCount(gameName, installPath);
-                presetService.DeleteMfgDynamicTargetFps(gameName, installPath);
                 currentFactor = 0;
                 currentDynamicMax = 0;
                 currentTargetFps = 0;
             }
             else if (modeValue == MODE_FIXED)
             {
-                // Switching to Fixed: delete dynamic settings (inherit from global)
-                presetService.DeleteMfgDynamicMaxCount(gameName, installPath);
-                presetService.DeleteMfgDynamicTargetFps(gameName, installPath);
                 currentDynamicMax = 0;
                 currentTargetFps = 0;
             }
             else if (modeValue == MODE_DYNAMIC)
             {
-                // Switching to Dynamic: clear fixed settings, delete dynamic to inherit global
-                presetService.SetMfgGenerationFactor(gameName, installPath, 0);
-                presetService.DeleteMfgDynamicMaxCount(gameName, installPath);
-                presetService.DeleteMfgDynamicTargetFps(gameName, installPath);
                 currentFactor = 0;
-                // Re-read effective values (now inheriting from global base profile)
-                currentDynamicMax = presetService.GetMfgDynamicMaxCount(gameName, installPath);
-                currentTargetFps = presetService.GetMfgDynamicTargetFps(gameName, installPath);
+                // Re-read effective values after the NVAPI calls complete and update UI via TryEnqueue
             }
 
             PopulateCountCombo(idx);
             PopulateFpsCombo(idx);
+
+            // Capture values for the lambda
+            string capturedGame = gameName;
+            string capturedPath = installPath;
+            uint capturedMode = modeValue;
+            int capturedIdx = idx;
+
+            _ = Task.Run(() =>
+            {
+                presetService.SetMfgMode(capturedGame, capturedPath, capturedMode);
+
+                if (capturedMode == MODE_OFF)
+                {
+                    presetService.SetMfgGenerationFactor(capturedGame, capturedPath, 0);
+                    presetService.DeleteMfgDynamicMaxCount(capturedGame, capturedPath);
+                    presetService.DeleteMfgDynamicTargetFps(capturedGame, capturedPath);
+                }
+                else if (capturedMode == MODE_FIXED)
+                {
+                    presetService.DeleteMfgDynamicMaxCount(capturedGame, capturedPath);
+                    presetService.DeleteMfgDynamicTargetFps(capturedGame, capturedPath);
+                }
+                else if (capturedMode == MODE_DYNAMIC)
+                {
+                    presetService.SetMfgGenerationFactor(capturedGame, capturedPath, 0);
+                    presetService.DeleteMfgDynamicMaxCount(capturedGame, capturedPath);
+                    presetService.DeleteMfgDynamicTargetFps(capturedGame, capturedPath);
+                    // Read effective inherited values and update UI combos
+                    var newDynamicMax = presetService.GetMfgDynamicMaxCount(capturedGame, capturedPath);
+                    var newTargetFps = presetService.GetMfgDynamicTargetFps(capturedGame, capturedPath);
+                    modeCombo.DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        currentDynamicMax = newDynamicMax;
+                        currentTargetFps = newTargetFps;
+                        PopulateCountCombo(capturedIdx);
+                        PopulateFpsCombo(capturedIdx);
+                    });
+                }
+            });
         };
 
         countCombo.SelectionChanged += (s, ev) =>
@@ -366,15 +392,21 @@ public static class MfgDialog
             {
                 // 2x=1, 3x=2, 4x=3, 5x=4, 6x=5
                 uint value = (uint)(idx + 1);
-                presetService.SetMfgGenerationFactor(gameName, installPath, value);
                 currentFactor = value;
+                string capturedGame = gameName;
+                string capturedPath = installPath;
+                uint capturedValue = value;
+                _ = Task.Run(() => presetService.SetMfgGenerationFactor(capturedGame, capturedPath, capturedValue));
             }
             else if (currentModeIdx == 2) // Dynamic → Dynamic Max Count
             {
                 // Up to 2x=1, Up to 3x=2, Up to 4x=3, Up to 5x=4, Up to 6x=5
                 uint value = (uint)(idx + 1);
-                presetService.SetMfgDynamicMaxCount(gameName, installPath, value);
                 currentDynamicMax = value;
+                string capturedGame = gameName;
+                string capturedPath = installPath;
+                uint capturedValue = value;
+                _ = Task.Run(() => presetService.SetMfgDynamicMaxCount(capturedGame, capturedPath, capturedValue));
             }
         };
 
@@ -405,8 +437,11 @@ public static class MfgDialog
             else
                 return; // Custom label item — don't set
 
-            presetService.SetMfgDynamicTargetFps(gameName, installPath, value);
             currentTargetFps = value;
+            string capturedGame = gameName;
+            string capturedPath = installPath;
+            uint capturedValue = value;
+            _ = Task.Run(() => presetService.SetMfgDynamicTargetFps(capturedGame, capturedPath, capturedValue));
         };
 
         // Custom FPS "Set" button handler
@@ -414,10 +449,13 @@ public static class MfgDialog
         {
             if (uint.TryParse(customFpsBox.Text, out var customFps) && customFps >= 20 && customFps <= 1000)
             {
-                presetService.SetMfgDynamicTargetFps(gameName, installPath, customFps);
                 currentTargetFps = customFps;
                 customFpsPanel.Visibility = Visibility.Collapsed;
                 PopulateFpsCombo(modeCombo.SelectedIndex);
+                string capturedGame = gameName;
+                string capturedPath = installPath;
+                uint capturedFps = customFps;
+                _ = Task.Run(() => presetService.SetMfgDynamicTargetFps(capturedGame, capturedPath, capturedFps));
             }
         };
         customFpsBox.KeyDown += (s, ev) =>
@@ -426,10 +464,13 @@ public static class MfgDialog
             {
                 if (uint.TryParse(customFpsBox.Text, out var customFps) && customFps >= 20 && customFps <= 1000)
                 {
-                    presetService.SetMfgDynamicTargetFps(gameName, installPath, customFps);
                     currentTargetFps = customFps;
                     customFpsPanel.Visibility = Visibility.Collapsed;
                     PopulateFpsCombo(modeCombo.SelectedIndex);
+                    string capturedGame = gameName;
+                    string capturedPath = installPath;
+                    uint capturedFps = customFps;
+                    _ = Task.Run(() => presetService.SetMfgDynamicTargetFps(capturedGame, capturedPath, capturedFps));
                 }
             }
         };

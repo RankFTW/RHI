@@ -98,6 +98,9 @@ internal static class NativeInterop
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool SetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct WINDOWPLACEMENT
     {
@@ -147,6 +150,7 @@ internal static class NativeInterop
 
     internal const int GWLP_WNDPROC = -4;
     internal const int WM_GETMINMAXINFO = 0x0024;
+    internal const int WM_EXITSIZEMOVE  = 0x0232;  // fires once when resize/move drag ends
     internal const int MinWindowWidth = 900;
     internal const int MinWindowHeight = 800;
 
@@ -286,6 +290,55 @@ internal static class NativeInterop
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    /// <summary>
+    /// Forces a window to the foreground, bypassing Windows' foreground-lock restrictions.
+    /// More reliable than SetForegroundWindow when called outside the foreground time window.
+    /// fAltTab=true mimics Alt+Tab behaviour (activates and shows the window).
+    /// </summary>
+    [DllImport("user32.dll")]
+    internal static extern void SwitchToThisWindow(IntPtr hWnd, [MarshalAs(UnmanagedType.Bool)] bool fAltTab);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool AllowSetForegroundWindow(int dwProcessId);
+
+    [DllImport("user32.dll")]
+    internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("user32.dll")]
+    internal static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, [MarshalAs(UnmanagedType.Bool)] bool fAttach);
+
+    [DllImport("user32.dll")]
+    internal static extern IntPtr GetForegroundWindow();
+
+    /// <summary>
+    /// Forces a window to the foreground by temporarily attaching to the foreground thread's
+    /// input queue. This is the only reliable way to steal focus on launch without a user event.
+    /// </summary>
+    internal static void ForceToForeground(IntPtr hwnd)
+    {
+        var foregroundHwnd = GetForegroundWindow();
+        var foregroundThread = GetWindowThreadProcessId(foregroundHwnd, out _);
+        var currentThread = GetCurrentThreadId();
+
+        if (foregroundThread != currentThread)
+            AttachThreadInput(currentThread, foregroundThread, true);
+
+        SetForegroundWindow(hwnd);
+        BringWindowToTop(hwnd);
+
+        if (foregroundThread != currentThread)
+            AttachThreadInput(currentThread, foregroundThread, false);
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool BringWindowToTop(IntPtr hWnd);
 
     // ── Win32 Open File Dialog (fallback for WinRT FileOpenPicker COM failures) ──
 

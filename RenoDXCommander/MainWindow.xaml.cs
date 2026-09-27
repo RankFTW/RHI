@@ -39,7 +39,6 @@ public sealed partial class MainWindow : Window
     private readonly WindowStateManager _windowStateManager;
     private readonly DragDropHandler _dragDropHandler;
     private readonly AddonFileWatcher _addonFileWatcher;
-    private CompactViewBuilder? _compactViewBuilder;
 
     /// <summary>Exposes the detail panel builder for extracted handler classes.</summary>
     internal DetailPanelBuilder DetailPanelBuilderInstance => _detailPanelBuilder;
@@ -77,7 +76,7 @@ public sealed partial class MainWindow : Window
             App.Services.GetRequiredService<IOptiScalerWikiService>(),
             App.Services.GetRequiredService<IHdrDatabaseService>(),
             App.Services.GetRequiredService<IOptiScalerService>());
-        _compactViewBuilder = new CompactViewBuilder(this);
+
         _dialogService = new DialogService(this);
         _settingsHandler = new SettingsHandler(this);
         _massDeployHandler = new MassDeployHandler(this);
@@ -115,11 +114,7 @@ public sealed partial class MainWindow : Window
         // Set a sensible default size immediately so the window isn't huge on first launch.
         // TryRestoreWindowBounds (called on Activated) will then override this with the
         // saved size+position from the previous session, if one exists.
-        if (ViewModel.CurrentViewLayout != ViewLayout.Compact)
-            AppWindow.Resize(new Windows.Graphics.SizeInt32(DefaultWidth, DefaultHeight));
-        // For compact mode, sizing is handled entirely by ApplyCompactSize in the
-        // Activated handler using SetWindowPos, which avoids the size mismatch between
-        // AppWindow.Resize (client area) and SetWindowPos (full window frame).
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(DefaultWidth, DefaultHeight));
 
         // Enforce minimum window size and enable Win32 drag-and-drop via WindowStateManager
         var hwnd = WindowNative.GetWindowHandle(this);
@@ -134,7 +129,7 @@ public sealed partial class MainWindow : Window
         {
             TrayIconService.Initialize(
                 _windowStateManager.Hwnd,
-                onShowWindow: () => { this.Activate(); },
+                onShowWindow: () => { BringToFront(); },
                 onExit: () => { _forceClose = true; this.Close(); },
                 onLaunchGame: (name) =>
                 {
@@ -142,7 +137,7 @@ public sealed partial class MainWindow : Window
                         c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
                     if (card != null)
                     {
-                        DispatcherQueue.TryEnqueue(() => LaunchGame(card));
+                        DispatcherQueue.TryEnqueue(async () => await LaunchGameAsync(card));
                     }
                 });
             TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentGamesMenu ? ViewModel.Settings.RecentLaunches : new List<string>());
@@ -162,13 +157,6 @@ public sealed partial class MainWindow : Window
         // Apply compact size and lock immediately in the constructor.
         // There may be a tiny WinUI layout adjustment on first render, but the lock
         // prevents the user from resizing the window freely.
-        if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
-        {
-            _windowStateManager.TryRestoreWindowBounds(positionOnly: true);
-            _windowStateManager.ApplyCompactSize();
-            _windowStateManager.SetSizeLocked(true);
-        }
-
         // Set the title bar icon (unpackaged apps need this explicitly)
         var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
         AppWindow.SetIcon(Path.Combine(exeDir, "icon.ico"));
@@ -197,6 +185,23 @@ public sealed partial class MainWindow : Window
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
         ViewModel.RequestOverridesPanelRebuild = card =>
             DispatcherQueue.TryEnqueue(() => { BuildOverridesPanel(card); _detailPanelBuilder.ApplySectionOrder(); });
+        ViewModel.RequestDetailPanelRebuild = card =>
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    // Re-find the card by name+store in case BuildCards replaced it concurrently
+                    var live = ViewModel.AllCards.FirstOrDefault(c =>
+                        c.GameName.Equals(card.GameName, StringComparison.OrdinalIgnoreCase)
+                        && c.Source == card.Source)
+                        ?? card;
+                    PopulateDetailPanel(live);
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter?.Log($"[RequestDetailPanelRebuild] Exception: {ex.Message}");
+                }
+            });
         ViewModel.RequestCardRebuild = card =>
             DispatcherQueue.TryEnqueue(() =>
             {
@@ -233,7 +238,7 @@ public sealed partial class MainWindow : Window
         // Apply initial visibility
         UpdatePageVisibility();
         // Show version in status bar
-        StatusBarVersionText.Text = $"v{Services.CrashReporter.AppVersion}";
+        StatusBarVersionText.Content = $"v{Services.CrashReporter.AppVersion}";
         // Always show the ✕ clear button on search box
         SearchBox.Loaded += (_, _) => VisualStateManager.GoToState(SearchBox, "ButtonVisible", false);
         ViewModel.InitializeAsync().SafeFireAndForget("MainWindow.Init");
@@ -267,14 +272,16 @@ public sealed partial class MainWindow : Window
         {
             var name = App._pendingLaunchGame;
             App._pendingLaunchGame = null;
-            DispatcherQueue.TryEnqueue(async () =>
+            // Use a DispatcherTimer to wait for cards to be built (avoids TryEnqueue + async + Task.Delay deadlock risk)
+            var launchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            launchTimer.Tick += (_, _) =>
             {
-                // Wait for cards to be built
-                await Task.Delay(2000);
+                launchTimer.Stop();
                 var card = ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
-                if (card != null) LaunchGame(card);
-            });
+                if (card != null) _ = LaunchGameAsync(card);
+            };
+            launchTimer.Start();
         }
 
         // Installer shutdown signal — allows the Inno Setup installer to request
@@ -318,7 +325,7 @@ public sealed partial class MainWindow : Window
         // Force tray icon initialization regardless of setting (user explicitly wants to start minimized)
         TrayIconService.Initialize(
             _windowStateManager.Hwnd,
-            onShowWindow: () => { this.Activate(); },
+            onShowWindow: () => { BringToFront(); },
             onExit: () => { _forceClose = true; this.Close(); },
             onLaunchGame: (name) =>
             {
@@ -326,7 +333,7 @@ public sealed partial class MainWindow : Window
                     c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
                 if (card != null)
                 {
-                    DispatcherQueue.TryEnqueue(() => LaunchGame(card));
+                    DispatcherQueue.TryEnqueue(async () => await LaunchGameAsync(card));
                 }
             });
         TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentGamesMenu ? ViewModel.Settings.RecentLaunches : new List<string>());
@@ -343,24 +350,30 @@ public sealed partial class MainWindow : Window
             // Only restore once
             this.Activated -= MainWindow_Activated;
 
-            // If starting minimized, hide instead of restoring
+            // Always restore saved bounds — even when starting minimized, so the
+            // window has the correct size/position when the user later shows it from tray.
+            _windowStateManager.TryRestoreWindowBounds();
+
+            // If starting minimized, hide after restoring bounds
             if (App._startMinimized)
             {
                 AppWindow.Hide();
                 return;
             }
 
-            if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
+            // Bring to front now that WinUI has presented the window — Activate() alone
+            // doesn't steal focus from whichever app was foreground when RHI launched.
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            NativeInterop.ForceToForeground(hwnd);
+
+            // Apply bounds a second time deferred — on some systems (especially after reboot)
+            // WinUI's layout system resizes the window after Activated fires. The deferred
+            // re-apply ensures our saved size wins over the default layout size.
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
-                // Compact mode: restore position only, then apply the fixed compact size and lock.
-                _windowStateManager.TryRestoreWindowBounds(positionOnly: true);
-                _windowStateManager.ApplyCompactSize();
-                _windowStateManager.SetSizeLocked(true);
-            }
-            else
-            {
-                _windowStateManager.TryRestoreWindowBounds();
-            }
+                try { _windowStateManager.TryRestoreWindowBounds(); }
+                catch { }
+            });
         }
         catch (Exception ex) { _crashReporter.Log($"[MainWindow.MainWindow_Activated] Failed to restore window bounds — {ex.Message}"); }
     }
@@ -382,6 +395,7 @@ public sealed partial class MainWindow : Window
         _windowStateManager.CleanupOleDragDrop();
         TrayIconService.Dispose();
         SingleInstanceService.Stop();
+        ViewModel.FlushPendingSaves(); // Flush any debounced saves before final save
         ViewModel.SaveSettingsPublic();
         ViewModel.SaveLibraryPublic();
         _windowStateManager.SaveWindowBounds();
@@ -390,7 +404,18 @@ public sealed partial class MainWindow : Window
     // ── Addon file handling (Downloads watcher + file association) ───────────────
 
     /// <summary>
-    /// Handles an addon file detected by the Downloads watcher or passed via command-line.
+    /// Reliably brings the window to the foreground from any state (hidden, behind other windows).
+    /// Must be called on the UI thread.
+    /// </summary>
+    internal void BringToFront()
+    {
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        AppWindow.Show();                               // unhide if hidden (CloseToTray / start-minimized)
+        NativeInterop.ForceToForeground(hwnd);          // AttachThreadInput trick — bypasses foreground lock
+        this.Activate();                                // update WinUI internal state
+    }
+
+    /// <summary>
     /// Waits for initialization to complete, then delegates to the drag-drop handler.
     /// </summary>
     internal async void HandleAddonFile(string filePath)
@@ -486,7 +511,7 @@ public sealed partial class MainWindow : Window
                 var fileName = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
                 var gameNames = lumaGames.Select(c => c.GameName).ToList();
                 var autoMatchIndex = gameNames.FindIndex(name =>
-                    fileName.Contains(name.ToLowerInvariant().Replace(":", "").Replace("™", "")));
+                    fileName.Contains(name.ToLowerInvariant().Replace(":", "").Replace("™", "").Replace("®", "")));
 
                 // Always show picker — pre-select the matched game if found
                 var combo = new ComboBox
@@ -498,13 +523,13 @@ public sealed partial class MainWindow : Window
                 };
                 var pickerDialog = new ContentDialog
                 {
-                    Title = "Install Luma Mod",
+                    Title = "🌙 Install Luma Addon",
                     Content = new StackPanel
                     {
                         Spacing = 8,
                         Children =
                         {
-                            new TextBlock { Text = $"Luma mod detected: {Path.GetFileName(filePath)}\n\nSelect game to install to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                            new TextBlock { Text = $"Install {Path.GetFileName(filePath)} to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
                             combo,
                         }
                     },
@@ -572,14 +597,10 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.SelectedGame = card;
 
-            switch (ViewModel.CurrentViewLayout)
+            // Debounce panel rebuild
+            _pendingSelectionCard = card;
+            if (_selectionDebounceTimer == null)
             {
-                case ViewLayout.Detail:
-                case ViewLayout.Compact:
-                    // Debounce panel rebuild for both Detail and Compact modes
-                    _pendingSelectionCard = card;
-                    if (_selectionDebounceTimer == null)
-                    {
                         _selectionDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
                         _selectionDebounceTimer.Tick += (s, ev) =>
                         {
@@ -587,64 +608,38 @@ public sealed partial class MainWindow : Window
                             var target = _pendingSelectionCard;
                             if (target != null && target == ViewModel.SelectedGame)
                             {
-                                if (ViewModel.CurrentViewLayout == ViewLayout.Detail)
-                                {
-                                    PopulateDetailPanel(target);
-                                    DetailPanel.Visibility = Visibility.Visible;
-                                    BuildOverridesPanel(target);
-                                    if (OverridesContainer.Visibility != Visibility.Visible)        OverridesContainer.Visibility = Visibility.Visible;
-                                    if (NeuralRenderingContainer.Visibility != Visibility.Visible)  NeuralRenderingContainer.Visibility = Visibility.Visible;
-                                    if (NvidiaProfileContainer.Visibility != Visibility.Visible)    NvidiaProfileContainer.Visibility = Visibility.Visible;
-                                    if (ManagementContainer.Visibility != Visibility.Visible)       ManagementContainer.Visibility = Visibility.Visible;
-                                    _detailPanelBuilder.ApplySectionOrder();
-                                }
-                                else if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
-                                {
-                                    _compactViewBuilder?.RebuildCurrentPage(
-                                        target, ViewModel.CompactPageIndex);
-                                }
+                                _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel start: '{target.GameName}'");
+                                PopulateDetailPanel(target);
+                                _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel done, BuildOverridesPanel start: '{target.GameName}'");
+                                DetailPanel.Visibility = Visibility.Visible;
+                                BuildOverridesPanel(target);
+                                _crashReporter?.Log($"[SelectionDebounce] BuildOverridesPanel done: '{target.GameName}'");
+                                if (OverridesContainer.Visibility != Visibility.Visible)        OverridesContainer.Visibility = Visibility.Visible;
+                                if (NeuralRenderingContainer.Visibility != Visibility.Visible)  NeuralRenderingContainer.Visibility = Visibility.Visible;
+                                if (NvidiaProfileContainer.Visibility != Visibility.Visible)    NvidiaProfileContainer.Visibility = Visibility.Visible;
+                                if (ManagementContainer.Visibility != Visibility.Visible)       ManagementContainer.Visibility = Visibility.Visible;
+                                _detailPanelBuilder.ApplySectionOrder();
+                                _crashReporter?.Log($"[SelectionDebounce] ApplySectionOrder done: '{target.GameName}'");
                             }
                         };
                     }
                     _selectionDebounceTimer.Stop();
                     _selectionDebounceTimer.Start();
-                    break;
-            }
         }
         else
         {
             ViewModel.SelectedGame = null;
-
-            switch (ViewModel.CurrentViewLayout)
-            {
-                case ViewLayout.Detail:
-                    DetailPanel.Visibility = Visibility.Collapsed;
-                    OverridesPanel.Children.Clear();
-                    OverridesContainer.Visibility = Visibility.Collapsed;
-                    NeuralRenderingPanel.Children.Clear();
-                    NeuralRenderingContainer.Visibility = Visibility.Collapsed;
-                    NvidiaProfilePanel.Children.Clear();
-                    NvidiaProfileContainer.Visibility = Visibility.Collapsed;
-                    ManagementPanel.Children.Clear();
-                    ManagementContainer.Visibility = Visibility.Collapsed;
-                    ExtrasPanel.Children.Clear();
-                    ExtrasContainer.Visibility = Visibility.Collapsed;
-                    break;
-                case ViewLayout.Compact:
-                    // Hide detail panel content when no game is selected
-                    DetailPanel.Visibility = Visibility.Collapsed;
-                    OverridesPanel.Children.Clear();
-                    OverridesContainer.Visibility = Visibility.Collapsed;
-                    NeuralRenderingPanel.Children.Clear();
-                    NeuralRenderingContainer.Visibility = Visibility.Collapsed;
-                    NvidiaProfilePanel.Children.Clear();
-                    NvidiaProfileContainer.Visibility = Visibility.Collapsed;
-                    ManagementPanel.Children.Clear();
-                    ManagementContainer.Visibility = Visibility.Collapsed;
-                    ExtrasPanel.Children.Clear();
-                    ExtrasContainer.Visibility = Visibility.Collapsed;
-                    break;
-            }
+            DetailPanel.Visibility = Visibility.Collapsed;
+            OverridesPanel.Children.Clear();
+            OverridesContainer.Visibility = Visibility.Collapsed;
+            NeuralRenderingPanel.Children.Clear();
+            NeuralRenderingContainer.Visibility = Visibility.Collapsed;
+            NvidiaProfilePanel.Children.Clear();
+            NvidiaProfileContainer.Visibility = Visibility.Collapsed;
+            ManagementPanel.Children.Clear();
+            ManagementContainer.Visibility = Visibility.Collapsed;
+            ExtrasPanel.Children.Clear();
+            ExtrasContainer.Visibility = Visibility.Collapsed;
         }
     }
 }

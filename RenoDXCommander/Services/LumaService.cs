@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Text.Json;
 using HtmlAgilityPack;
 using RenoDXCommander.Models;
+using RenoDXCommander;
 
 namespace RenoDXCommander.Services;
 
@@ -83,18 +84,20 @@ public class LumaService : ILumaService
 
             var author = cells.Count > 1 ? Clean(cells[1].InnerText) : "";
 
-            // Download Link cell — extract first href
+            // Download Link cell — extract GitHub URL and/or Nexus URL
+            // Patterns: GitHub only, GitHub + Nexus (separated by · ), Nexus only
             string? downloadUrl = null;
+            string? nexusUrl = null;
             if (cells.Count > 2)
             {
                 foreach (var a in cells[2].SelectNodes(".//a") ?? Enumerable.Empty<HtmlNode>())
                 {
                     var href = a.GetAttributeValue("href", "").Trim();
-                    if (!string.IsNullOrEmpty(href) && href.StartsWith("http"))
-                    {
+                    if (string.IsNullOrEmpty(href) || !href.StartsWith("http")) continue;
+                    if (href.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase))
+                        nexusUrl = href;
+                    else if (downloadUrl == null)
                         downloadUrl = href;
-                        break;
-                    }
                 }
             }
 
@@ -150,9 +153,12 @@ public class LumaService : ILumaService
                 Name = name,
                 Author = author,
                 DownloadUrl = downloadUrl,
+                NexusUrl = nexusUrl,
                 Status = status,
                 SpecialNotes = specialNotes,
                 FeatureNotes = null, // filled in below
+                RequiresDgVoodoo = specialNotes.Contains("dgVoodoo", StringComparison.OrdinalIgnoreCase),
+                DgVoodooVersion  = ExtractDgVoodooVersion(specialNotes),
             });
         }
 
@@ -573,8 +579,8 @@ public class LumaService : ILumaService
         {
             try
             {
-                var headReq = new HttpRequestMessage(HttpMethod.Head, mod.DownloadUrl);
-                var headResp = await _http.SendAsync(headReq);
+                using var headReq = new HttpRequestMessage(HttpMethod.Head, mod.DownloadUrl);
+                using var headResp = await _http.SendAsync(headReq);
                 if (headResp.IsSuccessStatusCode)
                 {
                     var remoteSize = headResp.Content.Headers.ContentLength;
@@ -596,39 +602,47 @@ public class LumaService : ILumaService
         if (needsDownload)
         {
         progress?.Report(("Downloading Luma mod...", 0));
-        HttpResponseMessage response;
+        HttpResponseMessage? response = null;
         try
         {
             response = await _http.GetAsync(mod.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
+
+            var total = response.Content.Headers.ContentLength ?? -1L;
+            var buffer = new byte[1024 * 1024]; // 1 MB
+            long downloaded = 0;
+
+            var tempPath = cachePath + ".tmp";
+            using (var netStream = await response.Content.ReadAsStreamAsync())
+            using (var cacheFile = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
+            {
+                int read;
+                while ((read = await netStream.ReadAsync(buffer)) > 0)
+                {
+                    await cacheFile.WriteAsync(buffer.AsMemory(0, read));
+                    downloaded += read;
+                    if (total > 0)
+                        progress?.Report(($"Downloading... {downloaded / 1024} KB",
+                                          (double)downloaded / total * 100));
+                }
+                cacheFile.Flush();
+            }
+
+            if (File.Exists(cachePath)) File.Delete(cachePath);
+            File.Move(tempPath, cachePath);
+        }
+        catch (HttpRequestException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             throw new HttpRequestException($"Failed to download Luma mod: {ex.Message}");
         }
-
-        var total = response.Content.Headers.ContentLength ?? -1L;
-        var buffer = new byte[1024 * 1024]; // 1 MB
-        long downloaded = 0;
-
-        var tempPath = cachePath + ".tmp";
-        using (var netStream = await response.Content.ReadAsStreamAsync())
-        using (var cacheFile = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
+        finally
         {
-            int read;
-            while ((read = await netStream.ReadAsync(buffer)) > 0)
-            {
-                await cacheFile.WriteAsync(buffer.AsMemory(0, read));
-                downloaded += read;
-                if (total > 0)
-                    progress?.Report(($"Downloading... {downloaded / 1024} KB",
-                                      (double)downloaded / total * 100));
-            }
-            cacheFile.Flush();
+            response?.Dispose();
         }
-
-        if (File.Exists(cachePath)) File.Delete(cachePath);
-        File.Move(tempPath, cachePath);
         } // end if (needsDownload)
 
         // Extract zip to game folder, tracking all extracted file names
@@ -709,9 +723,9 @@ public class LumaService : ILumaService
         progress?.Report(("Deploying shaders...", 95));
         try
         {
-            var exclLuma1 = selectedShaderPacks?
-                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                    StringComparer.OrdinalIgnoreCase);
+            var exclLuma1 = selectedShaderPacks == null ? null : await Task.Run(() =>
+                selectedShaderPacks.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                    StringComparer.OrdinalIgnoreCase));
             _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks, exclLuma1);
 
             // Track deployed shader files for clean uninstall
@@ -778,10 +792,23 @@ public class LumaService : ILumaService
         var addonDeployPath = ModInstallService.GetAddonDeployPath(record.InstallPath);
 
         // Remove the RDXC-managed reshade-shaders folder via ShaderPackService
-        // (must happen before individual file deletion removes the marker file)
+        // — but only when ReShade is NOT installed. If ReShade is present, the
+        // reshade-shaders folder belongs to it and must not be deleted; the
+        // CleanEmptyDirs pass below will remove any empty Luma subdirectories.
         try
         {
-            _shaderPackService.RemoveFromGameFolder(record.InstallPath);
+            bool reShadePresent = DllOverrideConstants.CommonDllNames
+                .Any(n => File.Exists(Path.Combine(record.InstallPath, n))
+                       && AuxInstallService.IsReShadeFile(Path.Combine(record.InstallPath, n)));
+            if (!reShadePresent)
+            {
+                _shaderPackService.RemoveFromGameFolder(record.InstallPath);
+                CrashReporter.Log($"[LumaService.Uninstall] Removed managed reshade-shaders (no ReShade present) from '{record.InstallPath}'");
+            }
+            else
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping reshade-shaders removal — ReShade still installed in '{record.InstallPath}'");
+            }
         }
         catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] ShaderPackService cleanup failed — {ex.Message}"); }
 
@@ -814,10 +841,25 @@ public class LumaService : ILumaService
                 CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed ReShade DLL '{relPath}'");
                 continue;
             }
-            // Skip nvngx_dlss.dll — managed by RHI separately
+            // Skip nvngx_dlss.dll — cleaned up by the ViewModel caller (UninstallLuma)
+            // since it was deployed post-record-save and is not in InstalledFiles
             if (fileName.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
             {
-                CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed DLSS DLL '{relPath}'");
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping nvngx_dlss.dll — handled by caller");
+                continue;
+            }
+            // Skip reshade.ini — RHI manages it independently; caller will redeploy a fresh one
+            if (fileName.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping reshade.ini — will be redeployed by caller");
+                continue;
+            }
+            // Skip the RHI shader pack marker — preserving it lets SyncGameFolder correctly
+            // identify the reshade-shaders folder as RHI-managed and redeploy rather than rename
+            if (fileName.Equals(ShaderPackService.ManagedMarkerFileName, StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping shader pack marker — preserving managed state");
                 continue;
             }
 
@@ -960,6 +1002,185 @@ public class LumaService : ILumaService
     }
 
     private static string Clean(string s) => System.Text.RegularExpressions.Regex.Replace(HtmlEntity.DeEntitize(s ?? "").Trim(), @"\s+", " ");
+
+    /// <summary>
+    /// Extracts the recommended dgVoodoo2 version from Luma wiki Special Notes text.
+    /// Handles patterns like "dgVoodoo2 v2.87.3", "dgVoodoo2 v2.81.3 or dgVoodoo2 v2.87.3".
+    /// Returns the last (highest) version found, or null if none.
+    /// </summary>
+    private static string? ExtractDgVoodooVersion(string notes)
+    {
+        if (string.IsNullOrEmpty(notes)) return null;
+        var matches = System.Text.RegularExpressions.Regex.Matches(
+            notes, @"dgVoodoo2?\s+v?(\d+\.\d+(?:\.\d+)?)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (matches.Count == 0) return null;
+        // Take the last version mentioned — wiki pattern is "v2.81.3 or v2.87.3", last is recommended
+        return matches[matches.Count - 1].Groups[1].Value;
+    }
+
+    // ── Releases API — asset discovery ───────────────────────────────────────────
+
+    private const string LumaReleasesListApi =
+        "https://api.github.com/repos/Filoppi/Luma-Framework/releases?per_page=5";
+
+    // Generics and dev tools — not real game mods, skip them
+    private static readonly HashSet<string> ReleasesApiExclusions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Generic Mod", "Unreal Engine", "Unity Engine", "Graphics Analyzer"
+    };
+
+    /// <summary>
+    /// Fetches the latest Luma release assets from the GitHub Releases API and returns
+    /// LumaMod stubs for any named game mods found. These are merged with the wiki results
+    /// by <see cref="MergeLumaMods"/> — wiki always wins on conflict.
+    /// </summary>
+    public async Task<List<LumaMod>> FetchReleasesModsAsync()
+    {
+        var result = new List<LumaMod>();
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, LumaReleasesListApi);
+            request.Headers.UserAgent.ParseAdd("RHI");
+            request.Headers.Accept.ParseAdd("application/vnd.github+json");
+            var response = await _http.SendAsync(request).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                CrashReporter.Log($"[LumaService.FetchReleasesModsAsync] GitHub API {response.StatusCode}");
+                return result;
+            }
+
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+            // Use the first (latest) release only
+            var releases = doc.RootElement.EnumerateArray().ToList();
+            if (releases.Count == 0) return result;
+
+            var latest = releases[0];
+            if (!latest.TryGetProperty("assets", out var assets)) return result;
+
+            var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var asset in assets.EnumerateArray())
+            {
+                var assetName = asset.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+
+                // Only standard release zips — skip -Test, -Dev, bitness variants
+                if (!assetName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) continue;
+                if (assetName.Contains("-Test", StringComparison.OrdinalIgnoreCase)) continue;
+                if (assetName.Contains("-Dev", StringComparison.OrdinalIgnoreCase)) continue;
+                if (!assetName.StartsWith("Luma-", StringComparison.OrdinalIgnoreCase)) continue;
+
+                // Extract game name: strip "Luma-" prefix and ".zip" suffix, replace _ with space
+                var stem = assetName[5..^4]; // strip "Luma-" (5) and ".zip" (4)
+
+                // Strip bitness suffix (-x32, -x64)
+                if (stem.EndsWith("-x32", StringComparison.OrdinalIgnoreCase)) stem = stem[..^4];
+                else if (stem.EndsWith("-x64", StringComparison.OrdinalIgnoreCase)) stem = stem[..^4];
+
+                var gameName = stem.Replace('_', ' ').Replace('.', '\'').Trim();
+
+                // Skip generics and dev tools
+                if (ReleasesApiExclusions.Contains(gameName)) continue;
+
+                // Deduplicate (x32 and x64 variants would produce the same name)
+                if (!seenNames.Add(gameName)) continue;
+
+                var downloadUrl = asset.TryGetProperty("browser_download_url", out var u)
+                    ? u.GetString() : null;
+                if (string.IsNullOrEmpty(downloadUrl)) continue;
+
+                result.Add(new LumaMod
+                {
+                    Name = gameName,
+                    DownloadUrl = downloadUrl,
+                    Status = "✅",
+                });
+            }
+
+            CrashReporter.Log($"[LumaService.FetchReleasesModsAsync] Found {result.Count} mods from release assets");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[LumaService.FetchReleasesModsAsync] Failed — {ex.Message}");
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Merges wiki mods with release asset mods using wiki-wins priority:
+    /// 1. Wiki entry with any URL → keep as-is, discard release asset
+    /// 2. Wiki entry with NO URL → fill in DownloadUrl from matching release asset
+    /// 3. No wiki entry → add release asset as new LumaMod
+    /// Matching uses NormalizeForLookup for fuzzy name comparison.
+    /// </summary>
+    public static List<LumaMod> MergeLumaMods(List<LumaMod> wikiMods, List<LumaMod> releaseMods)
+    {
+        // Build lookup from normalized name → release mod
+        var releaseByNorm = new Dictionary<string, LumaMod>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rm in releaseMods)
+        {
+            var norm = NormalizeForMerge(rm.Name);
+            if (!string.IsNullOrEmpty(norm) && !releaseByNorm.ContainsKey(norm))
+                releaseByNorm[norm] = rm;
+        }
+
+        var merged = new List<LumaMod>(wikiMods.Count + releaseMods.Count);
+        var wikiNorms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var wm in wikiMods)
+        {
+            var norm = NormalizeForMerge(wm.Name);
+            wikiNorms.Add(norm);
+
+            // Case 2: wiki entry has no download URL and no Nexus URL — fill in from release asset
+            if (wm.DownloadUrl == null && wm.NexusUrl == null
+                && releaseByNorm.TryGetValue(norm, out var match))
+            {
+                merged.Add(new LumaMod
+                {
+                    Name        = wm.Name,
+                    Author      = wm.Author,
+                    DownloadUrl = match.DownloadUrl,  // from release asset
+                    NexusUrl    = wm.NexusUrl,
+                    Status      = wm.Status,
+                    SpecialNotes  = wm.SpecialNotes,
+                    FeatureNotes  = wm.FeatureNotes,
+                    IsGenericLuma = wm.IsGenericLuma,
+                    RequiresDgVoodoo = wm.RequiresDgVoodoo,
+                    DgVoodooVersion  = wm.DgVoodooVersion,
+                });
+            }
+            else
+            {
+                // Cases 1 & default — keep wiki entry unchanged
+                merged.Add(wm);
+            }
+        }
+
+        // Case 3: release mods with no wiki entry
+        foreach (var rm in releaseMods)
+        {
+            var norm = NormalizeForMerge(rm.Name);
+            if (!wikiNorms.Contains(norm))
+                merged.Add(rm);
+        }
+
+        return merged;
+    }
+
+    private static string NormalizeForMerge(string name)
+    {
+        // Lowercase, strip punctuation except spaces, collapse spaces
+        var sb = new System.Text.StringBuilder(name.Length);
+        foreach (var c in name.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c)) sb.Append(c);
+            else if (char.IsWhiteSpace(c)) sb.Append(' ');
+        }
+        return System.Text.RegularExpressions.Regex.Replace(sb.ToString().Trim(), @"\s+", " ");
+    }
 
     // ── Update detection ──────────────────────────────────────────────────────────
 
@@ -1271,9 +1492,9 @@ public class LumaService : ILumaService
         // ── 4. Deploy shaders ──
         try
         {
-            var exclLuma2 = selectedShaderPacks?
-                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
-                    StringComparer.OrdinalIgnoreCase);
+            var exclLuma2 = selectedShaderPacks == null ? null : await Task.Run(() =>
+                selectedShaderPacks.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                    StringComparer.OrdinalIgnoreCase));
             _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks, exclLuma2);
             var rsDir = Path.Combine(gameInstallPath, ShaderPackService.GameReShadeShaders);
             if (Directory.Exists(rsDir))

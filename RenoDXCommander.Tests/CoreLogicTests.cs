@@ -427,4 +427,79 @@ public class CoreLogicTests
         Assert.Equal("1", ini["renodx"]["ForceBorderless"]);
         Assert.True(ini.ContainsKey("GENERAL"));
     }
+
+    [Fact]
+    public void ScreenshotHotkey_BackspaceClearsAndNormalKeysRemainUnchanged()
+    {
+        Assert.Equal("0,0,0,0", HotkeyManager.BuildScreenshotHotkeyString(8, true, true, true));
+        Assert.Equal("None", HotkeyManager.FormatHotkeyDisplay("0,0,0,0"));
+        Assert.Equal("75,1,1,0", HotkeyManager.BuildScreenshotHotkeyString(75, true, true, false));
+        Assert.Equal("44,0,0,0", HotkeyManager.BuildScreenshotHotkeyString(44, false, false, false));
+    }
+
+    [Fact]
+    public void DisabledScreenshotHotkey_RoundTripsThroughIniAndSettingsDictionary()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            AuxInstallService.ApplyScreenshotHotkey(tempFile, "0,0,0,0");
+            var ini = AuxInstallService.ParseIni(File.ReadAllLines(tempFile));
+            Assert.Equal("0,0,0,0", ini["INPUT"]["KeyScreenshot"]);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+
+        var saved = new Dictionary<string, string>();
+        var settings = new SettingsViewModel { ScreenshotHotkey = "0,0,0,0" };
+        settings.SaveSettingsToDict(saved);
+        var restored = new SettingsViewModel();
+        restored.LoadSettingsFromDict(saved);
+        Assert.Equal("0,0,0,0", restored.ScreenshotHotkey);
+    }
+
+    [Fact]
+    public void ApplyScreenshotSettings_BlankPath_PreservesPathAndAppliesOtherSettings()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(tempFile, "[SCREENSHOT]\nSavePath=C:\\Existing\n[INPUT]\nKeyOverlay=36,0,0,0\nKeyScreenshot=44,0,0,0\n[OVERLAY]\nVariableListUseTabs=1\n");
+
+            SettingsHandler.ApplyScreenshotSettingsToIni(
+                tempFile, null, "45,1,0,0", "46,0,0,0", useTabs: false);
+
+            var ini = AuxInstallService.ParseIni(File.ReadAllLines(tempFile));
+            Assert.Equal(@"C:\Existing", ini["SCREENSHOT"]["SavePath"]);
+            Assert.Equal("45,1,0,0", ini["INPUT"]["KeyOverlay"]);
+            Assert.Equal("46,0,0,0", ini["INPUT"]["KeyScreenshot"]);
+            Assert.Equal("0", ini["OVERLAY"]["VariableListUseTabs"]);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void ApplyScreenshotSettings_NonBlankPath_ReplacesPath()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(tempFile, "[SCREENSHOT]\nSavePath=C:\\Existing\n");
+
+            SettingsHandler.ApplyScreenshotSettingsToIni(
+                tempFile, @"D:\Screenshots", null, "44,0,0,0", useTabs: true);
+
+            var ini = AuxInstallService.ParseIni(File.ReadAllLines(tempFile));
+            Assert.Equal(@"D:\Screenshots", ini["SCREENSHOT"]["SavePath"]);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
 }

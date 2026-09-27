@@ -294,6 +294,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
     private static readonly string ScanSkipCachePath = Path.Combine(BaseStagingDir, "dlss_scan_cache.json");
     private Dictionary<string, int>? _scanSkipCache;
+    private static readonly object _scanSkipCacheLock = new();
     private const int SkipThreshold = 3;
 
     /// <summary>
@@ -301,8 +302,11 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// </summary>
     public bool ShouldSkipScan(string gameName)
     {
-        EnsureScanCacheLoaded();
-        return _scanSkipCache!.TryGetValue(gameName, out var count) && count >= SkipThreshold;
+        lock (_scanSkipCacheLock)
+        {
+            EnsureScanCacheLoaded_Unlocked();
+            return _scanSkipCache!.TryGetValue(gameName, out var count) && count >= SkipThreshold;
+        }
     }
 
     /// <summary>
@@ -310,9 +314,12 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// </summary>
     public void RecordNoDlssFound(string gameName)
     {
-        EnsureScanCacheLoaded();
-        _scanSkipCache!.TryGetValue(gameName, out var count);
-        _scanSkipCache[gameName] = count + 1;
+        lock (_scanSkipCacheLock)
+        {
+            EnsureScanCacheLoaded_Unlocked();
+            _scanSkipCache!.TryGetValue(gameName, out var count);
+            _scanSkipCache[gameName] = count + 1;
+        }
         SaveScanCache();
     }
 
@@ -321,8 +328,13 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// </summary>
     public void RecordDlssFound(string gameName)
     {
-        EnsureScanCacheLoaded();
-        if (_scanSkipCache!.Remove(gameName))
+        bool removed;
+        lock (_scanSkipCacheLock)
+        {
+            EnsureScanCacheLoaded_Unlocked();
+            removed = _scanSkipCache!.Remove(gameName);
+        }
+        if (removed)
             SaveScanCache();
     }
 
@@ -335,9 +347,14 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// </summary>
     public void RecheckSkipList(IReadOnlyList<DetectedGame> games)
     {
-        EnsureScanCacheLoaded();
-        CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] Starting recheck, skip cache has {_scanSkipCache!.Count} entries");
-        if (_scanSkipCache!.Count == 0) return;
+        int cacheCount;
+        lock (_scanSkipCacheLock)
+        {
+            EnsureScanCacheLoaded_Unlocked();
+            cacheCount = _scanSkipCache!.Count;
+        }
+        CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] Starting recheck, skip cache has {cacheCount} entries");
+        if (cacheCount == 0) return;
 
         var toRemove = new List<string>();
         foreach (var game in games)
@@ -362,8 +379,11 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
         if (toRemove.Count > 0)
         {
-            foreach (var name in toRemove)
-                _scanSkipCache!.Remove(name);
+            lock (_scanSkipCacheLock)
+            {
+                foreach (var name in toRemove)
+                    _scanSkipCache!.Remove(name);
+            }
             SaveScanCache();
             CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] Removed {toRemove.Count} game(s) from skip cache");
         }
@@ -384,13 +404,19 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     public void ClearScanCaches()
     {
         // Clear the scan skip cache entirely — reinstalled games may now have DLSS
-        EnsureScanCacheLoaded();
-        if (_scanSkipCache!.Count > 0)
+        bool hadEntries;
+        lock (_scanSkipCacheLock)
         {
-            CrashReporter.Log($"[DlssStreamlineService.ClearScanCaches] Clearing scan skip cache ({_scanSkipCache.Count} entries)");
-            _scanSkipCache.Clear();
-            SaveScanCache();
+            EnsureScanCacheLoaded_Unlocked();
+            hadEntries = _scanSkipCache!.Count > 0;
+            if (hadEntries)
+            {
+                CrashReporter.Log($"[DlssStreamlineService.ClearScanCaches] Clearing scan skip cache ({_scanSkipCache.Count} entries)");
+                _scanSkipCache.Clear();
+            }
         }
+        if (hadEntries)
+            SaveScanCache();
 
         // Invalidate trusted entries that are:
         // - Partial (any required path is null) — new DLLs may have appeared
@@ -412,7 +438,10 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         }
     }
 
-    private void EnsureScanCacheLoaded()
+    /// <summary>
+    /// Must be called while holding _scanSkipCacheLock.
+    /// </summary>
+    private void EnsureScanCacheLoaded_Unlocked()
     {
         if (_scanSkipCache != null) return;
         try

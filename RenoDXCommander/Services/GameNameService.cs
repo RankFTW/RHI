@@ -63,6 +63,12 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1" / "0.55". Absent = use latest.</summary>
     private Dictionary<string, string> _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game NR DLL version override. Key = "GameName|Store", Value = version string e.g. "310.8.0". Absent = use latest.</summary>
+    private Dictionary<string, string> _nrDllVersion = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game NR pack version override (Feeder or Bridge). Key = "GameName|Store", Value = version tag e.g. "v1.16.0-beta.4". Absent = use latest.</summary>
+    private Dictionary<string, string> _nrPackVersion = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game HDR auto-toggle overrides. Key = game name, Value = "On" or "Off". Absent = use global default.</summary>
     private Dictionary<string, string> _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
 
@@ -179,6 +185,10 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> NrMethodOverrides => _nrMethodOverrides;
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
     public Dictionary<string, string> NrAddonVersion => _nrAddonVersion;
+    /// <summary>Per-game NR DLL version override.</summary>
+    public Dictionary<string, string> NrDllVersion => _nrDllVersion;
+    /// <summary>Per-game NR pack (Feeder/Bridge) version override. Key = "GameName|Store", Value = version tag. Absent = use latest.</summary>
+    public Dictionary<string, string> NrPackVersion => _nrPackVersion;
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     public Dictionary<string, string> HdrToggleOverrides => _hdrToggleOverrides;
     /// <summary>Per-game Resolution auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
@@ -238,6 +248,15 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> Dlssg2030InstalledAs => _dlssg2030InstalledAs;
     /// <summary>Per-game 20/30 FG Unlock GPU generation. Key = "GameName|Store", Value = "RTX 30 Series" or "RTX 20 Series".</summary>
     public Dictionary<string, string> Dlssg2030GpuGen => _dlssg2030GpuGen;
+
+    // ── Debounce infrastructure for SaveNameMappings ─────────────────────────
+    private Timer? _saveDebounceTimer;
+    private readonly object _saveLock = new();
+    private IDllOverrideService? _pendingDllOverride;
+    private SettingsViewModel? _pendingSettings;
+    private ViewLayout _pendingViewLayout;
+    private string _pendingFilterMode = "";
+    private List<CustomFilter> _pendingCustomFilters = new();
 
     public GameNameService(
         IGameDetectionService gameDetectionService,
@@ -371,10 +390,7 @@ public class GameNameService : IGameNameService
         {
             _perGameShaderSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgssDict)
-            {
-                if (_perGameShaderMode.ContainsKey(kv.Key))
-                    _perGameShaderSelection[kv.Key] = kv.Value;
-            }
+                _perGameShaderSelection[kv.Key] = kv.Value;
         }
 
         var pgamDict = Load<Dictionary<string, string>?>("PerGameAddonMode", null);
@@ -395,6 +411,13 @@ public class GameNameService : IGameNameService
                 for (int i = 0; i < list.Count; i++)
                     if (list[i].Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase))
                         list[i] = "DLSS5 Tool";
+                // Migration: remove NR addons that moved out of the addon picker
+                list.RemoveAll(a => a.Equals("DLSS5 Tool",           StringComparison.OrdinalIgnoreCase)
+                                 || a.Equals("DLSS Tool (ShortFuse)", StringComparison.OrdinalIgnoreCase)
+                                 || a.Equals("MFG Ada Unlock",        StringComparison.OrdinalIgnoreCase)
+                                 || a.Equals("DLSS5 Feeder",          StringComparison.OrdinalIgnoreCase)
+                                 || a.Equals("DLSS5 DX11 Bridge",     StringComparison.OrdinalIgnoreCase));
+                if (list.Count == 0) pgasDict.Remove(key);
             }
             _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgasDict)
@@ -504,6 +527,16 @@ public class GameNameService : IGameNameService
             new(StringComparer.OrdinalIgnoreCase));
         _nrAddonVersion = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in nrAddonVersionDict) _nrAddonVersion[kv.Key] = kv.Value;
+
+        var nrDllVersionDict = Load<Dictionary<string, string>>("NrDllVersion",
+            new(StringComparer.OrdinalIgnoreCase));
+        _nrDllVersion = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in nrDllVersionDict) _nrDllVersion[kv.Key] = kv.Value;
+
+        var nrPackVersionDict = Load<Dictionary<string, string>>("NrPackVersion",
+            new(StringComparer.OrdinalIgnoreCase));
+        _nrPackVersion = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in nrPackVersionDict) _nrPackVersion[kv.Key] = kv.Value;
 
         var liliumPresetOvDict = Load<Dictionary<string, int>>("LiliumPresetOverrides",
             new(StringComparer.OrdinalIgnoreCase));
@@ -621,19 +654,8 @@ public class GameNameService : IGameNameService
             Load<Dictionary<string, string>>("Dlssg2030GpuGen", new()),
             StringComparer.OrdinalIgnoreCase);
 
-        if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
-            setViewLayout((ViewLayout)vlInt);
-        else if (s.TryGetValue("GridLayout", out var glVal))  // backward compat
-            setViewLayout(ViewLayout.Detail);
-
-        // One-time migration: force Detail view for all users on first launch after v2.6.1
-        if (!s.ContainsKey("DetailViewForced"))
-        {
-            setViewLayout(ViewLayout.Detail);
-            s["DetailViewForced"] = "1";
-            s["ViewLayout"] = ((int)ViewLayout.Detail).ToString();
-            SettingsViewModel.SaveSettingsFile(s);
-        }
+        // Always force Detail view — Simple view has been removed
+        setViewLayout(ViewLayout.Detail);
 
         if (s.TryGetValue("FilterMode", out var fmVal) && !string.IsNullOrWhiteSpace(fmVal))
             setFilterMode(fmVal);
@@ -657,6 +679,95 @@ public class GameNameService : IGameNameService
     {
         if (isLoadingSettings) return;
 
+        // Capture latest parameters for the debounced save
+        lock (_saveLock)
+        {
+            _pendingDllOverride = dllOverrideService;
+            _pendingSettings = settingsViewModel;
+            _pendingViewLayout = currentViewLayout;
+            _pendingFilterMode = filterMode;
+            _pendingCustomFilters = customFilters.ToList();
+
+            // Reset or start the debounce timer (250ms delay)
+            if (_saveDebounceTimer != null)
+            {
+                _saveDebounceTimer.Change(250, Timeout.Infinite);
+            }
+            else
+            {
+                _saveDebounceTimer = new Timer(_ => DoSaveNameMappings(), null, 250, Timeout.Infinite);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Performs the actual disk write. Called from the debounce timer callback.
+    /// Also call this directly when immediate persistence is required (e.g. game rename, app shutdown).
+    /// </summary>
+    public void SaveNameMappingsImmediate(
+        IDllOverrideService dllOverrideService,
+        SettingsViewModel settingsViewModel,
+        ViewLayout currentViewLayout,
+        string filterMode,
+        List<CustomFilter> customFilters)
+    {
+        // Cancel any pending debounced save — we're doing it now
+        lock (_saveLock)
+        {
+            _saveDebounceTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        DoSaveNameMappingsInternal(dllOverrideService, settingsViewModel, currentViewLayout, filterMode, customFilters);
+    }
+
+    /// <summary>
+    /// Flushes any pending debounced save immediately. Call on app shutdown.
+    /// </summary>
+    public void FlushPendingSave()
+    {
+        Timer? timer;
+        lock (_saveLock)
+        {
+            timer = _saveDebounceTimer;
+            _saveDebounceTimer = null;
+        }
+
+        if (timer != null)
+        {
+            timer.Dispose();
+            DoSaveNameMappings();
+        }
+    }
+
+    private void DoSaveNameMappings()
+    {
+        IDllOverrideService? dllOverride;
+        SettingsViewModel? settings;
+        ViewLayout viewLayout;
+        string filterMode;
+        List<CustomFilter> customFilters;
+
+        lock (_saveLock)
+        {
+            dllOverride = _pendingDllOverride;
+            settings = _pendingSettings;
+            viewLayout = _pendingViewLayout;
+            filterMode = _pendingFilterMode;
+            customFilters = _pendingCustomFilters;
+        }
+
+        if (dllOverride == null || settings == null) return;
+
+        DoSaveNameMappingsInternal(dllOverride, settings, viewLayout, filterMode, customFilters);
+    }
+
+    private void DoSaveNameMappingsInternal(
+        IDllOverrideService dllOverrideService,
+        SettingsViewModel settingsViewModel,
+        ViewLayout currentViewLayout,
+        string filterMode,
+        List<CustomFilter> customFilters)
+    {
         // Retry with short delays to handle file contention from concurrent background tasks
         for (int attempt = 0; attempt < 3; attempt++)
         {
@@ -706,6 +817,10 @@ public class GameNameService : IGameNameService
                 s["NrMethodOverrides"] = JsonSerializer.Serialize(_nrMethodOverrides);
                 if (_nrAddonVersion.Count > 0) s["NrAddonVersion"] = JsonSerializer.Serialize(_nrAddonVersion);
                 else s.Remove("NrAddonVersion");
+                if (_nrDllVersion.Count > 0) s["NrDllVersion"] = JsonSerializer.Serialize(_nrDllVersion);
+                else s.Remove("NrDllVersion");
+                if (_nrPackVersion.Count > 0) s["NrPackVersion"] = JsonSerializer.Serialize(_nrPackVersion);
+                else s.Remove("NrPackVersion");
                 s["HdrToggleOverrides"] = JsonSerializer.Serialize(_hdrToggleOverrides);
                 s["ResToggleOverrides"] = JsonSerializer.Serialize(_resToggleOverrides);
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
@@ -748,9 +863,10 @@ public class GameNameService : IGameNameService
                 SettingsViewModel.SaveSettingsFile(s);
                 return;
             }
-            catch (IOException) when (attempt < 2)
+            catch (IOException ex) when (attempt < 2)
             {
-                Thread.Sleep(50 * (attempt + 1)); // 50ms, 100ms
+                CrashReporter.Log($"[GameNameService.SaveNameMappings] IO retry {attempt + 1}: {ex.Message}");
+                // Don't sleep on UI thread — just log and retry immediately on next attempt
             }
             catch (Exception ex)
             {
@@ -905,6 +1021,8 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         MigrateCompositeDict(_nrMethodOverrides, oldName, newName);
         MigrateCompositeDict(_nrAddonVersion, oldName, newName);
+        MigrateCompositeDict(_nrDllVersion, oldName, newName);
+        MigrateCompositeDict(_nrPackVersion, oldName, newName);
         // These four are name-only (not per-store) — use name-only migration
         MigrateDict(_hdrToggleOverrides, oldName, newName);
         MigrateDict(_resToggleOverrides, oldName, newName);

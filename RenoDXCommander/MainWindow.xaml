@@ -57,6 +57,12 @@
                             BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
                             CornerRadius="8" Padding="12,7" FontSize="12"
                             ToolTipService.ToolTip="Quick Start Guide"/>
+                    <Button x:Name="HdrModsListBtn" Content="Available HDR Mods"
+                            Click="HdrModsListBtn_Click"
+                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
+                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,7" FontSize="12"
+                            ToolTipService.ToolTip="Browse all games with available HDR mods"/>
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
@@ -123,12 +129,6 @@
 
                     <Border Width="1" Height="20" Background="{StaticResource BorderSubtleBrush}" Margin="4,0"/>
 
-                    <Button x:Name="LayoutToggleBtn" Content="{x:Bind ViewModel.LayoutToggleLabel, Mode=OneWay}"
-                            Click="LayoutToggle_Click"
-                            Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
-                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" Padding="12,7" FontSize="12"
-                            ToolTipService.ToolTip="Toggle between Detail and Simple view"/>
                     <Button x:Name="SettingsBtn" Content="Settings"
                             Click="SettingsButton_Click" IsEnabled="False"
                             Background="{StaticResource SurfaceInputBrush}" Foreground="{StaticResource AccentTealBrush}"
@@ -464,6 +464,7 @@
                                             VerticalAlignment="Center" Visibility="Collapsed">
                                         <TextBlock x:Name="DetailInstalledFile" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource ChipTextBrush}"/>
                                     </Border>
+                                    <TextBlock x:Name="DetailModStatusIcon" x:FieldModifier="internal" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed"/>
                                     <Border x:Name="DetailGenericBadge" x:FieldModifier="internal" CornerRadius="5" Padding="6,2"
                                             Background="{StaticResource ChipDefaultBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                             VerticalAlignment="Center" Visibility="Collapsed">
@@ -596,7 +597,7 @@
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
                                     <!-- Collapse header for Components — arrow + title, wired in DetailPanelBuilder -->
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="0" VerticalAlignment="Center"
+                                    <StackPanel Grid.Column="0" Grid.ColumnSpan="4" Orientation="Horizontal" Spacing="0" VerticalAlignment="Center"
                                                 x:Name="DetailComponentsHeader" x:FieldModifier="internal">
                                         <TextBlock x:Name="DetailComponentsArrow" x:FieldModifier="internal"
                                                    Text="▼" FontSize="10" VerticalAlignment="Center"
@@ -703,7 +704,7 @@
                                     </Button>
                                 </Grid>
 
-                                <!-- Labeled separator: HDR mods — choose one or both -->
+                                <!-- Labeled separator: HDR Mods -->
                                 <Grid x:Name="DetailHdrModSeparator" x:FieldModifier="internal" Margin="0,4,0,4" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
@@ -713,7 +714,7 @@
                                         <ColumnDefinition Width="36"/>
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="3" Text="———  HDR Mods — Install one or both  ———" FontSize="11"
+                                    <TextBlock Grid.Column="3" Text="———  HDR Mods  ———" FontSize="11"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
@@ -975,51 +976,6 @@
                                     </Button>
                                 </Grid>
 
-                                <!-- DXVK row -->
-                                <Grid x:Name="DetailDxvkRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="120"/>
-                                        <ColumnDefinition Width="80"/>
-                                        <ColumnDefinition Width="36"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="36"/>
-                                        <ColumnDefinition Width="36"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="DetailDxvkLabel" x:FieldModifier="internal" Grid.Column="0" Text="DXVK" FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="DetailDxvkStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
-                                               VerticalAlignment="Center" HorizontalTextAlignment="Center"
-                                               PointerPressed="DetailDxvkStatus_PointerPressed"
-                                               PointerEntered="LinkText_PointerEntered" PointerExited="LinkText_PointerExited"/>
-                                    <Button x:Name="DetailDxvkInfoBtn" x:FieldModifier="internal" Grid.Column="2"
-                                            Content="Info" FontSize="11" Padding="6,2,6,2"
-                                            Background="{StaticResource SurfaceOverlayBrush}"
-                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32"
-                                            Click="DxvkInfoButton_Click"/>
-                                    <Button x:Name="DetailDxvkInstallBtn" x:FieldModifier="internal" Grid.Column="3"
-                                            Click="InstallDxvkButton_Click"
-                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                            CornerRadius="8" FontSize="12" Height="32"/>
-                                    <Button x:Name="DetailDxvkConfBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="DxvkCogButton_Click"
-                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="DXVK Settings">
-                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
-                                    </Button>
-                                    <Button x:Name="DetailDxvkDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
-                                            Click="UninstallDxvkButton_Click"
-                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
-                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Remove DXVK" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
-                                    </Button>
-                                </Grid>
-
                                 <!-- No mod message -->
                                 <Border x:Name="DetailNoModMsg" x:FieldModifier="internal" Visibility="Collapsed"
                                         Background="{StaticResource AccentPurpleBgBrush}" CornerRadius="8" Padding="12,8"
@@ -1130,29 +1086,6 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
-
-                    <!-- Compact Nav Arrows — overlaid on content area, visible only in Compact mode -->
-                    <Button x:Name="CompactNavLeft"
-                            Content="◀" Click="CompactNavLeft_Click"
-                            VerticalAlignment="Center" HorizontalAlignment="Left"
-                            Canvas.ZIndex="1"
-                            Visibility="{x:Bind ViewModel.CompactViewVisibility, Mode=OneWay}"
-                            Background="{StaticResource SurfaceInputBrush}"
-                            Foreground="{StaticResource AccentTealBrush}"
-                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" FontSize="18"
-                            Padding="8,16" Margin="4,0"/>
-
-                    <Button x:Name="CompactNavRight"
-                            Content="▶" Click="CompactNavRight_Click"
-                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                            Canvas.ZIndex="1"
-                            Visibility="{x:Bind ViewModel.CompactViewVisibility, Mode=OneWay}"
-                            Background="{StaticResource SurfaceInputBrush}"
-                            Foreground="{StaticResource AccentTealBrush}"
-                            BorderBrush="{StaticResource AccentTealBorderBrush}" BorderThickness="1"
-                            CornerRadius="8" FontSize="18"
-                            Padding="8,16" Margin="0,0,4,0"/>
 
                     <!-- Skeleton detail panel overlay (removed programmatically after first load) -->
                     <ScrollViewer x:Name="SkeletonDetailScrollViewer" VerticalScrollBarVisibility="Auto"
@@ -1396,6 +1329,7 @@
                                                  Background="{StaticResource SurfaceInputBrush}"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                 ToolTipService.ToolTip="Press a key to assign it, or Backspace to clear it."
                                                  PreviewKeyDown="ScreenshotHotkeyBox_PreviewKeyDown"/>
                                         <Button Grid.Column="1" Content="↺" Click="ResetScreenshotHotkey_Click"
                                                 ToolTipService.ToolTip="Reset to Print Screen"
@@ -1725,7 +1659,7 @@
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11"
                                            Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Controls where RHI fetches mod and UE-Extended configuration data. Hybrid uses the RHI database first and falls back to the wiki for games not yet in the database. Changing this setting triggers an immediate refresh."/>
+                                           Text="Controls where RHI fetches mod data. RHI Database uses the community-maintained RHI database (recommended). RenoDX Wiki falls back to the RenoDX wiki scraper. Changing this setting triggers an immediate refresh."/>
                                 <Grid ColumnSpacing="12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
@@ -1737,9 +1671,8 @@
                                     <ComboBox x:Name="RenoDxDbSourceCombo" x:FieldModifier="internal"
                                               Grid.Column="1" FontSize="12"
                                               HorizontalAlignment="Left" MinWidth="160">
-                                        <ComboBoxItem Content="Wiki Only" Tag="WikiOnly"/>
-                                        <ComboBoxItem Content="DB Only" Tag="DbOnly"/>
-                                        <ComboBoxItem Content="Hybrid" Tag="Hybrid"/>
+                                        <ComboBoxItem Content="RHI Database" Tag="DbOnly"/>
+                                        <ComboBoxItem Content="RenoDX Wiki" Tag="WikiOnly"/>
                                     </ComboBox>
                                 </Grid>
                             </StackPanel>
@@ -3096,9 +3029,12 @@
                            Text="⚠ ReShade, OptiScaler, and DLSS/Streamline modifications may trigger anti-cheat in online/multiplayer games"/>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right"
                             VerticalAlignment="Center" Spacing="8">
-                    <TextBlock x:Name="StatusBarVersionText" x:FieldModifier="internal"
-                               FontSize="11" Foreground="{StaticResource TextDisabledBrush}"
-                               VerticalAlignment="Center"/>
+                    <Button x:Name="StatusBarVersionText" x:FieldModifier="internal"
+                            FontSize="11" Foreground="{StaticResource TextDisabledBrush}"
+                            Background="Transparent" BorderThickness="0"
+                            Padding="0,2" VerticalAlignment="Center"
+                            Click="StatusBarVersion_Click"
+                            ToolTipService.ToolTip="Check for app updates"/>
                     <Button Content="Patch Notes"
                             Click="PatchNotesLink_Click"
                             Background="Transparent" BorderThickness="0"

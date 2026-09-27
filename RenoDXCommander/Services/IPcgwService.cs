@@ -14,6 +14,14 @@ public interface IPcgwService
     Task LoadCacheAsync();
 
     /// <summary>
+    /// Fetches database/pcgw_data.json from rhi-repo (ETag-cached) and builds
+    /// the in-memory centralized lookup for URLs and API info.
+    /// Covers ~55k games — eliminates per-game OpenSearch and API scrape calls
+    /// for the vast majority of users' libraries.
+    /// </summary>
+    Task LoadCentralDataAsync();
+
+    /// <summary>
     /// Resolves the PCGW URL for a game, checking:
     /// 1. Manifest pcgwUrlOverrides (highest priority)
     /// 2. Steam AppID → appid.php redirect URL
@@ -21,6 +29,13 @@ public interface IPcgwService
     /// Returns null if unresolvable.
     /// </summary>
     Task<string?> ResolveUrlAsync(string gameName, int? steamAppId, string installPath, RemoteManifest? manifest);
+
+    /// <summary>
+    /// Synchronous cache-only URL resolution. Returns the cached URL if available,
+    /// or null if a network lookup is required. Use this inside Parallel.ForEach
+    /// to avoid thread pool starvation from blocking async calls.
+    /// </summary>
+    string? TryResolveUrlFromCache(string gameName, RemoteManifest? manifest);
 
     /// <summary>
     /// Forces an immediate write of the AppID cache to disk.
@@ -40,6 +55,12 @@ public interface IPcgwService
     /// requests a higher version. Call after each manifest fetch.
     /// </summary>
     void CheckManifestCacheVersion(RenoDXCommander.Models.RemoteManifest? manifest);
+
+    /// <summary>
+    /// Returns true when the game is present in the centralized pcgw_data.json.
+    /// Use this to skip the per-page API scrape for games the centralized file covers.
+    /// </summary>
+    bool IsInCentralData(string gameName, int? steamAppId = null);
 
     /// <summary>Loads the PCGW API info cache from disk.</summary>
     Task LoadApiCacheAsync();

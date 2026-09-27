@@ -1,39 +1,300 @@
+## v2.7.8 beta
+
+### Bug Fixes
+- Fixed ASI Loader showing as installed in the Extras header when it wasn't — the tracked DLL name was persisted but the install record was gone. The stale entry is now cleared automatically.
+
+## v2.7.7
+
+### Changes
+- Named mods from the RHI database now show a green ✓ or 🔨 status icon in the game header, the same as UE-Extended games.
+- Unity engine compatibility settings (Swapchain Proxy, Swapchain Encoding, Force Pipeline Cloning, Force Borderless etc.) now appear in the RenoDX ⚙ cog Compatibility Settings section for games that use them.
+
+### Bug Fixes
+
+**Freezes & window behaviour**
+- Fixed random UI freezes when navigating between games. A background scan was holding a lock that blocked the NVIDIA profile section from loading.
+- Fixed UI freezing when rapidly scrolling through games with NVIDIA driver profiles.
+- Fixed RHI opening behind other windows on launch.
+- Fixed RHI not coming to the front when restored from the system tray or opened by a second instance.
+- Fixed a maximised window not restoring as maximised on relaunch — it would appear borderless but wasn't actually maximised.
+
+**PCGW links & engine badges**
+- Fixed PCGW link and engine badge not showing for games with trademark symbols (™, ®, ©) in their detected name that the PCGamingWiki database omits — e.g. Deus Ex: Mankind Divided™.
+- Fixed PCGW link and engine badge not showing for games where Steam uses a straight apostrophe but the PCGamingWiki database uses a curly one — e.g. Assassin's Creed titles.
+- Fixed PCGW link and engine badge not showing for EA App games where the folder name omits the subtitle colon — Dragon Age Inquisition and Mass Effect Andromeda now resolve correctly.
+- Fixed engine badge not showing for DX9 false-positive games (e.g. CrossCode) — NW.js and Electron games that import legacy D3D shims were being flagged as DX9. PCGW data now corrects this.
+
+**DXVK**
+- Fixed DXVK defaulting to Development variant instead of Lilium HDR.
+- Fixed DX9 games with DXVK installed not appearing in DX9 searches. The card now correctly shows "DX9 / VLK".
+- Fixed ReShade showing as not installed after installing DXVK on a DX9 game (e.g. Mass Effect, Diablo).
+- Fixed the ReShade uninstall button doing nothing after uninstalling DXVK without refreshing.
+- Fixed a VLK badge persisting after DXVK was uninstalled.
+- Fixed shaders not deploying when DXVK was installed without ReShade already present.
+
+**ReShade**
+- Fixed switching a game's Graphics API override to Vulkan not removing the DX ReShade DLL. The DLL is now uninstalled automatically on the transition, and vice versa.
+- Fixed Vulkan ReShade install/uninstall status not updating the panel immediately.
+- Fixed the ReShade install count in the status bar not updating immediately after install or uninstall.
+- Fixed the ReShade ⚙ cog being greyed out on Vulkan and Unity games.
+
+**OptiScaler**
+- Fixed the DLSS NR and Nightly variant selections being silently reset to Stable every time the OptiScaler ⚙ cog was opened, causing installs and updates to use the wrong version.
+
+**Neural Rendering**
+- Fixed the DLSS5 Tool and ShortFuse DLSS Tool not redeploying to game folders when a new "Latest" version was released. The deployment tracker cache was never refreshed after install.
+- Fixed new DLSS5 Tool versions not staging automatically when "Latest" is selected. The file wasn't downloaded until the 4-hour update check ran.
+- Fixed Feeder install failing on first launch with a "directory not found" error.
+
+**Other**
+- Fixed MFG Ada Unlock being removed when a RenoDX addon was drag-dropped onto the same game.
+- Fixed the ✓/🔨 status icon not appearing for named mods on games detected by folder name (e.g. Avatar: Frontiers of Pandora detected as "AFOP").
+- Fixed a multi-second delay when clicking a game whose NVIDIA driver profile had never been scanned before.
+- Fixed the Shaders dropdown in Game Overrides being disabled when ReShade Channel was set to "No Addons".
+- Fixed the Swapchain Encoding label showing "Gamma" instead of "Linear".
+
+### Maintenance
+- Engine names from PCGamingWiki are now included in the centralized `pcgw_data.json` database. When PE scan can't identify an engine (common for Game Pass and EA App installs), the engine badge is now filled from PCGW data for all 55,000+ games in the database.
+
+### Manifest Updates
+- Fixed Mount & Blade II: Bannerlord install path — RHI was detecting the wrong subfolder.
+- Fixed Sekiro™: Shadows Die Twice not showing its Luma mod.
+- Fixed Arma Reforger NVIDIA profile pointing to the wrong exe.
+- Added Nexus Mods links for CONTROL Resonant and FINAL FANTASY XV WINDOWS EDITION.
+- Added UltrawideSideGlass shader pack — fills ultrawide pillarboxes with zoom/mirror/frosted glass effects.
+
+## v2.7.6
+
+### New
+
+- **Available HDR Mods** — new button next to Quick Start. Opens a searchable list of every supported game, showing which of RenoDX and Luma are available, with direct download links.
+- **DLL naming overrides redesigned** — the old enable/disable toggle is gone. ReShade, Display Commander, and OptiScaler each have their own dropdown in the Game Overrides panel. Selecting a name renames the file immediately; selecting `--------` reverts it. A Reset button reverts all three at once.
+- **Collapsed sections now show a live summary** — when a detail panel section is collapsed, key info is shown inline: installed component versions (Components), active DLSS/Streamline versions (NVIDIA Profile), active NR method (Neural Rendering), installed extras (Extras), and any active overrides (Game Overrides).
+- **Luma mods from GitHub release assets** — mods that have been released as a build but not yet published on the Luma wiki now appear automatically in RHI.
+- **PCGamingWiki data now loaded as a single file** — replaces per-game requests. Covers 55,000+ games. PCGW links, API detection, and Engine.ini paths all work as before, just faster.
+
+### Neural Rendering
+
+- **Swap addon version while installed** — changing the version dropdown while Neural Rendering is installed now swaps the addon file in-place. No need to uninstall first. Only the addon file is replaced — DLSS DLLs, configs, and shaders are left alone.
+  - DLSS5 Tool / DLSS5 Tool + Bridge: swaps `renodx-dlss5.addon64`
+  - ShortFuse DLSS Tool: swaps `renodx-dlss.addon64`
+  - Feeder: swaps the neural consumer (`renodx-dlss5.addon64`) and/or the Feeder addon itself (`dlss5-feed.addon64`) independently
+  - Bridge: swaps `dlss5-bridge.addon64`
+- **NR DLL version selection** — the NR DLL Version dropdown is now active for all four NR methods (previously only DLSS5 Tool, Bridge, and Feeder). ShortFuse DLSS Tool can now target a specific NR DLL version before or during install. Changing the version while NR is installed swaps the DLL in-place for all methods.
+- **Version dropdowns show latest version number** — "Latest" now shows the actual version in brackets, e.g. `Latest (310.8.2 (20/30/40/50))`.
+
+### Changes
+
+- Simple View removed — the app is always in Detail View.
+- DLSS5 Tool, ShortFuse DLSS Tool, DLSS5 Feeder, DX11 Bridge, and MFG Ada Unlock removed from the addon picker — use the Neural Rendering and Extras sections instead. Existing per-game selections are cleaned up silently; nothing is uninstalled.
+- "HDR Mods" separator added to the Components section.
+- "Combo" added to the OptiScaler FG Nvngx Override dropdown.
+- Preset F added to the OptiScaler DLSS RR preset dropdown.
+- Available HDR Mods dialog is now a fixed width — previously the dialog would shift width slightly while scrolling through the list.
+
+### Bug Fixes
+
+**UI responsiveness**
+- Fixed UI freezing during navigation, installs, uninstalls, and menu interactions. Moved 20+ blocking operations off the UI thread: async logging, cached filesystem state on game cards, debounced settings saves, async 7-Zip extraction, async mass-deploy loops, async cog dialog reads, async auto-update pass, async Settings page init, and more.
+- Fixed UI freezing when selecting certain games with Neural Rendering installed — the NR status panel was doing multiple filesystem reads (File.Exists, GetFileVersion per DLL) on the UI thread. These are now pre-computed on a background thread before the UI is updated.
+- Fixed window size and position not being restored when RHI starts minimized to tray (e.g. on Windows startup). The window now opens at the correct size and position when shown from the tray.
+
+**PCGW reliability** (thanks kaeldrin-gh)
+- Fixed PCGamingWiki lookups permanently failing for the rest of a session after a single timeout or rate limit error. The service now pauses temporarily and retries automatically after recovery. Respects the `Retry-After` header on 429 responses.
+- Fixed transient PCGW failures being persisted as permanent "no result" cache entries, which would suppress a game's PCGW link even after the service recovered.
+
+**Neural Rendering**
+- Fixed `DLSS5_Feed.fx` and `lumenite_Kernel.fx` not deploying on games with no prior shader selection (e.g. Dragon Age Inquisition on a fresh install). The shader selection is now written before the ReShade install step runs.
+- Fixed `renodx-mfgunlock.addon64` being detected as a RenoDX HDR mod — it is now correctly excluded from the game-specific addon scan.
+
+**Startup hang**
+- Fixed RHI hanging indefinitely on "Building cards..." for users with RTX Remix installed on a game (e.g. Fallout New Vegas). RTX Remix creates circular directory symlinks that the DLSS scanner would follow forever. The scanner now stops at depth 8 and bails on paths over 300 characters.
+
+**Sleep/wake freeze**
+- Fixed the app freezing after waking from sleep when a game with DLSS or driver profile settings was selected. NVAPI reads now run with a 5-second timeout.
+
+**Other**
+- Fixed the "New Mods" notification not showing for Nexus-only mods.
+- Fixed leftover `renodx-dlss5.addon64` files in game folders after clearing the global addon picker on ShortFuse DLSS Tool or Feeder games.
+- Fixed the OptiScaler version/Info button opening the wrong releases page when the DLSS NR variant was installed.
+- Fixed RTX 40 MFG Unlock and MFG Ada Unlock not updating their row status immediately after install or uninstall — a refresh was previously required.
+- Fixed Unity addon games (AI Limit, Death's Door, Outer Wilds, etc.) re-downloading the addon on every install instead of using the cached file. The addon URL is now resolved to GitHub Releases (which returns a reliable file size) regardless of what URL the wiki or manifest provided.
+
+### Manifest Updates
+
+- Added dgVoodoo2 v2.87.5 (released by the author specifically to avoid false-positive Defender detections of D3D9.dll).
+- Added install warnings for 21 Luma mods available as release builds but not yet on the wiki.
+- Added `L.A. Noire` name mapping for Luma release asset matching.
+- Added Overwatch install subpath (`_retail_`).
+- Added SILENT HILL: Townfall engine hint (UE 5.6.1) and install subpath.
+- Added engine hint for CONTROL Resonant (Northlight Engine).
+
+## v2.7.5
+
+### Bug Fixes
+
+**Settings**
+- Fixed the app freezing when opening Settings after the PC had been idle or the GPU woke from sleep. NVAPI reads now run on a background thread with a 5-second timeout, so the Settings page always opens immediately.
+
+**DLSS5 Feeder**
+- Fixed dgVoodoo2 not being deployed for DX9 games (Gothic II, Diablo, etc.) where the API scan returned an empty result set. DX9 detection now falls back to the primary detected API, so dgVoodoo2 installs correctly on all DX9 games.
+- Fixed the host64\\ folder not being deployed on 32-bit games that aren't detected as DX9 (e.g. Diablo GOG). The host64\\ folder is required for all 32-bit Feeder installs — it no longer depends on DX9 being detected.
+- Fixed LumeniteFX and DLSS5_Feed.fx disappearing from the game folder after restarting RHI. The shader selection was being saved on the UI thread and could be overwritten by a concurrent settings save — it's now written synchronously during the install.
+- Fixed the 64-bit Feeder addon being copied to the game folder on 32-bit games when a specific Feeder version was pinned. Versioned staging only stores `.addon64`, so 32-bit games now always use the AddonPackService which has the correct `.addon32`.
+
+**Luma**
+- Fixed a crash when clicking "Install Luma" on a game where Luma was originally installed via drag-drop. These games have no download URL, so RHI now shows "Drop a Luma archive onto the card to reinstall." instead of crashing.
+
+### Manifest Updates
+
+- Fixed Engine.ini being written to the wrong folder for Clive Barker's Hellraiser: Revival Demo (`Hellraiser` instead of `Hellraiser_Demo`).
+
+## v2.7.4
+
+### Bug Fixes
+
+- Fixed `DLSS5_Feed.fx` not deploying when the shader staging file had been deleted — RHI now re-extracts it from the cached Feeder zip automatically. Stale registration entries that were blocking re-extraction are also cleared on startup.
+
+### Manifest Updates
+
+- Added engine hint for Mount & Blade II: Bannerlord (Daroya Engine).
+
+## v2.7.3
+
+### New
+
+- UE-Extended games now show a status icon next to the addon name — a green ✓ for mods marked complete, and 🔨 for mods still in progress.
+- You can now select individual files from your Custom Shaders folder in the shader picker. Files from `%LocalAppData%\RHI\reshade\Custom\Shaders\` and `\Textures\` appear as a "Custom Shaders" section between Recommended and Extra packs, grouped by subfolder. Tick or untick individual files to control exactly what gets deployed. An "Open Custom Folder" button in the Profiles panel opens the folder directly.
+- DXVK has moved to the Extras section, under a new "API Upgrades" sub-header. The install button is always available on eligible games (DX8/9/10). Variant selection (Lilium HDR by default, Development, Stable) and the Lilium preset are now in the DXVK cog alongside the existing present method settings.
+
+### Neural Rendering
+
+- Feeder and Bridge version selection — you can now pin a specific release version of the Feeder or Bridge addon instead of always using the latest. The dropdown shows the full release history (28+ versions including betas).
+- ShortFuse (DLSS Tool) is now available on all 64-bit games except OpenGL — previously it only showed on games with native DLSS.
+- Fixed Feeder installing the wrong dgVoodoo2 file on 64-bit DX9 games — the 32-bit version was always used, so dgVoodoo2 did nothing and the shader failed to compile. Reinstall Feeder on any affected game to fix it.
+- Fixed global shaders not being removed from the game folder immediately when Feeder is installed.
+- Fixed `DLSS5_Feed.fx` not deploying to the game folder on install.
+- Fixed the Neural Rendering panel not building on some sessions.
+
+### Game Detection
+
+- Unity games now correctly report their API based on Unity's own configuration file, rather than PE import scanning (which reads the Unity player DLL and sees every API). This fixes games like Caves of Qud showing DX12 instead of their actual runtime API.
+- Games with a trademark symbol in their name (®, ™) now correctly match against RHI database entries — Borderlands® 4 and similar were not being found.
+- Unreal Legacy (UE1/2/3) games that have a DX11 compatibility shim in their imports now correctly show DX9 as their primary API.
+- PCGamingWiki API detection now reads DX9, DX10, Vulkan, and OpenGL in addition to DX11/DX12. Games where PE scanning returns no result will now use PCGW data as the source of truth.
+
+### Bug Fixes
+
+**Crashes and freezes**
+- Fixed intermittent UI freezes affecting installs, Nexus sign-in, drag-drop, Update All, Luma installs, and app launch with `--launch`.
+- Fixed a slow memory and connection leak that built up over a long session.
+- Fixed a leak where event handlers accumulated every time a game card was opened.
+
+**Luma**
+- Fixed Luma uninstall removing the shader folder even when ReShade was still installed — shaders are now kept and redeployed.
+- Fixed Luma uninstall leaving a `reshade-shaders-original` folder behind.
+- Fixed Luma uninstall leaving `reshade.ini` in a Luma-configured state — a fresh copy is now deployed with your hotkeys and settings intact.
+- Fixed Luma uninstall leaving `nvngx_dlss.dll` behind.
+- Fixed Luma mods on Nexus showing "Update Available" repeatedly — this was a false positive from comparing page edit timestamps rather than actual file releases.
+
+**Game Pass**
+- Fixed ReShade being lost after a Game Pass game updates — Windows replaces the install folder with a new versioned path on update. RHI now detects this and reinstalls ReShade automatically on the next launch.
+
+**Other**
+- Fixed PCGamingWiki links never appearing on game cards.
+- Fixed the render scale input box keeping keyboard focus after pressing Enter.
+- Fixed occasional incorrect DLSS scan counts when multiple games were scanned at the same time.
+- Fixed file cleanup silently stopping partway through if a file was locked by another process.
+- Window position and size are now saved whenever you finish moving or resizing the window, not only on a clean close — so your layout is preserved even if RHI is force-closed or restarted by an update.
+- The version number in the status bar is now clickable and checks for app updates.
+
+### Manifest Updates
+
+- Added "Banishers: Ghosts of New Eden - The Wanderer Set DLC" to blacklist — was being incorrectly detected as a game.
+- Removed Elden Ring and Elden Ring: Nightreign from the external-only list — both mods now have direct download links in RHI.
+- Added engine hint for Insurgency: Sandstorm.
+- Added DX9 API override for Outlast and Outlast 2 — both were showing DX11 due to a Unreal Legacy PE import shim.
+- Updated engine hint for MGS4 and Peace Walker (Master Collection) to KojiPro Engine.
+
+### Diagnostic Logging
+
+This build includes enhanced session logging to help track down a UI freeze that occurs intermittently. Every major UI rendering operation logs timing and state to the session log. If the app freezes, close it and share the log from `%LocalAppData%\RHI\Logs\` — it will help narrow down the cause.
+
+## v2.7.2
+
+### New
+
+- **RHI Database is now the default mod data source** — RHI now uses its own community database instead of scraping the RenoDX wiki. The database is easier to maintain, more reliable, and gives RHI full control over the data without depending on third-party infrastructure. There is also a security benefit: the RenoDX wiki is publicly editable, and with RenoDX's growing userbase and by extension RHI's there is a real risk that someone could upload a malicious file disguised as a legitimate HDR mod — RHI would have no way to prevent it from being delivered to users. The RHI database is controlled and reviewed before any changes go live. Big thanks to Scrungus for the work transferring all wiki mods and details across to the new database. You can still switch back to the RenoDX Wiki scraper in Settings if needed.
+
+### Bug Fixes
+
+- Fixed UI freezing when navigating between games — RHI was doing filesystem I/O (directory scans for the AppData button) on the UI thread on every card selection. This is now pre-computed in the background at startup and cached per game.
+- Fixed UI becoming permanently unresponsive after clicking Install on Luma (and potentially other components) — shader pack settings read/write operations were using a synchronous lock that could block the UI thread when background download tasks held the lock concurrently.
+- Fixed DXVK uninstall blocking the UI thread during the ReShade mode switch that follows it.
+- Fixed the shader pack picker briefly freezing the UI when opened during an active shader pack download.
+- Fixed Settings page driver combo changes (Shader Cache, G-Sync, FPS Limit, ReBAR, VSync, Power Mode, etc.) causing brief UI hitches — all NVAPI profile writes are now dispatched to a background thread.
+- Fixed per-game NVIDIA driver setting combos (VSync, Low Latency, Smooth Motion, Power Mode, G-Sync, ReBAR) in the Game Overrides panel causing brief UI hitches on every change.
+- Fixed DLSS preset combos, render scale, and driver override toggles in the NVIDIA Profile section causing brief UI hitches on every change.
+- Fixed RTX HDR toggle and Configure RTX HDR apply button blocking the UI thread on NVAPI writes.
+- Fixed MFG dialog (FG Mode, Generation Factor, Target FPS) blocking the UI thread on NVAPI writes.
+- Fixed drag-dropping a `.addon` file (some Luma mods use this extension) showing "No Addon Found" — `.addon` files are now accepted alongside `.addon64` and `.addon32`. Luma-named addon files are now correctly routed through the Luma install flow (with ReShade deploy, dgVoodoo2, shaders, etc.) instead of the RenoDX addon flow. The install picker now shows "🌙 Install Luma Addon" and uses fuzzy filename matching to pre-select the correct game.
+- Fixed ReShade installing as `dxgi.dll` on Borderlands 2 and Borderlands: The Pre-Sequel — these are DX9 games that should use `d3d9.dll`. The `dxgi.dll` override was intended for Luma+dgVoodoo installs but was incorrectly applied to plain ReShade installs as well.
+- Fixed ReShade remaining as `dxgi.dll` after uninstalling Luma on DX9+dgVoodoo games — it now reinstalls automatically with the correct `d3d9.dll` filename.
+- Fixed dgVoodoo2 not deploying for DX9 games when installing DLSS5 Feeder — it was incorrectly gated on the Luma dgVoodoo manifest list, which only covers Luma-specific games. dgVoodoo2 is now deployed for all DX9 Feeder installs.
+- Fixed DLSS5 Feeder installing ReShade as `d3d9.dll` on DX9 games — dgVoodoo2 owns `d3d9.dll` on those games, so ReShade must be `dxgi.dll`. Existing wrong installs are corrected automatically on re-install.
+- Fixed background scan renaming ReShade from `dxgi.dll` back to `ReShade32.dll` on DX9+dgVoodoo Feeder games — the reconciliation logic now correctly skips games where dgVoodoo2 is active.
+- Fixed auto-update installing ReShade as `d3d9.dll` on DX9+dgVoodoo Feeder games — same fix as above applied to the Update All ReShade path.
+
+### Manifest Updates
+
+- Updated UltraShade (formerly Ultra ReShade by Ultra+) to the new repo URL and display name.
+
 ## v2.7.1
 
 ### New
 
-- **Export Game Data** — new button in Settings next to Copy Logs. Gathers your game library data (graphics API, exe paths, engine, store IDs) and copies a JSON file to clipboard. Paste into Discord to share with the community — submissions get merged into a community database that will help RHI detect APIs and paths correctly for more games over time.
+- **Export Game Data** — new button in Settings next to Copy Logs. Gathers your game library data (graphics API, exe paths, engine, store IDs) and copies a zip to clipboard. Paste into Discord to share with the community — submissions help RHI detect APIs and install paths correctly for more games.
+- **GitHub API token support** — if you're hitting rate limits (OptiScaler NR staging not available, version checks not completing), create `%LocalAppData%\RHI\github_api.txt` and paste a GitHub personal access token on a single line. No scopes needed — a free token for public repos takes about 30 seconds to generate at github.com/settings/tokens. Raises the limit from 60 to 5000 API calls per hour.
+- **Nexus Mods support for Luma** — Luma mods hosted on Nexus Mods (e.g. Mass Effect, Medal of Honor: Airborne, Borderlands 2) now show a "Get on Nexus Mods" button that takes you directly to the download page. Mods with both a GitHub and Nexus link (e.g. Prey, BioShock Remastered) now show both options. Full one-click Nexus install is wired but pending Nexus API approval.
+- **dgVoodoo2 auto-detection** — RHI now automatically detects when a Luma mod requires dgVoodoo2 (for DX9 games like Mass Effect, Borderlands 2, Medal of Honor: Airborne) by reading the Luma wiki's Special Notes column, including which specific dgVoodoo2 version the mod recommends. No longer relies on a hardcoded list.
 
 ### Changes
 
-- **GitHub API token support** — if you're hitting GitHub API rate limits (things not updating, "staging not available" errors), create `%LocalAppData%\RHI\github_api.txt` and paste a GitHub personal access token on a single line. No scopes needed — a token for public repos only is sufficient and takes about 30 seconds to generate at github.com/settings/tokens. Raises the rate limit from 60 to 5000 requests/hour.
-- **PCGW API detection** — RHI now quietly scrapes PCGamingWiki in the background to verify DirectX versions. Games that PE scanning can't read (Xbox/Game Pass titles, access-denied paths) now show the correct DX11/DX12 badge where PCGW has the data. Halo Infinite, Resonance, and similar Xbox titles that previously showed no API now correctly show DX12.
-- **Neural Rendering: Feeder and Bridge now support addon version pinning** — the Addon Version dropdown is now active for all four NR methods. For Feeder, the combo controls which version of `renodx-dlss5.addon64` is deployed as the neural consumer — the Feeder addon itself (`dlss5-feed.addon64`) always uses the latest version. For Bridge, the combo already controlled the DLSS5 Tool version.
-- **OptiScaler cog Upscaler API defaults to the game's detected API** — opening the cog on a DX12 game now shows DX12 selected instead of always defaulting to DX11.
+- **PCGamingWiki API detection** — RHI now uses PCGamingWiki in the background to verify DirectX versions for games it can't scan directly (Xbox/Game Pass titles, access-denied paths). Halo Infinite, Resonance, and similar titles that previously showed no API badge now correctly show DX12.
+- **PCGamingWiki config path detection** — RHI now scrapes the config file location from PCGamingWiki and uses it to place Engine.ini in the correct folder. Fixes UE-Extended installs for games that haven't been launched yet, where the config folder doesn't exist yet and RHI previously had to guess the project name.
+- **Neural Rendering: Feeder and Bridge now support addon version pinning** — the Addon Version dropdown is now active for all four NR methods.
+- **OptiScaler cog Upscaler API defaults to the game's detected API** — opens on DX12 for DX12 games instead of always defaulting to DX11.
+- **More reliable OptiScaler and Neural Rendering install records** — RHI now writes a `rhi_install.txt` file to the game folder on every OptiScaler and Neural Rendering install, recording the exact version, variant, and file list that was deployed. This is used on the next launch to show the correct version (fixes nightly builds reverting to stable version numbers on restart), and on uninstall to know exactly which files to clean up regardless of whether the staging folder has since been updated.
 
 ### Bug Fixes
 
-- Fixed OptiScaler showing the wrong installed version after a restart. RHI now writes a `rhi_install.txt` file to the game folder at install/update time that records the exact version deployed. On the next launch that file is read directly, so a nightly build (e.g. `20260813`) no longer reverts to showing the current stable version number after a restart.
-- Fixed OptiScaler uninstall sometimes leaving files behind when the staging folder had been updated to a newer version between the install and the uninstall. Uninstall now uses the game-folder manifest to know exactly which files were deployed, rather than scanning the (potentially different) staging folder.
-- Fixed OptiScaler uninstall failing to find the correct DLL filename when `aux_installed.json` was stale — the manifest is now the primary source, with the record as fallback.
-- Fixed OptiScaler DLL naming override not updating `rhi_install.txt` or renaming the `.original` sentinel when the DLL is renamed — uninstall would subsequently look for the wrong filename and leave files behind.
-- Fixed stale `.original` sentinel files left in game folders from previous DLL rename bugs — cleaned up automatically on next launch.
-- Fixed RHI database (rhi-repo) changes not reflecting in the app after a standard Refresh — required a full restart. The database ETag cache is now cleared on Refresh so any changes pushed to the repo appear immediately.
-- Fixed the detail panel not updating for the currently selected game after a Refresh — changes to game notes, mod status, or any other rebuilt card property now show without needing to reselect the game.
-- Fixed UE-Extended game notes from the RHI database not appearing in the RenoDX info dialog. Notes are now shown below the UE-Extended description for all games that have them.
-- Fixed `reshade-shaders` being renamed to `reshade-shaders-original` with a new empty folder in its place. This could happen during Refresh, especially when using Neural Rendering — concurrent shader operations would occasionally race and treat the existing folder as unmanaged.
-- Fixed `renodx-dlss5.addon64` reappearing after removing Neural Rendering. Clearing NR now properly removes DLSS5 Tool from your addon selection so it stays gone.
-- Fixed OptiScaler uninstall (Stable/Nightly) incorrectly removing `nvngx_dlssnr.dll` that was placed by the Neural Rendering section (ShortFuse or DLSS5 Tool). The dlssnr.dll cleanup now only runs when uninstalling the DlssNr OptiScaler variant, which is the only variant that deploys it.
-- Fixed batch DLSS/Streamline deploy getting stuck when a game has been removed from RHI or its install folder no longer exists — those games are now skipped.
-- Fixed DLSS5 DX11 Bridge and MFG Ada Unlock re-downloading on every launch even when already up to date.
-- Fixed MFG Ada Unlock being reinstalled on every Refresh after removing it via the Extras section. When installed via Extras, the addon picker toggle shows as greyed/blocked — meaning the user couldn't deselect it there. Removing via Extras now also clears it from the addon selection so it stays gone.
+- Fixed OptiScaler uninstall leaving DLSS files behind when a NR method (DLSS5 Tool, ShortFuse, Feeder) was also installed — RHI now tracks which component owns each shared file and only removes a file when the last component that deployed it is uninstalled.
+- Fixed `nvngx_dlss*.dll` files left in the game root (e.g. Mortal Shell II) after uninstalling DLSS5 Tool, when the game's actual DLSS lived in a plugin subfolder.
+- Fixed OptiScaler DLL naming override not correctly tracking the renamed DLL, causing uninstall to leave files behind.
+- Fixed MFG Ada Unlock being reinstalled on every Refresh after removing it via the Extras section.
+- Fixed batch DLSS/Streamline deploy getting stuck when a game's install folder no longer exists.
+- Fixed DLSS5 DX11 Bridge and MFG Ada Unlock re-downloading on every launch.
+- Fixed shader pack folder occasionally being renamed to `reshade-shaders-original` during Refresh.
+- Fixed `renodx-dlss5.addon64` reappearing in the addon picker after removing Neural Rendering.
+- Fixed RHI database (rhi-repo) changes not picking up after a standard Refresh — previously required a full restart.
+- Fixed the detail panel not refreshing for the currently selected game after a Refresh.
+- Fixed UE-Extended game notes from the rhi-repo database not appearing in the RenoDX info dialog.
+- Fixed pressing Backspace in the ReShade screenshot hotkey box being recorded as a hotkey — Backspace now clears the shortcut instead (matching ReShade's own behaviour). Thanks to @tzachbon for the contribution.
+- Fixed "Apply to All Games" in Screenshots & Hotkeys doing nothing when the screenshot path is blank — hotkeys and effect list style now apply regardless. Thanks to @tzachbon for the contribution.
+- Fixed UI freezing for a few seconds during OptiScaler downloads — progress and status message updates no longer trigger a full detail panel rebuild. Thanks to @Nypheena for the contribution.
+- Fixed an empty `reshade-shaders-original` folder being created on clean ReShade installs — on a fresh game folder with no prior `reshade-shaders`, RHI was accidentally creating the folder and immediately renaming it as a backup. On uninstall this empty folder would be restored as `reshade-shaders`, leaving just the management marker with no shaders.
+- Fixed Luma installs via drag-drop or the downloads watcher missing several post-install steps — ReShade, DLSS, dgVoodoo2, Engine.ini keys, and launch arguments are now all applied correctly regardless of how the Luma archive is installed.
+- Fixed ReShade being deployed as `d3d9.dll` on DX9 games when dgVoodoo2 is also being installed — dgVoodoo2 needs `d3d9.dll` to intercept the game's DX9 calls, so ReShade now correctly installs as `dxgi.dll` instead, hooking dgVoodoo2's DX11 output.
 
 ### Manifest Updates
 
-- Fixed Engine.ini being written to the wrong AppData folder for **Solasta 2** — the game's exe lives under a `Brimstone` subfolder which RHI was using as the project name. Now correctly targets `AppData\Local\Solasta 2\Saved\Config\Windows`.
-- Added **ReShade Screenshot Discord Fix** to the addon picker — strips the cICP colour chunk from HDR PNG screenshots so Discord previews them correctly instead of showing washed-out colours.
-- Kingdom Come: Deliverance II added to 64-bit override list (PE scan was returning 32-bit incorrectly)
-- Re-enabled PCGamingWiki AppID lookup (`appid.php`) which was disabled in August 2026 due to a server migration outage. It is now confirmed working again. Existing URL cache will be cleared on next launch to allow fresh lookups via the faster AppID method.
+- Fixed Engine.ini being written to the wrong AppData folder for **Solasta 2** (was using the `Brimstone` exe subfolder name instead of the game name).
+- Added **ReShade Screenshot Discord Fix** to the addon picker — strips the cICP colour chunk from HDR screenshots so Discord previews them correctly instead of showing washed-out colours.
+- Kingdom Come: Deliverance II added to the 64-bit override list.
+- Added **Ultra ReShade by Ultra+** to the shader picker — a single-shader "poor man's DLSS5" effect with bloom, contrast, haze/dehaze and saturation.
+- Five Hearts Under One Roof added to the 64-bit override list.
+- Mass Effect (2007) install path corrected to the `Binaries` subfolder.
+- 007 First Light install path corrected to the `Retail` subfolder.
 
 ---
 

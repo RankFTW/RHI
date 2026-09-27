@@ -14,4 +14,6 @@ public class LumaInstalledRecord
     /// Used to detect when a newer release is available.
     /// </summary>
     public int InstalledBuildNumber { get; set; }
+    /// <summary>Nexus Mods file_id installed, for update detection. Null for non-Nexus installs.</summary>
+    public int? NexusFileId { get; set; }
 }

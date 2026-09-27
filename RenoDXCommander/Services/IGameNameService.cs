@@ -109,6 +109,12 @@ public interface IGameNameService
     /// <summary>Per-game NR addon version override. Key = "GameName|Store", Value = version string e.g. "5.2.1". Absent = use latest.</summary>
     Dictionary<string, string> NrAddonVersion { get; }
 
+    /// <summary>Per-game NR DLL version override.</summary>
+    Dictionary<string, string> NrDllVersion { get; }
+
+    /// <summary>Per-game NR pack (Feeder/Bridge) version override. Key = "GameName|Store", Value = version tag. Absent = use latest.</summary>
+    Dictionary<string, string> NrPackVersion { get; }
+
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     Dictionary<string, string> HdrToggleOverrides { get; }
 
@@ -191,7 +197,7 @@ public interface IGameNameService
         Action<string> setFilterMode,
         Action<List<CustomFilter>> setCustomFilters);
 
-    /// <summary>Persists all settings to disk.</summary>
+    /// <summary>Persists all settings to disk (debounced — 250ms delay coalesces rapid calls).</summary>
     void SaveNameMappings(
         IDllOverrideService dllOverrideService,
         SettingsViewModel settingsViewModel,
@@ -199,6 +205,22 @@ public interface IGameNameService
         bool isLoadingSettings,
         string filterMode,
         List<CustomFilter> customFilters);
+
+    /// <summary>
+    /// Persists all settings to disk immediately (bypasses debounce).
+    /// Use for game rename and app shutdown where immediate persistence is required.
+    /// </summary>
+    void SaveNameMappingsImmediate(
+        IDllOverrideService dllOverrideService,
+        SettingsViewModel settingsViewModel,
+        ViewLayout currentViewLayout,
+        string filterMode,
+        List<CustomFilter> customFilters);
+
+    /// <summary>
+    /// Flushes any pending debounced save immediately. Call on app shutdown.
+    /// </summary>
+    void FlushPendingSave();
 
     // ── Name mapping CRUD ─────────────────────────────────────────────────────
 

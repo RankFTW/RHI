@@ -1,82 +1,125 @@
 # RenoDXdb Editor
 
-A simple tool for editing the RenoDX mod database (`RenoDXdb.json`).
+A WPF editor for the RHI mod databases hosted at [RankFTW/rhi-repo](https://github.com/RankFTW/rhi-repo/tree/main/database).
+
+Supports both databases:
+- **RenoDXdb.json** — named RenoDX addon mods (author, URLs, notes)
+- **RenoDXdb-unreal.json** — Unreal Engine game entries (HDR method, upgrade format/size)
 
 ---
 
 ## Getting Started
 
-1. Run `RenoDXdbEditor.exe`
-2. Click **Open JSON** and select your local copy of `RenoDXdb.json`
-3. The game list on the left will populate with all entries
+Run `RenoDXdbEditor.exe` from the `publish\` folder. Keep the exe in the same folder as its companion DLLs — it will not work if moved on its own.
+
+On first launch the editor automatically syncs both database files from GitHub and saves them next to the exe (`RenoDXdb.json` and `RenoDXdb-unreal.json`). You can then click either card to open and edit.
 
 ---
 
-## Editing a Game
+## GitHub Token (required for Push)
 
-1. Click a game in the left panel — its details appear on the right
-2. Edit any of the fields:
-   - **Game Name** — must match exactly how the game appears in RHI (case-sensitive)
-   - **Status** — `Done` (fully working mod) or `WIP` (in progress / has known issues)
-   - **Author** — mod author name(s)
-   - **Snapshot URL (64-bit)** — direct `.addon64` download link
-   - **Snapshot URL (32-bit)** — direct `.addon32` download link, only if the game is 32-bit
-   - **Nexus / GameBanana URL** — link to the mod page on Nexus or GameBanana
-   - **Discord URL** — Discord invite or channel link, if the mod is Discord-only
-   - **Discussion URL** — GitHub Discussions link for the mod
-   - **Notes** — brief notes shown in RHI (e.g. "Disable in-game HDR", "Requires Lyall's fix")
-3. Click **Apply Changes** to save your edits
-4. If you change the game name it will automatically re-sort alphabetically
+To push changes back to the repository you need a GitHub Personal Access Token.
+
+1. Go to https://github.com/settings/tokens
+2. Click **Generate new token (classic)**
+3. Give it a name (e.g. `rhi-db-editor`)
+4. Under **Scopes**, tick **repo** (full control of private repositories)
+5. Click **Generate token** and copy it
+6. In the editor, click **🔑 Token** in the toolbar and paste it in
+
+The token is stored as `github_token.txt` next to the exe. Keep this file private — anyone with it can push to the repo.
 
 ---
 
-## Adding a New Game
+## Toolbar
 
-1. Click **+ New Game**
-2. Fill in the fields on the right
-3. Click **Apply Changes** — the game is inserted into the list in alphabetical order
-
----
-
-## Deleting a Game
-
-1. Select the game in the list
-2. Click **Delete**
-3. Confirm the prompt
-
----
-
-## Saving
-
-- **Save** — overwrites the currently open file
-- **Save As** — saves to a new location
-- The title bar shows a dot indicator when there are unsaved changes
-- You will be prompted to save if you close the window with unsaved changes
+| Button | Action |
+|--------|--------|
+| **Open JSON** | Open any local `.json` file (DB type inferred from filename) |
+| **Save** | Save the current file to disk |
+| **Save As** | Save to a new path |
+| **↻ Sync** | Re-download both DB files from GitHub and check for changes |
+| **↑ Push** | Commit and push the current file to rhi-repo on GitHub |
+| **🔑 Token** | Set or update your GitHub Personal Access Token |
+| **◀ Change DB** | Return to the DB selector |
+| **+ New** | Add a new entry (inserted alphabetically) |
+| **Delete** | Delete the selected entry |
+| Search box | Filter the list by name / author / comments |
 
 ---
 
-## Search / Filter
+## Named Mods (RenoDXdb.json)
 
-Type in the search box (top toolbar) to filter the list by game name or author. The counter next to it shows how many games match.
+Fields per entry:
 
----
-
-## URL field guide
-
-| Field | What goes here |
-|---|---|
-| Snapshot URL (64-bit) | Direct `.addon64` file URL — GitHub releases or `.github.io` hosted |
-| Snapshot URL (32-bit) | Direct `.addon32` file URL — only for 32-bit games |
-| Nexus / GameBanana URL | `https://www.nexusmods.com/...` or `https://gamebanana.com/...` |
-| Discord URL | `https://discord.com/invite/...` or channel link |
-| Discussion URL | `https://github.com/clshortfuse/renodx/discussions/...` |
-
-Leave fields empty if not applicable — they will be saved as `null`.
+| Field | Notes |
+|-------|-------|
+| Game Name | Required |
+| Status | `Done` or `WIP` |
+| Author | Mod author name |
+| Snapshot URL (64-bit) | Direct link to `.addon64` file |
+| Snapshot URL (32-bit) | Direct link to `.addon32` file (if applicable) |
+| Nexus / GameBanana URL | Optional mod page link |
+| Discord URL | Optional Discord link |
+| Discussion URL | Optional GitHub Discussions link |
+| Notes | Free-text notes |
 
 ---
 
-## Notes on game names
+## Unreal Games (RenoDXdb-unreal.json)
 
-Game names must match exactly what RHI detects from the game's install folder (usually the Steam folder name or registry display name). Check RHI's game card title if unsure.
+Fields per entry:
 
-Special characters like `™`, `®`, `'`, and `:` should be written as-is — the editor saves them in plain text, not as escape codes.
+| Field | Notes |
+|-------|-------|
+| Game Name | Required |
+| Status | `Done` or `WIP` |
+| Method | `(none)`, `native`, `ini`, or `upgrade` |
+| Upgrades | Two-column rows: **Format** + **Size** — see below |
+| Comments | Free-text notes |
+
+### Upgrades
+
+The Upgrades field is used when Method is `upgrade`. Each row specifies one upgrade:
+
+- **Format** — the DXGI format token (e.g. `B8G8R8A8_TYPELESS`, `R10G10B10A2_UNORM`)
+- **Size** — the output size mode (`Output Size`, `Output Ratio`, `Any Size`)
+
+Click **+ Add Upgrade Row** to add another line. Click **✕** to remove a row. Leave both columns as `(none)` if no upgrade is needed.
+
+Example stored value: `` `B8G8R8A8_TYPELESS` `Output Size` ``
+
+---
+
+## Sync & Diff
+
+When you click **↻ Sync** (or on startup), the editor downloads both files from GitHub. If the remote version differs from your local copy, a diff window appears showing added lines (green) and removed lines (red).
+
+You can choose to **Overwrite Local** with the remote version, or **Cancel** to keep your local copy.
+
+---
+
+## Workflow
+
+Typical edit session:
+
+1. Launch the editor — it syncs automatically
+2. Click the database you want to edit
+3. If a diff is shown, review and decide whether to take the remote changes
+4. Make your edits, click **Apply Changes** after each entry
+5. Click **Save** when done
+6. Click **↑ Push** to commit directly to rhi-repo
+
+If you have unsaved changes and click Push, the editor will prompt you to save first.
+
+---
+
+## File Locations
+
+All files are stored next to the exe:
+
+| File | Purpose |
+|------|---------|
+| `RenoDXdb.json` | Local cache of the Named Mods database |
+| `RenoDXdb-unreal.json` | Local cache of the Unreal database |
+| `github_token.txt` | Your GitHub PAT (keep private) |

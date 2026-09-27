@@ -40,7 +40,7 @@ public partial class DragDropHandler
     /// </summary>
     public static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".exe", ".addon64", ".addon32", ".ini",
+        ".exe", ".addon64", ".addon32", ".addon", ".ini",
         ".zip", ".7z", ".rar", ".tar", ".gz", ".bz2", ".xz", ".tgz",
     };
 
@@ -182,15 +182,71 @@ public partial class DragDropHandler
                     continue;
                 }
 
-                // Handle .addon64 / .addon32 files — install RenoDX addon to a game
-                if (ext is ".addon64" or ".addon32"
-                    && Path.GetFileName(file.Path).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase)
+                // Handle .addon64 / .addon32 / .addon files — route Luma files to Luma install, others to RenoDX addon install
+                if (ext is ".addon64" or ".addon32" or ".addon"
                     && !Path.GetFileName(file.Path).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
                     && !Path.GetFileName(file.Path).StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase))
                 {
                     try
                     {
-                        await ProcessDroppedAddon(file.Path);
+                        var addonName = Path.GetFileName(file.Path);
+                        bool isLumaAddonFile = addonName.Contains("Luma", StringComparison.OrdinalIgnoreCase);
+
+                        if (isLumaAddonFile)
+                        {
+                            // Luma addon — show game picker and route to Luma install flow
+                            var lumaGames = _window.ViewModel.AllCards
+                                .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
+                                .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
+                                .ToList();
+
+                            if (lumaGames.Count > 0)
+                            {
+                                var gameNames = lumaGames.Select(c => c.GameName).ToList();
+                                var preSelectIndex = FuzzyMatchGameIndex(gameNames, Path.GetFileName(file.Path));
+                                var combo = new Microsoft.UI.Xaml.Controls.ComboBox
+                                {
+                                    ItemsSource = gameNames,
+                                    SelectedIndex = preSelectIndex,
+                                    FontSize = 12,
+                                    HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
+                                };
+                                var pickerDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                                {
+                                    Title = "🌙 Install Luma Addon",
+                                    Content = new Microsoft.UI.Xaml.Controls.StackPanel
+                                    {
+                                        Spacing = 8,
+                                        Children =
+                                        {
+                                            new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Install {addonName} to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                                            combo,
+                                        }
+                                    },
+                                    PrimaryButtonText = "Install",
+                                    CloseButtonText = "Cancel",
+                                    XamlRoot = _window.Content.XamlRoot,
+                                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+                                };
+                                var result = await DialogService.ShowSafeAsync(pickerDialog);
+                                if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+                                {
+                                    var selectedName = combo.SelectedItem as string;
+                                    var card = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
+                                    if (card != null)
+                                        await ProcessDroppedLumaAddonAsync(file.Path, card);
+                                }
+                            }
+                            else
+                            {
+                                // No Luma-eligible games — fall through to regular addon install
+                                await ProcessDroppedAddon(file.Path);
+                            }
+                        }
+                        else
+                        {
+                            await ProcessDroppedAddon(file.Path);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -216,15 +272,12 @@ public partial class DragDropHandler
                             if (lumaGames.Count > 0)
                             {
                                 var gameNames = lumaGames.Select(c => c.GameName).ToList();
-                                var selectedGame = _window.ViewModel.SelectedGame;
-                                var preSelectIndex = selectedGame != null
-                                    ? gameNames.IndexOf(selectedGame.GameName)
-                                    : -1;
+                                var preSelectIndex = FuzzyMatchGameIndex(gameNames, Path.GetFileName(file.Path));
 
                                 var combo = new Microsoft.UI.Xaml.Controls.ComboBox
                                 {
                                     ItemsSource = gameNames,
-                                    SelectedIndex = preSelectIndex >= 0 ? preSelectIndex : 0,
+                                    SelectedIndex = preSelectIndex,
                                     FontSize = 12,
                                     HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
                                 };

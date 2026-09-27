@@ -12,6 +12,8 @@ public partial class DetailPanelBuilder
 {
     // Set by BuildNvidiaProfileSection so BuildDriverProfileSection appends to the body, not the panel root
     private StackPanel? _nvBodyPanel;
+    // Set by BuildNvidiaProfileSection so BuildNvidiaProfileBody can append the collapsed summary
+    private StackPanel? _nvHeaderRow;
 
     // Snapshot of all NVAPI values needed to build the driver profile section — fetched off the UI thread.
     private sealed record DriverProfileData(
@@ -73,29 +75,53 @@ public partial class DetailPanelBuilder
                 || _window.ViewModel.SelectedGame?.Source != gameSource)
                 return;
 
+            CrashReporter.Log($"[BuildDriverProfileSection] Waiting for semaphore: '{gameName}'");
             try { await _panelScanSemaphore.WaitAsync(scanToken).ConfigureAwait(false); }
-            catch (OperationCanceledException) { return; }
+            catch (OperationCanceledException) { CrashReporter.Log($"[BuildDriverProfileSection] Semaphore cancelled: '{gameName}'"); return; }
+            CrashReporter.Log($"[BuildDriverProfileSection] Semaphore acquired, reading NVAPI: '{gameName}'");
             DriverProfileData? data = null;
             try
             {
-                data = new DriverProfileData(
-                    VSyncMode:              svc.GetVSyncMode(gameName, installPath),
-                    GlobalVSyncMode:        svc.GetGlobalVSyncMode(),
-                    VSyncTearControl:       svc.GetVSyncTearControl(gameName, installPath),
-                    LowLatencyMode:         svc.GetLowLatencyMode(gameName, installPath),
-                    SmoothMotionEnable:     svc.GetSmoothMotionEnable(gameName, installPath),
-                    SmoothMotionApis:       svc.GetSmoothMotionApis(gameName, installPath),
-                    SmoothMotionFlipPacingFs: svc.GetSmoothMotionFlipPacingFs(gameName, installPath),
-                    PowerManagementMode:    svc.GetPowerManagementMode(gameName, installPath),
-                    PerGameGSyncEnabled:    svc.GetPerGameGSyncEnabled(gameName, installPath),
-                    ReBarSizeLimit:         svc.GetReBarSizeLimit(gameName, installPath),
-                    ReBarEnableMode:        svc.GetReBarEnableMode(gameName, installPath),
-                    ReBarMode:              svc.GetReBarMode(gameName, installPath),
-                    GlobalReBarSizeLimit:   svc.GetGlobalReBarSizeLimit(),
-                    IsAdmin:                VulkanLayerService.IsRunningAsAdmin());
-            }
+                // Use a 4s cancellation token for the exe scan inside FindProfile.
+                // This is shorter than the 5s WhenAny timeout so the scan thread exits
+                // cleanly before the outer timeout fires — preventing thread pool starvation.
+                using var scanCts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
+                var scanCt = scanCts.Token;
+
+                // Wrap NVAPI reads in a timeout — they can hang indefinitely after sleep/wake
+                var nvapiTask = Task.Run(() =>
+                {
+                    // Prime the profile lookup cache with the cancellable token first.
+                    // All subsequent Get* calls will hit the in-memory _profileLookupCache
+                    // and never run the expensive exe scan again.
+                    svc.PrimeProfileCache(gameName, installPath, scanCt);
+                    return new DriverProfileData(
+                        VSyncMode:              svc.GetVSyncMode(gameName, installPath),
+                        GlobalVSyncMode:        svc.GetGlobalVSyncMode(),
+                        VSyncTearControl:       svc.GetVSyncTearControl(gameName, installPath),
+                        LowLatencyMode:         svc.GetLowLatencyMode(gameName, installPath),
+                        SmoothMotionEnable:     svc.GetSmoothMotionEnable(gameName, installPath),
+                        SmoothMotionApis:       svc.GetSmoothMotionApis(gameName, installPath),
+                        SmoothMotionFlipPacingFs: svc.GetSmoothMotionFlipPacingFs(gameName, installPath),
+                        PowerManagementMode:    svc.GetPowerManagementMode(gameName, installPath),
+                        PerGameGSyncEnabled:    svc.GetPerGameGSyncEnabled(gameName, installPath),
+                        ReBarSizeLimit:         svc.GetReBarSizeLimit(gameName, installPath),
+                        ReBarEnableMode:        svc.GetReBarEnableMode(gameName, installPath),
+                        ReBarMode:              svc.GetReBarMode(gameName, installPath),
+                        GlobalReBarSizeLimit:   svc.GetGlobalReBarSizeLimit(),
+                        IsAdmin:                VulkanLayerService.IsRunningAsAdmin());
+                }, scanCt);
+                using var delayCts = new CancellationTokenSource();
+                var delayTask = Task.Delay(5000, delayCts.Token);
+                var completed = await Task.WhenAny(nvapiTask, delayTask).ConfigureAwait(false);
+                delayCts.Cancel(); // cancel the delay timer immediately so it doesn't hold a thread
+                if (completed == nvapiTask)
+                    data = await nvapiTask.ConfigureAwait(false);
+                else
+                    CrashReporter.Log($"[BuildDriverProfileSection] NVAPI reads timed out for '{gameName}' — using defaults");            }
             finally
             {
+                CrashReporter.Log($"[BuildDriverProfileSection] Semaphore releasing: '{gameName}'");
                 _panelScanSemaphore.Release();
             }
 
@@ -110,11 +136,16 @@ public partial class DetailPanelBuilder
                     || currentCard.Source != gameSource)
                     return;
 
+                _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData({gameName})");
+                var sw = System.Diagnostics.Stopwatch.StartNew();
                 // Build into a throwaway container first, then swap atomically.
                 var tempDriver = new StackPanel();
                 BuildDriverProfileSectionWithData(targetCard, capturedName, svc, tempDriver, data);
                 driverContainer.Children.Clear();
                 driverContainer.Children.Add(tempDriver);
+                sw.Stop();
+                if (sw.ElapsedMilliseconds > 50)
+                    CrashReporter.Log($"[BuildDriverProfileSectionWithData] SLOW: '{gameName}' took {sw.ElapsedMilliseconds}ms on UI thread");
             });
         });
     }
@@ -130,6 +161,7 @@ public partial class DetailPanelBuilder
             bool isAdmin = d.IsAdmin;
 
             (nvBody ?? _window.NvidiaProfilePanel).Children.Add(UIFactory.MakeSeparator());
+            _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:GridSetup({capturedName})");
 
             var nvidiaGrid = new Grid { ColumnSpacing = 12, Opacity = isAdmin ? 1.0 : 0.4, IsHitTestVisible = isAdmin };
             // 4 columns with dividers between: col0 | div1 | col2 | div3 | col4 | div5 | col6
@@ -200,13 +232,17 @@ public partial class DetailPanelBuilder
                     if (selected.StartsWith("Global"))
                     {
                         // Inherit from global — write the global value
-                        nvidiaPresetService.SetVSyncMode(card.GameName, installPathSafe, globalVSync ?? options[0].Value);
+                        var valueToWrite = globalVSync ?? options[0].Value;
+                        _ = Task.Run(() => nvidiaPresetService.SetVSyncMode(capturedName, installPathSafe, valueToWrite));
                     }
                     else
                     {
                         int optIdx = globalVSync.HasValue ? i - 1 : i;
                         if (optIdx >= 0 && optIdx < options.Length)
-                            nvidiaPresetService.SetVSyncMode(card.GameName, installPathSafe, options[optIdx].Value);
+                        {
+                            var valueToWrite = options[optIdx].Value;
+                            _ = Task.Run(() => nvidiaPresetService.SetVSyncMode(capturedName, installPathSafe, valueToWrite));
+                        }
                     }
                 };
                 vsyncCol.Children.Add(combo);
@@ -236,7 +272,8 @@ public partial class DetailPanelBuilder
                     if (init) return;
                     int i = combo.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
-                    nvidiaPresetService.SetVSyncTearControl(card.GameName, installPathSafe, options[i].Value);
+                    var valueToWrite = options[i].Value;
+                    _ = Task.Run(() => nvidiaPresetService.SetVSyncTearControl(capturedName, installPathSafe, valueToWrite));
                 };
                 vsyncCol.Children.Add(combo);
                 init = false;
@@ -272,7 +309,8 @@ public partial class DetailPanelBuilder
                     if (init2) return;
                     int i = combo2.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
-                    nvidiaPresetService.SetLowLatencyMode(card.GameName, installPathSafe, options[i].Value);
+                    var valueToWrite = options[i].Value;
+                    _ = Task.Run(() => nvidiaPresetService.SetLowLatencyMode(capturedName, installPathSafe, valueToWrite));
                 };
                 vsyncCol.Children.Add(combo2);
                 init2 = false;
@@ -281,6 +319,7 @@ public partial class DetailPanelBuilder
             Grid.SetColumn(vsyncCol, 0);
             nvidiaGrid.Children.Add(vsyncCol);
             nvidiaGrid.Children.Add(MakeDlssDivider(1));
+            _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:VSync done({capturedName})");
 
             // ── Column 4: Smooth Motion ──
             var smoothCol = new StackPanel { Spacing = 4 };
@@ -313,26 +352,34 @@ public partial class DetailPanelBuilder
                     if (init) return;
                     int i = combo.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
-                    nvidiaPresetService.SetSmoothMotionEnable(card.GameName, installPathSafe, options[i].Value);
-                    // Cascade: set APIs to All when enabling, None when disabling
-                    bool enabling = options[i].Value != 0;
-                    nvidiaPresetService.SetSmoothMotionApis(card.GameName, installPathSafe, enabling ? 0x00000007u : 0x00000000u);
-                    // Cascade Low Latency: Ultra when enabling, restore previous value when disabling
+                    var selectedValue = options[i].Value;
+                    bool enabling = selectedValue != 0;
                     const uint LowLatencyOff   = 0x00000000;
                     const uint LowLatencyUltra = 0x00000002;
-                    if (enabling)
+                    _ = Task.Run(() =>
                     {
-                        uint prevLatency = nvidiaPresetService.GetLowLatencyMode(card.GameName, installPathSafe);
-                        // Save previous value only if it's not already Ultra (nothing to restore)
-                        card.PreSmoothMotionLowLatency = prevLatency != LowLatencyUltra ? prevLatency : (uint?)null;
-                        nvidiaPresetService.SetLowLatencyMode(card.GameName, installPathSafe, LowLatencyUltra);
-                    }
-                    else
-                    {
-                        uint restoreValue = card.PreSmoothMotionLowLatency ?? LowLatencyOff;
-                        nvidiaPresetService.SetLowLatencyMode(card.GameName, installPathSafe, restoreValue);
-                        card.PreSmoothMotionLowLatency = null;
-                    }
+                        nvidiaPresetService.SetSmoothMotionEnable(capturedName, installPathSafe, selectedValue);
+                        // Cascade: set APIs to All when enabling, None when disabling
+                        nvidiaPresetService.SetSmoothMotionApis(capturedName, installPathSafe, enabling ? 0x00000007u : 0x00000000u);
+                        // Cascade Low Latency: Ultra when enabling, restore previous value when disabling
+                        uint? savedLatency = null;
+                        if (enabling)
+                        {
+                            uint prevLatency = nvidiaPresetService.GetLowLatencyMode(capturedName, installPathSafe);
+                            savedLatency = prevLatency != LowLatencyUltra ? prevLatency : (uint?)null;
+                            nvidiaPresetService.SetLowLatencyMode(capturedName, installPathSafe, LowLatencyUltra);
+                        }
+                        else
+                        {
+                            uint restoreValue = card.PreSmoothMotionLowLatency ?? LowLatencyOff;
+                            nvidiaPresetService.SetLowLatencyMode(capturedName, installPathSafe, restoreValue);
+                        }
+                        // Marshal card state mutation back to UI thread
+                        _window.DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            card.PreSmoothMotionLowLatency = enabling ? savedLatency : null;
+                        });
+                    });
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
                 };
                 smoothCol.Children.Add(combo);
@@ -364,7 +411,8 @@ public partial class DetailPanelBuilder
                     if (init) return;
                     int i = combo.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
-                    nvidiaPresetService.SetSmoothMotionApis(card.GameName, installPathSafe, options[i].Value);
+                    var valueToWrite = options[i].Value;
+                    _ = Task.Run(() => nvidiaPresetService.SetSmoothMotionApis(capturedName, installPathSafe, valueToWrite));
                 };
                 smoothCol.Children.Add(combo);
                 init = false;
@@ -395,10 +443,14 @@ public partial class DetailPanelBuilder
                     if (init) return;
                     int i = combo.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
-                    nvidiaPresetService.SetSmoothMotionFlipPacingFs(card.GameName, installPathSafe, options[i].Value);
+                    var fsValue = options[i].Value;
                     // Also set windowed pacing to the same value (use 0x00000001 for "On" instead of 0xFFFFFFFF)
-                    uint winValue = options[i].Value == 0xFFFFFFFF ? 0x00000001 : options[i].Value;
-                    nvidiaPresetService.SetSmoothMotionFlipPacingWin(card.GameName, installPathSafe, winValue);
+                    var winValue = fsValue == 0xFFFFFFFF ? 0x00000001u : fsValue;
+                    _ = Task.Run(() =>
+                    {
+                        nvidiaPresetService.SetSmoothMotionFlipPacingFs(capturedName, installPathSafe, fsValue);
+                        nvidiaPresetService.SetSmoothMotionFlipPacingWin(capturedName, installPathSafe, winValue);
+                    });
                 };
                 smoothCol.Children.Add(combo);
                 init = false;
@@ -407,6 +459,7 @@ public partial class DetailPanelBuilder
             Grid.SetColumn(smoothCol, 4);
             nvidiaGrid.Children.Add(smoothCol);
             nvidiaGrid.Children.Add(MakeDlssDivider(5));
+            _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:SmoothMotion done({capturedName})");
 
             // ── Column 6: Other (Power, G-Sync, Restore) ──
             var powerCol = new StackPanel { Spacing = 4 };
@@ -437,7 +490,8 @@ public partial class DetailPanelBuilder
                     if (init) return;
                     int i = combo.SelectedIndex;
                     if (i < 0 || i >= options.Length) return;
-                    nvidiaPresetService.SetPowerManagementMode(card.GameName, installPathSafe, options[i].Value);
+                    var valueToWrite = options[i].Value;
+                    _ = Task.Run(() => nvidiaPresetService.SetPowerManagementMode(capturedName, installPathSafe, valueToWrite));
                 };
                 powerCol.Children.Add(combo);
                 init = false;
@@ -461,7 +515,7 @@ public partial class DetailPanelBuilder
                 {
                     if (gsyncInit) return;
                     bool enabled = gsyncCombo.SelectedIndex == 0;
-                    nvidiaPresetService.SetPerGameGSyncEnabled(card.GameName, installPathSafe, enabled);
+                    _ = Task.Run(() => nvidiaPresetService.SetPerGameGSyncEnabled(capturedName, installPathSafe, enabled));
                 };
                 powerCol.Children.Add(gsyncCombo);
                 gsyncInit = false;
@@ -527,6 +581,7 @@ public partial class DetailPanelBuilder
 
             Grid.SetColumn(powerCol, 6);
             nvidiaGrid.Children.Add(powerCol);
+            _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:Power done({capturedName})");
 
             // ── Column 8: ReBAR ──
             var rebarCol = new StackPanel { Spacing = 4 };
@@ -560,7 +615,7 @@ public partial class DetailPanelBuilder
                     if (rebarComboInit) return;
                     // index 0=Auto(1), 1=Off(0), 2=On(2)
                     uint mode = rebarEnableCombo.SelectedIndex switch { 1 => 0u, 2 => 2u, _ => 1u };
-                    nvidiaPresetService.SetReBarEnableMode(card.GameName, installPathSafe, mode);
+                    _ = Task.Run(() => nvidiaPresetService.SetReBarEnableMode(capturedName, installPathSafe, mode));
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
                 };
                 rebarCol.Children.Add(rebarEnableCombo);
@@ -598,7 +653,7 @@ public partial class DetailPanelBuilder
                     int idx = rebarModeCombo.SelectedIndex;
                     if (idx < 0) return;
                     uint newMode = DlssPresetService.ReBarModes[idx].Value;
-                    nvidiaPresetService.SetReBarMode(card.GameName, installPathSafe, newMode);
+                    _ = Task.Run(() => nvidiaPresetService.SetReBarMode(capturedName, installPathSafe, newMode));
                 };
                 rebarCol.Children.Add(rebarModeCombo);
                 modeComboInit = false;
@@ -641,7 +696,7 @@ public partial class DetailPanelBuilder
                     int idx = rebarSizeCombo.SelectedIndex;
                     if (idx < 0) return;
                     ulong newSize = sizeValues[idx];
-                    nvidiaPresetService.SetReBarSizeLimit(card.GameName, installPathSafe, newSize);
+                    _ = Task.Run(() => nvidiaPresetService.SetReBarSizeLimit(capturedName, installPathSafe, newSize));
                 };
                 rebarCol.Children.Add(rebarSizeCombo);
                 sizeComboInit = false;
@@ -650,6 +705,7 @@ public partial class DetailPanelBuilder
             Grid.SetColumn(rebarCol, 2);
             nvidiaGrid.Children.Add(rebarCol);
             nvidiaGrid.Children.Add(MakeDlssDivider(3));
+            _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:ReBAR done({capturedName})");
 
             (nvBody ?? _window.NvidiaProfilePanel).Children.Add(nvidiaGrid);
         }
@@ -669,3 +725,5 @@ public partial class DetailPanelBuilder
 
     }
 }
+
+// v2.7.7 fix: cancel Task.Delay on NVAPI completion to prevent thread pool starvation

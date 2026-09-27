@@ -211,7 +211,8 @@ public partial class DlssPresetService
     /// Finds the NVIDIA driver profile for a game by matching title or exe names.
     /// Checks the persistent on-disk cache before doing the expensive exe scan.
     /// </summary>
-    private DriverSettingsProfile? FindProfile(string gameName, string installPath)
+    private DriverSettingsProfile? FindProfile(string gameName, string installPath,
+        CancellationToken ct = default)
     {
         if (_cachedProfiles == null) return null;
 
@@ -230,20 +231,24 @@ public partial class DlssPresetService
         }
 
         // Cache miss — run the full matching logic
-        var result = FindProfileUncached(gameName, installPath);
+        var result = FindProfileUncached(gameName, installPath, ct);
 
-        // Persist the result (profile name or null for confirmed miss)
-        _persistentProfileNameCache[gameName] = result?.Name;
-        SavePersistentProfileCache();
+        // Only persist and cache when not cancelled — a partial scan result would be a false negative
+        if (!ct.IsCancellationRequested)
+        {
+            _persistentProfileNameCache[gameName] = result?.Name;
+            SavePersistentProfileCache();
+            _profileLookupCache[gameName] = result;
+        }
 
-        _profileLookupCache[gameName] = result;
         return result;
     }
 
     /// <summary>
     /// The actual profile matching logic — called once per game per install, result is cached.
     /// </summary>
-    private DriverSettingsProfile? FindProfileUncached(string gameName, string installPath)
+    private DriverSettingsProfile? FindProfileUncached(string gameName, string installPath,
+        CancellationToken ct = default)
     {
         if (_cachedProfiles == null) return null;
 
@@ -304,8 +309,12 @@ public partial class DlssPresetService
                 try
                 {
                     foreach (var file in Directory.EnumerateFiles(installPath, "*.exe", SearchOption.AllDirectories))
+                    {
+                        ct.ThrowIfCancellationRequested();
                         exeNames.Add(Path.GetFileName(file));
+                    }
                 }
+                catch (OperationCanceledException) { throw; } // let it propagate up
                 catch (UnauthorizedAccessException)
                 {
                     // Fallback to top-level only if recursive fails (WindowsApps etc.)
@@ -340,6 +349,11 @@ public partial class DlssPresetService
                 }
 
                 CrashReporter.Log($"[DlssPresetService.FindProfile] No profile matched any exe in '{installPath}'");
+            }
+            catch (OperationCanceledException)
+            {
+                CrashReporter.Log($"[DlssPresetService.FindProfile] Exe scan cancelled for '{gameName}'");
+                throw; // propagate so FindProfile doesn't cache a false null
             }
             catch (Exception ex)
             {
@@ -455,6 +469,25 @@ public partial class DlssPresetService
     public bool HasProfile(string gameName, string installPath)
     {
         return FindProfile(gameName, installPath) != null;
+    }
+
+    /// <summary>
+    /// Pre-warms the in-memory profile lookup cache for a game using a cancellable exe scan.
+    /// Call this once before a batch of Get*/Set* calls on the same game so all subsequent
+    /// calls hit the in-memory cache and never run the expensive recursive exe scan.
+    /// If the scan is cancelled (CancellationToken fires), the cache is left unpopulated and
+    /// the next Get* call will return a safe default (no freeze — the cache miss path returns null).
+    /// </summary>
+    public void PrimeProfileCache(string gameName, string installPath, CancellationToken ct = default)
+    {
+        try
+        {
+            FindProfile(gameName, installPath, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            CrashReporter.Log($"[DlssPresetService.PrimeProfileCache] Cancelled for '{gameName}' — exe scan took too long, driver settings will show defaults");
+        }
     }
 
     /// <summary>

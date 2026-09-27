@@ -101,8 +101,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private AppPage currentPage = AppPage.GameView;
     [ObservableProperty] private GameCardViewModel? selectedGame;
     [ObservableProperty] private bool hasUpdatesAvailable;
-    [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Compact;
-    [ObservableProperty] private int _compactPageIndex = 0;
+    [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Detail;
 
     /// <summary>List of new wiki mods detected since last dismiss.</summary>
     [ObservableProperty] private List<string> _newWikiMods = new();
@@ -131,42 +130,14 @@ public partial class MainViewModel : ObservableObject
     partial void OnNewLumaModsChanged(List<string> value)
         => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
 
-    public Visibility DetailPanelVisibility =>
-        CurrentViewLayout == ViewLayout.Detail ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility DetailPanelVisibility => Visibility.Visible;
 
-    public Visibility CompactViewVisibility =>
-        CurrentViewLayout == ViewLayout.Compact ? Visibility.Visible : Visibility.Collapsed;
-
-    /// <summary>
-    /// Returns Visible when in Detail OR Compact mode (both use the DetailScrollViewer).
-    /// </summary>
     public Visibility DetailOrCompactVisibility => Visibility.Visible;
-
-    public string LayoutToggleLabel => CurrentViewLayout switch
-    {
-        ViewLayout.Detail => "Detail View",
-        ViewLayout.Compact => "Simple View",
-        _ => "Detail View",
-    };
 
     partial void OnCurrentViewLayoutChanged(ViewLayout value)
     {
         OnPropertyChanged(nameof(DetailPanelVisibility));
-        OnPropertyChanged(nameof(CompactViewVisibility));
         OnPropertyChanged(nameof(DetailOrCompactVisibility));
-        OnPropertyChanged(nameof(LayoutToggleLabel));
-    }
-
-    public ViewLayout NextViewLayout() => CurrentViewLayout switch
-    {
-        ViewLayout.Detail => ViewLayout.Compact,
-        ViewLayout.Compact => ViewLayout.Detail,
-        _ => ViewLayout.Detail,
-    };
-
-    public void NavigateCompactPage(int delta)
-    {
-        CompactPageIndex = ((CompactPageIndex + delta) % 3 + 3) % 3;
     }
 
     /// <summary>
@@ -227,6 +198,12 @@ public partial class MainViewModel : ObservableObject
     public Action<GameCardViewModel>? RequestOverridesPanelRebuild { get; set; }
 
     /// <summary>
+    /// Callback set by the UI layer to trigger a full detail panel rebuild (Components + Overrides).
+    /// Called after operations that change GraphicsApi or RS state (e.g. DXVK install/uninstall).
+    /// </summary>
+    public Action<GameCardViewModel>? RequestDetailPanelRebuild { get; set; }
+
+    /// <summary>
     /// Callback set by the UI layer to trigger a single-card rebuild after API override changes.
     /// Re-evaluates Luma injection and UE5 DX11 suppression for the affected card.
     /// </summary>
@@ -263,9 +240,18 @@ public partial class MainViewModel : ObservableObject
     public void DismissNewWikiMods()
     {
         if (NewWikiMods.Count == 0) return;
-        _seenWikiModsService.MarkAsSeen(NewWikiMods);
-        NewWikiMods = new List<string>();
+        _seenWikiModsService.MarkAsSeen(NewWikiMods);        NewWikiMods = new List<string>();
         _crashReporter.Log("[MainViewModel.DismissNewWikiMods] Marked new mods as seen");
+    }
+
+    /// <summary>
+    /// Refreshes the bottom status bar text to reflect the current ReShade install count.
+    /// Call after any operation that changes RsStatus on any card.
+    /// </summary>
+    public void RefreshStatusBarText()
+    {
+        if (!string.IsNullOrEmpty(StatusText) && StatusText.Contains("games detected"))
+            StatusText = $"{_allCards.Count} games detected · {InstalledCount} ReShade installs";
     }
 
     /// <summary>
@@ -371,6 +357,7 @@ public partial class MainViewModel : ObservableObject
                     : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
 
                 var effectiveSelection = ResolveShaderSelection(gameName, card.ShaderModeOverride, card.Source ?? "");
+                _crashReporter.Log($"[DeployShadersForCard] '{gameName}' Source='{card.Source}' ShaderMode='{card.ShaderModeOverride}' sel={(effectiveSelection == null ? "null" : string.Join(",", effectiveSelection))}");
 
                 // Ensure needed packs are downloaded before deploying
                 if (effectiveSelection != null)
@@ -447,71 +434,174 @@ public partial class MainViewModel : ObservableObject
     /// <summary>UE-Extended entries from the last DB fetch. Empty when source is WikiOnly.</summary>
     private Dictionary<string, RenoDXDbUnrealEntry> _dbUnrealEntries =
         new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Unity entries from the last DB fetch. Empty when source is WikiOnly or dev-locked.</summary>
+    private Dictionary<string, RenoDXDbUnityEntry> _dbUnityEntries =
+        new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Returns the effective UE-Extended db entry for a game, or null when source is WikiOnly
     /// or the game isn't in the db.
     /// </summary>
-    public RenoDXDbUnrealEntry? GetDbUnrealEntry(string gameName) =>
-        _dbUnrealEntries.TryGetValue(gameName, out var e) ? e : null;
+    public RenoDXDbUnrealEntry? GetDbUnrealEntry(string gameName)
+    {
+        if (_dbUnrealEntries.TryGetValue(gameName, out var e)) return e;
+        // Strip trademark symbols and retry — detected names may include ®, ™, © that the DB omits
+        var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
+        if (stripped != gameName && _dbUnrealEntries.TryGetValue(stripped, out e)) return e;
+        return null;
+    }
+    /// <summary>
+    /// Returns the Unity db entry for a game, or null when dev-locked or the game isn't in the db.
+    /// Applies the same trademark-strip retry as GetDbUnrealEntry.
+    /// </summary>
+    public RenoDXDbUnityEntry? GetDbUnityEntry(string gameName)
+    {
+        if (_dbUnityEntries.TryGetValue(gameName, out var u)) return u;
+        var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
+        if (stripped != gameName && _dbUnityEntries.TryGetValue(stripped, out u)) return u;
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the named mod DB entry for a game, or null when dev-locked or the game isn't in the db.
+    /// Used to show the ✓/🔨 status icon on named mod cards, same as UE-Extended games.
+    /// Only returns an entry when the DB source is active (not WikiOnly).
+    /// </summary>
+    public GameMod? GetDbNamedMod(string gameName)
+    {
+        if (!DevUnlockService.IsUnlocked) return null;
+        // _dbMods is the raw DB list before wiki merge — search by Name field
+        var mod = _dbMods.FirstOrDefault(m => m.Name.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        if (mod != null) return mod;
+        var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
+        if (stripped != gameName)
+            mod = _dbMods.FirstOrDefault(m => m.Name.Equals(stripped, StringComparison.OrdinalIgnoreCase));
+        return mod;
+    }
 
     /// <summary>
     /// Merges wiki and DB mod lists according to the current RenoDxDbSource setting.
     /// Must be called after both _allMods (wiki) and _dbMods (db) are populated.
     ///
-    /// WikiOnly  — _allMods stays as-is; _dbUnrealEntries cleared
-    /// DbOnly    — _allMods replaced by db mods; _dbUnrealEntries populated
-    /// Hybrid    — db entries override wiki entries by name; db-only entries appended
+    /// DbOnly   — _allMods replaced by db mods (default)
+    /// WikiOnly — _allMods stays as wiki-sourced (fallback option)
     /// </summary>
     private void MergeDbSources()
     {
         var source = _settingsViewModel.RenoDxDbSource;
 
-        // Always feed DB unreal Comments into _genericNotes regardless of source mode —
-        // they supplement wiki content, not replace it, so they should show in the info
-        // dialog even in WikiOnly mode.
-        foreach (var (name, entry) in _dbUnrealEntries)
-            if (!string.IsNullOrEmpty(entry.Comments))
-                _genericNotes[name] = entry.Comments;
-
         if (string.Equals(source, "WikiOnly", StringComparison.OrdinalIgnoreCase))
         {
-            // Mods remain wiki-sourced; only Comments propagation (above) applies
+            // Mods remain wiki-sourced; DB Comments supplement wiki generic notes
+            foreach (var (name, entry) in _dbUnrealEntries)
+                if (!string.IsNullOrEmpty(entry.Comments))
+                    _genericNotes[name] = entry.Comments;
+            foreach (var (name, entry) in _dbUnityEntries)
+                if (!string.IsNullOrEmpty(entry.Comments))
+                    _genericNotes[name] = entry.Comments;
+            // Publish Unity entries so UpdateOrchestrationService can access them
+            AuxInstallService.GlobalUnityEntries = _dbUnityEntries;
             _crashReporter.Log("[MergeDbSources] Source=WikiOnly — using wiki mods only, DB comments merged");
             return;
         }
 
-        if (string.Equals(source, "DbOnly", StringComparison.OrdinalIgnoreCase))
+        // DbOnly (default) — replace wiki mods with DB mods AND replace generic
+        // notes entirely with DB Comments so no wiki-scraped notes reach the info dialog
+        _allMods = new List<GameMod>(_dbMods);
+        _genericNotes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, entry) in _dbUnrealEntries)
+            if (!string.IsNullOrEmpty(entry.Comments))
+                _genericNotes[name] = entry.Comments;
+        foreach (var (name, entry) in _dbUnityEntries)
+            if (!string.IsNullOrEmpty(entry.Comments))
+                _genericNotes[name] = entry.Comments;
+        // Publish Unity entries so UpdateOrchestrationService can access them
+        AuxInstallService.GlobalUnityEntries = _dbUnityEntries;
+        _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db, {_genericNotes.Count} generic notes from DB Comments");
+    }
+
+    // ── HDR Mods List ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a merged, alphabetically sorted list of all available HDR mods
+    /// from the RenoDX DB and the Luma wiki. Each entry shows whether a game has
+    /// a RenoDX mod, a Luma mod, or both, plus their download URLs.
+    /// Used by the "Available HDR Mods" dialog.
+    /// </summary>
+    public List<HdrModEntry> GetAllHdrMods()
+    {
+        var dict = new Dictionary<string, HdrModEntry>(StringComparer.OrdinalIgnoreCase);
+
+        // RenoDX named mods (from DB / wiki)
+        foreach (var mod in _allMods)
         {
-            _allMods = new List<GameMod>(_dbMods);
-            _crashReporter.Log($"[MergeDbSources] Source=DbOnly — {_allMods.Count} mods from db");
-            return;
+            if (string.IsNullOrWhiteSpace(mod.Name)) continue;
+            var rdxUrl    = mod.SnapshotUrl ?? mod.NexusUrl ?? mod.DiscordUrl;
+            var rdxStatus = mod.Status == "🚧" ? "WIP" : "Done";
+            dict[mod.Name] = new HdrModEntry(
+                Name:        mod.Name,
+                RenoDXStatus: rdxStatus,
+                RenoDXUrl:   rdxUrl,
+                LumaStatus:  null,
+                LumaUrl:     null);
         }
 
-        // Hybrid — db entries win on name collision; db-only entries are appended
-        if (string.Equals(source, "Hybrid", StringComparison.OrdinalIgnoreCase))
+        // UE-Extended entries — add to dict if not already covered by a named mod
+        foreach (var kv in _dbUnrealEntries)
         {
-            var merged = new List<GameMod>(_allMods);
-            var wikiByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < merged.Count; i++)
-                wikiByName[merged[i].Name] = i;
-
-            int overridden = 0, added = 0;
-            foreach (var dbMod in _dbMods)
+            if (string.IsNullOrWhiteSpace(kv.Key)) continue;
+            var ueStatus = string.Equals(kv.Value.Status, "WIP", StringComparison.OrdinalIgnoreCase)
+                ? "WIP" : "Done";
+            if (!dict.ContainsKey(kv.Key))
             {
-                if (wikiByName.TryGetValue(dbMod.Name, out int idx))
-                {
-                    merged[idx] = dbMod; // db wins
-                    overridden++;
-                }
-                else
-                {
-                    merged.Add(dbMod);
-                    added++;
-                }
+                dict[kv.Key] = new HdrModEntry(
+                    Name:        kv.Value.Name,
+                    RenoDXStatus: ueStatus,
+                    RenoDXUrl:   null,
+                    LumaStatus:  null,
+                    LumaUrl:     null);
             }
-            _allMods = merged;
-            _crashReporter.Log($"[MergeDbSources] Source=Hybrid — {overridden} overridden, {added} added from db, total {_allMods.Count}");
+            // If a named mod already exists, don't overwrite it — named mod takes priority
         }
+
+        // Unity entries — same RenoDX column (generic Unity addon is a RenoDX mod)
+        foreach (var kv in _dbUnityEntries)
+        {
+            if (string.IsNullOrWhiteSpace(kv.Key)) continue;
+            if (dict.ContainsKey(kv.Key)) continue; // named mod already covers it
+            var unityStatus = string.Equals(kv.Value.Status, "WIP", StringComparison.OrdinalIgnoreCase)
+                ? "WIP" : "Done";
+            dict[kv.Key] = new HdrModEntry(
+                Name:        kv.Value.Name,
+                RenoDXStatus: unityStatus,
+                RenoDXUrl:   null,
+                LumaStatus:  null,
+                LumaUrl:     null);
+        }
+
+        // Luma mods — merge into existing entries or add new ones
+        foreach (var luma in _lumaMods)
+        {
+            if (string.IsNullOrWhiteSpace(luma.Name) || luma.IsGenericLuma) continue;
+            var lumaUrl    = luma.DownloadUrl ?? luma.NexusUrl;
+            var lumaStatus = luma.Status == "🚧" ? "WIP" : "Done";
+            if (dict.TryGetValue(luma.Name, out var existing))
+            {
+                dict[luma.Name] = existing with { LumaStatus = lumaStatus, LumaUrl = lumaUrl };
+            }
+            else
+            {
+                dict[luma.Name] = new HdrModEntry(
+                    Name:        luma.Name,
+                    RenoDXStatus: null,
+                    RenoDXUrl:   null,
+                    LumaStatus:  lumaStatus,
+                    LumaUrl:     lumaUrl);
+            }
+        }
+
+        return dict.Values
+            .OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
     private List<GameCardViewModel> _allCards = new();
     public IReadOnlyList<GameCardViewModel> AllCards => _allCards;
@@ -531,6 +621,9 @@ public partial class MainViewModel : ObservableObject
     private Dictionary<string, string> _engineTypeCache = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _resolvedPathCache = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _addonFileCache = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Game keys queued for ReShade auto-reinstall after BuildCards — WindowsApps games
+    /// whose path changed and the DLL couldn't be copied (old folder deleted by Windows on update).</summary>
+    private readonly HashSet<string> _pendingRsReinstall = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, MachineType> _bitnessCache = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Game names that have DXVK enabled (loaded from saved library).</summary>
     private HashSet<string> _dxvkEnabledGames = new(StringComparer.OrdinalIgnoreCase);
@@ -819,7 +912,22 @@ public partial class MainViewModel : ObservableObject
 
     // Dispatcher reference for cross-thread UI updates
     private Microsoft.UI.Dispatching.DispatcherQueue? DispatcherQueue { get; set; }
-    public void SetDispatcher(Microsoft.UI.Dispatching.DispatcherQueue dq) => DispatcherQueue = dq;
+    public void SetDispatcher(Microsoft.UI.Dispatching.DispatcherQueue dq)
+    {
+        DispatcherQueue = dq;
+        PropagateDispatcherToCards();
+    }
+
+    /// <summary>
+    /// Propagates the DispatcherQueue to all cards so FadeMessage can dispatch to the UI thread.
+    /// Called after SetDispatcher and whenever _allCards is reassigned.
+    /// </summary>
+    private void PropagateDispatcherToCards()
+    {
+        if (DispatcherQueue == null) return;
+        foreach (var card in _allCards)
+            card.DispatcherQueue = DispatcherQueue;
+    }
 
     /// <summary>Store the background shader-pack download task so InitializeAsync can await it.</summary>
     public void SetShaderPackReadyTask(Task task) => _shaderPackReadyTask = task;

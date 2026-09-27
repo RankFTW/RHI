@@ -39,7 +39,7 @@ public class SettingsHandler
 
     private MainViewModel ViewModel => _window.ViewModel;
 
-    public void SettingsButton_Click(object sender, RoutedEventArgs e)
+    public async void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.NavigateToSettingsCommand.Execute(null);
         _window.GameViewPanel.Visibility = Visibility.Collapsed;
@@ -130,24 +130,21 @@ public class SettingsHandler
         else
             rsChannelCombo.SelectedIndex = 0;
 
-        // Initialize DLSS Indicator combo from registry
-        try
+        // Initialize DLSS Indicator combo from registry (read on background thread)
+        bool dlssIndicatorEnabled = false;
+        await Task.Run(() =>
         {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NVIDIA Corporation\Global\NGXCore");
-            var val = key?.GetValue("ShowDlssIndicator");
-            // 0x400 = enabled, 0 = disabled. Default to disabled if key doesn't exist.
-            bool indicatorEnabled = val is int intVal && intVal != 0;
-            _window.DlssIndicatorCombo.SelectedIndex = indicatorEnabled ? 0 : 1; // 0=Enabled, 1=Disabled
-        }
-        catch
-        {
-            _window.DlssIndicatorCombo.SelectedIndex = 1; // Default to Disabled if registry unreadable
-        }
+            try
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NVIDIA Corporation\Global\NGXCore");
+                var val = key?.GetValue("ShowDlssIndicator");
+                // 0x400 = enabled, 0 = disabled. Default to disabled if key doesn't exist.
+                dlssIndicatorEnabled = val is int intVal && intVal != 0;
+            }
+            catch { }
+        });
+        _window.DlssIndicatorCombo.SelectedIndex = dlssIndicatorEnabled ? 0 : 1; // 0=Enabled, 1=Disabled
         _window._dlssIndicatorInitializing = false;
-
-        // Initialize G-Sync Indicator combo
-        var presetSvcForGsync = App.Services.GetRequiredService<DlssPresetService>();
-        _window.GSyncIndicatorCombo.SelectedIndex = presetSvcForGsync.GetGSyncIndicator() ? 0 : 1; // 0=Enabled, 1=Disabled
 
         // Initialize DLSS/Streamline auto-update combos
         _window.AutoUpdateDlssCombo.SelectedIndex = ViewModel.Settings.AutoUpdateDlss ? 1 : 0;
@@ -202,109 +199,19 @@ public class SettingsHandler
         // Populate DLSS defaults summary
         _window.RefreshDlssDefaultsSummary();
 
-        // Populate shader cache combos
+        // Populate NVAPI-dependent combos (shader cache, G-Sync, FPS limit, ReBAR, VSync, Power)
+        // Fetch all NVAPI values on a background thread with timeout to prevent UI freeze after GPU sleep/wake
         _window._shaderCacheComboInit = true;
         var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
         if (presetSvc.IsSupported)
         {
-            _window.ShaderCacheSizeCombo.ItemsSource = DlssPresetService.ShaderCacheSizeOptions.Select(o => o.Name).ToArray();
-            var cacheSize = presetSvc.GetShaderCacheSize();
-            var cacheIdx = Array.FindIndex(DlssPresetService.ShaderCacheSizeOptions, o => o.Value == cacheSize);
-            _window.ShaderCacheSizeCombo.SelectedIndex = cacheIdx >= 0 ? cacheIdx : 0;
-
-            _window.ShaderPrecompileCombo.ItemsSource = DlssPresetService.ShaderPrecompileOptions.Select(o => o.Name).ToArray();
-            var precompile = presetSvc.GetShaderPrecompile();
-            var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == precompile);
-            _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
-
-            // G-Sync Enable
-            _window.GSyncEnableCombo.ItemsSource = DlssPresetService.GSyncEnableOptions.Select(o => o.Name).ToArray();
-            var gsyncEnable = presetSvc.GetGlobalGSyncEnabled();
-            var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == gsyncEnable);
-            _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;
-
-            _window.GSyncModeCombo.ItemsSource = DlssPresetService.GSyncModeOptions.Select(o => o.Name).ToArray();
-            var gsync = presetSvc.GetGSyncMode();
-            var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
-            _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
-
-            // FPS Limit
-            var fpsItems = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
-            var fpsLimit = presetSvc.GetGlobalFpsLimit();
-            var fpsIdx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == fpsLimit);
-            if (fpsIdx < 0 && fpsLimit > 0)
-            {
-                // Custom value — insert before "Custom..." at the end
-                fpsItems.Insert(fpsItems.Count - 1, $"{fpsLimit} FPS (Custom)");
-                fpsIdx = fpsItems.Count - 2;
-            }
-            _window.FpsLimitCombo.ItemsSource = fpsItems.ToArray();
-            _window.FpsLimitCombo.SelectedIndex = fpsIdx >= 0 ? fpsIdx : 0;
-
-            _window.PreferredRefreshRateCombo.ItemsSource = DlssPresetService.PreferredRefreshRateOptions.Select(o => o.Name).ToArray();
-            var refreshRate = presetSvc.GetPreferredRefreshRate();
-            var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
-            _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0; // Default: App Setting
-
-            // DMFG Defaults (global base profile)
-            _window.DmfgFrameCountCombo.ItemsSource = DlssPresetService.DmfgFrameCountOptions.Select(o => o.Name).ToArray();
-            var dmfgCount = presetSvc.GetGlobalDmfgFrameCount();
-            var dmfgCountIdx = Array.FindIndex(DlssPresetService.DmfgFrameCountOptions, o => o.Value == dmfgCount);
-            _window.DmfgFrameCountCombo.SelectedIndex = dmfgCountIdx >= 0 ? dmfgCountIdx : 0;
-
-            var dmfgFpsItems = DlssPresetService.DmfgTargetFpsOptions.Select(o => o.Name).ToList();
-            var dmfgFps = presetSvc.GetGlobalDmfgTargetFps();
-            var dmfgFpsIdx = Array.FindIndex(DlssPresetService.DmfgTargetFpsOptions, o => o.Value == dmfgFps);
-            if (dmfgFpsIdx < 0 && dmfgFps > 0 && dmfgFps != 0x01000000)
-            {
-                // Custom value — insert before "Custom..." at the end
-                dmfgFpsItems.Insert(dmfgFpsItems.Count - 1, $"{dmfgFps} FPS (Custom)");
-                dmfgFpsIdx = dmfgFpsItems.Count - 2;
-            }
-            _window.DmfgTargetFpsCombo.ItemsSource = dmfgFpsItems.ToArray();
-            _window.DmfgTargetFpsCombo.SelectedIndex = dmfgFpsIdx >= 0 ? dmfgFpsIdx : 0;
-
-            // Global ReBAR
-            var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
-            _window.GlobalReBarEnableCombo.ItemsSource = new[] { "Auto (Default)", "Off", "On" };
-            var globalReBarMode = presetSvc.GetGlobalReBarEnableMode(); // 0=Off, 1=Auto, 2=On
-            _window.GlobalReBarEnableCombo.SelectedIndex = globalReBarMode == 0 ? 1 : globalReBarMode == 2 ? 2 : 0;
-            _window.GlobalReBarEnableCombo.IsEnabled = isAdminForReBar;
-            _window.GlobalReBarEnableCombo.Opacity = isAdminForReBar ? 1.0 : 0.4;
-
-            _window.GlobalReBarSizeCombo.ItemsSource = DlssPresetService.ReBarSizeLimits.Select(o => o.Name).ToArray();
-            var globalReBarSize = presetSvc.GetGlobalReBarSizeLimit();
-            var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
-            _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1; // Default: 1GB
-            bool reBarOn = globalReBarMode == 2; // Only On enables size setting; Auto and Off grey it
-            _window.GlobalReBarSizeCombo.IsEnabled = isAdminForReBar && reBarOn;
-            _window.GlobalReBarSizeCombo.Opacity = (isAdminForReBar && reBarOn) ? 1.0 : 0.4;
-
-            // Show admin warning if not elevated
-            _window.ReBarAdminWarning.Visibility = isAdminForReBar
-                ? Microsoft.UI.Xaml.Visibility.Collapsed
-                : Microsoft.UI.Xaml.Visibility.Visible;
-
-            // Global VSync
-            _window.GlobalVSyncCombo.ItemsSource = DlssPresetService.VSyncModeOptions.Select(o => o.Name).ToArray();
-            var globalVSync = presetSvc.GetGlobalVSyncMode();
-            var vsyncIdx = globalVSync.HasValue
-                ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == globalVSync.Value)
-                : 0; // Default: App Controlled
-            _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
-
-            // Global Power Mode
-            _window.GlobalPowerModeCombo.ItemsSource = DlssPresetService.PowerManagementOptions.Select(o => o.Name).ToArray();
-            var globalPower = presetSvc.GetGlobalPowerMode();
-            var powerIdx = globalPower.HasValue
-                ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == globalPower.Value)
-                : 0; // Default: Optimal Performance
-            _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
+            var snapshot = await presetSvc.FetchNvApiSettingsAsync(timeoutMs: 5000);
+            PopulateNvApiCombosFromSnapshot(presetSvc, snapshot);
         }
         _window._shaderCacheComboInit = false;
 
-        // Initialize admin mode combo
-        InitAdminModeCombo(_window.AdminModeCombo);
+        // Initialize admin mode combo (async to avoid blocking on schtasks query)
+        await InitAdminModeComboAsync(_window.AdminModeCombo);
 
         // Initialize drop helper combo (greyed out when not in admin mode — not needed)
         _window.DropHelperCombo.SelectedIndex = ViewModel.Settings.DropHelperEnabled ? 1 : 0;
@@ -322,16 +229,115 @@ public class SettingsHandler
             RefreshNexusStatus();
         }
 
-        // Initialize RenoDX Data Source card (dev-only)
-        if (DevUnlockService.IsUnlocked)
-        {
-            _window.RenoDxDbSourceCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-            InitRenoDxDbSourceCombo();
-        }
+        // RenoDX Data Source card — always visible now that RHI Database is the default
+        _window.RenoDxDbSourceCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+        InitRenoDxDbSourceCombo();
     }
 
     /// <summary>
-    /// Populates and wires the RenoDX data source combo. Dev-only.
+    /// Populates all NVAPI-dependent combos from a pre-fetched snapshot.
+    /// This runs on the UI thread after the background fetch completes.
+    /// </summary>
+    private void PopulateNvApiCombosFromSnapshot(DlssPresetService presetSvc, NvApiSettingsSnapshot snapshot)
+    {
+        // Shader Cache Size
+        _window.ShaderCacheSizeCombo.ItemsSource = DlssPresetService.ShaderCacheSizeOptions.Select(o => o.Name).ToArray();
+        var cacheIdx = Array.FindIndex(DlssPresetService.ShaderCacheSizeOptions, o => o.Value == snapshot.ShaderCacheSize);
+        _window.ShaderCacheSizeCombo.SelectedIndex = cacheIdx >= 0 ? cacheIdx : 0;
+
+        // Shader Precompile
+        _window.ShaderPrecompileCombo.ItemsSource = DlssPresetService.ShaderPrecompileOptions.Select(o => o.Name).ToArray();
+        var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == snapshot.ShaderPrecompile);
+        _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
+
+        // G-Sync Indicator (uses snapshot value now)
+        _window.GSyncIndicatorCombo.SelectedIndex = snapshot.GSyncIndicator == true ? 0 : 1; // 0=Enabled, 1=Disabled
+
+        // G-Sync Enable
+        _window.GSyncEnableCombo.ItemsSource = DlssPresetService.GSyncEnableOptions.Select(o => o.Name).ToArray();
+        var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == snapshot.GSyncEnabled);
+        _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;
+
+        // G-Sync Mode
+        _window.GSyncModeCombo.ItemsSource = DlssPresetService.GSyncModeOptions.Select(o => o.Name).ToArray();
+        var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == snapshot.GSyncMode);
+        _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
+
+        // FPS Limit
+        var fpsItems = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
+        var fpsLimit = snapshot.FpsLimit ?? 0;
+        var fpsIdx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == fpsLimit);
+        if (fpsIdx < 0 && fpsLimit > 0)
+        {
+            // Custom value — insert before "Custom..." at the end
+            fpsItems.Insert(fpsItems.Count - 1, $"{fpsLimit} FPS (Custom)");
+            fpsIdx = fpsItems.Count - 2;
+        }
+        _window.FpsLimitCombo.ItemsSource = fpsItems.ToArray();
+        _window.FpsLimitCombo.SelectedIndex = fpsIdx >= 0 ? fpsIdx : 0;
+
+        // Preferred Refresh Rate
+        _window.PreferredRefreshRateCombo.ItemsSource = DlssPresetService.PreferredRefreshRateOptions.Select(o => o.Name).ToArray();
+        var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == snapshot.PreferredRefreshRate);
+        _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0; // Default: App Setting
+
+        // DMFG Frame Count
+        _window.DmfgFrameCountCombo.ItemsSource = DlssPresetService.DmfgFrameCountOptions.Select(o => o.Name).ToArray();
+        var dmfgCountIdx = Array.FindIndex(DlssPresetService.DmfgFrameCountOptions, o => o.Value == snapshot.DmfgFrameCount);
+        _window.DmfgFrameCountCombo.SelectedIndex = dmfgCountIdx >= 0 ? dmfgCountIdx : 0;
+
+        // DMFG Target FPS
+        var dmfgFpsItems = DlssPresetService.DmfgTargetFpsOptions.Select(o => o.Name).ToList();
+        var dmfgFps = snapshot.DmfgTargetFps ?? 0;
+        var dmfgFpsIdx = Array.FindIndex(DlssPresetService.DmfgTargetFpsOptions, o => o.Value == dmfgFps);
+        if (dmfgFpsIdx < 0 && dmfgFps > 0 && dmfgFps != 0x01000000)
+        {
+            // Custom value — insert before "Custom..." at the end
+            dmfgFpsItems.Insert(dmfgFpsItems.Count - 1, $"{dmfgFps} FPS (Custom)");
+            dmfgFpsIdx = dmfgFpsItems.Count - 2;
+        }
+        _window.DmfgTargetFpsCombo.ItemsSource = dmfgFpsItems.ToArray();
+        _window.DmfgTargetFpsCombo.SelectedIndex = dmfgFpsIdx >= 0 ? dmfgFpsIdx : 0;
+
+        // Global ReBAR Enable
+        var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
+        _window.GlobalReBarEnableCombo.ItemsSource = new[] { "Auto (Default)", "Off", "On" };
+        var globalReBarMode = snapshot.ReBarEnableMode ?? 1; // 0=Off, 1=Auto, 2=On
+        _window.GlobalReBarEnableCombo.SelectedIndex = globalReBarMode == 0 ? 1 : globalReBarMode == 2 ? 2 : 0;
+        _window.GlobalReBarEnableCombo.IsEnabled = isAdminForReBar;
+        _window.GlobalReBarEnableCombo.Opacity = isAdminForReBar ? 1.0 : 0.4;
+
+        // Global ReBAR Size
+        _window.GlobalReBarSizeCombo.ItemsSource = DlssPresetService.ReBarSizeLimits.Select(o => o.Name).ToArray();
+        var globalReBarSize = snapshot.ReBarSizeLimit ?? 0x40000000;
+        var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
+        _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1; // Default: 1GB
+        bool reBarOn = globalReBarMode == 2; // Only On enables size setting; Auto and Off grey it
+        _window.GlobalReBarSizeCombo.IsEnabled = isAdminForReBar && reBarOn;
+        _window.GlobalReBarSizeCombo.Opacity = (isAdminForReBar && reBarOn) ? 1.0 : 0.4;
+
+        // ReBAR admin warning
+        _window.ReBarAdminWarning.Visibility = isAdminForReBar
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        // Global VSync
+        _window.GlobalVSyncCombo.ItemsSource = DlssPresetService.VSyncModeOptions.Select(o => o.Name).ToArray();
+        var vsyncIdx = snapshot.VSyncMode.HasValue
+            ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == snapshot.VSyncMode.Value)
+            : 0; // Default: App Controlled
+        _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
+
+        // Global Power Mode
+        _window.GlobalPowerModeCombo.ItemsSource = DlssPresetService.PowerManagementOptions.Select(o => o.Name).ToArray();
+        var powerIdx = snapshot.PowerMode.HasValue
+            ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == snapshot.PowerMode.Value)
+            : 0; // Default: Optimal Performance
+        _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
+    }
+
+    /// <summary>
+    /// Populates and wires the RenoDX data source combo.
     /// </summary>
     private void InitRenoDxDbSourceCombo()
     {
@@ -368,66 +374,14 @@ public class SettingsHandler
     /// Re-reads global NVIDIA settings from the driver and refreshes the Settings page combos.
     /// Called after Reset All to reflect the cleared values.
     /// </summary>
-    public void RefreshGlobalNvidiaSettings()
+    public async Task RefreshGlobalNvidiaSettingsAsync()
     {
         var presetSvc = App.Services.GetRequiredService<DlssPresetService>();
         if (!presetSvc.IsSupported) return;
 
         _window._shaderCacheComboInit = true;
-
-        var cacheSize = presetSvc.GetShaderCacheSize();
-        var cacheIdx = Array.FindIndex(DlssPresetService.ShaderCacheSizeOptions, o => o.Value == cacheSize);
-        _window.ShaderCacheSizeCombo.SelectedIndex = cacheIdx >= 0 ? cacheIdx : 0;
-
-        var precompile = presetSvc.GetShaderPrecompile();
-        var precompIdx = Array.FindIndex(DlssPresetService.ShaderPrecompileOptions, o => o.Value == precompile);
-        _window.ShaderPrecompileCombo.SelectedIndex = precompIdx >= 0 ? precompIdx : 0;
-
-        var gsync = presetSvc.GetGSyncMode();
-        var gsyncIdx = Array.FindIndex(DlssPresetService.GSyncModeOptions, o => o.Value == gsync);
-        _window.GSyncModeCombo.SelectedIndex = gsyncIdx >= 0 ? gsyncIdx : 1; // Default: Fullscreen only
-
-        var gsyncEnable = presetSvc.GetGlobalGSyncEnabled();
-        var gsyncEnableIdx = Array.FindIndex(DlssPresetService.GSyncEnableOptions, o => o.Value == gsyncEnable);
-        _window.GSyncEnableCombo.SelectedIndex = gsyncEnableIdx >= 0 ? gsyncEnableIdx : 0;
-
-        var fpsLimit = presetSvc.GetGlobalFpsLimit();
-        var fpsItems = DlssPresetService.FpsLimiterPresets.Select(o => o.Name).ToList();
-        var fpsIdx = Array.FindIndex(DlssPresetService.FpsLimiterPresets, o => o.Value == fpsLimit);
-        if (fpsIdx < 0 && fpsLimit > 0)
-        {
-            fpsItems.Insert(fpsItems.Count - 1, $"{fpsLimit} FPS (Custom)");
-            fpsIdx = fpsItems.Count - 2;
-        }
-        _window.FpsLimitCombo.ItemsSource = fpsItems.ToArray();
-        _window.FpsLimitCombo.SelectedIndex = fpsIdx >= 0 ? fpsIdx : 0;
-
-        var refreshRate = presetSvc.GetPreferredRefreshRate();
-        var refreshIdx = Array.FindIndex(DlssPresetService.PreferredRefreshRateOptions, o => o.Value == refreshRate);
-        _window.PreferredRefreshRateCombo.SelectedIndex = refreshIdx >= 0 ? refreshIdx : 0;
-
-        var isAdminForReBar = VulkanLayerService.IsRunningAsAdmin();
-        var globalReBarMode = presetSvc.GetGlobalReBarEnableMode();
-        _window.GlobalReBarEnableCombo.SelectedIndex = globalReBarMode == 0 ? 1 : globalReBarMode == 2 ? 2 : 0;
-        bool reBarOn = globalReBarMode == 2;
-        _window.GlobalReBarSizeCombo.IsEnabled = isAdminForReBar && reBarOn;
-        _window.GlobalReBarSizeCombo.Opacity = (isAdminForReBar && reBarOn) ? 1.0 : 0.4;
-        var globalReBarSize = presetSvc.GetGlobalReBarSizeLimit();
-        var rebarSizeIdx = Array.FindIndex(DlssPresetService.ReBarSizeLimits, o => o.Value == globalReBarSize);
-        _window.GlobalReBarSizeCombo.SelectedIndex = rebarSizeIdx >= 0 ? rebarSizeIdx : 1;
-
-        var globalVSync = presetSvc.GetGlobalVSyncMode();
-        var vsyncIdx = globalVSync.HasValue
-            ? Array.FindIndex(DlssPresetService.VSyncModeOptions, o => o.Value == globalVSync.Value)
-            : 0;
-        _window.GlobalVSyncCombo.SelectedIndex = vsyncIdx >= 0 ? vsyncIdx : 0;
-
-        var globalPower = presetSvc.GetGlobalPowerMode();
-        var powerIdx = globalPower.HasValue
-            ? Array.FindIndex(DlssPresetService.PowerManagementOptions, o => o.Value == globalPower.Value)
-            : 0;
-        _window.GlobalPowerModeCombo.SelectedIndex = powerIdx >= 0 ? powerIdx : 0;
-
+        var snapshot = await presetSvc.FetchNvApiSettingsAsync(timeoutMs: 5000);
+        PopulateNvApiCombosFromSnapshot(presetSvc, snapshot);
         _window._shaderCacheComboInit = false;
     }
 
@@ -473,62 +427,80 @@ public class SettingsHandler
 
         ViewModel.SaveSettingsPublic();
 
-        if (string.IsNullOrEmpty(screenshotPath))
-        {
-            return;
-        }
-
         // Iterate all game cards and apply screenshot path + hotkeys to eligible games
         int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
+        var allCards = ViewModel.AllCards.ToList(); // Snapshot the list for background processing
+        var currentOverlayHotkey = _currentHotkeyString;
+        var currentScreenshotHotkey = _currentScreenshotHotkeyString;
+        var rsVariableListUseTabs = ViewModel.Settings.RsVariableListUseTabs;
+        
+        await Task.Run(() =>
         {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-            // Find all reshade*.ini files (reshade.ini, reshade2.ini, reshade3.ini, etc.)
-            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (iniFiles.Count == 0) continue;
-
-            // Skip games where the user has locked reshade.ini updates
-            if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
-
-            try
+            foreach (var card in allCards)
             {
-                var savePath = perGame
-                    ? BuildSavePath(screenshotPath, card.GameName)
-                    : screenshotPath;
+                if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                if (!System.IO.Directory.Exists(card.InstallPath)) continue;
 
-                foreach (var iniFile in iniFiles)
+                // Find all reshade*.ini files (reshade.ini, reshade2.ini, reshade3.ini, etc.)
+                var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                    .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
+                             && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (iniFiles.Count == 0) continue;
+
+                // Skip games where the user has locked reshade.ini updates
+                if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
+
+                try
                 {
-                    AuxInstallService.ApplyScreenshotPath(iniFile, savePath);
-                    // Always apply hotkeys when user explicitly clicks Apply to All
-                    if (!AuxInstallService.IsRdr2(card.GameName))
-                        AuxInstallService.ApplyOverlayHotkey(iniFile, _currentHotkeyString);
-                    AuxInstallService.ApplyScreenshotHotkey(iniFile, _currentScreenshotHotkeyString);
-                    AuxInstallService.ApplyVariableListUseTabs(iniFile, ViewModel.Settings.RsVariableListUseTabs);
+                    var savePath = string.IsNullOrEmpty(screenshotPath)
+                        ? null
+                        : perGame ? BuildSavePath(screenshotPath, card.GameName) : screenshotPath;
+                    var overlayHotkey = AuxInstallService.IsRdr2(card.GameName)
+                        ? null
+                        : currentOverlayHotkey;
+
+                    foreach (var iniFile in iniFiles)
+                        ApplyScreenshotSettingsToIni(iniFile, savePath, overlayHotkey,
+                            currentScreenshotHotkey, rsVariableListUseTabs);
+                    updatedCount++;
                 }
-                updatedCount++;
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[SettingsHandler.ApplyScreenshotPath_Click] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyScreenshotPath_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
 
         // Show confirmation dialog
+        var appliedSettings = string.IsNullOrEmpty(screenshotPath)
+            ? "ReShade hotkeys and effect list style"
+            : "Screenshot path, ReShade hotkeys, and effect list style";
         var dialog = new ContentDialog
         {
             Title = "Screenshots & Hotkeys",
-            Content = $"Screenshot path, ReShade hotkeys, and effect list style applied to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Content = $"{appliedSettings} applied to {updatedCount} game{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
         await DialogService.ShowSafeAsync(dialog);
+    }
+
+    internal static void ApplyScreenshotSettingsToIni(
+        string iniFilePath,
+        string? savePath,
+        string? overlayHotkey,
+        string screenshotHotkey,
+        bool useTabs)
+    {
+        if (!string.IsNullOrWhiteSpace(savePath))
+            AuxInstallService.ApplyScreenshotPath(iniFilePath, savePath);
+        if (overlayHotkey != null)
+            AuxInstallService.ApplyOverlayHotkey(iniFilePath, overlayHotkey);
+        AuxInstallService.ApplyScreenshotHotkey(iniFilePath, screenshotHotkey);
+        AuxInstallService.ApplyVariableListUseTabs(iniFilePath, useTabs);
     }
 
     /// <summary>
@@ -570,32 +542,37 @@ public class SettingsHandler
         }
 
         int updatedCount = 0;
-        foreach (var card in ViewModel.AllCards)
+        var allCards = ViewModel.AllCards.ToList(); // Snapshot the list for background processing
+        
+        await Task.Run(() =>
         {
-            if (string.IsNullOrEmpty(card.InstallPath)) continue;
-            if (!System.IO.Directory.Exists(card.InstallPath)) continue;
-
-            var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
-                .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
-                         && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (iniFiles.Count == 0) continue;
-
-            // Skip games where reshade.ini updates are locked
-            if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
-
-            try
+            foreach (var card in allCards)
             {
-                foreach (var iniFile in iniFiles)
-                    AuxInstallService.ApplyPeakNits(iniFile, peakNits);
-                updatedCount++;
+                if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                if (!System.IO.Directory.Exists(card.InstallPath)) continue;
+
+                var iniFiles = System.IO.Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                    .Where(f => System.IO.Path.GetFileName(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
+                             && System.IO.Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (iniFiles.Count == 0) continue;
+
+                // Skip games where reshade.ini updates are locked
+                if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
+
+                try
+                {
+                    foreach (var iniFile in iniFiles)
+                        AuxInstallService.ApplyPeakNits(iniFile, peakNits);
+                    updatedCount++;
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[SettingsHandler.ApplyPeakNitsToAll_Click] Failed for '{card.GameName}' — {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[SettingsHandler.ApplyPeakNitsToAll_Click] Failed for '{card.GameName}' — {ex.Message}");
-            }
-        }
+        });
 
         var dialog = new ContentDialog
         {
@@ -625,14 +602,17 @@ public class SettingsHandler
     /// Checks if the scheduled task exists and sets the combo box accordingly.
     /// Called during settings page initialization.
     /// </summary>
-    public void InitAdminModeCombo(ComboBox combo)
+    public async Task InitAdminModeComboAsync(ComboBox combo)
     {
         _adminComboInit = true;
         // When UAC is disabled or the task exists, show as On
-        bool isOn = IsUacDisabled() || IsAdminTaskRegistered();
+        // Run the schtasks query on a background thread to avoid blocking UI
+        bool isUacDisabled = await Task.Run(() => IsUacDisabled());
+        bool taskRegistered = !isUacDisabled && await IsAdminTaskRegisteredAsync();
+        bool isOn = isUacDisabled || taskRegistered;
         combo.SelectedIndex = isOn ? 1 : 0;
         // Grey out when UAC is off — no task needed, state can't be changed
-        if (IsUacDisabled()) combo.IsEnabled = false;
+        if (isUacDisabled) combo.IsEnabled = false;
         _adminComboInit = false;
     }
 
@@ -645,7 +625,7 @@ public class SettingsHandler
         CrashReporter.Log($"[SettingsHandler.AdminModeCombo] Admin mode = {(enable ? "On" : "Off")}");
 
         // When UAC is disabled, all processes already run as admin — no task needed.
-        if (IsUacDisabled())
+        if (await Task.Run(() => IsUacDisabled()))
         {
             await DialogService.ShowSafeAsync(new ContentDialog
             {
@@ -663,10 +643,11 @@ public class SettingsHandler
 
         try
         {
+            // Run schtasks operations on background thread to avoid blocking UI
             if (enable)
-                CreateAdminTask();
+                await Task.Run(() => CreateAdminTask());
             else
-                DeleteAdminTask();
+                await Task.Run(() => DeleteAdminTask());
 
             // Show restart notice
             await DialogService.ShowSafeAsync(new ContentDialog
@@ -690,11 +671,11 @@ public class SettingsHandler
         }
     }
 
-    private static bool IsAdminTaskRegistered()
+    private static async Task<bool> IsAdminTaskRegisteredAsync()
     {
         try
         {
-            var result = RunSchtasks($"/Query /TN \"{AdminTaskName}\" /FO LIST");
+            var result = await RunSchtasksAsync($"/Query /TN \"{AdminTaskName}\" /FO LIST");
             return result.ExitCode == 0;
         }
         catch { return false; }
@@ -723,20 +704,21 @@ public class SettingsHandler
         // Uses /SC ONCE with a past date so the task exists but never auto-triggers.
         // RHI launches itself through the task via "schtasks /Run" for UAC-free elevation.
         var args = $"/Create /TN \"{AdminTaskName}\" /TR \"\\\"{exePath}\\\"\" /SC ONCE /ST 00:00 /SD 01/01/2000 /RL HIGHEST /F";
-        var result = RunSchtasksElevated(args);
+        var result = RunSchtasksElevatedSync(args);
         if (result != 0)
             throw new InvalidOperationException($"schtasks /Create failed (exit {result})");
     }
 
     private static void DeleteAdminTask()
     {
-        var result = RunSchtasksElevated($"/Delete /TN \"{AdminTaskName}\" /F");
+        var result = RunSchtasksElevatedSync($"/Delete /TN \"{AdminTaskName}\" /F");
         if (result != 0)
             throw new InvalidOperationException($"schtasks /Delete failed (exit {result})");
     }
 
-    /// <summary>Runs schtasks.exe elevated (UAC prompt) and waits for completion.</summary>
-    private static int RunSchtasksElevated(string arguments)
+    /// <summary>Runs schtasks.exe elevated (UAC prompt) and waits for completion synchronously.
+    /// This is acceptable since it's called from a background thread.</summary>
+    private static int RunSchtasksElevatedSync(string arguments)
     {
         var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", arguments)
         {
@@ -749,7 +731,7 @@ public class SettingsHandler
         return proc.ExitCode;
     }
 
-    private static (int ExitCode, string Output) RunSchtasks(string arguments)
+    private static async Task<(int ExitCode, string Output)> RunSchtasksAsync(string arguments)
     {
         var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", arguments)
         {
@@ -759,9 +741,24 @@ public class SettingsHandler
             CreateNoWindow = true,
         };
         using var proc = System.Diagnostics.Process.Start(psi)!;
-        var output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
-        proc.WaitForExit(5000);
-        return (proc.ExitCode, output.Trim());
+        
+        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+        var stderrTask = proc.StandardError.ReadToEndAsync();
+        
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try
+        {
+            await proc.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            try { proc.Kill(); } catch { }
+            return (-1, "Timeout");
+        }
+        
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+        return (proc.ExitCode, (stdout + stderr).Trim());
     }
 
     public void OpenAppDataFolder_Click(object sender, RoutedEventArgs e)
@@ -930,6 +927,9 @@ public class SettingsHandler
                 xbox_aumid    = xboxAumid,
                 epic_app_name = epicAppName,
                 pcgw_url      = card.PcgwUrl,
+                config_path       = pcgwInfo?.ConfigPath,
+                config_path_xbox  = pcgwInfo?.ConfigPathXbox,
+                engine_ini_project_override = card.EngineIniProjectOverride,
                 api_source    = pcgwInfo != null ? "pcgw+pe" : "pe",
             });
         }
@@ -1195,12 +1195,12 @@ public class SettingsHandler
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
         // Build and store the hotkey string in KeyOverlay format (Req 2.2)
-        _currentHotkeyString = HotkeyManager.BuildHotkeyString(vk, shift, ctrl, alt);
+        _currentHotkeyString = HotkeyManager.BuildScreenshotHotkeyString(vk, shift, ctrl, alt);
 
         // Update the TextBox display with human-readable format (Req 2.1)
         if (sender is TextBox hotkeyBox)
         {
-            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(vk, shift, ctrl, alt);
+            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(_currentHotkeyString);
         }
 
         // Prevent the TextBox from receiving the character
@@ -1357,11 +1357,11 @@ public class SettingsHandler
             .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
-        _currentScreenshotHotkeyString = HotkeyManager.BuildHotkeyString(vk, shift, ctrl, alt);
+        _currentScreenshotHotkeyString = HotkeyManager.BuildScreenshotHotkeyString(vk, shift, ctrl, alt);
 
         if (sender is TextBox hotkeyBox)
         {
-            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(vk, shift, ctrl, alt);
+            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(_currentScreenshotHotkeyString);
         }
 
         e.Handled = true;
@@ -2004,7 +2004,7 @@ public class SettingsHandler
                                 CrashReporter.Log("[SettingsHandler.ReShadeChannelCombo] Direct copy denied, attempting elevated copy...");
                                 try
                                 {
-                                    ElevatedFileCopy(stagedPath64, layer64);
+                                    await ElevatedFileCopyAsync(stagedPath64, layer64);
                                     CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 64-bit DLL via elevated copy to {newChannel} build");
                                 }
                                 catch (Exception elevEx)
@@ -2033,7 +2033,7 @@ public class SettingsHandler
                             {
                                 try
                                 {
-                                    ElevatedFileCopy(stagedPath32, layer32);
+                                    await ElevatedFileCopyAsync(stagedPath32, layer32);
                                     CrashReporter.Log($"[SettingsHandler.ReShadeChannelCombo] Updated Vulkan layer 32-bit DLL via elevated copy to {newChannel} build");
                                 }
                                 catch (Exception elevEx)
@@ -2101,7 +2101,7 @@ public class SettingsHandler
     /// Copies a file using an elevated cmd.exe process (UAC prompt).
     /// Used when direct File.Copy fails due to permissions on C:\ProgramData\ReShade.
     /// </summary>
-    private static void ElevatedFileCopy(string source, string destination)
+    private static async Task ElevatedFileCopyAsync(string source, string destination)
     {
         var psi = new System.Diagnostics.ProcessStartInfo
         {
@@ -2113,8 +2113,18 @@ public class SettingsHandler
             WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
         };
         using var proc = System.Diagnostics.Process.Start(psi);
-        proc?.WaitForExit(10_000);
-        if (proc != null && proc.ExitCode != 0)
+        if (proc == null) throw new IOException("Failed to start elevated copy process");
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        try
+        {
+            await proc.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            proc.Kill();
+            throw new IOException("Elevated copy timed out after 10 seconds");
+        }
+        if (proc.ExitCode != 0)
             throw new IOException($"Elevated copy exited with code {proc.ExitCode}");
     }
 
@@ -2185,35 +2195,42 @@ public class SettingsHandler
         }
         catch (OperationCanceledException) { }
 
-        _window.DispatcherQueue?.TryEnqueue(async () =>
+        // Validate the key on a background thread, then marshal ALL UI updates to the dispatcher
+        _ = Task.Run(async () =>
         {
-            _window.NexusConnectBtn.IsEnabled = true;
-
-            if (string.IsNullOrEmpty(receivedKey))
+            NexusUserInfo? info = null;
+            if (!string.IsNullOrEmpty(receivedKey))
             {
-                _window.NexusStatusText.Text = "Authorisation timed out or was cancelled.";
-                _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
-                return;
+                try { info = await nexusDl.ValidateApiKeyAsync(receivedKey); }
+                catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Validate failed — {ex.Message}"); }
             }
 
-            _window.NexusStatusText.Text = "Validating...";
-            _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
-
-            var info = await nexusDl.ValidateApiKeyAsync(receivedKey).ConfigureAwait(false);
-            if (info == null)
+            _window.DispatcherQueue?.TryEnqueue(() =>
             {
-                _window.NexusStatusText.Text = "Received key was invalid. Please try again.";
-                _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
-                return;
-            }
+                _window.NexusConnectBtn.IsEnabled = true;
 
-            ViewModel.Settings.NexusApiKey    = receivedKey;
-            ViewModel.Settings.NexusIsPremium = info.IsPremium;
-            ViewModel.Settings.NexusUsername  = info.Name;
-            ViewModel.SaveSettingsPublic();
+                if (string.IsNullOrEmpty(receivedKey))
+                {
+                    _window.NexusStatusText.Text = "Authorisation timed out or was cancelled.";
+                    _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
+                    return;
+                }
 
-            RefreshNexusStatus();
-            CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Connected via SSO as {info.Name} (Premium={info.IsPremium})");
+                if (info == null)
+                {
+                    _window.NexusStatusText.Text = "Received key was invalid. Please try again.";
+                    _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
+                    return;
+                }
+
+                ViewModel.Settings.NexusApiKey    = receivedKey;
+                ViewModel.Settings.NexusIsPremium = info.IsPremium;
+                ViewModel.Settings.NexusUsername  = info.Name;
+                ViewModel.SaveSettingsPublic();
+
+                RefreshNexusStatus();
+                CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Connected via SSO as {info.Name} (Premium={info.IsPremium})");
+            });
         });
     }
 

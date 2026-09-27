@@ -60,12 +60,20 @@ public static class HotkeyManager
         return $"{vk},{(ctrl ? 1 : 0)},{(shift ? 1 : 0)},{(alt ? 1 : 0)}";
     }
 
+    /// <summary>Builds a ReShade screenshot shortcut, using Backspace to clear it.</summary>
+    public static string BuildScreenshotHotkeyString(int vk, bool shift, bool ctrl, bool alt)
+    {
+        return vk == 8 ? "0,0,0,0" : BuildHotkeyString(vk, shift, ctrl, alt);
+    }
+
     /// <summary>
     /// Formats a hotkey into a human-readable display string.
     /// Modifier order: Ctrl, Shift, Alt, then the main key name.
     /// </summary>
     public static string FormatHotkeyDisplay(int vk, bool shift, bool ctrl, bool alt)
     {
+        if (vk == 0) return "None";
+
         var parts = new List<string>();
         if (ctrl) parts.Add("Ctrl");
         if (shift) parts.Add("Shift");

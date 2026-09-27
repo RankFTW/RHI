@@ -27,7 +27,7 @@ public partial class DragDropHandler
         var archiveName = Path.GetFileName(archivePath);
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] Received '{archiveName}'");
 
-        var sevenZipExe = App.Services.GetRequiredService<ISevenZipExtractor>().Find7ZipExe();
+        var sevenZipExe = await App.Services.GetRequiredService<ISevenZipExtractor>().Find7ZipExeAsync();
         if (sevenZipExe == null)
         {
             var errDialog = new ContentDialog
@@ -70,7 +70,18 @@ public partial class DragDropHandler
             // Read output asynchronously to prevent deadlock
             var stdoutTask = proc.StandardOutput.ReadToEndAsync();
             var stderrTask = proc.StandardError.ReadToEndAsync();
-            proc.WaitForExit(60_000); // 60 second timeout for large archives
+            
+            // Wait asynchronously with 60 second timeout for large archives
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            try
+            {
+                await proc.WaitForExitAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                _crashReporter.Log("[DragDropHandler.ProcessDroppedArchive] 7z timed out after 60 seconds — killing process");
+                proc.Kill();
+            }
 
             var stderr = await stderrTask;
             if (!string.IsNullOrWhiteSpace(stderr))
@@ -91,10 +102,13 @@ public partial class DragDropHandler
                 return;
             }
 
-            // Search for renodx- prefixed .addon64 and .addon32 files in the extracted contents
+            // Search for renodx- prefixed .addon64, .addon32, and .addon files in the extracted contents
+            // .addon files (no bitness suffix) are treated as .addon64 for compatibility
             var addonFiles = Directory.GetFiles(tempDir, "*.addon64", SearchOption.AllDirectories)
                 .Concat(Directory.GetFiles(tempDir, "*.addon32", SearchOption.AllDirectories))
-                .Where(f => Path.GetFileName(f).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
+                .Concat(Directory.GetFiles(tempDir, "*.addon", SearchOption.AllDirectories))
+                .Where(f => Path.GetFileName(f).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase)
+                         || Path.GetFileName(f).Contains("Luma", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             if (addonFiles.Count == 0)
@@ -103,7 +117,7 @@ public partial class DragDropHandler
                 var noAddonDialog = new ContentDialog
                 {
                     Title = "No Addon Found",
-                    Content = $"No .addon64 or .addon32 files were found inside '{archiveName}'.",
+                    Content = $"No .addon64, .addon32, or .addon files were found inside '{archiveName}'.",
                     CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
                     RequestedTheme = ElementTheme.Dark,
@@ -145,8 +159,64 @@ public partial class DragDropHandler
                 addonToInstall = (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? addonFiles[0];
             }
 
-            // Pass the extracted addon to the existing install flow
-            await ProcessDroppedAddon(addonToInstall);
+            // Route to the correct handler based on file type
+            bool isLumaFile = Path.GetFileName(addonToInstall).Contains("Luma", StringComparison.OrdinalIgnoreCase);
+
+            if (isLumaFile)
+            {
+                // Luma addon found inside the archive — route the original archive to the full Luma install flow
+                // (which extracts the Luma subfolder, shaders, etc. via InstallFromArchiveAsync)
+                var lumaGames = _window.ViewModel.AllCards
+                    .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
+                    .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (lumaGames.Count > 0)
+                {
+                    var gameNames = lumaGames.Select(c => c.GameName).ToList();
+                    var preSelectIndex = FuzzyMatchGameIndex(gameNames, archiveName);
+                    var lumaCombo = new ComboBox
+                    {
+                        ItemsSource = gameNames,
+                        SelectedIndex = preSelectIndex,
+                        FontSize = 12,
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                    };
+                    var lumaPickDialog = new ContentDialog
+                    {
+                        Title = "🌙 Install Luma Addon",
+                        Content = new StackPanel
+                        {
+                            Spacing = 8,
+                            Children =
+                            {
+                                new TextBlock { Text = $"Install {archiveName} to:", TextWrapping = TextWrapping.Wrap, FontSize = 12 },
+                                lumaCombo,
+                            }
+                        },
+                        PrimaryButtonText = "Install",
+                        CloseButtonText = "Cancel",
+                        XamlRoot = _window.Content.XamlRoot,
+                        RequestedTheme = ElementTheme.Dark,
+                    };
+                    var lumaResult = await DialogService.ShowSafeAsync(lumaPickDialog);
+                    if (lumaResult == ContentDialogResult.Primary)
+                    {
+                        var selectedName = lumaCombo.SelectedItem as string;
+                        var card = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
+                        if (card != null)
+                            await ProcessDroppedLumaArchiveAsync(archivePath, card);
+                    }
+                }
+                else
+                {
+                    await ProcessDroppedAddon(addonToInstall);
+                }
+            }
+            else
+            {
+                await ProcessDroppedAddon(addonToInstall);
+            }
         }
         finally
         {
@@ -232,6 +302,9 @@ public partial class DragDropHandler
             }
         }
 
+        bool isLumaAddon = addonFileName.Contains("Luma", StringComparison.OrdinalIgnoreCase)
+                        || addonFileName.Contains("luma", StringComparison.OrdinalIgnoreCase);
+
         var panel = new StackPanel { Spacing = 12 };
         panel.Children.Add(new TextBlock
         {
@@ -244,7 +317,7 @@ public partial class DragDropHandler
 
         var pickDialog = new ContentDialog
         {
-            Title = "📦 Install RenoDX Addon",
+            Title = isLumaAddon ? "🌙 Install Luma Addon" : "📦 Install RenoDX Addon",
             Content = panel,
             PrimaryButtonText = "Next",
             CloseButtonText = "Cancel",
@@ -278,10 +351,12 @@ public partial class DragDropHandler
         {
             var existing = Directory.GetFiles(installPath, "*.addon64")
                 .Concat(Directory.GetFiles(installPath, "*.addon32"))
+                .Concat(Directory.GetFiles(installPath, "*.addon"))
                 .Where(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-upgrade", StringComparison.OrdinalIgnoreCase)
+                         && !Path.GetFileName(f).StartsWith("renodx-mfgunlock", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase))
@@ -329,13 +404,15 @@ public partial class DragDropHandler
                 if (!Directory.Exists(searchDir)) continue;
                 var toRemove = Directory.GetFiles(searchDir, "*.addon64")
                     .Concat(Directory.GetFiles(searchDir, "*.addon32"))
+                    .Concat(Directory.GetFiles(searchDir, "*.addon"))
                     .Where(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase)
                              && !Path.GetFileName(f).StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-upgrade", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
                          && !Path.GetFileName(f).StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase)
-                         && !Path.GetFileName(f).StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase))
+                         && !Path.GetFileName(f).StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase)
+                         && !Path.GetFileName(f).StartsWith("renodx-mfgunlock", StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 foreach (var f in toRemove)
                 {
@@ -350,15 +427,16 @@ public partial class DragDropHandler
         }
 
         // Copy the addon file to the resolved addon folder
-        var destPath = Path.Combine(addonDeployPath, addonFileName);
+        var effectiveAddonFileName = addonFileName;
+        var destPath = Path.Combine(addonDeployPath, effectiveAddonFileName);
         try
         {
             File.Copy(addonPath, destPath, overwrite: true);
-            _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Installed '{addonFileName}' to '{addonDeployPath}'");
+            _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Installed '{effectiveAddonFileName}' to '{addonDeployPath}'");
 
             // Determine if this is a named mod (not UE-Extended or generic UE)
-            bool isNamedMod = !addonFileName.Equals("renodx-ue-extended.addon64", StringComparison.OrdinalIgnoreCase)
-                           && !addonFileName.Equals("renodx-unrealengine.addon64", StringComparison.OrdinalIgnoreCase);
+            bool isNamedMod = !effectiveAddonFileName.Equals("renodx-ue-extended.addon64", StringComparison.OrdinalIgnoreCase)
+                           && !effectiveAddonFileName.Equals("renodx-unrealengine.addon64", StringComparison.OrdinalIgnoreCase);
 
             // Save an InstalledModRecord so the addon survives refresh/restart
             var installRecord = new InstalledModRecord
@@ -366,7 +444,7 @@ public partial class DragDropHandler
                 GameName      = gameName,
                 InstallPath   = addonDeployPath,
                 Store         = targetCard.Source ?? "",
-                AddonFileName = addonFileName,
+                AddonFileName = effectiveAddonFileName,
                 InstalledAt   = DateTime.UtcNow,
                 // For named mods from Discord, don't use the card's existing SnapshotUrl (could be UE-Extended)
                 SnapshotUrl   = isNamedMod ? null : targetCard.Mod?.SnapshotUrl,
@@ -393,26 +471,52 @@ public partial class DragDropHandler
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Cleared UE-Extended state for '{gameName}' — named mod installed");
             }
 
-            // Update card's Mod to reflect it's a Discord mod (named mod with no wiki entry)
-            // This applies when installing a non-generic addon over an existing card (including UE-Extended cards)
+            // Update card's Mod to reflect external-only state after drag-drop.
+            // Preserve existing Nexus/snapshot URLs if the card already has them —
+            // only fall back to the Discord channel when there's no better download URL.
             if (isNamedMod)
             {
-                targetCard.Mod = new GameMod
+                var existingNexus    = targetCard.Mod?.NexusUrl ?? targetCard.NexusUrl;
+                var existingSnapshot = targetCard.Mod?.SnapshotUrl;
+
+                if (!string.IsNullOrEmpty(existingSnapshot))
                 {
-                    Name       = gameName,
-                    Status     = "💬",
-                    DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
-                };
-                targetCard.IsExternalOnly = true;
-                targetCard.ExternalUrl = "https://discord.gg/gF4GRJWZ2A";
-                targetCard.ExternalLabel = "Download from Discord";  // ExternalDisplayLabel does the Replace("Download", "Redownload")
+                    // Card has a snapshot URL — keep the existing mod, just mark installed
+                    // (no ExternalOnly needed — install button will show Reinstall)
+                }
+                else if (!string.IsNullOrEmpty(existingNexus))
+                {
+                    // Nexus-hosted mod — preserve the Nexus URL
+                    targetCard.Mod = new GameMod
+                    {
+                        Name     = gameName,
+                        Status   = "💬",
+                        NexusUrl = existingNexus,
+                    };
+                    targetCard.IsExternalOnly = true;
+                    targetCard.ExternalUrl    = existingNexus;
+                    targetCard.ExternalLabel  = "Download from Nexus Mods";
+                }
+                else
+                {
+                    // No known URL — fall back to Discord channel
+                    targetCard.Mod = new GameMod
+                    {
+                        Name       = gameName,
+                        Status     = "💬",
+                        DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
+                    };
+                    targetCard.IsExternalOnly = true;
+                    targetCard.ExternalUrl    = "https://discord.gg/gF4GRJWZ2A";
+                    targetCard.ExternalLabel  = "Download from Discord";
+                }
             }
 
             // Update card status
             targetCard.InstalledRecord = installRecord;
             targetCard.Status = GameStatus.Installed;
-            targetCard.InstalledAddonFileName = addonFileName;
-            targetCard.RdxInstalledVersion = AuxInstallService.ReadInstalledVersion(addonDeployPath, addonFileName);
+            targetCard.InstalledAddonFileName = effectiveAddonFileName;
+            targetCard.RdxInstalledVersion = AuxInstallService.ReadInstalledVersion(addonDeployPath, effectiveAddonFileName);
             targetCard.NotifyAll();
             _window.ViewModel.SaveLibraryPublic();
 
@@ -505,8 +609,7 @@ public partial class DragDropHandler
             var lumaTemp = Path.Combine(Path.GetTempPath(), filename);
             try
             {
-                using var http = new HttpClient();
-                var bytes = await http.GetByteArrayAsync(url);
+                var bytes = await s_httpClient.GetByteArrayAsync(url);
                 await File.WriteAllBytesAsync(lumaTemp, bytes);
 
                 if (IsLumaArchive(lumaTemp))
@@ -520,13 +623,12 @@ public partial class DragDropHandler
                     if (lumaGames.Count > 0)
                     {
                         var gameNames = lumaGames.Select(c => c.GameName).ToList();
-                        var selectedGame = _window.ViewModel.SelectedGame;
-                        var preSelectIndex = selectedGame != null ? gameNames.IndexOf(selectedGame.GameName) : -1;
+                        var preSelectIndex = FuzzyMatchGameIndex(gameNames, filename);
 
                         var combo = new ComboBox
                         {
                             ItemsSource = gameNames,
-                            SelectedIndex = preSelectIndex >= 0 ? preSelectIndex : 0,
+                            SelectedIndex = preSelectIndex,
                             FontSize = 12,
                             HorizontalAlignment = HorizontalAlignment.Stretch,
                         };
@@ -631,7 +733,8 @@ public partial class DragDropHandler
             CrashReporter.Log("[DragDropHandler.Addon] Skipped progress dialog — another dialog is open");
             return;
         }
-        progressDialog.Closed += (_, _) => DialogService.ReleaseDialogGate();
+        bool gateReleased = false;
+        progressDialog.Closed += (_, _) => { if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); } };
         var dialogTask = progressDialog.ShowAsync();
 
         try
@@ -644,6 +747,7 @@ public partial class DragDropHandler
                 {
                     _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] HTTP {(int)response.StatusCode} for URL: {url}");
                     progressDialog.Hide();
+                    if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                     var errDialog = new ContentDialog
                     {
                         Title = "❌ Download Failed",
@@ -699,6 +803,7 @@ public partial class DragDropHandler
             {
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Network error downloading '{url}' — {ex.Message}");
                 progressDialog.Hide();
+                if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
                     Title = "❌ Download Failed",
@@ -714,6 +819,7 @@ public partial class DragDropHandler
             {
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Download timed out for '{url}' — {ex.Message}");
                 progressDialog.Hide();
+                if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
                     Title = "❌ Download Timed Out",
@@ -737,6 +843,7 @@ public partial class DragDropHandler
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Downloaded file '{filename}' is not a valid PE binary — deleting");
                 try { File.Delete(cachePath); } catch { }
                 progressDialog.Hide();
+                if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
                     Title = "❌ Invalid Addon File",
@@ -751,6 +858,7 @@ public partial class DragDropHandler
 
             // ── Step 7: Dismiss progress and route to existing install flow ───────
             progressDialog.Hide();
+            if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); };
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] PE validation passed for '{filename}', routing to ProcessDroppedAddon");
             await ProcessDroppedAddon(cachePath);
         }

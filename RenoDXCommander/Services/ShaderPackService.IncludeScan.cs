@@ -119,11 +119,22 @@ public partial class ShaderPackService
         var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            if (!File.Exists(SettingsPath)) return Array.Empty<string>();
-            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
-            if (d == null) return Array.Empty<string>();
+            // Virtual custom files pack — return leaf names from the Custom folder
+            var packIdList = packIds.ToList();
+            if (packIdList.Any(id => id.Equals(CustomFilePackId, StringComparison.OrdinalIgnoreCase)))
+            {
+                foreach (var f in GetCustomPackFiles())
+                    result.Add(Path.GetFileName(f));
+                packIdList = packIdList.Where(id => !id.Equals(CustomFilePackId, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
 
-            foreach (var packId in packIds)
+            if (!packIdList.Any()) return result.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList().AsReadOnly();
+
+            if (!File.Exists(SettingsPath)) return result.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList().AsReadOnly();
+            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+            if (d == null) return result.OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList().AsReadOnly();
+
+            foreach (var packId in packIdList)
             {
                 if (!d.TryGetValue(FileListKey(packId), out var json) || string.IsNullOrEmpty(json))
                     continue;

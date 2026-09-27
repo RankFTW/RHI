@@ -76,7 +76,7 @@ public partial class DxvkService : IDxvkService
     // ── Backing fields ────────────────────────────────────────────────
     private bool _hasUpdate;
     private bool _firstTimeWarningAcknowledged;
-    private DxvkVariant _selectedVariant = DxvkVariant.Development;
+    private DxvkVariant _selectedVariant = DxvkVariant.LiliumHdr;
     private int _liliumPresetIndex = 0;
 
     public DxvkService(

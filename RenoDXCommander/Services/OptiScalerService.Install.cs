@@ -521,6 +521,7 @@ public partial class OptiScalerService
                     Folders     = manifestFolders,
                     SharedFiles = existingManifest?.SharedFiles ?? new(StringComparer.OrdinalIgnoreCase),
                     NrMethod    = existingManifest?.NrMethod,
+                    Components  = existingManifest?.Components ?? new(StringComparer.OrdinalIgnoreCase),
                 });
             }
 
@@ -1295,6 +1296,7 @@ public partial class OptiScalerService
                     Folders     = manifestFolders,
                     SharedFiles = existingForUpdate?.SharedFiles ?? new(StringComparer.OrdinalIgnoreCase),
                     NrMethod    = existingForUpdate?.NrMethod,
+                    Components  = existingForUpdate?.Components ?? new(StringComparer.OrdinalIgnoreCase),
                 });
             }
 

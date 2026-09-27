@@ -1,0 +1,121 @@
+<Window x:Class="RenoDXdbEditor.UnityReviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Wiki Unity Review" Height="580" Width="820"
+        MinHeight="440" MinWidth="620"
+        Background="#1A1A2E" FontFamily="Segoe UI" FontSize="13"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Background"      Value="#333355"/>
+            <Setter Property="Foreground"      Value="#E0E0F0"/>
+            <Setter Property="BorderBrush"     Value="#555577"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="16,6"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Background"  Value="#252540"/>
+            <Setter Property="Foreground"  Value="#E0E0F0"/>
+            <Setter Property="BorderBrush" Value="#444466"/>
+            <Setter Property="Padding"     Value="6,4"/>
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="Foreground" Value="#AAAACC"/>
+            <Setter Property="Padding"    Value="0,6,0,2"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Header -->
+        <Border DockPanel.Dock="Top" Background="#16162A" BorderBrush="#333355"
+                BorderThickness="0,0,0,1" Padding="16,10">
+            <Grid>
+                <StackPanel>
+                    <TextBlock x:Name="ProgressLabel" Text="Reviewing entry 1 of 1"
+                               Foreground="#FFCC44" FontWeight="SemiBold" FontSize="14"/>
+                    <TextBlock Text="Review each Unity game and choose to Accept or Skip it."
+                               Foreground="#888899" FontSize="11" Margin="0,2,0,0"/>
+                </StackPanel>
+                <Border HorizontalAlignment="Right" Background="#1A3A1A"
+                        BorderBrush="#336633" BorderThickness="1" CornerRadius="4" Padding="10,4">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Accepted: " Foreground="#77CC77" FontSize="12"/>
+                        <TextBlock x:Name="AcceptedCountLabel" Text="0" Foreground="#AAFFAA"
+                                   FontWeight="Bold" FontSize="12"/>
+                        <TextBlock Text=" / " Foreground="#77CC77" FontSize="12"/>
+                        <TextBlock x:Name="TotalCountLabel" Text="?" Foreground="#77CC77" FontSize="12"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Action bar -->
+        <Border DockPanel.Dock="Bottom" Background="#16162A" BorderBrush="#333355"
+                BorderThickness="0,1,0,0" Padding="16,10">
+            <Grid>
+                <TextBlock x:Name="PositionLabel" Text="Entry 1 / ?"
+                           Foreground="#666688" FontSize="11" VerticalAlignment="Center"
+                           HorizontalAlignment="Left"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="AcceptBtn" Content="Accept and Add"
+                            Background="#1A3A1A" Foreground="#AAFFAA" BorderBrush="#336633"
+                            Margin="0,0,8,0" Click="Accept_Click"/>
+                    <Button Content="Skip" Margin="0,0,8,0" Click="Skip_Click"/>
+                    <Button Content="Stop Review"
+                            Background="#3A1A1A" Foreground="#FFAAAA" BorderBrush="#663333"
+                            Click="Stop_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <Grid Margin="16,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="24"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: wiki read-only -->
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="WIKI — New Entry" Foreground="#FFCC44"
+                           FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
+                <Label Content="Name"/>
+                <TextBlock x:Name="WikiName" Foreground="#CCCCFF" FontSize="14"
+                           FontWeight="SemiBold" TextWrapping="Wrap"/>
+                <Label Content="Status" Margin="0,8,0,0"/>
+                <TextBlock x:Name="WikiStatus" Foreground="#AAAACC"/>
+                <Label Content="Raw Notes" Margin="0,8,0,0"/>
+                <TextBlock x:Name="WikiNotes" Foreground="#AAAACC" TextWrapping="Wrap"/>
+                <Label Content="→ Parsed Upgrades" Margin="0,8,0,0"/>
+                <TextBlock x:Name="WikiUpgradesParsed" Foreground="#88CCFF"
+                           FontSize="11" TextWrapping="Wrap" FontFamily="Consolas"/>
+                <Label Content="→ Parsed Comments" Margin="0,4,0,0"/>
+                <TextBlock x:Name="WikiCommentsParsed" Foreground="#AAAACC"
+                           FontSize="11" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <!-- Right: editable -->
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="DB — Will Be Added As" Foreground="#88CCFF"
+                           FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
+                <Label Content="Name *"/>
+                <TextBox x:Name="DbNameBox"/>
+                <Label Content="Status" Margin="0,8,0,0"/>
+                <ComboBox x:Name="DbStatusCombo" Background="#252540" Foreground="#E0E0F0" BorderBrush="#444466">
+                    <ComboBoxItem Content="Done"/>
+                    <ComboBoxItem Content="WIP"/>
+                </ComboBox>
+                <Label Content="Upgrades (backtick format)" Margin="0,8,0,0"/>
+                <TextBox x:Name="DbUpgradesBox" FontFamily="Consolas" FontSize="11"
+                         AcceptsReturn="False" ToolTip="e.g. `R11G11B10_FLOAT`"/>
+                <Label Content="Comments" Margin="0,8,0,0"/>
+                <TextBox x:Name="DbCommentsBox" AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto" Height="80" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</Window>

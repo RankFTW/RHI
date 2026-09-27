@@ -1,0 +1,331 @@
+<Window x:Class="RenoDXdbEditor.WikiReviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Wiki New Mods Review" Height="620" Width="900"
+        MinHeight="480" MinWidth="680"
+        Background="#1A1A2E" FontFamily="Segoe UI" FontSize="13"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Background"      Value="#333355"/>
+            <Setter Property="Foreground"      Value="#E0E0F0"/>
+            <Setter Property="BorderBrush"     Value="#555577"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="16,6"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#444466"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed"   Value="True">
+                                <Setter Property="Background" Value="#222244"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled"   Value="False">
+                                <Setter Property="Opacity"   Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Green = Accept -->
+        <Style x:Key="AcceptButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background"  Value="#226633"/>
+            <Setter Property="BorderBrush" Value="#338844"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#337744"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed"   Value="True">
+                                <Setter Property="Background" Value="#114422"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled"   Value="False">
+                                <Setter Property="Opacity"   Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Red = Stop -->
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background"  Value="#882222"/>
+            <Setter Property="BorderBrush" Value="#AA3333"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#AA3333"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled"   Value="False">
+                                <Setter Property="Opacity"   Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Shared label style -->
+        <Style TargetType="Label">
+            <Setter Property="Foreground" Value="#8888AA"/>
+            <Setter Property="Padding"    Value="0,0,0,2"/>
+            <Setter Property="FontSize"   Value="11"/>
+        </Style>
+
+        <!-- Value TextBlock style -->
+        <Style x:Key="ValueText" TargetType="TextBlock">
+            <Setter Property="Foreground"    Value="#E0E0F0"/>
+            <Setter Property="TextWrapping"  Value="Wrap"/>
+            <Setter Property="Margin"        Value="0,0,0,10"/>
+        </Style>
+
+        <!-- Url-like value (dimmer, smaller) -->
+        <Style x:Key="UrlText" TargetType="TextBlock">
+            <Setter Property="Foreground"   Value="#8899CC"/>
+            <Setter Property="FontSize"     Value="11"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin"       Value="0,0,0,10"/>
+        </Style>
+
+        <!-- Panel card -->
+        <Style x:Key="PanelCard" TargetType="Border">
+            <Setter Property="Background"       Value="#14142A"/>
+            <Setter Property="BorderBrush"      Value="#333355"/>
+            <Setter Property="BorderThickness"  Value="1"/>
+            <Setter Property="CornerRadius"     Value="6"/>
+            <Setter Property="Padding"          Value="14,12"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- header / progress -->
+            <RowDefinition Height="*"/>      <!-- two-panel content -->
+            <RowDefinition Height="Auto"/>   <!-- action buttons -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="#14142A" BorderBrush="#333355"
+                BorderThickness="0,0,0,1" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock x:Name="ProgressLabel"
+                               Text="Reviewing new mods from the RenoDX wiki"
+                               Foreground="#FFCC44" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="SubLabel"
+                               Foreground="#AAAACC" FontSize="11" Margin="0,4,0,0"
+                               Text="Review each mod and choose to Accept or Skip it."/>
+                </StackPanel>
+
+                <!-- Accepted counter badge -->
+                <Border Grid.Column="1" Background="#1E331E" BorderBrush="#336633"
+                        BorderThickness="1" CornerRadius="4" Padding="12,6"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Accepted: " Foreground="#88AA88" FontSize="12"/>
+                        <TextBlock x:Name="AcceptedCountLabel" Text="0"
+                                   Foreground="#55CC77" FontSize="12" FontWeight="SemiBold"/>
+                        <TextBlock Text=" / " Foreground="#88AA88" FontSize="12"/>
+                        <TextBlock x:Name="TotalCountLabel" Text="0"
+                                   Foreground="#AAAACC" FontSize="12"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ── Two-panel content ──────────────────────────────────────────── -->
+        <Grid Grid.Row="1" Margin="14,12,14,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: Wiki mod -->
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="WIKI — New Entry"
+                           Foreground="#55CC77" FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,6"/>
+                <Border Style="{StaticResource PanelCard}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Label Content="Name"/>
+                            <TextBlock x:Name="WikiName"   Style="{StaticResource ValueText}"
+                                       FontSize="15" FontWeight="SemiBold" Foreground="#BBBBFF"/>
+
+                            <Label Content="Author"/>
+                            <TextBlock x:Name="WikiAuthor" Style="{StaticResource ValueText}"/>
+
+                            <Label Content="Status"/>
+                            <TextBlock x:Name="WikiStatus" Style="{StaticResource ValueText}"/>
+
+                            <Label Content="Snapshot URL (64-bit)"/>
+                            <TextBlock x:Name="WikiSnapshotUrl" Style="{StaticResource UrlText}"/>
+
+                            <Label Content="Snapshot URL (32-bit)"/>
+                            <TextBlock x:Name="WikiSnapshotUrl32" Style="{StaticResource UrlText}"/>
+
+                            <Label Content="Nexus URL"/>
+                            <TextBlock x:Name="WikiNexusUrl" Style="{StaticResource UrlText}"/>
+
+                            <Label Content="Discord URL"/>
+                            <TextBlock x:Name="WikiDiscordUrl" Style="{StaticResource UrlText}"/>
+
+                            <Label Content="Discussion URL"/>
+                            <TextBlock x:Name="WikiDiscussionUrl" Style="{StaticResource UrlText}"/>
+
+                            <Label Content="Notes"/>
+                            <TextBlock x:Name="WikiNotes" Style="{StaticResource ValueText}"
+                                       Foreground="#BBAA88"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </DockPanel>
+
+            <!-- Right: DB entry that would be created / current state note -->
+            <DockPanel Grid.Column="2">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="DB — Will Be Added As"
+                           Foreground="#AAAACC" FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,6"/>
+                <Border Style="{StaticResource PanelCard}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+
+                            <!-- Editable name field so you can tweak before accepting -->
+                            <Label Content="Name (edit if needed)"/>
+                            <TextBox x:Name="DbNameBox"
+                                     Background="#252540" Foreground="#E0E0F0"
+                                     BorderBrush="#444466" BorderThickness="1"
+                                     Padding="6,4" Margin="0,0,0,10"
+                                     CaretBrush="#E0E0F0"/>
+
+                            <Label Content="Author"/>
+                            <TextBox x:Name="DbAuthorBox"
+                                     Background="#252540" Foreground="#E0E0F0"
+                                     BorderBrush="#444466" BorderThickness="1"
+                                     Padding="6,4" Margin="0,0,0,10"
+                                     CaretBrush="#E0E0F0"/>
+
+                            <Label Content="Snapshot URL (64-bit)"/>
+                            <TextBox x:Name="DbSnapshotUrlBox"
+                                     Background="#252540" Foreground="#E0E0F0"
+                                     BorderBrush="#444466" BorderThickness="1"
+                                     Padding="6,4" Margin="0,0,0,10"
+                                     CaretBrush="#E0E0F0" TextWrapping="Wrap"/>
+
+                            <Label Content="Snapshot URL (32-bit)"/>
+                            <TextBox x:Name="DbSnapshotUrl32Box"
+                                     Background="#252540" Foreground="#E0E0F0"
+                                     BorderBrush="#444466" BorderThickness="1"
+                                     Padding="6,4" Margin="0,0,0,10"
+                                     CaretBrush="#E0E0F0" TextWrapping="Wrap"/>
+
+                            <Label Content="Nexus URL"/>
+                            <TextBox x:Name="DbNexusUrlBox"
+                                     Background="#252540" Foreground="#E0E0F0"
+                                     BorderBrush="#444466" BorderThickness="1"
+                                     Padding="6,4" Margin="0,0,0,10"
+                                     CaretBrush="#E0E0F0" TextWrapping="Wrap"/>
+
+                            <Label Content="Discord URL"/>
+                            <TextBox x:Name="DbDiscordUrlBox"
+                                     Background="#252540" Foreground="#E0E0F0"
+                                     BorderBrush="#444466" BorderThickness="1"
+                                     Padding="6,4" Margin="0,0,0,10"
+                                     CaretBrush="#E0E0F0" TextWrapping="Wrap"/>
+
+                            <Label Content="Discussion URL"/>
+                            <TextBox x:Name="DbDiscussionUrlBox"
+                                     Background="#252540" Foreground="#E0E0F0"
+                                     BorderBrush="#444466" BorderThickness="1"
+                                     Padding="6,4" Margin="0,0,0,10"
+                                     CaretBrush="#E0E0F0" TextWrapping="Wrap"/>
+
+                            <Label Content="Notes"/>
+                            <TextBox x:Name="DbNotesBox"
+                                     Background="#252540" Foreground="#E0E0F0"
+                                     BorderBrush="#444466" BorderThickness="1"
+                                     Padding="6,4" Margin="0,0,0,0"
+                                     CaretBrush="#E0E0F0" TextWrapping="Wrap"
+                                     AcceptsReturn="True" Height="60"
+                                     VerticalScrollBarVisibility="Auto"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </DockPanel>
+        </Grid>
+
+        <!-- ── Action bar ─────────────────────────────────────────────────── -->
+        <Border Grid.Row="2" Background="#14142A" BorderBrush="#333355"
+                BorderThickness="0,1,0,0" Padding="14,10" Margin="0,12,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: position info -->
+                <TextBlock x:Name="PositionLabel"
+                           VerticalAlignment="Center"
+                           Foreground="#666688" FontSize="11"/>
+
+                <!-- Right: action buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="AcceptBtn"
+                            Content="Accept and Add"
+                            Style="{StaticResource AcceptButton}"
+                            Padding="16,7"
+                            Click="Accept_Click"/>
+                    <Button x:Name="SkipBtn"
+                            Content="Skip"
+                            Padding="16,7" Margin="8,0,0,0"
+                            Click="Skip_Click"
+                            ToolTip="Skip this mod — it will not be added to the DB"/>
+                    <Button x:Name="StopBtn"
+                            Content="Stop Review"
+                            Style="{StaticResource DangerButton}"
+                            Padding="16,7" Margin="8,0,0,0"
+                            Click="Stop_Click"
+                            ToolTip="Close the review. Accepted mods are kept."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

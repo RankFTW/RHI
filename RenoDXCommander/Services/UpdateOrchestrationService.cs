@@ -73,10 +73,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
-                {
-                    card.ActionMessage   = p.msg;
-                    card.InstallProgress = p.pct;
-                });
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        card.ActionMessage   = p.msg;
+                        card.InstallProgress = p.pct;
+                    }));
                 var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName, card.Source).ConfigureAwait(false);
 
                 // Preserve per-game Engine.ini toggle state from the previous record
@@ -99,7 +100,21 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 if (!card.UseUeExtended && card.EngineHint?.Contains("Unreal") == true)
                     AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unreal");
                 else if (!card.UseUeExtended && card.EngineHint?.Contains("Unity") == true)
+                {
                     AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unity");
+
+                    // Apply per-game DB upgrades on top of the placeholders (dev-gated)
+                    if (DevUnlockService.IsUnlocked
+                        && AuxInstallService.GlobalUnityEntries.TryGetValue(card.GameName, out var unityEntry))
+                    {
+                        var upgrades = unityEntry.ParsedUpgrades;
+                        if (upgrades.Count > 0)
+                        {
+                            AuxInstallService.ApplyUnityRenodxUpgrades(card.InstallPath, upgrades);
+                            CrashReporter.Log($"[UpdateOrchestrationService] Unity DB upgrades applied for '{card.GameName}': {upgrades.Count} key(s)");
+                        }
+                    }
+                }
 
                 // Apply per-game [renodx] INI overrides from manifest
                 if (AuxInstallService.GlobalManifest?.RenodxIniOverrides != null
@@ -144,9 +159,12 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             }
             finally
             {
-                card.IsInstalling = false;
-                if (swappedTo32 && card.Mod != null && originalSnapshotUrl != null)
-                    card.Mod.SnapshotUrl = originalSnapshotUrl;
+                dispatcherQueue?.TryEnqueue(() =>
+                {
+                    card.IsInstalling = false;
+                    if (swappedTo32 && card.Mod != null && originalSnapshotUrl != null)
+                        card.Mod.SnapshotUrl = originalSnapshotUrl;
+                });
             }
         }
 
@@ -202,15 +220,20 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
-                {
-                    card.RsActionMessage = p.msg;
-                    card.RsProgress      = p.pct;
-                });
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        card.RsActionMessage = p.msg;
+                        card.RsProgress      = p.pct;
+                    }));
                 var rsOverride = card.DllOverrideEnabled
                     ? dllOverrideService.GetDllOverride(card.GameName)?.ReShadeFileName
                     : (manifestDllResolver?.Invoke(card.GameName)?.ReShade is { Length: > 0 } mRs
                         ? mRs
-                        : MainViewModel.ResolveAutoReShadeFilename(card.DetectedApis));
+                        // DX9 32-bit games with dgVoodoo active must use dxgi.dll (dgVoodoo owns d3d9.dll)
+                        : (card.Is32Bit && card.DetectedApis.Contains(GraphicsApiType.DirectX9)
+                            && File.Exists(System.IO.Path.Combine(card.InstallPath, "dgVoodoo.conf")))
+                            ? "dxgi.dll"
+                            : MainViewModel.ResolveAutoReShadeFilename(card.DetectedApis));
                 var effectiveChannel = card.UseNormalReShade ? null : channelResolver?.Invoke(card.GameName, card.Source) ?? AuxInstallService.ChannelStable;
                 var record = await _auxInstaller.InstallReShadeAsync(
                     card.GameName, card.InstallPath,
@@ -239,7 +262,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 card.RsActionMessage = $"❌ Failed: {ex.Message}";
                 _crashReporter.WriteCrashReport("UpdateAllReShade", ex, note: $"Game: {card.GameName}");
             }
-            finally { card.RsIsInstalling = false; }
+            finally { dispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false); }
         }
 
         // ── Vulkan games (global layer DLL) ───────────────────────────────────
@@ -293,7 +316,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                             _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Direct copy denied — {uaEx.Message}, attempting elevated copy...");
                             try
                             {
-                                ElevatedFileCopy(staged64, layer64);
+                            await ElevatedFileCopyAsync(staged64, layer64);
                                 layerUpdated = true;
                                 _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 64-bit DLL via elevated copy");
                             }
@@ -341,7 +364,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     {
                         try
                         {
-                            ElevatedFileCopy(staged32, layer32);
+                            await ElevatedFileCopyAsync(staged32, layer32);
                             _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 32-bit DLL via elevated copy");
                         }
                         catch (Exception elevEx)
@@ -395,7 +418,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     vCard.RsActionMessage = $"❌ Failed: {ex.Message}";
                     _crashReporter.WriteCrashReport("UpdateAllReShade.Vulkan", ex, note: $"Game: {vCard.GameName}");
                 }
-                finally { vCard.RsIsInstalling = false; }
+                finally { dispatcherQueue?.TryEnqueue(() => vCard.RsIsInstalling = false); }
             }
         }
 
@@ -406,7 +429,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
     /// Copies a file to a destination using an elevated cmd.exe process (UAC prompt).
     /// Used when direct File.Copy fails due to permissions on C:\ProgramData\ReShade.
     /// </summary>
-    private static void ElevatedFileCopy(string source, string destination)
+    private static async Task ElevatedFileCopyAsync(string source, string destination)
     {
         var psi = new System.Diagnostics.ProcessStartInfo
         {
@@ -418,8 +441,18 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
         };
         using var proc = System.Diagnostics.Process.Start(psi);
-        proc?.WaitForExit(10_000);
-        if (proc != null && proc.ExitCode != 0)
+        if (proc == null) throw new IOException("Failed to start elevated copy process");
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        try
+        {
+            await proc.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            proc.Kill();
+            throw new IOException("Elevated copy timed out after 10 seconds");
+        }
+        if (proc.ExitCode != 0)
             throw new IOException($"Elevated copy exited with code {proc.ExitCode}");
     }
 
@@ -440,10 +473,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
-                {
-                    card.RefActionMessage = p.msg;
-                    card.RefProgress = p.pct;
-                });
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        card.RefActionMessage = p.msg;
+                        card.RefProgress = p.pct;
+                    }));
                 var record = await _refService.InstallAsync(card.GameName, card.InstallPath, progress, card.Source).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
@@ -460,7 +494,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 card.RefActionMessage = $"❌ Failed: {ex.Message}";
                 _crashReporter.WriteCrashReport("UpdateAllREFramework", ex, note: $"Game: {card.GameName}");
             }
-            finally { card.RefIsInstalling = false; }
+            finally { dispatcherQueue?.TryEnqueue(() => card.RefIsInstalling = false); }
         }
 
         dispatcherQueue?.TryEnqueue(() => notifyUpdateState());
@@ -484,10 +518,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
-                {
-                    card.DofFixActionMessage = p.msg;
-                    card.DofFixProgress = p.pct;
-                });
+                    dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        card.DofFixActionMessage = p.msg;
+                        card.DofFixProgress = p.pct;
+                    }));
                 var success = await dofFixService.InstallAsync(card.InstallPath, progress).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
@@ -510,7 +545,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 card.DofFixActionMessage = $"❌ Failed: {ex.Message}";
                 _crashReporter.WriteCrashReport("UpdateAllDofFix", ex, note: $"Game: {card.GameName}");
             }
-            finally { card.DofFixIsInstalling = false; }
+            finally { dispatcherQueue?.TryEnqueue(() => card.DofFixIsInstalling = false); }
         }
 
         dispatcherQueue?.TryEnqueue(() => notifyUpdateState());

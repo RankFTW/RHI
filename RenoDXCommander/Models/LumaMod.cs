@@ -10,6 +10,21 @@ public class LumaMod
     public string? FeatureNotes { get; set; }
     /// <summary>True when this is the generic Unreal Engine Luma mod, not a named game-specific mod.</summary>
     public bool IsGenericLuma { get; set; }
+    /// <summary>Nexus Mods page URL, if the mod is hosted on Nexus (may be the only download or alongside GitHub).</summary>
+    public string? NexusUrl { get; set; }
+
+    /// <summary>
+    /// True when the Luma wiki's Special Notes column mentions dgVoodoo2 — indicates this
+    /// is a DX9 game that needs D3D9.dll + dgVoodoo.conf deployed alongside Luma.
+    /// </summary>
+    public bool RequiresDgVoodoo { get; set; }
+
+    /// <summary>
+    /// Specific dgVoodoo2 version recommended by the Luma wiki for this mod (e.g. "2.87.3").
+    /// When set and present in the manifest dgVoodooVersions dict, this version is preferred
+    /// over the default (latest). Null = use the default.
+    /// </summary>
+    public string? DgVoodooVersion { get; set; }
 }
 
 /// <summary>

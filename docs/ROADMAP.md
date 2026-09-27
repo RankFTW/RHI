@@ -49,7 +49,7 @@ Items that improve maintainability, performance, or reliability. No user-facing 
 - Structural changes (add/remove rows) stay imperative
 
 ### Test Infrastructure
-- Fix test project build errors (interface stubs)
+- Baseline verification (37 tests passing): `dotnet test RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -p:Platform=x64`
 - Add integration tests: install/uninstall roundtrip, manifest parse → card assertions, settings save/load
 - CI pipeline: `dotnet build && dotnet test` on push
 

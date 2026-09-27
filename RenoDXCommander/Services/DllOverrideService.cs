@@ -196,11 +196,18 @@ public class DllOverrideService : IDllOverrideService
             return;
         }
 
+        // Determine current RS source name: use saved config value, fall back to what's actually on disk.
+        // When the config was created for an OS-only override, ReShadeFileName is empty even though
+        // ReShade is physically installed as ReShade64.dll (or whatever InstalledAs says).
+        var currentRsFileName = !string.IsNullOrEmpty(oldCfg.ReShadeFileName)
+            ? oldCfg.ReShadeFileName
+            : card.RsRecord?.InstalledAs ?? card.RsInstalledFile;
+
         // Rename ReShade if filename changed
-        if (!string.IsNullOrEmpty(oldCfg.ReShadeFileName)
-            && !oldCfg.ReShadeFileName.Equals(newRsName, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(currentRsFileName)
+            && !currentRsFileName.Equals(newRsName, StringComparison.OrdinalIgnoreCase))
         {
-            var oldPath = Path.Combine(installPath, oldCfg.ReShadeFileName);
+            var oldPath = Path.Combine(installPath, currentRsFileName);
             var newPath = Path.Combine(installPath, newRsName);
             try
             {
@@ -244,7 +251,9 @@ public class DllOverrideService : IDllOverrideService
         }
 
         SetDllOverride(name, newRsName, newDcName);
-        card.NotifyAll();
+        // NotifyAll intentionally NOT called here — callers are on the UI thread and
+        // call it themselves (or rely on BuildOverridesPanel). Calling it from a
+        // background thread causes a COMException in XAML bindings.
     }
 
     /// <summary>
@@ -374,7 +383,7 @@ public class DllOverrideService : IDllOverrideService
 
         RemoveDllOverride(name);
         card.DllOverrideEnabled = false;
-        card.NotifyAll();
+        // NotifyAll intentionally NOT called here — must be called by the caller on the UI thread.
 
         return new DllDisableResult(rsReverted, dcReverted);
     }

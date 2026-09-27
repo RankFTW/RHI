@@ -42,8 +42,11 @@ public partial class GameCardViewModel
     public bool IsUlNotInstalling => !UlIsInstalling;
     public bool IsUlInstalled => UlStatus == GameStatus.Installed || UlStatus == GameStatus.UpdateAvailable;
 
+    // Cached INI existence (populated by RefreshBackupState, called from background threads)
+    private bool _ulIniExists;
+
     /// <summary>True when relimiter.ini is present in the inis folder — enables the 📋 button.</summary>
-    public bool UlIniExists => File.Exists(Services.AuxInstallService.UlIniPath);
+    public bool UlIniExists => _ulIniExists;
 
     // ── Card grid properties ──────────────────────────────────────────────────────
     public string CardUlStatusDot => UlIsInstalling ? "#2196F3"
