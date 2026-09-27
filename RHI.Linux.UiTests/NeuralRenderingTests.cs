@@ -112,7 +112,8 @@ public sealed class NeuralRenderingTests : IDisposable
         Click(Named<Button>("RemoveNeuralRendering"));
         var dialog = Assert.Single(_window!.OwnedWindows);
         Click(dialog.GetLogicalDescendants().OfType<Button>().Single(b => b.Content?.ToString() == "Remove"));
-        for (var i = 0; i < 200 && File.Exists(Path.Combine(bin, "dlss5-feed.addon64")); i++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(10); }
+        // Removal runs in the background; wait until the whole operation has reported completion.
+        for (var i = 0; i < 500 && !Text.Contains("Neural Rendering removed"); i++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(10); }
         Assert.False(File.Exists(Path.Combine(bin, "dlss5-feed.addon64")));
         Assert.False(File.Exists(Path.Combine(bin, "nvngx_dlssnr.dll")));
         Assert.False(File.Exists(Path.Combine(bin, "nvngx_dlssnr.dll.original")));

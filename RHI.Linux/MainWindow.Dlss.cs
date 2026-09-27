@@ -49,12 +49,14 @@ public sealed partial class MainWindow
         return null;
     }
 
-    private LaunchExtras Extras(Game game) => NeuralRenderingSetup.Extras(game, _settings.For(game));
+    private LaunchExtras Extras(Game game) => GameLaunch.Extras(game, _settings.For(game));
 
     private async Task RefreshDlssCatalogs()
     {
         try { await _dlss.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException) { CrashReporter.Log("DLSS list: " + ex.Message); }
         try { await _releases.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException) { CrashReporter.Log("NR releases: " + ex.Message); }
+        if (_games.Any(g => g.IsREEngine))
+            try { await _ref.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException) { CrashReporter.Log("RE Framework releases: " + ex.Message); }
     }
 
     // ── Shared building blocks ───────────────────────────────────────────────

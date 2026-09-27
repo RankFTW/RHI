@@ -306,7 +306,7 @@ public sealed class AdvancedWindow : Window
             _details.Children.Add(options);
             _details.Children.Add(Row(Button("Generate / merge options", () =>
             {
-                options.Text = Proton.LaunchOptions(options.Text ?? "", install.ReadState().Proxy ?? Installation.ProxyFor(ChosenApi()), NeuralRenderingSetup.Extras(game, prefs));
+                options.Text = Proton.LaunchOptions(options.Text ?? "", install.ReadState().Proxy ?? Installation.ProxyFor(ChosenApi()), GameLaunch.Extras(game, prefs));
                 _status.Text = "Options generated. Copy into Steam → game Properties → Launch Options, or exit Steam and save directly."; return Task.CompletedTask;
             }), Button("Copy", async () =>
             {
@@ -314,7 +314,7 @@ public sealed class AdvancedWindow : Window
             }), Button("Save to Steam (Steam closed)", () =>
             {
                 if (configPicker.SelectedItem is not string config || game.AppId == null) throw new IOException("No Steam user configuration found. Copy the options into your launcher instead.");
-                options.Text = Proton.LaunchOptions(options.Text ?? "", install.ReadState().Proxy ?? Installation.ProxyFor(ChosenApi()), NeuralRenderingSetup.Extras(game, prefs));
+                options.Text = Proton.LaunchOptions(options.Text ?? "", install.ReadState().Proxy ?? Installation.ProxyFor(ChosenApi()), GameLaunch.Extras(game, prefs));
                 var backup = Proton.SaveOptions(config, game.AppId, options.Text);
                 _status.Text = "Steam launch options saved. Backup: " + backup; return Task.CompletedTask;
             })));

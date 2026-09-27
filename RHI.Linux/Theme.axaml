@@ -24,6 +24,11 @@
     <Setter Property="Foreground" Value="#7AACDD"/>
     <Setter Property="BorderBrush" Value="#2A4468"/>
   </Style>
+  <Style Selector="Button.update">
+    <Setter Property="Background" Value="#201838"/>
+    <Setter Property="Foreground" Value="#B898E8"/>
+    <Setter Property="BorderBrush" Value="#3A2860"/>
+  </Style>
   <Style Selector="Button.success">
     <Setter Property="Background" Value="#122818"/>
     <Setter Property="Foreground" Value="#5ECB7D"/>

@@ -41,6 +41,10 @@ The interface uses the original Windows app's logo, dark palette, component-tabl
 
 For Heroic/Lutris, add `WINEDLLOVERRIDES` as an environment variable in the launcher's per-game settings; the value for DX10/11/12 is `dxgi=n,b;d3dcompiler_47=n,b`. Keep any other existing DLL entries. Use the launcher to run the game with its existing runner/prefix.
 
+## RE Framework (RE Engine games)
+
+RE Engine games (detected by `re_chunk_000.pak`, shown with an **RE Engine** badge and filter) get an **RE Framework** row above ReShade, as in the Windows app. ReShade shows **RE Framework required** until it is installed, and **Install recommended** installs it first. RHI downloads the latest [REFramework nightly](https://github.com/praydog/REFramework-nightly/releases) (`REFramework.zip` → `dinput8.dll` beside the game executable), shows its build number, offers **Update RE Framework** when a newer nightly is out (also done by **Update All**), and removal restores any original `dinput8.dll`. Proton needs a native override for it, so `dinput8=n,b` is added to the game's launch options through the normal Steam setup. A copy installed by Windows RHI on a shared library is recognised and can be replaced or removed. The Windows-only PD-Upscaler build (for OptiScaler) is not included.
+
 ## Neural Rendering (DLSS 5) and DLSS overrides
 
 The detail panel has the Windows app's **Neural Rendering** and **Nvidia Profile Overrides** sections below **Game overrides**. Click a section's title to collapse it; collapsed sections show a one-line summary.
@@ -96,7 +100,7 @@ For the installed **Mortal Shell II** test case, Steam calls the game folder `Sp
 
 Supported: Steam/Flatpak library scanning; manual games; ReShade stable/nightly/local; live/cached RenoDX catalogue; named and shared addons; shader packs; local addons; API/architecture selection; Proton launch options; UE Extended prefix configuration; component updates and reversible removal.
 
-Also supported: Neural Rendering (all four DLSS 5 methods, Cost Scaler), DLSS/Streamline version swaps, and DLSS presets/render scale/Multi Frame Gen/NVIDIA Override through dxvk-nvapi.
+Also supported: RE Framework for RE Engine games, Neural Rendering (all four DLSS 5 methods, Cost Scaler), DLSS/Streamline version swaps, and DLSS presets/render scale/Multi Frame Gen/NVIDIA Override through dxvk-nvapi.
 
 This is not full Windows feature parity. Windows-only NVIDIA driver profile settings (ReBAR, Present Method), Windows HDR toggles, Windows global Vulkan layers, automatic detection of every non-Steam launcher, OptiScaler/Luma workflows, and native Linux Vulkan games are not ported. Addon compatibility and anti-cheat policies remain game-specific. Choose games that allow DLL modding.
 
@@ -112,7 +116,7 @@ This is not full Windows feature parity. Windows-only NVIDIA driver profile sett
 
 The build script uses an installed .NET SDK or installs SDK 8.0.425 in the user's data directory, runs Linux unit/integration tests, and publishes a self-contained Linux x64 build. It needs network access for NuGet on the first build. Bazzite supplies the native desktop libraries and `7z` used to extract official ReShade setup executables. On another distribution, install 7zip, X11/XWayland, fontconfig, libc and the normal .NET native prerequisites.
 
-`--scan` is read-only and prints detected paths as JSON. `--smoke-test` downloads real x86/x64 ReShade, a real RenoDX addon, and shader packs, then checks install/update/remove and original restoration **in an isolated temporary folder**, plus the nightly x64 download. It never installs into detected games. `--nr-smoke-test` downloads the real Neural Rendering components and, in disposable game folders, installs each method (including 32-bit and DX9 Feeder), checks the status, launch settings and an in-place version swap, then verifies removal restores every original file. Headless UI tests exercise installed/applied indicators, filtering, and the ReShade channel dialog against isolated game folders. Unit tests cover stale launch logs, changed payloads, launch-readiness checks, flatpak/external libraries, symlink deduplication, casing, malformed manifests, PE architecture rejection, safe launch-option merges, interrupted transactions, file conflicts, and INI restoration.
+`--scan` is read-only and prints detected paths as JSON. `--smoke-test` downloads real x86/x64 ReShade, a real RenoDX addon, shader packs and the RE Framework nightly, then checks install/update/remove and original restoration **in an isolated temporary folder**, plus the nightly x64 download. It never installs into detected games. `--nr-smoke-test` downloads the real Neural Rendering components and, in disposable game folders, installs each method (including 32-bit and DX9 Feeder), checks the status, launch settings and an in-place version swap, then verifies removal restores every original file. Headless UI tests exercise installed/applied indicators, filtering, and the ReShade channel dialog against isolated game folders. Unit tests cover stale launch logs, changed payloads, launch-readiness checks, flatpak/external libraries, symlink deduplication, casing, malformed manifests, PE architecture rejection, safe launch-option merges, interrupted transactions, file conflicts, and INI restoration.
 
 The original Windows solution requires its Windows build environment; use `RHI.Linux.sln` or the Linux build script on Bazzite. The GUI uses Avalonia with software rendering to avoid depending on the game's graphics stack.
 

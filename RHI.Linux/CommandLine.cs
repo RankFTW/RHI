@@ -36,7 +36,7 @@ internal static class CommandLine
             var proxy = new Installation(game.InstallDirectory).ReadState().Proxy ?? throw new IOException("Install ReShade first.");
             var configs = Proton.LocalConfigs(game).ToList();
             if (configs.Count != 1) throw new IOException("Select the Steam user account in the desktop app to save launch options.");
-            var options = Proton.LaunchOptions(Proton.ReadOptions(configs[0], args[1]) ?? "%command%", proxy, NeuralRenderingSetup.Extras(game, Settings.Load().For(game)));
+            var options = Proton.LaunchOptions(Proton.ReadOptions(configs[0], args[1]) ?? "%command%", proxy, GameLaunch.Extras(game, Settings.Load().For(game)));
             Console.WriteLine("Saved. Backup: " + Proton.SaveOptions(configs[0], args[1], options));
             Console.WriteLine(options); return 0;
         }
@@ -47,7 +47,7 @@ internal static class CommandLine
             IniSettings.Restore(LinuxPaths.ResolveCase(game.InstallDirectory, "ReShade.ini"));
             Console.WriteLine("Previous HDR settings and file permissions restored."); return 0;
         }
-        Console.WriteLine("RHI Linux\n  (no arguments)    Open the desktop app\n  --scan            Print detected games, executable paths and Proton prefixes as JSON\n  --catalog-check   Fetch and validate the live RenoDX catalogue\n  --smoke-test      Test real downloads, install/update/remove in an isolated temporary directory\n  --nr-smoke-test   Install, swap and remove every Neural Rendering (DLSS 5) method in a temporary game\n  --prepare APPID [--ue-hdr] [--nightly]  Install ReShade using the saved channel, matched RenoDX and shaders\n  --save-launch-options APPID  Save its DLL override with Steam fully closed\n  --restore-hdr APPID  Restore previous HDR settings and Engine.ini permissions\n");
+        Console.WriteLine("RHI Linux\n  (no arguments)    Open the desktop app\n  --scan            Print detected games, executable paths and Proton prefixes as JSON\n  --catalog-check   Fetch and validate the live RenoDX catalogue\n  --smoke-test      Test real ReShade, RenoDX, shader and RE Framework downloads, install/update/remove in an isolated temporary directory\n  --nr-smoke-test   Install, swap and remove every Neural Rendering (DLSS 5) method in a temporary game\n  --prepare APPID [--ue-hdr] [--nightly]  Install ReShade using the saved channel, matched RenoDX and shaders\n  --save-launch-options APPID  Save its DLL override with Steam fully closed\n  --restore-hdr APPID  Restore previous HDR settings and Engine.ini permissions\n");
         return args[0] is "--help" or "-h" ? 0 : 2;
     }
 
@@ -105,6 +105,12 @@ internal static class CommandLine
         finally { File.Delete(reshade); }
     }
 
+    private static byte[] PeStub()
+    {
+        var bytes = new byte[512]; bytes[0] = (byte)'M'; bytes[1] = (byte)'Z'; BitConverter.GetBytes(128).CopyTo(bytes, 0x3c);
+        bytes[128] = (byte)'P'; bytes[129] = (byte)'E'; BitConverter.GetBytes((ushort)MachineType.x64).CopyTo(bytes, 132); return bytes;
+    }
+
     private static async Task<int> SmokeTest(HttpClient http, Catalog catalog)
     {
         var temp = Path.Combine(Path.GetTempPath(), "rhi-smoke-" + Guid.NewGuid().ToString("N"));
@@ -150,6 +156,19 @@ internal static class CommandLine
                 }
                 finally { File.Delete(path); }
             }
+            // RE Framework: real nightly into an RE Engine layout with a pre-existing dinput8.dll.
+            var reRoot = Path.Combine(temp, "re-engine"); Directory.CreateDirectory(reRoot);
+            var reExe = Path.Combine(reRoot, "re9.exe"); File.WriteAllBytes(reExe, PeStub());
+            File.WriteAllText(Path.Combine(reRoot, "re_chunk_000.pak"), ""); File.WriteAllText(Path.Combine(reRoot, "dinput8.dll"), "game dinput8");
+            var reGame = new Game { Name = "RE smoke", Root = reRoot, Executable = reExe, Executables = [reExe] };
+            var reframework = new REFramework(http, downloads);
+            await reframework.Install(reGame, progress);
+            var refState = InstallationStatus.Read(reGame).Get(REFramework.Component);
+            if (!reGame.IsREEngine || !refState.Installed || refState.Version != reframework.Latest?.Version) throw new Exception("RE Framework was not installed at the latest nightly.");
+            if (!GameLaunch.Extras(reGame, new()).Dlls.Contains("dinput8")) throw new Exception("RE Framework launch override missing.");
+            await REFramework.Remove(reGame);
+            if (File.ReadAllText(Path.Combine(reRoot, "dinput8.dll")) != "game dinput8") throw new Exception("Original dinput8.dll was not restored.");
+            Console.WriteLine($"PASS: RE Framework nightly {refState.Version} install, dinput8 override and original restoration.");
             var (nightly, nightlyVersion) = await downloads.ReShade("Nightly", MachineType.x64, progress);
             File.Delete(nightly);
             Console.WriteLine("PASS: " + nightlyVersion + " x64 download and PE validation.");

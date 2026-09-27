@@ -1,0 +1,126 @@
+using System.IO.Compression;
+using System.Text.Json;
+using RenoDXCommander.Services;
+
+namespace RHI.Linux.Core;
+
+// RE Framework (praydog) for RE Engine games, as installed by Windows RHI: the monolithic
+// nightly REFramework.zip provides dinput8.dll beside the game executable. Under Proton the
+// game also needs a native dinput8 DLL override, added to the Steam launch options.
+public sealed class REFramework(HttpClient http, Downloads downloads)
+{
+    public const string Component = "RE Framework", Dll = "dinput8.dll";
+    public const string Description = "RE Framework is a modding framework for RE Engine games. It enables ReShade injection and other mods by hooking into the game's rendering pipeline.";
+    private const string ReleasesApi = "https://api.github.com/repos/praydog/REFramework-nightly/releases?per_page=5";
+    private const string LatestZip = "https://github.com/praydog/REFramework-nightly/releases/latest/download/REFramework.zip";
+    private static string CacheFile => Path.Combine(LinuxPaths.Cache, "reframework", "latest.json");
+    public NrRelease? Latest { get; private set; } = Load();
+
+    private static NrRelease? Load()
+    {
+        try { return File.Exists(CacheFile) ? JsonSerializer.Deserialize<NrRelease>(File.ReadAllText(CacheFile), LinuxPaths.Json) : null; }
+        catch (Exception ex) when (ex is JsonException or IOException) { return null; }
+    }
+
+    // RE Engine games ship re_chunk_000.pak (the Windows app's detection signature).
+    public static bool IsREEngine(string root)
+    {
+        if (!Directory.Exists(root)) return false;
+        return Directory.EnumerateFiles(root, "*", new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 2, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint })
+            .Any(f => Path.GetFileName(f).Equals("re_chunk_000.pak", StringComparison.OrdinalIgnoreCase));
+    }
+
+    // "nightly-01424-d1461375…" → "01424", the number Windows RHI displays.
+    public static string VersionNumber(string tag) => tag.Split('-').FirstOrDefault(p => p.Length > 0 && p.All(char.IsDigit)) ?? tag;
+
+    public async Task Refresh(bool force = false)
+    {
+        if (!force && Latest != null && File.Exists(CacheFile) && DateTime.UtcNow - File.GetLastWriteTimeUtc(CacheFile) < TimeSpan.FromHours(1)) return;
+        using var request = new HttpRequestMessage(HttpMethod.Get, ReleasesApi);
+        request.Headers.Accept.ParseAdd("application/vnd.github+json");
+        using var response = await http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) throw new IOException($"GitHub returned {(int)response.StatusCode} for the RE Framework releases.");
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var release = AddonReleases.Parse(document.RootElement, "", "REFramework.zip").FirstOrDefault()
+            ?? throw new IOException("No RE Framework nightly release was found.");
+        Latest = release with { Version = VersionNumber(release.Version) };
+        LinuxPaths.WriteJson(CacheFile, Latest);
+    }
+
+    // Installed by Windows RHI on a shared library: dinput8.dll with its ".original" marker.
+    public static bool FromWindows(Game game)
+    {
+        if (game.Executable == null) return false;
+        var dll = LinuxPaths.ResolveCase(game.InstallDirectory, Dll);
+        return File.Exists(dll) && Sentinel.Placed(dll) && !Managed(game);
+    }
+    private static bool Managed(Game game)
+    {
+        try { return new Installation(game.InstallDirectory).ReadState().Components.ContainsKey(Component); }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return false; }
+    }
+    public static bool Installed(Game game) => game.Executable != null && (Managed(game) || FromWindows(game));
+
+    public bool UpdateAvailable(ComponentStatus status) =>
+        status.Installed && status.Version is { } version && version != "Local" && Latest != null && version != Latest.Version;
+
+    public async Task Install(Game game, IProgress<string>? progress = null)
+    {
+        GameSetup.RequireClosed(game);
+        try { await Refresh(); }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or JsonException) { CrashReporter.Log("RE Framework releases: " + ex.Message); }
+        // Versioned asset URLs never change, so a cached download is reused; "latest" is always fetched.
+        var url = Latest?.Url ?? LatestZip;
+        var version = Latest?.Version ?? "Nightly " + DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var zip = await downloads.Fetch(url, progress, refresh: Latest == null);
+        var dll = Path.Combine(LinuxPaths.Cache, "reframework-" + Guid.NewGuid().ToString("N") + ".dll");
+        try
+        {
+            using (var archive = ZipFile.OpenRead(zip))
+            {
+                var entry = archive.Entries.FirstOrDefault(e => DlssCatalog.EntryName(e).Equals(Dll, StringComparison.OrdinalIgnoreCase))
+                    ?? throw new IOException("The RE Framework download does not contain dinput8.dll.");
+                Directory.CreateDirectory(LinuxPaths.Cache);
+                DlssCatalog.Extract(entry, dll);
+            }
+            Downloads.ValidatePe(dll, game.Architecture);
+            var payload = await File.ReadAllBytesAsync(dll);
+            GameSetup.RequireClosed(game);
+            progress?.Report("Installing RE Framework " + version + "…");
+            await Task.Run(() =>
+            {
+                // Hand over a copy placed by Windows RHI first, so removal restores the game's own state.
+                var target = LinuxPaths.ResolveCase(game.InstallDirectory, Dll);
+                var installation = new Installation(game.InstallDirectory);
+                if (!installation.ReadState().Components.ContainsKey(Component) && Sentinel.Placed(target)) Sentinel.Restore(target);
+                installation.Install(Component, version, [new(Dll, payload)], replaceForeign: true);
+            });
+        }
+        finally { if (File.Exists(dll)) File.Delete(dll); }
+    }
+
+    public static async Task Remove(Game game)
+    {
+        GameSetup.RequireClosed(game);
+        await Task.Run(() =>
+        {
+            var installation = new Installation(game.InstallDirectory);
+            if (installation.ReadState().Components.ContainsKey(Component)) installation.Remove(Component);
+            else Sentinel.Restore(LinuxPaths.ResolveCase(game.InstallDirectory, Dll));
+        });
+    }
+
+    // Proton loads Wine's builtin dinput8 unless the game's copy is marked native.
+    public static IEnumerable<string> LaunchDlls(Game game) => Installed(game) ? ["dinput8"] : [];
+}
+
+// All RHI-managed launch settings for a game: Neural Rendering/DLSS and RE Framework.
+public static class GameLaunch
+{
+    public static LaunchExtras Extras(Game game, GamePreferences prefs)
+    {
+        var extras = NeuralRenderingSetup.Extras(game, prefs);
+        var dlls = extras.Dlls.Concat(REFramework.LaunchDlls(game)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        return extras with { Dlls = dlls };
+    }
+}

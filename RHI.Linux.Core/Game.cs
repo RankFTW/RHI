@@ -19,6 +19,8 @@ public sealed class Game
     [JsonIgnore] public string InstallDirectory => Executable is null ? throw new InvalidOperationException("Choose the game's Windows executable first.") : Path.GetDirectoryName(Executable)!;
     [JsonIgnore] public MachineType Architecture => Executable is null ? MachineType.Native : new PeHeaderService().DetectArchitecture(Executable);
     [JsonIgnore] public GraphicsApiType Api => Executable is null ? GraphicsApiType.Unknown : GraphicsApiDetector.Detect(Executable);
+    private bool? _reEngine;
+    [JsonIgnore] public bool IsREEngine => _reEngine ??= REFramework.IsREEngine(Root);
 }
 
 public sealed class GamePreferences

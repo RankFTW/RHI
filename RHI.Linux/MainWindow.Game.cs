@@ -38,30 +38,34 @@ public sealed partial class MainWindow
         var badges = new WrapPanel { Orientation = Orientation.Horizontal };
         var names = new List<string> { game.Source, "Proton" };
         if (Directory.Exists(Path.Combine(game.Root, "Engine"))) names.Add("Unreal Engine");
+        if (game.IsREEngine) names.Add("RE Engine");
         if (game.Executable != null) { names.Add(_setup.Api(game, prefs).ToString().Replace("DirectX", "DX")); names.Add(game.Architecture == RenoDXCommander.Services.MachineType.I386 ? "32-bit" : "64-bit"); }
         if (state.State.Files.FirstOrDefault(f => f.Component == "RenoDX") is { } addon) names.Insert(0, addon.Path);
         foreach (var name in names) { var badge = Badge(name); badge.Margin = new Thickness(0, 0, 6, 2); badges.Children.Add(badge); }
         info.Children.Add(badges); _details.Children.Add(Card(info));
 
         if (state.Error != null) _details.Children.Add(Card(Label("Could not check the installation: " + state.Error, 12, Amber)));
-        var rs = state.Get("ReShade"); var rdx = state.Get("RenoDX");
+        var rs = state.Get("ReShade"); var rdx = state.Get("RenoDX"); var re = RefStatus(game, state);
+        // RE Engine games need RE Framework before ReShade, as in the Windows app.
+        var needsRef = game.IsREEngine && !re.Installed;
         var hdrRequired = mod?.SnapshotUrl?.Contains("ue-extended") == true && mod.Notes?.Contains("Engine.ini", StringComparison.OrdinalIgnoreCase) == true;
-        var ready = rs.Installed && state.LaunchConfigured && (mod == null || rdx.Installed) && (!hdrRequired || state.HdrConfigured);
+        var ready = rs.Installed && state.LaunchConfigured && (mod == null || rdx.Installed) && (!hdrRequired || state.HdrConfigured) && !needsRef;
+        var damaged = rs.Damaged || rdx.Damaged || re.Damaged;
         var channelChanged = rs.Installed && rs.Channel != prefs.Channel;
         var summary = new Grid { ColumnDefinitions = new("*,Auto") };
         string summaryTitle, summaryDetail;
-        if (rs.Damaged || rdx.Damaged) { summaryTitle = "Installation needs attention"; summaryDetail = "Some installed files are missing or changed. Open Advanced settings to review them."; }
+        if (damaged) { summaryTitle = "Installation needs attention"; summaryDetail = "Some installed files are missing or changed. Open Advanced settings to review them."; }
         else if (ready) { summaryTitle = "✓  Ready to launch"; summaryDetail = rs.Applied && (mod == null || rdx.Applied) ? "ReShade and installed addons were loaded on the last launch." : "Your plugins and Steam setup are installed. Launch the game to apply them."; }
         else if (rs.Installed && !state.LaunchConfigured) { summaryTitle = "One step left: Steam setup"; summaryDetail = "Your plugins are installed. Let RHI finish the launch setup for you."; }
         else if (hdrRequired && rdx.Installed && !state.HdrConfigured) { summaryTitle = "HDR setup needed"; summaryDetail = "Apply the game's HDR settings to finish setup. Launch the game once first if its settings are missing."; }
-        else { summaryTitle = "Ready to install"; summaryDetail = mod == null ? "Install ReShade to add effects. No matching RenoDX mod is selected." : "RHI will install ReShade, the matching RenoDX mod and the required game settings."; }
+        else { summaryTitle = "Ready to install"; summaryDetail = (needsRef ? "RHI will install RE Framework, " : "RHI will install ") + (mod == null ? "ReShade. No matching RenoDX mod is selected." : "ReShade, the matching RenoDX mod and the required game settings."); }
         summary.Children.Add(new StackPanel { Spacing = 4, Margin = new Thickness(0, 0, 14, 0), Children = { Label(summaryTitle, 13, ready ? Green : Amber, true), Label(summaryDetail, 11, Secondary) } });
         if (!ready && game.Executable != null)
         {
-            var finish = Action(rs.Damaged || rdx.Damaged ? "Review installation" : rs.Installed && !state.LaunchConfigured ? "Finish Steam setup" : "Install recommended", async () =>
+            var finish = Action(damaged ? "Review installation" : rs.Installed && !state.LaunchConfigured && !needsRef ? "Finish Steam setup" : "Install recommended", async () =>
             {
-                if (rs.Damaged || rdx.Damaged) await OpenAdvanced();
-                else if (rs.Installed && !state.LaunchConfigured) await ShowSteamSetup(game); else await InstallRecommended(game);
+                if (damaged) await OpenAdvanced();
+                else if (rs.Installed && !state.LaunchConfigured && !needsRef) await ShowSteamSetup(game); else await InstallRecommended(game);
             }, "success", "InstallRecommended");
             Grid.SetColumn(finish, 1); summary.Children.Add(finish);
         }
@@ -69,10 +73,18 @@ public sealed partial class MainWindow
         if (game.Executable == null) { _details.Children.Add(Label("Choose the game's Windows executable in Advanced settings to install plugins.", 13, Secondary)); _details.Children.Add(Action("Advanced settings", OpenAdvanced)); return; }
 
         var table = new StackPanel { Spacing = 10, Children = { Label("Components", 13, null, true) } };
+        if (game.IsREEngine)
+        {
+            var update = _ref.UpdateAvailable(re);
+            table.Children.Add(ComponentRow(game, re, "RE Framework", update ? "⬆  Update RE Framework" : re.Installed ? "↻  Reinstall RE Framework" : "↓  Install RE Framework",
+                async () => { await _ref.Install(game, Progress); await Changed(game, "RE Framework installed"); }, null,
+                REFramework.Description + " RHI adds the dinput8 DLL override Proton needs to load it." + (update ? $"\n\nUpdate available: nightly {_ref.Latest!.Version}." : ""), actionStyle: update ? "update" : "action"));
+        }
         table.Children.Add(ComponentRow(game, rs, "ReShade", channelChanged ? "Apply " + prefs.Channel + " channel" : rs.Installed ? "↻  Reinstall ReShade" : "↓  Install ReShade",
             async () => { await _setup.InstallReShade(game, prefs, Progress); _settings.Save(); await Changed(game, "ReShade installed"); },
             () => ShowReShadeSettings(game),
-            "ReShade loads RenoDX and shader effects into the game. Applied means the current installed files were loaded on the last recorded game launch; it is not a display-calibration or gameplay test."));
+            "ReShade loads RenoDX and shader effects into the game. Applied means the current installed files were loaded on the last recorded game launch; it is not a display-calibration or gameplay test." + (game.IsREEngine ? " RE Engine games need RE Framework installed first." : ""),
+            !needsRef || rs.Installed, "⚠  RE Framework required"));
         table.Children.Add(ComponentRow(game, rdx, "RenoDX HDR", rdx.Installed ? "↻  Reinstall RenoDX" : "↓  Install RenoDX",
             async () => { await _setup.InstallRenoDx(game, prefs, Progress); _settings.Save(); await Changed(game, "RenoDX installed"); },
             () => ShowHdrSettings(game), "RenoDX is the game-specific HDR mod. Installing it also installs ReShade if needed, and applies supported game settings automatically.", mod != null));
@@ -105,7 +117,15 @@ public sealed partial class MainWindow
         ToolTip.SetTip(advanced, "Executable, Proton prefix, manual mods, launch options and recovery"); _details.Children.Add(advanced);
     }
 
-    private Control ComponentRow(Game game, ComponentStatus status, string name, string action, Func<Task> install, Func<Task> settings, string description, bool available = true)
+    // Windows-installed RE Framework has no Linux record; show it so it can be replaced or removed.
+    private static ComponentStatus RefStatus(Game game, InstallationStatus state)
+    {
+        var status = state.Get(REFramework.Component);
+        return status.Version == null && REFramework.FromWindows(game) ? new(REFramework.Component, "Windows RHI", true, false, false) : status;
+    }
+
+    private Control ComponentRow(Game game, ComponentStatus status, string name, string action, Func<Task> install, Func<Task>? settings, string description,
+        bool available = true, string unavailable = "No matching mod", string actionStyle = "action")
     {
         var row = new Grid { ColumnDefinitions = new("112,112,42,*,42,36"), MinHeight = 48 };
         row.Children.Add(Label(name, 12, Secondary));
@@ -120,9 +140,9 @@ public sealed partial class MainWindow
         ToolTip.SetTip(values, status.Version ?? "Not installed"); Grid.SetColumn(values, 1); row.Children.Add(values);
         var info = Action("Info", () => Message(name, description + (status.Version == null ? "" : "\n\nInstalled: " + status.Version)), "", "Info" + status.Name.Replace(" ", ""));
         info.Padding = new Thickness(4); info.Margin = new Thickness(2, 0); Grid.SetColumn(info, 2); row.Children.Add(info);
-        var main = Action(available ? action : "No matching mod", install, "action", "Install" + status.Name.Replace(" ", ""));
+        var main = Action(available ? action : unavailable, install, actionStyle, "Install" + status.Name.Replace(" ", ""));
         main.IsEnabled = available; main.HorizontalAlignment = HorizontalAlignment.Stretch; main.Margin = new Thickness(4, 0); Grid.SetColumn(main, 3); row.Children.Add(main);
-        var cog = Action("⚙", settings); cog.Width = 36; cog.FontSize = 15; cog.Padding = new Thickness(4); cog.Margin = new Thickness(2, 0); ToolTip.SetTip(cog, name + " settings"); Grid.SetColumn(cog, 4); row.Children.Add(cog);
+        if (settings != null) { var cog = Action("⚙", settings); cog.Width = 36; cog.FontSize = 15; cog.Padding = new Thickness(4); cog.Margin = new Thickness(2, 0); ToolTip.SetTip(cog, name + " settings"); Grid.SetColumn(cog, 4); row.Children.Add(cog); }
         if (status.Version != null)
         {
             var remove = Action("×", () => Remove(game, status.Name), "danger", "Remove" + status.Name.Replace(" ", "")); remove.Width = 36; remove.FontSize = 16; remove.Padding = new Thickness(4);
@@ -138,6 +158,7 @@ public sealed partial class MainWindow
     private async Task InstallRecommended(Game game)
     {
         var prefs = _settings.For(game); var state = State(game);
+        if (game.IsREEngine && !RefStatus(game, state).Installed) await _ref.Install(game, Progress);
         if (!state.Get("ReShade").Installed || state.Get("ReShade").Channel != prefs.Channel) await _setup.InstallReShade(game, prefs, Progress);
         if (_setup.Mod(game, prefs) != null) await _setup.InstallRenoDx(game, prefs, Progress);
         _settings.Save(); await Changed(game, "Recommended setup installed");
@@ -156,7 +177,8 @@ public sealed partial class MainWindow
         if (!await Confirm("Remove " + component + "?", "RHI will remove its installed files and restore any originals it backed up. Your saves and unrelated game settings are kept.", "Remove")) return;
         GameSetup.RequireClosed(game);
         if (component is "RenoDX" or "ReShade") GameSetup.RestoreHdr(game);
-        await Task.Run(() => new Installation(game.InstallDirectory).Remove(component));
+        if (component == REFramework.Component) await REFramework.Remove(game);
+        else await Task.Run(() => new Installation(game.InstallDirectory).Remove(component));
         await Changed(game, component + " removed", offerSteam: false);
     }
     private async Task UpdateAll()
@@ -170,10 +192,11 @@ public sealed partial class MainWindow
             var state = State(game); var prefs = _settings.For(game);
             if (state.Get("ReShade").Version is { } rs && rs != "Local") await _setup.InstallReShade(game, prefs, Progress);
             if (state.Get("RenoDX").Version is { } rdx && rdx != "Local") await _setup.InstallRenoDx(game, prefs, Progress);
+            if (_ref.UpdateAvailable(state.Get(REFramework.Component))) await _ref.Install(game, Progress);
             // Neural Rendering set to "Latest" follows new releases, as the Windows app auto-updates it.
             if (NeuralRenderingSetup.LoadRecord(game.InstallDirectory) is { } nr && prefs.NrAddonVersion == null && prefs.NrPackVersion == null && prefs.NrDllVersion == null)
             { await _nr.Install(game, prefs, nr.Method, _setup.Api(game, prefs), prefs.Channel, Progress); InvalidateDlss(game); }
         }
-        _settings.Save(); await ReadStates(); Filter(); _status.Text = "Installed ReShade, RenoDX and Neural Rendering components updated.";
+        _settings.Save(); await ReadStates(); Filter(); _status.Text = "Installed RE Framework, ReShade, RenoDX and Neural Rendering components updated.";
     }
 }
