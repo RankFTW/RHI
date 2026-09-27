@@ -19,6 +19,10 @@ public sealed partial class MainWindow : Window
     private readonly Catalog _catalog;
     private readonly Downloads _downloads;
     private readonly GameSetup _setup;
+    private readonly DlssCatalog _dlss;
+    private readonly AddonReleases _releases;
+    private readonly NeuralRenderingSetup _nr;
+    private readonly DlssSwap _swap;
     private Settings _settings;
     private List<Game> _games = [];
     private readonly Dictionary<string, InstallationStatus> _states = [];
@@ -43,6 +47,8 @@ public sealed partial class MainWindow : Window
         Title = "RHI — Simplified PC Gaming"; Width = 1180; Height = 900; MinWidth = 1000; MinHeight = 660;
         SystemDecorations = SystemDecorations.None;
         _catalog = new(_http); _downloads = new(_http); _setup = new(_downloads, _catalog);
+        _dlss = new(_http, _downloads); _releases = new(_http, _downloads); _nr = new(_downloads, _dlss, _releases, _catalog); _swap = new(_dlss);
+        DlssProfile.ApplyManifestPresets(_catalog.ManifestRoot("dlssPresets"));
         try { _settings = Settings.Load(); } catch { _settings = new(); }
         var shell = new Grid { RowDefinitions = new("56,*,Auto,32") };
         var header = new Grid { ColumnDefinitions = new("Auto,*,Auto,Auto"), Background = Brush("#0F1318"), Margin = new Thickness(0) };
@@ -54,7 +60,7 @@ public sealed partial class MainWindow : Window
                 if (control is Button) return;
             if (e.ClickCount == 2) ToggleMaximize(); else BeginMoveDrag(e);
         };
-        _actions.Children.Add(Action("Refresh", async () => { await Scan(); await RefreshCatalog(); }, "teal", "RefreshLibrary"));
+        _actions.Children.Add(Action("Refresh", async () => { _nrStates.Clear(); await Scan(); await RefreshCatalog(); await RefreshDlssCatalogs(); ShowGame(); }, "teal", "RefreshLibrary"));
         _actions.Children.Add(Action("Shaders/Addons", ShowShaders, "teal"));
         _actions.Children.Add(Action("Update All", UpdateAll, "teal"));
         _actions.Children.Add(Action("Links", ShowLinks, "teal"));
@@ -89,7 +95,12 @@ public sealed partial class MainWindow : Window
         Opened += async (_, _) =>
         {
             if (initialGames != null) { _games = initialGames.ToList(); await Run(async () => { await ReadStates(); Filter(); }); }
-            else { await Run(Scan); await Run(RefreshCatalog); _timer.Start(); }
+            else
+            {
+                await Run(Scan); await Run(RefreshCatalog); _timer.Start();
+                // DLSS and Neural Rendering version lists refresh quietly in the background.
+                await RefreshDlssCatalogs(); if (!_busy) ShowGame();
+            }
         };
         Activated += async (_, _) => { if (!_busy && _games.Count > 0) await RefreshStatus(); };
         _timer.Tick += async (_, _) => { if (!_busy && IsActive) await RefreshStatus(); };
@@ -150,14 +161,14 @@ public sealed partial class MainWindow : Window
     }
     private async Task ReadStates()
     {
-        var snapshots = await Task.Run(() => _games.ToDictionary(g => g.Id, g => InstallationStatus.Read(g, _settings.For(g).SteamConfig)));
+        var snapshots = await Task.Run(() => _games.ToDictionary(g => g.Id, g => InstallationStatus.Read(g, _settings.For(g).SteamConfig, Extras(g))));
         _states.Clear(); foreach (var s in snapshots) _states[s.Key] = s.Value;
     }
     private async Task RefreshStatus()
     {
         var game = Selected; if (game == null) return;
         var old = State(game);
-        var fresh = await Task.Run(() => InstallationStatus.Read(game, _settings.For(game).SteamConfig));
+        var fresh = await Task.Run(() => InstallationStatus.Read(game, _settings.For(game).SteamConfig, Extras(game)));
         if (_busy || Selected?.Id != game.Id) return;
         _states[game.Id] = fresh;
         if (System.Text.Json.JsonSerializer.Serialize(old) != System.Text.Json.JsonSerializer.Serialize(fresh)) { ShowGame(); _library.ItemsSource = _library.ItemsSource; }

@@ -306,7 +306,7 @@ public sealed class AdvancedWindow : Window
             _details.Children.Add(options);
             _details.Children.Add(Row(Button("Generate / merge options", () =>
             {
-                options.Text = Proton.LaunchOptions(options.Text ?? "", install.ReadState().Proxy ?? Installation.ProxyFor(ChosenApi()));
+                options.Text = Proton.LaunchOptions(options.Text ?? "", install.ReadState().Proxy ?? Installation.ProxyFor(ChosenApi()), NeuralRenderingSetup.Extras(game, prefs));
                 _status.Text = "Options generated. Copy into Steam → game Properties → Launch Options, or exit Steam and save directly."; return Task.CompletedTask;
             }), Button("Copy", async () =>
             {
@@ -314,7 +314,7 @@ public sealed class AdvancedWindow : Window
             }), Button("Save to Steam (Steam closed)", () =>
             {
                 if (configPicker.SelectedItem is not string config || game.AppId == null) throw new IOException("No Steam user configuration found. Copy the options into your launcher instead.");
-                options.Text = Proton.LaunchOptions(options.Text ?? "", install.ReadState().Proxy ?? Installation.ProxyFor(ChosenApi()));
+                options.Text = Proton.LaunchOptions(options.Text ?? "", install.ReadState().Proxy ?? Installation.ProxyFor(ChosenApi()), NeuralRenderingSetup.Extras(game, prefs));
                 var backup = Proton.SaveOptions(config, game.AppId, options.Text);
                 _status.Text = "Steam launch options saved. Backup: " + backup; return Task.CompletedTask;
             })));
@@ -327,11 +327,15 @@ public sealed class AdvancedWindow : Window
             {
                 if (components.SelectedItem is not string component) throw new IOException("Select an installed component.");
                 if (component == "RenoDX") RestoreHdr();
-                await Task.Run(() => install.Remove(component)); ShowGame(); _status.Text = component + " removed; originals restored where applicable.";
+                // Neural Rendering also restores DLSS DLLs outside the executable folder and its INI edits.
+                if (component == NeuralRenderingSetup.Component) await NeuralRendering().Remove(game);
+                else await Task.Run(() => install.Remove(component));
+                ShowGame(); _status.Text = component + " removed; originals restored where applicable.";
             })));
             _details.Children.Add(Button("Remove all managed components", async () =>
             {
                 RestoreHdr();
+                if (NeuralRenderingSetup.LoadRecord(game.InstallDirectory) != null || install.ReadState().Components.ContainsKey(NeuralRenderingSetup.Component)) await NeuralRendering().Remove(game);
                 await Task.Run(() => install.Remove()); ShowGame(); _status.Text = "Managed components removed; originals restored. Edited ReShade settings were preserved. Remove the DLL override from Steam launch options.";
             }));
             void RestoreHdr()
@@ -343,6 +347,8 @@ public sealed class AdvancedWindow : Window
         catch (Exception ex) { _details.Children.Add(Text("Could not load game settings: " + ex.Message)); CrashReporter.Log(ex.ToString()); }
         finally { _building = false; }
     }
+
+    private NeuralRenderingSetup NeuralRendering() => new(_downloads, new DlssCatalog(_http, _downloads), new AddonReleases(_http, _downloads), _catalog);
 
     private static void RequireReShade(Installation installation)
     {

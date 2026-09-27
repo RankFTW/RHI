@@ -41,6 +41,29 @@ The interface uses the original Windows app's logo, dark palette, component-tabl
 
 For Heroic/Lutris, add `WINEDLLOVERRIDES` as an environment variable in the launcher's per-game settings; the value for DX10/11/12 is `dxgi=n,b;d3dcompiler_47=n,b`. Keep any other existing DLL entries. Use the launcher to run the game with its existing runner/prefix.
 
+## Neural Rendering (DLSS 5) and DLSS overrides
+
+The detail panel has the Windows app's **Neural Rendering** and **Nvidia Profile Overrides** sections below **Game overrides**. Click a section's title to collapse it; collapsed sections show a one-line summary.
+
+**Neural Rendering** offers the same four methods as Windows. Inapplicable methods are disabled, and a recommended method is preselected:
+
+| Method | Use for | Deploys |
+| --- | --- | --- |
+| ShortFuse DLSS Tool | Most 64-bit games with native DLSS (DX12, DX11, DX9, Vulkan) | `renodx-dlss.addon64`, the newest DLSS SR/RR/FG, the NR DLL and Streamline |
+| DLSS5 Tool | DX12 games with native DLSS | `renodx-dlss5.addon64`, the newest DLSS SR/RR/FG and the NR DLL |
+| DLSS5 Tool + DX11 Bridge | DX11/Vulkan games with native DLSS | as DLSS5 Tool, plus `dlss5-bridge.addon64` |
+| DLSS5 Feeder | Games without native DLSS, OpenGL and 32-bit games | `dlss5-feed.addon64/32`, DLSS5 Tool as the neural consumer, DLSS SR, the NR DLL, `DLSS5_Feed.fx` and LumeniteFX's `lumenite_Kernel.fx`; for 32-bit games a `host64/` helper with 64-bit ReShade; for DX9 games dgVoodoo2 |
+
+Choose the addon, Feeder/Bridge and NR DLL versions (or **Latest**, which **Update All** keeps current). Changing a version while installed swaps it in place. **NR Cost Scaler** (set before installing) adds the DLSS NR Cost Scaler proxy. The **⚙** beside ShortFuse writes `HookStreamline=1` and `HookDirectX=1` to ReShade.ini; the Windows ASI-loader rename is not needed on Linux (ShortFuse v0.54+ doesn't require it). RHI installs ReShade first when needed and, for the Feeder, the Standard shader pack (its shaders include `ReShade.fxh`). The Feeder's techniques are added to your existing ReShade preset rather than replacing it. For DX9 Feeder games ReShade is loaded as `dxgi.dll` behind dgVoodoo2, as on Windows. The neural model currently runs on NVIDIA RTX 50-series GPUs.
+
+**Nvidia Profile Overrides** shows the game's DLSS Super Resolution, Ray Reconstruction, Frame Generation, Neural Rendering and Streamline DLLs, wherever they are in the game folder (including Unreal plugin folders):
+
+- **Version** swaps a DLL: *Default* restores the game's own, a version downloads it from the same list the Windows app uses, and *Custom* uses your own file from `~/.local/share/rhi-linux/Custom/DLSS/` (or `Custom/Streamline/`). **Settings → Open custom DLSS folder** opens it.
+- **Preset**, **Render Scale**, **Multi Frame Gen** and the **NVIDIA Override** version option write the same driver settings as the Windows app. Proton has no NVIDIA driver profile, so RHI passes them to dxvk-nvapi through `DXVK_NVAPI_DRS_SETTINGS` in the game's launch options. When they change, the section shows **Launch settings need updating**; **Apply launch settings** uses the normal Steam setup (existing options and your own `DXVK_NVAPI_DRS_SETTINGS` entries are kept). NVIDIA Override also sets `PROTON_ENABLE_NGX_UPDATER=1`. Managed DLSS also sets `PROTON_ENABLE_NVAPI=1`.
+- **Deploy DLL / ✕** adds or removes `nvngx_dlssnr.dll`. **Quick Apply** applies your **Settings → DLSS defaults…**, which can also be applied to every installed DLSS game at once. **Restore DLSS/SL** restores every swapped DLL and resets the presets.
+
+DLL swaps use the Windows app's `.original` convention (a real backup, or an empty marker when RHI created the file), so a library shared with Windows RHI stays consistent; Neural Rendering installed by the Windows app is recognised and can be removed here. Neural Rendering's addons and shaders are also tracked in `.rhi-linux/` with the other components, and `.rhi-linux/neural-rendering.json` records the DLLs it placed. The Windows driver-profile extras (ReBAR, Present Method and similar NVIDIA Profile Inspector settings) are not available under Proton.
+
 ## Proton locations and HDR
 
 Typical locations:
@@ -73,7 +96,9 @@ For the installed **Mortal Shell II** test case, Steam calls the game folder `Sp
 
 Supported: Steam/Flatpak library scanning; manual games; ReShade stable/nightly/local; live/cached RenoDX catalogue; named and shared addons; shader packs; local addons; API/architecture selection; Proton launch options; UE Extended prefix configuration; component updates and reversible removal.
 
-This is not full Windows feature parity. Windows NVIDIA driver profiles, Windows HDR toggles, Windows global Vulkan layers, automatic detection of every non-Steam launcher, OptiScaler/Luma/DLSS bulk workflows, and native Linux Vulkan games are not ported. Addon compatibility and anti-cheat policies remain game-specific. Choose games that allow DLL modding.
+Also supported: Neural Rendering (all four DLSS 5 methods, Cost Scaler), DLSS/Streamline version swaps, and DLSS presets/render scale/Multi Frame Gen/NVIDIA Override through dxvk-nvapi.
+
+This is not full Windows feature parity. Windows-only NVIDIA driver profile settings (ReBAR, Present Method), Windows HDR toggles, Windows global Vulkan layers, automatic detection of every non-Steam launcher, OptiScaler/Luma workflows, and native Linux Vulkan games are not ported. Addon compatibility and anti-cheat policies remain game-specific. Choose games that allow DLL modding.
 
 ## Build and validation
 
@@ -82,11 +107,12 @@ This is not full Windows feature parity. Windows NVIDIA driver profiles, Windows
 ./run-linux.sh --scan
 ./run-linux.sh --catalog-check
 ./run-linux.sh --smoke-test
+./run-linux.sh --nr-smoke-test
 ```
 
 The build script uses an installed .NET SDK or installs SDK 8.0.425 in the user's data directory, runs Linux unit/integration tests, and publishes a self-contained Linux x64 build. It needs network access for NuGet on the first build. Bazzite supplies the native desktop libraries and `7z` used to extract official ReShade setup executables. On another distribution, install 7zip, X11/XWayland, fontconfig, libc and the normal .NET native prerequisites.
 
-`--scan` is read-only and prints detected paths as JSON. `--smoke-test` downloads real x86/x64 ReShade, a real RenoDX addon, and shader packs, then checks install/update/remove and original restoration **in an isolated temporary folder**, plus the nightly x64 download. It never installs into detected games. Headless UI tests exercise installed/applied indicators, filtering, and the ReShade channel dialog against isolated game folders. Unit tests cover stale launch logs, changed payloads, launch-readiness checks, flatpak/external libraries, symlink deduplication, casing, malformed manifests, PE architecture rejection, safe launch-option merges, interrupted transactions, file conflicts, and INI restoration.
+`--scan` is read-only and prints detected paths as JSON. `--smoke-test` downloads real x86/x64 ReShade, a real RenoDX addon, and shader packs, then checks install/update/remove and original restoration **in an isolated temporary folder**, plus the nightly x64 download. It never installs into detected games. `--nr-smoke-test` downloads the real Neural Rendering components and, in disposable game folders, installs each method (including 32-bit and DX9 Feeder), checks the status, launch settings and an in-place version swap, then verifies removal restores every original file. Headless UI tests exercise installed/applied indicators, filtering, and the ReShade channel dialog against isolated game folders. Unit tests cover stale launch logs, changed payloads, launch-readiness checks, flatpak/external libraries, symlink deduplication, casing, malformed manifests, PE architecture rejection, safe launch-option merges, interrupted transactions, file conflicts, and INI restoration.
 
 The original Windows solution requires its Windows build environment; use `RHI.Linux.sln` or the Linux build script on Bazzite. The GUI uses Avalonia with software rendering to avoid depending on the game's graphics stack.
 
@@ -127,6 +153,8 @@ To undo RHI's HDR edits with the game closed, use **RenoDX cog → Restore previ
 - [Bazzite launch options](https://docs.bazzite.gg/Gaming/launch-options-env-variables/)
 - [ReShade](https://reshade.me/)
 - [Avalonia Linux platform support](https://docs.avaloniaui.net/docs/platform-specific-guides/linux)
+- [dxvk-nvapi driver settings (DXVK_NVAPI_DRS_SETTINGS)](https://github.com/jp7677/dxvk-nvapi#tweaks-debugging-and-troubleshooting)
+- [DLSS5 Feeder](https://github.com/jlrouzies-fr/DLSS5-Feeder), [DLSS5 DX11 Bridge](https://github.com/NIGos/dlss5-bridge), [DLSS NR Cost Scaler](https://github.com/xenmods/DLSSNR-Cost-Scaler)
 
 - [Verified Microsoft shader compiler extraction used by reshade-steam-proton](https://github.com/kevinlekiller/reshade-steam-proton/blob/main/reshade-linux.sh)
 - [ReShade support for newer VKD3D device interfaces](https://github.com/crosire/reshade/commit/ec0346e035b7d1c267103ea0d7c231b3945fc2b1)

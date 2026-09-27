@@ -14,11 +14,23 @@ public sealed class InstallationStatus
     public Dictionary<string, ComponentStatus> Components { get; init; } = [];
     public bool LaunchConfigured { get; init; }
     public bool HdrConfigured { get; init; }
+    // DLSS / Neural Rendering launch settings (environment and extra DLL overrides).
+    public bool DlssLaunchConfigured { get; init; } = true;
     public string? Error { get; init; }
     public ComponentStatus Get(string component) => Components.GetValueOrDefault(component) ?? new(component, null, false, false, false);
 
-    public static bool HasLaunchOverrides(string? options, string proxy)
+    public static bool HasExtras(string? options, LaunchExtras extras)
     {
+        if (options == null) return extras.Dlls.Count == 0 && Proton.HasEnvironment("", extras);
+        var value = Proton.ReadVariable(options, "WINEDLLOVERRIDES") ?? "";
+        var entries = value.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(e => e.Split('=', 2)).Where(p => p.Length == 2)
+            .SelectMany(p => p[0].Split(',').Select(k => (Key: k.Trim(), Mode: p[1].Split(',')[0].Trim()))).ToList();
+        return extras.Dlls.All(d => entries.Any(e => e.Key.Equals(d, StringComparison.OrdinalIgnoreCase) && e.Mode == "n")) && Proton.HasEnvironment(options, extras);
+    }
+
+    public static bool HasLaunchOverrides(string? options, string proxy, LaunchExtras? extras = null)
+    {
+        extras ??= LaunchExtras.None;
         if (options == null || !options.Contains("%command%")) return false;
         var matches = Regex.Matches(options, "(?<!\\S)WINEDLLOVERRIDES=(?:\"([^\"]*)\"|'([^']*)'|([^\\s]+))");
         if (matches.Count != 1) return false;
@@ -30,11 +42,11 @@ public sealed class InstallationStatus
             if (pair.Length != 2) return false;
             foreach (var key in pair[0].Split(',')) entries[key.Trim()] = pair[1].Trim();
         }
-        return new[] { Path.GetFileNameWithoutExtension(proxy), "d3dcompiler_47" }
-            .All(k => entries.TryGetValue(k, out var mode) && mode.Split(',')[0].Trim() == "n");
+        return new[] { Path.GetFileNameWithoutExtension(proxy), "d3dcompiler_47" }.Concat(extras.Dlls)
+            .All(k => entries.TryGetValue(k, out var mode) && mode.Split(',')[0].Trim() == "n") && Proton.HasEnvironment(options, extras);
     }
 
-    public static InstallationStatus Read(Game game, string? steamConfig = null)
+    public static InstallationStatus Read(Game game, string? steamConfig = null, LaunchExtras? extras = null)
     {
         if (game.Executable == null) return new();
         try
@@ -62,11 +74,12 @@ public sealed class InstallationStatus
             }
             var configs = Proton.LocalConfigs(game).ToList();
             var selectedConfig = steamConfig != null && configs.Contains(steamConfig) ? steamConfig : configs.Count == 1 ? configs[0] : null;
-            var configured = selectedConfig != null && HasLaunchOverrides(Proton.ReadOptions(selectedConfig, game.AppId!), state.Proxy ?? "dxgi.dll");
+            var configured = selectedConfig != null && HasLaunchOverrides(Proton.ReadOptions(selectedConfig, game.AppId!), state.Proxy ?? "dxgi.dll", extras);
             var ini = LinuxPaths.ResolveCase(game.InstallDirectory, "ReShade.ini");
             var hdr = File.Exists(ini) && IniSettings.Get(File.ReadAllText(ini), "renodx", "Set_Path") == "0" &&
                 IniSettings.FindEngineInis(game).Any(p => IniSettings.UnrealHdr.All(k => IniSettings.Get(File.ReadAllText(p), k.Section, k.Key) == k.Value));
-            return new() { State = state, Components = components, LaunchConfigured = configured, HdrConfigured = hdr };
+            var dlssConfigured = extras == null || selectedConfig == null ? extras == null || HasExtras(null, extras) : HasExtras(Proton.ReadOptions(selectedConfig, game.AppId!), extras);
+            return new() { State = state, Components = components, LaunchConfigured = configured, HdrConfigured = hdr, DlssLaunchConfigured = dlssConfigured };
         }
         catch (Exception ex) { return new() { Error = ex.Message }; }
     }

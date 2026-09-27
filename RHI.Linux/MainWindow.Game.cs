@@ -26,7 +26,7 @@ public sealed partial class MainWindow
         var launch = Action("▶ Launch", async () =>
         {
             if (game.AppId == null) { await Message("Launch your game", "Start this game using its usual launcher. RHI has installed the plugins beside its executable."); return; }
-            if (State(game).Get("ReShade").Installed && !State(game).LaunchConfigured) { await ShowSteamSetup(game); return; }
+            if (State(game).Get("ReShade").Installed && !State(game).LaunchConfigured || !State(game).DlssLaunchConfigured) { await ShowSteamSetup(game); return; }
             Proton.Open("steam://rungameid/" + game.AppId);
         }, "success", "LaunchGame");
         actions.Children.Add(launch);
@@ -99,6 +99,8 @@ public sealed partial class MainWindow
         var setup = Row(Badge(state.LaunchConfigured ? "✓ Steam setup applied" : "Steam setup needed", state.LaunchConfigured, !state.LaunchConfigured));
         if (hdrRequired || state.HdrConfigured) setup.Children.Add(Badge(state.HdrConfigured ? "✓ HDR settings applied" : "HDR settings needed", state.HdrConfigured, !state.HdrConfigured));
         overrides.Children.Add(setup); _details.Children.Add(Card(overrides));
+        _details.Children.Add(NeuralRenderingSection(game, state));
+        _details.Children.Add(NvidiaProfileSection(game, state));
         var advanced = Action("Advanced settings  ›", OpenAdvanced, "", "AdvancedSettings"); advanced.HorizontalAlignment = HorizontalAlignment.Left;
         ToolTip.SetTip(advanced, "Executable, Proton prefix, manual mods, launch options and recovery"); _details.Children.Add(advanced);
     }
@@ -131,7 +133,7 @@ public sealed partial class MainWindow
     private async Task Changed(Game game, string message, bool offerSteam = true)
     {
         await ReadStates(); Filter(); _status.Text = message;
-        if (offerSteam && State(game).Get("ReShade").Installed && !State(game).LaunchConfigured) await ShowSteamSetup(game);
+        if (offerSteam && (State(game).Get("ReShade").Installed && !State(game).LaunchConfigured || !State(game).DlssLaunchConfigured)) await ShowSteamSetup(game);
     }
     private async Task InstallRecommended(Game game)
     {
@@ -160,6 +162,7 @@ public sealed partial class MainWindow
     private async Task UpdateAll()
     {
         if (GameSetup.AnySteamGameRunning()) throw new IOException("Close running Steam games before updating their plugins.");
+        await RefreshDlssCatalogs();
         var installed = _games.Where(g => State(g).Components.Count > 0).ToList();
         if (installed.Count == 0) { await Message("Update All", "There are no installed plugins to update yet. Select a game and choose Install recommended."); return; }
         foreach (var game in installed)
@@ -167,7 +170,10 @@ public sealed partial class MainWindow
             var state = State(game); var prefs = _settings.For(game);
             if (state.Get("ReShade").Version is { } rs && rs != "Local") await _setup.InstallReShade(game, prefs, Progress);
             if (state.Get("RenoDX").Version is { } rdx && rdx != "Local") await _setup.InstallRenoDx(game, prefs, Progress);
+            // Neural Rendering set to "Latest" follows new releases, as the Windows app auto-updates it.
+            if (NeuralRenderingSetup.LoadRecord(game.InstallDirectory) is { } nr && prefs.NrAddonVersion == null && prefs.NrPackVersion == null && prefs.NrDllVersion == null)
+            { await _nr.Install(game, prefs, nr.Method, _setup.Api(game, prefs), prefs.Channel, Progress); InvalidateDlss(game); }
         }
-        _settings.Save(); await ReadStates(); Filter(); _status.Text = "Installed ReShade and RenoDX components updated.";
+        _settings.Save(); await ReadStates(); Filter(); _status.Text = "Installed ReShade, RenoDX and Neural Rendering components updated.";
     }
 }

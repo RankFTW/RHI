@@ -85,6 +85,8 @@ public sealed class Catalog
         return value?.ValueKind == JsonValueKind.String ? value.Value.GetString() : null;
     }
 
+    public JsonElement? ManifestRoot(string name) => _manifest.ValueKind == JsonValueKind.Object && _manifest.TryGetProperty(name, out var value) ? value : null;
+
     public JsonElement? ManifestValue(string section, string name)
     {
         if (!_manifest.TryGetProperty(section, out var values) || values.ValueKind != JsonValueKind.Object) return null;

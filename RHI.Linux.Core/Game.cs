@@ -32,6 +32,25 @@ public sealed class GamePreferences
     public bool Favourite { get; set; }
     public bool Hidden { get; set; }
     public string? SteamConfig { get; set; }
+    // DLSS driver-profile values (hex setting ID → value), applied through dxvk-nvapi.
+    public Dictionary<string, uint> DriverSettings { get; set; } = [];
+    public string? NrMethod { get; set; }
+    public string? NrAddonVersion { get; set; }
+    public string? NrPackVersion { get; set; }
+    public string? NrDllVersion { get; set; }
+    public bool NrCostScaler { get; set; }
+    public bool SfAutoConfig { get; set; }
+}
+
+// Settings → DLSS defaults: what Quick Apply and "Apply to all games" deploy.
+public sealed class DlssDefaults
+{
+    public Dictionary<string, string> Versions { get; set; } = [];
+    public Dictionary<string, uint> Presets { get; set; } = [];
+    public uint SrScale { get; set; }
+    public uint RrScale { get; set; }
+    public List<string> DriverOverrides { get; set; } = [];
+    public bool IsEmpty => Versions.Count == 0 && Presets.Values.All(v => v == 0) && SrScale == 0 && RrScale == 0 && DriverOverrides.Count == 0;
 }
 
 public sealed class Settings
@@ -40,6 +59,9 @@ public sealed class Settings
     public List<string> SteamRoots { get; set; } = [];
     public List<Game> ManualGames { get; set; } = [];
     public Dictionary<string, GamePreferences> Games { get; set; } = [];
+    public HashSet<string> CollapsedSections { get; set; } = [];
+    public DlssDefaults DlssDefaults { get; set; } = new();
+    public bool MfgWarningDismissed { get; set; }
     private static string FilePath => Path.Combine(LinuxPaths.Data, "settings.json");
     public static Settings Load() => File.Exists(FilePath)
         ? System.Text.Json.JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath), LinuxPaths.Json) ?? new()

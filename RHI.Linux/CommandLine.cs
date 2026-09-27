@@ -28,6 +28,7 @@ internal static class CommandLine
             await catalog.Refresh(); Console.WriteLine(catalog.Status); return 0;
         }
         if (args[0] == "--smoke-test") return await SmokeTest(http, catalog);
+        if (args[0] == "--nr-smoke-test") return await NeuralRenderingSmokeTest(http, catalog);
         if (args[0] == "--prepare" && args.Length >= 2) return await Prepare(args[1], args.Contains("--ue-hdr"), args.Contains("--nightly"), http, catalog);
         if (args[0] == "--save-launch-options" && args.Length == 2)
         {
@@ -35,7 +36,7 @@ internal static class CommandLine
             var proxy = new Installation(game.InstallDirectory).ReadState().Proxy ?? throw new IOException("Install ReShade first.");
             var configs = Proton.LocalConfigs(game).ToList();
             if (configs.Count != 1) throw new IOException("Select the Steam user account in the desktop app to save launch options.");
-            var options = Proton.LaunchOptions(Proton.ReadOptions(configs[0], args[1]) ?? "%command%", proxy);
+            var options = Proton.LaunchOptions(Proton.ReadOptions(configs[0], args[1]) ?? "%command%", proxy, NeuralRenderingSetup.Extras(game, Settings.Load().For(game)));
             Console.WriteLine("Saved. Backup: " + Proton.SaveOptions(configs[0], args[1], options));
             Console.WriteLine(options); return 0;
         }
@@ -46,7 +47,7 @@ internal static class CommandLine
             IniSettings.Restore(LinuxPaths.ResolveCase(game.InstallDirectory, "ReShade.ini"));
             Console.WriteLine("Previous HDR settings and file permissions restored."); return 0;
         }
-        Console.WriteLine("RHI Linux\n  (no arguments)    Open the desktop app\n  --scan            Print detected games, executable paths and Proton prefixes as JSON\n  --catalog-check   Fetch and validate the live RenoDX catalogue\n  --smoke-test      Test real downloads, install/update/remove in an isolated temporary directory\n  --prepare APPID [--ue-hdr] [--nightly]  Install ReShade using the saved channel, matched RenoDX and shaders\n  --save-launch-options APPID  Save its DLL override with Steam fully closed\n  --restore-hdr APPID  Restore previous HDR settings and Engine.ini permissions\n");
+        Console.WriteLine("RHI Linux\n  (no arguments)    Open the desktop app\n  --scan            Print detected games, executable paths and Proton prefixes as JSON\n  --catalog-check   Fetch and validate the live RenoDX catalogue\n  --smoke-test      Test real downloads, install/update/remove in an isolated temporary directory\n  --nr-smoke-test   Install, swap and remove every Neural Rendering (DLSS 5) method in a temporary game\n  --prepare APPID [--ue-hdr] [--nightly]  Install ReShade using the saved channel, matched RenoDX and shaders\n  --save-launch-options APPID  Save its DLL override with Steam fully closed\n  --restore-hdr APPID  Restore previous HDR settings and Engine.ini permissions\n");
         return args[0] is "--help" or "-h" ? 0 : 2;
     }
 
@@ -157,4 +158,80 @@ internal static class CommandLine
         }
         finally { Directory.Delete(temp, true); }
     }
+    // Real downloads, installed into disposable fake games: every Neural Rendering method must
+    // install, swap versions in place, and remove back to the exact original files.
+    private static async Task<int> NeuralRenderingSmokeTest(HttpClient http, Catalog catalog)
+    {
+        var temp = Path.Combine(Path.GetTempPath(), "rhi-nr-smoke-" + Guid.NewGuid().ToString("N"));
+        // Keep INI backup records out of the user's data folder; downloads still use the shared cache.
+        Environment.SetEnvironmentVariable("XDG_DATA_HOME", Path.Combine(temp, "data"));
+        var progress = new Progress<string>(Console.WriteLine);
+        var downloads = new Downloads(http);
+        var dlss = new DlssCatalog(http, downloads); var releases = new AddonReleases(http, downloads);
+        var setup = new NeuralRenderingSetup(downloads, dlss, releases, catalog);
+        await dlss.Refresh(); await releases.Refresh(true);
+        Console.WriteLine(dlss.Status + " " + releases.Status);
+        static byte[] Pe(MachineType machine)
+        {
+            var bytes = new byte[512]; bytes[0] = (byte)'M'; bytes[1] = (byte)'Z'; BitConverter.GetBytes(128).CopyTo(bytes, 0x3c);
+            bytes[128] = (byte)'P'; bytes[129] = (byte)'E'; BitConverter.GetBytes((ushort)machine).CopyTo(bytes, 132); return bytes;
+        }
+        static Dictionary<string, string> Snapshot(string root) => Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+            .Where(f => !Path.GetRelativePath(root, f).StartsWith(".rhi-linux")).ToDictionary(f => Path.GetRelativePath(root, f), f => Installation.Hash(File.ReadAllBytes(f)));
+        var cases = new (string Name, string Method, MachineType Machine, RenoDXCommander.Models.GraphicsApiType Api)[]
+        {
+            ("ShortFuse", NrMethod.ShortFuse, MachineType.x64, RenoDXCommander.Models.GraphicsApiType.DirectX12),
+            ("Dlss5Tool", NrMethod.Dlss5Tool, MachineType.x64, RenoDXCommander.Models.GraphicsApiType.DirectX12),
+            ("Bridge", NrMethod.Bridge, MachineType.x64, RenoDXCommander.Models.GraphicsApiType.DirectX11),
+            ("Feeder", NrMethod.Feeder, MachineType.x64, RenoDXCommander.Models.GraphicsApiType.DirectX11),
+            ("FeederDx9", NrMethod.Feeder, MachineType.x64, RenoDXCommander.Models.GraphicsApiType.DirectX9),
+            ("Feeder32", NrMethod.Feeder, MachineType.I386, RenoDXCommander.Models.GraphicsApiType.DirectX9),
+        };
+        try
+        {
+            foreach (var (name, method, machine, api) in cases)
+            {
+                var root = Path.Combine(temp, name); var binaries = Path.Combine(root, "Game/Binaries/Win64"); Directory.CreateDirectory(binaries);
+                var exe = Path.Combine(binaries, "Game.exe"); File.WriteAllBytes(exe, Pe(machine));
+                // A game-owned DLSS DLL in an Unreal plugin folder must be backed up and restored.
+                var plugin = Path.Combine(root, "Engine/Plugins/Runtime/Nvidia/DLSS/Binaries/ThirdParty/Win64"); Directory.CreateDirectory(plugin);
+                File.WriteAllText(Path.Combine(plugin, "nvngx_dlss.dll"), "game original");
+                File.WriteAllText(Path.Combine(binaries, "ReShadePreset.ini"), "Techniques=Existing@Existing.fx\n\n[Existing.fx]\nValue=1\n");
+                var game = new Game { Name = "NR " + name, Root = root, Executable = exe, Executables = [exe] };
+                var install = new Installation(binaries);
+                install.Install("ReShade", "smoke", [new("dxgi.dll", Pe(machine)), Installation.DefaultIni()], proxy: "dxgi.dll");
+                var before = Snapshot(root);
+                var prefs = new GamePreferences { NrCostScaler = method == NrMethod.Dlss5Tool, SfAutoConfig = method == NrMethod.ShortFuse };
+                await setup.Install(game, prefs, method, api, "Stable", progress);
+                var state = NeuralRenderingSetup.Read(game);
+                var tags = state.Tags(method, true).ToList();
+                Console.WriteLine($"{name}: " + string.Join("  ", tags.Select(t => t.Text)));
+                if (!state.Installed(method) || state.Method != method) throw new Exception(name + ": method not detected after install.");
+                var missing = tags.Where(t => !t.Ok).Select(t => t.Text).ToList();
+                if (missing.Count > 0) throw new Exception(name + ": missing " + string.Join(", ", missing));
+                if (state.Detection.Version(DlssKind.NR) is null or "Unknown") throw new Exception(name + ": NR DLL version unreadable.");
+                if (method != NrMethod.Feeder && state.Detection.Path(DlssKind.SR) != Path.Combine(plugin, "nvngx_dlss.dll")) throw new Exception(name + ": SR was not deployed to the game's plugin copy.");
+                if (method == NrMethod.Dlss5Tool && !state.CostScaler) throw new Exception(name + ": Cost Scaler not installed.");
+                var extras = NeuralRenderingSetup.Extras(game, prefs);
+                Console.WriteLine($"{name}: launch options: " + Proton.LaunchOptions("%command%", "dxgi.dll", extras));
+                // Swap to the previous addon and NR DLL release in place.
+                var addonType = method == NrMethod.ShortFuse ? AddonReleases.ShortFuse : AddonReleases.Dlss5Tool;
+                prefs.NrAddonVersion = releases.Versions(addonType).Skip(1).FirstOrDefault();
+                prefs.NrDllVersion = dlss.Versions(DlssKind.NR).Skip(1).FirstOrDefault();
+                await setup.Install(game, prefs, method, api, "Stable", progress);
+                var swapped = NeuralRenderingSetup.LoadRecord(binaries)!;
+                if (swapped.AddonVersion != prefs.NrAddonVersion) throw new Exception(name + ": addon swap did not apply.");
+                Console.WriteLine($"{name}: swapped to addon {swapped.AddonVersion}, NR {NeuralRenderingSetup.Read(game).Detection.Version(DlssKind.NR)}");
+                await setup.Remove(game);
+                var after = Snapshot(root);
+                var changed = before.Keys.Union(after.Keys).Where(k => before.GetValueOrDefault(k) != after.GetValueOrDefault(k)).ToList();
+                if (changed.Count > 0) throw new Exception(name + ": removal left differences: " + string.Join(", ", changed));
+                Console.WriteLine($"PASS {name}: install, status, launch settings, in-place swap and exact removal.");
+            }
+            Console.WriteLine("PASS: Neural Rendering smoke test. No installed games were modified.");
+            return 0;
+        }
+        finally { Directory.Delete(temp, true); }
+    }
 }
+

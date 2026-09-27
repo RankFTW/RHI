@@ -46,8 +46,10 @@ public static class IniSettings
             .ToList();
     }
 
-    private static string RecordPath(string path) => Path.Combine(LinuxPaths.Data, "ini-backups",
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(LinuxPaths.Canonical(path)))) + ".json");
+    // Owner-scoped records let independent features (HDR, Neural Rendering) edit the same
+    // file and each restore only its own keys.
+    private static string RecordPath(string path, string? owner = null) => Path.Combine(LinuxPaths.Data, "ini-backups",
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(LinuxPaths.Canonical(path) + (owner == null ? "" : "\n" + owner)))) + ".json");
     private static string Hash(string text) => Installation.Hash(Encoding.UTF8.GetBytes(text));
 
     public static string? Get(string text, string section, string key)
@@ -85,17 +87,18 @@ public static class IniSettings
         }
         else if (value != null)
         {
-            var index = lines.FindIndex(l => l.Trim().Equals("[" + section + "]", StringComparison.OrdinalIgnoreCase));
-            if (index < 0) { lines.Add("[" + section + "]"); lines.Add(key + "=" + value); }
+            var index = section.Length == 0 ? -1 : lines.FindIndex(l => l.Trim().Equals("[" + section + "]", StringComparison.OrdinalIgnoreCase));
+            if (section.Length == 0) lines.Insert(0, key + "=" + value);
+            else if (index < 0) { lines.Add("[" + section + "]"); lines.Add(key + "=" + value); }
             else lines.Insert(index + 1, key + "=" + value);
         }
         return string.Join(newline, lines);
     }
 
-    public static void Apply(string path, IEnumerable<IniKey> keys, bool readOnly = false)
+    public static void Apply(string path, IEnumerable<IniKey> keys, bool readOnly = false, string? owner = null)
     {
         path = LinuxPaths.Canonical(path);
-        var recordPath = RecordPath(path);
+        var recordPath = RecordPath(path, owner);
         var current = File.Exists(path) ? File.ReadAllText(path) : "";
         var record = File.Exists(recordPath) ? JsonSerializer.Deserialize<IniRecord>(File.ReadAllText(recordPath), LinuxPaths.Json)!
             : new IniRecord { Path = path, Existed = File.Exists(path), OriginalText = current };
@@ -125,15 +128,33 @@ public static class IniSettings
         finally { if (File.Exists(temp)) File.Delete(temp); }
     }
 
-    public static void Restore(string path)
+    // Drops section headers that an owner's edits created and that are now empty.
+    private static string RemoveAddedSections(string text, string original)
     {
-        var recordPath = RecordPath(path);
+        static bool Header(string line) { var t = line.Trim().TrimStart('\uFEFF'); return t.StartsWith('[') && t.EndsWith(']'); }
+        var existing = original.Replace("\r\n", "\n").Split('\n').Where(Header).Select(l => l.Trim().TrimStart('\uFEFF')).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var newline = text.Contains("\r\n") ? "\r\n" : "\n";
+        var lines = text.Replace("\r\n", "\n").Split('\n').ToList();
+        for (var i = lines.Count - 1; i >= 0; i--)
+        {
+            if (!Header(lines[i]) || existing.Contains(lines[i].Trim().TrimStart('\uFEFF'))) continue;
+            var next = lines.Skip(i + 1).FirstOrDefault(l => l.Trim().Length > 0);
+            if (next == null || Header(next)) lines.RemoveAt(i);
+        }
+        return string.Join(newline, lines);
+    }
+
+    public static bool HasRecord(string path, string? owner = null) => File.Exists(RecordPath(path, owner));
+
+    public static void Restore(string path, string? owner = null)
+    {
+        var recordPath = RecordPath(path, owner);
         if (!File.Exists(recordPath)) return;
         var record = JsonSerializer.Deserialize<IniRecord>(File.ReadAllText(recordPath), LinuxPaths.Json)!;
         if (!File.Exists(path)) { File.Delete(recordPath); return; }
         var current = File.ReadAllText(path);
         if (OperatingSystem.IsLinux() && record.ReadOnly) File.SetUnixFileMode(path, File.GetUnixFileMode(path) | UnixFileMode.UserWrite);
-        if (Hash(current) == record.AppliedHash)
+        if (owner == null && Hash(current) == record.AppliedHash)
         {
             if (record.Existed) File.WriteAllText(path, record.OriginalText);
             else File.Delete(path);
@@ -143,7 +164,9 @@ public static class IniSettings
             foreach (var change in record.Changes)
                 if (Get(current, change.Section, change.Key) == change.Applied)
                     current = Set(current, change.Section, change.Key, change.Original);
-            File.WriteAllText(path, current);
+            if (owner != null) current = RemoveAddedSections(current, record.OriginalText);
+            if (!record.Existed && current.Trim().Length == 0) File.Delete(path);
+            else File.WriteAllText(path, current);
         }
         if (OperatingSystem.IsLinux() && record.OriginalMode is { } mode && File.Exists(path)) File.SetUnixFileMode(path, (UnixFileMode)mode);
         File.Delete(recordPath);

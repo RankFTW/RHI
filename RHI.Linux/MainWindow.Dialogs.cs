@@ -83,9 +83,14 @@ public sealed partial class MainWindow
         var body = new StackPanel { Spacing = 14 };
         var configs = Proton.LocalConfigs(game).ToList();
         var dialog = Dialog("Finish Steam setup", body);
+        var extras = Extras(game);
+        string? Proxy() => new Installation(game.InstallDirectory).ReadState().Proxy;
         if (configs.Count == 0)
         {
-            body.Children.Add(Label("Open this game in Steam once, then refresh RHI. For games from another launcher, use Advanced settings to configure that launcher.", 13, Secondary));
+            body.Children.Add(Label("Open this game in Steam once, then refresh RHI. For games from another launcher, add these settings to that launcher's environment variables / launch options:", 13, Secondary));
+            var options = new TextBox { Text = Proton.LaunchOptions("%command%", Proxy(), extras), IsReadOnly = true, TextWrapping = Avalonia.Media.TextWrapping.Wrap, Name = "LauncherOptions" };
+            body.Children.Add(options);
+            body.Children.Add(DialogAction("Copy settings", body, async () => { if (Clipboard != null) await Clipboard.SetTextAsync(options.Text ?? ""); _status.Text = "Launch settings copied."; }));
         }
         else
         {
@@ -97,14 +102,14 @@ public sealed partial class MainWindow
             var progress = Label("", 12, Teal); body.Children.Add(progress);
             body.Children.Add(DialogAction(Proton.SteamRunning() ? "Apply & restart Steam" : "Apply Steam setup", body, async () =>
             {
-                await GameSetup.ConfigureSteam(game, configs[picker.SelectedIndex], new Progress<string>(s => progress.Text = s));
+                await GameSetup.ConfigureSteam(game, configs[picker.SelectedIndex], new Progress<string>(s => progress.Text = s), extras);
                 _settings.For(game).SteamConfig = configs[picker.SelectedIndex]; _settings.Save();
                 await ReadStates(); ShowGame(); _status.Text = "Steam setup applied. Ready to launch."; dialog.Close();
             }, "success"));
             var copy = DialogAction("Copy settings instead", body, async () =>
             {
-                var proxy = new Installation(game.InstallDirectory).ReadState().Proxy ?? Installation.ProxyFor(_setup.Api(game, _settings.For(game)));
-                var options = Proton.LaunchOptions(Proton.ReadOptions(configs[picker.SelectedIndex], game.AppId!) ?? "", proxy);
+                var proxy = Proxy() ?? (State(game).Get("ReShade").Installed ? Installation.ProxyFor(_setup.Api(game, _settings.For(game))) : null);
+                var options = Proton.LaunchOptions(Proton.ReadOptions(configs[picker.SelectedIndex], game.AppId!) ?? "", proxy, extras);
                 if (Clipboard != null) await Clipboard.SetTextAsync(options);
                 progress.Text = "Copied. In Steam, open the game's Properties → General → Launch Options and paste. RHI checks this automatically.";
             });
@@ -146,6 +151,10 @@ public sealed partial class MainWindow
         var body = new StackPanel { Spacing = 14, Children = { Label("Steam libraries are detected automatically. Add an external library if a game is missing.", 13, Secondary) } };
         body.Children.Add(DialogAction("Add Steam library…", body, AddLibrary));
         body.Children.Add(DialogAction("Add Windows game…", body, AddGame));
+        body.Children.Add(Label("DLSS", 13, null, true));
+        body.Children.Add(Label("Default DLSS versions and presets used by Quick Apply in the Nvidia Profile Overrides section. " + _dlss.Status + " " + _releases.Status, 12, Muted));
+        body.Children.Add(DialogAction("DLSS defaults…", body, ShowDlssDefaults));
+        body.Children.Add(Plain("Open custom DLSS folder", () => { Directory.CreateDirectory(DlssFiles.CustomDirectory); Directory.CreateDirectory(DlssFiles.CustomStreamlineDirectory); Proton.Open(Path.GetDirectoryName(DlssFiles.CustomDirectory)!); }));
         body.Children.Add(Plain("Open RHI data folder", () => Proton.Open(LinuxPaths.Data)));
         body.Children.Add(Plain("Linux guide", () => Proton.Open(Path.Combine(AppContext.BaseDirectory, "LINUX.md"))));
         await Dialog("Settings", body).ShowDialog(this);

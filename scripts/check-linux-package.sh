@@ -21,7 +21,7 @@ from pathlib import Path
 import sys
 bundle, desktop = map(Path, sys.argv[1:])
 assert 'RHI Linux' in Path('help.txt').read_text()
-for name in ('RHI.Linux', 'libhostfxr.so', 'libcoreclr.so', 'rhi.png', 'LINUX.md', 'README.md', 'LICENSE', 'BUILD-INFO.txt'):
+for name in ('RHI.Linux', 'libhostfxr.so', 'libcoreclr.so', 'rhi.png', 'LINUX.md', 'README.md', 'LICENSE', 'BUILD-INFO.txt', 'manifest.json', 'dlss_manifest.json'):
     assert (bundle / name).is_file(), name
 entry = desktop.read_text()
 assert f'Exec="{str(bundle).replace("%", "%%")}/run-linux.sh"' in entry

@@ -27,10 +27,10 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
             catch (UnauthorizedAccessException) { }
         }
     }
-    public async Task InstallReShade(Game game, GamePreferences preferences, IProgress<string>? progress)
+    public async Task InstallReShade(Game game, GamePreferences preferences, IProgress<string>? progress, string? proxyOverride = null)
     {
         RequireClosed(game);
-        var proxy = Installation.ProxyFor(Api(game, preferences));
+        var proxy = proxyOverride ?? Installation.ProxyFor(Api(game, preferences));
         var (path, version) = await downloads.ReShade(preferences.Channel, game.Architecture, progress);
         try
         {
@@ -80,13 +80,14 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
         var steam = Process.GetProcessesByName("reaper");
         try { return steam.Length > 0; } finally { foreach (var p in steam) p.Dispose(); }
     }
-    public static async Task ConfigureSteam(Game game, string config, IProgress<string>? progress)
+    public static async Task ConfigureSteam(Game game, string config, IProgress<string>? progress, LaunchExtras? extras = null)
     {
         RequireClosed(game);
         if (AnySteamGameRunning()) throw new IOException("Close your running Steam games, then choose Apply again. Steam needs a restart to save this setup.");
-        var proxy = new Installation(game.InstallDirectory).ReadState().Proxy ?? throw new IOException("Install ReShade first.");
+        var proxy = new Installation(game.InstallDirectory).ReadState().Proxy;
+        if (proxy == null && (extras == null || extras.Dlls.Count == 0 && Proton.HasEnvironment("", extras))) throw new IOException("Install ReShade first.");
         // Validate the merge before asking Steam to exit.
-        _ = Proton.LaunchOptions(Proton.ReadOptions(config, game.AppId!) ?? "", proxy);
+        _ = Proton.LaunchOptions(Proton.ReadOptions(config, game.AppId!) ?? "", proxy, extras);
         var restart = Proton.SteamRunning();
         try
         {
@@ -98,7 +99,7 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
                 while (Proton.SteamRunning() && DateTime.UtcNow < until) await Task.Delay(500);
                 if (Proton.SteamRunning()) throw new IOException("Steam is still closing. Exit it from its menu, then click Apply again.");
             }
-            var options = Proton.LaunchOptions(Proton.ReadOptions(config, game.AppId!) ?? "", proxy);
+            var options = Proton.LaunchOptions(Proton.ReadOptions(config, game.AppId!) ?? "", proxy, extras);
             Proton.SaveOptions(config, game.AppId!, options);
         }
         finally

@@ -14,5 +14,6 @@
     <Compile Include="../RenoDXCommander/Services/WikiService.cs" Link="Shared/WikiService.cs" />
     <Compile Include="../RenoDXCommander/Services/IWikiService.cs" Link="Shared/IWikiService.cs" />
     <Content Include="../manifest.json" Link="manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../dlss_manifest.json" Link="dlss_manifest.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
