@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-rhi_repo="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+# Physical path: on Bazzite /home is a symlink to /var/home, and restoring through the symlink
+# drops the tests' project reference, so its NuGet dependencies are missing at runtime.
+rhi_repo="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
     echo 'This build targets x86_64 Linux (including Bazzite).' >&2
     exit 1
