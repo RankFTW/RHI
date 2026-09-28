@@ -1,8 +1,5 @@
-using System.Diagnostics;
 using System.Globalization;
-using System.IO.Compression;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 
@@ -48,7 +45,9 @@ public sealed class WindowsOsManifest
 // OptiScaler as installed by Windows RHI: the Stable, Nightly and DLSS NR builds, OptiPatcher,
 // RHI's per-GPU OptiScaler.ini templates and the latest DLSS DLLs beside the executable. Proton
 // needs a native override for the DLL name OptiScaler is installed as.
-public sealed class OptiScaler(HttpClient http, Downloads downloads, DlssCatalog dlss)
+// Split like upstream's OptiScalerService: this file holds state, the INI and Engine.ini; see
+// OptiScaler.Staging.cs, .Install.cs, .Coexist.cs and .Streamline.cs for the rest.
+public sealed partial class OptiScaler(HttpClient http, Downloads downloads, DlssCatalog dlss)
 {
     public const string Component = "OptiScaler", IniName = "OptiScaler.ini", DefaultDll = "dxgi.dll", OptiPatcherPath = "plugins/OptiPatcher.asi";
     public const string Description = "OptiScaler replaces or adds upscalers (DLSS, FSR, XeSS) and frame generation in games that support any one of them. " +
@@ -60,188 +59,17 @@ public sealed class OptiScaler(HttpClient http, Downloads downloads, DlssCatalog
         ["F1"] = "0x70", ["F2"] = "0x71", ["F3"] = "0x72", ["F4"] = "0x73", ["F5"] = "0x74", ["F6"] = "0x75",
         ["F7"] = "0x76", ["F8"] = "0x77", ["F9"] = "0x78", ["F10"] = "0x79", ["F11"] = "0x7A", ["F12"] = "0x7B",
     };
-    private static readonly Dictionary<string, string> ReleaseApis = new()
-    {
-        [OsVariant.Stable] = "https://api.github.com/repos/optiscaler/OptiScaler/releases/latest",
-        [OsVariant.Nightly] = "https://api.github.com/repos/optiscaler/OptiScaler-nightly/releases?per_page=5",
-        [OsVariant.DlssNr] = "https://api.github.com/repos/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases?per_page=5",
-    };
-    private const string OptiPatcherUrl = "https://github.com/optiscaler/OptiPatcher/releases/download/rolling/OptiPatcher.asi";
-    private static readonly string[] SkippedExtensions = [".bat", ".sh", ".ps1", ".txt", ".md", ".exe", ".pdb"];
-    private static readonly string[] SkippedFolders = ["Licenses", "redist", "docs", "images", "tests"];
 
     private static string Root => Path.Combine(LinuxPaths.Cache, "optiscaler");
-    private static string CacheFile => Path.Combine(Root, "latest.json");
     // User-editable copies of RHI's INI templates, seeded once like %LocalAppData%\RHI\inis on Windows.
     public static string InisDirectory => Path.Combine(LinuxPaths.Data, "inis");
-    private Dictionary<string, NrRelease> _latest = Load();
-    public string Status { get; private set; } = "OptiScaler versions have not been checked.";
-
-    private static Dictionary<string, NrRelease> Load()
-    {
-        try { return File.Exists(CacheFile) ? JsonSerializer.Deserialize<Dictionary<string, NrRelease>>(File.ReadAllText(CacheFile), LinuxPaths.Json) ?? [] : []; }
-        catch (Exception ex) when (ex is JsonException or IOException) { return []; }
-    }
-
-    public NrRelease? Latest(string variant) => _latest.GetValueOrDefault(variant);
 
     public static string DetectGpu() => Directory.Exists("/sys/module/nvidia") || File.Exists("/proc/driver/nvidia/version") ? "NVIDIA" : "AMD";
-
-    public async Task Refresh(bool force = false)
-    {
-        if (!force && File.Exists(CacheFile) && DateTime.UtcNow - File.GetLastWriteTimeUtc(CacheFile) < TimeSpan.FromHours(1) && _latest.Count == ReleaseApis.Count) return;
-        var latest = new Dictionary<string, NrRelease>(_latest);
-        var failures = new List<string>();
-        foreach (var (variant, url) in ReleaseApis)
-        {
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Accept.ParseAdd("application/vnd.github+json");
-                using var response = await http.SendAsync(request);
-                if (!response.IsSuccessStatusCode) throw new IOException($"GitHub returned {(int)response.StatusCode}.");
-                using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-                if (Parse(document.RootElement, variant) is { } release) latest[variant] = release;
-                else failures.Add(OsVariant.Name(variant) + ": no release with a download was found");
-            }
-            catch (Exception ex) when (ex is HttpRequestException or JsonException or IOException or TaskCanceledException) { failures.Add(OsVariant.Name(variant) + ": " + ex.Message); }
-        }
-        _latest = latest;
-        LinuxPaths.WriteJson(CacheFile, _latest);
-        Status = failures.Count == 0 ? $"OptiScaler versions checked {DateTime.Now:t}." : "Some OptiScaler releases could not be checked: " + string.Join("; ", failures);
-        if (_latest.Count == 0) throw new IOException(Status);
-    }
-
-    // Stable and Nightly ship a .7z; the DLSS NR fork ships zips, of which the RTX 40 MFG build is opt-in.
-    public static NrRelease? Parse(JsonElement root, string variant)
-    {
-        var releases = root.ValueKind == JsonValueKind.Array ? root.EnumerateArray().ToList() : root.ValueKind == JsonValueKind.Object ? [root] : [];
-        foreach (var release in releases)
-        {
-            if (release.TryGetProperty("draft", out var draft) && draft.ValueKind == JsonValueKind.True) continue;
-            var tag = release.TryGetProperty("tag_name", out var t) ? t.GetString() : null;
-            if (string.IsNullOrEmpty(tag)) continue;
-            var assets = (release.TryGetProperty("assets", out var a) ? a.EnumerateArray() : default)
-                .Select(x => (Name: x.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "", Url: x.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null))
-                .Where(x => x.Url != null).ToList();
-            var url = variant == OsVariant.DlssNr
-                ? (assets.FirstOrDefault(x => x.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && !x.Name.Contains("rtx40", StringComparison.OrdinalIgnoreCase)).Url
-                    ?? assets.FirstOrDefault(x => x.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)).Url)
-                : assets.FirstOrDefault(x => x.Name.EndsWith(".7z", StringComparison.OrdinalIgnoreCase)).Url;
-            if (url == null) continue;
-            var version = variant switch { OsVariant.Nightly => tag.Replace("nightly-", ""), OsVariant.DlssNr => tag.TrimStart('v'), _ => tag };
-            return new(version, url);
-        }
-        return null;
-    }
 
     public static string Label(string variant, string version) => variant switch
     {
         OsVariant.Nightly => "Nightly " + version, OsVariant.DlssNr => "DLSS NR " + version, _ => version
     };
-
-    // Downloads and extracts one release into a versioned cache folder (the folder holding OptiScaler.dll).
-    public async Task<(string Version, string Directory)> Stage(string variant, IProgress<string>? progress = null)
-    {
-        if (Latest(variant) == null) await Refresh(true);
-        var release = Latest(variant) ?? throw new IOException($"Could not find an OptiScaler {OsVariant.Name(variant)} release. Check your connection and try again.");
-        var directory = Path.Combine(Root, variant, Regex.Replace(release.Version, "[^A-Za-z0-9._-]+", "_"));
-        if (File.Exists(Path.Combine(directory, ".complete"))) return (release.Version, directory);
-        progress?.Report($"Downloading OptiScaler {Label(variant, release.Version)}…");
-        var archive = await downloads.Fetch(release.Url, progress);
-        var staging = directory + ".rhi-" + Guid.NewGuid().ToString("N");
-        var extract = staging + "-extract";
-        try
-        {
-            progress?.Report("Extracting OptiScaler…");
-            Directory.CreateDirectory(extract);
-            if (release.Url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) ExtractZip(archive, extract);
-            else await Extract7z(archive, extract);
-            var dll = Directory.EnumerateFiles(extract, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint })
-                .Where(f => Path.GetFileName(f).Equals("OptiScaler.dll", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(f => f.Count(c => c == '/')).FirstOrDefault() ?? throw new IOException($"OptiScaler {release.Version} does not contain OptiScaler.dll.");
-            Downloads.ValidatePe(dll, MachineType.x64);
-            CopyTree(Path.GetDirectoryName(dll)!, staging);
-            File.WriteAllText(Path.Combine(staging, ".complete"), release.Url);
-            if (Directory.Exists(directory)) Directory.Delete(directory, true);
-            Directory.CreateDirectory(Path.GetDirectoryName(directory)!);
-            Directory.Move(staging, directory);
-            return (release.Version, directory);
-        }
-        finally
-        {
-            if (Directory.Exists(staging)) Directory.Delete(staging, true);
-            if (Directory.Exists(extract)) Directory.Delete(extract, true);
-        }
-    }
-
-    private static async Task Extract7z(string archive, string output)
-    {
-        var start = new ProcessStartInfo("7z") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
-        foreach (var arg in new[] { "x", "-y", "-snl-", "-o" + output, archive }) start.ArgumentList.Add(arg);
-        using var process = Process.Start(start) ?? throw new IOException("Could not start 7z. Install 7zip to extract OptiScaler.");
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var error = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync(); await stdout;
-        if (process.ExitCode != 0) throw new IOException("Could not extract OptiScaler: " + (await error).Trim());
-    }
-
-    private static void ExtractZip(string archive, string output)
-    {
-        using var zip = ZipFile.OpenRead(archive);
-        foreach (var entry in zip.Entries)
-        {
-            var parts = DlssCatalog.EntryPath(entry).Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (entry.Name.Length == 0 || parts.Length == 0) continue;
-            if (parts.Any(p => p is "." or ".." || p.Contains(':'))) throw new IOException("Unsafe path in the OptiScaler archive.");
-            var path = Path.Combine([output, .. parts]);
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            DlssCatalog.Extract(entry, path);
-        }
-    }
-
-    private static void CopyTree(string source, string destination)
-    {
-        Directory.CreateDirectory(destination);
-        foreach (var file in Directory.EnumerateFiles(source, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint }))
-        {
-            var target = Path.Combine(destination, Path.GetRelativePath(source, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(file, target);
-        }
-    }
-
-    // Same filter as Windows: the renamed OptiScaler.dll, its companions and backend folders; no
-    // scripts, documentation or licences. OptiScaler.ini is deployed separately.
-    public static List<Payload> Payloads(string staged, string dllName)
-    {
-        bool Skip(string name) => name is ".complete" || SkippedExtensions.Contains(Path.GetExtension(name), StringComparer.OrdinalIgnoreCase)
-            || name.Equals("LICENSE", StringComparison.OrdinalIgnoreCase) || name.StartsWith("!!", StringComparison.Ordinal);
-        var result = new List<Payload>();
-        foreach (var file in Directory.EnumerateFiles(staged))
-        {
-            var name = Path.GetFileName(file);
-            if (Skip(name) || name.Equals(IniName, StringComparison.OrdinalIgnoreCase)) continue;
-            result.Add(new(name.Equals("OptiScaler.dll", StringComparison.OrdinalIgnoreCase) ? dllName : name, File.ReadAllBytes(file)));
-        }
-        foreach (var folder in Directory.EnumerateDirectories(staged))
-        {
-            if (SkippedFolders.Contains(Path.GetFileName(folder), StringComparer.OrdinalIgnoreCase)) continue;
-            foreach (var file in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
-                if (!Skip(Path.GetFileName(file))) result.Add(new(Path.GetRelativePath(staged, file).Replace('\\', '/'), File.ReadAllBytes(file)));
-        }
-        return result;
-    }
-
-    public async Task<string> OptiPatcher(IProgress<string>? progress = null)
-    {
-        var marker = Path.Combine(Root, "optipatcher.refreshed");
-        var refresh = !File.Exists(marker) || DateTime.UtcNow - File.GetLastWriteTimeUtc(marker) > TimeSpan.FromDays(1);
-        var path = await downloads.Fetch(OptiPatcherUrl, progress, refresh);
-        Downloads.ValidatePe(path, MachineType.x64);
-        Directory.CreateDirectory(Root); File.WriteAllText(marker, "");
-        return path;
-    }
 
     // ── Records and state ────────────────────────────────────────────────────
     private static string RecordFile(string dir) => Path.Combine(LinuxPaths.ResolveCase(dir, ".rhi-linux"), "optiscaler.json");
@@ -285,8 +113,6 @@ public sealed class OptiScaler(HttpClient http, Downloads downloads, DlssCatalog
         var status = state.Get(Component);
         return status.Version == null && FromWindows(game) ? new(Component, "Windows RHI", true, false, false) : status;
     }
-
-    public bool UpdateAvailable(Game game) => Record(game) is { } record && Latest(record.Variant) is { } latest && latest.Version != record.Version;
 
     public static string DllFor(GamePreferences prefs, GraphicsApiType api) =>
         prefs.OsDllName is { } name && DllNames.Contains(name, StringComparer.OrdinalIgnoreCase) ? name : api == GraphicsApiType.Vulkan ? "winmm.dll" : DefaultDll;
@@ -468,189 +294,6 @@ public sealed class OptiScaler(HttpClient http, Downloads downloads, DlssCatalog
             Sentinel.Deploy(temp, ini);
         }
         finally { if (File.Exists(temp)) File.Delete(temp); }
-    }
-
-    // ── Install / update / remove ────────────────────────────────────────────
-    public async Task Install(Game game, GamePreferences prefs, OptiScalerSettings settings, GraphicsApiType api, IProgress<string>? progress = null)
-    {
-        GameSetup.RequireClosed(game);
-        if (game.Architecture != MachineType.x64) throw new IOException("OptiScaler supports 64-bit games only.");
-        var dir = game.InstallDirectory;
-        var variant = OsVariant.Of(prefs);
-        var dllName = DllFor(prefs, api);
-        try { await Refresh(); }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or JsonException) { CrashReporter.Log("OptiScaler releases: " + ex.Message); }
-
-        // Download everything before touching the game folder.
-        var (version, staged) = await Stage(variant, progress);
-        var payloads = Payloads(staged, dllName);
-        try { payloads.Add(new(OptiPatcherPath, await File.ReadAllBytesAsync(await OptiPatcher(progress)))); }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException) { CrashReporter.Log("OptiPatcher: " + ex.Message); }
-        var dlls = new List<(string Source, string Name)>();
-        foreach (var kind in new[] { DlssKind.SR, DlssKind.RR, DlssKind.FG })
-        {
-            try { dlls.Add((await dlss.Fetch(kind, null, progress), DlssFiles.DllName(kind))); }
-            catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException) { CrashReporter.Log($"OptiScaler {DlssFiles.Label(kind)}: " + ex.Message); }
-        }
-        if (variant == OsVariant.DlssNr) dlls.Add((await dlss.Fetch(DlssKind.NR, prefs.OsNrRuntime, progress), DlssFiles.Nr));
-        string? streamline = null;
-        if (OsVariant.Advanced(variant) && prefs.OsDeployStreamline) streamline = await dlss.Fetch(DlssKind.Streamline, prefs.OsStreamlineVersion, progress);
-        var template = Template(settings.EffectiveGpu, settings.DlssInputs, variant);
-        var stagedIni = Path.Combine(staged, IniName);
-
-        GameSetup.RequireClosed(game);
-        progress?.Report($"Installing OptiScaler {Label(variant, version)}…");
-        await Task.Run(() =>
-        {
-            if (FromWindows(game)) RemoveWindows(game);
-            var previous = LoadRecord(dir);
-            var installation = new Installation(dir);
-            // OptiScaler takes ReShade's proxy name and loads it as ReShade64.dll instead (LoadReshade=true).
-            var target = LinuxPaths.ResolveCase(dir, dllName);
-            if (installation.ReadState().Files.FirstOrDefault(f => f.Component == "ReShade" && LinuxPaths.ResolveCase(dir, f.Path) == target) is { } reshade)
-                installation.Move("ReShade", reshade.Path, Installation.ReShadeBesideOptiScaler);
-            installation.Install(Component, Label(variant, version), payloads, replaceForeign: true);
-            RestoreReShade(installation, dir);
-
-            var record = new OptiScalerRecord
-            {
-                Variant = variant, Version = version, DllName = dllName, Dlls = previous?.Dlls ?? [],
-                Folders = payloads.Select(p => p.RelativePath.Split('/')).Where(p => p.Length > 1).Select(p => p[0]).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-            };
-            // A reinstall keeps the game's INI; an update merges the user's changes into the new release's INI;
-            // a first install or a variant change starts from RHI's template.
-            var ini = LinuxPaths.ResolveCase(dir, IniName);
-            var ours = previous?.Ini == true && File.Exists(ini) && Sentinel.Placed(ini);
-            string text;
-            if (ours && previous!.Variant == variant)
-                text = previous.Version != version && File.Exists(stagedIni) ? MergeIni(File.ReadAllText(ini), File.ReadAllText(stagedIni)) : File.ReadAllText(ini);
-            else text = File.ReadAllText(template ?? stagedIni);
-            WriteIni(dir, Configure(text, settings, prefs, variant));
-            record.Ini = true;
-
-            // The Neural Rendering section keeps the DLSS DLLs it placed; OptiScaler places the rest.
-            var nrOwned = NeuralRenderingSetup.LoadRecord(dir)?.Dlls ?? [];
-            foreach (var (source, name) in dlls)
-            {
-                var destination = LinuxPaths.ResolveCase(dir, name);
-                if (nrOwned.Contains(destination)) continue;
-                Sentinel.Deploy(source, destination);
-                if (!record.Dlls.Contains(destination)) record.Dlls.Add(destination);
-            }
-            DeployStreamline(dir, streamline);
-            SaveRecord(dir, record);
-        });
-    }
-
-    // ReShade returns to its proxy name once OptiScaler no longer uses it.
-    private static void RestoreReShade(Installation installation, string dir)
-    {
-        var state = installation.ReadState();
-        if (state.Proxy == null || state.Files.All(f => f.Component != "ReShade" || !f.Path.Equals(Installation.ReShadeBesideOptiScaler, StringComparison.OrdinalIgnoreCase))) return;
-        var proxy = LinuxPaths.ResolveCase(dir, state.Proxy);
-        if (File.Exists(proxy) || state.Files.Any(f => LinuxPaths.ResolveCase(dir, f.Path) == proxy)) return;
-        installation.Move("ReShade", Installation.ReShadeBesideOptiScaler, state.Proxy);
-    }
-
-    private static void DeployStreamline(string dir, string? source)
-    {
-        var folder = Path.Combine(LinuxPaths.ResolveCase(dir, "OptiScaler"), "Streamline");
-        if (Directory.Exists(folder)) Directory.Delete(folder, true);
-        if (source == null) return;
-        Directory.CreateDirectory(folder);
-        foreach (var file in Directory.EnumerateFiles(source, "*.dll")) File.Copy(file, Path.Combine(folder, Path.GetFileName(file)));
-    }
-
-    // OptiScaler settings → Streamline: deploys (or removes) the selected Streamline in OptiScaler/Streamline.
-    public async Task ApplyStreamline(Game game, GamePreferences prefs, IProgress<string>? progress = null)
-    {
-        GameSetup.RequireClosed(game);
-        if (Record(game) == null) return;
-        var source = prefs.OsDeployStreamline ? await dlss.Fetch(DlssKind.Streamline, prefs.OsStreamlineVersion, progress) : null;
-        await Task.Run(() => DeployStreamline(game.InstallDirectory, source));
-    }
-
-    // OptiScaler settings → NR Runtime: swaps nvngx_dlssnr.dll for the DLSS NR build.
-    public async Task ApplyNrRuntime(Game game, GamePreferences prefs, IProgress<string>? progress = null)
-    {
-        GameSetup.RequireClosed(game);
-        var dir = game.InstallDirectory;
-        if (Record(game) is not { Variant: OsVariant.DlssNr } record) return;
-        var destination = LinuxPaths.ResolveCase(dir, DlssFiles.Nr);
-        if (NeuralRenderingSetup.LoadRecord(dir)?.Dlls.Contains(destination) == true) throw new IOException("The Neural Rendering section manages this game's NR DLL. Change its version there.");
-        var source = await dlss.Fetch(DlssKind.NR, prefs.OsNrRuntime, progress);
-        GameSetup.RequireClosed(game);
-        Sentinel.Deploy(source, destination);
-        if (!record.Dlls.Contains(destination)) { record.Dlls.Add(destination); SaveRecord(dir, record); }
-    }
-
-    public static async Task Remove(Game game)
-    {
-        GameSetup.RequireClosed(game);
-        await Task.Run(() =>
-        {
-            var dir = game.InstallDirectory;
-            if (FromWindows(game)) { RemoveWindows(game); return; }
-            var record = LoadRecord(dir);
-            DeployStreamline(dir, null);
-            var installation = new Installation(dir);
-            if (installation.ReadState().Components.ContainsKey(Component)) installation.Remove(Component);
-            RestoreReShade(installation, dir);
-            if (record != null)
-            {
-                if (record.Ini) Sentinel.Restore(LinuxPaths.ResolveCase(dir, IniName));
-                var nrOwned = NeuralRenderingSetup.LoadRecord(dir)?.Dlls ?? [];
-                foreach (var dll in Enumerable.Reverse(record.Dlls)) if (!nrOwned.Contains(dll)) Sentinel.Restore(dll);
-                foreach (var folder in record.Folders.Append("plugins")) RemoveEmpty(LinuxPaths.ResolveCase(dir, folder));
-            }
-            RestoreEngineIni(game);
-            SaveRecord(dir, null);
-        });
-    }
-
-    private static void RemoveEmpty(string folder)
-    {
-        if (!Directory.Exists(folder) || new DirectoryInfo(folder).LinkTarget != null) return;
-        foreach (var sub in Directory.EnumerateDirectories(folder)) RemoveEmpty(sub);
-        if (!Directory.EnumerateFileSystemEntries(folder).Any()) Directory.Delete(folder);
-    }
-
-    // As Windows RHI's Uninstall, driven by its rhi_install.txt: delete what it deployed, restore each
-    // ".original", and give ReShade64.dll its dxgi.dll name back.
-    private static void RemoveWindows(Game game)
-    {
-        var dir = game.InstallDirectory;
-        var manifest = WindowsManifest(game);
-        if (manifest == null) return;
-        string At(string relative) => LinuxPaths.ResolveCase(dir, relative);
-        bool Shared(string name) => manifest.SharedFiles.TryGetValue(name, out var owners) && owners.Any(o => !o.Equals(Component, StringComparison.OrdinalIgnoreCase));
-        var reshade = At(Installation.ReShadeBesideOptiScaler);
-        var reshadeReturns = File.Exists(reshade) && manifest.InstalledAs.Equals(DefaultDll, StringComparison.OrdinalIgnoreCase);
-        var dll = At(manifest.InstalledAs);
-        if (File.Exists(dll)) File.Delete(dll);
-        if (reshadeReturns) { if (File.Exists(Sentinel.BackupOf(dll))) File.Delete(Sentinel.BackupOf(dll)); }
-        else Sentinel.Restore(dll);
-        var ini = At(IniName);
-        if (File.Exists(ini)) File.Delete(ini);
-        Sentinel.Restore(ini);
-        foreach (var name in manifest.Files)
-        {
-            if (name.Equals(IniName, StringComparison.OrdinalIgnoreCase) || name.Equals(manifest.InstalledAs, StringComparison.OrdinalIgnoreCase) || Shared(name)) continue;
-            if (name.Equals(DlssFiles.Nr, StringComparison.OrdinalIgnoreCase) && (manifest.Variant != OsVariant.DlssNr || !string.IsNullOrEmpty(manifest.NrMethod))) continue;
-            var path = At(name);
-            if (File.Exists(path)) File.Delete(path);
-            Sentinel.Restore(path);
-        }
-        foreach (var folder in manifest.Folders.Append("plugins").Append("OptiScaler"))
-        {
-            var path = At(folder);
-            if (!Directory.Exists(path) || new DirectoryInfo(path).LinkTarget != null) continue;
-            foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).Where(f => !f.EndsWith(Sentinel.Suffix, StringComparison.Ordinal)).ToList())
-            { File.Delete(file); Sentinel.Restore(file); }
-            RemoveEmpty(path);
-        }
-        if (reshadeReturns && !File.Exists(dll)) File.Move(reshade, dll);
-        File.Delete(At("rhi_install.txt"));
     }
 
     // ── Engine.ini settings (Unreal Engine) ──────────────────────────────────
