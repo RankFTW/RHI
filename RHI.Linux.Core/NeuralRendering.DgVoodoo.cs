@@ -13,7 +13,7 @@ public sealed partial class NeuralRenderingSetup
     {
         var versions = catalog.ManifestRoot("dgVoodooVersions");
         var url = versions is { ValueKind: JsonValueKind.Object } list ? list.EnumerateObject().Select(p => p.Value.GetString()).FirstOrDefault(u => u != null) : null;
-        url ??= "https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.3/dgVoodoo2_87_3.zip";
+        url ??= Sources.DgVoodooFallback;
         progress?.Report("Downloading dgVoodoo2…");
         var zip = await downloads.Fetch(url, progress);
         using var archive = ZipFile.OpenRead(zip);

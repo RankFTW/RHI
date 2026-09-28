@@ -9,7 +9,7 @@ Native ReShade and RenoDX management for Proton games, tested on Bazzite x86_64.
 3. Run `./run-linux.sh` inside that folder. No .NET installation or build is needed.
 4. Optionally run `./install.sh` to add **RHI (Linux / Proton)** to the application menu. Keep the extracted folder in place.
 
-Bazzite includes the desktop libraries, Python 3 (for the menu installer), and `7z` (for ReShade extraction). Other distributions need these dependencies; see `LINUX.md` in the archive. The app needs internet access to download plugins. Linux ARM and native Linux Vulkan games are not supported by this package.
+The package includes .NET and a static 7-Zip extractor; the Bash menu installer needs no Python. Bazzite supplies the native desktop libraries. Other distributions need X11/XWayland, fontconfig and the normal .NET native libraries; see the distro table in `LINUX.md` in the archive. Extractor redistribution notices and its source-code link are under `licenses/7zip/`. The app needs internet access to download plugins. Linux ARM and native Linux Vulkan games are not supported by this package.
 
 Select a game, choose **Install recommended**, and follow **Finish Steam setup** if shown. See `LINUX.md` for setup, backups, and the features supported by the Linux port. Windows-only driver management and full Windows feature parity are not included.
 

@@ -44,6 +44,15 @@ public sealed partial class MainWindow
         foreach (var name in names) { var badge = Badge(name); badge.Margin = new Thickness(0, 0, 6, 2); badges.Children.Add(badge); }
         info.Children.Add(badges); _details.Children.Add(Card(info));
 
+        var compatibilityNotes = _catalog.GameNotes(game);
+        if (!string.IsNullOrWhiteSpace(compatibilityNotes))
+        {
+            var notes = new StackPanel { Spacing = 6 };
+            notes.Children.Add(Label("Game compatibility notes and install warnings", 13, Amber, true));
+            notes.Children.Add(Label(compatibilityNotes, 12, Secondary));
+            _details.Children.Add(Card(notes));
+        }
+
         if (state.Error != null) _details.Children.Add(Card(Label("Could not check the installation: " + state.Error, 12, Amber)));
         var rs = state.Get("ReShade"); var rdx = state.Get("RenoDX"); var re = RefStatus(game, state);
         // RE Engine games need RE Framework before ReShade, as in the Windows app.
@@ -186,7 +195,7 @@ public sealed partial class MainWindow
     private async Task UpdateAll()
     {
         if (GameSetup.AnySteamGameRunning()) throw new IOException("Close running Steam games before updating their plugins.");
-        await RefreshDlssCatalogs();
+        await RefreshDlssCatalogs(force: true);
         var installed = _games.Where(g => State(g).Components.Count > 0).ToList();
         if (installed.Count == 0) { await Message("Update All", "There are no installed plugins to update yet. Select a game and choose Install recommended."); return; }
         foreach (var game in installed)

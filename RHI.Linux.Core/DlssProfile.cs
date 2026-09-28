@@ -21,11 +21,15 @@ public static class DlssProfile
         SrLatestId, RrLatestId, FgLatestId, NrLatestId, MfgModeId, MfgFactorId, MfgDynamicMaxId, MfgTargetFpsId,
     ];
 
-    public static (string Name, uint Value)[] SrPresets =
+    private static readonly (string Name, uint Value)[] DefaultSrPresets =
         [("Default", 0), ("J - TF1", 0x0A), ("K - TF1", 0x0B), ("L - TF2", 0x0C), ("M - TF2", 0x0D), ("NVIDIA Recommended", 0x00FFFFFF)];
-    public static (string Name, uint Value)[] RrPresets = [("Default", 0), ("D - TF1", 0x04), ("E - TF1", 0x05), ("NVIDIA Recommended", 0x00FFFFFF)];
-    public static (string Name, uint Value)[] FgPresets = [("Default", 0), ("A", 0x01), ("B", 0x02), ("NVIDIA Recommended", 0x00FFFFFE)];
-    public static (string Name, uint Value)[] NrPresets = [("Default", 0), ("NVIDIA Recommended", 0x00FFFFFF)];
+    private static readonly (string Name, uint Value)[] DefaultRrPresets = [("Default", 0), ("D - TF1", 0x04), ("E - TF1", 0x05), ("NVIDIA Recommended", 0x00FFFFFF)];
+    private static readonly (string Name, uint Value)[] DefaultFgPresets = [("Default", 0), ("A", 0x01), ("B", 0x02), ("NVIDIA Recommended", 0x00FFFFFE)];
+    private static readonly (string Name, uint Value)[] DefaultNrPresets = [("Default", 0), ("NVIDIA Recommended", 0x00FFFFFF)];
+    public static (string Name, uint Value)[] SrPresets = DefaultSrPresets.ToArray();
+    public static (string Name, uint Value)[] RrPresets = DefaultRrPresets.ToArray();
+    public static (string Name, uint Value)[] FgPresets = DefaultFgPresets.ToArray();
+    public static (string Name, uint Value)[] NrPresets = DefaultNrPresets.ToArray();
     public static readonly (string Name, uint Value)[] RenderScaleOptions =
     [
         ("Off", 0), ("100% DLAA", 100), ("99% DLAA Alt", 99), ("88% DLAA Lite", 88), ("77% Ultra Quality", 77), ("75% Quality+", 75),
@@ -39,27 +43,44 @@ public static class DlssProfile
         (416, "416 FPS (480Hz VRR Cap)"), (431, "431 FPS (500Hz VRR Cap)"),
     ];
 
-    // Presets added by the RHI manifest ("dlssPresets") without a client update, like Windows.
+    // Rebuild from built-ins for every manifest snapshot, so removals and edits take effect.
+    // Saved per-game numeric selections remain untouched, including custom choices.
     public static void ApplyManifestPresets(JsonElement? presets)
     {
-        if (presets is not { ValueKind: JsonValueKind.Object } root) return;
-        (string, uint)[] Merge((string Name, uint Value)[] existing, string key)
+        (string, uint)[] Merge((string Name, uint Value)[] defaults, string key)
         {
-            if (!root.TryGetProperty(key, out var list) || list.ValueKind != JsonValueKind.Array) return existing;
-            var merged = existing.ToList();
+            var merged = defaults.ToList();
+            if (presets is not { ValueKind: JsonValueKind.Object } root
+                || !root.TryGetProperty(key, out var list) || list.ValueKind != JsonValueKind.Array)
+                return merged.ToArray();
             foreach (var item in list.EnumerateArray())
             {
-                var name = item.TryGetProperty("name", out var n) ? n.GetString() : null;
-                if (string.IsNullOrEmpty(name) || !item.TryGetProperty("value", out var v) || !v.TryGetUInt32(out var value)) continue;
-                if (item.TryGetProperty("disabled", out var d) && d.ValueKind == JsonValueKind.True)
-                { if (name != "Default") merged.RemoveAll(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)); continue; }
-                if (merged.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) continue;
-                var index = merged.FindIndex(1, p => p.Name == "NVIDIA Recommended" || string.Compare(name, p.Name, StringComparison.OrdinalIgnoreCase) < 0);
+                if (item.ValueKind != JsonValueKind.Object) continue;
+                var name = item.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString() : null;
+                if (string.IsNullOrWhiteSpace(name) || name.Equals("Default", StringComparison.OrdinalIgnoreCase)) continue;
+                if (item.TryGetProperty("disabled", out var disabled) && disabled.ValueKind == JsonValueKind.True)
+                {
+                    merged.RemoveAll(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                    continue;
+                }
+                if (!item.TryGetProperty("value", out var valueElement) || valueElement.ValueKind != JsonValueKind.Number
+                    || !valueElement.TryGetUInt32(out var value)) continue;
+                var existing = merged.FindIndex(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                if (existing >= 0)
+                {
+                    merged[existing] = (name, value);
+                    continue;
+                }
+                var index = merged.FindIndex(1, p => p.Name == "NVIDIA Recommended"
+                    || string.Compare(name, p.Name, StringComparison.OrdinalIgnoreCase) < 0);
                 merged.Insert(index < 0 ? merged.Count : index, (name, value));
             }
             return merged.ToArray();
         }
-        SrPresets = Merge(SrPresets, "sr"); RrPresets = Merge(RrPresets, "rr"); FgPresets = Merge(FgPresets, "fg"); NrPresets = Merge(NrPresets, "nr");
+        SrPresets = Merge(DefaultSrPresets, "sr");
+        RrPresets = Merge(DefaultRrPresets, "rr");
+        FgPresets = Merge(DefaultFgPresets, "fg");
+        NrPresets = Merge(DefaultNrPresets, "nr");
     }
 
     private static string Key(uint id) => "0x" + id.ToString("X8");

@@ -53,12 +53,7 @@ public sealed partial class OptiScaler(HttpClient http, Downloads downloads, Dls
     public const string Description = "OptiScaler replaces or adds upscalers (DLSS, FSR, XeSS) and frame generation in games that support any one of them. " +
         "It loads ReShade itself when both are installed, so RHI renames ReShade to ReShade64.dll if they would share a DLL name.";
     public static readonly string[] DllNames = ["dxgi.dll", "winmm.dll", "d3d11.dll", "d3d12.dll", "dbghelp.dll", "version.dll", "wininet.dll", "winhttp.dll"];
-    public static readonly Dictionary<string, string> Hotkeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Insert"] = "0x2D", ["Delete"] = "0x2E", ["Home"] = "0x24", ["End"] = "0x23", ["Page Up"] = "0x21", ["Page Down"] = "0x22",
-        ["F1"] = "0x70", ["F2"] = "0x71", ["F3"] = "0x72", ["F4"] = "0x73", ["F5"] = "0x74", ["F6"] = "0x75",
-        ["F7"] = "0x76", ["F8"] = "0x77", ["F9"] = "0x78", ["F10"] = "0x79", ["F11"] = "0x7A", ["F12"] = "0x7B",
-    };
+    public static readonly Dictionary<string, string> Hotkeys = OptiScalerPolicy.Hotkeys;
 
     private static string Root => Path.Combine(LinuxPaths.Cache, "optiscaler");
     // User-editable copies of RHI's INI templates, seeded once like %LocalAppData%\RHI\inis on Windows.
@@ -128,8 +123,7 @@ public sealed partial class OptiScaler(HttpClient http, Downloads downloads, Dls
     // ── OptiScaler.ini ───────────────────────────────────────────────────────
     public static string TemplateName(string gpu, bool dlssInputs, string variant)
     {
-        var suffix = variant switch { OsVariant.Nightly => "_nightly", OsVariant.DlssNr => "_dlssnr", _ => "" };
-        return $"OptiScaler{suffix}." + (gpu.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase) ? "nvidia" : dlssInputs ? "amd-dlss" : "amd-nodlss") + ".ini";
+        return OptiScalerPolicy.TemplateName(gpu, dlssInputs, variant);
     }
 
     // The user's copy in the inis folder, seeded from the bundled template the first time.

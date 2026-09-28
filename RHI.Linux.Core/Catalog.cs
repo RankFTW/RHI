@@ -11,12 +11,19 @@ public sealed class Catalog
     private JsonElement _manifest;
     public List<GameMod> Mods { get; private set; } = [];
     public string Status { get; private set; } = "Catalogue has not been refreshed.";
+    public string ManifestStatus { get; private set; } = "Using bundled manifest.";
+    private string ManifestCacheFile => Path.Combine(LinuxPaths.Cache, "manifest.json");
     private string CacheFile => Path.Combine(LinuxPaths.Cache, "renodx-catalog.json");
     public Catalog(HttpClient http)
     {
         _http = http;
         var manifest = Path.Combine(AppContext.BaseDirectory, "manifest.json");
-        _manifest = JsonDocument.Parse(File.Exists(manifest) ? File.ReadAllText(manifest) : "{}").RootElement.Clone();
+        _manifest = ReadManifestFile(manifest) ?? ParseManifest("{}");
+        if (ReadManifestFile(ManifestCacheFile) is { } cachedManifest)
+        {
+            _manifest = cachedManifest;
+            ManifestStatus = "Using cached manifest.";
+        }
         if (File.Exists(CacheFile))
         {
             try { Mods = JsonSerializer.Deserialize<List<GameMod>>(File.ReadAllText(CacheFile), LinuxPaths.Json) ?? []; Status = "Using cached RenoDX catalogue."; }
@@ -25,17 +32,78 @@ public sealed class Catalog
         AddGenericMods();
     }
 
-    public async Task Refresh(IProgress<string>? progress = null)
+    public async Task Refresh(IProgress<string>? progress = null, bool refreshManifest = true)
     {
-        progress?.Report("Fetching the RenoDX wiki…");
-        var html = await _http.GetStringAsync("https://github.com/clshortfuse/renodx/wiki/Mods");
-        var (mods, _) = new WikiService(_http, GameDiscovery.NormalizeName).ParseHtml(html, progress);
+        if (refreshManifest) await RefreshManifest(progress);
+        string html = "";
+        var (mods, _) = await new WikiService(_http, GameDiscovery.NormalizeName)
+            .FetchAllAsync(progress, fetched => html = fetched);
         ApplySharedDownloads(html, mods);
         if (mods.Count == 0) throw new IOException("The RenoDX wiki returned no mods. The cached catalogue has been retained.");
         Mods = mods;
         LinuxPaths.WriteJson(CacheFile, Mods);
         AddGenericMods();
-        Status = $"{mods.Count} RenoDX entries refreshed {DateTime.Now:t}.";
+        Status = $"{mods.Count} RenoDX entries refreshed {DateTime.Now:t}. {ManifestStatus}";
+    }
+
+    // Refresh independently of the wiki: manifest fixes still arrive when wiki fetching fails.
+    public async Task RefreshManifest(IProgress<string>? progress = null)
+    {
+        progress?.Report("Fetching game compatibility manifest…");
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            var next = ParseManifest(await _http.GetStringAsync(Sources.Manifest, timeout.Token));
+            _manifest = next;
+            ManifestStatus = "Using live manifest.";
+            try { LinuxPaths.WriteJson(ManifestCacheFile, next); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                ManifestStatus = "Using live manifest; could not save its offline cache.";
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or IOException or TaskCanceledException)
+        {
+            // Preserve the last valid manifest, including one loaded at startup.
+            ManifestStatus = "Manifest refresh unavailable; retaining cached or bundled compatibility data.";
+        }
+    }
+
+    // Components without a catalogue instance share the same validated offline fallback.
+    public static JsonElement LoadManifestSnapshot() =>
+        ReadManifestFile(Path.Combine(LinuxPaths.Cache, "manifest.json"))
+        ?? ReadManifestFile(Path.Combine(AppContext.BaseDirectory, "manifest.json"))
+        ?? ParseManifest("{}");
+
+    private static JsonElement? ReadManifestFile(string path)
+    {
+        try { return File.Exists(path) ? ParseManifest(File.ReadAllText(path)) : null; }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    private static JsonElement ParseManifest(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object) throw new JsonException("Manifest must be an object.");
+        _ = root.Deserialize<RemoteManifest>();
+        foreach (var section in new[] { "wikiNameOverrides", "snapshotOverrides", "graphicsApiOverrides", "launchExeOverrides", "installPathOverrides", "dgVoodooVersions" })
+            if (root.TryGetProperty(section, out var map)
+                && (map.ValueKind != JsonValueKind.Object || map.EnumerateObject().Any(p => p.Value.ValueKind != JsonValueKind.String)))
+                throw new JsonException("Invalid manifest section: " + section);
+        foreach (var section in new[] { "gameNotes", "installWarnings", "forceExternalOnly", "shaderPacks" })
+            if (root.TryGetProperty(section, out var map)
+                && (map.ValueKind != JsonValueKind.Object || map.EnumerateObject().Any(p => p.Value.ValueKind != JsonValueKind.Object)))
+                throw new JsonException("Invalid manifest section: " + section);
+        if (root.TryGetProperty("wikiUnlinks", out var unlinks)
+            && (unlinks.ValueKind != JsonValueKind.Array || unlinks.EnumerateArray().Any(v => v.ValueKind != JsonValueKind.String)))
+            throw new JsonException("Invalid wikiUnlinks.");
+        if (root.TryGetProperty("dlssPresets", out var presets) && presets.ValueKind == JsonValueKind.Object)
+            foreach (var kind in new[] { "sr", "rr", "fg", "nr" })
+                if (presets.TryGetProperty(kind, out var entries) && entries.ValueKind == JsonValueKind.Array
+                    && entries.EnumerateArray().Any(entry => entry.ValueKind != JsonValueKind.Object))
+                    throw new JsonException("Invalid DLSS preset entry.");
+        return root.Clone();
     }
 
     // Multi-game sections put their download link in the heading, not in each row.
@@ -63,7 +131,7 @@ public sealed class Catalog
                     mod.SnapshotUrl = url;
                     mod.SnapshotUrl32 = url32;
                     mod.Maintainer = "Shared mod: " + HtmlEntity.DeEntitize(heading.InnerText).Trim();
-                    mod.NameUrl = "https://github.com/clshortfuse/renodx/wiki/Mods";
+                    mod.NameUrl = Sources.Wiki;
                 }
             }
         }
@@ -73,9 +141,9 @@ public sealed class Catalog
     {
         Mods.RemoveAll(m => m.IsGenericUnity || m.IsGenericUnreal);
         Mods.Add(new() { Name = "Generic Unreal Engine", SnapshotUrl = WikiService.GenericUnrealUrl, IsGenericUnreal = true,
-            Notes = "Generic engine support is game-dependent. Check the RenoDX wiki for required HDR/Engine.ini settings.", NameUrl = "https://github.com/clshortfuse/renodx/wiki/Mods" });
+            Notes = "Generic engine support is game-dependent. Check the RenoDX wiki for required HDR/Engine.ini settings.", NameUrl = Sources.Wiki });
         Mods.Add(new() { Name = "Generic Unity", SnapshotUrl = WikiService.GenericUnityUrl64, SnapshotUrl32 = WikiService.GenericUnityUrl32, IsGenericUnity = true,
-            Notes = "Generic engine support is game-dependent. Check the RenoDX wiki for this game's instructions.", NameUrl = "https://github.com/clshortfuse/renodx/wiki/Mods" });
+            Notes = "Generic engine support is game-dependent. Check the RenoDX wiki for this game's instructions.", NameUrl = Sources.Wiki });
         Mods = Mods.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
@@ -115,10 +183,10 @@ public sealed class Catalog
     public string GameNotes(Game game)
     {
         var notes = new List<string>();
-        if (ManifestValue("gameNotes", game.Name) is { } gameNotes && gameNotes.TryGetProperty("notes", out var n)) notes.Add(n.GetString() ?? "");
+        if (ManifestValue("gameNotes", game.Name) is { } gameNotes && gameNotes.TryGetProperty("notes", out var n) && n.ValueKind == JsonValueKind.String) notes.Add(n.GetString() ?? "");
         if (ManifestValue("installWarnings", game.Name) is { } warnings)
-            notes.AddRange(warnings.EnumerateObject().Select(p => p.Value.GetString() ?? ""));
-        if (ManifestValue("forceExternalOnly", game.Name) is { } external && external.TryGetProperty("url", out var url))
+            notes.AddRange(warnings.EnumerateObject().Where(p => p.Value.ValueKind == JsonValueKind.String).Select(p => p.Value.GetString() ?? ""));
+        if (ManifestValue("forceExternalOnly", game.Name) is { } external && external.TryGetProperty("url", out var url) && url.ValueKind == JsonValueKind.String)
             notes.Add("This game requires its author's external package: " + url.GetString());
         return string.Join("\n\n", notes);
     }

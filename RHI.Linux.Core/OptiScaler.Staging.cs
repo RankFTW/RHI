@@ -12,11 +12,11 @@ public sealed partial class OptiScaler
     // ── Staging and update ───────────────────────────────────────────────────
     private static readonly Dictionary<string, string> ReleaseApis = new()
     {
-        [OsVariant.Stable] = "https://api.github.com/repos/optiscaler/OptiScaler/releases/latest",
-        [OsVariant.Nightly] = "https://api.github.com/repos/optiscaler/OptiScaler-nightly/releases?per_page=5",
-        [OsVariant.DlssNr] = "https://api.github.com/repos/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases?per_page=5",
+        [OsVariant.Stable] = Sources.OptiScalerStable,
+        [OsVariant.Nightly] = Sources.OptiScalerNightly,
+        [OsVariant.DlssNr] = Sources.OptiScalerDlssNr,
     };
-    private const string OptiPatcherUrl = "https://github.com/optiscaler/OptiPatcher/releases/download/rolling/OptiPatcher.asi";
+    private const string OptiPatcherUrl = Sources.OptiPatcher;
     private static readonly string[] SkippedExtensions = [".bat", ".sh", ".ps1", ".txt", ".md", ".exe", ".pdb"];
     private static readonly string[] SkippedFolders = ["Licenses", "redist", "docs", "images", "tests"];
 
@@ -119,7 +119,7 @@ public sealed partial class OptiScaler
 
     private static async Task Extract7z(string archive, string output)
     {
-        var start = new ProcessStartInfo("7z") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        var start = new ProcessStartInfo(ArchiveTools.SevenZip) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
         foreach (var arg in new[] { "x", "-y", "-snl-", "-o" + output, archive }) start.ArgumentList.Add(arg);
         using var process = Process.Start(start) ?? throw new IOException("Could not start 7z. Install 7zip to extract OptiScaler.");
         var stdout = process.StandardOutput.ReadToEndAsync();

@@ -43,4 +43,7 @@ docs/ui-polish-fix-tasks.md
 OptiScaler-DLSSNR-v*/
 RHI.Linux*/bin/
 RHI.Linux*/obj/
+RHI.Core/bin/
+RHI.Core/obj/
+scripts/tests/__pycache__/
 artifacts/

@@ -51,14 +51,25 @@ public sealed partial class MainWindow
 
     private LaunchExtras Extras(Game game) => GameLaunch.Extras(game, _settings.For(game));
 
-    private async Task RefreshDlssCatalogs()
+    private async Task RefreshDlssCatalogs(bool force = false)
     {
-        try { await _dlss.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException) { CrashReporter.Log("DLSS list: " + ex.Message); }
-        try { await _releases.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException) { CrashReporter.Log("NR releases: " + ex.Message); }
+        async Task RefreshList(Func<Task> refresh, string label)
+        {
+            try { await refresh(); }
+            catch (Exception ex) when (ex is HttpRequestException or IOException
+                or TaskCanceledException or System.Text.Json.JsonException)
+            {
+                CrashReporter.Log(label + ": " + ex.Message);
+            }
+        }
+
+        // DLSS manifests are always fetched; the other services can reuse fresh startup caches.
+        await RefreshList(_dlss.Refresh, "DLSS list");
+        await RefreshList(() => _releases.Refresh(force), "NR releases");
         if (_games.Any(g => g.IsREEngine))
-            try { await _ref.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException) { CrashReporter.Log("RE Framework releases: " + ex.Message); }
+            await RefreshList(() => _ref.Refresh(force), "RE Framework releases");
         if (_states.Values.Any(s => s.Components.ContainsKey(OptiScaler.Component)))
-            try { await _os.Refresh(); } catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException) { CrashReporter.Log("OptiScaler releases: " + ex.Message); }
+            await RefreshList(() => _os.Refresh(force), "OptiScaler releases");
     }
 
     // ── Shared building blocks ───────────────────────────────────────────────

@@ -1,5 +1,4 @@
 using RenoDXCommander.Models;
-using RenoDXCommander.ViewModels;
 
 namespace RenoDXCommander.Services;
 
@@ -14,21 +13,11 @@ public partial class OptiScalerService
     /// </summary>
     public static string GetBundledIniPath(string gpuType, bool dlssInputs, string variant = "Stable")
     {
-        var suffix = variant switch {
-            "Nightly" => "_nightly",
-            "DlssNr"  => "_dlssnr",
-            _         => ""
-        };
-        var fileName = gpuType.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase)
-            ? $"OptiScaler{suffix}.nvidia.ini"
-            : dlssInputs
-                ? $"OptiScaler{suffix}.amd-dlss.ini"
-                : $"OptiScaler{suffix}.amd-nodlss.ini";
-        return Path.Combine(AppContext.BaseDirectory, fileName);
+        return Path.Combine(AppContext.BaseDirectory, OptiScalerPolicy.TemplateName(gpuType, dlssInputs, variant));
     }
 
     public async Task<AuxInstalledRecord?> InstallAsync(
-        GameCardViewModel card,
+        IOptiScalerGame card,
         IProgress<(string message, double percent)>? progress = null,
         string gpuType = "NVIDIA",
         bool dlssInputs = true,
@@ -539,7 +528,7 @@ public partial class OptiScalerService
     }
 
     /// <inheritdoc />
-    public void Uninstall(GameCardViewModel card)
+    public void Uninstall(IOptiScalerGame card)
     {
         try
         {
@@ -962,7 +951,7 @@ public partial class OptiScalerService
 
     /// <inheritdoc />
     public async Task UpdateAsync(
-        GameCardViewModel card,
+        IOptiScalerGame card,
         IProgress<(string message, double percent)>? progress = null)
     {
         try
@@ -1347,7 +1336,7 @@ public partial class OptiScalerService
     }
 
     /// <inheritdoc />
-    public void CopyIniToGame(GameCardViewModel card, string? hotkey = null)
+    public void CopyIniToGame(IOptiScalerGame card, string? hotkey = null)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 

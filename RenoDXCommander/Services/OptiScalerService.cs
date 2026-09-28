@@ -59,28 +59,18 @@ public partial class OptiScalerService : IOptiScalerService
     /// </summary>
     public static string GetUserIniPath(string gpuType, bool dlssInputs, string variant = "Stable")
     {
-        var suffix = variant switch {
-            "Nightly" => "_nightly",
-            "DlssNr"  => "_dlssnr",
-            _         => ""
-        };
-        var fileName = gpuType.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase)
-            ? $"OptiScaler{suffix}.nvidia.ini"
-            : dlssInputs
-                ? $"OptiScaler{suffix}.amd-dlss.ini"
-                : $"OptiScaler{suffix}.amd-nodlss.ini";
-        return Path.Combine(AuxInstallService.InisDir, fileName);
+        return Path.Combine(AuxInstallService.InisDir, OptiScalerPolicy.TemplateName(gpuType, dlssInputs, variant));
     }
 
     private static readonly string GitHubReleasesApi =
-        "https://api.github.com/repos/optiscaler/OptiScaler/releases/latest";
+        RHI.Core.Sources.OptiScalerStable;
 
     private static readonly string NightlyStagingDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "optiscaler-nightly");
     private static readonly string NightlyVersionFilePath = Path.Combine(NightlyStagingDir, "version.txt");
     private const string NightlyReleasesApi =
-        "https://api.github.com/repos/optiscaler/OptiScaler-nightly/releases";
+        RHI.Core.Sources.OptiScalerNightlyReleases;
 
     // ── OptiPatcher constants ─────────────────────────────────────────────────
     private static readonly string OptiPatcherReleasesApi =
@@ -113,27 +103,7 @@ public partial class OptiScalerService : IOptiScalerService
     /// hex strings (used by OptiScaler's ShortcutKey= INI setting).
     /// See: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
     /// </summary>
-    public static readonly Dictionary<string, string> HotkeyNameToVkCode = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Insert"]    = "0x2D",
-        ["Delete"]    = "0x2E",
-        ["Home"]      = "0x24",
-        ["End"]       = "0x23",
-        ["Page Up"]   = "0x21",
-        ["Page Down"] = "0x22",
-        ["F1"]        = "0x70",
-        ["F2"]        = "0x71",
-        ["F3"]        = "0x72",
-        ["F4"]        = "0x73",
-        ["F5"]        = "0x74",
-        ["F6"]        = "0x75",
-        ["F7"]        = "0x76",
-        ["F8"]        = "0x77",
-        ["F9"]        = "0x78",
-        ["F10"]       = "0x79",
-        ["F11"]       = "0x7A",
-        ["F12"]       = "0x7B",
-    };
+    public static readonly Dictionary<string, string> HotkeyNameToVkCode = OptiScalerPolicy.Hotkeys;
 
     /// <summary>
     /// Converts a friendly key name to the VK code hex string for OptiScaler's INI.
@@ -141,7 +111,7 @@ public partial class OptiScalerService : IOptiScalerService
     /// </summary>
     public static string ResolveHotkeyToVkCode(string friendlyName)
     {
-        return HotkeyNameToVkCode.TryGetValue(friendlyName, out var vkCode) ? vkCode : friendlyName;
+        return OptiScalerPolicy.ResolveHotkey(friendlyName);
     }
 
     // ── Binary signature markers ──────────────────────────────────────────────
@@ -254,7 +224,7 @@ public partial class OptiScalerService : IOptiScalerService
 
     /// <summary>GitHub releases list URL for the DLSS NR OptiScaler fork.</summary>
     private const string DlssNrReleasesApi =
-        "https://api.github.com/repos/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases";
+        RHI.Core.Sources.OptiScalerDlssNrReleases;
 
     /// <summary>The NR forwarder DLL that must be deployed alongside OptiScaler.dll for the DlssNr variant.</summary>
     public const string DlssNrForwarderName = "nvngx.dll_dlssnr.dll";

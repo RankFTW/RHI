@@ -466,29 +466,8 @@ public partial class ShaderPackService
             }
 
             using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("assets", out var assets))
-            {
-                foreach (var asset in assets.EnumerateArray())
-                {
-                    var name = asset.GetProperty("name").GetString() ?? "";
-                    var url = asset.GetProperty("browser_download_url").GetString() ?? "";
-                    bool matches = pack.AssetExt == null ||
-                                   name.EndsWith(pack.AssetExt, StringComparison.OrdinalIgnoreCase);
-                    if (matches && !string.IsNullOrEmpty(url))
-                        return (url, name);
-                }
-            }
-
-            // Fall back to source code zipball
-            if (root.TryGetProperty("zipball_url", out var zb))
-            {
-                var tagName = root.TryGetProperty("tag_name", out var t) ? t.GetString() ?? "unknown" : "unknown";
-                var zbUrl = zb.GetString();
-                if (!string.IsNullOrEmpty(zbUrl))
-                    return (zbUrl, $"source_{tagName}.zip");
-            }
+            var selected = ResolveRelease(doc.RootElement, pack.AssetExt);
+            if (selected.Url != null) return selected;
 
             CrashReporter.Log($"[ShaderPackService.ResolveGhRelease] [{pack.Id}] No suitable asset found");
             return (null, "");

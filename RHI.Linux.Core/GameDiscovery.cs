@@ -15,8 +15,18 @@ public sealed class GameDiscovery
     {
         Path.Combine(home, ".local/share/Steam"), Path.Combine(home, ".steam/steam"), Path.Combine(home, ".steam/root"),
         Path.Combine(home, ".var/app/com.valvesoftware.Steam/.local/share/Steam"),
-        Path.Combine(home, ".var/app/com.valvesoftware.Steam/.steam/steam")
+        Path.Combine(home, ".var/app/com.valvesoftware.Steam/.steam/steam"),
+        Path.Combine(home, "snap/steam/common/.local/share/Steam"),
+        Path.Combine(home, "snap/steam/common/.steam/steam")
     }.Concat(Environment.GetEnvironmentVariable("XDG_DATA_HOME") is { } data ? [Path.Combine(data, "Steam")] : []);
+
+    public static string SteamSource(string steamRoot)
+    {
+        var path = steamRoot.Replace('\\', '/').TrimEnd('/') + "/";
+        if (path.Contains("/.var/app/com.valvesoftware.Steam/", StringComparison.Ordinal)) return "Steam Flatpak";
+        if (path.Contains("/snap/steam/", StringComparison.Ordinal)) return "Steam Snap";
+        return "Steam";
+    }
 
     public List<Game> Scan(IEnumerable<string> steamRoots, Settings? settings = null, Catalog? catalog = null)
     {
@@ -56,7 +66,7 @@ public sealed class GameDiscovery
                         if (name is null || dir is null || !uint.TryParse(id, out _) || IsTool(name)) continue;
                         var root = LinuxPaths.ResolveCase(Path.Combine(apps, "common"), dir);
                         if (!Directory.Exists(root)) continue;
-                        var game = new Game { Name = name, AppId = id, Root = root, SteamRoot = steamRoot, Source = steamRoot.Contains("com.valvesoftware.Steam") ? "Steam Flatpak" : "Steam" };
+                        var game = new Game { Name = name, AppId = id, Root = root, SteamRoot = steamRoot, Source = SteamSource(steamRoot) };
                         game.Prefix = libraries.Keys.Prepend(library).Distinct()
                             .Select(l => Path.Combine(l, "steamapps/compatdata", id!, "pfx")).FirstOrDefault(Directory.Exists);
                         PopulateExecutables(game, catalog);

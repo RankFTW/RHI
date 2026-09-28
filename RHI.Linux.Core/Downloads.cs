@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using RenoDXCommander.Services;
 
@@ -11,8 +12,9 @@ public sealed class Downloads(HttpClient http)
 {
     public static HttpClient CreateClient()
     {
+        CoreLog.Sink = CrashReporter.Log;
         var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("RHI-Linux/0.1 (+https://github.com/RankFTW/RHI)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(Sources.UserAgent);
         return client;
     }
 
@@ -25,7 +27,7 @@ public sealed class Downloads(HttpClient http)
         if (!refresh && File.Exists(path)) return path;
         progress?.Report("Downloading " + Path.GetFileName(uri.AbsolutePath));
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        if (uri.Host.EndsWith("reshade.me", StringComparison.Ordinal)) request.Headers.Referrer = new Uri("https://reshade.me/");
+        if (uri.Host.EndsWith("reshade.me", StringComparison.Ordinal)) request.Headers.Referrer = new Uri(Sources.ReShade);
         using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
         string temp = path + "." + Guid.NewGuid().ToString("N");
@@ -58,15 +60,15 @@ public sealed class Downloads(HttpClient http)
         if (channel == "Nightly")
         {
             version = "Nightly " + DateTime.UtcNow.ToString("yyyy-MM-dd");
-            archive = await Fetch($"https://nightly.link/crosire/reshade/workflows/build/main/ReShade%20({bits}-bit).zip", progress, true);
+            archive = await Fetch(Sources.ReShadeNightly(bits), progress, true);
         }
         else
         {
-            var html = await http.GetStringAsync("https://reshade.me/");
+            var html = await http.GetStringAsync(Sources.ReShade);
             var match = Regex.Match(html, @"/downloads/ReShade_Setup_([\d.]+)_Addon\.exe", RegexOptions.IgnoreCase);
             if (!match.Success) throw new IOException("Could not find the current ReShade addon installer on reshade.me. Use a local ReShade DLL or try again later.");
             version = match.Groups[1].Value;
-            archive = await Fetch("https://reshade.me" + match.Value, progress);
+            archive = await Fetch(new Uri(new Uri(Sources.ReShade), match.Value).AbsoluteUri, progress);
         }
         var dest = Path.Combine(LinuxPaths.Cache, $"reshade-{Guid.NewGuid():N}.dll");
         await Extract(archive, $"ReShade{bits}.dll", dest);
@@ -78,7 +80,7 @@ public sealed class Downloads(HttpClient http)
     public static async Task Extract(string archive, string entry, string output)
     {
         // 7z understands the appended archive in the official Windows installer; no Wine needed.
-        var start = new ProcessStartInfo("7z") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        var start = new ProcessStartInfo(ArchiveTools.SevenZip) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
         foreach (var arg in new[] { "e", "-so", archive, entry }) start.ArgumentList.Add(arg);
         using var process = Process.Start(start) ?? throw new IOException("Could not start 7z. Install 7zip or use a local DLL.");
         var error = process.StandardError.ReadToEndAsync();
@@ -94,9 +96,8 @@ public sealed class Downloads(HttpClient http)
         // Microsoft compiler redistributed by Mozilla, pinned to the verified archives
         // used by reshade-steam-proton. Supports SM5.1 (the 2013 SDK compiler does not).
         var bits = architecture == MachineType.I386 ? 32 : 64;
-        var expected = bits == 32 ? "d6edb4ff0a713f417ebd19baedfe07527c6e45e84a6c73ed8c66a33377cc0aca"
-            : "721977f36c008af2b637aedd3f1b529f3cfed6feb10f68ebe17469acb1934986";
-        var archive = await Fetch($"https://download-installer.cdn.mozilla.net/pub/firefox/releases/62.0.3/win{bits}/ach/Firefox%20Setup%2062.0.3.exe", progress);
+        var expected = Sources.CompilerArchiveSha256(bits);
+        var archive = await Fetch(Sources.CompilerArchive(bits), progress);
         using (var stream = File.OpenRead(archive))
             if (!Convert.ToHexString(SHA256.HashData(stream)).Equals(expected, StringComparison.OrdinalIgnoreCase))
                 throw new IOException("Shader compiler archive checksum mismatch. Delete the cached download and retry.");
@@ -124,30 +125,27 @@ public sealed class Downloads(HttpClient http)
 
     public async Task<List<Payload>> Shaders(string pack, IProgress<string>? progress = null)
     {
-        string url = pack switch
+        var catalog = new ShaderPackCatalog();
+        catalog.ApplyManifestOverrides(Catalog.LoadManifestSnapshot().Deserialize<RenoDXCommander.Models.RemoteManifest>());
+        var id = pack switch
         {
-            "Lilium HDR" => "https://github.com/EndlesslyFlowering/ReShade_HDR_shaders/archive/refs/heads/master.zip",
-            "Standard" => "https://github.com/crosire/reshade-shaders/archive/refs/heads/slim.zip",
+            "Lilium HDR" => "Lilium",
+            "Standard" => "CrosireMaster",
             _ => throw new ArgumentException("Unknown shader pack.")
         };
-        var zip = await Fetch(url, progress, true);
-        using var archive = ZipFile.OpenRead(zip);
-        var result = new List<Payload>(); long total = 0;
-        foreach (var entry in archive.Entries)
+        var source = catalog.FindPack(id) ?? throw new IOException("This shader pack is disabled by the manifest.");
+        var url = source.PortableZipUrl ?? source.Url;
+        var assetName = Path.GetFileName(new Uri(url).AbsolutePath);
+        if (source.PortableZipUrl == null && source.Kind == ShaderPackCatalog.SourceKind.GhRelease)
         {
-            if (entry.Name.Length == 0) continue;
-            var parts = entry.FullName.Replace('\\', '/').Split('/');
-            if (parts.Any(p => p is "." or ".." || p.Contains(':'))) throw new IOException("Unsafe path in shader archive.");
-            var index = Array.FindIndex(parts, p => p is "Shaders" or "Textures");
-            if (index < 0) continue;
-            total += entry.Length;
-            if (total > 256L * 1024 * 1024) throw new IOException("Shader archive is too large.");
-            using var memory = new MemoryStream();
-            using (var input = entry.Open()) await input.CopyToAsync(memory);
-            var relative = $"reshade-shaders/{parts[index]}/{pack.Replace(' ', '-')}/" + string.Join('/', parts.Skip(index + 1));
-            result.Add(new(relative, memory.ToArray()));
+            var json = await new GitHubETagCache(CrashReporter.Log).GetWithETagAsync(http, url)
+                ?? throw new IOException("Could not retrieve the shader pack release.");
+            using var release = JsonDocument.Parse(json);
+            var selected = ShaderPackCatalog.ResolveRelease(release.RootElement, source.AssetExt);
+            url = selected.Url ?? throw new IOException("The shader release has no matching download.");
+            assetName = selected.Name;
         }
-        if (result.Count == 0) throw new IOException("The archive contains no Shaders or Textures folders.");
-        return result;
+        var archive = await Fetch(url, progress, true);
+        return await ShaderArchives.ReadPayloads(archive, assetName, pack);
     }
 }

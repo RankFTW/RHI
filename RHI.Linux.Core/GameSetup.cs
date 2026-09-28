@@ -83,6 +83,29 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
         var steam = Process.GetProcessesByName("reaper");
         try { return steam.Length > 0; } finally { foreach (var p in steam) p.Dispose(); }
     }
+    // Select the launcher from the owning Steam installation, not the game's library.
+    // ArgumentList avoids shell parsing and preserves Flatpak's application id as one argument.
+    public static ProcessStartInfo SteamStartInfo(Game game, bool shutdown)
+    {
+        var source = game.SteamRoot is { } root ? GameDiscovery.SteamSource(root) : game.Source;
+        var info = new ProcessStartInfo { UseShellExecute = false };
+        if (source == "Steam Flatpak")
+        {
+            info.FileName = "flatpak";
+            info.ArgumentList.Add("run");
+            info.ArgumentList.Add("com.valvesoftware.Steam");
+        }
+        else if (source == "Steam Snap")
+        {
+            info.FileName = "snap";
+            info.ArgumentList.Add("run");
+            info.ArgumentList.Add("steam");
+        }
+        else info.FileName = "steam";
+        info.ArgumentList.Add(shutdown ? "-shutdown" : "-silent");
+        return info;
+    }
+
     public static async Task ConfigureSteam(Game game, string config, IProgress<string>? progress, LaunchExtras? extras = null)
     {
         RequireClosed(game);
@@ -97,7 +120,7 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
             if (restart)
             {
                 progress?.Report("Waiting for Steam to close…");
-                using var shutdown = Process.Start(new ProcessStartInfo("steam", "-shutdown") { UseShellExecute = false });
+                using var shutdown = Process.Start(SteamStartInfo(game, shutdown: true));
                 var until = DateTime.UtcNow.AddSeconds(45);
                 while (Proton.SteamRunning() && DateTime.UtcNow < until) await Task.Delay(500);
                 if (Proton.SteamRunning()) throw new IOException("Steam is still closing. Exit it from its menu, then click Apply again.");
@@ -107,7 +130,7 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
         }
         finally
         {
-            if (restart && !Proton.SteamRunning()) Process.Start(new ProcessStartInfo("steam", "-silent") { UseShellExecute = false })?.Dispose();
+            if (restart && !Proton.SteamRunning()) Process.Start(SteamStartInfo(game, shutdown: false))?.Dispose();
         }
     }
 }

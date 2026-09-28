@@ -22,6 +22,7 @@ public partial class App : Application
         // Register crash/error reporting before anything else runs.
         // This catches AppDomain, TaskScheduler, and WinUI exceptions.
         CrashReporter.Register(this);
+        CoreLog.Sink = CrashReporter.Log;
 
         // Configure DI container
         var services = new ServiceCollection();
@@ -66,7 +67,7 @@ public partial class App : Application
         });
 
         // Shared ETag cache for GitHub API conditional requests (304 Not Modified)
-        services.AddSingleton<GitHubETagCache>();
+        services.AddSingleton(_ => new GitHubETagCache(CrashReporter.Log, () => DevUnlockService.GitHubApiToken));
 
         // Services — all singletons
         services.AddSingleton<IModInstallService, ModInstallService>();

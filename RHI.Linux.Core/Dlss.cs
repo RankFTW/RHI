@@ -24,13 +24,9 @@ public sealed class DlssManifest
 
 public static class DlssFiles
 {
-    public const string Sr = "nvngx_dlss.dll", Rr = "nvngx_dlssd.dll", Fg = "nvngx_dlssg.dll", Nr = "nvngx_dlssnr.dll", StreamlineCommon = "sl.common.dll";
+    public const string Sr = DlssFileDiscovery.Dlss, Rr = DlssFileDiscovery.Dlssd, Fg = DlssFileDiscovery.Dlssg, Nr = DlssFileDiscovery.Dlssnr, StreamlineCommon = DlssFileDiscovery.StreamlineIndicator;
     public const string CustomMarker = ".rhi_custom";
-    public static readonly string[] Streamline =
-    [
-        "sl.common.dll", "sl.deepdvc.dll", "sl.directsr.dll", "sl.dlss.dll", "sl.dlss_d.dll", "sl.dlss_g.dll",
-        "sl.interposer.dll", "sl.nis.dll", "sl.nvperf.dll", "sl.pcl.dll", "sl.reflex.dll",
-    ];
+    public static readonly string[] Streamline = DlssFileDiscovery.StreamlineDlls;
     public static readonly DlssKind[] Dlls = [DlssKind.SR, DlssKind.RR, DlssKind.FG, DlssKind.NR];
     public static string DllName(DlssKind kind) => kind switch
     {
@@ -59,49 +55,13 @@ public static class DlssFiles
 // a real backup restores the game's file, a 0-byte sentinel means RHI created the file.
 public static class Sentinel
 {
-    public const string Suffix = ".original";
-    public static string BackupOf(string path) => path + Suffix;
-    public static bool Placed(string path) => File.Exists(BackupOf(path));
-
-    public static void Deploy(string source, string destination)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-        var backup = BackupOf(destination);
-        if (!File.Exists(backup))
-        {
-            if (File.Exists(destination)) File.Copy(destination, backup);
-            else File.WriteAllBytes(backup, []);
-        }
-        Copy(source, destination);
-    }
-
-    // Places a file only where the game has none (or RHI placed it); a game's own copy is left alone.
-    public static bool DeployIfAbsent(string source, string destination)
-    {
-        if (File.Exists(destination) && !Placed(destination)) return false;
-        Deploy(source, destination);
-        return true;
-    }
-
-    public static void Restore(string destination)
-    {
-        var backup = BackupOf(destination);
-        if (!File.Exists(backup)) return;
-        if (new FileInfo(backup).Length == 0)
-        {
-            if (File.Exists(destination)) File.Delete(destination);
-            File.Delete(backup);
-        }
-        else File.Move(backup, destination, true);
-    }
-
-    public static void Copy(string source, string destination)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-        var temp = destination + ".rhi-" + Guid.NewGuid().ToString("N");
-        try { File.Copy(source, temp); File.Move(temp, destination, true); }
-        finally { if (File.Exists(temp)) File.Delete(temp); }
-    }
+    public const string Suffix = SentinelFiles.Suffix;
+    public static string BackupOf(string path) => SentinelFiles.BackupOf(path);
+    public static bool Placed(string path) => SentinelFiles.Placed(path);
+    public static void Deploy(string source, string destination) => SentinelFiles.Deploy(source, destination);
+    public static bool DeployIfAbsent(string source, string destination) => SentinelFiles.DeployIfAbsent(source, destination);
+    public static void Restore(string destination) => SentinelFiles.Restore(destination);
+    public static void Copy(string source, string destination) => SentinelFiles.Copy(source, destination);
 }
 
 public sealed class DlssDetection
@@ -146,47 +106,25 @@ public sealed class DlssDetection
 
 public static class DlssScanner
 {
-    // Search the whole game (the Steam install folder), so Unreal plugin copies under Engine/ are found.
+    // Linux already supplies the game root. OptiScaler and helper copies are not native game DLSS.
     public static DlssDetection Detect(string root)
     {
         var result = new DlssDetection();
-        if (!Directory.Exists(root)) return result;
-        Search(root, result, 0);
+        var files = DlssFileDiscovery.Scan(root,
+            name => name.Equals(".rhi-linux", StringComparison.OrdinalIgnoreCase) || name.Equals("host64", StringComparison.OrdinalIgnoreCase),
+            preferStreamlineIndicator: false);
+        foreach (var kind in DlssFiles.Dlls)
+            if (files.GameDlls.TryGetValue(DlssFiles.DllName(kind), out var path)) result.Paths[kind] = path;
+        result.StreamlineFolder = files.StreamlineFolder;
         result.ReadVersions();
         return result;
-    }
-
-    private static void Search(string directory, DlssDetection result, int depth)
-    {
-        if (depth > 8) return;
-        var name = Path.GetFileName(directory);
-        // RHI's own metadata and the Feeder's 64-bit helper folder are not the game's DLSS.
-        if (depth > 0 && (name.Equals(".rhi-linux", StringComparison.OrdinalIgnoreCase) || name.Equals("host64", StringComparison.OrdinalIgnoreCase))) return;
-        try
-        {
-            var files = Directory.EnumerateFiles(directory).Where(f => f.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)).OrderBy(f => f, StringComparer.Ordinal).ToList();
-            var optiScaler = files.Count > 0 && Directory.EnumerateFiles(directory).Any(f => Path.GetFileName(f).Equals("OptiScaler.ini", StringComparison.OrdinalIgnoreCase));
-            foreach (var file in files)
-            {
-                var fileName = Path.GetFileName(file);
-                foreach (var kind in DlssFiles.Dlls)
-                    if (!optiScaler && fileName.Equals(DlssFiles.DllName(kind), StringComparison.OrdinalIgnoreCase)) result.Paths.TryAdd(kind, file);
-                if (result.StreamlineFolder == null && DlssFiles.Streamline.Contains(fileName, StringComparer.OrdinalIgnoreCase)) result.StreamlineFolder = directory;
-            }
-            foreach (var sub in Directory.EnumerateDirectories(directory).OrderBy(d => d, StringComparer.Ordinal))
-            {
-                if (new DirectoryInfo(sub).LinkTarget != null) continue;
-                Search(sub, result, depth + 1);
-            }
-        }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException) { }
     }
 }
 
 public sealed class DlssCatalog
 {
     // The Windows app reads the same live list, so Linux sees new DLSS builds without an update.
-    public const string ManifestUrl = "https://raw.githubusercontent.com/RankFTW/RHI/main/dlss_manifest.json";
+    public const string ManifestUrl = Sources.DlssManifest;
     private readonly HttpClient _http;
     private readonly Downloads _downloads;
     private DlssManifest _manifest = new();
@@ -277,16 +215,10 @@ public sealed class DlssCatalog
 
     // ExtractToFile applies the zip's Unix permission bits, which Windows-made zips leave empty
     // (an unreadable file), so copy the stream into a normally created file instead.
-    public static void Extract(ZipArchiveEntry entry, string output)
-    {
-        using var input = entry.Open();
-        using var file = File.Create(output);
-        input.CopyTo(file);
-    }
+    public static void Extract(ZipArchiveEntry entry, string output) => DllArchive.Extract(entry, output);
 
-    // Some Windows zips use backslashes, which .NET on Linux keeps as part of the file name.
-    public static string EntryName(ZipArchiveEntry entry) => entry.FullName.Replace('\\', '/').Split('/').Last();
-    public static string EntryPath(ZipArchiveEntry entry) => entry.FullName.Replace('\\', '/');
+    public static string EntryName(ZipArchiveEntry entry) => DllArchive.EntryName(entry);
+    public static string EntryPath(ZipArchiveEntry entry) => DllArchive.EntryPath(entry);
 }
 
 // Per-DLL version swaps for the DLSS overrides section (Default / versions / Custom).

@@ -24,7 +24,7 @@ public class Renodx5AddonService
     private const string SfTagPrefix      = "renodx-dlss-SF-";
 
     private static readonly string GitHubApiUrl =
-        "https://api.github.com/repos/RankFTW/rhi-repo/releases?per_page=100";
+        RHI.Core.Sources.RhiAddonReleases;
 
     private readonly HttpClient _http;
     private readonly ICrashReporter _crashReporter;
@@ -709,8 +709,8 @@ public class Renodx5AddonService
     private const string FeederStagedFileName = "dlss5-feed.addon64";
     private const string BridgeStagedFileName = "dlss5-bridge.addon64";
 
-    private static readonly string FeederApiUrl = "https://api.github.com/repos/jlrouzies-fr/DLSS5-Feeder/releases?per_page=100";
-    private static readonly string BridgeApiUrl = "https://api.github.com/repos/NIGos/dlss5-bridge/releases?per_page=100";
+    private static readonly string FeederApiUrl = RHI.Core.Sources.FeederReleases;
+    private static readonly string BridgeApiUrl = RHI.Core.Sources.BridgeReleases;
 
     /// <summary>
     /// Path to the available_versions.json cache (list of all released versions for each addon).

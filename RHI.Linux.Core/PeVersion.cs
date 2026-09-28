@@ -60,10 +60,5 @@ public static class PeVersion
     }
 
     // "310.9.1.0" → "310.9.1"; matches the Windows app's DlssStreamlineService.FormatVersion.
-    public static string Format(string? raw)
-    {
-        if (string.IsNullOrEmpty(raw)) return "Unknown";
-        var parts = raw.Split('.');
-        return parts.Length == 4 && parts[3] == "0" ? $"{parts[0]}.{parts[1]}.{parts[2]}" : raw;
-    }
+    public static string Format(string? raw) => RenoDXCommander.Services.DlssVersion.Format(raw);
 }

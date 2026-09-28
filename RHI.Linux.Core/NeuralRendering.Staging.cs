@@ -12,14 +12,14 @@ public sealed record NrRelease(string Version, string Url);
 public sealed class AddonReleases
 {
     public const string Dlss5Tool = "dlss5tool", ShortFuse = "dlsstool", Feeder = "feeder", Bridge = "bridge", CostScaler = "costscaler";
-    private const string RhiRepo = "https://api.github.com/repos/RankFTW/rhi-repo/releases?per_page=100";
+    private const string RhiRepo = Sources.RhiAddonReleases;
     private static readonly Dictionary<string, string> AuthorRepos = new()
     {
-        [Feeder] = "https://api.github.com/repos/jlrouzies-fr/DLSS5-Feeder/releases?per_page=100",
-        [Bridge] = "https://api.github.com/repos/NIGos/dlss5-bridge/releases?per_page=100",
-        [CostScaler] = "https://api.github.com/repos/xenmods/DLSSNR-Cost-Scaler/releases?per_page=30",
+        [Feeder] = Sources.FeederReleases,
+        [Bridge] = Sources.BridgeReleases,
+        [CostScaler] = Sources.CostScalerReleases,
     };
-    public const string LumeniteUrl = "https://github.com/umar-afzaal/LumeniteFX/archive/refs/heads/mainline.zip";
+    public const string LumeniteUrl = Sources.Lumenite;
     private static readonly Dictionary<string, string[]> Contents = new()
     {
         [Dlss5Tool] = [NrFiles.Dlss5Addon], [ShortFuse] = [NrFiles.SfAddon], [Bridge] = [NrFiles.Bridge],

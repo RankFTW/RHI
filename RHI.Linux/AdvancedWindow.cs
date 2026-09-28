@@ -58,7 +58,7 @@ public sealed class AdvancedWindow : Window
         Grid.SetRow(_status, 3); shell.Children.Add(_status); Content = shell;
         _search.TextChanged += (_, _) => Filter();
         _library.SelectionChanged += (_, _) => ShowGame();
-        Opened += async (_, _) => { await Run(Scan); await Run(RefreshCatalog); };
+        Opened += async (_, _) => await Run(RefreshCatalog);
         Closed += (_, _) => _http.Dispose();
     }
 
@@ -106,7 +106,13 @@ public sealed class AdvancedWindow : Window
     }
     private async Task RefreshCatalog()
     {
-        await _catalog.Refresh(Progress); ShowGame(); _status.Text = _catalog.Status;
+        await _catalog.RefreshManifest(Progress);
+        DlssProfile.ApplyManifestPresets(_catalog.ManifestRoot("dlssPresets"));
+        // Discovery uses live executable/path overrides, with cached data when offline.
+        await Scan();
+        await _catalog.Refresh(Progress, refreshManifest: false);
+        ShowGame();
+        _status.Text = _catalog.Status;
     }
     private void SavePreference(Action action) { if (_building) return; action(); _settings.Save(); }
 

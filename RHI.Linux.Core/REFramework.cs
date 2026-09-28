@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using System.Text.Json;
 using RenoDXCommander.Services;
 
@@ -9,10 +8,10 @@ namespace RHI.Linux.Core;
 // game also needs a native dinput8 DLL override, added to the Steam launch options.
 public sealed class REFramework(HttpClient http, Downloads downloads)
 {
-    public const string Component = "RE Framework", Dll = "dinput8.dll";
+    public const string Component = "RE Framework", Dll = REFrameworkArchive.DllFileName;
     public const string Description = "RE Framework is a modding framework for RE Engine games. It enables ReShade injection and other mods by hooking into the game's rendering pipeline.";
-    private const string ReleasesApi = "https://api.github.com/repos/praydog/REFramework-nightly/releases?per_page=5";
-    private const string LatestZip = "https://github.com/praydog/REFramework-nightly/releases/latest/download/REFramework.zip";
+    private const string ReleasesApi = REFrameworkArchive.ReleasesApiUrl;
+    private readonly GitHubETagCache _etagCache = new(CrashReporter.Log);
     private static string CacheFile => Path.Combine(LinuxPaths.Cache, "reframework", "latest.json");
     public NrRelease? Latest { get; private set; } = Load();
 
@@ -31,17 +30,16 @@ public sealed class REFramework(HttpClient http, Downloads downloads)
     }
 
     // "nightly-01424-d1461375…" → "01424", the number Windows RHI displays.
-    public static string VersionNumber(string tag) => tag.Split('-').FirstOrDefault(p => p.Length > 0 && p.All(char.IsDigit)) ?? tag;
+    public static string VersionNumber(string tag) => REFrameworkArchive.ExtractVersionNumber(tag)!;
 
     public async Task Refresh(bool force = false)
     {
         if (!force && Latest != null && File.Exists(CacheFile) && DateTime.UtcNow - File.GetLastWriteTimeUtc(CacheFile) < TimeSpan.FromHours(1)) return;
-        using var request = new HttpRequestMessage(HttpMethod.Get, ReleasesApi);
-        request.Headers.Accept.ParseAdd("application/vnd.github+json");
-        using var response = await http.SendAsync(request);
-        if (!response.IsSuccessStatusCode) throw new IOException($"GitHub returned {(int)response.StatusCode} for the RE Framework releases.");
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var release = AddonReleases.Parse(document.RootElement, "", "REFramework.zip").FirstOrDefault()
+        if (force) _etagCache.Invalidate(ReleasesApi);
+        var json = await _etagCache.GetWithETagAsync(http, ReleasesApi)
+            ?? throw new IOException("Could not retrieve the RE Framework releases.");
+        using var document = JsonDocument.Parse(json);
+        var release = AddonReleases.Parse(document.RootElement, "", REFrameworkArchive.ResolveZipName("")).FirstOrDefault()
             ?? throw new IOException("No RE Framework nightly release was found.");
         Latest = release with { Version = VersionNumber(release.Version) };
         LinuxPaths.WriteJson(CacheFile, Latest);
@@ -70,19 +68,14 @@ public sealed class REFramework(HttpClient http, Downloads downloads)
         try { await Refresh(); }
         catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or JsonException) { CrashReporter.Log("RE Framework releases: " + ex.Message); }
         // Versioned asset URLs never change, so a cached download is reused; "latest" is always fetched.
-        var url = Latest?.Url ?? LatestZip;
+        var url = Latest?.Url ?? REFrameworkArchive.DownloadBaseUrl + REFrameworkArchive.ResolveZipName(game.Name);
         var version = Latest?.Version ?? "Nightly " + DateTime.UtcNow.ToString("yyyy-MM-dd");
         var zip = await downloads.Fetch(url, progress, refresh: Latest == null);
         var dll = Path.Combine(LinuxPaths.Cache, "reframework-" + Guid.NewGuid().ToString("N") + ".dll");
         try
         {
-            using (var archive = ZipFile.OpenRead(zip))
-            {
-                var entry = archive.Entries.FirstOrDefault(e => DlssCatalog.EntryName(e).Equals(Dll, StringComparison.OrdinalIgnoreCase))
-                    ?? throw new IOException("The RE Framework download does not contain dinput8.dll.");
-                Directory.CreateDirectory(LinuxPaths.Cache);
-                DlssCatalog.Extract(entry, dll);
-            }
+            Directory.CreateDirectory(LinuxPaths.Cache);
+            REFrameworkArchive.ExtractDllFromZip(zip, dll);
             Downloads.ValidatePe(dll, game.Architecture);
             var payload = await File.ReadAllBytesAsync(dll);
             GameSetup.RequireClosed(game);

@@ -364,15 +364,8 @@ public partial class DlssStreamlineService
     /// <summary>
     /// Backs up the target file (if no backup exists) and replaces it with the source.
     /// </summary>
-    private void BackupAndReplace(string targetPath, string sourcePath)
-    {
-        // SentinelBackup handles all three cases:
-        //   file exists, no .original  → real backup (File.Move)
-        //   file exists, .original exists → no-op (preserve existing backup)
-        //   file absent → 0-byte sentinel so Restore knows to clean up entirely
-        AuxInstallService.SentinelBackup(targetPath);
-        File.Copy(sourcePath, targetPath, overwrite: true);
-    }
+    private void BackupAndReplace(string targetPath, string sourcePath) =>
+        SentinelFiles.Deploy(sourcePath, targetPath);
 
     /// <summary>
     /// Downloads a zip from the given URL, extracts the single DLL, and places it in the cache dir.
@@ -402,11 +395,11 @@ public partial class DlssStreamlineService
             using (var zip = ZipFile.OpenRead(tempZip))
             {
                 var entry = zip.Entries.FirstOrDefault(e =>
-                    string.Equals(Path.GetFileName(e.FullName), expectedDllName, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(DllArchive.EntryName(e), expectedDllName, StringComparison.OrdinalIgnoreCase));
 
                 if (entry != null)
                 {
-                    entry.ExtractToFile(Path.Combine(cacheDir, expectedDllName), overwrite: true);
+                    DllArchive.Extract(entry, Path.Combine(cacheDir, expectedDllName));
                     CrashReporter.Log($"[DlssStreamlineService.DownloadAndCacheAsync] Cached {expectedDllName} to '{cacheDir}'");
                 }
                 else

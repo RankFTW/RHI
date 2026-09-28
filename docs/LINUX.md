@@ -1,6 +1,6 @@
 # RHI on Bazzite / Linux
 
-This repository now includes a native Linux desktop application for managing Windows ReShade and RenoDX components in Proton games. It runs without Wine, a system .NET installation, root access, or changes to Bazzite's immutable base image. The original Windows WinUI app remains a separate build.
+This repository now includes a native Linux desktop application for managing Windows ReShade and RenoDX components in Proton games. It runs without Wine, a system .NET installation, root access, or changes to Bazzite's immutable base image. The original Windows WinUI app remains a separate build. Both hosts reference `RHI.Core`, a platform-neutral assembly containing shared source definitions and portable helpers; `RHI.Linux.Core` retains the Linux installation, discovery and Proton adapters. See [upstream tracking and review decisions](https://github.com/TwoToneEddy/RHI/blob/linux_port/docs/LINUX-PORT-SYNC.md).
 
 ## Run
 
@@ -18,7 +18,7 @@ The first run downloads a user-local .NET SDK if needed, restores packages, runs
 
 The standalone build is `artifacts/linux-x64/RHI.Linux`. The portable package and checksum are `artifacts/RHI-linux-x64.tar.gz` and `artifacts/RHI-linux-x64.tar.gz.sha256`.
 
-To add a KDE application-menu entry:
+To add an application-menu entry (KDE, GNOME, and other desktop-entry menus):
 
 ```bash
 ./scripts/install-linux-desktop.sh
@@ -86,8 +86,9 @@ Typical locations:
 | Proton prefix | `<library>/steamapps/compatdata/<appid>/pfx/` |
 | Windows LocalAppData | `<prefix>/drive_c/users/steamuser/AppData/Local/` |
 | Flatpak Steam root | `~/.var/app/com.valvesoftware.Steam/.local/share/Steam/` |
+| Snap Steam root | `~/snap/steam/common/.local/share/Steam/` |
 
-The prefix may be in a different Steam library from the game. It may not exist until the first launch, and it may be overridden by your launcher. You can save an explicit prefix in the app. Game payloads use relative Windows shader paths, so they work through both native and Flatpak Steam without relying on access to RHI's cache.
+Steam restart uses the client owning the library: `steam`, `flatpak run com.valvesoftware.Steam`, or `snap run steam`. The prefix may be in a different Steam library from the game. It may not exist until the first launch, and it may be overridden by your launcher. You can save an explicit prefix in the app. Game payloads use relative Windows shader paths, so they work through both native and Flatpak Steam without relying on access to RHI's cache.
 
 For UE Extended games that require `Engine.ini`, the app finds config files **inside the game's prefix**. Select the correct file and use **RenoDX cog → Apply recommended HDR settings** (also available in Advanced settings). This preserves existing ray-tracing/FSR and other keys and backs up the settings it changes. The recipe enables the Unreal HDR output path and real-time LUT updates; it also selects `Set_Path=0` in ReShade's RenoDX configuration. The game can rewrite Engine.ini at launch, so RHI marks this file read-only as required by the wiki. The dedicated restore button restores the original permissions as well as the keys. These tweaks are not recommended for UE4 games; follow the game's wiki instructions.
 
@@ -106,7 +107,7 @@ For the installed **Mortal Shell II** test case, Steam calls the game folder `Sp
 
 ## Linux support boundaries
 
-Supported: Steam/Flatpak library scanning; manual games; ReShade stable/nightly/local; live/cached RenoDX catalogue; named and shared addons; shader packs; local addons; API/architecture selection; Proton launch options; UE Extended prefix configuration; component updates and reversible removal.
+Supported: native Steam, Flatpak Steam and Snap Steam library scanning; manual games; ReShade stable/nightly/local; live/cached RenoDX catalogue; named and shared addons; shader packs; local addons; API/architecture selection; Proton launch options; UE Extended prefix configuration; component updates and reversible removal.
 
 Also supported: RE Framework for RE Engine games, OptiScaler (Stable, Nightly and DLSS NR), Neural Rendering (all four DLSS 5 methods, Cost Scaler), DLSS/Streamline version swaps, and DLSS presets/render scale/Multi Frame Gen/NVIDIA Override through dxvk-nvapi.
 
@@ -123,7 +124,23 @@ This is not full Windows feature parity. Windows-only NVIDIA driver profile sett
 ./run-linux.sh --os-smoke-test
 ```
 
-The build script uses an installed .NET SDK or installs SDK 8.0.425 in the user's data directory, runs Linux unit/integration tests, and publishes a self-contained Linux x64 build. It needs network access for NuGet on the first build. Bazzite supplies the native desktop libraries and `7z` used to extract official ReShade setup executables. On another distribution, install 7zip, X11/XWayland, fontconfig, libc and the normal .NET native prerequisites.
+The build script uses an installed .NET SDK or installs the version pinned in `scripts/linux-dependencies.env` in the user's data directory, runs Linux unit/integration tests, and publishes a self-contained Linux **x86_64** build. ARM64/Asahi and 32-bit Linux hosts are not supported by this package. Windows game payloads can still be 32-bit where the component supports them.
+
+Portable packages include .NET and the official static 7-Zip extractor. The build verifies the extractor archive against the SHA-256 pinned in `scripts/linux-dependencies.env`; its version, checksum, source-code URL and redistribution notices are included in `BUILD-INFO.txt` and `licenses/7zip/`. End users do not need system `7z`, Python, a .NET SDK or root access. The menu installer uses Bash. A direct developer `dotnet run` without a packaged extractor can use a system `7zz`/`7z` instead.
+
+The desktop still needs X11 (or XWayland in a Wayland session), fontconfig and .NET's native libraries. These are normally present on gaming desktops. Minimal installs may need the packages below, in addition to their normal glibc/GCC runtimes, certificates and zlib:
+
+| Distribution | Native desktop/runtime prerequisites | Source-build additions |
+| --- | --- | --- |
+| Bazzite / Fedora Atomic desktops | Use the existing desktop libraries; run the portable package from your home directory. No base-image modification is needed. | `git`, `curl`, `tar`, `gzip`, `xz`, Bash; Python 3 for tooling/package tests. |
+| Fedora Workstation / Fedora container | `libX11 libICE libSM fontconfig libicu openssl-libs krb5-libs`; XWayland for a Wayland desktop. | `git curl tar gzip xz python3`; the build installs its SDK in user space if needed. |
+| Debian / Ubuntu desktop | `libx11-6 libice6 libsm6 libfontconfig1 libgssapi-krb5-2`; the release's ICU/OpenSSL packages and XWayland when applicable. | `git curl tar gzip xz-utils python3`. |
+| Arch desktop | `libx11 libice libsm fontconfig icu openssl krb5`; XWayland when applicable. Keep the system's runtime packages updated together. | `git curl tar gzip xz python`; no global .NET SDK is required. |
+| Steam Deck / SteamOS | Use Desktop Mode and extract the portable x86_64 package under your home directory. Keep the system read-only. | Build on a development machine/container, then copy the whole package to the Deck. |
+
+Package names for versioned ICU/OpenSSL libraries vary by release. Consult the [.NET 8 native dependency list](https://github.com/dotnet/core/blob/main/release-notes/8.0/linux-packages.md), [Fedora dependency guidance](https://learn.microsoft.com/en-us/dotnet/core/install/linux-fedora#dependencies), and [Avalonia desktop Linux requirements](https://docs.avaloniaui.net/docs/platform-specific-guides/linux). Fedora and Ubuntu CI exercise headless tests and relocated packages; graphical gameplay/HDR behavior still requires testing on the target desktop. The first source build needs network access for NuGet and the pinned extractor.
+
+For upstream maintenance, also run `python3 scripts/check-upstream-sync.py` and `python3 -m unittest discover -s scripts/tests -v`. [LINUX-PORT-SYNC.md](https://github.com/TwoToneEddy/RHI/blob/linux_port/docs/LINUX-PORT-SYNC.md) documents the full source map, remaining feature gaps and explicit review procedure.
 
 `--scan` is read-only and prints detected paths as JSON. `--smoke-test` downloads real x86/x64 ReShade, a real RenoDX addon, shader packs and the RE Framework nightly, then checks install/update/remove and original restoration **in an isolated temporary folder**, plus the nightly x64 download. It never installs into detected games. `--nr-smoke-test` downloads the real Neural Rendering components and, in disposable game folders, installs each method (including 32-bit and DX9 Feeder), checks the status, launch settings and an in-place version swap, then verifies removal restores every original file. `--os-smoke-test` downloads the real OptiScaler Stable, Nightly and DLSS NR builds and, beside a ReShade install in disposable game folders, checks the ReShade64.dll rename, INI, OptiPatcher, DLSS DLLs, Streamline, a reinstall that keeps INI changes, and exact removal. Headless UI tests exercise installed/applied indicators, filtering, and the ReShade channel dialog against isolated game folders. Unit tests cover stale launch logs, changed payloads, launch-readiness checks, flatpak/external libraries, symlink deduplication, casing, malformed manifests, PE architecture rejection, safe launch-option merges, interrupted transactions, file conflicts, and INI restoration.
 
@@ -133,7 +150,7 @@ The command `./run-linux.sh --prepare APPID --ue-hdr --nightly` can prepare a ma
 
 ## Creating Linux releases
 
-The **Linux build and release** GitHub Actions workflow runs the tests, publishes a self-contained x64 app, checks the extracted package and menu installer, and uploads a downloadable build artifact on pushes and pull requests to `linux_port`, `main`, and `master`. It also supports **Run workflow** once the workflow exists on the repository's default branch.
+The **Linux build and release** GitHub Actions workflow builds/tests on Ubuntu and Fedora, checks the extracted package and menu installer, builds/tests the Windows host against the shared core, and uploads a downloadable Linux build artifact on pushes and pull requests to `linux_port`, `main`, and `master`. It also supports **Run workflow** once the workflow exists on the repository's default branch.
 
 To prepare a release, commit the changes and push a unique Linux tag pointing at the version you want to ship, for example:
 
@@ -151,7 +168,7 @@ You can also prepare and verify the same files locally, then attach them to a re
 ./scripts/check-linux-package.sh
 ```
 
-Only the application is bundled; ReShade, RenoDX, and shader packs are downloaded when users install them. `BUILD-INFO.txt` in the archive records the source commit and SDK. The Linux release remains a preview with the support boundaries described above.
+The application, .NET runtime and static 7-Zip extractor are bundled; ReShade, RenoDX, and shader packs are downloaded when users install them. `BUILD-INFO.txt` in the archive records the source commit and SDK. The Linux release remains a preview with the support boundaries described above.
 
 ## Black screen with an accessible ReShade overlay
 

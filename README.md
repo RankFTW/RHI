@@ -10,7 +10,7 @@ RHI detects your entire game library across every major store and handles ReShad
 
 **[Latest release](https://github.com/RankFTW/RenoDXChecker/releases/latest)** · **[Discord](https://discord.gg/ultraplace)**
 
-**Bazzite / Linux:** see [Linux installation and downloads](docs/LINUX.md#run). Linux releases provide a ready-to-run `RHI-linux-x64.tar.gz` with an optional application-menu installer. For a source checkout, run `./run-linux.sh`; the first run builds the app automatically.
+**Bazzite / Linux:** see [Linux installation and downloads](docs/LINUX.md#run). Linux releases provide a ready-to-run `RHI-linux-x64.tar.gz` with an optional application-menu installer. For a source checkout, run `./run-linux.sh`; the first run builds the app automatically. Windows and Linux share the platform-neutral `RHI.Core` assembly; Linux retains its own installation transactions, Avalonia UI and Proton adapters. The [upstream source map and review guard](docs/LINUX-PORT-SYNC.md) document inherited code and remaining feature gaps.
 
 ---
 

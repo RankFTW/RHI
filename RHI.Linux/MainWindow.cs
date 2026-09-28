@@ -15,7 +15,7 @@ namespace RHI.Linux;
 
 public sealed partial class MainWindow : Window
 {
-    private readonly HttpClient _http = Downloads.CreateClient();
+    private readonly HttpClient _http;
     private readonly Catalog _catalog;
     private readonly Downloads _downloads;
     private readonly GameSetup _setup;
@@ -44,8 +44,9 @@ public sealed partial class MainWindow : Window
     private static IBrush Brush(string hex) => new SolidColorBrush(Color.Parse(hex));
     private static readonly IBrush Teal = Brush("#4DC9E6"), Green = Brush("#5ECB7D"), Amber = Brush("#D4A856"), Muted = Brush("#6B7A8E"), Secondary = Brush("#A0AABB");
 
-    public MainWindow(IEnumerable<Game>? initialGames = null)
+    public MainWindow(IEnumerable<Game>? initialGames = null, HttpClient? http = null)
     {
+        _http = http ?? Downloads.CreateClient();
         Title = "RHI — Simplified PC Gaming"; Width = 1180; Height = 900; MinWidth = 1000; MinHeight = 660;
         SystemDecorations = SystemDecorations.None;
         _catalog = new(_http); _downloads = new(_http); _setup = new(_downloads, _catalog);
@@ -62,7 +63,13 @@ public sealed partial class MainWindow : Window
                 if (control is Button) return;
             if (e.ClickCount == 2) ToggleMaximize(); else BeginMoveDrag(e);
         };
-        _actions.Children.Add(Action("Refresh", async () => { _nrStates.Clear(); await Scan(); await RefreshCatalog(); await RefreshDlssCatalogs(); ShowGame(); }, "teal", "RefreshLibrary"));
+        _actions.Children.Add(Action("Refresh", async () =>
+        {
+            _nrStates.Clear();
+            await RefreshCatalog();
+            await RefreshDlssCatalogs(force: true);
+            ShowGame();
+        }, "teal", "RefreshLibrary"));
         _actions.Children.Add(Action("Shaders/Addons", ShowShaders, "teal"));
         _actions.Children.Add(Action("Update All", UpdateAll, "teal"));
         _actions.Children.Add(Action("Links", ShowLinks, "teal"));
@@ -99,7 +106,8 @@ public sealed partial class MainWindow : Window
             if (initialGames != null) { _games = initialGames.ToList(); await Run(async () => { await ReadStates(); Filter(); }); }
             else
             {
-                await Run(Scan); await Run(RefreshCatalog); _timer.Start();
+                await Run(RefreshCatalog);
+                _timer.Start();
                 // DLSS and Neural Rendering version lists refresh quietly in the background.
                 await RefreshDlssCatalogs(); if (!_busy) ShowGame();
             }
@@ -154,12 +162,25 @@ public sealed partial class MainWindow : Window
         _status.Text = "Finding your installed games…";
         var discovery = new GameDiscovery();
         _games = await Task.Run(() => discovery.Scan(GameDiscovery.DefaultSteamRoots(LinuxPaths.Home).Concat(_settings.SteamRoots), _settings, _catalog));
-        await ReadStates(); Filter(); _status.Text = $"{_games.Count} games detected · Ready";
+        await ReadStates();
+        Filter();
+        _status.Text = $"{_games.Count} games detected · Ready";
         if (discovery.Warnings.Count > 0) _status.Text = string.Join(" · ", discovery.Warnings);
     }
     private async Task RefreshCatalog()
     {
-        await _catalog.Refresh(Progress); await ReadStates(); Filter(); _status.Text = "Library refreshed · " + _catalog.Status;
+        await RefreshCompatibility();
+        // Always discover games with the latest valid overrides, even when the wiki is offline.
+        await Scan();
+        await _catalog.Refresh(Progress, refreshManifest: false);
+        await ReadStates();
+        Filter();
+        _status.Text = "Library refreshed · " + _catalog.Status;
+    }
+    private async Task RefreshCompatibility()
+    {
+        await _catalog.RefreshManifest(Progress);
+        DlssProfile.ApplyManifestPresets(_catalog.ManifestRoot("dlssPresets"));
     }
     private async Task ReadStates()
     {
