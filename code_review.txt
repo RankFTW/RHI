@@ -1,0 +1,61 @@
+I've reviewed the `linux_port` branch against `main`. It adds about 7,900 lines across 55 files, and nearly all of it is new `RHI.Linux*` code. Upstream files are only touched in two places. Overall the work is solid, but the way it's structured will make keeping up with upstream expensive over time. That's the main thing I'd want you to act on.
+
+## 1. Code quality
+
+**Strengths**
+- **The core logic is kept apart from the UI.** `RHI.Linux.Core` is a plain net8.0 library with no Avalonia dependency. The GUI and the CLI (`CommandLine.cs`) both sit on top of it, which is the right shape.
+- **The file handling is careful.** `Installation.cs` records hashes of what it installs, uses a transaction snapshot so an interrupted install can be recovered, and keeps backups of the original files. `LinuxPaths.ResolveCase` refuses paths that would escape the game folder or that match more than one file with different letter casing. `WriteJson` writes to a temp file and renames it, so a crash can't leave a half-written file. `Proton.SaveOptions` backs up `localconfig.vdf` and checks it hasn't changed during the write. This is better defensive coding than most mod managers have.
+- **The tests are good.** There are 52 tests across unit, headless-UI and integration projects. The `--smoke-test`, `--nr-smoke-test` and `--os-smoke-test` modes do real installs and removals in throwaway folders. CI builds, packages and checks that the package can be moved to another folder and still run.
+- **It stays compatible with the Windows app.** It uses the same `.original` backup convention and reads Windows RHI's `rhi_install.txt`, so a Steam library shared between the two apps stays consistent.
+
+**Weaknesses**
+- **The code is hard to read in places.** Many lines are over 200 characters: `MainWindow.Dlss.cs` has 28, and `NeuralRendering.cs` and `AdvancedWindow.cs` have several each. Several steps are often packed onto one line, e.g. `GameSetup.cs:91`. That makes diffs and reviews harder, and you'll be reading a lot of diffs (see section 3).
+- **Some classes are too large.** `OptiScaler.cs` (689 lines), `NeuralRendering.cs` (622) and `MainWindow.Dlss.cs` (686) each mix downloading, staging, installing and status checks. The upstream code splits OptiScaler into `Install`/`Staging`/`Coexist`/`Streamline` partial files, and mirroring that split would make it easier to compare against upstream.
+- **Download URLs and pinned versions are scattered through the code.** Examples are the dgVoodoo 2.87.3 URL (`NeuralRendering.cs:516`), the Firefox 62 installer used to extract `d3dcompiler_47.dll` (`Downloads.cs:99`) and the OptiScaler repos. A small `Sources.cs`, or even better the shared `manifest.json`, would keep them in one place.
+- **Small cleanups:**
+  - The user-agent string points at `RankFTW/RHI` while the docs point at `TwoToneEddy/RHI`.
+  - `Catalog.Refresh` hard-codes the wiki URL again instead of calling `WikiService.FetchAllAsync`.
+
+## 2. Ease of use across distros
+
+**What works well:** it's a self-contained x64 tarball, so no system .NET is needed and no root is needed. It follows the XDG directory conventions, and there's a `.desktop` installer. It finds both native and Flatpak Steam, plus extra Steam libraries. That's a good base.
+
+**Gaps:**
+
+| Issue | Where | Impact |
+|---|---|---|
+| **`7z` is required at runtime** to extract ReShade and OptiScaler | `Downloads.cs:81`, `OptiScaler.cs:180` | Not installed by default on Fedora Workstation, Arch or Ubuntu. Users only find out when an install fails. Consider bundling a static `7zz` in the tarball, or using SharpCompress. |
+| **Steam restart runs `steam -shutdown` / `steam -silent`** | `GameSetup.cs:100,110` | Flatpak Steam has no `steam` command on the PATH (it runs as `flatpak run com.valvesoftware.Steam`), so "Apply & restart Steam" won't work there. Snap and some distro-packaged Steam installs name their process differently too. |
+| **Snap Steam is not scanned** (`~/snap/steam/common/.local/share/Steam`) | `GameDiscovery.cs:14` | Ubuntu users with the Snap package won't see any games. |
+| **The menu installer needs `python3`** | `install-linux-desktop.sh` | Usually present, but not on minimal or immutable images. This could be done in plain bash. |
+| **x86_64 only** | `build-linux.sh:5` | Rules out ARM machines such as Asahi Macs. Probably acceptable, but say so up front. |
+| **The docs assume Bazzite and KDE** | `docs/LINUX.md` | Other distros get a single sentence at the end of "Build and validation". A short per-distro prerequisites table (Fedora/Arch/Debian/Steam Deck) would help a lot. |
+| **CI only runs on Ubuntu 22.04** | `.github/workflows/linux.yml` | An extra job running the tests inside a Fedora or Arch container would be cheap. |
+
+I didn't see any Wayland-specific problems, because Avalonia runs through XWayland here.
+
+## 3. How upstream changes reach Linux (the main issue)
+
+**Current structure:**
+- **Code shared by linking to the upstream file (7 files):** `GameMod`, `GraphicsApiType`, `GraphicsApiDetector`, `PeHeaderService`, `IPeHeaderService`, `WikiService`, `IWikiService`. Fixes to these arrive automatically when you merge `main`.
+- **Data shared at build time:** `manifest.json`, `dlss_manifest.json` and the `OptiScaler*.ini` templates are copied into the build.
+- **Everything else is a separate reimplementation:** ReShade, RenoDX install, RE Framework, OptiScaler, Neural Rendering, DLSS/Streamline swaps and presets. Together that's about 3,000 lines in `RHI.Linux.Core`, duplicating around 45k lines of upstream `Services/`.
+
+**The consequence:** apart from those 7 files, an upstream bug fix or feature produces **no merge conflict and no failing test on Linux.** It just goes missing. Someone has to read each upstream commit and port it by hand. The logging commits at the top of `main` (`SetLastUiAction` etc.) show how quickly upstream moves. For example, the next time OptiScaler changes its archive layout or adds a companion DLL, `OptiScalerService.Staging.cs` gets fixed upstream and `RHI.Linux.Core/OptiScaler.cs` quietly stays wrong.
+
+**There's also a concrete bug here.** Windows fetches `manifest.json` live from GitHub (`ManifestService.cs:29`, `raw.githubusercontent.com/.../main/manifest.json`). Linux only reads the copy bundled at build time (`Catalog.cs:18`). So new per-game overrides, wiki-name fixes and install warnings don't reach Linux users until they download a new release. `dlss_manifest.json` is already fetched live (`Dlss.cs:218`), so the same approach can be copied. This is the cheapest high-value fix on the list.
+
+**Upstream is less Windows-bound than the Linux structure assumes.** Only 16 of the 134 upstream `Services/*.cs` files use Windows APIs (P/Invoke, registry, `Microsoft.UI`).
+- `REFrameworkService` depends only on `HttpClient` and `GitHubETagCache`, so it could be linked directly today.
+- `OptiScalerService` and the DLSS/Streamline services mostly depend on other services through interfaces. The two real blockers are `OptiScalerService.Install.cs` and `.Coexist.cs`, which use `ViewModels`. Upstream's `GameCardViewModel` pulls in `Microsoft.UI`.
+
+**Recommended direction, in order of payoff:**
+1. **Fetch `manifest.json` at runtime** and fall back to the bundled copy when offline.
+2. **Link more upstream services directly** where they're already free of Windows APIs: `REFrameworkService`, `GitHubETagCache`, `ShaderPackService`, and the DLSS/Streamline detection and swap code. Implement their small interfaces on Linux (for example `IDllOverrideService` becomes "write Proton launch options") instead of rewriting the service.
+3. **Make small refactors upstream so more code can be shared.** You've already done this with the `WikiService` change, which replaced the `IGameDetectionService` dependency with a `Func<string,string>`. Doing the same for OptiScaler would mean moving the install and staging logic out of the `GameCardViewModel` dependency into a plain options object or interface. Ideally these land as small PRs to `main`, so the Windows maintainer owns the shared code and `linux_port` stops carrying private edits to upstream files.
+4. **Long term:** a `RHI.Core` project that targets plain `net8.0` and is referenced by both the WinUI app and the Avalonia app. Linux would then be only a UI plus a Proton adapter.
+5. **In the meantime, keep a tracking file,** e.g. `docs/LINUX-PORT-SYNC.md`. List each Linux module, the upstream files it mirrors, and the last upstream commit reviewed. Then `git log <last>..main -- RenoDXCommander/Services/OptiScalerService*` shows exactly what needs porting.
+
+**Bottom line:** the Linux app is well built and well tested. But it's currently a parallel reimplementation rather than a port that shares upstream code, so every upstream change has to be ported by hand, forever. Fixing the manifest fetch and linking the services that are already portable would cut most of that cost with modest effort.
+
+I only read the code: I didn't run the build or the tests.
