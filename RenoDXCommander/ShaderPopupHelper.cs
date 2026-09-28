@@ -1397,6 +1397,10 @@ public static class ShaderPopupHelper
 
             foreach (var (packId, fcList) in fileCheckBoxes)
             {
+                // Never auto-select custom user files as dependencies — the user must select them explicitly.
+                if (packId.StartsWith(ShaderPackService.CustomFilePackId, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 var match = fcList.FirstOrDefault(fc =>
                     fc.File.Equals(dep, StringComparison.OrdinalIgnoreCase));
                 if (match.Box != null)

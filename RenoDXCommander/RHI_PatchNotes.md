@@ -1,6 +1,32 @@
-## v2.7.8 beta
+## v2.7.9 beta
+
+### New
+- **Unity game-specific settings** — RHI now applies per-game render target and swapchain upgrades for Unity engine games using data from the RHI database. When you install a Unity RenoDX mod, the correct `[renodx]` INI keys (upgrade formats, swapchain settings, etc.) are written automatically for each game that has a database entry.
+
+### Changes
+- Tonemap Offset and Scaling Offset are now exposed in the RenoDX ⚙ cog Compatibility Settings for Unity games that support them (Off / On).
+- Unity games now show the ✓ or 🔨 status icon next to the installed addon, matching the behaviour for UE-Extended and named mod games.
 
 ### Bug Fixes
+- Fixed game-specific Comments from the RenoDX database not showing in the Info dialog for Unity engine games. The comments were being written to the card correctly but the dialog's wiki-source path was intercepting before they could be displayed.
+- Fixed the NR section addon version dropdown not showing newly released versions until the 1-hour version list cache expired. Full Refresh now bypasses the cache and fetches the latest version list immediately.
+- Fixed ShortFuse DLSS Tool and DLSS5 Tool not auto-updating in game folders when "Latest" is selected and a new version is released. NR-managed addon files are intentionally untracked by the addon deployment system, causing the auto-redeploy pass to skip them. The pass now also checks `rhi_install.txt` to confirm NR ownership.
+- Fixed rc10 sorting below rc5 in the NR addon version dropdown. Pre-release suffixes are now compared numerically as a secondary sort key.
+- Fixed custom shader files being auto-ticked when selecting built-in shader packs. The dependency scanner (`#include` auto-select) was matching standard ReShade headers (e.g. `ReShade.fxh`) against copies of those files in the user's custom folder, causing the entire custom folder to be selected. Custom user files are now excluded from the dependency auto-select scan.
+
+## v2.7.8
+
+### New
+- DXVK can now be installed on DirectX 11 games. All three variants (Development, Stable, Lilium HDR) fully support DX11 — the DX11 deploy path was already in place but the toggle was hidden. Lilium HDR uses its DX11-specific preset system (swapchain and render target upgrades). Games where DX12 or Vulkan is also detected are still excluded.
+- To use DXVK on a DX11 game where DX12 is also detected (common with Unreal Engine titles whose PE imports include both), set the Graphics API override to DirectX 11 in Game Overrides — this tells RHI to treat the game as DX11-only and makes the DXVK toggle available.
+
+### Bug Fixes
+
+**OptiScaler**
+- Fixed OptiScaler auto-update using the wrong variant (Stable instead of Nightly) when a game's tracking record was created before the variant field was added. The update now cross-references the per-game variant setting when the record has no stored variant, so Nightly games always update from Nightly staging.
+
+**Other**
+- Fixed RHI closing instead of restoring when double-clicking the desktop shortcut while minimised to the system tray. Caused by a wrong DLL name in a Windows API declaration (`GetCurrentThreadId` was imported from `user32.dll` instead of `kernel32.dll`), which threw an exception and crashed the running instance on some systems.
 - Fixed ASI Loader showing as installed in the Extras header when it wasn't — the tracked DLL name was persisted but the install record was gone. The stale entry is now cleared automatically.
 
 ## v2.7.7

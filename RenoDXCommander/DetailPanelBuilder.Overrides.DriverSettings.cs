@@ -141,11 +141,16 @@ public partial class DetailPanelBuilder
                 // Build into a throwaway container first, then swap atomically.
                 var tempDriver = new StackPanel();
                 BuildDriverProfileSectionWithData(targetCard, capturedName, svc, tempDriver, data);
-                driverContainer.Children.Clear();
-                driverContainer.Children.Add(tempDriver);
                 sw.Stop();
                 if (sw.ElapsedMilliseconds > 50)
-                    CrashReporter.Log($"[BuildDriverProfileSectionWithData] SLOW: '{gameName}' took {sw.ElapsedMilliseconds}ms on UI thread");
+                    CrashReporter.Log($"[BuildDriverProfileSectionWithData] SLOW build: '{gameName}' took {sw.ElapsedMilliseconds}ms");
+                _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddToTree({gameName})");
+                var sw2 = System.Diagnostics.Stopwatch.StartNew();
+                driverContainer.Children.Clear();
+                driverContainer.Children.Add(tempDriver);
+                sw2.Stop();
+                if (sw2.ElapsedMilliseconds > 50)
+                    CrashReporter.Log($"[BuildDriverProfileSectionWithData] SLOW AddToTree: '{gameName}' took {sw2.ElapsedMilliseconds}ms on UI thread");
             });
         });
     }

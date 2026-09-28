@@ -615,7 +615,9 @@ public sealed partial class MainWindow
                           || kv.Key.Equals("Blit_Copy_Hack",         StringComparison.OrdinalIgnoreCase)
                           || kv.Key.Equals("Use_Resource_Cloning",   StringComparison.OrdinalIgnoreCase)
                           || kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
-                          || kv.Key.Equals("Upgrade_UseSCRGB",       StringComparison.OrdinalIgnoreCase))
+                          || kv.Key.Equals("Upgrade_UseSCRGB",       StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("Tonemap_Offset",         StringComparison.OrdinalIgnoreCase)
+                          || kv.Key.Equals("Scaling_Offset",         StringComparison.OrdinalIgnoreCase))
                 .OrderBy(kv => kv.Key.Equals("DumpLUTShaders", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
                 .ThenBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
                 .ToList();
@@ -657,7 +659,9 @@ public sealed partial class MainWindow
                                     || kv.Key.Equals("Blit_Copy_Hack",         StringComparison.OrdinalIgnoreCase)
                                     || kv.Key.Equals("Use_Resource_Cloning",   StringComparison.OrdinalIgnoreCase)
                                     || kv.Key.Equals("Upgrade_CopyDestinations", StringComparison.OrdinalIgnoreCase)
-                                    || kv.Key.Equals("Upgrade_UseSCRGB",       StringComparison.OrdinalIgnoreCase);
+                                    || kv.Key.Equals("Upgrade_UseSCRGB",       StringComparison.OrdinalIgnoreCase)
+                                    || kv.Key.Equals("Tonemap_Offset",         StringComparison.OrdinalIgnoreCase)
+                                    || kv.Key.Equals("Scaling_Offset",         StringComparison.OrdinalIgnoreCase);
                     bool isBinaryToggle = isSetPath || isDumpLut || isUnityBool;
 
                     // Label text

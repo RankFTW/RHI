@@ -824,7 +824,11 @@ public partial class DetailPanelBuilder
                     ? existing
                     : (_gameNameService.PerGameShaderSelection.TryGetValue(capturedName, out existing)
                         ? existing
-                        : _window.ViewModel.Settings.SelectedShaderPacks);
+                        // Fall back to global selection but strip custom file IDs — they are user-specific
+                        // files that should not auto-populate every new per-game selection.
+                        : _window.ViewModel.Settings.SelectedShaderPacks
+                            .Where(id => !id.StartsWith(ShaderPackService.CustomFilePackId, StringComparison.OrdinalIgnoreCase))
+                            .ToList());
                 var result = await ShaderPopupHelper.ShowAsync(
                     _window.Content.XamlRoot,
                     _shaderPackService,

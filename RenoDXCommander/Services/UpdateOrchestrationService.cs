@@ -103,9 +103,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 {
                     AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unity");
 
-                    // Apply per-game DB upgrades on top of the placeholders (dev-gated)
-                    if (DevUnlockService.IsUnlocked
-                        && AuxInstallService.GlobalUnityEntries.TryGetValue(card.GameName, out var unityEntry))
+                    // Apply per-game DB upgrades on top of the placeholders
+                    if (AuxInstallService.GlobalUnityEntries.TryGetValue(card.GameName, out var unityEntry))
                     {
                         var upgrades = unityEntry.ParsedUpgrades;
                         if (upgrades.Count > 0)

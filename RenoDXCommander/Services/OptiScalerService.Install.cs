@@ -952,15 +952,19 @@ public partial class OptiScalerService
     /// <inheritdoc />
     public async Task UpdateAsync(
         IOptiScalerGame card,
-        IProgress<(string message, double percent)>? progress = null)
+        IProgress<(string message, double percent)>? progress = null,
+        string? variantHint = null)
     {
         try
         {
             progress?.Report(("Preparing OptiScaler update...", 5));
 
             // ── Read variant from tracking record ─────────────────────────
+            // variantHint (from caller's GetOsVariant) is the fallback for legacy
+            // records where OsVariant was not yet persisted (pre-nightly field addition).
             var record = _auxInstaller.FindRecord(card.GameName, card.InstallPath, AddonType);
-            var variant = record?.OsVariant ?? "Stable";
+            var variant = record?.OsVariant ?? variantHint ?? "Stable";
+            CrashReporter.Log($"[OptiScalerService.UpdateAsync] {card.GameName}: record.OsVariant={record?.OsVariant ?? "(null)"}, variantHint={variantHint ?? "(null)"}, effective={variant}");
             bool isNightly = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase);
             bool isDlssNr  = variant.Equals("DlssNr",  StringComparison.OrdinalIgnoreCase);
             var effectiveStagingDir = isDlssNr ? DlssNrStagingDir

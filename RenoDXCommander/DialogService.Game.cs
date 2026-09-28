@@ -325,6 +325,22 @@ public partial class DialogService
                 gameNote.NotesUrlLabel, textColour, linkColour);
         }
 
+        // ── DB Comments supplement for Unity games ───────────────────────────
+        // card.Notes carries the DB comment ("📋 Game-specific settings:\n{comment}")
+        // set by BuildNotes() but never read by the Tier-2 wiki path in AddonInfoResolver.
+        if (!string.IsNullOrWhiteSpace(card.Notes) && card.Mod?.IsGenericUnity == true)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text         = card.Notes,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground   = textColour,
+                FontSize     = 13,
+                LineHeight   = 22,
+                Margin       = new Thickness(0, 8, 0, 0),
+            });
+        }
+
         // ── Wiki page link (NameUrl) as clickable hyperlink ──────────────────
         if (!string.IsNullOrEmpty(result.Url))
         {

@@ -306,7 +306,7 @@ internal static class NativeInterop
     [DllImport("user32.dll")]
     internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-    [DllImport("user32.dll")]
+    [DllImport("kernel32.dll")]
     internal static extern uint GetCurrentThreadId();
 
     [DllImport("user32.dll")]

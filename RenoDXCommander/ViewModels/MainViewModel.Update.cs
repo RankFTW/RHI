@@ -1001,7 +1001,8 @@ public partial class MainViewModel
 
         foreach (var card in osCards)
         {
-            try { await _optiScalerService.UpdateAsync(card); }
+            var cardVariant = GetOsVariant(card.GameName, card.Source ?? "");
+            try { await _optiScalerService.UpdateAsync(card, variantHint: cardVariant); }
             catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Failed for '{card.GameName}': {ex.Message}"); }
         }
 

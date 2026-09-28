@@ -903,8 +903,7 @@ public partial class MainViewModel
             {
                 AuxInstallService.ApplyRenodxKeyPlaceholders(card.InstallPath, "Unity");
 
-                // Apply per-game DB upgrades on top of the placeholders (dev-gated)
-                if (DevUnlockService.IsUnlocked)
+                // Apply per-game DB upgrades on top of the placeholders
                 {
                     var unityEntry = GetDbUnityEntry(card.GameName);
                     var upgrades   = unityEntry?.ParsedUpgrades;

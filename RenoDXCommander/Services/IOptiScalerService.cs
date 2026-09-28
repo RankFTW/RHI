@@ -124,7 +124,8 @@ public interface IOptiScalerService
     /// </summary>
     Task UpdateAsync(
         IOptiScalerGame card,
-        IProgress<(string message, double percent)>? progress = null);
+        IProgress<(string message, double percent)>? progress = null,
+        string? variantHint = null);
 
     // ── INI management ────────────────────────────────────────────────────────
 

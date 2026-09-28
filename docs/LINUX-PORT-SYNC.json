@@ -181,7 +181,7 @@
       ],
       "reason": "Linux mirrors OptiScaler controls for supported settings; unsupported Windows extras/presets remain deferred. cde8f9d audit: upstream change is a Windows extras button brush change; Linux uses its existing action theme.",
       "upstream_sha256": "857d847adbfa23488bcafd8862e1aa9b7c0d65d7a2fc22177bf1fb2c13d9439b",
-      "local_sha256": "fdcba9689dbb64cfa762e37c3da35e4d10feebc2798202fc01ef0428a234443d"
+      "local_sha256": "857d847adbfa23488bcafd8862e1aa9b7c0d65d7a2fc22177bf1fb2c13d9439b"
     },
     "RenoDXCommander/DetailPanelBuilder.NeuralRendering.cs": {
       "status": "adapted",
@@ -212,7 +212,7 @@
       ],
       "reason": "Linux exposes supported DLSS settings through dxvk-nvapi; Windows-only driver profile controls and WinUI instrumentation are not reproduced. cde8f9d audit: timing/logging split around WinUI AddToTree has no Avalonia driver-profile equivalent.",
       "upstream_sha256": "f0b5e2f519e74f0be4ad46fceb7cd143b1d5eaa0d0f6ac3a1562cd5d2a3a0651",
-      "local_sha256": "35f6b46f1d86ca7c4bf0ee9e97c76fa469ed4bd322b29f1bb81c68f3fc7869f0"
+      "local_sha256": "f0b5e2f519e74f0be4ad46fceb7cd143b1d5eaa0d0f6ac3a1562cd5d2a3a0651"
     },
     "RenoDXCommander/DetailPanelBuilder.Overrides.Dxvk.cs": {
       "status": "deferred",
@@ -262,7 +262,7 @@
       ],
       "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. cde8f9d audit: custom shader IDs are excluded from global-to-game inheritance upstream; Linux has no such inheritance or per-file picker.",
       "upstream_sha256": "b4dc17b9d0d479a743d4b7c8fc60667020f6de1f3bb9b80ac24a8d9743fa17bd",
-      "local_sha256": "0b90cbd61a486d690ec317c6ce17ca869befd5f3eef157e2ee837df54dd18559"
+      "local_sha256": "b4dc17b9d0d479a743d4b7c8fc60667020f6de1f3bb9b80ac24a8d9743fa17bd"
     },
     "RenoDXCommander/DetailPanelBuilder.cs": {
       "status": "adapted",
@@ -273,7 +273,7 @@
       ],
       "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. cde8f9d audit: Unity database status precedence is deferred with RenoDXDb integration; wiki status remains the Linux source.",
       "upstream_sha256": "04b0de1a4a1e8458ee34f52753f48575467ddea97a4b8025f70b0f0a61f6568b",
-      "local_sha256": "2dcaf656740b8bb0471bfe1e6a4eaa93d8ae2bd3fa8bc307442f601f360c59ef"
+      "local_sha256": "04b0de1a4a1e8458ee34f52753f48575467ddea97a4b8025f70b0f0a61f6568b"
     },
     "RenoDXCommander/DialogService.Game.cs": {
       "status": "adapted",
@@ -284,7 +284,7 @@
       ],
       "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. cde8f9d audit: additional Unity database comments are deferred with database integration; Linux displays wiki notes.",
       "upstream_sha256": "f909db2106f5547c89a7107e40d0ce2a68a808819ae2ec44a7cc2bd5e46d3e9a",
-      "local_sha256": "2872370d2c853cc213f6bd3c37e8e607df568df60938e90368375e94ced04f92"
+      "local_sha256": "f909db2106f5547c89a7107e40d0ce2a68a808819ae2ec44a7cc2bd5e46d3e9a"
     },
     "RenoDXCommander/DialogService.Update.cs": {
       "status": "adapted",
@@ -393,7 +393,7 @@
       ],
       "reason": "Linux adapts supported game/install/update UI and dialogs; new upstream behavior requires explicit review even when Windows UI cannot be reused. cde8f9d audit: Unity Tonemap_Offset/Scaling_Offset database toggle UI is deferred with Unity upgrade recipes.",
       "upstream_sha256": "465082239616dfbba20ac3306631b30b3694891c56516b32ba72d22292bec20c",
-      "local_sha256": "187df6347d544f3456eee564c70db106795e4a8461b54f3f093c099d0a09866b"
+      "local_sha256": "465082239616dfbba20ac3306631b30b3694891c56516b32ba72d22292bec20c"
     },
     "RenoDXCommander/MainWindow.Events.Install.cs": {
       "status": "adapted",
@@ -854,7 +854,7 @@
       "linux": [],
       "reason": "Windows handles, P/Invoke and global window/hotkey management are replaced by Avalonia/desktop facilities. cde8f9d audit: GetCurrentThreadId DLL import correction is Windows-only; Linux does not compile NativeInterop.",
       "upstream_sha256": "fa51a25d1859e2d0ef0ad3bca28dfd42f9a142eefaff526a09ccec7d20cebf85",
-      "local_sha256": "5715642cacb184d74a4e7774294fc64bc5e9f2cce32c3c4412b32f81f57def43"
+      "local_sha256": "fa51a25d1859e2d0ef0ad3bca28dfd42f9a142eefaff526a09ccec7d20cebf85"
     },
     "RenoDXCommander/OptiScaler.amd-dlss.ini": {
       "status": "data",
@@ -986,7 +986,7 @@
       ],
       "reason": "Review project/framework/package and shared-source changes against both builds; Linux has a separate solution and host. cde8f9d audit: upstream assembly/file release version bump to 2.7.9 is Windows release metadata; this Linux maintenance change does not claim that release version.",
       "upstream_sha256": "9946d5af951917ee8bcc2db86a1e4cd4a71bfbd8ba20f878c544e4b3b445eda4",
-      "local_sha256": "9d071b4475f30206322ff7297c22bc920da79327718460f738a64b85c6b1258e"
+      "local_sha256": "6b0473c154fb6e2f3c4893a85696bbd1866ab908480a0b42b44a99866d36baf6"
     },
     "RenoDXCommander/ResourceKeys.cs": {
       "status": "adapted",
@@ -1657,7 +1657,7 @@
       ],
       "reason": "Compiled once in RHI.Core and referenced by both Windows and Linux; host-specific adapters remain outside the shared assembly. cde8f9d audit: optional legacy variant hint is not needed by Linux ownership-record updates; Windows upstream signature evolution must be reconciled on a future main merge.",
       "upstream_sha256": "701a592ace3191e73c31b348a9dc459c4c474990570d3d5bb59758773dd2eb5a",
-      "local_sha256": "0118e217c152729536aeaea1dcef09e9ad9762b6293e4a07d23d83a7a3121858"
+      "local_sha256": "d0033727eb89df92271374c80b612f93b67b3cd5d2b457ab8690fe8432bdb687"
     },
     "RenoDXCommander/Services/IPcgwService.cs": {
       "status": "deferred",
@@ -1895,7 +1895,7 @@
       ],
       "reason": "Linux mirrors this upstream partial responsibility while retaining transactional ownership and Proton launch handling; review upstream changes explicitly. cde8f9d audit: Linux UpdateAll only updates when the owned record variant matches saved preferences; Windows-only installations require explicit adoption/reinstall and are not auto-updated with a default variant.",
       "upstream_sha256": "a81b7009ac36004e30c2f46774b3b48ee29650e15f11664e2145877b365c13e9",
-      "local_sha256": "4193414789e722b48dbcdcf3a258887cdd114f6d2cda0cc46a7844f0ada4bb61"
+      "local_sha256": "1aca67b3ec1bf1e109824ab338871636ed917ed39cbf34c7c3a0b583d9846afb"
     },
     "RenoDXCommander/Services/OptiScalerService.Staging.cs": {
       "status": "adapted",
@@ -2016,7 +2016,7 @@
       ],
       "reason": "Linux implements addon release lists and installation for all four NR methods; uses natural numeric prerelease sorting. Windows-installed NR can be removed/reinstalled but is not automatically updated until adopted into Linux ownership records. cde8f9d audit: Linux already naturally sorts rc10 above rc5 and stable above RC. Windows-manifest NR auto-redeploy remains deferred: Linux auto-updates only Linux-owned NrRecord installations.",
       "upstream_sha256": "eff41d5f19003f2c7058f02dab158d5948a527439d4592bc14dd8e31174269db",
-      "local_sha256": "56d0e07a83e3a4ddd8dd00d944ff40b08587f42c8fce366c4104fa9f694e58f8"
+      "local_sha256": "4656db430aa97435e13dc7117cb8899bdd591aebc02143fbf05dbf4aaf225655"
     },
     "RenoDXCommander/Services/ResolutionToggleService.cs": {
       "status": "windows-only",
@@ -2200,7 +2200,7 @@
       ],
       "reason": "Linux Update All uses installed ownership records and saved channels. Database-driven Unity upgrades, Nexus/Luma and Windows-specific update paths remain deferred. cde8f9d audit: ungating Unity database upgrade recipes is deferred because Linux has no RenoDXDb upgrade pipeline.",
       "upstream_sha256": "fa6c9edbc51160cccfa622ec2476e344aa498ac8296cc3bacd3abe36b154f834",
-      "local_sha256": "1524ef6d91f2ffdce65892382243d6e2fe65ab5855f224d1ec4de5c13ae701c3"
+      "local_sha256": "fa6c9edbc51160cccfa622ec2476e344aa498ac8296cc3bacd3abe36b154f834"
     },
     "RenoDXCommander/Services/UpdateService.cs": {
       "status": "deferred",
@@ -2272,7 +2272,7 @@
       ],
       "reason": "Linux offers explicit whole-pack/local-addon installation; per-file shader selection, global inheritance and include auto-selection are not present. cde8f9d audit: exclusion of custom files from include dependency auto-selection does not apply to explicit whole-pack Linux installation.",
       "upstream_sha256": "46d173b583472cc9817eea010e615f0941acc2ac64f6738555c8f30ae5f5a65f",
-      "local_sha256": "514a74c098d2e2d8af41b9dcc8bc6dab1838c99fb895ac82b5224941f2cd1d9e"
+      "local_sha256": "46d173b583472cc9817eea010e615f0941acc2ac64f6738555c8f30ae5f5a65f"
     },
     "RenoDXCommander/Themes/DarkTheme.xaml": {
       "status": "adapted",
@@ -2347,7 +2347,7 @@
       "linux": [],
       "reason": "Dedicated Windows DXVK/optional-addon settings UI is not ported; Proton supplies its own translation layer. cde8f9d audit: Windows DX11 DXVK toggle eligibility does not apply; Proton selects/manages DXVK.",
       "upstream_sha256": "d340874c00346f45267fe384cdca1b57ba272208cad76a27a0323f794cfaccd9",
-      "local_sha256": "63717a45792fe377b8d45d3c6d5c3c0cbb88bc272a038a0842759507ad846a6a"
+      "local_sha256": "d340874c00346f45267fe384cdca1b57ba272208cad76a27a0323f794cfaccd9"
     },
     "RenoDXCommander/ViewModels/GameCardViewModel.Luma.cs": {
       "status": "deferred",
@@ -2520,7 +2520,7 @@
       ],
       "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. cde8f9d audit: explicit Linux refresh must bypass the addon release cache; see RefreshDlssCatalogs and its force argument.",
       "upstream_sha256": "715a1f256af881875a125840ddac366b982668f574a3b2384cfa22ba14c82599",
-      "local_sha256": "5bfd02f0889cde6ab46b4937bd02475f5138510872b57b1f4b714f98fe75f377"
+      "local_sha256": "715a1f256af881875a125840ddac366b982668f574a3b2384cfa22ba14c82599"
     },
     "RenoDXCommander/ViewModels/MainViewModel.Install.Components.cs": {
       "status": "adapted",
@@ -2558,7 +2558,7 @@
       ],
       "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. cde8f9d audit: Unity database upgrade ungating is deferred with that unported feature.",
       "upstream_sha256": "66c6719ebe27a850a08ac574ccc7b692eb5a00bcb8cd5354a2c568d548eff3cd",
-      "local_sha256": "0969efcc6b1d881da34a124c9119fd6691579e50b4811a0296eff1de28fb2e19"
+      "local_sha256": "66c6719ebe27a850a08ac574ccc7b692eb5a00bcb8cd5354a2c568d548eff3cd"
     },
     "RenoDXCommander/ViewModels/MainViewModel.Settings.cs": {
       "status": "adapted",
@@ -2581,7 +2581,7 @@
       ],
       "reason": "Linux keeps game/view state in its own models and Avalonia window; supported discovery/install/update/filter behavior must be reviewed, while database-only and Windows-only paths remain deferred. cde8f9d audit: Linux update requires an owned record and a matching saved variant; Windows-manifest installations are explicitly reinstalled/adopted before automated updates.",
       "upstream_sha256": "80a703ef718b5f3ab6d4fcba681ccce0aa62f9cead34aaead9203722e4cc3c54",
-      "local_sha256": "764a7170107164b93391e93929575f2b001c6b903bacb11fd13a684b4291e719"
+      "local_sha256": "80a703ef718b5f3ab6d4fcba681ccce0aa62f9cead34aaead9203722e4cc3c54"
     },
     "RenoDXCommander/ViewModels/MainViewModel.cs": {
       "status": "adapted",
@@ -2653,7 +2653,7 @@
       "linux": [],
       "reason": "Upstream game/PCGamingWiki/Unity database and per-title recipe integration is not ported; catalogue matching currently uses the wiki and live manifest. Review data/schema changes before adding support.",
       "upstream_sha256": "614de218480abbb8e5f361b503ab30632dd160d13cde3487b83c7ccb5d62e322",
-      "local_sha256": "248f63e264a764dc8c4c79c75f1af45d397dae369eb4ab204aa71c2f721009eb"
+      "local_sha256": "614de218480abbb8e5f361b503ab30632dd160d13cde3487b83c7ccb5d62e322"
     },
     "dlss_manifest.json": {
       "status": "data",

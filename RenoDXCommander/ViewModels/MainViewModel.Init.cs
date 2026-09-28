@@ -433,7 +433,7 @@ public partial class MainViewModel
                 try
                 {
                     var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
-                    await rdx5Svc.FetchAndCacheAvailableVersionsAsync().ConfigureAwait(false);
+                    await rdx5Svc.FetchAndCacheAvailableVersionsAsync(forceRefresh: forceRescan).ConfigureAwait(false);
                     // If the version list shows a newer version than what's staged, download it.
                     // This handles the case where the user has "Latest" selected but hasn't run
                     // the update check yet (4-hour cooldown) — the version list fetch is independent.

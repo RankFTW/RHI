@@ -232,19 +232,27 @@ public partial class DetailPanelBuilder
         }
         else
         {
-            var dbMod = _window.ViewModel.GetDbNamedMod(card.GameName);
-            if (dbMod != null)
+            var dbUnityEntry = _window.ViewModel.GetDbUnityEntry(card.GameName);
+            if (dbUnityEntry != null)
             {
-                // MapStatus converts "Done"→"✅" and "WIP"→"🚧", so normalise back to text
-                modStatusText = dbMod.Status == "🚧" ? "WIP" : dbMod.Status == "✅" ? "Done" : null;
+                modStatusText = dbUnityEntry.Status; // "Done" or "WIP"
             }
-            else if (!card.IsGenericMod)
+            else
             {
-                // Fallback: WikiStatus is already correctly resolved for this card (handles
-                // games detected by folder name like "AFOP" whose DB entry uses the full title)
-                modStatusText = card.WikiStatus == "🚧" ? "WIP"
-                              : card.WikiStatus == "✅" ? "Done"
-                              : null;
+                var dbMod = _window.ViewModel.GetDbNamedMod(card.GameName);
+                if (dbMod != null)
+                {
+                    // MapStatus converts "Done"→"✅" and "WIP"→"🚧", so normalise back to text
+                    modStatusText = dbMod.Status == "🚧" ? "WIP" : dbMod.Status == "✅" ? "Done" : null;
+                }
+                else if (!card.IsGenericMod)
+                {
+                    // Fallback: WikiStatus is already correctly resolved for this card (handles
+                    // games detected by folder name like "AFOP" whose DB entry uses the full title)
+                    modStatusText = card.WikiStatus == "🚧" ? "WIP"
+                                  : card.WikiStatus == "✅" ? "Done"
+                                  : null;
+                }
             }
         }
 

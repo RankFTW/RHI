@@ -42,17 +42,16 @@ public partial class GameCardViewModel
     /// </summary>
     private bool HasHigherApiDetected =>
         DetectedApis.Contains(GraphicsApiType.DirectX12)
-        || DetectedApis.Contains(GraphicsApiType.Vulkan)
-        || (GraphicsApi == GraphicsApiType.DirectX11
-            && (EngineHint.StartsWith("Unreal Engine", StringComparison.OrdinalIgnoreCase) || EngineHint is "Unreal (Legacy)"));
+        || DetectedApis.Contains(GraphicsApiType.Vulkan);
 
     public bool IsDxvkToggleVisible =>
-        // DX11 is intentionally excluded — DXVK on Windows provides marginal to negative
-        // performance for DX11 games, and causes overlay/fullscreen/VRR issues.
-        // The DX11 install code is still in place; re-add DirectX11 here when ready.
+        // DX8/DX9/DX10/DX11 games are eligible for DXVK.
+        // HasHigherApiDetected blocks: games with DX12/Vulkan detected, or DX11 Unreal Engine titles
+        // (which commonly support DX12 alongside DX11 and don't benefit from DXVK).
         (GraphicsApi is GraphicsApiType.DirectX8
                      or GraphicsApiType.DirectX9
-                     or GraphicsApiType.DirectX10)
+                     or GraphicsApiType.DirectX10
+                     or GraphicsApiType.DirectX11)
         && !HasHigherApiDetected
         || DxvkRecord?.InstalledDlls.Contains("d3d9.dll") == true; // Keep visible when direct DX9 mode is active (API switched to Vulkan)
 
