@@ -52,7 +52,7 @@ jobs:
     steps:
       - name: Install build and desktop dependencies
         run: >-
-          dnf install -y git curl tar gzip xz python3 findutils
+          dnf install -y git curl tar gzip xz python3 findutils diffutils
           glibc libgcc libstdc++ ca-certificates openssl-libs libicu krb5-libs zlib
           libX11 libICE libSM fontconfig
       - uses: actions/checkout@v4
