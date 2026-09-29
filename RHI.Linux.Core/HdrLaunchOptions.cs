@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace RHI.Linux.Core;
 
-// Copy-only presets: never rewrite another feature's settings or replace a conflicting value.
+// Preserve unrelated settings and refuse ambiguous shell syntax.
 public static class HdrLaunchOptions
 {
     public static string Merge(string existing, bool wayland, bool hdrWsi)
@@ -33,6 +33,24 @@ public static class HdrLaunchOptions
                 throw new FormatException($"{name} already appears with a conflicting value or in an ambiguous position. Review it in your existing options; RHI has not changed it.");
         }
         return additions.Count == 0 ? existing : string.Join(' ', additions) + " " + existing;
+    }
+
+    public static bool IsEnabled(string existing)
+    {
+        try { return Tokens(existing).Count > 0 && Merge(existing, false, false) == existing; }
+        catch (FormatException) { return false; }
+    }
+
+    public static string Disable(string existing)
+    {
+        // Validate scope and value before removing the HDR assignment only.
+        _ = Merge(existing, false, false);
+        if (!IsEnabled(existing)) return existing;
+        var token = Tokens(existing).First(t => t.StartsWith("PROTON_ENABLE_HDR=", StringComparison.Ordinal));
+        var start = existing.IndexOf(token, StringComparison.Ordinal);
+        var end = start + token.Length;
+        if (end < existing.Length && existing[end] == ' ') end++;
+        return existing[..start] + existing[end..];
     }
 
     private static List<string> Tokens(string text)

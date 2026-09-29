@@ -106,14 +106,19 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
         return info;
     }
 
-    public static async Task ConfigureSteam(Game game, string config, IProgress<string>? progress, LaunchExtras? extras = null)
+    public static Task ConfigureSteam(Game game, string config, IProgress<string>? progress, LaunchExtras? extras = null)
+    {
+        var proxy = new Installation(game.InstallDirectory).ReadState().Proxy;
+        if (proxy == null && (extras == null || extras.Dlls.Count == 0 && Proton.HasEnvironment("", extras))) throw new IOException("Install ReShade first.");
+        return ConfigureLaunchOptions(game, config, progress, options => Proton.LaunchOptions(options, proxy, extras));
+    }
+
+    public static async Task ConfigureLaunchOptions(Game game, string config, IProgress<string>? progress, Func<string, string> merge)
     {
         RequireClosed(game);
         if (AnySteamGameRunning()) throw new IOException("Close your running Steam games, then choose Apply again. Steam needs a restart to save this setup.");
-        var proxy = new Installation(game.InstallDirectory).ReadState().Proxy;
-        if (proxy == null && (extras == null || extras.Dlls.Count == 0 && Proton.HasEnvironment("", extras))) throw new IOException("Install ReShade first.");
         // Validate the merge before asking Steam to exit.
-        _ = Proton.LaunchOptions(Proton.ReadOptions(config, game.AppId!) ?? "", proxy, extras);
+        _ = merge(Proton.ReadOptions(config, game.AppId!) ?? "");
         var restart = Proton.SteamRunning();
         try
         {
@@ -125,7 +130,7 @@ public sealed class GameSetup(Downloads downloads, Catalog catalog)
                 while (Proton.SteamRunning() && DateTime.UtcNow < until) await Task.Delay(500);
                 if (Proton.SteamRunning()) throw new IOException("Steam is still closing. Exit it from its menu, then click Apply again.");
             }
-            var options = Proton.LaunchOptions(Proton.ReadOptions(config, game.AppId!) ?? "", proxy, extras);
+            var options = merge(Proton.ReadOptions(config, game.AppId!) ?? "");
             Proton.SaveOptions(config, game.AppId!, options);
         }
         finally

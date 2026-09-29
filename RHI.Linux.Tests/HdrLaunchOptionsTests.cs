@@ -5,6 +5,26 @@ namespace RHI.Linux.Tests;
 
 public sealed class HdrLaunchOptionsTests
 {
+    [Theory]
+    [InlineData("PROTON_ENABLE_HDR=1 %command%", true)]
+    [InlineData("PROTON_ENABLE_HDR='1' gamemoderun %command%", true)]
+    [InlineData("", false)]
+    [InlineData("%command% PROTON_ENABLE_HDR=1", false)]
+    [InlineData("PROTON_ENABLE_HDR=0 %command%", false)]
+    [InlineData("env PROTON_ENABLE_HDR=1 %command%", false)]
+    public void ActiveStateRequiresUnambiguousSavedHdr(string options, bool enabled)
+        => Assert.Equal(enabled, HdrLaunchOptions.IsEnabled(options));
+
+    [Fact]
+    public void DisablePreservesOtherFeaturesAndSubsequentEdits()
+    {
+        const string original = "PROTON_ENABLE_WAYLAND=1  ENABLE_HDR_WSI=1 WINEDLLOVERRIDES='dxgi=n,b' %command% -dx12";
+        var enabled = HdrLaunchOptions.Merge(original, false, false);
+        Assert.Equal(original + " -nosplash", HdrLaunchOptions.Disable(enabled + " -nosplash"));
+        Assert.Equal(original, HdrLaunchOptions.Disable(original));
+        Assert.Throws<FormatException>(() => HdrLaunchOptions.Disable("%command% PROTON_ENABLE_HDR=1"));
+    }
+
     [Fact]
     public void FullPresetPreservesOtherFeaturesAndFormatting()
     {

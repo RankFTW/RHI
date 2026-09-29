@@ -176,6 +176,14 @@ On the tested GE-Proton11-6 setup, stable ReShade 6.8.0 caused a black screen in
 
 To undo RHI's HDR edits with the game closed, use **RenoDX cog → Restore previous HDR settings** or `./run-linux.sh --restore-hdr 2584270`. This also restores Engine.ini's original file permissions. Removal controls can restore the pre-install plugin files for a baseline test. Keep gameplay validation separate from the isolated download/install smoke test.
 
+## Native HDR on the game page
+
+Use **Native HDR → Enable Native HDR** on the main game page for games with built-in HDR. This saves `PROTON_ENABLE_HDR=1` for the selected Steam account, with a backup, and offers to restart Steam if needed. No ReShade or RenoDX installation is required. Enable HDR in the game and display settings and use a compatible Proton build.
+
+The button turns green when the saved launch options contain an unambiguous enabled HDR flag. This means **configured**, not verified HDR output. **Disable** removes only that flag, preserving current DLL overrides, DLSS options, Wayland, HDR WSI and game arguments. Conflicting or ambiguous options must be resolved manually. The state is refreshed when returning to RHI.
+
+The cog opens the optional Wayland / HDR WSI preview helper. For games without an available Steam account configuration, the main button opens that helper so you can copy options into your launcher.
+
 ## HDR launch-option preview
 
 Open **RenoDX HDR settings → HDR launch options…**, or **Advanced settings → Proton launch options → HDR launch options…** for the selected game. Select the Steam account if needed. For another launcher, or if Steam has unsaved changes, paste the complete current launch options into the input first.
