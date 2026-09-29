@@ -176,6 +176,16 @@ On the tested GE-Proton11-6 setup, stable ReShade 6.8.0 caused a black screen in
 
 To undo RHI's HDR edits with the game closed, use **RenoDX cog → Restore previous HDR settings** or `./run-linux.sh --restore-hdr 2584270`. This also restores Engine.ini's original file permissions. Removal controls can restore the pre-install plugin files for a baseline test. Keep gameplay validation separate from the isolated download/install smoke test.
 
+## HDR launch-option preview
+
+Open **RenoDX HDR settings → HDR launch options…**, or **Advanced settings → Proton launch options → HDR launch options…** for the selected game. Select the Steam account if needed. For another launcher, or if Steam has unsaved changes, paste the complete current launch options into the input first.
+
+The preset adds `PROTON_ENABLE_HDR=1`, with separate choices for `PROTON_ENABLE_WAYLAND=1` (selected initially) and `ENABLE_HDR_WSI=1` (optional). Check support in your Proton build and display setup: [GE-Proton documents the Proton switches](https://github.com/GloriousEggroll/proton-ge-custom/blob/master/README.md), and [VK_hdr_layer documents HDR WSI](https://github.com/Zamundaaa/VK_hdr_layer). These settings do not confirm that the game is outputting HDR.
+
+Choose **Preview HDR options**, review the result, then **Copy preview** and paste it into Steam's game Properties → General → Launch Options. This tool does not write to Steam or persist a preset that could later overwrite another feature's settings. Reopen it after changing ReShade, DLSS or other launch options to read their latest values.
+
+The merge only prefixes missing selected variables. Existing DLL overrides, DLSS variables, wrapper arguments, spacing and game arguments remain intact. Already enabled literal values are kept, and unchecked variables are left alone. Conflicting values, duplicate selected variables, ambiguous variable placement, environment wrappers and shell scripting are refused rather than rewritten. Resolve those manually in your launcher. **Restore original preview** shows the input without the preset additions; use **Copy preview** to undo only if no subsequent launcher changes need to be preserved. The original input remains available while the dialog is open.
+
 ## Sources
 
 - [RenoDX mod catalogue and UE Extended instructions](https://github.com/clshortfuse/renodx/wiki/Mods)

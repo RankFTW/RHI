@@ -300,6 +300,7 @@ public sealed class AdvancedWindow : Window
             _details.Children.Add(Text("Local addons include ReLimiter and Display Commander when their Windows builds work under Proton. Windows NVIDIA driver profiles and Windows HDR toggles are unavailable on Linux. Enable HDR through Bazzite / Gamescope for HDR-capable games."));
 
             Section("Proton launch options");
+            _details.Children.Add(Button("HDR launch options…", async () => await new HdrLaunchWindow(game).ShowDialog(this)));
             var configs = Proton.LocalConfigs(game).ToList();
             var configPicker = new ComboBox { ItemsSource = configs, SelectedIndex = configs.Count > 0 ? 0 : -1, HorizontalAlignment = HorizontalAlignment.Stretch };
             var options = new TextBox { Watermark = "Existing Steam launch options, including %command%", TextWrapping = TextWrapping.Wrap, MinHeight = 70, Name = "LaunchOptions" };
