@@ -17,7 +17,7 @@ public static class HdrLaunchOptions
         if (Regex.Matches(existing, Regex.Escape("%command%")).Count != 1)
             throw new FormatException("Use exactly one %command% placeholder before generating HDR options.");
         if (tokens.Any(t => t.Trim('\'', '"') is "env" or "-i" or "--ignore-environment" || t.EndsWith("/env", StringComparison.Ordinal)))
-            throw new FormatException("An environment wrapper may override the HDR preset. Configure HDR manually in your launcher.");
+            throw new FormatException("An environment wrapper may override the HDR preset. Configure them manually in your launcher.");
         var wanted = new List<string> { "PROTON_ENABLE_HDR" };
         if (wayland) wanted.Insert(0, "PROTON_ENABLE_WAYLAND");
         if (hdrWsi) wanted.Add("ENABLE_HDR_WSI");
@@ -53,7 +53,7 @@ public static class HdrLaunchOptions
         return existing[..start] + existing[end..];
     }
 
-    private static List<string> Tokens(string text)
+    internal static List<string> Tokens(string text)
     {
         var result = new List<string>();
         int start = -1; char quote = '\0';
@@ -62,7 +62,7 @@ public static class HdrLaunchOptions
             var c = text[i];
             // Do not interpret shell expansions, escapes, control operators or redirections.
             if (c is '$' or '`' or '\\' || (quote == '\0' && c is ';' or '|' or '&' or '<' or '>' or '(' or ')' or '#'))
-                throw new FormatException("These launch options contain shell syntax that cannot be safely merged. Configure HDR manually in your launcher.");
+                throw new FormatException("These launch options contain shell syntax that cannot be safely merged. Configure them manually in your launcher.");
             if (quote == '\0' && char.IsWhiteSpace(c))
             {
                 if (start >= 0) { result.Add(text[start..i]); start = -1; }

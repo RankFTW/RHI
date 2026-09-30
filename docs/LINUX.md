@@ -184,6 +184,14 @@ The button turns green when the saved launch options contain an unambiguous enab
 
 The cog opens the optional Wayland / HDR WSI preview helper. For games without an available Steam account configuration, the main button opens that helper so you can copy options into your launcher.
 
+## RE Engine Wine detection bypass
+
+RE Engine games show an optional **RE Engine Wine detection → Bypass Wine detection** control beside the Native HDR section. It reuses the same `IsREEngine` detection as the RE Framework row; no additional engine detection is performed. Nothing is enabled automatically.
+
+Enabling appends `/WineDetectionEnabled:False` after `%command%` for the selected Steam account, using the existing backup and Steam restart flow. Disabling removes only that argument, preserving HDR, DLL overrides and other launch options. Conflicting values or ambiguous syntax require manual review. For games without an available Steam account configuration, a preview helper lets you paste, edit and copy launcher options.
+
+This RE Engine workaround may expose ray-tracing options in supported games; enable ray tracing in-game afterwards. It does not add ray-tracing support to games or hardware. Compatibility varies, and [game/driver crashes have been reported with the argument](https://github.com/HansKristian-Work/vkd3d-proton/issues/2884); disable the bypass if it causes problems.
+
 ## HDR launch-option preview
 
 Open **RenoDX HDR settings → HDR launch options…**, or **Advanced settings → Proton launch options → HDR launch options…** for the selected game. Select the Steam account if needed. For another launcher, or if Steam has unsaved changes, paste the complete current launch options into the input first.
