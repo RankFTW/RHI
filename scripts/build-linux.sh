@@ -49,3 +49,9 @@ mkdir -p "$rhi_repo/artifacts/linux-x64"
 cp -a --remove-destination "$rhi_publish/." "$rhi_repo/artifacts/linux-x64/"
 echo "Ready: $rhi_repo/artifacts/linux-x64/RHI.Linux"
 echo "Package: $rhi_repo/artifacts/RHI-linux-x64.tar.gz"
+if [[ -t 0 && "${RHI_SKIP_DESKTOP_PROMPT:-0}" != 1 ]]; then
+    read -r -p 'Add an RHI icon to your desktop? [y/N] ' rhi_desktop_answer || rhi_desktop_answer=n
+    case "$rhi_desktop_answer" in
+        [yY]|[yY][eE][sS]) bash "$rhi_repo/scripts/install-linux-desktop.sh" --desktop ;;
+    esac
+fi

@@ -6,6 +6,29 @@ namespace RHI.Linux.Tests;
 public sealed class HdrLaunchOptionsTests
 {
     [Theory]
+    [InlineData("%command%")]
+    [InlineData("PROTON_ENABLE_HDR=1 %command%")]
+    [InlineData("PROTON_ENABLE_WAYLAND=1 %command%")]
+    [InlineData("PROTON_ENABLE_WAYLAND='1' PROTON_ENABLE_HDR=\"1\" %command%")]
+    public void MainPagePresetCompletesBothFlagsWithoutDuplicates(string original)
+    {
+        var enabled = HdrLaunchOptions.Merge(original, true, false);
+        Assert.True(HdrLaunchOptions.IsEnabled(enabled, wayland: true));
+        Assert.Equal(enabled, HdrLaunchOptions.Merge(enabled, true, false));
+        Assert.Equal("1", Proton.ReadVariable(enabled, "PROTON_ENABLE_WAYLAND"));
+        Assert.Equal("1", Proton.ReadVariable(enabled, "PROTON_ENABLE_HDR"));
+        Assert.False(HdrLaunchOptions.IsEnabled(HdrLaunchOptions.Disable(enabled), wayland: true));
+    }
+
+    [Theory]
+    [InlineData("PROTON_ENABLE_HDR=1 %command%")]
+    [InlineData("PROTON_ENABLE_WAYLAND=1 %command%")]
+    [InlineData("PROTON_ENABLE_WAYLAND=0 PROTON_ENABLE_HDR=1 %command%")]
+    [InlineData("PROTON_ENABLE_HDR=1 %command% PROTON_ENABLE_WAYLAND=1")]
+    public void MainPageStateRequiresBothFlags(string options)
+        => Assert.False(HdrLaunchOptions.IsEnabled(options, wayland: true));
+
+    [Theory]
     [InlineData("PROTON_ENABLE_HDR=1 %command%", true)]
     [InlineData("PROTON_ENABLE_HDR='1' gamemoderun %command%", true)]
     [InlineData("", false)]

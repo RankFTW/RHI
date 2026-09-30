@@ -29,27 +29,27 @@ public sealed partial class MainWindow
             toggle.IsEnabled = true;
             try
             {
-                var enabled = Config() is { } config && HdrLaunchOptions.IsEnabled(Proton.ReadOptions(config, game.AppId!) ?? "");
+                var enabled = Config() is { } config && HdrLaunchOptions.IsEnabled(Proton.ReadOptions(config, game.AppId!) ?? "", wayland: true);
                 toggle.Content = enabled ? "✓ Configured — Disable" : Config() == null ? "Set up Native HDR…" : "Enable Native HDR";
                 if (enabled) toggle.Classes.Add("success");
-                status.Text = Config() == null ? "Copy launch options into your launcher using the setup helper." : enabled ? "HDR launch option configured. HDR output is not verified." : "HDR launch option is not configured.";
+                status.Text = Config() == null ? "Copy launch options into your launcher using the setup helper." : enabled ? "HDR and Wayland launch options configured. HDR output is not verified." : "HDR and Wayland launch options are not both configured.";
             }
             catch (Exception ex) { status.Text = "Could not read HDR settings: " + ex.Message; toggle.IsEnabled = false; }
         }
         toggle = Action("Enable Native HDR", async () =>
         {
             if (Config() is not { } config) { await new HdrLaunchWindow(game).ShowDialog(this); Update(); return; }
-            var enabled = HdrLaunchOptions.IsEnabled(Proton.ReadOptions(config, game.AppId!) ?? "");
-            string Merge(string options) => enabled ? HdrLaunchOptions.Disable(options) : HdrLaunchOptions.Merge(options, false, false);
+            var enabled = HdrLaunchOptions.IsEnabled(Proton.ReadOptions(config, game.AppId!) ?? "", wayland: true);
+            string Merge(string options) => enabled ? HdrLaunchOptions.Disable(options) : HdrLaunchOptions.Merge(options, true, false);
             _ = Merge(Proton.ReadOptions(config, game.AppId!) ?? "");
             if (Proton.SteamRunning() && !await Confirm("Restart Steam?", "Steam needs to close and reopen to save this game's Native HDR launch option. Close running games first.", "Apply & restart Steam")) return;
             await GameSetup.ConfigureLaunchOptions(game, config, Progress, Merge);
             _settings.For(game).SteamConfig = config;
             _settings.Save();
             await ReadStates(); ShowGame();
-            _status.Text = enabled ? "Native HDR launch option removed." : "Native HDR launch option configured.";
+            _status.Text = enabled ? "Native HDR launch option removed." : "Native HDR and Wayland launch options configured.";
         }, "action", "NativeHdrToggle");
-        ToolTip.SetTip(toggle, "Green means PROTON_ENABLE_HDR=1 is saved for the selected Steam account. Disabling removes only this option; Wayland and HDR WSI settings are preserved.");
+        ToolTip.SetTip(toggle, "Green means PROTON_ENABLE_WAYLAND=1 and PROTON_ENABLE_HDR=1 are saved for the selected Steam account. Disabling removes only PROTON_ENABLE_HDR; Wayland and HDR WSI settings are preserved.");
         var settings = Action("⚙", async () => { await new HdrLaunchWindow(game).ShowDialog(this); Update(); }, "", "NativeHdrSettings");
         ToolTip.SetTip(settings, "Optional Wayland / HDR WSI launch options");
         body.Children.Add(Row(toggle, settings));

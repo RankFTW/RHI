@@ -14,7 +14,7 @@ cd RHI
 ./run-linux.sh
 ```
 
-The first run downloads a user-local .NET SDK if needed, restores packages, runs tests, and builds the app. Allow several minutes and an internet connection. Later runs launch the existing build. After pulling source updates, run `./scripts/build-linux.sh` to rebuild.
+The first run downloads a user-local .NET SDK if needed, restores packages, runs tests, and builds the app. Allow several minutes and an internet connection. Later runs launch the existing build. After pulling source updates, run `./scripts/build-linux.sh` to rebuild. At the end of an interactive build, answer **Y** to add a desktop icon and application-menu entry, or **N** (the default) to skip them. Automated builds skip this prompt.
 
 The standalone build is `artifacts/linux-x64/RHI.Linux`. The portable package and checksum are `artifacts/RHI-linux-x64.tar.gz` and `artifacts/RHI-linux-x64.tar.gz.sha256`.
 
@@ -23,6 +23,8 @@ To add an application-menu entry (KDE, GNOME, and other desktop-entry menus):
 ```bash
 ./scripts/install-linux-desktop.sh
 ```
+
+The installer also asks whether to add a desktop icon, using your configured desktop folder. Use `--desktop` or `--no-desktop` to choose without a prompt. Some desktops require allowing the shortcut to launch on first use; desktops without icon support can use the application-menu entry.
 
 ## First game
 
@@ -178,9 +180,9 @@ To undo RHI's HDR edits with the game closed, use **RenoDX cog → Restore previ
 
 ## Native HDR on the game page
 
-Use **Native HDR → Enable Native HDR** on the main game page for games with built-in HDR. This saves `PROTON_ENABLE_HDR=1` for the selected Steam account, with a backup, and offers to restart Steam if needed. No ReShade or RenoDX installation is required. Enable HDR in the game and display settings and use a compatible Proton build.
+Use **Native HDR → Enable Native HDR** on the main game page for games with built-in HDR. This saves both `PROTON_ENABLE_WAYLAND=1` and `PROTON_ENABLE_HDR=1` for the selected Steam account, with a backup, and offers to restart Steam if needed. No ReShade or RenoDX installation is required. Enable HDR in the game and display settings and use a compatible Proton build.
 
-The button turns green when the saved launch options contain an unambiguous enabled HDR flag. This means **configured**, not verified HDR output. **Disable** removes only that flag, preserving current DLL overrides, DLSS options, Wayland, HDR WSI and game arguments. Conflicting or ambiguous options must be resolved manually. The state is refreshed when returning to RHI.
+The button turns green when the saved launch options contain unambiguous enabled HDR and Wayland flags. This means **configured**, not verified HDR output. **Disable** removes only that flag, preserving current DLL overrides, DLSS options, Wayland, HDR WSI and game arguments. Conflicting or ambiguous options must be resolved manually. The state is refreshed when returning to RHI.
 
 The cog opens the optional Wayland / HDR WSI preview helper. For games without an available Steam account configuration, the main button opens that helper so you can copy options into your launcher.
 

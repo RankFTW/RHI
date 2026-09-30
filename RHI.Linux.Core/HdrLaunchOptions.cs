@@ -17,7 +17,7 @@ public static class HdrLaunchOptions
         if (Regex.Matches(existing, Regex.Escape("%command%")).Count != 1)
             throw new FormatException("Use exactly one %command% placeholder before generating HDR options.");
         if (tokens.Any(t => t.Trim('\'', '"') is "env" or "-i" or "--ignore-environment" || t.EndsWith("/env", StringComparison.Ordinal)))
-            throw new FormatException("An environment wrapper may override the HDR preset. Configure them manually in your launcher.");
+            throw new FormatException("An environment wrapper may override the HDR preset. Configure HDR manually in your launcher.");
         var wanted = new List<string> { "PROTON_ENABLE_HDR" };
         if (wayland) wanted.Insert(0, "PROTON_ENABLE_WAYLAND");
         if (hdrWsi) wanted.Add("ENABLE_HDR_WSI");
@@ -35,9 +35,9 @@ public static class HdrLaunchOptions
         return additions.Count == 0 ? existing : string.Join(' ', additions) + " " + existing;
     }
 
-    public static bool IsEnabled(string existing)
+    public static bool IsEnabled(string existing, bool wayland = false)
     {
-        try { return Tokens(existing).Count > 0 && Merge(existing, false, false) == existing; }
+        try { return Tokens(existing).Count > 0 && Merge(existing, wayland, false) == existing; }
         catch (FormatException) { return false; }
     }
 
