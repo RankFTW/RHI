@@ -1,4 +1,5 @@
 import os
+import pty
 from pathlib import Path
 import shutil
 import subprocess
@@ -9,6 +10,55 @@ SCRIPT = Path(__file__).resolve().parents[1] / "install-linux-desktop.sh"
 
 
 class DesktopInstallerTests(unittest.TestCase):
+    def test_interactive_desktop_choice(self):
+        for answer, expected in (("Y", True), ("y", True), ("N", False), ("", False)):
+            with self.subTest(answer=answer), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                bundle = root / "bundle"
+                bundle.mkdir()
+                shutil.copyfile(SCRIPT, bundle / "install.sh")
+                (bundle / "RHI.Linux").touch(mode=0o755)
+                desktop = root / "Localized Desktop"
+                bin_dir = root / "bin"
+                bin_dir.mkdir()
+                xdg = bin_dir / "xdg-user-dir"
+                xdg.write_text('#!/bin/sh\nprintf "%s\\n" "$RHI_TEST_DESKTOP"\n')
+                xdg.chmod(0o755)
+                environment = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ["PATH"],
+                                   XDG_DATA_HOME=str(root / "data"), RHI_TEST_DESKTOP=str(desktop))
+                master, slave = pty.openpty()
+                try:
+                    os.write(master, (answer + "\n").encode())
+                    result = subprocess.run(["/bin/bash", str(bundle / "install.sh")], env=environment,
+                                            stdin=slave, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+                finally:
+                    os.close(master)
+                    os.close(slave)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                entry = root / "data/applications/rhi-linux.desktop"
+                self.assertTrue(entry.exists())
+                shortcut = desktop / "rhi-linux.desktop"
+                self.assertEqual(shortcut.exists(), expected)
+                if expected:
+                    self.assertEqual(shortcut.read_bytes(), entry.read_bytes())
+                    self.assertTrue(os.access(shortcut, os.X_OK))
+
+    def test_explicit_desktop_respects_disabled_desktop_directory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            shutil.copyfile(SCRIPT, root / "install.sh")
+            (root / "RHI.Linux").touch(mode=0o755)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            xdg = bin_dir / "xdg-user-dir"
+            xdg.write_text('#!/bin/sh\nprintf "%s\\n" "$HOME"\n')
+            xdg.chmod(0o755)
+            environment = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ["PATH"],
+                               XDG_DATA_HOME=str(root / "data"))
+            result = subprocess.run(["/bin/bash", str(root / "install.sh"), "--desktop"],
+                                    env=environment, capture_output=True, text=True, check=True)
+            self.assertIn("Desktop folder is disabled", result.stdout)
+
     def test_install_without_python_and_escape_desktop_fields(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

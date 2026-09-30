@@ -79,6 +79,8 @@ public sealed partial class MainWindow
             Grid.SetColumn(finish, 1); summary.Children.Add(finish);
         }
         _details.Children.Add(Card(summary));
+        _details.Children.Add(NativeHdrSection(game));
+        if (game.IsREEngine) _details.Children.Add(ReEngineLaunchSection(game));
         if (game.Executable == null) { _details.Children.Add(Label("Choose the game's Windows executable in Advanced settings to install plugins.", 13, Secondary)); _details.Children.Add(Action("Advanced settings", OpenAdvanced)); return; }
 
         var table = new StackPanel { Spacing = 10, Children = { Label("Components", 13, null, true) } };

@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
+rhi_desktop_mode=ask
+case "${1:-}" in
+    --desktop) rhi_desktop_mode=yes ;;
+    --no-desktop) rhi_desktop_mode=no ;;
+    '') ;;
+    *) echo 'Usage: install.sh [--desktop|--no-desktop]' >&2; exit 1 ;;
+esac
 rhi_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$rhi_dir/RHI.Linux" && -x "$rhi_dir/RHI.Linux" ]]; then
     rhi_launcher="$rhi_dir/run-linux.sh"
     rhi_icon="$rhi_dir/rhi.png"
 else
     rhi_repo="$(cd -- "$rhi_dir/.." && pwd)"
-    if [[ ! -x "$rhi_repo/artifacts/linux-x64/RHI.Linux" ]]; then "$rhi_repo/scripts/build-linux.sh"; fi
+    if [[ ! -x "$rhi_repo/artifacts/linux-x64/RHI.Linux" ]]; then RHI_SKIP_DESKTOP_PROMPT=1 "$rhi_repo/scripts/build-linux.sh"; fi
     rhi_launcher="$rhi_repo/run-linux.sh"
     rhi_icon="$rhi_repo/RHI.Linux/Assets/rhi.png"
 fi
@@ -37,3 +44,25 @@ rhi_icon="${rhi_icon//\\/\\\\}"
 } > "$rhi_apps/rhi-linux.desktop"
 printf 'Installed menu entry: %s\n' "$rhi_apps/rhi-linux.desktop"
 printf '%s\n' 'Keep the RHI folder here; the menu entry launches it from this location.'
+if [[ "$rhi_desktop_mode" == ask && -t 0 ]]; then
+    read -r -p 'Add an RHI icon to your desktop? [y/N] ' rhi_desktop_answer || rhi_desktop_answer=n
+    case "$rhi_desktop_answer" in
+        [yY]|[yY][eE][sS]) rhi_desktop_mode=yes ;;
+    esac
+fi
+if [[ "$rhi_desktop_mode" == yes ]]; then
+    rhi_desktop=''
+    if command -v xdg-user-dir >/dev/null 2>&1; then
+        rhi_desktop="$(xdg-user-dir DESKTOP)" || rhi_desktop=''
+    fi
+    rhi_desktop="${rhi_desktop:-$HOME/Desktop}"
+    if [[ "$rhi_desktop" == "$HOME" || "$rhi_desktop" != /* ]]; then
+        echo 'Desktop folder is disabled or invalid; the application-menu entry is still available.'
+    else
+        mkdir -p "$rhi_desktop"
+        cp -- "$rhi_apps/rhi-linux.desktop" "$rhi_desktop/rhi-linux.desktop"
+        chmod +x "$rhi_desktop/rhi-linux.desktop"
+        printf 'Installed desktop icon: %s\n' "$rhi_desktop/rhi-linux.desktop"
+        echo 'Your desktop may ask you to allow launching this shortcut the first time you open it.'
+    fi
+fi

@@ -45,6 +45,7 @@ public sealed class REFrameworkUiTests : IDisposable
     {
         await Open(ReGame());
         Assert.Contains("RE Engine", Text); Assert.Contains("RE Framework", Text);
+        Assert.Equal("Set up Wine detection bypass…", Named("ReEngineWineDetectionToggle").Content);
         Assert.Equal("↓  Install RE Framework", Named("InstallREFramework").Content);
         var reshade = Named("InstallReShade");
         Assert.Equal("⚠  RE Framework required", reshade.Content); Assert.False(reshade.IsEnabled);
@@ -52,6 +53,14 @@ public sealed class REFrameworkUiTests : IDisposable
         // RE Framework sits above ReShade, as in the Windows component table.
         var buttons = All<Button>().Select(b => b.Name).ToList();
         Assert.True(buttons.IndexOf("InstallREFramework") < buttons.IndexOf("InstallReShade"));
+    }
+
+    [AvaloniaFact] public async Task NonReEngineGamesDoNotShowWineDetectionBypass()
+    {
+        var game = ReGame();
+        File.Delete(Path.Combine(game.Root, "re_chunk_000.pak"));
+        await Open(game);
+        Assert.DoesNotContain(All<Button>(), b => b.Name == "ReEngineWineDetectionToggle");
     }
 
     [AvaloniaFact] public async Task InstalledReFrameworkShowsVersionAndOffersNightlyUpdate()

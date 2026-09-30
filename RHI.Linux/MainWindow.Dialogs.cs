@@ -69,6 +69,7 @@ public sealed partial class MainWindow
         body.Children.Add(Label("Enable HDR on your display in Bazzite's display settings. RHI can apply the UE Extended settings required by supported games, keeping a backup for Restore. Use Home in the game to adjust RenoDX brightness.", 13, Secondary));
         var inis = IniSettings.FindEngineInis(game);
         var dialog = Dialog("RenoDX HDR settings", body);
+        body.Children.Add(DialogAction("HDR launch options…", body, async () => await new HdrLaunchWindow(game).ShowDialog(dialog)));
         if (extended && inis.Count == 1)
         {
             body.Children.Add(DialogAction("Apply recommended HDR settings", body, async () => { GameSetup.ApplyHdr(game, inis[0]); await ReadStates(); ShowGame(); dialog.Close(); }));

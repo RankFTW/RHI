@@ -14,7 +14,7 @@ cd RHI
 ./run-linux.sh
 ```
 
-The first run downloads a user-local .NET SDK if needed, restores packages, runs tests, and builds the app. Allow several minutes and an internet connection. Later runs launch the existing build. After pulling source updates, run `./scripts/build-linux.sh` to rebuild.
+The first run downloads a user-local .NET SDK if needed, restores packages, runs tests, and builds the app. Allow several minutes and an internet connection. Later runs launch the existing build. After pulling source updates, run `./scripts/build-linux.sh` to rebuild. At the end of an interactive build, answer **Y** to add a desktop icon and application-menu entry, or **N** (the default) to skip them. Automated builds skip this prompt.
 
 The standalone build is `artifacts/linux-x64/RHI.Linux`. The portable package and checksum are `artifacts/RHI-linux-x64.tar.gz` and `artifacts/RHI-linux-x64.tar.gz.sha256`.
 
@@ -23,6 +23,8 @@ To add an application-menu entry (KDE, GNOME, and other desktop-entry menus):
 ```bash
 ./scripts/install-linux-desktop.sh
 ```
+
+The installer also asks whether to add a desktop icon, using your configured desktop folder. Use `--desktop` or `--no-desktop` to choose without a prompt. Some desktops require allowing the shortcut to launch on first use; desktops without icon support can use the application-menu entry.
 
 ## First game
 
@@ -175,6 +177,32 @@ The application, .NET runtime and static 7-Zip extractor are bundled; ReShade, R
 On the tested GE-Proton11-6 setup, stable ReShade 6.8.0 caused a black screen in Mortal Shell II even with RenoDX disabled. ReShade nightly from September 12, 2026 restored the menu background. With RenoDX UE Extended and the native HDR recipe re-enabled, the user also confirmed normal gameplay without cursor trails or a black background. Its newer VKD3D interface hooks include an upstream compatibility fix absent from 6.8.0. Select **Nightly** in RHI and install/update ReShade before changing game graphics settings.
 
 To undo RHI's HDR edits with the game closed, use **RenoDX cog → Restore previous HDR settings** or `./run-linux.sh --restore-hdr 2584270`. This also restores Engine.ini's original file permissions. Removal controls can restore the pre-install plugin files for a baseline test. Keep gameplay validation separate from the isolated download/install smoke test.
+
+## Native HDR on the game page
+
+Use **Native HDR → Enable Native HDR** on the main game page for games with built-in HDR. This saves both `PROTON_ENABLE_WAYLAND=1` and `PROTON_ENABLE_HDR=1` for the selected Steam account, with a backup, and offers to restart Steam if needed. No ReShade or RenoDX installation is required. Enable HDR in the game and display settings and use a compatible Proton build.
+
+The button turns green when the saved launch options contain unambiguous enabled HDR and Wayland flags. This means **configured**, not verified HDR output. **Disable** removes only that flag, preserving current DLL overrides, DLSS options, Wayland, HDR WSI and game arguments. Conflicting or ambiguous options must be resolved manually. The state is refreshed when returning to RHI.
+
+The cog opens the optional Wayland / HDR WSI preview helper. For games without an available Steam account configuration, the main button opens that helper so you can copy options into your launcher.
+
+## RE Engine Wine detection bypass
+
+RE Engine games show an optional **RE Engine Wine detection → Bypass Wine detection** control beside the Native HDR section. It reuses the same `IsREEngine` detection as the RE Framework row; no additional engine detection is performed. Nothing is enabled automatically.
+
+Enabling appends `/WineDetectionEnabled:False` after `%command%` for the selected Steam account, using the existing backup and Steam restart flow. Disabling removes only that argument, preserving HDR, DLL overrides and other launch options. Conflicting values or ambiguous syntax require manual review. For games without an available Steam account configuration, a preview helper lets you paste, edit and copy launcher options.
+
+This RE Engine workaround may expose ray-tracing options in supported games; enable ray tracing in-game afterwards. It does not add ray-tracing support to games or hardware. Compatibility varies, and [game/driver crashes have been reported with the argument](https://github.com/HansKristian-Work/vkd3d-proton/issues/2884); disable the bypass if it causes problems.
+
+## HDR launch-option preview
+
+Open **RenoDX HDR settings → HDR launch options…**, or **Advanced settings → Proton launch options → HDR launch options…** for the selected game. Select the Steam account if needed. For another launcher, or if Steam has unsaved changes, paste the complete current launch options into the input first.
+
+The preset adds `PROTON_ENABLE_HDR=1`, with separate choices for `PROTON_ENABLE_WAYLAND=1` (selected initially) and `ENABLE_HDR_WSI=1` (optional). Check support in your Proton build and display setup: [GE-Proton documents the Proton switches](https://github.com/GloriousEggroll/proton-ge-custom/blob/master/README.md), and [VK_hdr_layer documents HDR WSI](https://github.com/Zamundaaa/VK_hdr_layer). These settings do not confirm that the game is outputting HDR.
+
+Choose **Preview HDR options**, review the result, then **Copy preview** and paste it into Steam's game Properties → General → Launch Options. This tool does not write to Steam or persist a preset that could later overwrite another feature's settings. Reopen it after changing ReShade, DLSS or other launch options to read their latest values.
+
+The merge only prefixes missing selected variables. Existing DLL overrides, DLSS variables, wrapper arguments, spacing and game arguments remain intact. Already enabled literal values are kept, and unchecked variables are left alone. Conflicting values, duplicate selected variables, ambiguous variable placement, environment wrappers and shell scripting are refused rather than rewritten. Resolve those manually in your launcher. **Restore original preview** shows the input without the preset additions; use **Copy preview** to undo only if no subsequent launcher changes need to be preserved. The original input remains available while the dialog is open.
 
 ## Sources
 
