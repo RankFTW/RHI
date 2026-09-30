@@ -268,6 +268,7 @@ public sealed partial class MainWindow : Window
         else
             _addonFileWatcher.Start();
         this.Closed += MainWindow_Closed;
+        InitOneClick();
 
         // Handle pending launch from --launch argument
         if (!string.IsNullOrEmpty(App._pendingLaunchGame))

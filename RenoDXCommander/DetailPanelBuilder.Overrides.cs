@@ -36,6 +36,10 @@ public partial class DetailPanelBuilder
 
     public void BuildOverridesPanel(GameCardViewModel card)
     {
+        // The Optimize / Undo buttons follow the detail panel: also refresh when the panel is rebuilt for a game that was
+        // already selected (start-up restore, background scan), where SelectedGame itself does not change.
+        _window.DispatcherQueue?.TryEnqueue(() => _ = _window.RefreshOneClickAsync());
+
         // Abort any in-progress drag before clearing the header row — prevents stale
         // _dragging = true from blocking pointer events on the rebuilt panel.
         if (_dragging) DragEnd(save: false);
