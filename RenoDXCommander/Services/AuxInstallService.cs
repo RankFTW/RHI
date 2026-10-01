@@ -528,30 +528,7 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// </summary>
     public static void SentinelBackup(string destPath)
     {
-        var backup = destPath + ".original";
-        try
-        {
-            if (File.Exists(destPath))
-            {
-                // Real file present — back it up unless already done
-                if (!File.Exists(backup))
-                {
-                    File.Move(destPath, backup);
-                    CrashReporter.Log($"[SentinelBackup] Backed up original: {Path.GetFileName(destPath)}");
-                }
-                // else: backup already exists — leave it untouched
-            }
-            else
-            {
-                // File absent — write 0-byte sentinel so uninstall knows to clean up
-                if (!File.Exists(backup))
-                {
-                    File.WriteAllBytes(backup, Array.Empty<byte>());
-                    CrashReporter.Log($"[SentinelBackup] Wrote sentinel for: {Path.GetFileName(destPath)}");
-                }
-                // else: some backup already exists — never overwrite it
-            }
-        }
+        try { SentinelFiles.Backup(destPath, moveOriginal: true); }
         catch (Exception ex)
         {
             CrashReporter.Log($"[SentinelBackup] Failed for '{Path.GetFileName(destPath)}' — {ex.Message}");
@@ -567,26 +544,7 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// </summary>
     public static void SentinelRestore(string filePath)
     {
-        var backup = filePath + ".original";
-        if (!File.Exists(backup)) return; // not placed by RHI — leave untouched
-
-        try
-        {
-            if (new FileInfo(backup).Length == 0)
-            {
-                // Sentinel — RHI placed this file; game had nothing → delete both
-                try { if (File.Exists(filePath)) File.Delete(filePath); } catch { }
-                File.Delete(backup); // always clean up sentinel
-                CrashReporter.Log($"[SentinelRestore] Cleaned up sentinel-placed file: {Path.GetFileName(filePath)}");
-            }
-            else
-            {
-                // Real backup — restore game's original
-                try { if (File.Exists(filePath)) File.Delete(filePath); } catch { }
-                File.Move(backup, filePath);
-                CrashReporter.Log($"[SentinelRestore] Restored original: {Path.GetFileName(filePath)}");
-            }
-        }
+        try { SentinelFiles.Restore(filePath); }
         catch (Exception ex)
         {
             CrashReporter.Log($"[SentinelRestore] Failed for '{Path.GetFileName(filePath)}' — {ex.Message}");

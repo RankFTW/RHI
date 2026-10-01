@@ -6,15 +6,15 @@ namespace RenoDXCommander.Services;
 public class WikiService : IWikiService
 {
     private readonly HttpClient _http;
-    private readonly IGameDetectionService _gameDetection;
+    private readonly Func<string, string> _normalizeName;
 
-    public WikiService(HttpClient http, IGameDetectionService gameDetection)
+    public WikiService(HttpClient http, Func<string, string> normalizeName)
     {
         _http = http;
-        _gameDetection = gameDetection;
+        _normalizeName = normalizeName;
     }
 
-    private const string WikiUrl = "https://github.com/clshortfuse/renodx/wiki/Mods";
+    private const string WikiUrl = RHI.Core.Sources.Wiki;
 
     // Generic addon download URLs
     // Unreal: GitHub Releases provides reliable Content-Length for update detection
@@ -25,10 +25,21 @@ public class WikiService : IWikiService
     public const string GenericUnityUrl   = GenericUnityUrl64;
 
     public async Task<(List<GameMod> Mods, Dictionary<string, string> GenericNotes)>
-        FetchAllAsync(IProgress<string>? progress = null)
+        FetchAllAsync(IProgress<string>? progress = null) => await FetchAllAsync(progress, null);
+
+    // Allows platform adapters to supplement parsing without fetching the page twice.
+    public async Task<(List<GameMod> Mods, Dictionary<string, string> GenericNotes)>
+        FetchAllAsync(IProgress<string>? progress, Action<string>? htmlReceived)
     {
         progress?.Report("Fetching wiki...");
         var html = await _http.GetStringAsync(WikiUrl).ConfigureAwait(false);
+        htmlReceived?.Invoke(html);
+        return ParseHtml(html, progress);
+    }
+
+    public (List<GameMod> Mods, Dictionary<string, string> GenericNotes)
+        ParseHtml(string html, IProgress<string>? progress = null)
+    {
         var doc  = new HtmlDocument();
         doc.LoadHtml(html);
 
@@ -50,7 +61,7 @@ public class WikiService : IWikiService
             // Skip tables that appear AFTER the "Deprecated mods" heading
             if (deprecatedHeading != null && table.StreamPosition > deprecatedHeading.StreamPosition)
             {
-                CrashReporter.Log("[WikiService.FetchAllAsync] Skipping table after 'Deprecated' heading");
+                CoreLog.Log("[WikiService.FetchAllAsync] Skipping table after 'Deprecated' heading");
                 continue;
             }
 
@@ -93,14 +104,14 @@ public class WikiService : IWikiService
         {
             var sample = mods.Take(5).Select(m => m.Name)
                 .Concat(mods.Count > 10 ? mods.Skip(mods.Count - 3).Select(m => m.Name) : Enumerable.Empty<string>());
-            CrashReporter.Log($"[WikiService.FetchAllAsync] Parsed {mods.Count} specific mods. Sample: [{string.Join(", ", sample)}]");
+            CoreLog.Log($"[WikiService.FetchAllAsync] Parsed {mods.Count} specific mods. Sample: [{string.Join(", ", sample)}]");
             // Log raw bytes of first 3 mod names to detect invisible Unicode
             foreach (var m in mods.Take(3))
             {
                 var bytes = System.Text.Encoding.UTF8.GetBytes(m.Name);
                 var hex = string.Join(" ", bytes.Select(b => b.ToString("X2")));
-                var norm = _gameDetection.NormalizeName(m.Name);
-                CrashReporter.Log($"[WikiService.FetchAllAsync] Mod raw: '{m.Name}' hex=[{hex}] norm='{norm}'");
+                var norm = _normalizeName(m.Name);
+                CoreLog.Log($"[WikiService.FetchAllAsync] Mod raw: '{m.Name}' hex=[{hex}] norm='{norm}'");
             }
             // Also log a known game that should match — search for 'Lies of P' or similar
             var liesOfP = mods.FirstOrDefault(m => m.Name.Contains("Lies", StringComparison.OrdinalIgnoreCase));
@@ -108,16 +119,16 @@ public class WikiService : IWikiService
             {
                 var bytes = System.Text.Encoding.UTF8.GetBytes(liesOfP.Name);
                 var hex = string.Join(" ", bytes.Select(b => b.ToString("X2")));
-                var norm = _gameDetection.NormalizeName(liesOfP.Name);
-                CrashReporter.Log($"[WikiService.FetchAllAsync] Mod 'Lies' raw: '{liesOfP.Name}' hex=[{hex}] norm='{norm}'");
+                var norm = _normalizeName(liesOfP.Name);
+                CoreLog.Log($"[WikiService.FetchAllAsync] Mod 'Lies' raw: '{liesOfP.Name}' hex=[{hex}] norm='{norm}'");
             }
             else
             {
-                CrashReporter.Log("[WikiService.FetchAllAsync] Mod 'Lies': NOT FOUND in parsed mods");
+                CoreLog.Log("[WikiService.FetchAllAsync] Mod 'Lies': NOT FOUND in parsed mods");
             }
             // Full normalized dump for match diagnostics
-            var allNorms = mods.Select(m => _gameDetection.NormalizeName(m.Name)).OrderBy(n => n).ToList();
-            CrashReporter.Log($"[WikiService.FetchAllAsync] Normalized names ({allNorms.Count}): [{string.Join(", ", allNorms)}]");
+            var allNorms = mods.Select(m => _normalizeName(m.Name)).OrderBy(n => n).ToList();
+            CoreLog.Log($"[WikiService.FetchAllAsync] Normalized names ({allNorms.Count}): [{string.Join(", ", allNorms)}]");
         }
 
         progress?.Report($"Found {mods.Count} mods, {genericNotes.Count} generic game notes");
@@ -138,7 +149,7 @@ public class WikiService : IWikiService
             return resp.Content.Headers.LastModified?.UtcDateTime
                 ?? resp.Headers.Date?.UtcDateTime;
         }
-        catch (Exception ex) { CrashReporter.Log($"[WikiService.GetSnapshotLastModifiedAsync] Failed to get Last-Modified for '{url}' — {ex.Message}"); return null; }
+        catch (Exception ex) { CoreLog.Log($"[WikiService.GetSnapshotLastModifiedAsync] Failed to get Last-Modified for '{url}' — {ex.Message}"); return null; }
     }
 
     /// <summary>
@@ -170,7 +181,7 @@ public class WikiService : IWikiService
         }
 
         // Log table layout for diagnostics
-        CrashReporter.Log($"[WikiService.ParseModTable] cols={headerTexts.Count} headers=[{string.Join("|", headerTexts)}] " +
+        CoreLog.Log($"[WikiService.ParseModTable] cols={headerTexts.Count} headers=[{string.Join("|", headerTexts)}] " +
                           $"name={nameCol} maintainer={maintainerCol} links={linksCol} status={statusCol}");
 
         foreach (var row in rows)
@@ -200,7 +211,7 @@ public class WikiService : IWikiService
                     }
                 }
             }
-            catch (Exception ex) { CrashReporter.Log($"[WikiService.ParseModTable] Failed to parse name URL for '{name}' — {ex.Message}"); }
+            catch (Exception ex) { CoreLog.Log($"[WikiService.ParseModTable] Failed to parse name URL for '{name}' — {ex.Message}"); }
 
             var maintainer = (maintainerCol >= 0 && maintainerCol < cells.Count) ? Clean(cells[maintainerCol].InnerText) : "";
             var linksCell  = (linksCol >= 0 && linksCol < cells.Count) ? cells[linksCol] : null;

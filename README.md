@@ -10,6 +10,8 @@ RHI detects your entire game library across every major store and handles ReShad
 
 **[Latest release](https://github.com/RankFTW/RenoDXChecker/releases/latest)** · **[Discord](https://discord.gg/ultraplace)**
 
+**Bazzite / Linux:** see [Linux installation and downloads](docs/LINUX.md#run). Linux releases provide a ready-to-run `RHI-linux-x64.tar.gz` with an optional application-menu installer. For a source checkout, run `./run-linux.sh`; the first run builds the app automatically. Windows and Linux share the platform-neutral `RHI.Core` assembly; Linux retains its own installation transactions, Avalonia UI and Proton adapters. The [upstream source map and review guard](docs/LINUX-PORT-SYNC.md) document inherited code and remaining feature gaps.
+
 ---
 
 ## What It Does
@@ -143,6 +145,8 @@ Drag and drop any game's `.exe` onto the window to add it manually if it's not a
 ---
 
 ## Requirements
+
+**Bazzite / Linux:** a native Proton-aware build is available in this checkout, with the Windows-style component table, installed/applied indicators, guided setup, and the Neural Rendering (DLSS 5) and DLSS override sections. Run `./run-linux.sh`, or build with `./scripts/build-linux.sh`. See the [Linux screenshot](screenshots/linux_game_view.png) and [Linux setup, supported features, and testing](docs/LINUX.md). The requirements below apply to the Windows application.
 
 - Windows 10 / 11
 - [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)

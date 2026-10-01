@@ -4,7 +4,7 @@ using RenoDXCommander.Models;
 
 namespace RenoDXCommander.ViewModels;
 
-public partial class GameCardViewModel : ObservableObject
+public partial class GameCardViewModel : ObservableObject, RenoDXCommander.Services.IOptiScalerGame
 {
     // ── Dispatcher for UI thread access from background tasks ─────────────────────
     public DispatcherQueue? DispatcherQueue { get; set; }

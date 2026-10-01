@@ -13,23 +13,9 @@ public class REFrameworkService : IREFrameworkService
 {
     // ── Constants ──────────────────────────────────────────────────────────────────
 
-    private const string DllFileName = "dinput8.dll";
-    private const string DownloadBaseUrl = "https://github.com/praydog/REFramework-nightly/releases/latest/download/";
-    private const string ReleasesApiUrl = "https://api.github.com/repos/praydog/REFramework-nightly/releases";
-
-    /// <summary>
-    /// Maps game names to their RE Framework nightly ZIP filename.
-    /// Since the monolithic REFramework.zip build, all RE Engine games use the
-    /// same zip. The map is retained for any future per-game overrides.
-    /// </summary>
-    private static readonly Dictionary<string, string> GameZipMap = new(StringComparer.OrdinalIgnoreCase)
-    {
-        // All RE Engine games now use the monolithic REFramework.zip.
-        // Per-game zips (DMC5.zip, RE2.zip, etc.) are no longer published.
-    };
-
-    /// <summary>The monolithic zip that works for all supported RE Engine games.</summary>
-    private const string MonolithicZipName = "REFramework.zip";
+    private const string DllFileName = REFrameworkArchive.DllFileName;
+    private const string DownloadBaseUrl = REFrameworkArchive.DownloadBaseUrl;
+    private const string ReleasesApiUrl = REFrameworkArchive.ReleasesApiUrl;
 
     // ── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -133,19 +119,8 @@ public class REFrameworkService : IREFrameworkService
     /// <summary>
     /// Extracts dinput8.dll from the given ZIP archive to the specified destination path.
     /// </summary>
-    private static void ExtractDllFromZip(string zipPath, string destDllPath)
-    {
-        using var archive = ZipFile.OpenRead(zipPath);
-
-        var entry = archive.Entries.FirstOrDefault(e =>
-            e.Name.Equals(DllFileName, StringComparison.OrdinalIgnoreCase));
-
-        if (entry == null)
-            throw new FileNotFoundException($"{DllFileName} not found inside {Path.GetFileName(zipPath)}");
-
-        // Extract to destination, overwriting any existing cached copy
-        entry.ExtractToFile(destDllPath, overwrite: true);
-    }
+    private static void ExtractDllFromZip(string zipPath, string destDllPath) =>
+        REFrameworkArchive.ExtractDllFromZip(zipPath, destDllPath);
 
     // ── ZIP name resolution ───────────────────────────────────────────────────────
 
@@ -154,18 +129,7 @@ public class REFrameworkService : IREFrameworkService
     /// build, all RE Engine games use REFramework.zip. The GameZipMap is checked
     /// first for any future per-game overrides.
     /// </summary>
-    private static string ResolveZipName(string gameName)
-    {
-        if (GameZipMap.TryGetValue(gameName, out var zip))
-            return zip;
-
-        // Strip ™®© and retry exact match
-        var stripped = gameName.Replace("™", "").Replace("®", "").Replace("©", "").Trim();
-        if (stripped != gameName && GameZipMap.TryGetValue(stripped, out zip))
-            return zip;
-
-        return MonolithicZipName;
-    }
+    private static string ResolveZipName(string gameName) => REFrameworkArchive.ResolveZipName(gameName);
 
     // ── Version tracking ──────────────────────────────────────────────────────────
 
@@ -216,17 +180,7 @@ public class REFrameworkService : IREFrameworkService
     /// Extracts the numeric build number from a nightly tag like "nightly-01302-abcdef1".
     /// Returns the raw tag if no number is found.
     /// </summary>
-    private static string? ExtractVersionNumber(string? tag)
-    {
-        if (string.IsNullOrEmpty(tag)) return tag;
-        // Tags look like "nightly-01302-abcdef1" — grab the first numeric segment
-        foreach (var part in tag.Split('-'))
-        {
-            if (part.Length > 0 && part.All(char.IsDigit))
-                return part;
-        }
-        return tag;
-    }
+    private static string? ExtractVersionNumber(string? tag) => REFrameworkArchive.ExtractVersionNumber(tag);
 
     public async Task<bool> CheckForUpdateAsync(string installedVersion)
     {

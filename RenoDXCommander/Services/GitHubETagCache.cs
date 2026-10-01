@@ -12,6 +12,15 @@ namespace RenoDXCommander.Services;
 /// </summary>
 public class GitHubETagCache
 {
+    private readonly Action<string> _log;
+    private readonly Func<string?> _getToken;
+
+    public GitHubETagCache(Action<string>? log = null, Func<string?>? getToken = null)
+    {
+        _log = log ?? (_ => { });
+        _getToken = getToken ?? (() => null);
+    }
+
     private readonly ConcurrentDictionary<string, (string etag, string body)> _cache = new();
 
     /// <summary>Session-scoped flag — set when GitHub returns 403 (rate limited).</summary>
@@ -41,17 +50,17 @@ public class GitHubETagCache
         {
             if (_cache.TryGetValue(url, out var stale) && stale.body != null)
                 return stale.body;
-            CrashReporter.Log($"[GitHubETagCache] Rate limited — skipping {TruncateUrl(url)}");
+            _log($"[GitHubETagCache] Rate limited — skipping {TruncateUrl(url)}");
             return null;
         }
 
         // Build request
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RHI", "1.0"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 
         // Add GitHub API token if available (raises rate limit from 60 to 5000 req/hour)
-        var token = DevUnlockService.GitHubApiToken;
+        var token = _getToken();
         if (!string.IsNullOrEmpty(token))
             request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
 
@@ -65,11 +74,11 @@ public class GitHubETagCache
         if (_cache.TryGetValue(url, out var cached))
             request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(cached.etag));
 
-        var response = await http.SendAsync(request).ConfigureAwait(false);
+        using var response = await http.SendAsync(request).ConfigureAwait(false);
 
         if (response.StatusCode == HttpStatusCode.NotModified && cached.body != null)
         {
-            CrashReporter.Log($"[GitHubETagCache] 304 Not Modified for {TruncateUrl(url)}");
+            _log($"[GitHubETagCache] 304 Not Modified for {TruncateUrl(url)}");
             return cached.body;
         }
 
@@ -88,11 +97,11 @@ public class GitHubETagCache
                 if (actuallyRateLimited && !_rateLimited)
                 {
                     _rateLimited = true;
-                    CrashReporter.Log($"[GitHubETagCache] GitHub API rate limited (X-RateLimit-Remaining=0) for {TruncateUrl(url)} — authenticated={hasAuthHeader}");
+                    _log($"[GitHubETagCache] GitHub API rate limited (X-RateLimit-Remaining=0) for {TruncateUrl(url)} — authenticated={hasAuthHeader}");
                 }
                 else if (!actuallyRateLimited)
                 {
-                    CrashReporter.Log($"[GitHubETagCache] 403 Forbidden for {TruncateUrl(url)} (not rate limited, remaining={remaining ?? "unknown"}, authenticated={hasAuthHeader}) — skipping this URL only");
+                    _log($"[GitHubETagCache] 403 Forbidden for {TruncateUrl(url)} (not rate limited, remaining={remaining ?? "unknown"}, authenticated={hasAuthHeader}) — skipping this URL only");
                 }
             }
 
@@ -102,7 +111,7 @@ public class GitHubETagCache
             // keeps the app working with slightly stale data.
             if (cached.body != null)
             {
-                CrashReporter.Log($"[GitHubETagCache] {response.StatusCode} for {TruncateUrl(url)} — returning cached body");
+                _log($"[GitHubETagCache] {response.StatusCode} for {TruncateUrl(url)} — returning cached body");
                 return cached.body;
             }
             return null; // Let caller handle the error

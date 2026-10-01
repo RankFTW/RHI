@@ -1,0 +1,95 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector="Window">
+    <Setter Property="Background" Value="#121518"/>
+    <Setter Property="Foreground" Value="#E8ECF2"/>
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+  <Style Selector="Button">
+    <Setter Property="Background" Value="#1E242C"/>
+    <Setter Property="Foreground" Value="#A0AABB"/>
+    <Setter Property="BorderBrush" Value="#354050"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="12,7"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+  </Style>
+  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#263445"/>
+    <Setter Property="BorderBrush" Value="#4DC9E6"/>
+  </Style>
+  <Style Selector="Button.action">
+    <Setter Property="Background" Value="#182840"/>
+    <Setter Property="Foreground" Value="#7AACDD"/>
+    <Setter Property="BorderBrush" Value="#2A4468"/>
+  </Style>
+  <Style Selector="Button.update">
+    <Setter Property="Background" Value="#201838"/>
+    <Setter Property="Foreground" Value="#B898E8"/>
+    <Setter Property="BorderBrush" Value="#3A2860"/>
+  </Style>
+  <Style Selector="Button.success">
+    <Setter Property="Background" Value="#122818"/>
+    <Setter Property="Foreground" Value="#5ECB7D"/>
+    <Setter Property="BorderBrush" Value="#1E4028"/>
+  </Style>
+  <Style Selector="Button.teal">
+    <Setter Property="Background" Value="#151A22"/>
+    <Setter Property="Foreground" Value="#4DC9E6"/>
+    <Setter Property="BorderBrush" Value="#1E4858"/>
+  </Style>
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="#201010"/>
+    <Setter Property="Foreground" Value="#E07070"/>
+    <Setter Property="BorderBrush" Value="#3A2860"/>
+  </Style>
+  <Style Selector="Button.chip">
+    <Setter Property="Background" Value="#1A2030"/>
+    <Setter Property="Foreground" Value="#8898B0"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Padding" Value="9,5"/>
+    <Setter Property="MinHeight" Value="26"/>
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="CornerRadius" Value="7"/>
+  </Style>
+  <Style Selector="Button.chip.selected">
+    <Setter Property="Background" Value="#243050"/>
+    <Setter Property="Foreground" Value="#E8ECF2"/>
+  </Style>
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Padding" Value="6"/>
+  </Style>
+  <Style Selector="ListBoxItem">
+    <Setter Property="Padding" Value="9,9"/>
+    <Setter Property="Margin" Value="2,3"/>
+    <Setter Property="MinHeight" Value="38"/>
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Foreground" Value="#8090B8"/>
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#1A2840"/>
+    <Setter Property="BorderBrush" Value="#2A4060"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="6"/>
+  </Style>
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="#151A22"/>
+    <Setter Property="BorderBrush" Value="#283240"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="MinHeight" Value="34"/>
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="#151A22"/>
+    <Setter Property="BorderBrush" Value="#283240"/>
+    <Setter Property="CornerRadius" Value="7"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="MinHeight" Value="34"/>
+  </Style>
+  <Style Selector="ToolTip">
+    <Setter Property="MaxWidth" Value="380"/>
+  </Style>
+</Styles>

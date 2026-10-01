@@ -13,28 +13,15 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 {
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    private const string DlssDllName = "nvngx_dlss.dll";
-    private const string DlssdDllName = "nvngx_dlssd.dll";
-    private const string DlssgDllName = "nvngx_dlssg.dll";
-    private const string DlssnrDllName = "nvngx_dlssnr.dll";
-    private const string StreamlineIndicator = "sl.common.dll";
+    private const string DlssDllName = DlssFileDiscovery.Dlss;
+    private const string DlssdDllName = DlssFileDiscovery.Dlssd;
+    private const string DlssgDllName = DlssFileDiscovery.Dlssg;
+    private const string DlssnrDllName = DlssFileDiscovery.Dlssnr;
+    private const string StreamlineIndicator = DlssFileDiscovery.StreamlineIndicator;
     private const string BackupExtension = ".original";
 
     /// <summary>Known Streamline DLL filenames.</summary>
-    public static readonly string[] KnownStreamlineDlls =
-    [
-        "sl.common.dll",
-        "sl.deepdvc.dll",
-        "sl.directsr.dll",
-        "sl.dlss.dll",
-        "sl.dlss_d.dll",
-        "sl.dlss_g.dll",
-        "sl.interposer.dll",
-        "sl.nis.dll",
-        "sl.nvperf.dll",
-        "sl.pcl.dll",
-        "sl.reflex.dll",
-    ];
+    public static readonly string[] KnownStreamlineDlls = DlssFileDiscovery.StreamlineDlls;
 
     // ── Staging directories ───────────────────────────────────────────────────
 
@@ -56,7 +43,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     // ── Manifest URL ──────────────────────────────────────────────────────────
 
     private const string DlssManifestUrl =
-        "https://raw.githubusercontent.com/RankFTW/RHI/main/dlss_manifest.json";
+        RHI.Core.Sources.DlssManifest;
 
     private static readonly string ManifestCachePath = Path.Combine(BaseStagingDir, "dlss_manifest.json");
 
@@ -274,17 +261,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// Always keeps a minimum of 3 parts (e.g. "310.6.0" stays as-is, "2.7.32.0" → "2.7.32" is wrong,
     /// so we only trim if there are 4+ parts and the last is "0").
     /// </summary>
-    public static string FormatVersion(string? rawVersion)
-    {
-        if (string.IsNullOrEmpty(rawVersion)) return "Unknown";
-
-        // Only trim the last .0 if there are 4 parts and the last part is "0"
-        var parts = rawVersion.Split('.');
-        if (parts.Length == 4 && parts[3] == "0")
-            return $"{parts[0]}.{parts[1]}.{parts[2]}";
-
-        return rawVersion;
-    }
+    public static string FormatVersion(string? rawVersion) => DlssVersion.Format(rawVersion);
 
     public bool HasBackup(string dllPath) => File.Exists(dllPath + BackupExtension);
 

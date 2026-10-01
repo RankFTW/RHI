@@ -246,80 +246,16 @@ public partial class DlssStreamlineService
     /// </summary>
     private void SearchDirectory(string directory, DlssDetectionResult result, int depth = 0)
     {
-        // Guard against circular symlinks and excessively deep directory trees
-        if (depth > 8) return;
-        // Guard against paths that are clearly not game directories (e.g. Unreal Engine editor installs)
-        if (directory.Length > 300) return;
-
-        bool hasOptiScalerIni = File.Exists(Path.Combine(directory, "OptiScaler.ini"));
-
-        // Check files in the current directory
-        try
-        {
-            foreach (var file in Directory.EnumerateFiles(directory, "*.dll"))
-            {
-                var fileName = Path.GetFileName(file);
-
-                if (string.Equals(fileName, DlssDllName, StringComparison.OrdinalIgnoreCase))
-                {
-                    // Skip OptiScaler's copies — prefer the game's deeper copy
-                    if (!hasOptiScalerIni && result.DlssPath == null)
-                        result.DlssPath = file;
-                    else if (hasOptiScalerIni && result.DlssPath == null)
-                        result._optiScalerDlssPath = file; // stash as fallback
-                }
-                else if (string.Equals(fileName, DlssdDllName, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!hasOptiScalerIni && result.DlssdPath == null)
-                        result.DlssdPath = file;
-                    else if (hasOptiScalerIni && result.DlssdPath == null)
-                        result._optiScalerDlssdPath = file;
-                }
-                else if (string.Equals(fileName, DlssgDllName, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!hasOptiScalerIni && result.DlssgPath == null)
-                        result.DlssgPath = file;
-                    else if (hasOptiScalerIni && result.DlssgPath == null)
-                        result._optiScalerDlssgPath = file;
-                }
-                else if (string.Equals(fileName, DlssnrDllName, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!hasOptiScalerIni && result.DlssnrPath == null)
-                        result.DlssnrPath = file;
-                    else if (hasOptiScalerIni && result.DlssnrPath == null)
-                        result._optiScalerDlssnrPath = file;
-                }
-                else if (string.Equals(fileName, StreamlineIndicator, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (result.StreamlineInterposerPath == null)
-                    {
-                        result.StreamlineInterposerPath = file;
-                        result.StreamlineFolder = Path.GetDirectoryName(file);
-                    }
-                }
-                else if (result.StreamlineFolder == null
-                    && KnownStreamlineDlls.Contains(fileName, StringComparer.OrdinalIgnoreCase))
-                {
-                    // No interposer yet — track the folder from any known Streamline DLL
-                    // so sl.common.dll can be used as a version fallback for EA builds
-                    result.StreamlineFolder = Path.GetDirectoryName(file);
-                }
-            }
-        }
-        catch (UnauthorizedAccessException) { }
-        catch (DirectoryNotFoundException) { }
-        catch (IOException) { } // catches path-too-long errors
-
-        // Recurse into subdirectories, skipping any that are inaccessible
-        try
-        {
-            foreach (var subDir in Directory.EnumerateDirectories(directory))
-            {
-                SearchDirectory(subDir, result, depth + 1);
-            }
-        }
-        catch (UnauthorizedAccessException) { }
-        catch (DirectoryNotFoundException) { }
-        catch (IOException) { } // catches path-too-long and circular symlink errors
+        var files = DlssFileDiscovery.Scan(directory, maxPathLength: 300);
+        result.DlssPath = files.GameDlls.GetValueOrDefault(DlssDllName);
+        result.DlssdPath = files.GameDlls.GetValueOrDefault(DlssdDllName);
+        result.DlssgPath = files.GameDlls.GetValueOrDefault(DlssgDllName);
+        result.DlssnrPath = files.GameDlls.GetValueOrDefault(DlssnrDllName);
+        result._optiScalerDlssPath = files.OptiScalerDlls.GetValueOrDefault(DlssDllName);
+        result._optiScalerDlssdPath = files.OptiScalerDlls.GetValueOrDefault(DlssdDllName);
+        result._optiScalerDlssgPath = files.OptiScalerDlls.GetValueOrDefault(DlssgDllName);
+        result._optiScalerDlssnrPath = files.OptiScalerDlls.GetValueOrDefault(DlssnrDllName);
+        result.StreamlineFolder = files.StreamlineFolder;
+        result.StreamlineInterposerPath = files.StreamlineIndicatorPath;
     }
 }

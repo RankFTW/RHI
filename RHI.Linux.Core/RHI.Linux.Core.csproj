@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../RHI.Core/RHI.Core.csproj" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+    <Content Include="../manifest.json" Link="manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../dlss_manifest.json" Link="dlss_manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../RenoDXCommander/OptiScaler*.ini" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

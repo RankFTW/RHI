@@ -55,7 +55,7 @@ public static class GraphicsApiDetector
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[GraphicsApiDetector.LoadCache] Failed to load cache — {ex.Message}");
+            CoreLog.Log($"[GraphicsApiDetector.LoadCache] Failed to load cache — {ex.Message}");
         }
     }
 
@@ -79,7 +79,7 @@ public static class GraphicsApiDetector
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[GraphicsApiDetector.SaveCache] Failed to save cache — {ex.Message}");
+            CoreLog.Log($"[GraphicsApiDetector.SaveCache] Failed to save cache — {ex.Message}");
         }
     }
 
@@ -136,21 +136,21 @@ public static class GraphicsApiDetector
 
             if (headerRead < 0x40 || header[0] != (byte)'M' || header[1] != (byte)'Z')
             {
-                CrashReporter.Log($"[GraphicsApiDetector] Invalid MZ signature in '{exePath}'");
+                CoreLog.Log($"[GraphicsApiDetector] Invalid MZ signature in '{exePath}'");
                 return GraphicsApiType.Unknown;
             }
 
             int peOffset = BitConverter.ToInt32(header, 0x3C);
             if (peOffset < 0 || peOffset + 24 > headerRead)
             {
-                CrashReporter.Log($"[GraphicsApiDetector] PE offset out of range ({peOffset}) in '{exePath}'");
+                CoreLog.Log($"[GraphicsApiDetector] PE offset out of range ({peOffset}) in '{exePath}'");
                 return GraphicsApiType.Unknown;
             }
 
             if (header[peOffset] != (byte)'P' || header[peOffset + 1] != (byte)'E' ||
                 header[peOffset + 2] != 0 || header[peOffset + 3] != 0)
             {
-                CrashReporter.Log($"[GraphicsApiDetector] Invalid PE signature in '{exePath}'");
+                CoreLog.Log($"[GraphicsApiDetector] Invalid PE signature in '{exePath}'");
                 return GraphicsApiType.Unknown;
             }
 
@@ -305,17 +305,17 @@ public static class GraphicsApiDetector
         }
         catch (FileNotFoundException)
         {
-            CrashReporter.Log($"[GraphicsApiDetector] File not found: '{exePath}'");
+            CoreLog.Log($"[GraphicsApiDetector] File not found: '{exePath}'");
             return GraphicsApiType.Unknown;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
-            CrashReporter.Log($"[GraphicsApiDetector] I/O error reading '{exePath}': {ex.Message}");
+            CoreLog.Log($"[GraphicsApiDetector] I/O error reading '{exePath}': {ex.Message}");
             return GraphicsApiType.Unknown;
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[GraphicsApiDetector] Unexpected error reading '{exePath}': {ex.Message}");
+            CoreLog.Log($"[GraphicsApiDetector] Unexpected error reading '{exePath}': {ex.Message}");
             return GraphicsApiType.Unknown;
         }
     }
@@ -486,7 +486,7 @@ public static class GraphicsApiDetector
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[GraphicsApiDetector] Error in DetectAllApis for '{exePath}': {ex.Message}");
+            CoreLog.Log($"[GraphicsApiDetector] Error in DetectAllApis for '{exePath}': {ex.Message}");
             return result;
         }
     }
@@ -604,7 +604,7 @@ public static class GraphicsApiDetector
         }
         catch (Exception ex)
         {
-            CrashReporter.Log($"[GraphicsApiDetector] Error reading Unity boot.config in '{installPath}': {ex.Message}");
+            CoreLog.Log($"[GraphicsApiDetector] Error reading Unity boot.config in '{installPath}': {ex.Message}");
         }
 
         return GraphicsApiType.Unknown;
