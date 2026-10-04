@@ -79,11 +79,10 @@ public static class UIFactory
         });
         panel.Children.Add(new TextBlock
         {
-            Text = label,
             FontSize = 11,
             Foreground = GetBrush("#A0AABB"),
-            VerticalAlignment = VerticalAlignment.Center,
-        });
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", Loc.Get(label)));
         return panel;
     }
 
@@ -110,10 +109,9 @@ public static class UIFactory
     {
         return new TextBlock
         {
-            Text = text,
             FontSize = fontSize,
-            Foreground = Brush(foregroundKey),
-        };
+            Foreground = Brush(foregroundKey)
+        }.Localize("Text", Loc.Get(text));
     }
 
     /// <summary>
@@ -133,7 +131,6 @@ public static class UIFactory
     {
         return new Button
         {
-            Content = content,
             Tag = tag,
             FontSize = 11,
             Padding = new Thickness(8, 3, 8, 3),
@@ -141,7 +138,7 @@ public static class UIFactory
             Background = GetBrush(bgHex),
             Foreground = GetBrush(fgHex),
             BorderBrush = GetBrush(borderHex),
-            CornerRadius = new CornerRadius(6),
-        };
+            CornerRadius = new CornerRadius(6)
+        }.Localize("Content", Loc.Get(content));
     }
 }

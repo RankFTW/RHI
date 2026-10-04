@@ -1,4 +1,4 @@
-﻿// DetailPanelBuilder.Overrides.ShadersAddons.cs — Shaders, Addons, Launch, and Reset Overrides sections.
+// DetailPanelBuilder.Overrides.ShadersAddons.cs — Shaders, Addons, Launch, and Reset Overrides sections.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -28,11 +28,10 @@ public partial class DetailPanelBuilder
         var shadersAddonsLeftColumn = new StackPanel { Spacing = 6 };
         shadersAddonsLeftColumn.Children.Add(new TextBlock
         {
-            Text = "Shaders and Addons",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            Margin = new Thickness(0, 0, 0, 4),
-        });
+            Margin = new Thickness(0, 0, 0, 4)
+        }.Localize("Text", Loc.Get("Shaders and Addons")));
 
         // Shader + Addon ComboBoxes side by side in a 2-column grid
         var shaderAddonGrid = new Grid { ColumnSpacing = 12 };
@@ -43,10 +42,9 @@ public partial class DetailPanelBuilder
 
         var shaderLabel = new TextBlock
         {
-            Text = "Shaders",
             FontSize = 11,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-        };
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+        }.Localize("Text", Loc.Get("Shaders"));
         Grid.SetRow(shaderLabel, 0); Grid.SetColumn(shaderLabel, 0);
         shaderAddonGrid.Children.Add(shaderLabel);
         Grid.SetRow(ctx.ShaderModeCombo, 1); Grid.SetColumn(ctx.ShaderModeCombo, 0);
@@ -65,8 +63,7 @@ public partial class DetailPanelBuilder
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = !card.UseNormalReShade,
         };
-        ToolTipService.SetToolTip(addonModeCombo,
-            "Global = use global addon set. Select = pick per-game addons. Off = no addons for this game.");
+        addonModeCombo.Localize("ToolTip", Loc.Get("Global = use global addon set. Select = pick per-game addons. Off = no addons for this game."));
 
         // Allow re-opening the Select picker when already on Select
         addonModeCombo.DropDownClosed += (s, ev) =>
@@ -106,18 +103,14 @@ public partial class DetailPanelBuilder
                 {
                     var infoDlg = new ContentDialog
                     {
-                        Title = "Select Addons",
-                        Content = new TextBlock
-                        {
-                            Text = "Addon service is not yet wired. Complete Task 9.1 to enable addon selection.",
-                            FontSize = 13,
-                            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                        },
-                        CloseButtonText = "OK",
                         XamlRoot = _window.Content.XamlRoot,
                         Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                        RequestedTheme = ElementTheme.Dark,
-                    };
+                        RequestedTheme = ElementTheme.Dark
+                    }.Localize("Title", Loc.Get("Select Addons")).Localize("Content", new TextBlock
+                    {
+                        FontSize = 13,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+                    }.Localize("Text", Loc.Get("Addon service is not yet wired. Complete Task 9.1 to enable addon selection."))).Localize("CloseButtonText", Loc.Get("OK"));
                     await DialogService.ShowSafeAsync(infoDlg);
                     var warnRevertMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName, ctx.Card.Source);
                     addonComboInitializing = true;
@@ -165,10 +158,9 @@ public partial class DetailPanelBuilder
 
         var addonLabel = new TextBlock
         {
-            Text = "Addons",
             FontSize = 11,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-        };
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+        }.Localize("Text", Loc.Get("Addons"));
         Grid.SetRow(addonLabel, 0); Grid.SetColumn(addonLabel, 1);
         shaderAddonGrid.Children.Add(addonLabel);
         Grid.SetRow(addonModeCombo, 1); Grid.SetColumn(addonModeCombo, 1);
@@ -179,7 +171,6 @@ public partial class DetailPanelBuilder
         // "Select ReShade Preset" button
         var presetBtn = new Button
         {
-            Content = "Select ReShade Preset",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -188,10 +179,9 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Margin = new Thickness(0, 8, 0, 0),
-        };
-        ToolTipService.SetToolTip(presetBtn,
-            "Pick .ini preset files to copy to this game's folder. Place presets in the reshade-presets folder.");
+            Margin = new Thickness(0, 8, 0, 0)
+        }.Localize("Content", Loc.Get("Select ReShade Preset"));
+        presetBtn.Localize("ToolTip", Loc.Get("Pick .ini preset files to copy to this game's folder. Place presets in the reshade-presets folder."));
         presetBtn.Click += async (s, ev) =>
         {
             var selected = await PresetPopupHelper.ShowAsync(_window.Content.XamlRoot);
@@ -208,13 +198,9 @@ public partial class DetailPanelBuilder
                     {
                         var shaderDialog = new ContentDialog
                         {
-                            Title = "🔧 Install Shaders?",
-                            Content = "Also install the required shaders and textures?",
-                            PrimaryButtonText = "Yes",
-                            CloseButtonText = "No",
                             XamlRoot = _window.Content.XamlRoot,
-                            RequestedTheme = ElementTheme.Dark,
-                        };
+                            RequestedTheme = ElementTheme.Dark
+                        }.Localize("Title", Loc.Get("🔧 Install Shaders?")).Localize("Content", Loc.Get("Also install the required shaders and textures?")).Localize("PrimaryButtonText", Loc.Get("Yes")).Localize("CloseButtonText", Loc.Get("No"));
 
                         var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
                         if (shaderResult == ContentDialogResult.Primary)
@@ -274,16 +260,15 @@ public partial class DetailPanelBuilder
                 : null); // exe scan deferred — label updates asynchronously
 
         var headerText = string.IsNullOrEmpty(effectiveExe)
-            ? "Launch executable"
-            : $"Launch executable  —  {effectiveExe}";
+            ? Loc.Get("Launch executable")
+            : Loc.Format($"Launch executable  —  {effectiveExe}");
         var exeHeaderText = new TextBlock
         {
-            Text = headerText,
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             TextWrapping = TextWrapping.NoWrap,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-        };
+            TextTrimming = TextTrimming.CharacterEllipsis
+        }.Localize("Text", headerText);
         launchExeHeaderPanel.Children.Add(exeHeaderText);
 
         // Async exe scan — updates the label without blocking the UI thread
@@ -306,16 +291,15 @@ public partial class DetailPanelBuilder
                     _window.DispatcherQueue?.TryEnqueue(() =>
                     {
                         if (_window.ViewModel.SelectedGame == card)
-                            exeHeaderText.Text = $"Launch executable  —  {scannedExe}";
+                            exeHeaderText.Localize("Text", Loc.Format($"Launch executable  —  {scannedExe}"));
                     });
             });
         }
         // Invisible spacer matching the "Shaders" / "Addons" sub-label height
         launchExeHeaderPanel.Children.Add(new TextBlock
         {
-            Text = " ",
-            FontSize = 11,
-        });
+            FontSize = 11
+        }.Localize("Text", " "));
         Grid.SetRow(launchExeHeaderPanel, 0);
         shadersAddonsRightColumn.Children.Add(launchExeHeaderPanel);
 
@@ -323,12 +307,10 @@ public partial class DetailPanelBuilder
         var launchExeBox = new TextBox
         {
             Text = currentLaunchExe,
-            PlaceholderText = "Auto-detect (or paste path)",
             FontSize = 11,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        ToolTipService.SetToolTip(launchExeBox,
-            "Override the executable used when launching this game. Leave blank for auto-detection (largest exe in install folder).");
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        }.Localize("PlaceholderText", Loc.Get("Auto-detect (or paste path)"));
+        launchExeBox.Localize("ToolTip", Loc.Get("Override the executable used when launching this game. Leave blank for auto-detection (largest exe in install folder)."));
         launchExeBox.LostFocus += (s, ev) =>
         {
             var newPath = launchExeBox.Text.Trim();
@@ -344,13 +326,12 @@ public partial class DetailPanelBuilder
         var launchArgsBox = new TextBox
         {
             Text = currentLaunchArgs,
-            PlaceholderText = "Launch arguments",
             FontSize = 11,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        var argsTooltip = "Command-line arguments passed to the game on launch. Saves on focus lost.";
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        }.Localize("PlaceholderText", Loc.Get("Launch arguments"));
+        var argsTooltip = Loc.Get("Command-line arguments passed to the game on launch. Saves on focus lost.");
         if (card.Source.Equals("Epic", StringComparison.OrdinalIgnoreCase))
-            argsTooltip += "\n\nNote: Setting arguments disables Epic protocol launch. EOS-protected games may fail to launch with arguments.";
+            argsTooltip += Loc.Get("\n\nNote: Setting arguments disables Epic protocol launch. EOS-protected games may fail to launch with arguments.");
         ToolTipService.SetToolTip(launchArgsBox, argsTooltip);
         launchArgsBox.LostFocus += (s, ev) =>
         {
@@ -378,7 +359,6 @@ public partial class DetailPanelBuilder
         launchBtnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         var browseLaunchBtn = new Button
         {
-            Content = "Browse",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -386,8 +366,8 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Browse"));
         browseLaunchBtn.Click += async (s, ev) =>
         {
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
@@ -415,12 +395,11 @@ public partial class DetailPanelBuilder
             }
         };
         Grid.SetColumn(browseLaunchBtn, 0);
-        ToolTipService.SetToolTip(browseLaunchBtn, "Browse for a game executable to use as the launch target.");
+        browseLaunchBtn.Localize("ToolTip", Loc.Get("Browse for a game executable to use as the launch target."));
         launchBtnRow.Children.Add(browseLaunchBtn);
 
         var resetLaunchBtn = new Button
         {
-            Content = "Reset",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -428,8 +407,8 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Reset"));
         resetLaunchBtn.Click += (s, ev) =>
         {
             launchExeBox.Text = "";
@@ -437,7 +416,7 @@ public partial class DetailPanelBuilder
             _window.ViewModel.SaveSettingsPublic();
         };
         Grid.SetColumn(resetLaunchBtn, 1);
-        ToolTipService.SetToolTip(resetLaunchBtn, "Clear the launch executable override and revert to auto-detection.");
+        resetLaunchBtn.Localize("ToolTip", Loc.Get("Clear the launch executable override and revert to auto-detection."));
         launchBtnRow.Children.Add(resetLaunchBtn);
         Grid.SetRow(launchBtnRow, 2);
         shadersAddonsRightColumn.Children.Add(launchBtnRow);
@@ -449,7 +428,6 @@ public partial class DetailPanelBuilder
 
         var resetOverridesBtn = new Button
         {
-            Content = "Reset Overrides",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -457,8 +435,8 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Reset Overrides"));
         ctx.ResetOverridesBtn = resetOverridesBtn;
         Action resetAction = () =>
         {

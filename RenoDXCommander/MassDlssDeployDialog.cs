@@ -43,12 +43,9 @@ public class MassDlssDeployDialog
         {
             var emptyDialog = new ContentDialog
             {
-                Title = "No DLSS/Streamline Games",
-                Content = "No games with DLSS or Streamline DLLs were detected.\nRun a Full Refresh to scan for them.",
-                CloseButtonText = "OK",
                 XamlRoot = _xamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("No DLSS/Streamline Games")).Localize("Content", Loc.Get("No games with DLSS or Streamline DLLs were detected.\nRun a Full Refresh to scan for them.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(emptyDialog);
             return;
         }
@@ -70,27 +67,29 @@ public class MassDlssDeployDialog
                     : Windows.UI.Color.FromArgb(255, 220, 220, 220)),
             };
             if (isV1)
-                ToolTipService.SetToolTip(cb, "Skipped — v1.x DLSS/Streamline not compatible with newer versions");
+                cb.Localize("ToolTip", Loc.Get("Skipped — v1.x DLSS/Streamline not compatible with newer versions"));
             checkBoxes.Add(cb);
             gameListPanel.Children.Add(cb);
         }
 
         var selectAllBtn = new Button
         {
-            Content = "Select All", FontSize = 11, Padding = new Thickness(8, 4, 8, 4),
+            FontSize = 11,
+            Padding = new Thickness(8, 4, 8, 4),
             Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 40, 60)),
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
-            CornerRadius = new CornerRadius(6),
-        };
+            CornerRadius = new CornerRadius(6)
+        }.Localize("Content", Loc.Get("Select All"));
         selectAllBtn.Click += (_, _) => { foreach (var cb in checkBoxes) if (cb.IsEnabled) cb.IsChecked = true; };
 
         var deselectAllBtn = new Button
         {
-            Content = "Deselect All", FontSize = 11, Padding = new Thickness(8, 4, 8, 4),
+            FontSize = 11,
+            Padding = new Thickness(8, 4, 8, 4),
             Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 40, 60)),
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
-            CornerRadius = new CornerRadius(6),
-        };
+            CornerRadius = new CornerRadius(6)
+        }.Localize("Content", Loc.Get("Deselect All"));
         deselectAllBtn.Click += (_, _) => { foreach (var cb in checkBoxes) cb.IsChecked = false; };
 
         var buttonRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 0, 0, 8) };
@@ -108,10 +107,10 @@ public class MassDlssDeployDialog
 
         // ── Right side: Version dropdowns (pre-populated with saved defaults) ──
         var settings = _viewModel.Settings;
-        var dlssCombo  = BuildVersionCombo(_dlssService.DlssVersions,       settings.DefaultDlssVersion,  includeDriverOverride: true, currentDriverOverride: settings.DefaultSrDriverOverride);
-        var dlssdCombo = BuildVersionCombo(_dlssService.DlssdVersions,      settings.DefaultDlssdVersion, includeDriverOverride: true, currentDriverOverride: settings.DefaultRrDriverOverride);
-        var dlssgCombo = BuildVersionCombo(_dlssService.DlssgVersions,      settings.DefaultDlssgVersion, includeDriverOverride: true, currentDriverOverride: settings.DefaultFgDriverOverride);
-        var slCombo    = BuildVersionCombo(_dlssService.StreamlineVersions,  settings.DefaultStreamlineVersion);
+        var dlssCombo = BuildVersionCombo(_dlssService.DlssVersions, settings.DefaultDlssVersion, includeDriverOverride: true, currentDriverOverride: settings.DefaultSrDriverOverride);
+        var dlssdCombo = BuildVersionCombo(_dlssService.DlssdVersions, settings.DefaultDlssdVersion, includeDriverOverride: true, currentDriverOverride: settings.DefaultRrDriverOverride);
+        var dlssgCombo = BuildVersionCombo(_dlssService.DlssgVersions, settings.DefaultDlssgVersion, includeDriverOverride: true, currentDriverOverride: settings.DefaultFgDriverOverride);
+        var slCombo = BuildVersionCombo(_dlssService.StreamlineVersions, settings.DefaultStreamlineVersion);
 
         // Force visual refresh when switching away from "NVIDIA Override" — WinUI doesn't clear the old text otherwise
         static void ForceComboRefresh(ComboBox cb) =>
@@ -126,9 +125,9 @@ public class MassDlssDeployDialog
         var fgPresetCombo = BuildPresetCombo(DlssPresetService.FgPresets, settings.DefaultFgPreset);
 
         var rightPanel = new StackPanel { Spacing = 8, Width = 320 };
-        rightPanel.Children.Add(BuildDropdownSection("DLSS Super Resolution", dlssCombo));
-        rightPanel.Children.Add(BuildDropdownSection("DLSS Ray Reconstruction", dlssdCombo));
-        rightPanel.Children.Add(BuildDropdownSection("DLSS Frame Generation", dlssgCombo));
+        rightPanel.Children.Add(BuildDropdownSection(Loc.Get("DLSS Super Resolution"), dlssCombo));
+        rightPanel.Children.Add(BuildDropdownSection(Loc.Get("DLSS Ray Reconstruction"), dlssdCombo));
+        rightPanel.Children.Add(BuildDropdownSection(Loc.Get("DLSS Frame Generation"), dlssgCombo));
         rightPanel.Children.Add(BuildDropdownSection("Streamline", slCombo));
 
         // Presets section
@@ -138,9 +137,9 @@ public class MassDlssDeployDialog
             Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 60, 70, 90)),
             Margin = new Thickness(0, 4, 0, 4),
         });
-        rightPanel.Children.Add(BuildDropdownSection("SR Preset", srPresetCombo));
-        rightPanel.Children.Add(BuildDropdownSection("RR Preset", rrPresetCombo));
-        rightPanel.Children.Add(BuildDropdownSection("FG Preset", fgPresetCombo));
+        rightPanel.Children.Add(BuildDropdownSection(Loc.Get("SR Preset"), srPresetCombo));
+        rightPanel.Children.Add(BuildDropdownSection(Loc.Get("RR Preset"), rrPresetCombo));
+        rightPanel.Children.Add(BuildDropdownSection(Loc.Get("FG Preset"), fgPresetCombo));
 
         var rightScroll = new ScrollViewer
         {
@@ -152,7 +151,7 @@ public class MassDlssDeployDialog
         // Auto-create profiles checkbox — lives outside the scroll so it's always visible
         var autoCreateCheck = new CheckBox
         {
-            Content = "Auto-create NVIDIA profiles",
+            Content = Loc.Get("Auto-create NVIDIA profiles"),
             IsChecked = true,
             FontSize = 11,
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 190, 220)),
@@ -196,14 +195,10 @@ public class MassDlssDeployDialog
         // ── Dialog ──
         var dialog = new ContentDialog
         {
-            Title = "Batch DLSS & Streamline Deploy",
             Content = mainGrid,
-            PrimaryButtonText = "Deploy",
-            SecondaryButtonText = "Restore",
-            CloseButtonText = "Cancel",
             XamlRoot = _xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Batch DLSS & Streamline Deploy")).Localize("PrimaryButtonText", Loc.Get("Deploy")).Localize("SecondaryButtonText", Loc.Get("Restore")).Localize("CloseButtonText", Loc.Get("Cancel"));
         dialog.Resources["ContentDialogMaxWidth"] = 800.0;
 
         var result = await DialogService.ShowSafeAsync(dialog);
@@ -225,22 +220,22 @@ public class MassDlssDeployDialog
         ComboBox srPresetCombo, ComboBox rrPresetCombo, ComboBox fgPresetCombo,
         bool autoCreateProfiles)
     {
-        var dlssVersion  = dlssCombo.SelectedItem  as string;
+        var dlssVersion = dlssCombo.SelectedItem as string;
         var dlssdVersion = dlssdCombo.SelectedItem as string;
         var dlssgVersion = dlssgCombo.SelectedItem as string;
-        var slVersion    = slCombo.SelectedItem    as string;
+        var slVersion = slCombo.SelectedItem as string;
 
         var srPresetSelection = srPresetCombo.SelectedItem as string;
         var rrPresetSelection = rrPresetCombo.SelectedItem as string;
         var fgPresetSelection = fgPresetCombo.SelectedItem as string;
 
         // "NVIDIA Override" in the version combo means: write the driver DLL override, skip file swap
-        bool srDriverEnable = dlssVersion  == NvidiaOverrideOption;
+        bool srDriverEnable = dlssVersion == NvidiaOverrideOption;
         bool rrDriverEnable = dlssdVersion == NvidiaOverrideOption;
         bool fgDriverEnable = dlssgVersion == NvidiaOverrideOption;
 
         // Nothing selected at all
-        bool anyDllSelected    = dlssVersion  != NoneOption || dlssdVersion != NoneOption || dlssgVersion != NoneOption || slVersion != NoneOption;
+        bool anyDllSelected = dlssVersion != NoneOption || dlssdVersion != NoneOption || dlssgVersion != NoneOption || slVersion != NoneOption;
         bool anyPresetSelected = srPresetSelection != NoneOption || rrPresetSelection != NoneOption || fgPresetSelection != NoneOption;
         if (!anyDllSelected && !anyPresetSelected)
             return;
@@ -258,12 +253,11 @@ public class MassDlssDeployDialog
         // Show progress
         var progressText = new TextBlock
         {
-            Text = "Deploying to selected games...",
             FontSize = 12,
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
             TextWrapping = TextWrapping.Wrap,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", Loc.Get("Deploying to selected games..."));
         var progressRing = new ProgressRing
         {
             IsActive = true,
@@ -287,11 +281,10 @@ public class MassDlssDeployDialog
 
         var progressDialog = new ContentDialog
         {
-            Title = "Deploying...",
             Content = progressContainer,
             XamlRoot = _xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Deploying..."));
 
         // Use explicit gate pattern to avoid a race condition where fire-and-forget ShowSafeAsync
         // hasn't acquired the gate yet when progressDialog.Hide() is called, causing two concurrent
@@ -493,12 +486,10 @@ public class MassDlssDeployDialog
 
         var resultDialog = new ContentDialog
         {
-            Title = "Batch Deploy Complete",
-            Content = new TextBlock { Text = report.ToString().TrimEnd(), TextWrapping = TextWrapping.Wrap, FontSize = 12 },
-            CloseButtonText = "OK",
+            Content = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12 }.Localize("Text", report.ToString().TrimEnd()),
             XamlRoot = _xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Batch Deploy Complete")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(resultDialog);
         _onComplete?.Invoke();
     }
@@ -512,12 +503,11 @@ public class MassDlssDeployDialog
         // Show progress
         var progressText = new TextBlock
         {
-            Text = "Restoring selected games...",
             FontSize = 12,
             Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
             TextWrapping = TextWrapping.Wrap,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", Loc.Get("Restoring selected games..."));
         var progressRing = new ProgressRing { IsActive = true, Width = 24, Height = 24 };
         var progressPanel = new StackPanel
         {
@@ -533,11 +523,10 @@ public class MassDlssDeployDialog
 
         var progressDialog = new ContentDialog
         {
-            Title = "Restoring...",
             Content = progressContainer,
             XamlRoot = _xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Restoring..."));
 
         // Use explicit gate pattern to avoid the fire-and-forget ShowSafeAsync race
         bool restoreGateReleased = false;
@@ -555,7 +544,7 @@ public class MassDlssDeployDialog
             var detection = card.DlssDetection;
             if (detection == null) continue;
 
-            progressText.Text = $"Restoring {card.GameName}...";
+            progressText.Localize("Text", Loc.Format($"Restoring {card.GameName}..."));
             await Task.Delay(1);
 
             // Restore DLL backups
@@ -588,17 +577,14 @@ public class MassDlssDeployDialog
 
         var resultDialog = new ContentDialog
         {
-            Title = "Restore Complete",
             Content = new TextBlock
             {
-                Text = reportText.ToString().TrimEnd(),
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = 12,
-            },
-            CloseButtonText = "OK",
+                FontSize = 12
+            }.Localize("Text", reportText.ToString().TrimEnd()),
             XamlRoot = _xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Restore Complete")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(resultDialog);
         _onComplete?.Invoke();
     }
@@ -648,11 +634,10 @@ public class MassDlssDeployDialog
         var panel = new StackPanel { Spacing = 4 };
         panel.Children.Add(new TextBlock
         {
-            Text = label,
             FontSize = 12,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 210, 230)),
-        });
+            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 210, 230))
+        }.Localize("Text", label));
         panel.Children.Add(combo);
         return panel;
     }

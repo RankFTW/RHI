@@ -10,6 +10,7 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
+    <DefaultLanguage>en-US</DefaultLanguage>
     <ImplicitUsings>enable</ImplicitUsings>
     <NoWarn>NU1902</NoWarn>
     <WindowsPackageType>None</WindowsPackageType>
@@ -24,6 +25,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Localization\zh-CN.json" />
+    <EmbeddedResource Include="Strings\en-US\Resources.resw" LogicalName="RenoDXCommander.Localization.en-US.resw" />
+    <EmbeddedResource Include="Strings\zh-CN\Resources.resw" LogicalName="RenoDXCommander.Localization.zh-CN.resw" />
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>RenoDXCommander.Tests</_Parameter1>
     </AssemblyAttribute>

@@ -29,19 +29,15 @@ public static class AddonManagerDialog
         {
             var emptyDlg = new ContentDialog
             {
-                Title = "ReShade Addon Manager",
-                Content = new TextBlock
-                {
-                    Text = "No addons available. Try refreshing.",
-                    FontSize = 13,
-                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                },
-                CloseButtonText = "Close",
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 MinWidth = 750,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("ReShade Addon Manager")).Localize("Content", new TextBlock
+            {
+                FontSize = 13,
+                Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+            }.Localize("Text", Loc.Get("No addons available. Try refreshing."))).Localize("CloseButtonText", Loc.Get("Close"));
             await DialogService.ShowSafeAsync(emptyDlg);
             return;
         }
@@ -54,12 +50,11 @@ public static class AddonManagerDialog
             "RHI", "Custom", "Addons");
         var folderLink = new HyperlinkButton
         {
-            Content = "Place custom .addon64/.addon32 files here",
             FontSize = 11,
             Foreground = Brush(ResourceKeys.AccentBlueBrush),
             Padding = new Thickness(0),
-            Margin = new Thickness(0, 0, 0, 4),
-        };
+            Margin = new Thickness(0, 0, 0, 4)
+        }.Localize("Content", Loc.Get("Place custom .addon64/.addon32 files here"));
         folderLink.Click += (_, _) =>
         {
             try
@@ -87,13 +82,12 @@ public static class AddonManagerDialog
         {
             panel.Children.Add(new TextBlock
             {
-                Text = "Custom Addons",
                 FontSize = 12,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                 Opacity = 0.6,
-                Margin = new Thickness(0, 12, 0, 4),
-            });
+                Margin = new Thickness(0, 12, 0, 4)
+            }.Localize("Text", Loc.Get("Custom Addons")));
 
             foreach (var entry in customAddons)
             {
@@ -111,14 +105,12 @@ public static class AddonManagerDialog
 
         var dlg = new ContentDialog
         {
-            Title = "ReShade Addon Manager",
             Content = scrollViewer,
-            CloseButtonText = "Close",
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             MinWidth = 750,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("ReShade Addon Manager")).Localize("CloseButtonText", Loc.Get("Close"));
 
         await DialogService.ShowSafeAsync(dlg);
     }
@@ -166,29 +158,26 @@ public static class AddonManagerDialog
         var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         nameRow.Children.Add(new TextBlock
         {
-            Text = entry.PackageName,
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-        });
+            Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+        }.Localize("Text", entry.PackageName));
         var versionLabel = addonPackService.GetVersionLabel(entry.SectionId);
         if (!string.IsNullOrEmpty(versionLabel))
             nameRow.Children.Add(new TextBlock
             {
-                Text = versionLabel,
                 FontSize = 11,
                 Foreground = Brush(ResourceKeys.TextSecondaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
-                Opacity = 0.7,
-            });
+                Opacity = 0.7
+            }.Localize("Text", Loc.Get(versionLabel)));
         var tickMark = new TextBlock
         {
-            Text = "✓",
             FontSize = 13,
             Foreground = Brush(ResourceKeys.AccentGreenBrush),
             VerticalAlignment = VerticalAlignment.Center,
-            Visibility = isDownloaded ? Visibility.Visible : Visibility.Collapsed,
-        };
+            Visibility = isDownloaded ? Visibility.Visible : Visibility.Collapsed
+        }.Localize("Text", "✓");
         nameRow.Children.Add(tickMark);
         textPanel.Children.Add(nameRow);
 
@@ -196,13 +185,12 @@ public static class AddonManagerDialog
         {
             textPanel.Children.Add(new TextBlock
             {
-                Text = entry.PackageDescription,
                 FontSize = 11,
                 Opacity = 0.6,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                 TextWrapping = TextWrapping.Wrap,
-                MaxWidth = 450,
-            });
+                MaxWidth = 450
+            }.Localize("Text", entry.PackageDescription));
         }
 
         // "How to use" link when the entry has both a download URL and a repository/wiki URL
@@ -210,12 +198,11 @@ public static class AddonManagerDialog
         {
             textPanel.Children.Add(new HyperlinkButton
             {
-                Content = "How to use",
                 NavigateUri = new Uri(entry.RepositoryUrl),
                 FontSize = 11,
                 Foreground = Brush(ResourceKeys.AccentBlueBrush),
-                Padding = new Thickness(0),
-            });
+                Padding = new Thickness(0)
+            }.Localize("Content", Loc.Get("How to use")));
         }
 
         // Right side: toggle or repository link
@@ -228,10 +215,8 @@ public static class AddonManagerDialog
             var toggle = new ToggleSwitch
             {
                 IsOn = isEnabled,
-                OnContent = "On",
-                OffContent = "Off",
-                VerticalAlignment = VerticalAlignment.Center,
-            };
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("OnContent", Loc.Get("On")).Localize("OffContent", Loc.Get("Off"));
 
             toggle.Toggled += async (s, ev) =>
             {
@@ -300,12 +285,11 @@ public static class AddonManagerDialog
         {
             rightElement = new HyperlinkButton
             {
-                Content = "Repository",
                 NavigateUri = new Uri(entry.RepositoryUrl!),
                 FontSize = 11,
                 Foreground = Brush(ResourceKeys.AccentBlueBrush),
-                HorizontalAlignment = HorizontalAlignment.Right,
-            };
+                HorizontalAlignment = HorizontalAlignment.Right
+            }.Localize("Content", Loc.Get("Repository"));
         }
         else
         {

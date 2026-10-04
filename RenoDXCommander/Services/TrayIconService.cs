@@ -110,8 +110,8 @@ public static class TrayIconService
             AppendMenu(hMenu, MF_SEPARATOR, 0, null);
         }
 
-        AppendMenu(hMenu, MF_STRING, 1, "Open RHI");
-        AppendMenu(hMenu, MF_STRING, 2, "Exit");
+        AppendMenu(hMenu, MF_STRING, 1, Loc.Get("Open RHI"));
+        AppendMenu(hMenu, MF_STRING, 2, Loc.Get("Exit"));
 
         // Required for the menu to close when clicking away
         SetForegroundWindow(_hwnd);
@@ -159,7 +159,7 @@ public static class TrayIconService
                 col.AddObject(link);
             }
 
-            cdl.AppendCategory("Recent", col);
+            cdl.AppendCategory(Loc.Get("Recent"), col);
             cdl.CommitList();
 
             CrashReporter.Log($"[TrayIconService.UpdateJumpList] Set {recentGames.Count} games via ICustomDestinationList");

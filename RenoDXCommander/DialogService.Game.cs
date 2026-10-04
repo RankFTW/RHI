@@ -16,28 +16,19 @@ public partial class DialogService
     public async Task<bool> ShowForeignDxgiConfirmDialogAsync(GameCardViewModel card, string dxgiPath)
     {
         var fileSize = new System.IO.FileInfo(dxgiPath).Length;
-        var sizeKB   = fileSize / 1024.0;
+        var sizeKB = fileSize / 1024.0;
 
         var dlg = new ContentDialog
         {
-            Title               = "⚠ Unknown dxgi.dll Detected",
-            Content             = new TextBlock
-            {
-                TextWrapping = TextWrapping.Wrap,
-                Foreground   = Brush(ResourceKeys.AccentAmberBrush),
-                FontSize     = 13,
-                Text         = $"A dxgi.dll file was found in:\n{card.InstallPath}\n\n" +
-                               $"File size: {sizeKB:N0} KB\n\n" +
-                               "RHI cannot identify this file as ReShade or Display Commander. " +
-                               "It may belong to another mod (e.g. DXVK, Special K, ENB).\n\n" +
-                               "Overwriting it may break the existing mod. Do you want to proceed?",
-            },
-            PrimaryButtonText   = "Overwrite",
-            CloseButtonText     = "Cancel",
-            XamlRoot            = _window.Content.XamlRoot,
-            Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
-            RequestedTheme      = ElementTheme.Dark,
-        };
+            XamlRoot = _window.Content.XamlRoot,
+            Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("⚠ Unknown dxgi.dll Detected")).Localize("Content", new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Brush(ResourceKeys.AccentAmberBrush),
+            FontSize = 13
+        }.Localize("Text", Loc.Concat(Loc.Format($"A dxgi.dll file was found in:\n{card.InstallPath}\n\n"), Loc.Format($"File size: {sizeKB:N0} KB\n\n"), Loc.Get("RHI cannot identify this file as ReShade or Display Commander. "), Loc.Get("It may belong to another mod (e.g. DXVK, Special K, ENB).\n\n"), Loc.Get("Overwriting it may break the existing mod. Do you want to proceed?")))).Localize("PrimaryButtonText", Loc.Get("Overwrite")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dlg);
         return result == ContentDialogResult.Primary;
@@ -46,28 +37,19 @@ public partial class DialogService
     public async Task<bool> ShowForeignWinmmConfirmDialogAsync(GameCardViewModel card, string winmmPath)
     {
         var fileSize = new System.IO.FileInfo(winmmPath).Length;
-        var sizeKB   = fileSize / 1024.0;
+        var sizeKB = fileSize / 1024.0;
 
         var dlg = new ContentDialog
         {
-            Title               = "⚠ Unknown winmm.dll Detected",
-            Content             = new TextBlock
-            {
-                TextWrapping = TextWrapping.Wrap,
-                Foreground   = Brush(ResourceKeys.AccentAmberBrush),
-                FontSize     = 13,
-                Text         = $"A winmm.dll file was found in:\n{card.InstallPath}\n\n" +
-                               $"File size: {sizeKB:N0} KB\n\n" +
-                               "RHI cannot identify this file as Display Commander. " +
-                               "It may belong to another mod or DLL injector.\n\n" +
-                               "Overwriting it may break the existing mod. Do you want to proceed?",
-            },
-            PrimaryButtonText   = "Overwrite",
-            CloseButtonText     = "Cancel",
-            XamlRoot            = _window.Content.XamlRoot,
-            Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
-            RequestedTheme      = ElementTheme.Dark,
-        };
+            XamlRoot = _window.Content.XamlRoot,
+            Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("⚠ Unknown winmm.dll Detected")).Localize("Content", new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Brush(ResourceKeys.AccentAmberBrush),
+            FontSize = 13
+        }.Localize("Text", Loc.Concat(Loc.Format($"A winmm.dll file was found in:\n{card.InstallPath}\n\n"), Loc.Format($"File size: {sizeKB:N0} KB\n\n"), Loc.Get("RHI cannot identify this file as Display Commander. "), Loc.Get("It may belong to another mod or DLL injector.\n\n"), Loc.Get("Overwriting it may break the existing mod. Do you want to proceed?")))).Localize("PrimaryButtonText", Loc.Get("Overwrite")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dlg);
         return result == ContentDialogResult.Primary;
@@ -90,13 +72,13 @@ public partial class DialogService
         // Detail view Info buttons use x:Name
         return btn.Name switch
         {
-            "DetailRefInfoBtn"  => AddonType.REFramework,
-            "DetailRsInfoBtn"   => AddonType.ReShade,
-            "DetailRdxInfoBtn"  => AddonType.RenoDX,
+            "DetailRefInfoBtn" => AddonType.REFramework,
+            "DetailRsInfoBtn" => AddonType.ReShade,
+            "DetailRdxInfoBtn" => AddonType.RenoDX,
             "DetailLumaInfoBtn" => AddonType.Luma,
-            "DetailUlInfoBtn"   => AddonType.ReLimiter,
-            "DetailDcInfoBtn"   => AddonType.DisplayCommander,
-            "DetailOsInfoBtn"   => AddonType.OptiScaler,
+            "DetailUlInfoBtn" => AddonType.ReLimiter,
+            "DetailDcInfoBtn" => AddonType.DisplayCommander,
+            "DetailOsInfoBtn" => AddonType.OptiScaler,
             _ => null
         };
     }
@@ -140,7 +122,7 @@ public partial class DialogService
 
             var textColour = Brush(ResourceKeys.TextSecondaryBrush);
             var linkColour = Brush(ResourceKeys.AccentBlueBrush);
-            var dimColour  = Brush(ResourceKeys.TextTertiaryBrush);
+            var dimColour = Brush(ResourceKeys.TextTertiaryBrush);
             var outerPanel = new StackPanel { Spacing = 10 };
 
             // ── Addon-specific content rendering ──────────────────────────────
@@ -181,22 +163,21 @@ public partial class DialogService
 
             var scrollContent = new ScrollViewer
             {
-                Content   = outerPanel,
+                Content = outerPanel,
                 MaxHeight = 440,
-                Padding   = new Thickness(0, 4, 12, 0),
+                Padding = new Thickness(0, 4, 12, 0),
             };
 
             var addonName = GetAddonDisplayName(addonType.Value);
 
             var dialog = new ContentDialog
             {
-                Title           = $"{addonName} — {card.GameName}",
-                Content         = scrollContent,
-                CloseButtonText = "Close",
-                XamlRoot        = _window.Content.XamlRoot,
-                Background      = Brush(ResourceKeys.SurfaceToolbarBrush),
-                RequestedTheme  = ElementTheme.Dark,
-            };
+                Title = $"{addonName} — {card.GameName}",
+                Content = scrollContent,
+                XamlRoot = _window.Content.XamlRoot,
+                Background = Brush(ResourceKeys.SurfaceToolbarBrush),
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("CloseButtonText", Loc.Get("Close"));
             await DialogService.ShowSafeAsync(dialog);
         }
         catch (Exception ex)
@@ -208,14 +189,14 @@ public partial class DialogService
     /// <summary>Returns the human-readable display name for an addon type.</summary>
     private static string GetAddonDisplayName(AddonType addon) => addon switch
     {
-        AddonType.REFramework     => "RE Framework",
-        AddonType.ReShade         => "ReShade",
-        AddonType.RenoDX          => "RenoDX",
-        AddonType.ReLimiter       => "ReLimiter",
+        AddonType.REFramework => "RE Framework",
+        AddonType.ReShade => "ReShade",
+        AddonType.RenoDX => "RenoDX",
+        AddonType.ReLimiter => "ReLimiter",
         AddonType.DisplayCommander => "Display Commander",
-        AddonType.OptiScaler      => "OptiScaler",
-        AddonType.Luma            => "Luma",
-        _                         => "Info"
+        AddonType.OptiScaler => "OptiScaler",
+        AddonType.Luma => "Luma",
+        _ => "Info"
     };
 
     // ── RenoDX-specific dialog content (8.2) ─────────────────────────────────────
@@ -240,38 +221,34 @@ public partial class DialogService
             // RTX HDR badge (green, same style as Luma badge)
             var rtxHdrBadge = new Border
             {
-                CornerRadius        = new CornerRadius(6),
-                Padding             = new Thickness(10, 4, 10, 4),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10, 4, 10, 4),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Background          = Brush(ResourceKeys.AccentGreenBgBrush),
-                BorderBrush         = Brush(ResourceKeys.AccentGreenBorderBrush),
-                BorderThickness     = new Thickness(1),
+                Background = Brush(ResourceKeys.AccentGreenBgBrush),
+                BorderBrush = Brush(ResourceKeys.AccentGreenBorderBrush),
+                BorderThickness = new Thickness(1),
                 Child = new TextBlock
                 {
-                    Text       = "RTX HDR Enabled",
-                    FontSize   = 12,
-                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
-                }
+                    FontSize = 12,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush)
+                }.Localize("Text", Loc.Get("RTX HDR Enabled"))
             };
             panel.Children.Add(rtxHdrBadge);
 
             panel.Children.Add(new TextBlock
             {
-                Text = "RTX HDR uses NVIDIA's driver-level HDR injection to upgrade SDR games to HDR. " +
-                       "It works at the GPU level without injecting DLLs into the game, making it compatible with anti-cheat systems.\n\n" +
-                       "Requires: NVIDIA App installed, Game Filter/Freestyle enabled, RTX GPU, driver 550+.",
                 TextWrapping = TextWrapping.Wrap,
-                Foreground   = textColour,
-                FontSize     = 13,
-                LineHeight   = 22,
-            });
+                Foreground = textColour,
+                FontSize = 13,
+                LineHeight = 22
+            }.Localize("Text", Loc.Concat(Loc.Get("RTX HDR uses NVIDIA's driver-level HDR injection to upgrade SDR games to HDR. "), Loc.Get("It works at the GPU level without injecting DLLs into the game, making it compatible with anti-cheat systems.\n\n"), Loc.Get("Requires: NVIDIA App installed, Game Filter/Freestyle enabled, RTX GPU, driver 550+."))));
 
-            AddHyperlinkBlock(panel, "RTX HDR Calibration Guide", manifest?.RtxHdrInfoUrl ?? "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/", linkColour);
+            AddHyperlinkBlock(panel, Loc.Get("RTX HDR Calibration Guide"), manifest?.RtxHdrInfoUrl ?? "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/", linkColour);
 
             // Still show HDR Gaming Database link if available
             if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
             {
-                AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+                AddHyperlinkBlock(panel, Loc.Get("HDR Analysis — HDR Gaming Database"), result.HdrAnalysisUrl, linkColour);
             }
 
             return; // Skip regular RenoDX content
@@ -282,12 +259,11 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text         = result.Content,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground   = textColour,
-                FontSize     = 13,
-                LineHeight   = 22,
-            });
+                Foreground = textColour,
+                FontSize = 13,
+                LineHeight = 22
+            }.Localize("Text", result.Content));
         }
 
         // ── Manifest gameNotes supplement (when wiki is the source, manifest
@@ -307,31 +283,30 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text         = card.Notes,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground   = textColour,
-                FontSize     = 13,
-                LineHeight   = 22,
-                Margin       = new Thickness(0, 8, 0, 0),
-            });
+                Foreground = textColour,
+                FontSize = 13,
+                LineHeight = 22,
+                Margin = new Thickness(0, 8, 0, 0)
+            }.Localize("Text", card.Notes));
         }
 
         // ── Wiki page link (NameUrl) as clickable hyperlink ──────────────────
         if (!string.IsNullOrEmpty(result.Url))
         {
-            AddHyperlinkBlock(panel, result.UrlLabel ?? "View wiki page", result.Url, linkColour);
+            AddHyperlinkBlock(panel, result.UrlLabel ?? Loc.Get("View wiki page"), result.Url, linkColour);
         }
 
         // ── "Also available on Nexus" link (Snapshot+Nexus games only) ───────
         if (!card.IsExternalOnly && card.Mod?.SnapshotUrl != null && !string.IsNullOrEmpty(card.NexusUrl))
         {
-            AddHyperlinkBlock(panel, "Also available on Nexus Mods", card.NexusUrl, linkColour);
+            AddHyperlinkBlock(panel, Loc.Get("Also available on Nexus Mods"), card.NexusUrl, linkColour);
         }
 
         // ── HDR Gaming Database link (supplementary) ─────────────────────────
         if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
         {
-            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+            AddHyperlinkBlock(panel, Loc.Get("HDR Analysis — HDR Gaming Database"), result.HdrAnalysisUrl, linkColour);
         }
 
         // ── Fallback if no content at all ────────────────────────────────────
@@ -339,10 +314,9 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text       = "No additional RenoDX notes for this game.",
                 Foreground = dimColour,
-                FontSize   = 13,
-            });
+                FontSize = 13
+            }.Localize("Text", Loc.Get("No additional RenoDX notes for this game.")));
         }
     }
 
@@ -370,18 +344,17 @@ public partial class DialogService
                 : "Luma";
             var lumaBadge = new Border
             {
-                CornerRadius        = new CornerRadius(6),
-                Padding             = new Thickness(10, 4, 10, 4),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10, 4, 10, 4),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Background          = Brush(ResourceKeys.AccentGreenBgBrush),
-                BorderBrush         = Brush(ResourceKeys.AccentGreenBorderBrush),
-                BorderThickness     = new Thickness(1),
+                Background = Brush(ResourceKeys.AccentGreenBgBrush),
+                BorderBrush = Brush(ResourceKeys.AccentGreenBorderBrush),
+                BorderThickness = new Thickness(1),
                 Child = new TextBlock
                 {
-                    Text       = lumaLabel,
-                    FontSize   = 12,
-                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
-                }
+                    FontSize = 12,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush)
+                }.Localize("Text", Loc.Get(lumaLabel))
             };
             panel.Children.Add(lumaBadge);
         }
@@ -394,18 +367,16 @@ public partial class DialogService
             if (card.LumaDlssFsrSupported)
                 flagPanel.Children.Add(new TextBlock
                 {
-                    Text = "✅ DLSS / FSR",
                     FontSize = 12,
-                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
-                });
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush)
+                }.Localize("Text", "✅ DLSS / FSR"));
 
             if (card.LumaHdrSupported)
                 flagPanel.Children.Add(new TextBlock
                 {
-                    Text = "✅ HDR",
                     FontSize = 12,
-                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
-                });
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush)
+                }.Localize("Text", "✅ HDR"));
 
             panel.Children.Add(flagPanel);
         }
@@ -427,12 +398,11 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text         = lumaNotesText,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground   = textColour,
-                FontSize     = 13,
-                LineHeight   = 22,
-            });
+                Foreground = textColour,
+                FontSize = 13,
+                LineHeight = 22
+            }.Localize("Text", Loc.Get(lumaNotesText)));
         }
 
         // ── Manifest lumaGameNotes content ───────────────────────────────────
@@ -458,12 +428,11 @@ public partial class DialogService
             {
                 panel.Children.Add(new TextBlock
                 {
-                    Text         = result.Content,
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground   = textColour,
-                    FontSize     = 13,
-                    LineHeight   = 22,
-                });
+                    Foreground = textColour,
+                    FontSize = 13,
+                    LineHeight = 22
+                }.Localize("Text", result.Content));
             }
             if (!string.IsNullOrEmpty(result.Url))
                 AddHyperlinkBlock(panel, result.UrlLabel ?? result.Url, result.Url, linkColour);
@@ -472,7 +441,7 @@ public partial class DialogService
         // ── HDR Gaming Database link (supplementary) ─────────────────────────
         if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
         {
-            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+            AddHyperlinkBlock(panel, Loc.Get("HDR Analysis — HDR Gaming Database"), result.HdrAnalysisUrl, linkColour);
         }
 
         // ── Fallback if no content at all ────────────────────────────────────
@@ -482,21 +451,19 @@ public partial class DialogService
             {
                 panel.Children.Add(new TextBlock
                 {
-                    Text         = result.Content,
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground   = textColour,
-                    FontSize     = 13,
-                    LineHeight   = 22,
-                });
+                    Foreground = textColour,
+                    FontSize = 13,
+                    LineHeight = 22
+                }.Localize("Text", result.Content));
             }
             else if (panel.Children.Count <= 1)
             {
                 panel.Children.Add(new TextBlock
                 {
-                    Text       = "No additional Luma notes for this game.",
                     Foreground = dimColour,
-                    FontSize   = 13,
-                });
+                    FontSize = 13
+                }.Localize("Text", Loc.Get("No additional Luma notes for this game.")));
             }
         }
     }
@@ -543,15 +510,14 @@ public partial class DialogService
             {
                 panel.Children.Add(new TextBlock
                 {
-                    Text         = result.Content,
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground   = textColour,
-                    FontSize     = 13,
-                    LineHeight   = 22,
-                });
+                    Foreground = textColour,
+                    FontSize = 13,
+                    LineHeight = 22
+                }.Localize("Text", result.Content));
                 // Show URL only for the unstructured fallback path (no per-section links)
                 if (!string.IsNullOrEmpty(result.Url))
-                    AddHyperlinkBlock(panel, result.UrlLabel ?? "View wiki page", result.Url, linkColour);
+                    AddHyperlinkBlock(panel, result.UrlLabel ?? Loc.Get("View wiki page"), result.Url, linkColour);
             }
         }
         else
@@ -564,10 +530,9 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text       = "No OptiScaler compatibility data available for this game.",
                 Foreground = dimColour,
-                FontSize   = 13,
-            });
+                FontSize = 13
+            }.Localize("Text", Loc.Get("No OptiScaler compatibility data available for this game.")));
         }
     }
 
@@ -589,35 +554,32 @@ public partial class DialogService
         // Section header with status
         panel.Children.Add(new TextBlock
         {
-            Text         = $"{sectionTitle}: {entry.Status}",
             TextWrapping = TextWrapping.Wrap,
-            Foreground   = textColour,
-            FontSize     = 13,
-            FontWeight   = Microsoft.UI.Text.FontWeights.SemiBold,
-            LineHeight   = 22,
-        });
+            Foreground = textColour,
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            LineHeight = 22
+        }.Localize("Text", $"{sectionTitle}: {entry.Status}"));
 
         // Upscaler list
         panel.Children.Add(new TextBlock
         {
-            Text         = $"Upscalers: {upscalers}",
             TextWrapping = TextWrapping.Wrap,
-            Foreground   = textColour,
-            FontSize     = 13,
-            LineHeight   = 22,
-        });
+            Foreground = textColour,
+            FontSize = 13,
+            LineHeight = 22
+        }.Localize("Text", Loc.Format($"Upscalers: {upscalers}")));
 
         // Notes
         if (!string.IsNullOrWhiteSpace(entry.Notes))
         {
             panel.Children.Add(new TextBlock
             {
-                Text         = entry.Notes,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground   = textColour,
-                FontSize     = 13,
-                LineHeight   = 22,
-            });
+                Foreground = textColour,
+                FontSize = 13,
+                LineHeight = 22
+            }.Localize("Text", entry.Notes));
         }
 
         // Detail page URL
@@ -626,13 +588,12 @@ public partial class DialogService
             var link = new Microsoft.UI.Xaml.Documents.Hyperlink
             {
                 NavigateUri = new Uri(entry.DetailPageUrl),
-                Foreground  = linkColour,
+                Foreground = linkColour,
             };
             link.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text     = "View details",
-                FontSize = 13,
-            });
+                FontSize = 13
+            }.Localize("Text", Loc.Get("View details")));
             var para = new Microsoft.UI.Xaml.Documents.Paragraph();
             para.Inlines.Add(link);
             var rtb = new RichTextBlock { IsTextSelectionEnabled = true };
@@ -657,12 +618,11 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text         = result.Content,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground   = textColour,
-                FontSize     = 13,
-                LineHeight   = 22,
-            });
+                Foreground = textColour,
+                FontSize = 13,
+                LineHeight = 22
+            }.Localize("Text", result.Content));
         }
 
         if (!string.IsNullOrEmpty(result.Url))
@@ -670,7 +630,7 @@ public partial class DialogService
 
         // ── HDR Gaming Database link (supplementary) ─────────────────────────
         if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
-            AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+            AddHyperlinkBlock(panel, Loc.Get("HDR Analysis — HDR Gaming Database"), result.HdrAnalysisUrl, linkColour);
     }
 
     // ── Release notes content rendering (ReLimiter, Display Commander) ───────────
@@ -694,11 +654,10 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text       = $"Installed: {installedVersion}",
                 Foreground = dimColour,
-                FontSize   = 12,
-                Margin     = new Thickness(0, 0, 0, 4),
-            });
+                FontSize = 12,
+                Margin = new Thickness(0, 0, 0, 4)
+            }.Localize("Text", Loc.Format($"Installed: {installedVersion}")));
         }
 
         // Show manifest game-specific note first (above release notes) if present
@@ -706,19 +665,18 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text         = result.Content,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground   = textColour,
-                FontSize     = 13,
-                LineHeight   = 22,
-                Margin       = new Thickness(0, 0, 0, 12),
-            });
+                Foreground = textColour,
+                FontSize = 13,
+                LineHeight = 22,
+                Margin = new Thickness(0, 0, 0, 12)
+            }.Localize("Text", result.Content));
             // Add a separator before release notes
             panel.Children.Add(new Border
             {
-                Height      = 1,
-                Background  = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255)),
-                Margin      = new Thickness(0, 0, 0, 12),
+                Height = 1,
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255)),
+                Margin = new Thickness(0, 0, 0, 12),
             });
         }
 
@@ -727,13 +685,13 @@ public partial class DialogService
         {
             var markdown = new CommunityToolkit.WinUI.Controls.MarkdownTextBlock
             {
-                Text              = releaseBody,
-                Background        = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                Foreground        = textColour,
-                FontSize          = 12,
+                Text = releaseBody,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                Foreground = textColour,
+                FontSize = 12,
                 UseEmphasisExtras = true,
-                UseListExtras     = true,
-                UseTaskLists      = true,
+                UseListExtras = true,
+                UseTaskLists = true,
             };
 
             var markdownContainer = new Grid { RequestedTheme = ElementTheme.Dark };
@@ -747,17 +705,16 @@ public partial class DialogService
             {
                 panel.Children.Add(new TextBlock
                 {
-                    Text         = result.Content,
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground   = textColour,
-                    FontSize     = 13,
-                    LineHeight   = 22,
-                });
+                    Foreground = textColour,
+                    FontSize = 13,
+                    LineHeight = 22
+                }.Localize("Text", result.Content));
             }
         }
 
         // Always show link to the releases page
-        AddHyperlinkBlock(panel, "View all releases on GitHub", releasesPageUrl, linkColour);
+        AddHyperlinkBlock(panel, Loc.Get("View all releases on GitHub"), releasesPageUrl, linkColour);
     }
 
     // ── Shared helpers for dialog content ────────────────────────────────────────
@@ -779,21 +736,19 @@ public partial class DialogService
             var para = new Microsoft.UI.Xaml.Documents.Paragraph();
             para.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text       = text,
                 Foreground = textColour,
-                FontSize   = 13,
-            });
+                FontSize = 13
+            }.Localize("Text", text));
             para.Inlines.Add(new Microsoft.UI.Xaml.Documents.LineBreak());
             var link = new Microsoft.UI.Xaml.Documents.Hyperlink
             {
                 NavigateUri = new Uri(url),
-                Foreground  = linkColour,
+                Foreground = linkColour,
             };
             link.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text     = urlLabel ?? url,
-                FontSize = 13,
-            });
+                FontSize = 13
+            }.Localize("Text", urlLabel ?? url));
             para.Inlines.Add(link);
             var rtb = new RichTextBlock { IsTextSelectionEnabled = true };
             rtb.Blocks.Add(para);
@@ -803,12 +758,11 @@ public partial class DialogService
         {
             panel.Children.Add(new TextBlock
             {
-                Text         = text,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground   = textColour,
-                FontSize     = 13,
-                LineHeight   = 22,
-            });
+                Foreground = textColour,
+                FontSize = 13,
+                LineHeight = 22
+            }.Localize("Text", text));
         }
     }
 
@@ -824,13 +778,12 @@ public partial class DialogService
         var link = new Microsoft.UI.Xaml.Documents.Hyperlink
         {
             NavigateUri = new Uri(url),
-            Foreground  = linkColour,
+            Foreground = linkColour,
         };
         link.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
         {
-            Text     = label,
-            FontSize = 13,
-        });
+            FontSize = 13
+        }.Localize("Text", label));
         var para = new Microsoft.UI.Xaml.Documents.Paragraph();
         para.Inlines.Add(link);
         var rtb = new RichTextBlock { IsTextSelectionEnabled = true };
@@ -855,24 +808,14 @@ public partial class DialogService
 
             var dlg = new ContentDialog
             {
-                Title               = "⚠ UE-Extended Compatibility Warning",
-                Content             = new TextBlock
-                {
-                    TextWrapping = TextWrapping.Wrap,
-                    FontSize     = 13,
-                    Text         = "Not all Unreal Engine games are compatible with UE-Extended.\n\n" +
-                                   "UE-Extended uses a generic injection method that works with most " +
-                                   "Unreal Engine games but may cause crashes or visual issues with others. " +
-                                   "If the game has a named RenoDX mod, that mod is specifically tailored " +
-                                   "for the game and may provide better results." +
-                                   notesHint,
-                },
-                PrimaryButtonText   = "OK, I understand",
-                SecondaryButtonText = "Don't show again",
-                XamlRoot            = _window.Content.XamlRoot,
-                Background          = Brush(ResourceKeys.SurfaceOverlayBrush),
-                RequestedTheme      = ElementTheme.Dark,
-            };
+                XamlRoot = _window.Content.XamlRoot,
+                Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("⚠ UE-Extended Compatibility Warning")).Localize("Content", new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13
+            }.Localize("Text", Loc.Concat(Loc.Get("Not all Unreal Engine games are compatible with UE-Extended.\n\n"), Loc.Get("UE-Extended uses a generic injection method that works with most "), Loc.Get("Unreal Engine games but may cause crashes or visual issues with others. "), Loc.Get("If the game has a named RenoDX mod, that mod is specifically tailored "), Loc.Get("for the game and may provide better results."), notesHint))).Localize("PrimaryButtonText", Loc.Get("OK, I understand")).Localize("SecondaryButtonText", Loc.Get("Don't show again"));
 
             var result = await DialogService.ShowSafeAsync(dlg);
             if (result == ContentDialogResult.Secondary)
@@ -899,23 +842,14 @@ public partial class DialogService
 
             var dlg = new ContentDialog
             {
-                Title = "Administrator Privileges Required",
-                Content = new TextBlock
-                {
-                    TextWrapping = TextWrapping.Wrap,
-                    FontSize = 13,
-                    Text = "Installing the Vulkan ReShade layer requires writing to C:\\ProgramData\\ReShade\\ " +
-                           "and modifying system registry keys, which needs administrator privileges.\n\n" +
-                           "Enable Admin Mode — RHI will always launch elevated (no UAC prompt after setup).\n\n" +
-                           "Restart as Admin — one-time elevated restart to complete this install.",
-                },
-                PrimaryButtonText = "Enable Admin Mode",
-                SecondaryButtonText = "Restart as Admin",
-                CloseButtonText = "Cancel",
                 XamlRoot = _window.Content.XamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Administrator Privileges Required")).Localize("Content", new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13
+            }.Localize("Text", Loc.Concat(Loc.Get("Installing the Vulkan ReShade layer requires writing to C:\\ProgramData\\ReShade\\ "), Loc.Get("and modifying system registry keys, which needs administrator privileges.\n\n"), Loc.Get("Enable Admin Mode — RHI will always launch elevated (no UAC prompt after setup).\n\n"), Loc.Get("Restart as Admin — one-time elevated restart to complete this install.")))).Localize("PrimaryButtonText", Loc.Get("Enable Admin Mode")).Localize("SecondaryButtonText", Loc.Get("Restart as Admin")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
             var result = await ShowSafeAsync(dlg);
 

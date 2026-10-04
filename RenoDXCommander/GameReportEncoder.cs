@@ -26,21 +26,13 @@ public static class GameReportEncoder
         // Gatekeep: ask user to correct overrides first
         var gateDlg = new ContentDialog
         {
-            Title = "Before you submit",
-            Content = new TextBlock
-            {
-                Text = "Please use the overrides on this panel to correct any wrong values " +
-                       "(bitness, graphics API, game name, etc.) before generating a report. " +
-                       "This helps us update the manifest faster.\n\n" +
-                       "Have you corrected everything you can?",
-                TextWrapping = TextWrapping.Wrap,
-                FontSize = 12,
-            },
-            PrimaryButtonText = "Yes, continue",
-            CloseButtonText = "Go back",
             XamlRoot = xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Before you submit")).Localize("Content", new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12
+        }.Localize("Text", Loc.Concat(Loc.Get("Please use the overrides on this panel to correct any wrong values "), Loc.Get("(bitness, graphics API, game name, etc.) before generating a report. "), Loc.Get("This helps us update the manifest faster.\n\n"), Loc.Get("Have you corrected everything you can?")))).Localize("PrimaryButtonText", Loc.Get("Yes, continue")).Localize("CloseButtonText", Loc.Get("Go back"));
 
         var gateResult = await DialogService.ShowSafeAsync(gateDlg);
         if (gateResult != ContentDialogResult.Primary) return;
@@ -48,16 +40,14 @@ public static class GameReportEncoder
         // Show dialog with optional note
         var noteBox = new TextBox
         {
-            PlaceholderText = "Describe the issue (optional)",
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             MinHeight = 80,
-            MaxHeight = 160,
-        };
+            MaxHeight = 160
+        }.Localize("PlaceholderText", Loc.Get("Describe the issue (optional)"));
 
         var dlg = new ContentDialog
         {
-            Title = "Copy Game Report",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -65,20 +55,16 @@ public static class GameReportEncoder
                 {
                     new TextBlock
                     {
-                        Text = "This saves a report file and copies it to your clipboard. " +
-                               "Paste it directly into Discord or attach it to a GitHub issue.",
                         TextWrapping = TextWrapping.Wrap,
                         FontSize = 12,
-                        Opacity = 0.7,
-                    },
+                        Opacity = 0.7
+                    }.Localize("Text", Loc.Concat(Loc.Get("This saves a report file and copies it to your clipboard. "), Loc.Get("Paste it directly into Discord or attach it to a GitHub issue."))),
                     noteBox,
                 },
             },
-            PrimaryButtonText = "Copy to Clipboard",
-            CloseButtonText = "Cancel",
             XamlRoot = xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Copy Game Report")).Localize("PrimaryButtonText", Loc.Get("Copy to Clipboard")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dlg);
         if (result != ContentDialogResult.Primary) return;

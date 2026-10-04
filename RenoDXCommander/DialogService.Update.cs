@@ -64,7 +64,6 @@ public partial class DialogService
     {
         var dlg = new ContentDialog
         {
-            Title   = "🔄 Update Available",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -74,20 +73,14 @@ public partial class DialogService
                     {
                         TextWrapping = TextWrapping.Wrap,
                         Foreground   = Brush(ResourceKeys.TextSecondaryBrush),
-                        FontSize     = 14,
-                        Text         = $"A new version of RHI is available!\n\n" +
-                                       $"Installed:  v{updateInfo.CurrentVersion}\n" +
-                                       $"Available:  v{updateInfo.DisplayVersion ?? updateInfo.RemoteVersion.ToString()}\n\n" +
-                                       "Would you like to update now?",
-                    },
+                        FontSize     = 14
+                    }.Localize("Text", Loc.Concat(Loc.Format($"A new version of RHI is available!\n\n"), Loc.Format($"Installed:  v{updateInfo.CurrentVersion}\n"), Loc.Format($"Available:  v{updateInfo.DisplayVersion ?? updateInfo.RemoteVersion.ToString()}\n\n"), Loc.Get("Would you like to update now?"))),
                 },
             },
-            PrimaryButtonText   = "Update Now",
-            CloseButtonText     = "Later",
-            XamlRoot            = _window.Content.XamlRoot,
-            Background          = Brush(ResourceKeys.SurfaceRaisedBrush),
-            RequestedTheme      = ElementTheme.Dark,
-        };
+            XamlRoot = _window.Content.XamlRoot,
+            Background = Brush(ResourceKeys.SurfaceRaisedBrush),
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("🔄 Update Available")).Localize("PrimaryButtonText", Loc.Get("Update Now")).Localize("CloseButtonText", Loc.Get("Later"));
 
         var result = await DialogService.ShowSafeAsync(dlg);
         if (result != ContentDialogResult.Primary) return; // user chose "Later"
@@ -101,32 +94,29 @@ public partial class DialogService
         // Create a non-dismissable progress dialog
         var progressText = new TextBlock
         {
-            Text         = "Starting download...",
             TextWrapping = TextWrapping.Wrap,
-            Foreground   = Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize     = 13,
-        };
+            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 13
+        }.Localize("Text", Loc.Get("Starting download..."));
         var progressBar = new ProgressBar
         {
             Minimum = 0,
             Maximum = 100,
-            Value   = 0,
-            Height  = 6,
+            Value = 0,
+            Height = 6,
             IsIndeterminate = false,
         };
         var downloadDlg = new ContentDialog
         {
-            Title   = "⬇ Downloading Update",
             Content = new StackPanel
             {
                 Spacing = 12,
                 Children = { progressText, progressBar },
             },
-            XamlRoot   = _window.Content.XamlRoot,
+            XamlRoot = _window.Content.XamlRoot,
             Background = Brush(ResourceKeys.SurfaceRaisedBrush),
-            RequestedTheme = ElementTheme.Dark,
-            // No buttons — dialog will be closed programmatically when download completes
-        };
+            RequestedTheme = ElementTheme.Dark            // No buttons — dialog will be closed programmatically when download completes
+        }.Localize("Title", Loc.Get("⬇ Downloading Update"));
 
         // Show dialog non-blocking — wait up to 15s for any concurrently-showing dialog
         // (e.g. MOTD) to finish. Using TryAcquireDialogGate (zero timeout) here would
@@ -161,9 +151,9 @@ public partial class DialogService
             // Download failed — update dialog to show error with a Close button
             _dispatcherQueue.TryEnqueue(() =>
             {
-                progressText.Text = "❌ Download failed. Please try again later or download manually from GitHub.";
+                progressText.Localize("Text", Loc.Get("❌ Download failed. Please try again later or download manually from GitHub."));
                 progressBar.Value = 0;
-                downloadDlg.CloseButtonText = "Close";
+                downloadDlg.Localize("CloseButtonText", Loc.Get("Close"));
             });
             return;
         }
@@ -268,13 +258,11 @@ public partial class DialogService
 
         var dlg = new ContentDialog
         {
-            Title              = "📋 Patch Notes — What's New",
-            Content            = scrollViewer,
-            CloseButtonText    = "Close",
-            XamlRoot           = _window.Content.XamlRoot,
-            Background         = Brush(ResourceKeys.SurfaceToolbarBrush),
-            RequestedTheme     = ElementTheme.Dark,
-        };
+            Content = scrollViewer,
+            XamlRoot = _window.Content.XamlRoot,
+            Background = Brush(ResourceKeys.SurfaceToolbarBrush),
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("📋 Patch Notes — What's New")).Localize("CloseButtonText", Loc.Get("Close"));
 
         await DialogService.ShowSafeAsync(dlg);
     }
@@ -321,21 +309,18 @@ public partial class DialogService
     {
         var dlg = new ContentDialog
         {
-            Title = "📢 Message from RHI",
             Content = new ScrollViewer
             {
                 Content = new TextBlock
                 {
-                    Text = motd,
                     TextWrapping = TextWrapping.Wrap,
-                    IsTextSelectionEnabled = true,
-                },
+                    IsTextSelectionEnabled = true
+                }.Localize("Text", motd),
                 MaxHeight = 400,
             },
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("📢 Message from RHI")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dlg);
     }
 }

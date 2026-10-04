@@ -22,7 +22,7 @@ public partial class MainViewModel
     private async Task RunBackgroundScanAndMergeAsync(SavedGameLibrary savedLib, bool isStartup = false)
     {
         IsBackgroundScanning = true;
-        BackgroundScanStatusText = "Scanning for changes...";
+        BackgroundScanStatusText = Loc.Get("Scanning for changes...");
         _crashReporter.Log("[MainViewModel.RunBackgroundScanAndMergeAsync] Starting background scan...");
 
         try
@@ -34,46 +34,54 @@ public partial class MainViewModel
             Task dlssTask = Task.CompletedTask;
 
             // Start Nexus Mods + PCGW + Lyall initialization early (network I/O)
-            var nexusInitTask = Task.Run(async () => {
+            var nexusInitTask = Task.Run(async () =>
+            {
                 try { await _nexusModsService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] NexusModsService init failed — {ex.Message}"); }
             });
-            var pcgwCacheTask = Task.Run(async () => {
+            var pcgwCacheTask = Task.Run(async () =>
+            {
                 try { await _pcgwService.LoadCacheAsync(); await _pcgwService.LoadApiCacheAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService cache load failed — {ex.Message}"); }
             });
-            var pcgwCentralTask = Task.Run(async () => {
+            var pcgwCentralTask = Task.Run(async () =>
+            {
                 try { await _pcgwService.LoadCentralDataAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] PcgwService central data load failed — {ex.Message}"); }
             });
-            var uwFixInitTask = Task.Run(async () => {
+            var uwFixInitTask = Task.Run(async () =>
+            {
                 try { await _uwFixService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] UltrawideFixService init failed — {ex.Message}"); }
             });
-            var ultraPlusInitTask = Task.Run(async () => {
+            var ultraPlusInitTask = Task.Run(async () =>
+            {
                 try { await _ultraPlusService.InitAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] UltraPlusService init failed — {ex.Message}"); }
             });
 
             // Launch all background tasks (identical to InitializeAsync)
-            var wikiTask        = _wikiService.FetchAllAsync();
-            var lumaTask        = _lumaService.FetchCompletedModsAsync();
-            var lumaRelTask     = _lumaService.FetchReleasesModsAsync();
-            var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
-            var manifestTask    = _manifestService.FetchAsync();
+            var wikiTask = _wikiService.FetchAllAsync();
+            var lumaTask = _lumaService.FetchCompletedModsAsync();
+            var lumaRelTask = _lumaService.FetchReleasesModsAsync();
+            var lumaUeTask = _lumaService.FetchGenericUeTableAsync();
+            var manifestTask = _manifestService.FetchAsync();
             var dbTask = !string.Equals(_settingsViewModel.RenoDxDbSource, "WikiOnly", StringComparison.OrdinalIgnoreCase)
                 ? _renoDxDbService.FetchAllAsync()
                 : Task.FromResult(new DbFetchResult(new(), new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase)));
-            var detectTask   = DetectAllGamesDedupedAsync();
-            var osWikiTask   = Task.Run(async () => {
+            var detectTask = DetectAllGamesDedupedAsync();
+            var osWikiTask = Task.Run(async () =>
+            {
                 try { await _optiScalerWikiService.FetchAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki fetch failed — {ex.Message}"); }
             });
-            var hdrDbTask    = Task.Run(async () => {
+            var hdrDbTask = Task.Run(async () =>
+            {
                 try { await _hdrDatabaseService.FetchAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database fetch failed — {ex.Message}"); }
             });
-            rsTask           = Task.Run(async () => {
+            rsTask = Task.Run(async () =>
+            {
                 try
                 {
                     // Always download both stable and nightly so per-game overrides work
@@ -83,7 +91,8 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] ReShade update task failed — {ex.Message}"); }
             });
-            normalRsTask     = Task.Run(async () => {
+            normalRsTask = Task.Run(async () =>
+            {
                 try { await _normalRsUpdateService.EnsureLatestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Normal ReShade update task failed — {ex.Message}"); }
             });
@@ -92,19 +101,23 @@ public partial class MainViewModel
             // Do NOT start a second concurrent EnsureLatestAsync here — it races with the first,
             // causing packs to be skipped ("already being downloaded") and never extracted.
             // The deferred section below awaits _shaderPackReadyTask before SyncShaders.
-            var addonPackTask = Task.Run(async () => {
-                try {
+            var addonPackTask = Task.Run(async () =>
+            {
+                try
+                {
                     await _addonPackService.EnsureLatestAsync();
                     // Note: CheckAndUpdateAllAsync is called after ApplyManifestOverrides below,
                     // so manifest-driven entries (releaseApiUrl etc.) are available for version resolution.
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Addon pack task failed — {ex.Message}"); }
             });
-            osTask           = Task.Run(async () => {
+            osTask = Task.Run(async () =>
+            {
                 try { await _optiScalerService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler staging task failed — {ex.Message}"); }
             });
-            var osNightlyTask2 = Task.Run(async () => {
+            var osNightlyTask2 = Task.Run(async () =>
+            {
                 try
                 {
                     if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly"))
@@ -112,7 +125,8 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
             });
-            var osDlssNrTask = Task.Run(async () => {
+            var osDlssNrTask = Task.Run(async () =>
+            {
                 try
                 {
                     if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "DlssNr"))
@@ -120,15 +134,18 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler DLSS NR staging task failed — {ex.Message}"); }
             });
-            dlssTask         = Task.Run(async () => {
+            dlssTask = Task.Run(async () =>
+            {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS staging task failed — {ex.Message}"); }
             });
-            var dlssManifestTask2 = Task.Run(async () => {
+            var dlssManifestTask2 = Task.Run(async () =>
+            {
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS manifest fetch failed — {ex.Message}"); }
             });
-            var dxvkTask     = Task.Run(async () => {
+            var dxvkTask = Task.Run(async () =>
+            {
                 try
                 {
                     // Only download the globally selected variant.
@@ -137,11 +154,13 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DXVK staging task failed — {ex.Message}"); }
             });
-            var dofFixTask2 = Task.Run(async () => {
+            var dofFixTask2 = Task.Run(async () =>
+            {
                 try { await _dofFixService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DOF Fix staging task failed — {ex.Message}"); }
             });
-            var nrCostScalerTask = Task.Run(async () => {
+            var nrCostScalerTask = Task.Run(async () =>
+            {
                 try
                 {
                     await _nrCostScalerService.CheckForUpdateAsync(forceRefresh: true);
@@ -150,7 +169,8 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] NR Cost Scaler staging failed — {ex.Message}"); }
             });
-            var rtx40MfgTask = Task.Run(async () => {
+            var rtx40MfgTask = Task.Run(async () =>
+            {
                 try
                 {
                     await _rtx40MfgService.CheckForUpdateAsync(forceRefresh: true);
@@ -159,7 +179,8 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] RTX40MFG staging failed — {ex.Message}"); }
             });
-            var dlssg2030Task = Task.Run(async () => {
+            var dlssg2030Task = Task.Run(async () =>
+            {
                 try
                 {
                     await _dlssg2030Service.CheckForUpdateAsync();
@@ -168,7 +189,8 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Dlssg2030 staging failed — {ex.Message}"); }
             });
-            var ualTask = Task.Run(async () => {
+            var ualTask = Task.Run(async () =>
+            {
                 try
                 {
                     await _ualService.CheckForUpdateAsync();
@@ -225,7 +247,7 @@ public partial class MainViewModel
 
             // Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
-            _allMods      = wikiResult.Mods ?? new();
+            _allMods = wikiResult.Mods ?? new();
             _genericNotes = wikiResult.GenericNotes ?? new();
             // Extract DB results and merge with wiki according to source setting
             try
@@ -233,7 +255,7 @@ public partial class MainViewModel
                 var dbResult = await dbTask;
                 _dbMods = dbResult.Mods;
                 _dbUnrealEntries = dbResult.UnrealEntries;
-                _dbUnityEntries  = dbResult.UnityEntries;
+                _dbUnityEntries = dbResult.UnityEntries;
                 _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DB fetch: {_dbMods.Count} mods, {_dbUnrealEntries.Count} UE entries, {_dbUnityEntries.Count} Unity entries");
             }
             catch (Exception ex)
@@ -245,7 +267,7 @@ public partial class MainViewModel
             try
             {
                 var wikiLuma = lumaTask.IsCompletedSuccessfully ? await lumaTask : new();
-                var relLuma  = lumaRelTask.IsCompletedSuccessfully ? await lumaRelTask : new();
+                var relLuma = lumaRelTask.IsCompletedSuccessfully ? await lumaRelTask : new();
                 _lumaMods = LumaService.MergeLumaMods(wikiLuma, relLuma);
                 _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods: {wikiLuma.Count} wiki + {relLuma.Count} releases = {_lumaMods.Count} merged");
             }
@@ -369,7 +391,7 @@ public partial class MainViewModel
                     && !_manifestBlacklistPrefixes.Any(p => g.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase))).ToList();
 
             _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Loading install records...");
-            var records    = _installer.LoadAll();
+            var records = _installer.LoadAll();
             var auxRecords = _auxInstaller.LoadAll();
             _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Records loaded: {records.Count} mod, {auxRecords.Count} aux");
             var addonCache = savedLib.AddonScanCache ?? new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
@@ -497,8 +519,8 @@ public partial class MainViewModel
             DispatcherQueue?.TryEnqueue(() =>
             {
                 StatusText = offlineMode
-                    ? $"{detectedGames.Count} games detected · offline mode (mod info unavailable)"
-                    : $"{detectedGames.Count} games detected · {InstalledCount} ReShade installs";
+                    ? Loc.Format($"{detectedGames.Count} games detected · offline mode (mod info unavailable)")
+                    : Loc.Format($"{detectedGames.Count} games detected · {InstalledCount} ReShade installs");
                 SubStatusText = "";
 
                 // Re-scroll to selected game after merge (cards may have shifted)
@@ -701,81 +723,81 @@ public partial class MainViewModel
                     // Update mutable properties in-place so WinUI bindings fire
                     // Preserve UpdateAvailable status if the fresh scan shows Installed
                     // (the update check already determined an update exists — don't lose it)
-                    e.Status             = (e.Status == GameStatus.UpdateAvailable && f.Status == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.Status;
-                    e.RsStatus           = (e.RsStatus == GameStatus.UpdateAvailable && f.RsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.RsStatus;
-                    e.UlStatus           = (e.UlStatus == GameStatus.UpdateAvailable && f.UlStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.UlStatus;
-                    e.DcStatus           = (e.DcStatus == GameStatus.UpdateAvailable && f.DcStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.DcStatus;
-                    e.OsStatus           = (e.OsStatus == GameStatus.UpdateAvailable && f.OsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.OsStatus;
-                    e.RefStatus          = (e.RefStatus == GameStatus.UpdateAvailable && f.RefStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.RefStatus;
-                    e.LumaStatus         = (e.LumaStatus == GameStatus.UpdateAvailable && f.LumaStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.LumaStatus;
-                    e.Mod                = f.Mod;
-                    e.InstalledRecord    = f.InstalledRecord;
-                    e.RsRecord           = f.RsRecord;
-                    e.NexusModsUrl       = f.NexusModsUrl;
-                    e.PcgwUrl            = f.PcgwUrl;
-                    e.UwFixUrl        = f.UwFixUrl;
-                    e.UwFixSource     = f.UwFixSource;
-                    e.UltraPlusUrl    = f.UltraPlusUrl;
-                    e.EngineHint         = f.EngineHint;
-                    e.GraphicsApi        = f.GraphicsApi;
-                    e.Is32Bit            = f.Is32Bit;
-                    e.WikiStatus         = f.WikiStatus;
-                    e.Maintainer         = f.Maintainer;
-                    e.InstallPath        = f.InstallPath;
-                    e.Source             = f.Source;
-                    e.IsGenericMod       = f.IsGenericMod;
-                    e.IsExternalOnly     = f.IsExternalOnly;
-                    e.ExternalUrl        = f.ExternalUrl;
-                    e.ExternalLabel      = f.ExternalLabel;
-                    e.NexusUrl           = f.NexusUrl;
-                    e.DiscordUrl         = f.DiscordUrl;
-                    e.NameUrl            = f.NameUrl;
-                    e.Notes              = f.Notes;
-                    e.NotesUrl           = f.NotesUrl;
-                    e.NotesUrlLabel      = f.NotesUrlLabel;
-                    e.UseUeExtended      = f.UseUeExtended;
-                    e.IsRtxHdrEnabled    = f.IsRtxHdrEnabled;
+                    e.Status = (e.Status == GameStatus.UpdateAvailable && f.Status == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.Status;
+                    e.RsStatus = (e.RsStatus == GameStatus.UpdateAvailable && f.RsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.RsStatus;
+                    e.UlStatus = (e.UlStatus == GameStatus.UpdateAvailable && f.UlStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.UlStatus;
+                    e.DcStatus = (e.DcStatus == GameStatus.UpdateAvailable && f.DcStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.DcStatus;
+                    e.OsStatus = (e.OsStatus == GameStatus.UpdateAvailable && f.OsStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.OsStatus;
+                    e.RefStatus = (e.RefStatus == GameStatus.UpdateAvailable && f.RefStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.RefStatus;
+                    e.LumaStatus = (e.LumaStatus == GameStatus.UpdateAvailable && f.LumaStatus == GameStatus.Installed) ? GameStatus.UpdateAvailable : f.LumaStatus;
+                    e.Mod = f.Mod;
+                    e.InstalledRecord = f.InstalledRecord;
+                    e.RsRecord = f.RsRecord;
+                    e.NexusModsUrl = f.NexusModsUrl;
+                    e.PcgwUrl = f.PcgwUrl;
+                    e.UwFixUrl = f.UwFixUrl;
+                    e.UwFixSource = f.UwFixSource;
+                    e.UltraPlusUrl = f.UltraPlusUrl;
+                    e.EngineHint = f.EngineHint;
+                    e.GraphicsApi = f.GraphicsApi;
+                    e.Is32Bit = f.Is32Bit;
+                    e.WikiStatus = f.WikiStatus;
+                    e.Maintainer = f.Maintainer;
+                    e.InstallPath = f.InstallPath;
+                    e.Source = f.Source;
+                    e.IsGenericMod = f.IsGenericMod;
+                    e.IsExternalOnly = f.IsExternalOnly;
+                    e.ExternalUrl = f.ExternalUrl;
+                    e.ExternalLabel = f.ExternalLabel;
+                    e.NexusUrl = f.NexusUrl;
+                    e.DiscordUrl = f.DiscordUrl;
+                    e.NameUrl = f.NameUrl;
+                    e.Notes = f.Notes;
+                    e.NotesUrl = f.NotesUrl;
+                    e.NotesUrlLabel = f.NotesUrlLabel;
+                    e.UseUeExtended = f.UseUeExtended;
+                    e.IsRtxHdrEnabled = f.IsRtxHdrEnabled;
                     e.InstalledAddonFileName = f.InstalledAddonFileName;
-                    e.RdxInstalledVersion    = f.RdxInstalledVersion;
-                    e.RsInstalledFile        = f.RsInstalledFile;
-                    e.RsInstalledVersion     = f.RsInstalledVersion;
-                    e.DetectedGame           = f.DetectedGame;
-                    e.DetectedApis           = f.DetectedApis;
-                    e.IsDualApiGame          = f.IsDualApiGame;
-                    e.LumaMod                = f.LumaMod;
-                    e.IsLumaMode             = false;
-                    e.LumaRecord             = f.LumaRecord;
-                    e.LumaNotes              = f.LumaNotes;
-                    e.LumaNotesUrl           = f.LumaNotesUrl;
-                    e.LumaNotesUrlLabel      = f.LumaNotesUrlLabel;
-                    e.LumaHdrSupported       = f.LumaHdrSupported;
-                    e.LumaDlssFsrSupported   = f.LumaDlssFsrSupported;
-                    e.IsNativeHdrGame        = f.IsNativeHdrGame;
-                    e.IsManifestUeExtended   = f.IsManifestUeExtended;
-                    e.LumaRenodxCompatible   = f.LumaMod != null;
+                    e.RdxInstalledVersion = f.RdxInstalledVersion;
+                    e.RsInstalledFile = f.RsInstalledFile;
+                    e.RsInstalledVersion = f.RsInstalledVersion;
+                    e.DetectedGame = f.DetectedGame;
+                    e.DetectedApis = f.DetectedApis;
+                    e.IsDualApiGame = f.IsDualApiGame;
+                    e.LumaMod = f.LumaMod;
+                    e.IsLumaMode = false;
+                    e.LumaRecord = f.LumaRecord;
+                    e.LumaNotes = f.LumaNotes;
+                    e.LumaNotesUrl = f.LumaNotesUrl;
+                    e.LumaNotesUrlLabel = f.LumaNotesUrlLabel;
+                    e.LumaHdrSupported = f.LumaHdrSupported;
+                    e.LumaDlssFsrSupported = f.LumaDlssFsrSupported;
+                    e.IsNativeHdrGame = f.IsNativeHdrGame;
+                    e.IsManifestUeExtended = f.IsManifestUeExtended;
+                    e.LumaRenodxCompatible = f.LumaMod != null;
                     e.EngineIniProjectOverride = f.EngineIniProjectOverride;
-                    e.GameConfigRootPath      = f.GameConfigRootPath;
-                    e.DllOverrideEnabled      = f.DllOverrideEnabled;
+                    e.GameConfigRootPath = f.GameConfigRootPath;
+                    e.DllOverrideEnabled = f.DllOverrideEnabled;
                     e.ExcludeFromUpdateAllReShade = f.ExcludeFromUpdateAllReShade;
-                    e.ExcludeFromUpdateAllRenoDx  = f.ExcludeFromUpdateAllRenoDx;
-                    e.ExcludeFromUpdateAllUl      = f.ExcludeFromUpdateAllUl;
-                    e.ExcludeFromUpdateAllDc      = f.ExcludeFromUpdateAllDc;
-                    e.UseNormalReShade        = f.UseNormalReShade;
-                    e.ShaderModeOverride      = f.ShaderModeOverride;
-                    e.UlInstalledFile         = f.UlInstalledFile;
-                    e.UlInstalledVersion      = f.UlInstalledVersion;
-                    e.DcInstalledFile         = f.DcInstalledFile;
-                    e.DcInstalledVersion      = f.DcInstalledVersion;
-                    e.OsInstalledFile         = f.OsInstalledFile;
-                    e.OsInstalledVersion      = f.OsInstalledVersion;
-                    e.RefRecord               = f.RefRecord;
-                    e.RefInstalledVersion     = f.RefInstalledVersion;
+                    e.ExcludeFromUpdateAllRenoDx = f.ExcludeFromUpdateAllRenoDx;
+                    e.ExcludeFromUpdateAllUl = f.ExcludeFromUpdateAllUl;
+                    e.ExcludeFromUpdateAllDc = f.ExcludeFromUpdateAllDc;
+                    e.UseNormalReShade = f.UseNormalReShade;
+                    e.ShaderModeOverride = f.ShaderModeOverride;
+                    e.UlInstalledFile = f.UlInstalledFile;
+                    e.UlInstalledVersion = f.UlInstalledVersion;
+                    e.DcInstalledFile = f.DcInstalledFile;
+                    e.DcInstalledVersion = f.DcInstalledVersion;
+                    e.OsInstalledFile = f.OsInstalledFile;
+                    e.OsInstalledVersion = f.OsInstalledVersion;
+                    e.RefRecord = f.RefRecord;
+                    e.RefInstalledVersion = f.RefInstalledVersion;
 
                     // ── DXVK fields ──────────────────────────────────────────
-                    e.DxvkStatus              = f.DxvkStatus;
-                    e.DxvkInstalledVersion    = f.DxvkInstalledVersion;
-                    e.DxvkRecord              = f.DxvkRecord;
-                    e.DxvkEnabled             = f.DxvkEnabled;
+                    e.DxvkStatus = f.DxvkStatus;
+                    e.DxvkInstalledVersion = f.DxvkInstalledVersion;
+                    e.DxvkRecord = f.DxvkRecord;
+                    e.DxvkEnabled = f.DxvkEnabled;
                     e.ExcludeFromUpdateAllDxvk = f.ExcludeFromUpdateAllDxvk;
 
                     // ── DLSS / Streamline fields ─────────────────────────────
@@ -834,8 +856,8 @@ public partial class MainViewModel
     {
         var age = DateTime.UtcNow - utc;
         if (age.TotalMinutes < 1) return "just now";
-        if (age.TotalHours   < 1) return $"{(int)age.TotalMinutes}m ago";
-        if (age.TotalDays    < 1) return $"{(int)age.TotalHours}h ago";
+        if (age.TotalHours < 1) return $"{(int)age.TotalMinutes}m ago";
+        if (age.TotalDays < 1) return $"{(int)age.TotalHours}h ago";
         return $"{(int)age.TotalDays}d ago";
     }
 

@@ -27,28 +27,24 @@ public static class ShaderPopupHelper
         PopupContext context)
     {
         var packs = shaderPackService.AvailablePacks;
-        var primaryButtonText = context == PopupContext.Global ? "Deploy" : "Confirm";
+        var primaryButtonText = context == PopupContext.Global ? Loc.Get("Deploy") : Loc.Get("Confirm");
 
         // Handle empty packs state
         if (packs.Count == 0)
         {
             var emptyDlg = new ContentDialog
             {
-                Title             = "Select Shader Packs",
-                Content           = new TextBlock
-                {
-                    Text       = "No shader packs available.",
-                    FontSize   = 13,
-                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                },
-                PrimaryButtonText      = primaryButtonText,
+                PrimaryButtonText = primaryButtonText,
                 IsPrimaryButtonEnabled = false,
-                CloseButtonText        = "Cancel",
-                XamlRoot               = xamlRoot,
-                Background             = Brush(ResourceKeys.SurfaceOverlayBrush),
-                RequestedTheme         = ElementTheme.Dark,
-                MinWidth               = 750,
-            };
+                XamlRoot = xamlRoot,
+                Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+                RequestedTheme = ElementTheme.Dark,
+                MinWidth = 750
+            }.Localize("Title", Loc.Get("Select Shader Packs")).Localize("Content", new TextBlock
+            {
+                FontSize = 13,
+                Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+            }.Localize("Text", Loc.Get("No shader packs available."))).Localize("CloseButtonText", Loc.Get("Cancel"));
 
             await DialogService.ShowSafeAsync(emptyDlg);
             return null;
@@ -63,7 +59,7 @@ public static class ShaderPopupHelper
         foreach (var (id, _, _) in shaderPackService.AvailablePacks)
         {
             var cached = await shaderPackService.IsPackCachedAsync(id);
-            var excl   = cached
+            var excl = cached
                 ? await shaderPackService.GetExcludedFilesAsync(id)
                 : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             packCacheState[id] = (cached, excl);
@@ -90,8 +86,8 @@ public static class ShaderPopupHelper
         var checkBoxes = new List<(string Id, CheckBox Box)>();
 
         // Per-pack file sub-panels (expand/collapse) and their expand buttons
-        var fileSubPanels  = new Dictionary<string, StackPanel>(StringComparer.OrdinalIgnoreCase);
-        var expandButtons  = new Dictionary<string, Button>(StringComparer.OrdinalIgnoreCase);
+        var fileSubPanels = new Dictionary<string, StackPanel>(StringComparer.OrdinalIgnoreCase);
+        var expandButtons = new Dictionary<string, Button>(StringComparer.OrdinalIgnoreCase);
         // Per-pack file checkboxes: packId → list of (filename, checkbox)
         var fileCheckBoxes = new Dictionary<string, List<(string File, CheckBox Box)>>(StringComparer.OrdinalIgnoreCase);
 
@@ -102,18 +98,16 @@ public static class ShaderPopupHelper
         bool allExpanded = false;
         var expandAllBtn = new Button
         {
-            Content             = "Expand All",
-            FontSize            = 12,
-            Padding             = new Thickness(8, 4, 8, 4),
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
+            FontSize = 12,
+            Padding = new Thickness(8, 4, 8, 4),
+            HorizontalAlignment = HorizontalAlignment.Left
+        }.Localize("Content", Loc.Get("Expand All"));
         var deselectAllBtn = new Button
         {
-            Content             = "Deselect All",
-            FontSize            = 12,
-            Padding             = new Thickness(8, 4, 8, 4),
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
+            FontSize = 12,
+            Padding = new Thickness(8, 4, 8, 4),
+            HorizontalAlignment = HorizontalAlignment.Left
+        }.Localize("Content", Loc.Get("Deselect All"));
         expandAllBtn.Click += (s, ev) =>
         {
             allExpanded = !allExpanded;
@@ -124,7 +118,7 @@ public static class ShaderPopupHelper
                 if (expandButtons.TryGetValue(pid, out var eb))
                     eb.Content = allExpanded ? "▼" : "▶";
             }
-            expandAllBtn.Content = allExpanded ? "Collapse All" : "Expand All";
+            expandAllBtn.Localize("Content", allExpanded ? Loc.Get("Collapse All") : Loc.Get("Expand All"));
         };
         deselectAllBtn.Click += (s, ev) =>
         {
@@ -143,15 +137,15 @@ public static class ShaderPopupHelper
                         eb.Content = "▶";
                 }
                 allExpanded = false;
-                expandAllBtn.Content = "Expand All";
+                expandAllBtn.Localize("Content", Loc.Get("Expand All"));
             }
             finally { profileLoading = false; }
         };
         var topButtonRow = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing     = 6,
-            Margin      = new Thickness(0, 0, 0, 8),
+            Spacing = 6,
+            Margin = new Thickness(0, 0, 0, 8),
         };
         topButtonRow.Children.Add(expandAllBtn);
         topButtonRow.Children.Add(deselectAllBtn);
@@ -159,17 +153,16 @@ public static class ShaderPopupHelper
         // ── Search box (right of Deselect All) ───────────────────────────────
         var searchBox = new TextBox
         {
-            PlaceholderText = "Search packs or shaders...",
-            FontSize        = 12,
-            MinWidth        = 220,
-            Background      = Brush(ResourceKeys.SurfaceInputBrush),
-            Foreground      = Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush     = Brush(ResourceKeys.BorderSubtleBrush),
+            FontSize = 12,
+            MinWidth = 220,
+            Background = Brush(ResourceKeys.SurfaceInputBrush),
+            Foreground = Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = Brush(ResourceKeys.BorderSubtleBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius    = new CornerRadius(8),
-            Padding         = new Thickness(10, 5, 10, 5),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(10, 5, 10, 5),
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("PlaceholderText", Loc.Get("Search packs or shaders..."));
         // Force built-in WinUI 3 clear (✕) button to always show
         searchBox.Loaded += (_, _) => VisualStateManager.GoToState(searchBox, "ButtonVisible", false);
         topButtonRow.Children.Add(searchBox);
@@ -189,9 +182,9 @@ public static class ShaderPopupHelper
             .ToList();
 
         // Pre-fetch custom files and exclusions so we can inject the section synchronously
-        var customFiles    = ShaderPackService.GetCustomPackFiles();
-        var customId       = ShaderPackService.CustomFilePackId;
-        var customExcl     = customFiles.Count > 0
+        var customFiles = ShaderPackService.GetCustomPackFiles();
+        var customId = ShaderPackService.CustomFilePackId;
+        var customExcl = customFiles.Count > 0
             ? await shaderPackService.GetExcludedFilesAsync(customId)
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         // customSelected is used for per-folder initial state — check if any custom folder ID is selected
@@ -206,12 +199,11 @@ public static class ShaderPopupHelper
             // ── "Custom Shaders" plain section header (no checkbox, no expand) ──
             panel.Children.Add(new TextBlock
             {
-                Text       = "Custom Shaders",
-                FontSize   = 14,
+                FontSize = 14,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                Margin     = new Thickness(0, checkBoxes.Count > 0 ? 10 : 4, 0, 4),
-            });
+                Margin = new Thickness(0, checkBoxes.Count > 0 ? 10 : 4, 0, 4)
+            }.Localize("Text", Loc.Get("Custom Shaders")));
             // No category header tracking needed — section header is decorative only
 
             // ── Group files by first-level subfolder (or "General" for root files) ──
@@ -243,8 +235,8 @@ public static class ShaderPopupHelper
                 var folderSubPanel = new StackPanel
                 {
                     Orientation = Orientation.Vertical,
-                    Margin      = new Thickness(24, 0, 0, 0),
-                    Visibility  = Visibility.Collapsed,
+                    Margin = new Thickness(24, 0, 0, 0),
+                    Visibility = Visibility.Collapsed,
                 };
                 var folderFileCbList = new List<(string File, CheckBox Box)>();
                 bool folderSelected = folderFiles.All(f => customSelected && !customExcl.Contains(Path.GetFileName(f)));
@@ -252,22 +244,21 @@ public static class ShaderPopupHelper
                 foreach (var relPath in folderFiles)
                 {
                     var leafName = Path.GetFileName(relPath);
-                    var fileCb  = new CheckBox
+                    var fileCb = new CheckBox
                     {
-                        Content   = new TextBlock
+                        Content = new TextBlock
                         {
-                            Text       = relPath,
-                            FontSize   = 12,
-                            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                        },
-                        Margin    = new Thickness(0, 1, 0, 1),
+                            FontSize = 12,
+                            Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+                        }.Localize("Text", relPath),
+                        Margin = new Thickness(0, 1, 0, 1),
                         IsChecked = customSelected && !customExcl.Contains(leafName),
                     };
                     folderFileCbList.Add((leafName, fileCb));
                     folderSubPanel.Children.Add(fileCb);
                 }
 
-                fileSubPanels[folderId]  = folderSubPanel;
+                fileSubPanels[folderId] = folderSubPanel;
                 fileCheckBoxes[folderId] = folderFileCbList;
 
                 bool? folderInitialState;
@@ -283,35 +274,33 @@ public static class ShaderPopupHelper
                 var folderPackCb = new CheckBox
                 {
                     IsThreeState = folderFileCbList.Count > 0,
-                    IsChecked    = folderInitialState,
-                    Margin       = new Thickness(0, 2, 0, 2),
+                    IsChecked = folderInitialState,
+                    Margin = new Thickness(0, 2, 0, 2),
                 };
 
                 var folderNameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
                 folderNameRow.Children.Add(new TextBlock
                 {
-                    Text              = folderName,
-                    FontSize          = 13,
-                    Foreground        = Brush(ResourceKeys.TextPrimaryBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
-                });
+                    FontSize = 13,
+                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center
+                }.Localize("Text", folderName));
                 folderNameRow.Children.Add(new TextBlock
                 {
-                    Text              = "✓",
-                    FontSize          = 13,
-                    Foreground        = Brush(ResourceKeys.AccentGreenBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
-                });
+                    FontSize = 13,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                    VerticalAlignment = VerticalAlignment.Center
+                }.Localize("Text", "✓"));
 
                 var folderExpandBtn = new Button
                 {
-                    Content           = "▶",
-                    FontSize          = 10,
-                    Padding           = new Thickness(4, 0, 4, 0),
-                    Margin            = new Thickness(4, 0, 0, 0),
+                    Content = "▶",
+                    FontSize = 10,
+                    Padding = new Thickness(4, 0, 4, 0),
+                    Margin = new Thickness(4, 0, 0, 0),
                     VerticalAlignment = VerticalAlignment.Center,
-                    Background        = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                    BorderThickness   = new Thickness(0),
+                    Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                    BorderThickness = new Thickness(0),
                 };
                 var capturedFolderSubPanel = folderSubPanel;
                 var capturedExpandBtn = folderExpandBtn;
@@ -387,29 +376,28 @@ public static class ShaderPopupHelper
 
             var headerText = group.Key switch
             {
-                ShaderPackService.PackCategory.Essential   => "Essential",
-                ShaderPackService.PackCategory.Recommended => "Recommended",
-                _                                          => "Extra",
+                ShaderPackService.PackCategory.Essential => Loc.Get("Essential"),
+                ShaderPackService.PackCategory.Recommended => Loc.Get("Recommended"),
+                _ => Loc.Get("Extra"),
             };
 
             var headerTextBlock = new TextBlock
             {
-                Text       = headerText,
-                FontSize   = 14,
+                FontSize = 14,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                Margin     = new Thickness(0, checkBoxes.Count > 0 ? 10 : 4, 0, 4),
-            };
+                Margin = new Thickness(0, checkBoxes.Count > 0 ? 10 : 4, 0, 4)
+            }.Localize("Text", headerText);
             panel.Children.Add(headerTextBlock);
             var categoryPackIds = new List<string>();
             categoryHeaders.Add((headerText, headerTextBlock, categoryPackIds));
 
             foreach (var (id, displayName, _) in group)
             {
-                var capturedId  = id;
+                var capturedId = id;
                 var description = shaderPackService.GetPackDescription(id);
                 packCacheState.TryGetValue(id, out var packCs);
-                var isCached          = packCs.IsCached;
+                var isCached = packCs.IsCached;
                 var initialExclusions = isCached
                     ? packCs.Exclusions
                     : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -418,27 +406,26 @@ public static class ShaderPopupHelper
                 var fileSubPanel = new StackPanel
                 {
                     Orientation = Orientation.Vertical,
-                    Margin      = new Thickness(24, 0, 0, 0),
-                    Visibility  = Visibility.Collapsed,
+                    Margin = new Thickness(24, 0, 0, 0),
+                    Visibility = Visibility.Collapsed,
                 };
 
                 var fileCbList = new List<(string File, CheckBox Box)>();
 
                 if (isCached)
                 {
-                    var shaderFiles    = shaderPackService.GetPackShaderFiles(new[] { id });
+                    var shaderFiles = shaderPackService.GetPackShaderFiles(new[] { id });
                     var packIsSelected = selected.Contains(id);
                     foreach (var fileName in shaderFiles)
                     {
                         var fileCb = new CheckBox
                         {
-                            Content   = new TextBlock
+                            Content = new TextBlock
                             {
-                                Text       = fileName,
-                                FontSize   = 12,
-                                Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                            },
-                            Margin    = new Thickness(0, 1, 0, 1),
+                                FontSize = 12,
+                                Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+                            }.Localize("Text", fileName),
+                            Margin = new Thickness(0, 1, 0, 1),
                             IsChecked = packIsSelected && !initialExclusions.Contains(fileName),
                         };
                         fileCbList.Add((fileName, fileCb));
@@ -446,7 +433,7 @@ public static class ShaderPopupHelper
                     }
                 }
 
-                fileSubPanels[id]  = fileSubPanel;
+                fileSubPanels[id] = fileSubPanel;
                 fileCheckBoxes[id] = fileCbList;
 
                 bool? packInitialState;
@@ -460,39 +447,37 @@ public static class ShaderPopupHelper
                 var packCb = new CheckBox
                 {
                     IsThreeState = isCached && fileCbList.Count > 0,
-                    IsChecked    = packInitialState,
-                    Margin       = new Thickness(0, 2, 0, 2),
+                    IsChecked = packInitialState,
+                    Margin = new Thickness(0, 2, 0, 2),
                 };
 
                 var innerPanel = new StackPanel { Spacing = 0, MaxWidth = 490 };
-                var nameRow    = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+                var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
                 nameRow.Children.Add(new TextBlock
                 {
-                    Text              = displayName,
-                    FontSize          = 13,
-                    Foreground        = Brush(ResourceKeys.TextPrimaryBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
-                });
+                    FontSize = 13,
+                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center
+                }.Localize("Text", displayName));
                 if (isCached)
                 {
                     nameRow.Children.Add(new TextBlock
                     {
-                        Text              = "✓",
-                        FontSize          = 13,
-                        Foreground        = Brush(ResourceKeys.AccentGreenBrush),
-                        VerticalAlignment = VerticalAlignment.Center,
-                    });
+                        FontSize = 13,
+                        Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                        VerticalAlignment = VerticalAlignment.Center
+                    }.Localize("Text", "✓"));
                 }
 
                 if (isCached && fileCbList.Count > 0)
                 {
                     var expandBtn = new Button
                     {
-                        Content           = "▶",
-                        FontSize          = 10,
-                        Padding           = new Thickness(4, 0, 4, 0),
-                        Margin            = new Thickness(4, 0, 0, 0),
-                        Visibility        = Visibility.Visible,
+                        Content = "▶",
+                        FontSize = 10,
+                        Padding = new Thickness(4, 0, 4, 0),
+                        Margin = new Thickness(4, 0, 0, 0),
+                        Visibility = Visibility.Visible,
                         VerticalAlignment = VerticalAlignment.Center,
                     };
                     expandButtons[id] = expandBtn;
@@ -514,13 +499,12 @@ public static class ShaderPopupHelper
                 {
                     innerPanel.Children.Add(new TextBlock
                     {
-                        Text         = description,
-                        FontSize     = 11,
-                        Opacity      = 0.6,
-                        Foreground   = Brush(ResourceKeys.TextPrimaryBrush),
+                        FontSize = 11,
+                        Opacity = 0.6,
+                        Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                         TextWrapping = TextWrapping.Wrap,
-                        Width        = 340,
-                    });
+                        Width = 340
+                    }.Localize("Text", description));
                 }
 
                 packCb.Content = innerPanel;
@@ -561,7 +545,7 @@ public static class ShaderPopupHelper
                         if (fileSubPanels.TryGetValue(capturedId, out var sp))
                         {
                             sp.Visibility = Visibility.Collapsed;
-                            eb.Content    = "▶";
+                            eb.Content = "▶";
                         }
                     }
                 };
@@ -577,9 +561,9 @@ public static class ShaderPopupHelper
                 // ── Wire file checkbox Checked/Unchecked → update pack tri-state
                 if (fileCbList.Count > 0)
                 {
-                    var capturedPackCb     = packCb;
+                    var capturedPackCb = packCb;
                     var capturedFileCbList = fileCbList;
-                    var capturedIncMap     = includeMap;
+                    var capturedIncMap = includeMap;
 
                     foreach (var (fileName, fileCb) in fileCbList)
                     {
@@ -614,10 +598,10 @@ public static class ShaderPopupHelper
 
         var packScrollViewer = new ScrollViewer
         {
-            Content                     = panel,
-            MaxHeight                   = 700,
+            Content = panel,
+            MaxHeight = 700,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Padding                     = new Thickness(0, 0, 8, 0),
+            Padding = new Thickness(0, 0, 8, 0),
         };
 
         // ── Wire search box filter ────────────────────────────────────────────
@@ -631,7 +615,7 @@ public static class ShaderPopupHelper
             {
                 if (!hasQuery)
                 {
-                    packCb.Visibility  = Visibility.Visible;
+                    packCb.Visibility = Visibility.Visible;
                     // Restore all file row visibilities
                     if (fileCheckBoxes.TryGetValue(id, out var allFc))
                         foreach (var (_, fileCb) in allFc)
@@ -700,33 +684,32 @@ public static class ShaderPopupHelper
         };
 
         // ── Profile state ─────────────────────────────────────────────────────
-        var profiles        = ShaderProfileService.Load();
+        var profiles = ShaderProfileService.Load();
         int activeProfileIdx = -1;
 
         // ── Profile panel (right column, 200px) ──────────────────────────────
         var profilePanel = new StackPanel
         {
-            Width   = 200,
+            Width = 200,
             Spacing = 4,
-            Margin  = new Thickness(8, 0, 0, 0),
+            Margin = new Thickness(8, 0, 0, 0),
         };
 
         // Header
         profilePanel.Children.Add(new TextBlock
         {
-            Text       = "Profiles",
-            FontSize   = 13,
+            FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-            Margin     = new Thickness(0, 0, 0, 4),
-        });
+            Margin = new Thickness(0, 0, 0, 4)
+        }.Localize("Text", Loc.Get("Profiles")));
 
         // Profile list scroll area
         var profileListPanel = new StackPanel { Spacing = 2 };
         var profileListScroll = new ScrollViewer
         {
-            Content                     = profileListPanel,
-            MaxHeight                   = 300,
+            Content = profileListPanel,
+            MaxHeight = 300,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
         profilePanel.Children.Add(profileListScroll);
@@ -734,21 +717,19 @@ public static class ShaderPopupHelper
         // Inline rename TextBox for new profile (hidden until "New" is clicked)
         var newProfileBox = new TextBox
         {
-            PlaceholderText = "Profile name",
-            FontSize        = 12,
-            Margin          = new Thickness(0, 2, 0, 2),
-            Visibility      = Visibility.Collapsed,
-        };
+            FontSize = 12,
+            Margin = new Thickness(0, 2, 0, 2),
+            Visibility = Visibility.Collapsed
+        }.Localize("PlaceholderText", Loc.Get("Profile name"));
 
         // Status label for export confirmation
         var exportStatusLabel = new TextBlock
         {
-            Text       = "",
-            FontSize   = 11,
+            FontSize = 11,
             Foreground = Brush(ResourceKeys.AccentGreenBrush),
             Visibility = Visibility.Collapsed,
-            Margin     = new Thickness(0, 2, 0, 0),
-        };
+            Margin = new Thickness(0, 2, 0, 0)
+        }.Localize("Text", "");
 
         // ── Helper: collect current selection from checkboxes ─────────────────
         List<string> CollectCurrentPackIds()
@@ -855,8 +836,8 @@ public static class ShaderPopupHelper
             for (int i = 0; i < profiles.Count; i++)
             {
                 var capturedIdx = i;
-                var prof        = profiles[i];
-                bool isActive   = capturedIdx == activeProfileIdx;
+                var prof = profiles[i];
+                bool isActive = capturedIdx == activeProfileIdx;
 
                 var rowGrid = new Grid();
                 rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -870,25 +851,25 @@ public static class ShaderPopupHelper
 
                 var rowBorder = new Border
                 {
-                    Background      = isActive ? Brush(ResourceKeys.AccentTealBgBrush) : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                    BorderBrush     = isActive ? Brush(ResourceKeys.AccentTealBorderBrush) : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                    Background = isActive ? Brush(ResourceKeys.AccentTealBgBrush) : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                    BorderBrush = isActive ? Brush(ResourceKeys.AccentTealBorderBrush) : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                     BorderThickness = new Thickness(isActive ? 1 : 0),
-                    CornerRadius    = new CornerRadius(4),
-                    Margin          = new Thickness(0, 1, 0, 1),
-                    Child           = rowGrid,
+                    CornerRadius = new CornerRadius(4),
+                    Margin = new Thickness(0, 1, 0, 1),
+                    Child = rowGrid,
                 };
 
                 // Name button — loads the profile
                 var nameBtn = new Button
                 {
-                    Content             = prof.Name,
-                    FontSize            = 12,
-                    Padding             = new Thickness(6, 3, 6, 3),
-                    Background          = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                    BorderThickness     = new Thickness(0),
+                    Content = prof.Name,
+                    FontSize = 12,
+                    Padding = new Thickness(6, 3, 6, 3),
+                    Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                    BorderThickness = new Thickness(0),
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     HorizontalContentAlignment = HorizontalAlignment.Left,
-                    MinWidth            = 0,
+                    MinWidth = 0,
                 };
                 int nameBtnWidth = context == PopupContext.Global ? 120 : 170;
 
@@ -907,21 +888,21 @@ public static class ShaderPopupHelper
                 {
                     var editBtn = new Button
                     {
-                        Content           = "✎",
-                        FontSize          = 11,
-                        Padding           = new Thickness(4, 2, 4, 2),
+                        Content = "✎",
+                        FontSize = 11,
+                        Padding = new Thickness(4, 2, 4, 2),
                         VerticalAlignment = VerticalAlignment.Center,
-                        Opacity           = 0.6,
+                        Opacity = 0.6,
                     };
                     editBtn.Click += (s, ev) =>
                     {
                         // Replace name button with inline TextBox in the row
                         var renameBox = new TextBox
                         {
-                            Text      = profiles[capturedIdx].Name,
-                            FontSize  = 12,
+                            Text = profiles[capturedIdx].Name,
+                            FontSize = 12,
                             HorizontalAlignment = HorizontalAlignment.Stretch,
-                            Padding   = new Thickness(4, 2, 4, 2),
+                            Padding = new Thickness(4, 2, 4, 2),
                             VerticalAlignment = VerticalAlignment.Center,
                         };
 
@@ -961,9 +942,9 @@ public static class ShaderPopupHelper
                     // Delete button
                     var delBtn = new Button
                     {
-                        Content           = "X",
-                        FontSize          = 10,
-                        Padding           = new Thickness(4, 2, 4, 2),
+                        Content = "X",
+                        FontSize = 10,
+                        Padding = new Thickness(4, 2, 4, 2),
                         VerticalAlignment = VerticalAlignment.Center,
                     };
                     delBtn.Click += (s, ev) =>
@@ -993,21 +974,20 @@ public static class ShaderPopupHelper
             // Save button
             var saveBtn = new Button
             {
-                Content  = "Save",
                 FontSize = 12,
-                Padding  = new Thickness(8, 4, 8, 4),
-                Margin   = new Thickness(0, 6, 0, 2),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
+                Padding = new Thickness(8, 4, 8, 4),
+                Margin = new Thickness(0, 6, 0, 2),
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            }.Localize("Content", Loc.Get("Save"));
             saveBtn.Click += (s, ev) =>
             {
-                var packIds  = CollectCurrentPackIds();
-                var excls    = CollectCurrentExclusions();
+                var packIds = CollectCurrentPackIds();
+                var excls = CollectCurrentExclusions();
 
                 if (activeProfileIdx >= 0 && activeProfileIdx < profiles.Count)
                 {
                     // Overwrite active profile
-                    profiles[activeProfileIdx].SelectedPacks  = packIds;
+                    profiles[activeProfileIdx].SelectedPacks = packIds;
                     profiles[activeProfileIdx].FileExclusions = excls;
                     CrashReporter.Log($"[ShaderPopupHelper.ShowAsync] Updated profile '{profiles[activeProfileIdx].Name}'");
                 }
@@ -1019,8 +999,8 @@ public static class ShaderPopupHelper
                         n++;
                     var newProf = new ShaderProfile
                     {
-                        Name           = $"Profile {n}",
-                        SelectedPacks  = packIds,
+                        Name = $"Profile {n}",
+                        SelectedPacks = packIds,
                         FileExclusions = excls,
                     };
                     profiles.Add(newProf);
@@ -1032,28 +1012,27 @@ public static class ShaderPopupHelper
                 rebuildProfileList!();
             };
             profilePanel.Children.Add(saveBtn);
-            ToolTipService.SetToolTip(saveBtn, "Save the current shader selection into the highlighted profile. If no profile is selected, a new one is created automatically.");
+            saveBtn.Localize("ToolTip", Loc.Get("Save the current shader selection into the highlighted profile. If no profile is selected, a new one is created automatically."));
             var newBtn = new Button
             {
-                Content  = "New",
                 FontSize = 12,
-                Padding  = new Thickness(8, 4, 8, 4),
-                Margin   = new Thickness(0, 2, 0, 2),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
+                Padding = new Thickness(8, 4, 8, 4),
+                Margin = new Thickness(0, 2, 0, 2),
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            }.Localize("Content", Loc.Get("New"));
             newBtn.Click += (s, ev) =>
             {
                 // Show the inline rename box pre-filled
                 int n = profiles.Count + 1;
                 while (profiles.Any(p => p.Name.Equals($"Profile {n}", StringComparison.OrdinalIgnoreCase)))
                     n++;
-                newProfileBox.Text       = $"Profile {n}";
+                newProfileBox.Localize("Text", Loc.Format($"Profile {n}"));
                 newProfileBox.Visibility = Visibility.Visible;
                 newProfileBox.Focus(FocusState.Programmatic);
                 newProfileBox.SelectAll();
             };
             profilePanel.Children.Add(newBtn);
-            ToolTipService.SetToolTip(newBtn, "Create a new profile from the current shader selection. You'll be prompted to enter a name.");
+            newBtn.Localize("ToolTip", Loc.Get("Create a new profile from the current shader selection. You'll be prompted to enter a name."));
             profilePanel.Children.Add(newProfileBox);
 
             // Confirm new profile on Enter or focus lost
@@ -1065,13 +1044,13 @@ public static class ShaderPopupHelper
                 var name = newProfileBox.Text.Trim();
                 if (string.IsNullOrEmpty(name)) return;
 
-                var packIds  = CollectCurrentPackIds();
-                var excls    = CollectCurrentExclusions();
+                var packIds = CollectCurrentPackIds();
+                var excls = CollectCurrentExclusions();
 
                 var newProf = new ShaderProfile
                 {
-                    Name           = name,
-                    SelectedPacks  = packIds,
+                    Name = name,
+                    SelectedPacks = packIds,
                     FileExclusions = excls,
                 };
                 profiles.Add(newProf);
@@ -1091,20 +1070,19 @@ public static class ShaderPopupHelper
             // Separator
             profilePanel.Children.Add(new Border
             {
-                Height          = 1,
-                Margin          = new Thickness(0, 4, 0, 4),
-                Background      = Brush(ResourceKeys.SurfaceOverlayBrush),
-                Opacity         = 0.4,
+                Height = 1,
+                Margin = new Thickness(0, 4, 0, 4),
+                Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+                Opacity = 0.4,
             });
 
             // Export button
             var exportBtn = new Button
             {
-                Content  = "Export",
                 FontSize = 12,
-                Padding  = new Thickness(8, 4, 8, 4),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
+                Padding = new Thickness(8, 4, 8, 4),
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            }.Localize("Content", Loc.Get("Export"));
             exportBtn.Click += async (s, ev) =>
             {
                 try
@@ -1135,7 +1113,7 @@ public static class ShaderPopupHelper
 
                     CrashReporter.Log($"[ShaderPopupHelper.ShowAsync] Exported shaders zip to clipboard: {zipPath}");
 
-                    exportStatusLabel.Text       = "Copied to clipboard";
+                    exportStatusLabel.Localize("Text", Loc.Get("Copied to clipboard"));
                     exportStatusLabel.Visibility = Visibility.Visible;
 
                     // Clear after 3 seconds
@@ -1146,7 +1124,7 @@ public static class ShaderPopupHelper
                     timer.Tick += (t, _) =>
                     {
                         timer.Stop();
-                        exportStatusLabel.Text       = "";
+                        exportStatusLabel.Text = "";
                         exportStatusLabel.Visibility = Visibility.Collapsed;
                     };
                     timer.Start();
@@ -1157,28 +1135,26 @@ public static class ShaderPopupHelper
                 }
             };
             profilePanel.Children.Add(exportBtn);
-            ToolTipService.SetToolTip(exportBtn, "Zip the currently selected shader files and copy the archive to your clipboard. Paste directly into Discord to share.");
+            exportBtn.Localize("ToolTip", Loc.Get("Zip the currently selected shader files and copy the archive to your clipboard. Paste directly into Discord to share."));
             profilePanel.Children.Add(exportStatusLabel);
 
             // Import button
             var importBtn = new Button
             {
-                Content  = "Import",
                 FontSize = 12,
-                Padding  = new Thickness(8, 4, 8, 4),
-                Margin   = new Thickness(0, 2, 0, 0),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
-            ToolTipService.SetToolTip(importBtn, "Import a shader profile from a .zip archive exported by RHI.");
+                Padding = new Thickness(8, 4, 8, 4),
+                Margin = new Thickness(0, 2, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            }.Localize("Content", Loc.Get("Import"));
+            importBtn.Localize("ToolTip", Loc.Get("Import a shader profile from a .zip archive exported by RHI."));
 
             var importStatusLabel = new TextBlock
             {
-                Text       = "",
-                FontSize   = 11,
+                FontSize = 11,
                 Foreground = Brush(ResourceKeys.AccentGreenBrush),
                 Visibility = Visibility.Collapsed,
-                Margin     = new Thickness(0, 2, 0, 0),
-            };
+                Margin = new Thickness(0, 2, 0, 0)
+            }.Localize("Text", "");
 
             importBtn.Click += async (s, ev) =>
             {
@@ -1192,18 +1168,18 @@ public static class ShaderPopupHelper
                     {
                         var ofn = new NativeInterop.OpenFileName();
                         ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
-                        ofn.hwndOwner  = hwnd;
-                        ofn.filter     = "ZIP Archives (*.zip)\0*.zip\0All Files (*.*)\0*.*\0";
-                        ofn.file       = new string(new char[260]);
-                        ofn.maxFile    = ofn.file.Length;
-                        ofn.title      = "Import Shader Profile";
-                        ofn.flags      = 0x00080000 | 0x00001000; // OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST
+                        ofn.hwndOwner = hwnd;
+                        ofn.filter = "ZIP Archives (*.zip)\0*.zip\0All Files (*.*)\0*.*\0";
+                        ofn.file = new string(new char[260]);
+                        ofn.maxFile = ofn.file.Length;
+                        ofn.title = "Import Shader Profile";
+                        ofn.flags = 0x00080000 | 0x00001000; // OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST
                         return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
                     });
                     if (string.IsNullOrEmpty(zipPath)) return;
 
                     importBtn.IsEnabled = false;
-                    importStatusLabel.Text       = "Importing...";
+                    importStatusLabel.Localize("Text", Loc.Get("Importing..."));
                     importStatusLabel.Foreground = Brush(ResourceKeys.AccentGreenBrush);
                     importStatusLabel.Visibility = Visibility.Visible;
 
@@ -1211,7 +1187,7 @@ public static class ShaderPopupHelper
 
                     if (result == null)
                     {
-                        importStatusLabel.Text       = "Invalid archive — not an RHI shader profile.";
+                        importStatusLabel.Localize("Text", Loc.Get("Invalid archive — not an RHI shader profile."));
                         importStatusLabel.Foreground = Brush(ResourceKeys.AccentRedBrush);
                         importStatusLabel.Visibility = Visibility.Visible;
                     }
@@ -1235,7 +1211,7 @@ public static class ShaderPopupHelper
                         var msg = extractedPackIds.Count > 0
                             ? $"Imported — {extractedPackIds.Count} pack(s) extracted from archive."
                             : "Imported.";
-                        importStatusLabel.Text       = msg;
+                        importStatusLabel.Text = msg;
                         importStatusLabel.Foreground = Brush(ResourceKeys.AccentGreenBrush);
                         importStatusLabel.Visibility = Visibility.Visible;
                         CrashReporter.Log($"[ShaderPopupHelper.ShowAsync] Imported profile '{importedProfile.Name}', extracted packs: [{string.Join(", ", extractedPackIds)}]");
@@ -1265,12 +1241,11 @@ public static class ShaderPopupHelper
             profilePanel.Children.Add(new Border { Height = 1, Background = Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 10) });
             var openCustomBtn = new Button
             {
-                Content             = "Open Custom Folder",
-                FontSize            = 12,
-                Padding             = new Thickness(8, 4, 8, 4),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
-            ToolTipService.SetToolTip(openCustomBtn, "Open your Custom shader folder — place .fx files in Shaders\\ and textures in Textures\\ to add them to the picker above.");
+                FontSize = 12,
+                Padding = new Thickness(8, 4, 8, 4),
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            }.Localize("Content", Loc.Get("Open Custom Folder"));
+            openCustomBtn.Localize("ToolTip", Loc.Get("Open your Custom shader folder — place .fx files in Shaders\\ and textures in Textures\\ to add them to the picker above."));
             openCustomBtn.Click += async (s, ev) =>
             {
                 try
@@ -1296,10 +1271,10 @@ public static class ShaderPopupHelper
         // Vertical separator
         var separator = new Border
         {
-            Width      = 1,
-            Margin     = new Thickness(8, 0, 0, 0),
+            Width = 1,
+            Margin = new Thickness(8, 0, 0, 0),
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
-            Opacity    = 0.3,
+            Opacity = 0.3,
             VerticalAlignment = VerticalAlignment.Stretch,
         };
 
@@ -1313,15 +1288,13 @@ public static class ShaderPopupHelper
 
         var dlg = new ContentDialog
         {
-            Title             = "Select Shader Packs",
-            Content           = contentGrid,
+            Content = contentGrid,
             PrimaryButtonText = primaryButtonText,
-            CloseButtonText   = "Cancel",
-            XamlRoot          = xamlRoot,
-            Background        = Brush(ResourceKeys.SurfaceOverlayBrush),
-            RequestedTheme    = ElementTheme.Dark,
-            MinWidth          = 920,
-        };
+            XamlRoot = xamlRoot,
+            Background = Brush(ResourceKeys.SurfaceOverlayBrush),
+            RequestedTheme = ElementTheme.Dark,
+            MinWidth = 920
+        }.Localize("Title", Loc.Get("Select Shader Packs")).Localize("CloseButtonText", Loc.Get("Cancel"));
         dlg.Resources["ContentDialogMaxWidth"] = 980.0;
 
         var dialogResult = await DialogService.ShowSafeAsync(dlg);
@@ -1405,8 +1378,8 @@ public static class ShaderPopupHelper
                     fc.File.Equals(dep, StringComparison.OrdinalIgnoreCase));
                 if (match.Box != null)
                 {
-                    depPackId  = packId;
-                    depFileCb  = match.Box;
+                    depPackId = packId;
+                    depFileCb = match.Box;
                     break;
                 }
             }
@@ -1434,7 +1407,7 @@ public static class ShaderPopupHelper
         IReadOnlyList<(string Id, string DisplayName, ShaderPackService.PackCategory Category)> availablePacks,
         List<string>? currentSelection)
     {
-        var sel   = new HashSet<string>(currentSelection ?? [], StringComparer.OrdinalIgnoreCase);
+        var sel = new HashSet<string>(currentSelection ?? [], StringComparer.OrdinalIgnoreCase);
         var model = new List<(string Id, bool IsChecked)>(availablePacks.Count);
         foreach (var (id, _, _) in availablePacks)
             model.Add((id, sel.Contains(id)));

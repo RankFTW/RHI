@@ -1,4 +1,4 @@
-﻿// DetailPanelBuilder.Overrides.Dlss.cs — DLSS/Streamline column builder helpers.
+// DetailPanelBuilder.Overrides.Dlss.cs — DLSS/Streamline column builder helpers.
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -25,14 +25,18 @@ public partial class DetailPanelBuilder
 
         col.Children.Add(new TextBlock
         {
-            Text = label,
             FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-        });
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+        }.Localize("Text", Loc.Get(label)));
 
         // Version ComboBox
-        var versionLabel = new TextBlock { Text = "Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+        var versionLabel = new TextBlock
+        {
+            FontSize = 10,
+            Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            Margin = new Thickness(0, 2, 0, 0)
+        }.Localize("Text", Loc.Get("Version"));
         col.Children.Add(versionLabel);
 
         // Build items list with (Default) marker on the game's original/default version
@@ -122,11 +126,11 @@ public partial class DetailPanelBuilder
         };
 
         if (driverOverrideActive)
-            ToolTipService.SetToolTip(versionCombo, "NVIDIA Override is active — the driver is injecting its own latest DLL for this game. Select any other version to disable the override and deploy that version instead.");
+            versionCombo.Localize("ToolTip", Loc.Get("NVIDIA Override is active — the driver is injecting its own latest DLL for this game. Select any other version to disable the override and deploy that version instead."));
         else if (onDriverOverrideToggled != null)
-            ToolTipService.SetToolTip(versionCombo, "Selects which DLL version is copied into the game folder. Default restores the original game DLL. Custom uses your own file from %LocalAppData%\\RHI\\Custom\\DLSS\\. NVIDIA Override lets the driver inject its own latest version instead of a file on disk — equivalent to enabling DLSS Override in NVIDIA App or Profile Inspector.");
+            versionCombo.Localize("ToolTip", Loc.Get("Selects which DLL version is copied into the game folder. Default restores the original game DLL. Custom uses your own file from %LocalAppData%\\RHI\\Custom\\DLSS\\. NVIDIA Override lets the driver inject its own latest version instead of a file on disk — equivalent to enabling DLSS Override in NVIDIA App or Profile Inspector."));
         else
-            ToolTipService.SetToolTip(versionCombo, "Selects which DLL version is copied into the game folder. Default restores the original game DLL. Custom uses your own file from %LocalAppData%\\RHI\\Custom\\DLSS\\.");
+            versionCombo.Localize("ToolTip", Loc.Get("Selects which DLL version is copied into the game folder. Default restores the original game DLL. Custom uses your own file from %LocalAppData%\\RHI\\Custom\\DLSS\\."));
 
         col.Children.Add(versionCombo);
 
@@ -167,7 +171,12 @@ public partial class DetailPanelBuilder
         // Preset ComboBox (only for SR, RR, FG)
         if (presets != null && isPresent)
         {
-            col.Children.Add(new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+            col.Children.Add(new TextBlock
+            {
+                FontSize = 10,
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                Margin = new Thickness(0, 2, 0, 0)
+            }.Localize("Text", Loc.Get("Preset")));
 
             var presetItems = presets.Select(p => p.Name).ToList();
             int presetIdx = 0;
@@ -189,9 +198,9 @@ public partial class DetailPanelBuilder
             // Add tooltip explaining presets
             string presetTooltip = label switch
             {
-                "DLSS Super Resolution" => "Override the DLSS upscaling model. J/K use the 1st-gen transformer (DLSS 4.0). L/M use the 2nd-gen transformer (DLSS 4.5) with better temporal stability. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
-                "Ray Reconstruction" => "Override the Ray Reconstruction denoising model. Higher presets are newer model iterations. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
-                "Frame Generation" => "Override the Frame Generation interpolation model. Higher presets are newer model iterations. NVIDIA Recommended uses NVIDIA's per-resolution preset selection.",
+                "DLSS Super Resolution" => Loc.Get("Override the DLSS upscaling model. J/K use the 1st-gen transformer (DLSS 4.0). L/M use the 2nd-gen transformer (DLSS 4.5) with better temporal stability. NVIDIA Recommended uses NVIDIA's per-resolution preset selection."),
+                "Ray Reconstruction" => Loc.Get("Override the Ray Reconstruction denoising model. Higher presets are newer model iterations. NVIDIA Recommended uses NVIDIA's per-resolution preset selection."),
+                "Frame Generation" => Loc.Get("Override the Frame Generation interpolation model. Higher presets are newer model iterations. NVIDIA Recommended uses NVIDIA's per-resolution preset selection."),
                 _ => ""
             };
             if (!string.IsNullOrEmpty(presetTooltip))
@@ -212,7 +221,12 @@ public partial class DetailPanelBuilder
         // Render Scale ComboBox (only for SR and RR)
         if (onRenderScaleSelected != null && isPresent)
         {
-            col.Children.Add(new TextBlock { Text = "Render Scale", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+            col.Children.Add(new TextBlock
+            {
+                FontSize = 10,
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                Margin = new Thickness(0, 2, 0, 0)
+            }.Localize("Text", Loc.Get("Render Scale")));
             var rsOptions = DlssPresetService.RenderScaleOptions;
             var rsItems = rsOptions.Select(o => o.Name).ToList();
 
@@ -241,8 +255,7 @@ public partial class DetailPanelBuilder
                 IsEnabled = isPresent,
                 MaxDropDownHeight = 300,
             };
-            ToolTipService.SetToolTip(rsCombo,
-                "Override the DLSS render resolution scale. Off = game controls the scale.\nNamed presets set a fixed percentage. Custom lets you enter any value from 33-100%.");
+            rsCombo.Localize("ToolTip", Loc.Get("Override the DLSS render resolution scale. Off = game controls the scale.\nNamed presets set a fixed percentage. Custom lets you enter any value from 33-100%."));
 
             bool rsInit = true;
             rsCombo.SelectionChanged += (s, ev) =>

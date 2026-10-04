@@ -21,13 +21,13 @@ public partial class GameCardViewModel
 
     // ── Card grid: component status dot colors ────────────────────────────────────
     private static string StatusDotColor(GameStatus s, bool installing) =>
-        installing   ? "#2196F3"
-        : s == GameStatus.Installed       ? "#4CAF50"
+        installing ? "#2196F3"
+        : s == GameStatus.Installed ? "#4CAF50"
         : s == GameStatus.UpdateAvailable ? "#FF9800"
         : "#5A6880";
 
-    public string CardRdxStatusDot  => StatusDotColor(Status, IsInstalling);
-    public string CardRsStatusDot   => RequiresVulkanInstall
+    public string CardRdxStatusDot => StatusDotColor(Status, IsInstalling);
+    public string CardRsStatusDot => RequiresVulkanInstall
         ? (RsIsInstalling ? "#2196F3" : _vulkanLayerInstalled ? "#4CAF50" : "#5A6880")
         : StatusDotColor(RsStatus, RsIsInstalling);
     public string CardLumaStatusDot => StatusDotColor(LumaStatus, IsLumaInstalling);
@@ -45,17 +45,17 @@ public partial class GameCardViewModel
             var effectiveStatus = Status;
             var effectiveInstalling = IsInstalling;
 
-            if (effectiveInstalling) return "Installing...";
+            if (effectiveInstalling) return Loc.Get("Installing...");
             if (IsManaged)
             {
                 // Any component has an update available → show update icon
                 if (effectiveStatus == GameStatus.UpdateAvailable
                     || RsStatus == GameStatus.UpdateAvailable
                     || LumaStatus == GameStatus.UpdateAvailable)
-                    return "⬆  Manage";
-                return "↺  Manage";
+                    return Loc.Get("⬆  Manage");
+                return Loc.Get("↺  Manage");
             }
-            return "⬇  Install";
+            return Loc.Get("⬇  Install");
         }
     }
 
@@ -66,8 +66,8 @@ public partial class GameCardViewModel
     public bool CanCardInstall => !IsInstalling && !RsIsInstalling && !IsLumaInstalling && !UlIsInstalling && !DcIsInstalling;
 
     // ── Per-component install enabled (card install flyout) ───────────────────────
-    public bool CardRdxInstallEnabled  => !IsInstalling && Mod?.SnapshotUrl != null && !IsExternalOnly && (IsRsInstalled || ExcludeFromUpdateAllReShade);
-    public bool CardRsInstallEnabled   => !RsIsInstalling && !(IsREEngineGame && !IsRefInstalled && !EffectiveLumaMode && !ExcludeFromUpdateAllRef);
+    public bool CardRdxInstallEnabled => !IsInstalling && Mod?.SnapshotUrl != null && !IsExternalOnly && (IsRsInstalled || ExcludeFromUpdateAllReShade);
+    public bool CardRsInstallEnabled => !RsIsInstalling && !(IsREEngineGame && !IsRefInstalled && !EffectiveLumaMode && !ExcludeFromUpdateAllRef);
     public bool CardLumaInstallEnabled => !IsLumaInstalling && (LumaMod?.DownloadUrl != null || LumaMod?.NexusUrl != null) && (IsRsInstalled || ExcludeFromUpdateAllReShade || LumaStatus != GameStatus.NotInstalled);
 
     private void NotifySidebarProps()
@@ -100,12 +100,12 @@ public partial class GameCardViewModel
 
     // ── Derived display ───────────────────────────────────────────────────────────
 
-    public string WikiStatusLabel => WikiStatus == "✅" ? "✅ Working"
-                                   : WikiStatus == "🚧" ? "🚧 In Progress"
-                                   : WikiStatus == "?"  ? "⚠️ May Work"
+    public string WikiStatusLabel => WikiStatus == "✅" ? Loc.Get("✅ Working")
+                                   : WikiStatus == "🚧" ? Loc.Get("🚧 In Progress")
+                                   : WikiStatus == "?" ? Loc.Get("⚠️ May Work")
                                    : WikiStatus == "💬" ? "💬 Discord"
                                    : WikiStatus == "🌐" ? "🌐 Nexus"
-                                   : WikiStatus == "—" && IsGenericMod ? "⚠️ May Work"
+                                   : WikiStatus == "—" && IsGenericMod ? Loc.Get("⚠️ May Work")
                                    : "";
 
     /// <summary>
@@ -114,7 +114,7 @@ public partial class GameCardViewModel
     public string WikiStatusIcon => EffectiveLumaMode ? ""
                                   : WikiStatus == "✅" ? ""
                                   : WikiStatus == "🚧" ? "🚧"
-                                  : WikiStatus == "?"  ? "⚠️"
+                                  : WikiStatus == "?" ? "⚠️"
                                   : WikiStatus == "💬" ? "💬"
                                   : WikiStatus == "🌐" ? "🌐"
                                   : WikiStatus == "—" && IsGenericMod ? "⚠️"
@@ -124,36 +124,41 @@ public partial class GameCardViewModel
     public bool WikiStatusIconVisible => !EffectiveLumaMode;
 
     // Badge colours change per status to make them visually distinct
-    public string WikiStatusBadgeBackground  => WikiStatus == "💬" ? "#201838"
+    public string WikiStatusBadgeBackground => WikiStatus == "💬" ? "#201838"
                                               : WikiStatus == "🌐" ? "#182840"
-                                              : WikiStatus == "?"  ? "#201C10"
+                                              : WikiStatus == "?" ? "#201C10"
                                               : "#1A2030";
     public string WikiStatusBadgeBorderBrush => WikiStatus == "💬" ? "#3A2860"
                                               : WikiStatus == "🌐" ? "#2A4468"
-                                              : WikiStatus == "?"  ? "#403018"
+                                              : WikiStatus == "?" ? "#403018"
                                               : "#283240";
-    public string WikiStatusBadgeForeground  => WikiStatus == "💬" ? "#B898E8"
+    public string WikiStatusBadgeForeground => WikiStatus == "💬" ? "#B898E8"
                                               : WikiStatus == "🌐" ? "#7AACDD"
-                                              : WikiStatus == "?"  ? "#D4A856"
+                                              : WikiStatus == "?" ? "#D4A856"
                                               : "#A0AABB";
 
     public string SourceIcon => Source switch
     {
-        "Steam" => "🟦", "GOG" => "🟣", "Epic" => "🟤", "EA App" => "🟧",
-        "Ubisoft" => "🟠", "Manual" => "🔧", _ => "🎮"
+        "Steam" => "🟦",
+        "GOG" => "🟣",
+        "Epic" => "🟤",
+        "EA App" => "🟧",
+        "Ubisoft" => "🟠",
+        "Manual" => "🔧",
+        _ => "🎮"
     };
 
     public string? SourceIconPath => Source switch
     {
-        "Steam"      => "Assets/icons/steam.ico",
-        "GOG"        => "Assets/icons/gog.ico",
-        "Epic"       => "Assets/icons/epic.ico",
-        "EA App"     => "Assets/icons/ea.ico",
-        "Xbox"       => "Assets/icons/xbox.ico",
-        "Ubisoft"    => "Assets/icons/ubisoft.ico",
+        "Steam" => "Assets/icons/steam.ico",
+        "GOG" => "Assets/icons/gog.ico",
+        "Epic" => "Assets/icons/epic.ico",
+        "EA App" => "Assets/icons/ea.ico",
+        "Xbox" => "Assets/icons/xbox.ico",
+        "Ubisoft" => "Assets/icons/ubisoft.ico",
         "Battle.net" => "Assets/icons/battlenet.ico",
-        "Rockstar"   => "Assets/icons/rockstar.ico",
-        _            => null
+        "Rockstar" => "Assets/icons/rockstar.ico",
+        _ => null
     };
 
     /// <summary>
@@ -189,45 +194,45 @@ public partial class GameCardViewModel
         }
     }
 
-    public string InstalledFileLabel  => InstalledAddonFileName != null ? $"📦 {InstalledAddonFileName}" : "";
-    public bool HasNotes              => !string.IsNullOrWhiteSpace(Notes);
-    public bool IsUnityGeneric        => IsGenericMod && EngineHint.Contains("Unity");
-    public bool HasDualBitMod         => Mod?.HasBothBitVersions == true;
-    public bool HasExtraLinks         => NexusUrl != null || (DiscordUrl != null && EffectiveLumaMode) || IsExternalOnly;
-    public bool HasNexusModsUrl       => !string.IsNullOrEmpty(NexusModsUrl);
-    public bool HasPcgwUrl            => !string.IsNullOrEmpty(PcgwUrl);
-    public bool HasUwFixUrl        => !string.IsNullOrEmpty(UwFixUrl);
-    public bool HasUltraPlusUrl    => !string.IsNullOrEmpty(UltraPlusUrl);
-    public bool HasNameUrl            => !string.IsNullOrEmpty(NameUrl);
-    public string HideButtonLabel     => IsHidden ? "👁 Show" : "🚫 Hide";
-    public string StarForeground       => IsFavourite ? "#FFD700" : "#282840";
-    public Visibility IsFavouriteVisibility      => IsFavourite ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility IsNotFavouriteVisibility   => IsFavourite ? Visibility.Collapsed : Visibility.Visible;
+    public string InstalledFileLabel => InstalledAddonFileName != null ? $"📦 {InstalledAddonFileName}" : "";
+    public bool HasNotes => !string.IsNullOrWhiteSpace(Notes);
+    public bool IsUnityGeneric => IsGenericMod && EngineHint.Contains("Unity");
+    public bool HasDualBitMod => Mod?.HasBothBitVersions == true;
+    public bool HasExtraLinks => NexusUrl != null || (DiscordUrl != null && EffectiveLumaMode) || IsExternalOnly;
+    public bool HasNexusModsUrl => !string.IsNullOrEmpty(NexusModsUrl);
+    public bool HasPcgwUrl => !string.IsNullOrEmpty(PcgwUrl);
+    public bool HasUwFixUrl => !string.IsNullOrEmpty(UwFixUrl);
+    public bool HasUltraPlusUrl => !string.IsNullOrEmpty(UltraPlusUrl);
+    public bool HasNameUrl => !string.IsNullOrEmpty(NameUrl);
+    public string HideButtonLabel => IsHidden ? Loc.Get("👁 Show") : Loc.Get("🚫 Hide");
+    public string StarForeground => IsFavourite ? "#FFD700" : "#282840";
+    public Visibility IsFavouriteVisibility => IsFavourite ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility IsNotFavouriteVisibility => IsFavourite ? Visibility.Collapsed : Visibility.Visible;
 
     // ── Visibility ────────────────────────────────────────────────────────────────
 
-    public Visibility SourceBadgeVisibility      => string.IsNullOrEmpty(Source) ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility GenericBadgeVisibility     => IsGenericMod ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility EngineBadgeVisibility      => !string.IsNullOrEmpty(EngineHint) ? Visibility.Visible : Visibility.Collapsed;
-    public string GraphicsApiLabel               => GraphicsApiDetector.GetMultiLabel(DetectedApis, GraphicsApi);
-    public bool HasGraphicsApiBadge              => GraphicsApi != GraphicsApiType.Unknown;
-    public Visibility NotesButtonVisibility      => HasNotes ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility ProgressVisibility         => IsInstalling ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility MessageVisibility          => string.IsNullOrEmpty(ActionMessage) ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility ExternalBtnVisibility      => IsExternalOnly && !EffectiveLumaMode && CombinedRowVisibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility ExtraLinkVisibility        => HasExtraLinks ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility InstalledFileLabelVisible  => !string.IsNullOrEmpty(InstalledAddonFileName) && (!EffectiveLumaMode || LumaRenodxCompatible) ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility InstallOnlyBtnVisibility   => (!IsExternalOnly && Mod?.SnapshotUrl != null
+    public Visibility SourceBadgeVisibility => string.IsNullOrEmpty(Source) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility GenericBadgeVisibility => IsGenericMod ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility EngineBadgeVisibility => !string.IsNullOrEmpty(EngineHint) ? Visibility.Visible : Visibility.Collapsed;
+    public string GraphicsApiLabel => GraphicsApiDetector.GetMultiLabel(DetectedApis, GraphicsApi);
+    public bool HasGraphicsApiBadge => GraphicsApi != GraphicsApiType.Unknown;
+    public Visibility NotesButtonVisibility => HasNotes ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility ProgressVisibility => IsInstalling ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility MessageVisibility => string.IsNullOrEmpty(ActionMessage) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility ExternalBtnVisibility => IsExternalOnly && !EffectiveLumaMode && CombinedRowVisibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility ExtraLinkVisibility => HasExtraLinks ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility InstalledFileLabelVisible => !string.IsNullOrEmpty(InstalledAddonFileName) && (!EffectiveLumaMode || LumaRenodxCompatible) ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility InstallOnlyBtnVisibility => (!IsExternalOnly && Mod?.SnapshotUrl != null
                                                       && Status == GameStatus.Available
                                                       && Is32BitUeWipVisibility == Visibility.Collapsed
                                                       && (!EffectiveLumaMode || LumaRenodxCompatible))
                                                       ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility ReinstallRowVisibility     => (!IsExternalOnly && Mod?.SnapshotUrl != null
+    public Visibility ReinstallRowVisibility => (!IsExternalOnly && Mod?.SnapshotUrl != null
                                                       && (Status == GameStatus.Installed || Status == GameStatus.UpdateAvailable)
                                                       && (!EffectiveLumaMode || LumaRenodxCompatible))
                                                       ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility DualBitInstallVisibility   => Visibility.Collapsed;
-    public Visibility UpdateBadgeVisibility      => ((Status == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllRenoDx && (!string.IsNullOrEmpty(RdxInstalledVersion) || !string.IsNullOrEmpty(InstalledAddonFileName) || IsExternalOnly || IsEmulator))
+    public Visibility DualBitInstallVisibility => Visibility.Collapsed;
+    public Visibility UpdateBadgeVisibility => ((Status == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllRenoDx && (!string.IsNullOrEmpty(RdxInstalledVersion) || !string.IsNullOrEmpty(InstalledAddonFileName) || IsExternalOnly || IsEmulator))
                                                       || (RsStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllReShade && !EffectiveLumaMode)
                                                       || (UlStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllUl)
                                                       || (DcStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllDc)
@@ -237,11 +242,11 @@ public partial class GameCardViewModel
                                                       || (RefStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllRef)
                                                       || (DofFixStatus == GameStatus.UpdateAvailable && !ExcludeFromUpdateAllDofFix))
                                                       ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility IsHiddenVisibility         => IsHidden ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility IsNotHiddenVisibility      => IsHidden ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility NameLinkVisibility         => HasNameUrl ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility NoModVisibility            => Visibility.Collapsed;
-    public Visibility SwitchToLumaVisibility     => (Mod == null && string.IsNullOrEmpty(InstalledAddonFileName)
+    public Visibility IsHiddenVisibility => IsHidden ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility IsNotHiddenVisibility => IsHidden ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility NameLinkVisibility => HasNameUrl ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility NoModVisibility => Visibility.Collapsed;
+    public Visibility SwitchToLumaVisibility => (Mod == null && string.IsNullOrEmpty(InstalledAddonFileName)
                                                       && !EffectiveLumaMode
                                                       && LumaFeatureEnabled && IsLumaAvailable)
                                                       ? Visibility.Visible : Visibility.Collapsed;
@@ -275,24 +280,24 @@ public partial class GameCardViewModel
     /// <summary>Display-name overrides for wiki maintainer handles.</summary>
     private static readonly Dictionary<string, string> AuthorDisplayNames =
         new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["oopydoopy"] = "Jon",
-    };
+        {
+            ["oopydoopy"] = "Jon",
+        };
 
     /// <summary>Donation page URLs keyed by display name (after resolution).</summary>
     private static readonly Dictionary<string, string> AuthorDonationUrls =
         new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["ShortFuse"] = "https://ko-fi.com/shortfuse",
-        ["Jon"]       = "https://ko-fi.com/kickfister",
-        ["Forge"]     = "https://ko-fi.com/forge87682",
-        ["Voosh"]     = "https://ko-fi.com/notvoosh",
-        ["Musa"]      = "https://ko-fi.com/musaqh",
-        ["Pumbo"]     = "https://ko-fi.com/pumbo",
-        ["Nukem"]     = "https://ko-fi.com/nukem9",
-        ["Lilium"]    = "https://ko-fi.com/endlesslyflowering",
-        ["Bit Viper"] = "https://ko-fi.com/bitviper",
-    };
+        {
+            ["ShortFuse"] = "https://ko-fi.com/shortfuse",
+            ["Jon"] = "https://ko-fi.com/kickfister",
+            ["Forge"] = "https://ko-fi.com/forge87682",
+            ["Voosh"] = "https://ko-fi.com/notvoosh",
+            ["Musa"] = "https://ko-fi.com/musaqh",
+            ["Pumbo"] = "https://ko-fi.com/pumbo",
+            ["Nukem"] = "https://ko-fi.com/nukem9",
+            ["Lilium"] = "https://ko-fi.com/endlesslyflowering",
+            ["Bit Viper"] = "https://ko-fi.com/bitviper",
+        };
 
     /// <summary>What each author is known for, keyed by display name. Shown in the Donate dialog.</summary>
     internal static readonly Dictionary<string, string> AuthorRoles =

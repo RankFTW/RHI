@@ -44,21 +44,18 @@ public static class UpdateInclusionHelper
             var (label, isOn) = items[i];
             summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text = $"{label}: ",
-                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
+            }.Localize("Text", $"{label}: "));
             summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text = isOn ? "On" : "Off",
-                Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-            });
+                Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush)
+            }.Localize("Text", isOn ? Loc.Get("On") : Loc.Get("Off")));
             if (i < items.Count - 1)
             {
                 summaryTb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
-                    Text = "  ·  ",
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                });
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
+                }.Localize("Text", "  ·  "));
             }
         }
     }
@@ -87,7 +84,6 @@ public static class UpdateInclusionHelper
 
         var button = new Button
         {
-            Content = "Update Inclusion",
             Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
@@ -95,8 +91,8 @@ public static class UpdateInclusionHelper
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(12, 7, 12, 7),
             FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        }.Localize("Content", Loc.Get("Update Inclusion"));
 
         button.Click += async (s, ev) =>
         {
@@ -121,7 +117,12 @@ public static class UpdateInclusionHelper
                 : null;
 
             var checkPanel = new StackPanel { Spacing = 0 };
-            checkPanel.Children.Add(new TextBlock { Text = "Include this game in Update All for:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
+            checkPanel.Children.Add(new TextBlock
+            {
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                Margin = new Thickness(0, 0, 0, 8)
+            }.Localize("Text", Loc.Get("Include this game in Update All for:")));
             checkPanel.Children.Add(rsCheck);
             checkPanel.Children.Add(rdxCheck);
             checkPanel.Children.Add(ulCheck);
@@ -132,13 +133,10 @@ public static class UpdateInclusionHelper
 
             var dialog = new ContentDialog
             {
-                Title = "Global Update Inclusion",
                 Content = checkPanel,
-                PrimaryButtonText = "Save",
-                CloseButtonText = "Cancel",
                 XamlRoot = effectiveRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Global Update Inclusion")).Localize("PrimaryButtonText", Loc.Get("Save")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
             var result = await DialogService.ShowSafeAsync(dialog);
             if (result == ContentDialogResult.Primary)

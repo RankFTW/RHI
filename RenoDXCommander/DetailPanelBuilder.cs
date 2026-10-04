@@ -138,7 +138,7 @@ public partial class DetailPanelBuilder
             _window.DetailEngineText.TextDecorations = isClickable ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None;
             _window.DetailEngineBadge.Tag = isClickable ? card : null;
             if (isClickable)
-                ToolTipService.SetToolTip(_window.DetailEngineBadge, "Click to cycle engine version (affects DOF Fix eligibility)");
+                _window.DetailEngineBadge.Localize("ToolTip", Loc.Get("Click to cycle engine version (affects DOF Fix eligibility)"));
             else
                 ToolTipService.SetToolTip(_window.DetailEngineBadge, null);
         }
@@ -166,11 +166,10 @@ public partial class DetailPanelBuilder
                 var donationUrl = GameCardViewModel.GetAuthorDonationUrl(author);
                 var textBlock = new TextBlock
                 {
-                    Text = author,
                     FontSize = 11,
                     Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush),
-                    TextDecorations = donationUrl != null ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None,
-                };
+                    TextDecorations = donationUrl != null ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None
+                }.Localize("Text", author);
                 var badge = new Border
                 {
                     CornerRadius = new CornerRadius(5),
@@ -190,11 +189,11 @@ public partial class DetailPanelBuilder
                     var cursorProp = DetailPanelBuilder.CursorProp;
                     badge.PointerEntered += (s, e) => cursorProp?.SetValue(badge, handCursor);
                     badge.PointerExited += (s, e) => cursorProp?.SetValue(badge, arrowCursor);
-                    ToolTipService.SetToolTip(badge, $"Mod author: {author} — click to open Ko-fi donation page");
+                    badge.Localize("ToolTip", Loc.Format($"Mod author: {author} — click to open Ko-fi donation page"));
                 }
                 else
                 {
-                    ToolTipService.SetToolTip(badge, $"Mod author: {author}");
+                    badge.Localize("ToolTip", Loc.Format($"Mod author: {author}"));
                 }
                 _window.DetailAuthorBadgePanel.Children.Add(badge);
             }
@@ -265,14 +264,14 @@ public partial class DetailPanelBuilder
                 if (dbMod != null)
                 {
                     // MapStatus converts "Done"→"✅" and "WIP"→"🚧", so normalise back to text
-                    modStatusText = dbMod.Status == "🚧" ? "WIP" : dbMod.Status == "✅" ? "Done" : null;
+                    modStatusText = dbMod.Status == "🚧" ? Loc.Get("WIP") : dbMod.Status == "✅" ? Loc.Get("Done") : null;
                 }
                 else if (!card.IsGenericMod)
                 {
                     // Fallback: WikiStatus is already correctly resolved for this card (handles
                     // games detected by folder name like "AFOP" whose DB entry uses the full title)
-                    modStatusText = card.WikiStatus == "🚧" ? "WIP"
-                                  : card.WikiStatus == "✅" ? "Done"
+                    modStatusText = card.WikiStatus == "🚧" ? Loc.Get("WIP")
+                                  : card.WikiStatus == "✅" ? Loc.Get("Done")
                                   : null;
                 }
             }
@@ -283,14 +282,14 @@ public partial class DetailPanelBuilder
             _window.DetailModStatusIcon.Text = "✓";
             _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);
             _window.DetailModStatusIcon.Visibility = Visibility.Visible;
-            ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod complete");
+            _window.DetailModStatusIcon.Localize("ToolTip", Loc.Get("HDR mod complete"));
         }
         else if (string.Equals(modStatusText, "WIP", StringComparison.OrdinalIgnoreCase))
         {
             _window.DetailModStatusIcon.Text = "🔨";
             _window.DetailModStatusIcon.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
             _window.DetailModStatusIcon.Visibility = Visibility.Visible;
-            ToolTipService.SetToolTip(_window.DetailModStatusIcon, "HDR mod in progress");
+            _window.DetailModStatusIcon.Localize("ToolTip", Loc.Get("HDR mod in progress"));
         }
         else
         {
@@ -299,7 +298,7 @@ public partial class DetailPanelBuilder
 
         // Utility buttons — set Tag for event handlers
         _window.DetailFavBtn.Tag = card;
-        _window.DetailFavIcon.Text = "Favourite";
+        _window.DetailFavIcon.Localize("Text", Loc.Get("Favourite"));
         var favColor = card.IsFavourite
             ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
             : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
@@ -309,7 +308,7 @@ public partial class DetailPanelBuilder
             : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
 
         _window.DetailHideBtn.Tag = card;
-        _window.DetailHideIcon.Text = card.IsHidden ? "Show" : "Hide";
+        _window.DetailHideIcon.Localize("Text", card.IsHidden ? Loc.Get("Show") : Loc.Get("Hide"));
         _window.DetailHideBtn.Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
         // Folder management buttons
@@ -353,7 +352,7 @@ public partial class DetailPanelBuilder
             bool resActive = resOverride != null
                 ? string.Equals(resOverride, "On", StringComparison.OrdinalIgnoreCase)
                 : _window.ViewModel.Settings.ResolutionAutoToggle;
-            _window.DetailResToggleText.Text = "RES";
+            _window.DetailResToggleText.Localize("Text", Loc.Get("RES"));
             _window.DetailResToggleBtn.Background = resActive
                 ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
                 : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
@@ -379,7 +378,7 @@ public partial class DetailPanelBuilder
         if (card.HasUwFixUrl)
         {
             var source = card.UwFixSource ?? "creator";
-            ToolTipService.SetToolTip(_window.DetailUwFixBtn, $"Open {source}'s ultrawide fix page");
+            _window.DetailUwFixBtn.Localize("ToolTip", Loc.Format($"Open {source}'s ultrawide fix page"));
         }
 
         // Ultra+ link button
@@ -393,8 +392,8 @@ public partial class DetailPanelBuilder
         // ── Wire Components section collapse + drag handle ────────────────────
         {
             const string sectionKey = "Components";
-            var settings    = _window.ViewModel.Settings;
-            bool collapsed  = settings.CollapsedDetailSections.Contains(sectionKey);
+            var settings = _window.ViewModel.Settings;
+            bool collapsed = settings.CollapsedDetailSections.Contains(sectionKey);
 
             _window.DetailComponentsArrow.Text = collapsed ? "▶" : "▼";
             _window.DetailComponentsBody.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
@@ -405,8 +404,8 @@ public partial class DetailPanelBuilder
             _window.DetailComponentsHeader.PointerPressed += ComponentsHeader_PointerPressed;
             _window.DetailComponentsHeader.PointerEntered -= ComponentsHeader_PointerEntered;
             _window.DetailComponentsHeader.PointerEntered += ComponentsHeader_PointerEntered;
-            _window.DetailComponentsHeader.PointerExited  -= ComponentsHeader_PointerExited;
-            _window.DetailComponentsHeader.PointerExited  += ComponentsHeader_PointerExited;
+            _window.DetailComponentsHeader.PointerExited -= ComponentsHeader_PointerExited;
+            _window.DetailComponentsHeader.PointerExited += ComponentsHeader_PointerExited;
 
             // Replace drag handle as first child.
             // The XAML starts with [0]=Arrow, [1]=Title.
@@ -475,12 +474,12 @@ public partial class DetailPanelBuilder
 
         var filtered = rawApis.Where(a => a switch
         {
-            GraphicsApiType.DirectX8  => !hasDx10Plus,
-            GraphicsApiType.DirectX9  => !hasDx10Plus,
+            GraphicsApiType.DirectX8 => !hasDx10Plus,
+            GraphicsApiType.DirectX9 => !hasDx10Plus,
             GraphicsApiType.DirectX10 => !hasModern,
             // OGL only shows alone — if any DX or Vulkan is present it's likely a launcher/helper exe
-            GraphicsApiType.OpenGL    => rawApis.Count == 1,
-            _                         => true,
+            GraphicsApiType.OpenGL => rawApis.Count == 1,
+            _ => true,
         });
 
         // Display in consistent order: DX8→DX9→DX10→DX11→DX12→VLK→OGL
@@ -499,10 +498,9 @@ public partial class DetailPanelBuilder
 
             var textBlock = new TextBlock
             {
-                Text = label,
                 FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush),
-            };
+                Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush)
+            }.Localize("Text", label);
             var badge = new Border
             {
                 CornerRadius = new CornerRadius(5),
@@ -531,14 +529,14 @@ public partial class DetailPanelBuilder
     /// <summary>Maps section key → its container Border in DetailPanel.</summary>
     private Border GetSectionContainer(string key) => key switch
     {
-        "Components"         => _window.DetailComponentSection,
-        "GameOverrides"      => _window.OverridesContainer,
-        "NeuralRendering"    => _window.NeuralRenderingContainer,
-        "NvidiaProfileDlss"  => _window.NvidiaProfileDlssContainer,
-        "NvidiaProfileDriver"=> _window.NvidiaProfileDriverContainer,
-        "Management"         => _window.ManagementContainer,
-        "Extras"             => _window.ExtrasContainer,
-        _                    => throw new ArgumentException($"Unknown section key: {key}"),
+        "Components" => _window.DetailComponentSection,
+        "GameOverrides" => _window.OverridesContainer,
+        "NeuralRendering" => _window.NeuralRenderingContainer,
+        "NvidiaProfileDlss" => _window.NvidiaProfileDlssContainer,
+        "NvidiaProfileDriver" => _window.NvidiaProfileDriverContainer,
+        "Management" => _window.ManagementContainer,
+        "Extras" => _window.ExtrasContainer,
+        _ => throw new ArgumentException($"Unknown section key: {key}"),
     };
 
     /// <summary>
@@ -578,13 +576,13 @@ public partial class DetailPanelBuilder
     }
 
     // Drag state
-    private Border?  _dragBorder;
-    private uint     _dragPointerId;
-    private double   _dragStartY;
-    private int      _dragStartIdx;
-    private int      _dragCurrentIdx;
-    private double   _dragCardHeight;
-    private bool     _dragging;
+    private Border? _dragBorder;
+    private uint _dragPointerId;
+    private double _dragStartY;
+    private int _dragStartIdx;
+    private int _dragCurrentIdx;
+    private double _dragCardHeight;
+    private bool _dragging;
 
     private const double SectionCardHeight = 120.0;  // fallback only
 
@@ -617,17 +615,16 @@ public partial class DetailPanelBuilder
     {
         var handle = new TextBlock
         {
-            Text              = "≡",
-            FontSize          = 14,
-            Foreground        = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            FontSize = 14,
+            Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin            = new Thickness(0, 0, 8, 0),
-            ManipulationMode  = Microsoft.UI.Xaml.Input.ManipulationModes.None,
-        };
+            Margin = new Thickness(0, 0, 8, 0),
+            ManipulationMode = Microsoft.UI.Xaml.Input.ManipulationModes.None
+        }.Localize("Text", "≡");
 
-        var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        var handCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
         var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
-        var cursorProp  = DetailPanelBuilder.CursorProp;
+        var cursorProp = DetailPanelBuilder.CursorProp;
 
         handle.PointerEntered += (s, e) =>
         {
@@ -643,15 +640,15 @@ public partial class DetailPanelBuilder
         handle.PointerPressed += (s, e) =>
         {
             var panel = _window.DetailPanel;
-            var idx   = panel.Children.IndexOf(container);
+            var idx = panel.Children.IndexOf(container);
             if (idx < 2) return;
 
-            _dragBorder      = container;
-            _dragPointerId   = e.Pointer.PointerId;
-            _dragStartY      = e.GetCurrentPoint(_window.DetailPanel).Position.Y;
-            _dragStartIdx    = idx;
-            _dragCurrentIdx  = idx;
-            _dragging        = true;
+            _dragBorder = container;
+            _dragPointerId = e.Pointer.PointerId;
+            _dragStartY = e.GetCurrentPoint(_window.DetailPanel).Position.Y;
+            _dragStartIdx = idx;
+            _dragCurrentIdx = idx;
+            _dragging = true;
             container.Opacity = 0.55;
 
             // Use actual average section height for threshold — measure the dragged section itself
@@ -659,9 +656,9 @@ public partial class DetailPanelBuilder
             _dragCardHeight = container.ActualHeight > 20 ? container.ActualHeight + 16 : SectionCardHeight;
 
             _window.DetailPanel.CapturePointer(e.Pointer);
-            _window.DetailPanel.PointerMoved        += DetailPanel_PointerMoved;
-            _window.DetailPanel.PointerReleased     += DetailPanel_PointerReleased;
-            _window.DetailPanel.PointerCaptureLost  += DetailPanel_PointerCaptureLost;
+            _window.DetailPanel.PointerMoved += DetailPanel_PointerMoved;
+            _window.DetailPanel.PointerReleased += DetailPanel_PointerReleased;
+            _window.DetailPanel.PointerCaptureLost += DetailPanel_PointerCaptureLost;
 
             e.Handled = true;
         };
@@ -675,14 +672,14 @@ public partial class DetailPanelBuilder
     {
         if (!_dragging || _dragBorder == null || e.Pointer.PointerId != _dragPointerId) return;
 
-        var pt     = e.GetCurrentPoint(_window.DetailPanel).Position;
+        var pt = e.GetCurrentPoint(_window.DetailPanel).Position;
         var deltaY = pt.Y - _dragStartY;           // always relative to original press point
-        var panel  = _window.DetailPanel;
+        var panel = _window.DetailPanel;
 
         // Compute target index from total accumulated delta — each slot requires a full
         // SectionCardHeight of travel from the original start, so thresholds are evenly spaced
         // and don't compound with each move.
-        int offset    = (int)(deltaY / _dragCardHeight);  // truncate, not round
+        int offset = (int)(deltaY / _dragCardHeight);  // truncate, not round
         int targetIdx = Math.Clamp(_dragStartIdx + offset, 2, panel.Children.Count - 1);
 
         if (targetIdx != _dragCurrentIdx)
@@ -723,9 +720,9 @@ public partial class DetailPanelBuilder
         if (!_dragging) return;
         _dragging = false;
         var panel = _window.DetailPanel;
-        panel.PointerMoved        -= DetailPanel_PointerMoved;
-        panel.PointerReleased     -= DetailPanel_PointerReleased;
-        panel.PointerCaptureLost  -= DetailPanel_PointerCaptureLost;
+        panel.PointerMoved -= DetailPanel_PointerMoved;
+        panel.PointerReleased -= DetailPanel_PointerReleased;
+        panel.PointerCaptureLost -= DetailPanel_PointerCaptureLost;
         if (_dragBorder != null) _dragBorder.Opacity = 1.0;
         _dragBorder = null;
         if (save) _window.DispatcherQueue.TryEnqueue(SaveSectionOrder);
@@ -744,18 +741,18 @@ public partial class DetailPanelBuilder
 
     private void SaveSectionOrder()
     {
-        var panel    = _window.DetailPanel;
+        var panel = _window.DetailPanel;
         var keyOrder = new List<string>();
         for (int i = 2; i < panel.Children.Count; i++)
         {
             var border = panel.Children[i] as Border;
-            if      (border == _window.DetailComponentSection)     keyOrder.Add("Components");
-            else if (border == _window.OverridesContainer)          keyOrder.Add("GameOverrides");
-            else if (border == _window.NeuralRenderingContainer)    keyOrder.Add("NeuralRendering");
-            else if (border == _window.NvidiaProfileDlssContainer)   keyOrder.Add("NvidiaProfileDlss");
+            if (border == _window.DetailComponentSection) keyOrder.Add("Components");
+            else if (border == _window.OverridesContainer) keyOrder.Add("GameOverrides");
+            else if (border == _window.NeuralRenderingContainer) keyOrder.Add("NeuralRendering");
+            else if (border == _window.NvidiaProfileDlssContainer) keyOrder.Add("NvidiaProfileDlss");
             else if (border == _window.NvidiaProfileDriverContainer) keyOrder.Add("NvidiaProfileDriver");
-            else if (border == _window.ManagementContainer)         keyOrder.Add("Management");
-            else if (border == _window.ExtrasContainer)             keyOrder.Add("Extras");
+            else if (border == _window.ManagementContainer) keyOrder.Add("Management");
+            else if (border == _window.ExtrasContainer) keyOrder.Add("Extras");
         }
         if (keyOrder.Count > 0)
         {
@@ -773,13 +770,13 @@ public partial class DetailPanelBuilder
     private void ComponentsHeader_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         const string sectionKey = "Components";
-        var settings   = _window.ViewModel.Settings;
+        var settings = _window.ViewModel.Settings;
         bool collapsed = _window.DetailComponentsBody.Visibility == Visibility.Visible;
         _window.DetailComponentsBody.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-        _window.DetailComponentsArrow.Text      = collapsed ? "▶" : "▼";
+        _window.DetailComponentsArrow.Text = collapsed ? "▶" : "▼";
 
         if (collapsed) settings.CollapsedDetailSections.Add(sectionKey);
-        else           settings.CollapsedDetailSections.Remove(sectionKey);
+        else settings.CollapsedDetailSections.Remove(sectionKey);
 
         // Rebuild summary on collapse, hide on expand
         if (collapsed)
@@ -850,8 +847,8 @@ public partial class DetailPanelBuilder
 
         var tb = new TextBlock
         {
-            FontSize  = 11,
-            Margin    = new Thickness(10, 0, 0, 0),
+            FontSize = 11,
+            Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
             TextWrapping = TextWrapping.NoWrap,
         };
@@ -862,24 +859,21 @@ public partial class DetailPanelBuilder
             {
                 tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
-                    Text       = "  ·  ",
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                });
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
+                }.Localize("Text", "  ·  "));
             }
 
             tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text       = entries[i].Label,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+            }.Localize("Text", Loc.Get(entries[i].Label)));
 
             if (!string.IsNullOrWhiteSpace(entries[i].Version))
             {
                 tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
-                    Text       = " " + entries[i].Version,
-                    Foreground = UIFactory.GetBrush("#5ECB7D"),
-                });
+                    Foreground = UIFactory.GetBrush("#5ECB7D")
+                }.Localize("Text", Loc.Concat(" ", Loc.Option(entries[i].Version!))));
             }
         }
 
@@ -916,22 +910,19 @@ public partial class DetailPanelBuilder
             if (i > 0)
                 target.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
-                    Text       = "  ·  ",
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                });
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
+                }.Localize("Text", "  ·  "));
 
             target.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text       = entries[i].Label,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+            }.Localize("Text", entries[i].Label));
 
             if (!string.IsNullOrWhiteSpace(entries[i].Version))
                 target.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
-                    Text       = " " + entries[i].Version,
-                    Foreground = UIFactory.GetBrush("#5ECB7D"),
-                });
+                    Foreground = UIFactory.GetBrush("#5ECB7D")
+                }.Localize("Text", " " + entries[i].Version));
         }
         return true;
     }
@@ -990,9 +981,9 @@ public partial class DetailPanelBuilder
         var excluded = new List<string>();
         if (_window.ViewModel.IsUpdateAllExcludedReShade(card.GameName, card.Source ?? "")) excluded.Add("RS");
         if (_window.ViewModel.IsUpdateAllExcludedRenoDx(card.GameName, card.Source ?? "")) excluded.Add("RDX");
-        if (_window.ViewModel.IsUpdateAllExcludedUl(card.GameName, card.Source ?? ""))     excluded.Add("RL");
-        if (_window.ViewModel.IsUpdateAllExcludedDc(card.GameName, card.Source ?? ""))     excluded.Add("DC");
-        if (_window.ViewModel.IsUpdateAllExcludedOs(card.GameName, card.Source ?? ""))     excluded.Add("OS");
+        if (_window.ViewModel.IsUpdateAllExcludedUl(card.GameName, card.Source ?? "")) excluded.Add("RL");
+        if (_window.ViewModel.IsUpdateAllExcludedDc(card.GameName, card.Source ?? "")) excluded.Add("DC");
+        if (_window.ViewModel.IsUpdateAllExcludedOs(card.GameName, card.Source ?? "")) excluded.Add("OS");
         if (excluded.Count > 0)
             entries.Add(("Excluded:", string.Join(" ", excluded)));
 
@@ -1033,44 +1024,42 @@ public partial class DetailPanelBuilder
 
         var arrowText = new TextBlock
         {
-            Text        = isCollapsed ? "▶" : "▼",
-            FontSize    = 10,
-            Foreground  = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            FontSize = 10,
+            Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin      = new Thickness(0, 0, 6, 0),
-        };
+            Margin = new Thickness(0, 0, 6, 0)
+        }.Localize("Text", isCollapsed ? "▶" : "▼");
 
         var titleText = new TextBlock
         {
-            Text       = title,
-            FontSize   = 13,
+            FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", title);
 
         var headerRow = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing     = 0,
+            Spacing = 0,
         };
         headerRow.Children.Add(arrowText);
         headerRow.Children.Add(titleText);
 
         // Make the header row behave like a button
         headerRow.PointerEntered += (s, e) => titleText.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
-        headerRow.PointerExited  += (s, e) => titleText.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
+        headerRow.PointerExited += (s, e) => titleText.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
 
         // Hand cursor on hover
-        var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        var handCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
         var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
-        var cursorProp  = DetailPanelBuilder.CursorProp;
+        var cursorProp = DetailPanelBuilder.CursorProp;
         headerRow.PointerEntered += (s, e) => cursorProp?.SetValue(headerRow, handCursor);
-        headerRow.PointerExited  += (s, e) => cursorProp?.SetValue(headerRow, arrowCursor);
+        headerRow.PointerExited += (s, e) => cursorProp?.SetValue(headerRow, arrowCursor);
 
         var body = new StackPanel
         {
-            Spacing    = 10,
+            Spacing = 10,
             Visibility = isCollapsed ? Visibility.Collapsed : Visibility.Visible,
         };
 
@@ -1079,7 +1068,7 @@ public partial class DetailPanelBuilder
         {
             bool nowCollapsed = body.Visibility == Visibility.Visible;
             body.Visibility = nowCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            arrowText.Text  = nowCollapsed ? "▶" : "▼";
+            arrowText.Text = nowCollapsed ? "▶" : "▼";
 
             if (nowCollapsed)
                 settings.CollapsedDetailSections.Add(sectionKey);

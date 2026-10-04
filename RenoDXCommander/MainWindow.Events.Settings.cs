@@ -1,4 +1,4 @@
-﻿// MainWindow.Events.Settings.cs — Settings page button click and ComboBox change handlers.
+// MainWindow.Events.Settings.cs — Settings page button click and ComboBox change handlers.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
@@ -28,12 +28,9 @@ public sealed partial class MainWindow
             {
                 var dlg = new ContentDialog
                 {
-                    Title = "RHI is up to date",
-                    Content = $"You're running v{Services.CrashReporter.AppVersion} — no updates available.",
-                    CloseButtonText = "OK",
                     XamlRoot = Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("RHI is up to date")).Localize("Content", Loc.Format($"You're running v{Services.CrashReporter.AppVersion} — no updates available.")).Localize("CloseButtonText", Loc.Get("OK"));
                 await DialogService.ShowSafeAsync(dlg);
             }
             else
@@ -238,10 +235,9 @@ public sealed partial class MainWindow
         {
             DlssDefaultsSummaryPanel.Children.Add(new TextBlock
             {
-                Text = "No defaults configured yet.",
                 FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
+            }.Localize("Text", Loc.Get("No defaults configured yet.")));
             return;
         }
 
@@ -256,10 +252,10 @@ public sealed partial class MainWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var srCol = new StackPanel { Spacing = 2 };
-        srCol.Children.Add(new TextBlock { Text = "DLSS", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
-        if (s.DefaultSrDriverOverride) srCol.Children.Add(MakeSummaryText("NVIDIA Override"));
+        srCol.Children.Add(new TextBlock { FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) }.Localize("Text", "DLSS"));
+        if (s.DefaultSrDriverOverride) srCol.Children.Add(MakeSummaryText(Loc.Get("NVIDIA Override")));
         else if (!string.IsNullOrEmpty(s.DefaultDlssVersion)) srCol.Children.Add(MakeSummaryText(s.DefaultDlssVersion));
-        if (s.DefaultSrPreset != 0) srCol.Children.Add(MakeSummaryText($"Preset {DlssPresetService.SrPresets.FirstOrDefault(p => p.Value == s.DefaultSrPreset).Name ?? "?"}"));
+        if (s.DefaultSrPreset != 0) srCol.Children.Add(MakeSummaryText(Loc.Format($"Preset {DlssPresetService.SrPresets.FirstOrDefault(p => p.Value == s.DefaultSrPreset).Name ?? "?"}")));
         if (s.DefaultSrRenderScale != 0) srCol.Children.Add(MakeSummaryText($"{s.DefaultSrRenderScale}%"));
         Grid.SetColumn(srCol, 0);
         grid.Children.Add(srCol);
@@ -267,10 +263,10 @@ public sealed partial class MainWindow
         grid.Children.Add(MakeSummaryDivider(1));
 
         var rrCol = new StackPanel { Spacing = 2 };
-        rrCol.Children.Add(new TextBlock { Text = "RR", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
-        if (s.DefaultRrDriverOverride) rrCol.Children.Add(MakeSummaryText("NVIDIA Override"));
+        rrCol.Children.Add(new TextBlock { FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) }.Localize("Text", "RR"));
+        if (s.DefaultRrDriverOverride) rrCol.Children.Add(MakeSummaryText(Loc.Get("NVIDIA Override")));
         else if (!string.IsNullOrEmpty(s.DefaultDlssdVersion)) rrCol.Children.Add(MakeSummaryText(s.DefaultDlssdVersion));
-        if (s.DefaultRrPreset != 0) rrCol.Children.Add(MakeSummaryText($"Preset {DlssPresetService.RrPresets.FirstOrDefault(p => p.Value == s.DefaultRrPreset).Name ?? "?"}"));
+        if (s.DefaultRrPreset != 0) rrCol.Children.Add(MakeSummaryText(Loc.Format($"Preset {DlssPresetService.RrPresets.FirstOrDefault(p => p.Value == s.DefaultRrPreset).Name ?? "?"}")));
         if (s.DefaultRrRenderScale != 0) rrCol.Children.Add(MakeSummaryText($"{s.DefaultRrRenderScale}%"));
         Grid.SetColumn(rrCol, 2);
         grid.Children.Add(rrCol);
@@ -278,17 +274,17 @@ public sealed partial class MainWindow
         grid.Children.Add(MakeSummaryDivider(3));
 
         var fgCol = new StackPanel { Spacing = 2 };
-        fgCol.Children.Add(new TextBlock { Text = "FG", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
-        if (s.DefaultFgDriverOverride) fgCol.Children.Add(MakeSummaryText("NVIDIA Override"));
+        fgCol.Children.Add(new TextBlock { FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) }.Localize("Text", "FG"));
+        if (s.DefaultFgDriverOverride) fgCol.Children.Add(MakeSummaryText(Loc.Get("NVIDIA Override")));
         else if (!string.IsNullOrEmpty(s.DefaultDlssgVersion)) fgCol.Children.Add(MakeSummaryText(s.DefaultDlssgVersion));
-        if (s.DefaultFgPreset != 0) fgCol.Children.Add(MakeSummaryText($"Preset {DlssPresetService.FgPresets.FirstOrDefault(p => p.Value == s.DefaultFgPreset).Name ?? "?"}"));
+        if (s.DefaultFgPreset != 0) fgCol.Children.Add(MakeSummaryText(Loc.Format($"Preset {DlssPresetService.FgPresets.FirstOrDefault(p => p.Value == s.DefaultFgPreset).Name ?? "?"}")));
         Grid.SetColumn(fgCol, 4);
         grid.Children.Add(fgCol);
 
         grid.Children.Add(MakeSummaryDivider(5));
 
         var slCol = new StackPanel { Spacing = 2 };
-        slCol.Children.Add(new TextBlock { Text = "SL", FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) });
+        slCol.Children.Add(new TextBlock { FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) }.Localize("Text", "SL"));
         if (!string.IsNullOrEmpty(s.DefaultStreamlineVersion)) slCol.Children.Add(MakeSummaryText(s.DefaultStreamlineVersion));
         Grid.SetColumn(slCol, 6);
         grid.Children.Add(slCol);
@@ -298,10 +294,9 @@ public sealed partial class MainWindow
 
     private static TextBlock MakeSummaryText(string text) => new TextBlock
     {
-        Text = text,
         FontSize = 10,
-        Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-    };
+        Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
+    }.Localize("Text", text);
 
     private static Border MakeSummaryDivider(int column)
     {
@@ -417,13 +412,10 @@ public sealed partial class MainWindow
         var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
         var dialog = new ContentDialog
         {
-            Title = "Custom FPS Limit",
             Content = textBox,
-            PrimaryButtonText = "Set",
-            CloseButtonText = "Cancel",
             XamlRoot = this.Content.XamlRoot,
-            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-        };
+            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Custom FPS Limit")).Localize("PrimaryButtonText", Loc.Get("Set")).Localize("CloseButtonText", Loc.Get("Cancel"));
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text, out var fps) && fps >= 20 && fps <= 1000)
         {
@@ -510,13 +502,10 @@ public sealed partial class MainWindow
         var textBox = new TextBox { PlaceholderText = "20-1000", FontSize = 13 };
         var dialog = new ContentDialog
         {
-            Title = "Custom DMFG Target FPS",
             Content = textBox,
-            PrimaryButtonText = "Set",
-            CloseButtonText = "Cancel",
             XamlRoot = this.Content.XamlRoot,
-            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-        };
+            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Custom DMFG Target FPS")).Localize("PrimaryButtonText", Loc.Get("Set")).Localize("CloseButtonText", Loc.Get("Cancel"));
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result == ContentDialogResult.Primary && uint.TryParse(textBox.Text, out var fps) && fps >= 20 && fps <= 1000)
         {
@@ -632,17 +621,19 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Create Missing Profiles",
             Content = new ScrollViewer
             {
-                Content = new TextBlock { Text = content, TextWrapping = TextWrapping.Wrap, FontSize = 12 },
+                Content = new TextBlock
+                {
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 12
+                }.Localize("Text", content),
                 MaxHeight = 400,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             },
-            CloseButtonText = "OK",
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Create Missing Profiles")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -663,12 +654,9 @@ public sealed partial class MainWindow
             {
                 await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "Export",
-                    Content = "No custom profile settings found to export.",
-                    CloseButtonText = "OK",
                     XamlRoot = Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                });
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("Export")).Localize("Content", Loc.Get("No custom profile settings found to export.")).Localize("CloseButtonText", Loc.Get("OK")));
                 return;
             }
 
@@ -681,24 +669,18 @@ public sealed partial class MainWindow
 
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Export Complete",
-                Content = $"Exported {data.Count} profile(s) to:\n{path}",
-                CloseButtonText = "OK",
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Export Complete")).Localize("Content", Loc.Format($"Exported {data.Count} profile(s) to:\n{path}")).Localize("CloseButtonText", Loc.Get("OK")));
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[ExportNvidiaProfiles_Click] Error: {ex.GetType().Name}: {ex.Message}");
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Export Failed",
-                Content = $"An error occurred during export:\n{ex.Message}",
-                CloseButtonText = "OK",
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Export Failed")).Localize("Content", Loc.Format($"An error occurred during export:\n{ex.Message}")).Localize("CloseButtonText", Loc.Get("OK")));
         }
     }
 
@@ -712,12 +694,9 @@ public sealed partial class MainWindow
         {
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Import",
-                Content = $"No backup file found at:\n{path}\n\nBackup profiles first.",
-                CloseButtonText = "OK",
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Import")).Localize("Content", Loc.Format($"No backup file found at:\n{path}\n\nBackup profiles first.")).Localize("CloseButtonText", Loc.Get("OK")));
             return;
         }
 
@@ -727,46 +706,40 @@ public sealed partial class MainWindow
 
         // Confirm before proceeding — importing overwrites driver profile settings irreversibly
         bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
-        var warningText = "This will overwrite your current NVIDIA driver profile settings with the saved backup. This cannot be undone.";
+        var warningText = Loc.Get("This will overwrite your current NVIDIA driver profile settings with the saved backup. This cannot be undone.");
         if (!isAdmin)
-            warningText += "\n\nYou are not running as admin. Settings that require elevated privileges (e.g. ReBAR) will not be restored. Run RHI as admin to import all settings.";
+            warningText += Loc.Get("\n\nYou are not running as admin. Settings that require elevated privileges (e.g. ReBAR) will not be restored. Run RHI as admin to import all settings.");
 
         var confirmResult = await DialogService.ShowSafeAsync(new ContentDialog
         {
-            Title = "Restore Profiles",
             Content = new TextBlock
             {
-                Text = warningText,
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = 12,
-            },
-            PrimaryButtonText = "Import",
-            CloseButtonText = "Cancel",
+                FontSize = 12
+            }.Localize("Text", Loc.Get(warningText)),
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        });
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Restore Profiles")).Localize("PrimaryButtonText", Loc.Get("Import")).Localize("CloseButtonText", Loc.Get("Cancel")));
         if (confirmResult != ContentDialogResult.Primary) return;
 
         // Show progress dialog
         var progressText = new TextBlock
         {
-            Text = "Importing profiles...",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            TextWrapping = TextWrapping.Wrap,
-        };
+            TextWrapping = TextWrapping.Wrap
+        }.Localize("Text", Loc.Get("Importing profiles..."));
         var progressPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         progressPanel.Children.Add(new ProgressRing { IsActive = true, Width = 20, Height = 20 });
         progressPanel.Children.Add(progressText);
 
         var progressDialog = new ContentDialog
         {
-            Title = "Importing...",
             Content = progressPanel,
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Importing..."));
+
         // Use explicit gate pattern to avoid race condition where fire-and-forget ShowSafeAsync
         // hasn't acquired the gate yet when progressDialog.Hide() is called
         bool importGateReleased = false;
@@ -785,12 +758,9 @@ public sealed partial class MainWindow
 
         await DialogService.ShowSafeAsync(new ContentDialog
         {
-            Title = "Import Complete",
-            Content = $"Imported {count} profile(s) from backup.",
-            CloseButtonText = "OK",
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        });
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Import Complete")).Localize("Content", Loc.Format($"Imported {count} profile(s) from backup.")).Localize("CloseButtonText", Loc.Get("OK")));
     }
 
     private async void DigitalVibrance_Click(object sender, RoutedEventArgs e)
@@ -802,12 +772,9 @@ public sealed partial class MainWindow
             {
                 await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "Digital Vibrance",
-                    Content = "No NVIDIA displays detected. Digital Vibrance requires an NVIDIA GPU with compatible drivers.",
-                    CloseButtonText = "OK",
                     XamlRoot = Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                });
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("Digital Vibrance")).Localize("Content", Loc.Get("No NVIDIA displays detected. Digital Vibrance requires an NVIDIA GPU with compatible drivers.")).Localize("CloseButtonText", Loc.Get("OK")));
                 return;
             }
 
@@ -826,10 +793,9 @@ public sealed partial class MainWindow
 
             var displayLabel = new TextBlock
             {
-                Text = "Monitor",
                 FontSize = 11,
-                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-            };
+                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush)
+            }.Localize("Text", Loc.Get("Monitor"));
 
             // Slider + value display
             var sliderValueText = new TextBlock
@@ -850,11 +816,10 @@ public sealed partial class MainWindow
 
             var sliderLabel = new TextBlock
             {
-                Text = "Digital Vibrance (0 = desaturated, 50 = neutral, 100 = maximum)",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-                TextWrapping = TextWrapping.Wrap,
-            };
+                TextWrapping = TextWrapping.Wrap
+            }.Localize("Text", Loc.Get("Digital Vibrance (0 = desaturated, 50 = neutral, 100 = maximum)"));
 
             // Load current level for the first display
             var currentLevel = DigitalVibranceService.GetLevel(displays[0].Index);
@@ -886,22 +851,20 @@ public sealed partial class MainWindow
             // Buttons row
             var saveBtn = new Button
             {
-                Content = "Save",
                 Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
                 Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
                 BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(16, 6, 16, 6),
-                FontSize = 12,
-            };
+                FontSize = 12
+            }.Localize("Content", Loc.Get("Save"));
             var resetBtn = new Button
             {
-                Content = "Reset to 50",
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(16, 6, 16, 6),
-                FontSize = 12,
-            };
+                FontSize = 12
+            }.Localize("Content", Loc.Get("Reset to 50"));
             var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             btnRow.Children.Add(saveBtn);
             btnRow.Children.Add(resetBtn);
@@ -921,7 +884,7 @@ public sealed partial class MainWindow
                     var level = (int)slider.Value;
                     settings.DigitalVibranceSettings[displays[idx].Index.ToString()] = level;
                     ViewModel.SaveSettingsPublic();
-                    statusText.Text = $"Saved: Display {displays[idx].Name} = {level}%";
+                    statusText.Localize("Text", Loc.Format($"Saved: Display {displays[idx].Name} = {level}%"));
                     CrashReporter.Log($"[DigitalVibrance_Click] Saved display {displays[idx].Index} ({displays[idx].Name}) = {level}");
                 }
             };
@@ -936,7 +899,7 @@ public sealed partial class MainWindow
                     DigitalVibranceService.SetLevel(displays[idx].Index, 50);
                     settings.DigitalVibranceSettings[displays[idx].Index.ToString()] = 50;
                     ViewModel.SaveSettingsPublic();
-                    statusText.Text = $"Reset: Display {displays[idx].Name} = 50% (neutral)";
+                    statusText.Localize("Text", Loc.Format($"Reset: Display {displays[idx].Name} = 50% (neutral)"));
                 }
             };
 
@@ -959,12 +922,10 @@ public sealed partial class MainWindow
 
             var dialog = new ContentDialog
             {
-                Title = "Digital Vibrance",
                 Content = panel,
-                CloseButtonText = "Close",
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Digital Vibrance")).Localize("CloseButtonText", Loc.Get("Close"));
 
             await DialogService.ShowSafeAsync(dialog);
         }
@@ -978,19 +939,14 @@ public sealed partial class MainWindow
     {
         var confirmDialog = new ContentDialog
         {
-            Title = "Reset all game profiles?",
-            Content = new TextBlock
-            {
-                Text = "This will remove ALL per-game NVIDIA driver profile overrides (DLSS/Streamline versions, presets, render scales, ReBAR, VSync, Smooth Motion, Low Latency, Power Mode — everything) AND reset global settings (Shader Cache, G-Sync, Refresh Rate, ReBAR) to defaults.\n\nAll profiles will return to NVIDIA factory defaults. This cannot be undone.",
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                FontSize = 13,
-            },
-            PrimaryButtonText = "Reset All",
-            CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Reset all game profiles?")).Localize("Content", new TextBlock
+        {
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            FontSize = 13
+        }.Localize("Text", Loc.Get("This will remove ALL per-game NVIDIA driver profile overrides (DLSS/Streamline versions, presets, render scales, ReBAR, VSync, Smooth Motion, Low Latency, Power Mode — everything) AND reset global settings (Shader Cache, G-Sync, Refresh Rate, ReBAR) to defaults.\n\nAll profiles will return to NVIDIA factory defaults. This cannot be undone."))).Localize("PrimaryButtonText", Loc.Get("Reset All")).Localize("CloseButtonText", Loc.Get("Cancel"));
         var result = await DialogService.ShowSafeAsync(confirmDialog);
         if (result != ContentDialogResult.Primary) return;
 
@@ -1005,7 +961,11 @@ public sealed partial class MainWindow
             // Show progress dialog
             var progressPanel = new StackPanel { Spacing = 8 };
             var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
-            var progressText = new TextBlock { Text = "Preparing...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+            var progressText = new TextBlock
+            {
+                FontSize = 13,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+            }.Localize("Text", Loc.Get("Preparing..."));
             var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
             progressRow.Children.Add(progressRing);
             progressRow.Children.Add(progressText);
@@ -1013,12 +973,11 @@ public sealed partial class MainWindow
 
             var progressDialog = new ContentDialog
             {
-                Title = "Resetting...",
                 Content = progressPanel,
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
-            
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Resetting..."));
+
             // Use explicit gate pattern to avoid race condition where fire-and-forget ShowSafeAsync
             // hasn't acquired the gate yet when progressDialog.Hide() is called
             bool resetGateReleased = false;
@@ -1043,7 +1002,7 @@ public sealed partial class MainWindow
 
                 // Reset global profile
                 DispatcherQueue?.TryEnqueue(() =>
-                    progressText.Text = "Resetting global settings...");
+                    progressText.Text = Loc.Get("Resetting global settings..."));
                 presetSvc.ResetGlobalProfile();
             });
 
@@ -1066,24 +1025,18 @@ public sealed partial class MainWindow
 
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Profiles Reset",
-                Content = $"Reset {resetCount} game profile(s) and global settings to factory defaults.",
-                CloseButtonText = "OK",
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Profiles Reset")).Localize("Content", Loc.Format($"Reset {resetCount} game profile(s) and global settings to factory defaults.")).Localize("CloseButtonText", Loc.Get("OK")));
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[ResetAllNvidiaProfiles_Click] Error: {ex.GetType().Name}: {ex.Message}");
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Reset Failed",
-                Content = $"Error: {ex.Message}",
-                CloseButtonText = "OK",
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Reset Failed")).Localize("Content", Loc.Format($"Error: {ex.Message}")).Localize("CloseButtonText", Loc.Get("OK")));
         }
     }
 
@@ -1091,14 +1044,10 @@ public sealed partial class MainWindow
     {
         var confirmDialog = new ContentDialog
         {
-            Title = "Clear NVIDIA Shader Cache",
-            Content = "This will permanently delete the NVIDIA DXCache and GLCache folders. This cannot be undone.\n\nAll games will need to rebuild their shader caches on next launch, which may cause brief stuttering or longer load times the first time. This can fix shader corruption, persistent stuttering, or graphical issues after driver updates.",
-            PrimaryButtonText = "Clear",
-            CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Clear NVIDIA Shader Cache")).Localize("Content", Loc.Get("This will permanently delete the NVIDIA DXCache and GLCache folders. This cannot be undone.\n\nAll games will need to rebuild their shader caches on next launch, which may cause brief stuttering or longer load times the first time. This can fix shader corruption, persistent stuttering, or graphical issues after driver updates.")).Localize("PrimaryButtonText", Loc.Get("Clear")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(confirmDialog);
         if (result != ContentDialogResult.Primary) return;
@@ -1140,12 +1089,10 @@ public sealed partial class MainWindow
 
         await DialogService.ShowSafeAsync(new ContentDialog
         {
-            Title = "Shader Cache Cleared",
             Content = message,
-            CloseButtonText = "OK",
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        });
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Shader Cache Cleared")).Localize("CloseButtonText", Loc.Get("OK")));
     }
 
     private async void DlssIndicatorCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1256,21 +1203,17 @@ public sealed partial class MainWindow
 
         panel.Children.Add(new TextBlock
         {
-            Text = "Leave all unchecked to enable HDR on the primary display only.",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-            Margin = new Thickness(0, 4, 0, 0),
-        });
+            Margin = new Thickness(0, 4, 0, 0)
+        }.Localize("Text", Loc.Get("Leave all unchecked to enable HDR on the primary display only.")));
 
         var dialog = new ContentDialog
         {
-            Title = "Select HDR Monitors",
             Content = panel,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Select HDR Monitors")).Localize("PrimaryButtonText", Loc.Get("Save")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result != ContentDialogResult.Primary) return;
@@ -1448,23 +1391,20 @@ public sealed partial class MainWindow
         var depthLabel = (ColorDepthCombo.SelectedItem as ComboBoxItem)?.Content as string
                       ?? ColorDepthCombo.SelectedItem as string ?? "10 bpc";
         var rangeLabel = (ColorRangeCombo.SelectedItem as ComboBoxItem)?.Content as string
-                      ?? ColorRangeCombo.SelectedItem as string ?? "Full";
+                      ?? ColorRangeCombo.SelectedItem as string ?? Loc.Get("Full");
 
         byte bpc = NvColorService.LabelToBpc(depthLabel);
-        byte dr  = NvColorService.LabelToDynamicRange(rangeLabel);
+        byte dr = NvColorService.LabelToDynamicRange(rangeLabel);
 
         bool ok = await Task.Run(() => NvColorService.SetColorData(display.DisplayId, bpc, dr));
 
         var dialog = new ContentDialog
         {
-            Title   = "Output Colour Settings",
-            Content = ok
-                ? $"Applied to {display.Name}: {depthLabel}, {rangeLabel}."
-                : $"Failed to apply colour settings to {display.Name}. Check that RHI is running as administrator.",
-            CloseButtonText = "OK",
-            XamlRoot        = Content.XamlRoot,
-            RequestedTheme  = ElementTheme.Dark,
-        };
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Output Colour Settings")).Localize("Content", ok
+                ? Loc.Format($"Applied to {display.Name}: {depthLabel}, {rangeLabel}.")
+                : Loc.Format($"Failed to apply colour settings to {display.Name}. Check that RHI is running as administrator.")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -1491,21 +1431,17 @@ public sealed partial class MainWindow
 
         panel.Children.Add(new TextBlock
         {
-            Text = "Leave all unchecked to change resolution on the primary display only.",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-            Margin = new Thickness(0, 4, 0, 0),
-        });
+            Margin = new Thickness(0, 4, 0, 0)
+        }.Localize("Text", Loc.Get("Leave all unchecked to change resolution on the primary display only.")));
 
         var dialog = new ContentDialog
         {
-            Title = "Select Resolution Monitors",
             Content = panel,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Select Resolution Monitors")).Localize("PrimaryButtonText", Loc.Get("Save")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result != ContentDialogResult.Primary) return;
@@ -1545,7 +1481,7 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
 
         bool resActive = string.Equals(newValue, "On", StringComparison.OrdinalIgnoreCase);
-        DetailResToggleText.Text = "RES";
+        DetailResToggleText.Localize("Text", Loc.Get("RES"));
         DetailResToggleBtn.Background = resActive
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
             : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
@@ -1655,11 +1591,10 @@ public sealed partial class MainWindow
         var enablePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         enablePanel.Children.Add(new TextBlock
         {
-            Text = "Auto-apply peak nits on deploy",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        });
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", Loc.Get("Auto-apply peak nits on deploy")));
         var enableCombo = new ComboBox { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
         enableCombo.Items.Add("Off");
         enableCombo.Items.Add("On");
@@ -1670,37 +1605,31 @@ public sealed partial class MainWindow
         // Preset checkboxes
         content.Children.Add(new TextBlock
         {
-            Text = "Apply to presets:",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            Margin = new Thickness(0, 4, 0, 0),
-        });
+            Margin = new Thickness(0, 4, 0, 0)
+        }.Localize("Text", Loc.Get("Apply to presets:")));
 
-        var cb1 = new CheckBox { Content = "Preset 1", IsChecked = settings.PeakNitsPresets.Contains(1), FontSize = 12 };
-        var cb2 = new CheckBox { Content = "Preset 2", IsChecked = settings.PeakNitsPresets.Contains(2), FontSize = 12 };
-        var cb3 = new CheckBox { Content = "Preset 3", IsChecked = settings.PeakNitsPresets.Contains(3), FontSize = 12 };
+        var cb1 = new CheckBox { Content = Loc.Get("Preset 1"), IsChecked = settings.PeakNitsPresets.Contains(1), FontSize = 12 };
+        var cb2 = new CheckBox { Content = Loc.Get("Preset 2"), IsChecked = settings.PeakNitsPresets.Contains(2), FontSize = 12 };
+        var cb3 = new CheckBox { Content = Loc.Get("Preset 3"), IsChecked = settings.PeakNitsPresets.Contains(3), FontSize = 12 };
         content.Children.Add(cb1);
         content.Children.Add(cb2);
         content.Children.Add(cb3);
 
         content.Children.Add(new TextBlock
         {
-            Text = "Unchecked presets keep their existing per-preset values.",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
-            TextWrapping = TextWrapping.Wrap,
-        });
+            TextWrapping = TextWrapping.Wrap
+        }.Localize("Text", Loc.Get("Unchecked presets keep their existing per-preset values.")));
 
         var dialog = new ContentDialog
         {
-            Title = "Peak Nits Settings",
-            Content = content,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = (sender as FrameworkElement)?.XamlRoot ?? Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Peak Nits Settings")).Localize("Content", content).Localize("PrimaryButtonText", Loc.Get("Save")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result != ContentDialogResult.Primary) return;
@@ -1725,7 +1654,7 @@ public sealed partial class MainWindow
 
     private void AboutButton_Click(object sender, RoutedEventArgs e)
     {
-        AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+        AboutVersionText.Localize("Text", Loc.Format($"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW"));
         ViewModel.NavigateToAboutCommand.Execute(null);
     }
 
@@ -1749,30 +1678,27 @@ public sealed partial class MainWindow
             {
                 wikiListPanel.Children.Add(new TextBlock
                 {
-                    Text = $"• {modName}",
                     FontSize = 12,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
-                });
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"]
+                }.Localize("Text", $"• {modName}"));
             }
             if (newWikiMods.Count > 30)
             {
                 wikiListPanel.Children.Add(new TextBlock
                 {
-                    Text = $"... and {newWikiMods.Count - 30} more",
                     FontSize = 12,
                     FontStyle = Windows.UI.Text.FontStyle.Italic,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
-                });
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"]
+                }.Localize("Text", Loc.Format($"... and {newWikiMods.Count - 30} more")));
             }
 
             var wikiSection = new StackPanel { Spacing = 8 };
             wikiSection.Children.Add(new TextBlock
             {
-                Text = $"🖥️ {newWikiMods.Count} new RenoDX mod{(newWikiMods.Count == 1 ? "" : "s")}:",
                 FontSize = 13,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
-            });
+                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"]
+            }.Localize("Text", Loc.Format($"🖥️ {newWikiMods.Count} new RenoDX mod{(newWikiMods.Count == 1 ? "" : "s")}:")));
             wikiSection.Children.Add(new ScrollViewer
             {
                 Content = wikiListPanel,
@@ -1790,24 +1716,22 @@ public sealed partial class MainWindow
             {
                 ultraPlusListPanel.Children.Add(new TextBlock
                 {
-                    Text = $"• {modName}",
                     FontSize = 12,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
-                });
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"]
+                }.Localize("Text", $"• {modName}"));
             }
             if (newUltraPlusMods.Count > 30)
             {
                 ultraPlusListPanel.Children.Add(new TextBlock
                 {
-                    Text = $"... and {newUltraPlusMods.Count - 30} more",
                     FontSize = 12,
                     FontStyle = Windows.UI.Text.FontStyle.Italic,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
-                });
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"]
+                }.Localize("Text", Loc.Format($"... and {newUltraPlusMods.Count - 30} more")));
             }
 
             var ultraPlusSection = new StackPanel { Spacing = 8 };
-            
+
             // Header with U+ icon
             var ultraPlusHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             ultraPlusHeader.Children.Add(new Image
@@ -1819,12 +1743,11 @@ public sealed partial class MainWindow
             });
             ultraPlusHeader.Children.Add(new TextBlock
             {
-                Text = $"{newUltraPlusMods.Count} new Ultra+ mod{(newUltraPlusMods.Count == 1 ? "" : "s")}:",
                 FontSize = 13,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
-                VerticalAlignment = VerticalAlignment.Center,
-            });
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", Loc.Format($"{newUltraPlusMods.Count} new Ultra+ mod{(newUltraPlusMods.Count == 1 ? "" : "s")}:")));
             ultraPlusSection.Children.Add(ultraPlusHeader);
             ultraPlusSection.Children.Add(new ScrollViewer
             {
@@ -1843,30 +1766,27 @@ public sealed partial class MainWindow
             {
                 lumaListPanel.Children.Add(new TextBlock
                 {
-                    Text = $"• {modName}",
                     FontSize = 12,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
-                });
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"]
+                }.Localize("Text", $"• {modName}"));
             }
             if (newLumaMods.Count > 30)
             {
                 lumaListPanel.Children.Add(new TextBlock
                 {
-                    Text = $"... and {newLumaMods.Count - 30} more",
                     FontSize = 12,
                     FontStyle = Windows.UI.Text.FontStyle.Italic,
-                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
-                });
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"]
+                }.Localize("Text", Loc.Format($"... and {newLumaMods.Count - 30} more")));
             }
 
             var lumaSection = new StackPanel { Spacing = 8 };
             lumaSection.Children.Add(new TextBlock
             {
-                Text = $"🌙 {newLumaMods.Count} new Luma mod{(newLumaMods.Count == 1 ? "" : "s")}:",
                 FontSize = 13,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
-            });
+                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"]
+            }.Localize("Text", Loc.Format($"🌙 {newLumaMods.Count} new Luma mod{(newLumaMods.Count == 1 ? "" : "s")}:")));
             lumaSection.Children.Add(new ScrollViewer
             {
                 Content = lumaListPanel,
@@ -1879,13 +1799,10 @@ public sealed partial class MainWindow
         var totalCount = newWikiMods.Count + newUltraPlusMods.Count + newLumaMods.Count;
         var dialog = new ContentDialog
         {
-            Title = "New Mods Available",
             Content = contentPanel,
-            PrimaryButtonText = "Dismiss",
-            CloseButtonText = "Close",
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("New Mods Available")).Localize("PrimaryButtonText", Loc.Get("Dismiss")).Localize("CloseButtonText", Loc.Get("Close"));
 
         var result = await DialogService.ShowSafeAsync(dialog);
 
@@ -1914,10 +1831,9 @@ public sealed partial class MainWindow
         // ── Search box ────────────────────────────────────────────────────────
         var searchBox = new TextBox
         {
-            PlaceholderText = "Search games…",
-            FontSize        = 13,
-            Margin          = new Thickness(0, 0, 0, 10),
-        };
+            FontSize = 13,
+            Margin = new Thickness(0, 0, 0, 10)
+        }.Localize("PlaceholderText", Loc.Get("Search games…"));
 
         // ── Column header row ─────────────────────────────────────────────────
         var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 4), Width = 500 };
@@ -1930,29 +1846,28 @@ public sealed partial class MainWindow
         {
             var tb = new TextBlock
             {
-                Text                = text,
-                FontSize            = 11,
-                FontWeight          = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground          = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                FontSize = 11,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 HorizontalAlignment = col == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center,
-            };
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", text);
             Grid.SetColumn(tb, col);
             headerGrid.Children.Add(tb);
         }
-        AddHeader("Game",     0);
-        AddHeader("RenoDX",   1);
-        AddHeader("Luma",     2);
-        AddHeader("Download", 3);
+        AddHeader(Loc.Get("Game"), 0);
+        AddHeader("RenoDX", 1);
+        AddHeader("Luma", 2);
+        AddHeader(Loc.Get("Download"), 3);
 
         // ── Virtualised ListView — only renders visible rows ──────────────────
         var listView = new ListView
         {
-            SelectionMode        = ListViewSelectionMode.None,
-            IsItemClickEnabled   = false,
-            ItemContainerStyle   = null,
-            Height               = 480,
-            Width                = 500,
+            SelectionMode = ListViewSelectionMode.None,
+            IsItemClickEnabled = false,
+            ItemContainerStyle = null,
+            Height = 480,
+            Width = 500,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
         };
 
@@ -1969,38 +1884,35 @@ public sealed partial class MainWindow
 
             var nameBlock = new TextBlock
             {
-                Text              = entry.Name,
-                FontSize          = 12,
-                Foreground        = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
-                TextTrimming      = TextTrimming.CharacterEllipsis,
-            };
+                TextTrimming = TextTrimming.CharacterEllipsis
+            }.Localize("Text", entry.Name);
             Grid.SetColumn(nameBlock, 0);
             row.Children.Add(nameBlock);
 
             var rdxTick = new TextBlock
             {
-                Text                = entry.RenoDXStatus == "Done" ? "✓" : entry.RenoDXStatus == "WIP" ? "🔨" : "✗",
-                FontSize            = 13,
-                Foreground          = entry.RenoDXStatus == "Done" ? UIFactory.GetBrush("#5ECB7D")
-                                    : entry.RenoDXStatus == "WIP"  ? UIFactory.GetBrush("#D4A856")
+                FontSize = 13,
+                Foreground = entry.RenoDXStatus == "Done" ? UIFactory.GetBrush("#5ECB7D")
+                                    : entry.RenoDXStatus == "WIP" ? UIFactory.GetBrush("#D4A856")
                                     : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center,
-            };
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", entry.RenoDXStatus == "Done" ? "✓" : entry.RenoDXStatus == "WIP" ? "🔨" : "✗");
             Grid.SetColumn(rdxTick, 1);
             row.Children.Add(rdxTick);
 
             var lumaTick = new TextBlock
             {
-                Text                = entry.LumaStatus == "Done" ? "✓" : entry.LumaStatus == "WIP" ? "🔨" : "✗",
-                FontSize            = 13,
-                Foreground          = entry.LumaStatus == "Done" ? UIFactory.GetBrush("#B898E8")
-                                    : entry.LumaStatus == "WIP"  ? UIFactory.GetBrush("#D4A856")
+                FontSize = 13,
+                Foreground = entry.LumaStatus == "Done" ? UIFactory.GetBrush("#B898E8")
+                                    : entry.LumaStatus == "WIP" ? UIFactory.GetBrush("#D4A856")
                                     : UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center,
-            };
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", entry.LumaStatus == "Done" ? "✓" : entry.LumaStatus == "WIP" ? "🔨" : "✗");
             Grid.SetColumn(lumaTick, 2);
             row.Children.Add(lumaTick);
 
@@ -2009,13 +1921,12 @@ public sealed partial class MainWindow
             {
                 var linkBtn = new HyperlinkButton
                 {
-                    Content             = "Link",
-                    NavigateUri         = parsedUri,
-                    FontSize            = 11,
-                    Padding             = new Thickness(0),
+                    NavigateUri = parsedUri,
+                    FontSize = 11,
+                    Padding = new Thickness(0),
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment   = VerticalAlignment.Center,
-                };
+                    VerticalAlignment = VerticalAlignment.Center
+                }.Localize("Content", Loc.Get("Link"));
                 Grid.SetColumn(linkBtn, 3);
                 row.Children.Add(linkBtn);
             }
@@ -2023,12 +1934,11 @@ public sealed partial class MainWindow
             {
                 var noLink = new TextBlock
                 {
-                    Text                = "—",
-                    FontSize            = 11,
-                    Foreground          = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                    FontSize = 11,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment   = VerticalAlignment.Center,
-                };
+                    VerticalAlignment = VerticalAlignment.Center
+                }.Localize("Text", "—");
                 Grid.SetColumn(noLink, 3);
                 row.Children.Add(noLink);
             }
@@ -2066,11 +1976,10 @@ public sealed partial class MainWindow
         // ── Assemble dialog content ───────────────────────────────────────────
         var countLabel = new TextBlock
         {
-            Text       = $"{allEntries.Count} games with HDR mods",
-            FontSize   = 11,
+            FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            Margin     = new Thickness(0, 0, 0, 10),
-        };
+            Margin = new Thickness(0, 0, 0, 10)
+        }.Localize("Text", Loc.Format($"{allEntries.Count} games with HDR mods"));
 
         var content = new StackPanel { Spacing = 0, MinWidth = 480, MaxWidth = 520 };
         content.Children.Add(countLabel);
@@ -2078,20 +1987,17 @@ public sealed partial class MainWindow
         content.Children.Add(headerGrid);
         content.Children.Add(new Border
         {
-            Height     = 1,
+            Height = 1,
             Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            Margin     = new Thickness(0, 0, 0, 6),
+            Margin = new Thickness(0, 0, 0, 6),
         });
         content.Children.Add(listView);
 
         var dlg = new ContentDialog
         {
-            Title           = "Available HDR Mods",
-            Content         = content,
-            CloseButtonText = "Close",
-            XamlRoot        = Content.XamlRoot,
-            DefaultButton   = ContentDialogButton.Close,
-        };
+            XamlRoot = Content.XamlRoot,
+            DefaultButton = ContentDialogButton.Close
+        }.Localize("Title", Loc.Get("Available HDR Mods")).Localize("Content", content).Localize("CloseButtonText", Loc.Get("Close"));
 
         await DialogService.ShowSafeAsync(dlg);
     }

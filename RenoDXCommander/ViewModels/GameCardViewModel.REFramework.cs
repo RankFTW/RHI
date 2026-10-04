@@ -13,23 +13,23 @@ public partial class GameCardViewModel
 
     // ── REF computed properties ───────────────────────────────────────────────────
 
-    public string RefActionLabel => RefIsInstalling ? "Installing..."
-        : RefStatus == GameStatus.UpdateAvailable ? "⬆  Update RE Framework"
-        : RefStatus == GameStatus.Installed ? "↺  Reinstall RE Framework"
-        : "⬇  Install RE Framework";
+    public string RefActionLabel => RefIsInstalling ? Loc.Get("Installing...")
+        : RefStatus == GameStatus.UpdateAvailable ? Loc.Get("⬆  Update RE Framework")
+        : RefStatus == GameStatus.Installed ? Loc.Get("↺  Reinstall RE Framework")
+        : Loc.Get("⬇  Install RE Framework");
 
-    public string RefBtnBackground  => RefStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string RefBtnForeground  => RefStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
+    public string RefBtnBackground => RefStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
+    public string RefBtnForeground => RefStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
     public string RefBtnBorderBrush => RefStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     public Visibility RefProgressVisibility => RefIsInstalling ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility RefMessageVisibility  => string.IsNullOrEmpty(RefActionMessage) ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility RefDeleteVisibility   => RefStatus == GameStatus.Installed || RefStatus == GameStatus.UpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility RefMessageVisibility => string.IsNullOrEmpty(RefActionMessage) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility RefDeleteVisibility => RefStatus == GameStatus.Installed || RefStatus == GameStatus.UpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
 
-    public string RefStatusText => RefIsInstalling ? "Installing…"
-        : RefStatus == GameStatus.UpdateAvailable ? "Update"
-        : RefStatus == GameStatus.Installed ? (RefInstalledVersion ?? "Installed")
-        : "Ready";
+    public string RefStatusText => RefIsInstalling ? Loc.Get("Installing…")
+        : RefStatus == GameStatus.UpdateAvailable ? Loc.Get("Update")
+        : RefStatus == GameStatus.Installed ? (RefInstalledVersion ?? Loc.Get("Installed"))
+        : Loc.Get("Ready");
     public string RefStatusColor => RefIsInstalling ? "#D4A856"
         : RefStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : RefStatus == GameStatus.Installed ? "#5ECB7D"

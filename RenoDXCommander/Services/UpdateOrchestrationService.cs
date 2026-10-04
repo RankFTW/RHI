@@ -62,8 +62,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
         foreach (var card in targets)
         {
-            card.IsInstalling  = true;
-            card.ActionMessage = "Updating...";
+            card.IsInstalling = true;
+            card.ActionMessage = Loc.Get("Updating...");
 
             string? originalSnapshotUrl = card.Mod!.SnapshotUrl;
             bool swappedTo32 = card.Is32Bit && card.Mod.SnapshotUrl32 != null;
@@ -75,7 +75,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 var progress = new Progress<(string msg, double pct)>(p =>
                     dispatcherQueue?.TryEnqueue(() =>
                     {
-                        card.ActionMessage   = p.msg;
+                        card.ActionMessage = p.msg;
                         card.InstallProgress = p.pct;
                     }));
                 var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName, card.Source).ConfigureAwait(false);
@@ -143,18 +143,18 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
                 dispatcherQueue?.TryEnqueue(() =>
                 {
-                    card.InstalledRecord        = record;
+                    card.InstalledRecord = record;
                     card.InstalledAddonFileName = record.AddonFileName;
-                    card.RdxInstalledVersion    = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName);
-                    card.Status                 = GameStatus.Installed;
-                    card.ActionMessage          = "✅ Updated!";
+                    card.RdxInstalledVersion = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName);
+                    card.Status = GameStatus.Installed;
+                    card.ActionMessage = Loc.Get("✅ Updated!");
                     card.NotifyAll();
                     card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
                 });
             }
             catch (Exception ex)
             {
-                card.ActionMessage = $"❌ Failed: {ex.Message}";
+                card.ActionMessage = Loc.Format($"❌ Failed: {ex.Message}");
             }
             finally
             {
@@ -207,22 +207,22 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                         _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Skipping {card.GameName} — foreign dxgi.dll detected");
                         dispatcherQueue?.TryEnqueue(() =>
                         {
-                            card.RsActionMessage = "⚠ Skipped — unknown dxgi.dll";
+                            card.RsActionMessage = Loc.Get("⚠ Skipped — unknown dxgi.dll");
                         });
                         continue;
                     }
                 }
             }
 
-            card.RsIsInstalling  = true;
-            card.RsActionMessage = "Updating...";
+            card.RsIsInstalling = true;
+            card.RsActionMessage = Loc.Get("Updating...");
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
                     dispatcherQueue?.TryEnqueue(() =>
                     {
                         card.RsActionMessage = p.msg;
-                        card.RsProgress      = p.pct;
+                        card.RsProgress = p.pct;
                     }));
                 var rsOverride = card.DllOverrideEnabled
                     ? dllOverrideService.GetDllOverride(card.GameName)?.ReShadeFileName
@@ -237,28 +237,28 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 var record = await _auxInstaller.InstallReShadeAsync(
                     card.GameName, card.InstallPath,
                     shaderModeOverride: card.ShaderModeOverride,
-                    use32Bit:       card.Is32Bit,
+                    use32Bit: card.Is32Bit,
                     filenameOverride: rsOverride,
                     selectedPackIds: shaderResolver?.Invoke(card.GameName, card.Source ?? "", card.ShaderModeOverride),
-                    progress:       progress,
+                    progress: progress,
                     useNormalReShade: card.UseNormalReShade,
                     channel: effectiveChannel,
                     store: card.Source,
                     mergeIni: keepRsIniUpdatedResolver == null || keepRsIniUpdatedResolver(card.GameName, card.Source ?? "")).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
-                    card.RsRecord           = record;
-                    card.RsInstalledFile    = record.InstalledAs;
+                    card.RsRecord = record;
+                    card.RsInstalledFile = record.InstalledAs;
                     card.RsInstalledVersion = _auxFileService.ReadInstalledVersion(record.InstallPath, record.InstalledAs);
-                    card.RsStatus           = GameStatus.Installed;
-                    card.RsActionMessage    = "✅ Updated!";
+                    card.RsStatus = GameStatus.Installed;
+                    card.RsActionMessage = Loc.Get("✅ Updated!");
                     card.NotifyAll();
                     card.FadeMessage(m => card.RsActionMessage = m, card.RsActionMessage);
                 });
             }
             catch (Exception ex)
             {
-                card.RsActionMessage = $"❌ Failed: {ex.Message}";
+                card.RsActionMessage = Loc.Format($"❌ Failed: {ex.Message}");
                 _crashReporter.WriteCrashReport("UpdateAllReShade", ex, note: $"Game: {card.GameName}");
             }
             finally { dispatcherQueue?.TryEnqueue(() => card.RsIsInstalling = false); }
@@ -303,31 +303,31 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                         var layerSize = new FileInfo(layer64).Length;
                         if (stagedSize != layerSize)
                         {
-                        try
-                        {
-                            File.Copy(staged64, layer64, overwrite: true);
-                            layerUpdated = true;
-                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 64-bit DLL ({new FileInfo(layer64).Length} bytes)");
-                        }
-                        catch (UnauthorizedAccessException uaEx)
-                        {
-                            // Direct copy denied — try elevated copy via UAC prompt
-                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Direct copy denied — {uaEx.Message}, attempting elevated copy...");
                             try
                             {
-                            await ElevatedFileCopyAsync(staged64, layer64);
+                                File.Copy(staged64, layer64, overwrite: true);
                                 layerUpdated = true;
-                                _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 64-bit DLL via elevated copy");
+                                _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 64-bit DLL ({new FileInfo(layer64).Length} bytes)");
                             }
-                            catch (Exception elevEx)
+                            catch (UnauthorizedAccessException uaEx)
                             {
-                                _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Elevated copy also failed — {elevEx.Message}");
+                                // Direct copy denied — try elevated copy via UAC prompt
+                                _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Direct copy denied — {uaEx.Message}, attempting elevated copy...");
+                                try
+                                {
+                                    await ElevatedFileCopyAsync(staged64, layer64);
+                                    layerUpdated = true;
+                                    _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 64-bit DLL via elevated copy");
+                                }
+                                catch (Exception elevEx)
+                                {
+                                    _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Elevated copy also failed — {elevEx.Message}");
+                                }
                             }
-                        }
-                        catch (IOException ioEx)
-                        {
-                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Vulkan layer 64-bit copy failed (file locked?) — {ioEx.Message}");
-                        }
+                            catch (IOException ioEx)
+                            {
+                                _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Vulkan layer 64-bit copy failed (file locked?) — {ioEx.Message}");
+                            }
                         }
                         else
                         {
@@ -354,27 +354,27 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     var layerSize32 = new FileInfo(layer32).Length;
                     if (stagedSize32 != layerSize32)
                     {
-                    try
-                    {
-                        File.Copy(staged32, layer32, overwrite: true);
-                        _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 32-bit DLL ({new FileInfo(layer32).Length} bytes)");
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
                         try
                         {
-                            await ElevatedFileCopyAsync(staged32, layer32);
-                            _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 32-bit DLL via elevated copy");
+                            File.Copy(staged32, layer32, overwrite: true);
+                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 32-bit DLL ({new FileInfo(layer32).Length} bytes)");
                         }
-                        catch (Exception elevEx)
+                        catch (UnauthorizedAccessException)
                         {
-                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] 32-bit elevated copy failed — {elevEx.Message}");
+                            try
+                            {
+                                await ElevatedFileCopyAsync(staged32, layer32);
+                                _crashReporter.Log("[UpdateOrchestrationService.UpdateAllReShade] Updated Vulkan layer 32-bit DLL via elevated copy");
+                            }
+                            catch (Exception elevEx)
+                            {
+                                _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] 32-bit elevated copy failed — {elevEx.Message}");
+                            }
                         }
-                    }
-                    catch (Exception ex32)
-                    {
-                        _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] 32-bit Vulkan layer copy failed — {ex32.Message}");
-                    }
+                        catch (Exception ex32)
+                        {
+                            _crashReporter.Log($"[UpdateOrchestrationService.UpdateAllReShade] 32-bit Vulkan layer copy failed — {ex32.Message}");
+                        }
                     }
                     else
                     {
@@ -395,7 +395,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             foreach (var vCard in vulkanTargets)
             {
                 vCard.RsIsInstalling = true;
-                vCard.RsActionMessage = "Updating Vulkan ReShade...";
+                vCard.RsActionMessage = Loc.Get("Updating Vulkan ReShade...");
                 try
                 {
                     if (keepRsIniUpdatedResolver == null || keepRsIniUpdatedResolver(vCard.GameName, vCard.Source ?? ""))
@@ -407,14 +407,14 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     {
                         vCard.RsInstalledVersion = vulkanVersion;
                         vCard.RsStatus = GameStatus.Installed;
-                        vCard.RsActionMessage = layerUpdated ? "✅ Updated!" : "✅ Up to date";
+                        vCard.RsActionMessage = layerUpdated ? Loc.Get("✅ Updated!") : Loc.Get("✅ Up to date");
                         vCard.NotifyAll();
                         vCard.FadeMessage(m => vCard.RsActionMessage = m, vCard.RsActionMessage);
                     });
                 }
                 catch (Exception ex)
                 {
-                    vCard.RsActionMessage = $"❌ Failed: {ex.Message}";
+                    vCard.RsActionMessage = Loc.Format($"❌ Failed: {ex.Message}");
                     _crashReporter.WriteCrashReport("UpdateAllReShade.Vulkan", ex, note: $"Game: {vCard.GameName}");
                 }
                 finally { dispatcherQueue?.TryEnqueue(() => vCard.RsIsInstalling = false); }
@@ -468,7 +468,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         foreach (var card in targets)
         {
             card.RefIsInstalling = true;
-            card.RefActionMessage = "Updating...";
+            card.RefActionMessage = Loc.Get("Updating...");
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
@@ -483,14 +483,14 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.RefRecord = record;
                     card.RefInstalledVersion = record.InstalledVersion;
                     card.RefStatus = GameStatus.Installed;
-                    card.RefActionMessage = "✅ Updated!";
+                    card.RefActionMessage = Loc.Get("✅ Updated!");
                     card.NotifyAll();
                     card.FadeMessage(m => card.RefActionMessage = m, card.RefActionMessage);
                 });
             }
             catch (Exception ex)
             {
-                card.RefActionMessage = $"❌ Failed: {ex.Message}";
+                card.RefActionMessage = Loc.Format($"❌ Failed: {ex.Message}");
                 _crashReporter.WriteCrashReport("UpdateAllREFramework", ex, note: $"Game: {card.GameName}");
             }
             finally { dispatcherQueue?.TryEnqueue(() => card.RefIsInstalling = false); }
@@ -513,7 +513,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         foreach (var card in targets)
         {
             card.DofFixIsInstalling = true;
-            card.DofFixActionMessage = "Updating...";
+            card.DofFixActionMessage = Loc.Get("Updating...");
             try
             {
                 var progress = new Progress<(string msg, double pct)>(p =>
@@ -529,19 +529,19 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     {
                         card.DofFixInstalledVersion = dofFixService.StagedVersion;
                         card.DofFixStatus = GameStatus.Installed;
-                        card.DofFixActionMessage = "✅ Updated!";
+                        card.DofFixActionMessage = Loc.Get("✅ Updated!");
                         card.NotifyAll();
                         card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
                     }
                     else
                     {
-                        card.DofFixActionMessage = "❌ Update failed";
+                        card.DofFixActionMessage = Loc.Get("❌ Update failed");
                     }
                 });
             }
             catch (Exception ex)
             {
-                card.DofFixActionMessage = $"❌ Failed: {ex.Message}";
+                card.DofFixActionMessage = Loc.Format($"❌ Failed: {ex.Message}");
                 _crashReporter.WriteCrashReport("UpdateAllDofFix", ex, note: $"Game: {card.GameName}");
             }
             finally { dispatcherQueue?.TryEnqueue(() => card.DofFixIsInstalling = false); }
@@ -564,147 +564,147 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
         if (!skipRdx)
         {
-        var installed = cards
-            .Where(c => c.Status == GameStatus.Installed
-                     && !c.IsExternalOnly
-                     && c.Mod?.SnapshotUrl != null
-                     && c.InstalledRecord?.SnapshotUrl != null)
-            .ToList();
+            var installed = cards
+                .Where(c => c.Status == GameStatus.Installed
+                         && !c.IsExternalOnly
+                         && c.Mod?.SnapshotUrl != null
+                         && c.InstalledRecord?.SnapshotUrl != null)
+                .ToList();
 
-        _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {installed.Count} RenoDX mods to check");
+            _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {installed.Count} RenoDX mods to check");
 
-        // Deduplicate: group by resolved URL so each unique addon is only downloaded once.
-        // Games sharing the same snapshot URL (e.g. all generic Unity games) are checked together.
-        var groupedByUrl = installed.GroupBy(c => ModInstallService.ResolveSnapshotUrlPublic(c.InstalledRecord!.SnapshotUrl!),
-            StringComparer.OrdinalIgnoreCase);
+            // Deduplicate: group by resolved URL so each unique addon is only downloaded once.
+            // Games sharing the same snapshot URL (e.g. all generic Unity games) are checked together.
+            var groupedByUrl = installed.GroupBy(c => ModInstallService.ResolveSnapshotUrlPublic(c.InstalledRecord!.SnapshotUrl!),
+                StringComparer.OrdinalIgnoreCase);
 
-        var tasks = groupedByUrl.Select(async group =>
-        {
-            var resolvedUrl = group.Key;
-            var firstCard = group.First();
-            var firstRecord = firstCard.InstalledRecord!;
-
-            bool updateAvailable;
-            try
+            var tasks = groupedByUrl.Select(async group =>
             {
-                updateAvailable = await _installer.CheckForUpdateAsync(firstRecord).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update check failed for URL '{resolvedUrl}' (representative: '{firstCard.GameName}') — {ex.Message}");
-                return;
-            }
+                var resolvedUrl = group.Key;
+                var firstCard = group.First();
+                var firstRecord = firstCard.InstalledRecord!;
 
-            if (updateAvailable)
-            {
-                // Apply result to ALL games sharing this URL
-                foreach (var card in group)
+                bool updateAvailable;
+                try
                 {
-                    try { _installer.SaveRecordPublic(card.InstalledRecord!); }
-                    catch (Exception ex) { _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Failed to save record for '{card.GameName}' — {ex.Message}"); }
-                    dispatcherQueue?.TryEnqueue(() => { card.Status = GameStatus.UpdateAvailable; });
+                    updateAvailable = await _installer.CheckForUpdateAsync(firstRecord).ConfigureAwait(false);
                 }
-                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update detected for '{resolvedUrl}' — {group.Count()} game(s) flagged");
-            }
-        });
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update check failed for URL '{resolvedUrl}' (representative: '{firstCard.GameName}') — {ex.Message}");
+                    return;
+                }
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
-        _crashReporter.Log("[UpdateOrchestrationService.CheckForUpdatesAsync] RenoDX mod checks complete");
+                if (updateAvailable)
+                {
+                    // Apply result to ALL games sharing this URL
+                    foreach (var card in group)
+                    {
+                        try { _installer.SaveRecordPublic(card.InstalledRecord!); }
+                        catch (Exception ex) { _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Failed to save record for '{card.GameName}' — {ex.Message}"); }
+                        dispatcherQueue?.TryEnqueue(() => { card.Status = GameStatus.UpdateAvailable; });
+                    }
+                    _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update detected for '{resolvedUrl}' — {group.Count()} game(s) flagged");
+                }
+            });
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+            _crashReporter.Log("[UpdateOrchestrationService.CheckForUpdatesAsync] RenoDX mod checks complete");
         }
 
         if (!skipRs)
         {
-        var auxInstalled = cards
-            .Where(c => c.RsStatus == GameStatus.Installed)
-            .Where(c => !c.IsLumaMode) // Luma games bundle their own ReShade — skip update check
-            .Where(c => !c.RequiresVulkanInstall) // Vulkan games use a global layer — handled separately in UpdateAllReShade
-            .Where(c => c.OsStatus != GameStatus.Installed) // OptiScaler deploys as dxgi.dll — size check gives false positive
-            .ToList();
+            var auxInstalled = cards
+                .Where(c => c.RsStatus == GameStatus.Installed)
+                .Where(c => !c.IsLumaMode) // Luma games bundle their own ReShade — skip update check
+                .Where(c => !c.RequiresVulkanInstall) // Vulkan games use a global layer — handled separately in UpdateAllReShade
+                .Where(c => c.OsStatus != GameStatus.Installed) // OptiScaler deploys as dxgi.dll — size check gives false positive
+                .ToList();
 
-        _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {auxInstalled.Count} aux (RS) cards to check");
-        foreach (var c in auxInstalled)
-            _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Aux check: {c.GameName} RS={c.RsStatus} RsRec={c.RsRecord != null}");
+            _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {auxInstalled.Count} aux (RS) cards to check");
+            foreach (var c in auxInstalled)
+                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Aux check: {c.GameName} RS={c.RsStatus} RsRec={c.RsRecord != null}");
 
-        var auxTasks = auxInstalled.Select(card =>
-            card.RsRecord != null ? CheckAuxUpdate(card, card.RsRecord, isRs: true, dispatcherQueue) : Task.CompletedTask
-        );
+            var auxTasks = auxInstalled.Select(card =>
+                card.RsRecord != null ? CheckAuxUpdate(card, card.RsRecord, isRs: true, dispatcherQueue) : Task.CompletedTask
+            );
 
-        await Task.WhenAll(auxTasks).ConfigureAwait(false);
-        _crashReporter.Log("[UpdateOrchestrationService.CheckForUpdatesAsync] All checks complete");
+            await Task.WhenAll(auxTasks).ConfigureAwait(false);
+            _crashReporter.Log("[UpdateOrchestrationService.CheckForUpdatesAsync] All checks complete");
         }
 
         // ── RE Framework update check ─────────────────────────────────────────
         if (!skipRef)
         {
-        try
-        {
-            var refInstalled = cards
-                .Where(c => c.IsREEngineGame && c.IsRefInstalled && c.RefRecord != null)
-                .ToList();
-
-            _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {refInstalled.Count} REF cards to check");
-
-            if (refInstalled.Count > 0)
+            try
             {
-                // Find the highest installed standard version for the update check.
-                // Using the newest avoids false positives from stale records on games
-                // the user hasn't reinstalled since an older update.
-                var standardCard = refInstalled
-                    .Where(c => !string.Equals(c.RefRecord!.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
-                    .OrderByDescending(c => c.RefRecord!.InstalledVersion, StringComparer.OrdinalIgnoreCase)
-                    .FirstOrDefault();
+                var refInstalled = cards
+                    .Where(c => c.IsREEngineGame && c.IsRefInstalled && c.RefRecord != null)
+                    .ToList();
 
-                if (standardCard != null)
+                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {refInstalled.Count} REF cards to check");
+
+                if (refInstalled.Count > 0)
                 {
-                    var firstVersion = standardCard.RefRecord!.InstalledVersion;
-                    _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF version check using '{standardCard.GameName}' installed={firstVersion}");
-                    var refUpdateAvailable = await _refService.CheckForUpdateAsync(firstVersion).ConfigureAwait(false);
+                    // Find the highest installed standard version for the update check.
+                    // Using the newest avoids false positives from stale records on games
+                    // the user hasn't reinstalled since an older update.
+                    var standardCard = refInstalled
+                        .Where(c => !string.Equals(c.RefRecord!.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
+                        .OrderByDescending(c => c.RefRecord!.InstalledVersion, StringComparer.OrdinalIgnoreCase)
+                        .FirstOrDefault();
 
-                    if (refUpdateAvailable)
+                    if (standardCard != null)
                     {
-                        dispatcherQueue?.TryEnqueue(() =>
+                        var firstVersion = standardCard.RefRecord!.InstalledVersion;
+                        _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF version check using '{standardCard.GameName}' installed={firstVersion}");
+                        var refUpdateAvailable = await _refService.CheckForUpdateAsync(firstVersion).ConfigureAwait(false);
+
+                        if (refUpdateAvailable)
                         {
-                            // Only flag standard REF cards as needing update, not PD-Upscaler ones
-                            foreach (var card in refInstalled)
-                            {
-                                if (!string.Equals(card.RefRecord!.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
-                                    card.RefStatus = GameStatus.UpdateAvailable;
-                            }
-                        });
-                    }
-                    else
-                    {
-                        // Up to date — sync card display version from the live GitHub tag
-                        // so the card shows the actual installed build even if the tracking
-                        // record is stale (e.g. REF updated outside RHI).
-                        var latestTag = await _refService.GetLatestVersionAsync().ConfigureAwait(false);
-                        if (latestTag != null)
-                        {
-                            if (!string.Equals(latestTag, firstVersion, StringComparison.OrdinalIgnoreCase))
-                                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF tracking record stale ({firstVersion} → {latestTag}), syncing display version");
-                            // Always persist so Refresh also shows the correct version
-                            _refService.SyncInstalledVersion(latestTag);
                             dispatcherQueue?.TryEnqueue(() =>
                             {
+                                // Only flag standard REF cards as needing update, not PD-Upscaler ones
                                 foreach (var card in refInstalled)
                                 {
-                                    if (card.RefRecord != null &&
-                                        !string.Equals(card.RefRecord.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        card.RefRecord.InstalledVersion = latestTag;
-                                        card.RefInstalledVersion = latestTag;
-                                    }
+                                    if (!string.Equals(card.RefRecord!.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
+                                        card.RefStatus = GameStatus.UpdateAvailable;
                                 }
                             });
+                        }
+                        else
+                        {
+                            // Up to date — sync card display version from the live GitHub tag
+                            // so the card shows the actual installed build even if the tracking
+                            // record is stale (e.g. REF updated outside RHI).
+                            var latestTag = await _refService.GetLatestVersionAsync().ConfigureAwait(false);
+                            if (latestTag != null)
+                            {
+                                if (!string.Equals(latestTag, firstVersion, StringComparison.OrdinalIgnoreCase))
+                                    _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF tracking record stale ({firstVersion} → {latestTag}), syncing display version");
+                                // Always persist so Refresh also shows the correct version
+                                _refService.SyncInstalledVersion(latestTag);
+                                dispatcherQueue?.TryEnqueue(() =>
+                                {
+                                    foreach (var card in refInstalled)
+                                    {
+                                        if (card.RefRecord != null &&
+                                            !string.Equals(card.RefRecord.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            card.RefRecord.InstalledVersion = latestTag;
+                                            card.RefInstalledVersion = latestTag;
+                                        }
+                                    }
+                                });
+                            }
                         }
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF update check failed — {ex.Message}");
-        }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF update check failed — {ex.Message}");
+            }
         }
 
         // ── Luma update check ─────────────────────────────────────────────────

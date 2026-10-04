@@ -596,12 +596,11 @@ public sealed partial class MainWindow
         // "Components" header text (real TextBlock, not skeleton — matches real layout)
         tableContent.Children.Add(new TextBlock
         {
-            Text = "Components",
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0xE8, 0xEC, 0xF2)),
-            Margin = new Thickness(0, 0, 0, 4),
-        });
+            Margin = new Thickness(0, 0, 0, 4)
+        }.Localize("Text", Loc.Get("Components")));
 
         // 2 component rows for ReShade + RenoDX
         for (int i = 0; i < 2; i++)
@@ -655,12 +654,11 @@ public sealed partial class MainWindow
         // "── Frame limiters — Choose one ──" separator
         tableContent.Children.Add(new TextBlock
         {
-            Text = "——  Frame limiters — Choose one  ——",
             FontSize = 10,
             Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x5A, 0x68, 0x80)),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 4, 0, 2),
-        });
+            Margin = new Thickness(0, 4, 0, 2)
+        }.Localize("Text", Loc.Get("——  Frame limiters — Choose one  ——")));
 
         // 2 component rows for ReLimiter + DC
         for (int i = 0; i < 2; i++)
@@ -714,12 +712,11 @@ public sealed partial class MainWindow
         // "── Optional ──" separator (matches real detail panel separator above OptiScaler)
         tableContent.Children.Add(new TextBlock
         {
-            Text = "── Optional ──",
             FontSize = 10,
             Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x5A, 0x68, 0x80)),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 4, 0, 2),
-        });
+            Margin = new Thickness(0, 4, 0, 2)
+        }.Localize("Text", Loc.Get("── Optional ──")));
 
         // OptiScaler placeholder row (4th component row, same 5-column layout)
         {
@@ -801,11 +798,10 @@ public sealed partial class MainWindow
         // "Overrides" header text
         overridesContent.Children.Add(new TextBlock
         {
-            Text = "Overrides",
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0xE8, 0xEC, 0xF2)),
-        });
+            Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0xE8, 0xEC, 0xF2))
+        }.Localize("Text", Loc.Get("Overrides")));
 
         // Row 1: Game name (editable) + DLL naming override — two-column
         var row1 = new Grid { ColumnSpacing = 16 };
@@ -913,11 +909,10 @@ public sealed partial class MainWindow
         // "Manage" header text
         manageContent.Children.Add(new TextBlock
         {
-            Text = "Manage",
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0xE8, 0xEC, 0xF2)),
-        });
+            Foreground = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0xE8, 0xEC, 0xF2))
+        }.Localize("Text", Loc.Get("Manage")));
 
         // Two buttons side by side: "Change install folder" + "Reset folder / Remove game"
         var manageBtnRow = new Grid { ColumnSpacing = 16 };

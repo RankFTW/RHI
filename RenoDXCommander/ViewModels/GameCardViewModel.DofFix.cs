@@ -9,10 +9,10 @@ public partial class GameCardViewModel
 {
     // ── DOF Fix observable properties ─────────────────────────────────────────────
     [ObservableProperty] private GameStatus _dofFixStatus = GameStatus.NotInstalled;
-    [ObservableProperty] private string?    _dofFixInstalledVersion;
-    [ObservableProperty] private bool       _dofFixIsInstalling;
-    [ObservableProperty] private double     _dofFixProgress;
-    [ObservableProperty] private string     _dofFixActionMessage = "";
+    [ObservableProperty] private string? _dofFixInstalledVersion;
+    [ObservableProperty] private bool _dofFixIsInstalling;
+    [ObservableProperty] private double _dofFixProgress;
+    [ObservableProperty] private string _dofFixActionMessage = "";
 
     // ── DOF Fix per-game exclusion ────────────────────────────────────────────────
     public bool ExcludeFromUpdateAllDofFix { get; set; }
@@ -26,23 +26,23 @@ public partial class GameCardViewModel
     public Visibility DofFixRowVisibility =>
         IsDofFixEligible ? Visibility.Visible : Visibility.Collapsed;
 
-    public string DofFixActionLabel => DofFixIsInstalling ? "Installing..."
-        : DofFixStatus == GameStatus.UpdateAvailable ? "⬆  Update DOF Fix"
-        : DofFixStatus == GameStatus.Installed ? "↺  Reinstall DOF Fix"
-        : "⬇  Install DOF Fix";
+    public string DofFixActionLabel => DofFixIsInstalling ? Loc.Get("Installing...")
+        : DofFixStatus == GameStatus.UpdateAvailable ? Loc.Get("⬆  Update DOF Fix")
+        : DofFixStatus == GameStatus.Installed ? Loc.Get("↺  Reinstall DOF Fix")
+        : Loc.Get("⬇  Install DOF Fix");
 
-    public string DofFixBtnBackground  => DofFixStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string DofFixBtnForeground  => DofFixStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
+    public string DofFixBtnBackground => DofFixStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
+    public string DofFixBtnForeground => DofFixStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
     public string DofFixBtnBorderBrush => DofFixStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     public Visibility DofFixProgressVisibility => DofFixIsInstalling ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility DofFixDeleteVisibility   => DofFixStatus == GameStatus.Installed || DofFixStatus == GameStatus.UpdateAvailable
+    public Visibility DofFixDeleteVisibility => DofFixStatus == GameStatus.Installed || DofFixStatus == GameStatus.UpdateAvailable
         ? Visibility.Visible : Visibility.Collapsed;
 
-    public string DofFixStatusText => DofFixIsInstalling ? "Installing…"
-        : DofFixStatus == GameStatus.UpdateAvailable ? "Update"
-        : DofFixStatus == GameStatus.Installed ? (DofFixInstalledVersion ?? "Installed")
-        : "Ready";
+    public string DofFixStatusText => DofFixIsInstalling ? Loc.Get("Installing…")
+        : DofFixStatus == GameStatus.UpdateAvailable ? Loc.Get("Update")
+        : DofFixStatus == GameStatus.Installed ? (DofFixInstalledVersion ?? Loc.Get("Installed"))
+        : Loc.Get("Ready");
     public string DofFixStatusColor => DofFixIsInstalling ? "#D4A856"
         : DofFixStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : DofFixStatus == GameStatus.Installed ? "#5ECB7D"

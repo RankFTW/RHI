@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Models;
@@ -47,7 +47,7 @@ public class SettingsHandler
         _window.LoadingPanel.Visibility = Visibility.Collapsed;
         // Sync toggle state with ViewModel
         _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
-        _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+        _window.AboutVersionText.Localize("Text", Loc.Format($"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW"));
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
         // Populate screenshot path and per-game combo
@@ -173,6 +173,7 @@ public class SettingsHandler
             // Populate resolution combo with supported modes
             var resolutions = ResolutionToggleService.GetSupportedResolutions();
             _window.ResolutionTargetCombo.ItemsSource = resolutions;
+            _window.ResolutionTargetCombo.ItemTemplate = null;
             _window.ResolutionTargetCombo.DisplayMemberPath = "Label";
 
             var savedKey = ViewModel.Settings.ResolutionTarget;
@@ -190,17 +191,18 @@ public class SettingsHandler
             var nvDisplays = NvColorService.GetDisplays();
             if (nvDisplays.Count > 0)
             {
-                _window.ColorDisplayCombo.ItemsSource    = nvDisplays;
+                _window.ColorDisplayCombo.ItemsSource = nvDisplays;
+                _window.ColorDisplayCombo.ItemTemplate = null;
                 _window.ColorDisplayCombo.DisplayMemberPath = "Name";
-                _window.ColorDisplayCombo.SelectedIndex  = 0; // triggers SelectionChanged → reads current values
+                _window.ColorDisplayCombo.SelectedIndex = 0; // triggers SelectionChanged → reads current values
             }
             else
             {
                 // No NVIDIA displays found — hide the colour controls
-                _window.ColorDisplayCombo.Visibility  = Microsoft.UI.Xaml.Visibility.Collapsed;
-                _window.ColorDepthCombo.IsEnabled     = false;
-                _window.ColorRangeCombo.IsEnabled     = false;
-                _window.ColorApplyBtn.IsEnabled       = false;
+                _window.ColorDisplayCombo.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+                _window.ColorDepthCombo.IsEnabled = false;
+                _window.ColorRangeCombo.IsEnabled = false;
+                _window.ColorApplyBtn.IsEnabled = false;
             }
         }
 
@@ -447,7 +449,7 @@ public class SettingsHandler
         var currentOverlayHotkey = _currentHotkeyString;
         var currentScreenshotHotkey = _currentScreenshotHotkeyString;
         var rsVariableListUseTabs = ViewModel.Settings.RsVariableListUseTabs;
-        
+
         await Task.Run(() =>
         {
             foreach (var card in allCards)
@@ -493,12 +495,9 @@ public class SettingsHandler
             : "Screenshot path, ReShade hotkeys, and effect list style";
         var dialog = new ContentDialog
         {
-            Title = "Screenshots & Hotkeys",
-            Content = $"{appliedSettings} applied to {updatedCount} game{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Screenshots & Hotkeys")).Localize("Content", Loc.Format($"{appliedSettings} applied to {updatedCount} game{(updatedCount == 1 ? "" : "s")}.")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -545,19 +544,16 @@ public class SettingsHandler
         {
             var emptyDialog = new ContentDialog
             {
-                Title = "Peak Nits",
-                Content = "Peak nits is not configured or is disabled.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Peak Nits")).Localize("Content", Loc.Get("Peak nits is not configured or is disabled.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(emptyDialog);
             return;
         }
 
         int updatedCount = 0;
         var allCards = ViewModel.AllCards.ToList(); // Snapshot the list for background processing
-        
+
         await Task.Run(() =>
         {
             foreach (var card in allCards)
@@ -590,12 +586,9 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "Peak Nits",
-            Content = $"Applied peak nits ({peakNits}) to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Peak Nits")).Localize("Content", Loc.Format($"Applied peak nits ({peakNits}) to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -643,12 +636,9 @@ public class SettingsHandler
         {
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Admin Mode",
-                Content = "UAC is disabled on this system — RHI always runs as administrator.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Admin Mode")).Localize("Content", Loc.Get("UAC is disabled on this system — RHI always runs as administrator.")).Localize("CloseButtonText", Loc.Get("OK")));
             _adminComboInit = true;
             combo.SelectedIndex = 1; // keep showing On
             _adminComboInit = false;
@@ -666,14 +656,11 @@ public class SettingsHandler
             // Show restart notice
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Admin Mode",
-                Content = enable
-                    ? "Admin Mode enabled. Restart RHI for it to take effect."
-                    : "Admin Mode disabled. RHI will launch normally on next start.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Admin Mode")).Localize("Content", enable
+                    ? Loc.Get("Admin Mode enabled. Restart RHI for it to take effect.")
+                    : Loc.Get("Admin Mode disabled. RHI will launch normally on next start.")).Localize("CloseButtonText", Loc.Get("OK")));
         }
         catch (Exception ex)
         {
@@ -755,10 +742,10 @@ public class SettingsHandler
             CreateNoWindow = true,
         };
         using var proc = System.Diagnostics.Process.Start(psi)!;
-        
+
         var stdoutTask = proc.StandardOutput.ReadToEndAsync();
         var stderrTask = proc.StandardError.ReadToEndAsync();
-        
+
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         try
         {
@@ -769,7 +756,7 @@ public class SettingsHandler
             try { proc.Kill(); } catch { }
             return (-1, "Timeout");
         }
-        
+
         var stdout = await stdoutTask;
         var stderr = await stderrTask;
         return (proc.ExitCode, (stdout + stderr).Trim());
@@ -813,7 +800,7 @@ public class SettingsHandler
 
             // Write to temp file and put on clipboard as a zip (same pattern as Copy Logs)
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            var jsonPath  = Path.Combine(Path.GetTempPath(), $"RHI_GameData_{timestamp}.json");
+            var jsonPath = Path.Combine(Path.GetTempPath(), $"RHI_GameData_{timestamp}.json");
             File.WriteAllText(jsonPath, json, System.Text.Encoding.UTF8);
 
             // Zip it
@@ -840,12 +827,9 @@ public class SettingsHandler
             {
                 await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "Game Data Copied",
-                    Content = $"Data for {ViewModel.AllCards.Count} games has been gathered and copied to your clipboard. Paste directly into Discord to share.",
-                    CloseButtonText = "OK",
                     XamlRoot = fe.XamlRoot,
-                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                });
+                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+                }.Localize("Title", Loc.Get("Game Data Copied")).Localize("Content", Loc.Format($"Data for {ViewModel.AllCards.Count} games has been gathered and copied to your clipboard. Paste directly into Discord to share.")).Localize("CloseButtonText", Loc.Get("OK")));
             }
         }
         catch (Exception ex)
@@ -861,9 +845,9 @@ public class SettingsHandler
     private string BuildGameDataJson()
     {
         var pcgwSvc = App.Services.GetRequiredService<IPcgwService>();
-        var gnSvc   = App.Services.GetRequiredService<IGameNameService>();
-        var cards   = ViewModel.AllCards;
-        var rhi     = CrashReporter.AppVersion;
+        var gnSvc = App.Services.GetRequiredService<IGameNameService>();
+        var cards = ViewModel.AllCards;
+        var rhi = CrashReporter.AppVersion;
 
         var games = new System.Collections.Generic.List<object>();
 
@@ -900,21 +884,21 @@ public class SettingsHandler
 
             // ── APIs — merge PE scan with PCGW scrape ────────────────────────
             var detectedApis = card.DetectedApis ?? new System.Collections.Generic.HashSet<Models.GraphicsApiType>();
-            var primaryApi   = card.GraphicsApi.ToString().Replace("DirectX", "DX");
+            var primaryApi = card.GraphicsApi.ToString().Replace("DirectX", "DX");
 
             // PCGW can fill in APIs the PE scan missed (e.g. DX12 not in exe imports)
             var pcgwInfo = pcgwSvc.GetCachedApiInfo(card.GameName);
-            var allApis  = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var allApis = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var a in detectedApis)
                 allApis.Add(a.ToString().Replace("DirectX", "DX"));
             if (pcgwInfo != null)
             {
-                if (pcgwInfo.HasDirectX9)  allApis.Add("DX9");
+                if (pcgwInfo.HasDirectX9) allApis.Add("DX9");
                 if (pcgwInfo.HasDirectX10) allApis.Add("DX10");
                 if (pcgwInfo.HasDirectX11) allApis.Add("DX11");
                 if (pcgwInfo.HasDirectX12) allApis.Add("DX12");
-                if (pcgwInfo.HasVulkan)    allApis.Add("Vulkan");
-                if (pcgwInfo.HasOpenGL)    allApis.Add("OpenGL");
+                if (pcgwInfo.HasVulkan) allApis.Add("Vulkan");
+                if (pcgwInfo.HasOpenGL) allApis.Add("OpenGL");
             }
 
             // If PCGW says DX12 but PE scan only found DX11, promote primary to DX12
@@ -929,31 +913,31 @@ public class SettingsHandler
 
             games.Add(new
             {
-                name          = card.GameName,
-                store         = card.Source,
+                name = card.GameName,
+                store = card.Source,
                 install_subpath = installSubpath,
-                exe_relative  = exeRelative,
-                api           = primaryApi,
-                all_apis      = allApis.OrderBy(x => x).ToList(),
-                bitness       = card.Is32Bit ? 32 : 64,
-                engine        = string.IsNullOrEmpty(card.EngineHint) ? null : card.EngineHint,
-                steam_appid   = steamAppId,
-                xbox_aumid    = xboxAumid,
+                exe_relative = exeRelative,
+                api = primaryApi,
+                all_apis = allApis.OrderBy(x => x).ToList(),
+                bitness = card.Is32Bit ? 32 : 64,
+                engine = string.IsNullOrEmpty(card.EngineHint) ? null : card.EngineHint,
+                steam_appid = steamAppId,
+                xbox_aumid = xboxAumid,
                 epic_app_name = epicAppName,
-                pcgw_url      = card.PcgwUrl,
-                config_path       = pcgwInfo?.ConfigPath,
-                config_path_xbox  = pcgwInfo?.ConfigPathXbox,
+                pcgw_url = card.PcgwUrl,
+                config_path = pcgwInfo?.ConfigPath,
+                config_path_xbox = pcgwInfo?.ConfigPathXbox,
                 engine_ini_project_override = card.EngineIniProjectOverride,
-                api_source    = pcgwInfo != null ? "pcgw+pe" : "pe",
+                api_source = pcgwInfo != null ? "pcgw+pe" : "pe",
             });
         }
 
         var export = new
         {
-            version     = "1",
+            version = "1",
             rhi_version = rhi,
             exported_at = DateTime.UtcNow.ToString("o"),
-            game_count  = games.Count,
+            game_count = games.Count,
             games,
         };
 
@@ -1005,11 +989,8 @@ public class SettingsHandler
             {
                 await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "Logs Copied",
-                    Content = "All session logs have been archived and copied to your clipboard. Paste directly into Discord to share.",
-                    CloseButtonText = "OK",
-                    XamlRoot = fe.XamlRoot,
-                });
+                    XamlRoot = fe.XamlRoot
+                }.Localize("Title", Loc.Get("Logs Copied")).Localize("Content", Loc.Get("All session logs have been archived and copied to your clipboard. Paste directly into Discord to share.")).Localize("CloseButtonText", Loc.Get("OK")));
             }
         }
         catch (Exception ex)
@@ -1023,13 +1004,9 @@ public class SettingsHandler
         // Show warning dialog
         var warningDialog = new ContentDialog
         {
-            Title = "⚠ Purge Staging Files",
-            Content = "This will delete cached DLSS, Streamline, and component staging files to free disk space.\n\nShaders, installed RenoDX addons, and version metadata are preserved.\n\nThese files will be re-downloaded automatically when needed.\n\nContinue?",
-            PrimaryButtonText = "Purge",
-            CloseButtonText = "Cancel",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("⚠ Purge Staging Files")).Localize("Content", Loc.Get("This will delete cached DLSS, Streamline, and component staging files to free disk space.\n\nShaders, installed RenoDX addons, and version metadata are preserved.\n\nThese files will be re-downloaded automatically when needed.\n\nContinue?")).Localize("PrimaryButtonText", Loc.Get("Purge")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(warningDialog);
         if (result != ContentDialogResult.Primary) return;
@@ -1145,12 +1122,9 @@ public class SettingsHandler
 
             var resultDialog = new ContentDialog
             {
-                Title = "✅ Cache Purged",
-                Content = $"Deleted {filesDeleted} files, freed {sizeStr} of disk space.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("✅ Cache Purged")).Localize("Content", Loc.Format($"Deleted {filesDeleted} files, freed {sizeStr} of disk space.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(resultDialog);
         }
         catch (Exception ex)
@@ -1158,12 +1132,9 @@ public class SettingsHandler
             CrashReporter.Log($"[SettingsHandler.PurgeCachedFiles_Click] Failed: {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Purge Failed",
-                Content = $"An error occurred: {ex.Message}",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Purge Failed")).Localize("Content", Loc.Format($"An error occurred: {ex.Message}")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
         }
     }
@@ -1271,12 +1242,9 @@ public class SettingsHandler
         // Req 4.5: Show confirmation dialog with count of updated files
         var dialog = new ContentDialog
         {
-            Title = "ReShade UI Hotkey",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("ReShade UI Hotkey")).Localize("Content", Loc.Format($"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -1326,12 +1294,9 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "ReShade Hotkeys",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("ReShade Hotkeys")).Localize("Content", Loc.Format($"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -1419,12 +1384,9 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "ReShade Screenshot Hotkey",
-            Content = $"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("ReShade Screenshot Hotkey")).Localize("Content", Loc.Format($"Updated {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -1541,12 +1503,9 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "ReLimiter Settings",
-            Content = $"Updated {updatedCount} relimiter.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("ReLimiter Settings")).Localize("Content", Loc.Format($"Updated {updatedCount} relimiter.ini file{(updatedCount == 1 ? "" : "s")}.")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -1642,25 +1601,20 @@ public class SettingsHandler
             var panel = new StackPanel { Spacing = 8 };
             panel.Children.Add(new TextBlock
             {
-                Text = "Enter a custom FPS value (20-1000):",
-                FontSize = 12,
-            });
+                FontSize = 12
+            }.Localize("Text", Loc.Get("Enter a custom FPS value (20-1000):")));
             var inputBox = new TextBox
             {
-                PlaceholderText = "e.g. 165",
-                FontSize = 12,
-            };
+                FontSize = 12
+            }.Localize("PlaceholderText", Loc.Get("e.g. 165"));
             panel.Children.Add(inputBox);
 
             var dialog = new ContentDialog
             {
-                Title = "Custom Target FPS",
                 Content = panel,
-                PrimaryButtonText = "Set",
-                CloseButtonText = "Cancel",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Custom Target FPS")).Localize("PrimaryButtonText", Loc.Get("Set")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
             var result = await DialogService.ShowSafeAsync(dialog);
             if (result == ContentDialogResult.Primary &&
@@ -1730,7 +1684,12 @@ public class SettingsHandler
         var refCheck = new CheckBox { Content = "RE Framework", IsChecked = !settings.GlobalSkipRefUpdates, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
 
         var checkPanel = new StackPanel { Spacing = 0 };
-        checkPanel.Children.Add(new TextBlock { Text = "Include components in Update All globally:", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 0, 0, 8) });
+        checkPanel.Children.Add(new TextBlock
+        {
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            Margin = new Thickness(0, 0, 0, 8)
+        }.Localize("Text", Loc.Get("Include components in Update All globally:")));
         checkPanel.Children.Add(rsCheck);
         checkPanel.Children.Add(rdxCheck);
         checkPanel.Children.Add(ulCheck);
@@ -1740,13 +1699,10 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "Global Update Inclusion",
             Content = checkPanel,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
             XamlRoot = xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Global Update Inclusion")).Localize("PrimaryButtonText", Loc.Get("Save")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result == ContentDialogResult.Primary)
@@ -1781,21 +1737,18 @@ public class SettingsHandler
             var (label, isOn) = items[i];
             tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text = $"{label}: ",
-                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
+            }.Localize("Text", $"{label}: "));
             tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
             {
-                Text = isOn ? "On" : "Off",
-                Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush),
-            });
+                Foreground = UIFactory.Brush(isOn ? ResourceKeys.AccentGreenBrush : ResourceKeys.AccentRedBrush)
+            }.Localize("Text", isOn ? Loc.Get("On") : Loc.Get("Off")));
             if (i < items.Length - 1)
             {
                 tb.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
                 {
-                    Text = "  ·  ",
-                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                });
+                    Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
+                }.Localize("Text", "  ·  "));
             }
         }
     }
@@ -1872,12 +1825,9 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "OptiScaler Hotkey",
-            Content = $"Updated {updatedCount} OptiScaler.ini file{(updatedCount == 1 ? "" : "s")}.",
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("OptiScaler Hotkey")).Localize("Content", Loc.Format($"Updated {updatedCount} OptiScaler.ini file{(updatedCount == 1 ? "" : "s")}.")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -1937,22 +1887,18 @@ public class SettingsHandler
 
         var variantLabel = newVariant switch
         {
-            DxvkVariant.Stable => "Stable",
+            DxvkVariant.Stable => Loc.Get("Stable"),
             DxvkVariant.LiliumHdr => "Lilium HDR",
-            _ => "Development",
+            _ => Loc.Get("Development"),
         };
 
         var dialog = new ContentDialog
         {
-            Title = "DXVK Variant Changed",
-            Content = $"DXVK variant changed to {variantLabel}."
-                + (gamesWithDxvk.Count > 0
-                    ? $"\n\nSwitching {gamesWithDxvk.Count} game(s) to the {variantLabel} build."
-                    : "\n\nNo games currently have DXVK installed."),
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("DXVK Variant Changed")).Localize("Content", Loc.Concat(Loc.Format($"DXVK variant changed to {variantLabel}."), (gamesWithDxvk.Count > 0
+                    ? Loc.Format($"\n\nSwitching {gamesWithDxvk.Count} game(s) to the {variantLabel} build.")
+                    : Loc.Get("\n\nNo games currently have DXVK installed.")))).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -2094,20 +2040,15 @@ public class SettingsHandler
         var totalCount = gamesWithRs.Count;
         var vulkanCount = ViewModel.AllCards.Count(c => c.RequiresVulkanInstall && c.IsRsInstalled);
         var channelLabel = string.Equals(newChannel, "Nightly", StringComparison.OrdinalIgnoreCase)
-            ? "Nightly" : "Stable";
+            ? Loc.Get("Nightly") : Loc.Get("Stable");
 
         var dialog = new ContentDialog
         {
-            Title = "ReShade Build Channel Changed",
-            Content = $"ReShade build channel changed to {channelLabel}.\n\n"
-                + (totalCount > 0
-                    ? $"Switching {totalCount} game(s) to the {channelLabel} build."
-                      + (vulkanCount > 0 ? $"\n{vulkanCount} Vulkan game(s) updated via global layer." : "")
-                    : "No games currently have ReShade installed."),
-            CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("ReShade Build Channel Changed")).Localize("Content", Loc.Concat(Loc.Format($"ReShade build channel changed to {channelLabel}.\n\n"), (totalCount > 0
+                    ? Loc.Concat(Loc.Format($"Switching {totalCount} game(s) to the {channelLabel} build."), (vulkanCount > 0 ? Loc.Format($"\n{vulkanCount} Vulkan game(s) updated via global layer.") : ""))
+                    : Loc.Get("No games currently have ReShade installed.")))).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -2150,7 +2091,7 @@ public class SettingsHandler
     /// </summary>
     public void RefreshNexusStatus()
     {
-        var key      = ViewModel.Settings.NexusApiKey;
+        var key = ViewModel.Settings.NexusApiKey;
         var username = ViewModel.Settings.NexusUsername;
         var isPremium = ViewModel.Settings.NexusIsPremium;
 
@@ -2159,35 +2100,35 @@ public class SettingsHandler
         if (connected)
         {
             var tier = isPremium ? "Premium" : "Free";
-            _window.NexusStatusText.Text = $"Connected as {username} ({tier})";
+            _window.NexusStatusText.Localize("Text", Loc.Format($"Connected as {username} ({tier})"));
             _window.NexusStatusText.Foreground = UIFactory.Brush(
                 isPremium ? ResourceKeys.AccentGreenBrush : ResourceKeys.TextSecondaryBrush);
             _window.NexusDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-            _window.NexusConnectBtn.Content = "Re-connect";
+            _window.NexusConnectBtn.Localize("Content", Loc.Get("Re-connect"));
         }
         else
         {
-            _window.NexusStatusText.Text = "Not connected";
+            _window.NexusStatusText.Localize("Text", Loc.Get("Not connected"));
             _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
             _window.NexusDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
-            _window.NexusConnectBtn.Content = "Connect";
+            _window.NexusConnectBtn.Localize("Content", Loc.Get("Connect"));
         }
 
         // NXM handler status
         bool nxmRegistered = NxmProtocolHandler.IsRegistered();
-        _window.NxmStatusText.Text = nxmRegistered ? "RHI is the active nxm:// handler" : "Not registered";
+        _window.NxmStatusText.Localize("Text", nxmRegistered ? Loc.Get("RHI is the active nxm:// handler") : Loc.Get("Not registered"));
         _window.NxmStatusText.Foreground = UIFactory.Brush(
             nxmRegistered ? ResourceKeys.AccentGreenBrush : ResourceKeys.TextSecondaryBrush);
-        _window.NxmRegisterBtn.Content = nxmRegistered ? "Unregister" : "Register";
+        _window.NxmRegisterBtn.Localize("Content", nxmRegistered ? Loc.Get("Unregister") : Loc.Get("Register"));
     }
 
     public async void NexusConnectBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        var nexusDl  = App.Services.GetRequiredService<NexusDownloadService>();
+        var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
         var nexusSso = App.Services.GetRequiredService<NexusSsoService>();
 
         _window.NexusConnectBtn.IsEnabled = false;
-        _window.NexusStatusText.Text = "Opening browser for authorisation...";
+        _window.NexusStatusText.Localize("Text", Loc.Get("Opening browser for authorisation..."));
         _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
 
         using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(120));
@@ -2200,7 +2141,7 @@ public class SettingsHandler
             catch (Exception ex) { CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Failed to open browser — {ex.Message}"); }
 
             _window.DispatcherQueue?.TryEnqueue(() =>
-                _window.NexusStatusText.Text = "Waiting for authorisation in browser...");
+                _window.NexusStatusText.Text = Loc.Get("Waiting for authorisation in browser..."));
         };
 
         try
@@ -2225,21 +2166,21 @@ public class SettingsHandler
 
                 if (string.IsNullOrEmpty(receivedKey))
                 {
-                    _window.NexusStatusText.Text = "Authorisation timed out or was cancelled.";
+                    _window.NexusStatusText.Localize("Text", Loc.Get("Authorisation timed out or was cancelled."));
                     _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
                     return;
                 }
 
                 if (info == null)
                 {
-                    _window.NexusStatusText.Text = "Received key was invalid. Please try again.";
+                    _window.NexusStatusText.Localize("Text", Loc.Get("Received key was invalid. Please try again."));
                     _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
                     return;
                 }
 
-                ViewModel.Settings.NexusApiKey    = receivedKey;
+                ViewModel.Settings.NexusApiKey = receivedKey;
                 ViewModel.Settings.NexusIsPremium = info.IsPremium;
-                ViewModel.Settings.NexusUsername  = info.Name;
+                ViewModel.Settings.NexusUsername = info.Name;
                 ViewModel.SaveSettingsPublic();
 
                 RefreshNexusStatus();
@@ -2250,9 +2191,9 @@ public class SettingsHandler
 
     public void NexusDisconnectBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        ViewModel.Settings.NexusApiKey    = "";
+        ViewModel.Settings.NexusApiKey = "";
         ViewModel.Settings.NexusIsPremium = false;
-        ViewModel.Settings.NexusUsername  = "";
+        ViewModel.Settings.NexusUsername = "";
         ViewModel.SaveSettingsPublic();
         RefreshNexusStatus();
         CrashReporter.Log("[SettingsHandler.NexusDisconnectBtn_Click] Disconnected from Nexus Mods");
@@ -2274,13 +2215,9 @@ public class SettingsHandler
             {
                 var result = await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "NXM Protocol Handler",
-                    Content = "Another application (e.g. Vortex or MO2) is already registered as the nxm:// handler. Registering RHI will replace it. Continue?",
-                    PrimaryButtonText = "Register RHI",
-                    CloseButtonText = "Cancel",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                });
+                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+                }.Localize("Title", Loc.Get("NXM Protocol Handler")).Localize("Content", Loc.Get("Another application (e.g. Vortex or MO2) is already registered as the nxm:// handler. Registering RHI will replace it. Continue?")).Localize("PrimaryButtonText", Loc.Get("Register RHI")).Localize("CloseButtonText", Loc.Get("Cancel")));
                 if (result != ContentDialogResult.Primary) return;
             }
 
@@ -2293,12 +2230,9 @@ public class SettingsHandler
             {
                 await DialogService.ShowSafeAsync(new ContentDialog
                 {
-                    Title = "NXM Registration Failed",
-                    Content = $"Could not register the nxm:// handler: {ex.Message}",
-                    CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                });
+                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+                }.Localize("Title", Loc.Get("NXM Registration Failed")).Localize("Content", Loc.Format($"Could not register the nxm:// handler: {ex.Message}")).Localize("CloseButtonText", Loc.Get("OK")));
                 return;
             }
         }
@@ -2310,23 +2244,23 @@ public class SettingsHandler
 
     public void RefreshGitHubStatus()
     {
-        var token    = ViewModel.Settings.GitHubOAuthToken;
+        var token = ViewModel.Settings.GitHubOAuthToken;
         var username = ViewModel.Settings.GitHubUsername;
         bool connected = !string.IsNullOrEmpty(token);
 
         if (connected)
         {
             var display = string.IsNullOrEmpty(username) ? "GitHub" : $"@{username}";
-            _window.GitHubStatusText.Text       = $"Connected as {display} · 5,000 req/hr";
+            _window.GitHubStatusText.Localize("Text", Loc.Format($"Connected as {display} · 5,000 req/hr"));
             _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentGreenBrush);
-            _window.GitHubConnectBtn.Content    = "Re-connect";
+            _window.GitHubConnectBtn.Localize("Content", Loc.Get("Re-connect"));
             _window.GitHubDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
         }
         else
         {
-            _window.GitHubStatusText.Text       = "Not connected · 60 req/hr";
+            _window.GitHubStatusText.Localize("Text", Loc.Get("Not connected · 60 req/hr"));
             _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
-            _window.GitHubConnectBtn.Content    = "Connect GitHub";
+            _window.GitHubConnectBtn.Localize("Content", Loc.Get("Connect GitHub"));
             _window.GitHubDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
         }
 
@@ -2337,11 +2271,11 @@ public class SettingsHandler
     public async void GitHubConnectBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
         var authSvc = App.Services.GetRequiredService<GitHubAuthService>();
-        var http    = App.Services.GetRequiredService<HttpClient>();
+        var http = App.Services.GetRequiredService<HttpClient>();
 
         _window.GitHubConnectBtn.IsEnabled = false;
-        _window.GitHubConnectBtn.Content   = "Connecting...";
-        _window.GitHubStatusText.Text      = "Requesting device code...";
+        _window.GitHubConnectBtn.Localize("Content", Loc.Get("Connecting..."));
+        _window.GitHubStatusText.Localize("Text", Loc.Get("Requesting device code..."));
         _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
         _window.GitHubDeviceCodePanel.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
 
@@ -2354,10 +2288,10 @@ public class SettingsHandler
         {
             _window.DispatcherQueue?.TryEnqueue(() =>
             {
-                _window.GitHubStatusText.Text      = "Failed to start authorisation. Check your connection and try again.";
+                _window.GitHubStatusText.Localize("Text", Loc.Get("Failed to start authorisation. Check your connection and try again."));
                 _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
-                _window.GitHubConnectBtn.IsEnabled  = true;
-                _window.GitHubConnectBtn.Content    = "Connect GitHub";
+                _window.GitHubConnectBtn.IsEnabled = true;
+                _window.GitHubConnectBtn.Localize("Content", Loc.Get("Connect GitHub"));
             });
             return;
         }
@@ -2367,9 +2301,9 @@ public class SettingsHandler
         {
             _window.GitHubUserCodeText.Text = deviceCode.UserCode;
             _window.GitHubVerificationLink.NavigateUri = new Uri(deviceCode.VerificationUri);
-            _window.GitHubVerificationLink.Content     = deviceCode.VerificationUri;
-            _window.GitHubDeviceCodePanel.Visibility   = Microsoft.UI.Xaml.Visibility.Visible;
-            _window.GitHubStatusText.Text       = "Enter the code above at the link — waiting for authorisation...";
+            _window.GitHubVerificationLink.Content = deviceCode.VerificationUri;
+            _window.GitHubDeviceCodePanel.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+            _window.GitHubStatusText.Localize("Text", Loc.Get("Enter the code above at the link — waiting for authorisation..."));
             _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
         });
 
@@ -2387,11 +2321,11 @@ public class SettingsHandler
         {
             _window.DispatcherQueue?.TryEnqueue(() =>
             {
-                _window.GitHubStatusText.Text       = "Authorisation timed out or was cancelled.";
+                _window.GitHubStatusText.Localize("Text", Loc.Get("Authorisation timed out or was cancelled."));
                 _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
                 _window.GitHubDeviceCodePanel.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
-                _window.GitHubConnectBtn.IsEnabled  = true;
-                _window.GitHubConnectBtn.Content    = "Connect GitHub";
+                _window.GitHubConnectBtn.IsEnabled = true;
+                _window.GitHubConnectBtn.Localize("Content", Loc.Get("Connect GitHub"));
             });
             return;
         }
@@ -2402,7 +2336,7 @@ public class SettingsHandler
         _window.DispatcherQueue?.TryEnqueue(() =>
         {
             ViewModel.Settings.GitHubOAuthToken = token;
-            ViewModel.Settings.GitHubUsername   = username ?? "";
+            ViewModel.Settings.GitHubUsername = username ?? "";
             ViewModel.SaveSettingsPublic();
 
             // Apply to DevUnlockService and the live HttpClient
@@ -2419,7 +2353,7 @@ public class SettingsHandler
         var http = App.Services.GetRequiredService<HttpClient>();
 
         ViewModel.Settings.GitHubOAuthToken = "";
-        ViewModel.Settings.GitHubUsername   = "";
+        ViewModel.Settings.GitHubUsername = "";
         ViewModel.SaveSettingsPublic();
 
         // Clear token from DevUnlockService and HttpClient

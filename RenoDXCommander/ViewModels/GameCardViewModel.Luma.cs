@@ -40,30 +40,30 @@ public partial class GameCardViewModel
     public bool IsLumaNotInstalling => !IsLumaInstalling;
     public Visibility LumaProgressVisibility => IsLumaInstalling ? Visibility.Visible : Visibility.Collapsed;
     public Visibility LumaMessageVisibility => string.IsNullOrEmpty(LumaActionMessage) ? Visibility.Collapsed : Visibility.Visible;
-    public string LumaActionLabel => IsLumaInstalling ? "Installing..."
-        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade && LumaStatus == GameStatus.NotInstalled) ? "⚠  ReShade required"
-        : LumaStatus == GameStatus.UpdateAvailable ? "⬆  Update Luma"
-        : LumaStatus == GameStatus.Installed ? "↺  Reinstall Luma"
-        : LumaIsExternalOnly ? "Get on Nexus Mods"
-        : "⬇  Install Luma";
+    public string LumaActionLabel => IsLumaInstalling ? Loc.Get("Installing...")
+        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade && LumaStatus == GameStatus.NotInstalled) ? Loc.Get("⚠  ReShade required")
+        : LumaStatus == GameStatus.UpdateAvailable ? Loc.Get("⬆  Update Luma")
+        : LumaStatus == GameStatus.Installed ? Loc.Get("↺  Reinstall Luma")
+        : LumaIsExternalOnly ? Loc.Get("Get on Nexus Mods")
+        : Loc.Get("⬇  Install Luma");
 
     // Component table: Luma short status/action (consistent with RS/DC/RDX)
-    public string LumaStatusText => IsLumaInstalling ? "Installing…"
-        : LumaStatus == GameStatus.UpdateAvailable ? "Update"
+    public string LumaStatusText => IsLumaInstalling ? Loc.Get("Installing…")
+        : LumaStatus == GameStatus.UpdateAvailable ? Loc.Get("Update")
         : LumaStatus == GameStatus.Installed
-            ? (LumaRecord?.InstalledBuildNumber > 0 ? $"Build {LumaRecord.InstalledBuildNumber}" : "Installed")
-        : "Ready";
+            ? (LumaRecord?.InstalledBuildNumber > 0 ? Loc.Format($"Build {LumaRecord.InstalledBuildNumber}") : Loc.Get("Installed"))
+        : Loc.Get("Ready");
     public string LumaStatusColor => IsLumaInstalling ? "#D4A856"
         : LumaStatus == GameStatus.UpdateAvailable ? "#B898E8"
-        : LumaStatus == GameStatus.Installed       ? "#5ECB7D"
+        : LumaStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     public string LumaShortAction => IsLumaInstalling ? "…"
         : LumaStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-        : LumaStatus == GameStatus.Installed       ? "↺ Reinstall"
+        : LumaStatus == GameStatus.Installed ? "↺ Reinstall"
         : "⬇ Install";
 
-    public string LumaBtnBackground  => LumaStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string LumaBtnForeground  => LumaStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
+    public string LumaBtnBackground => LumaStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
+    public string LumaBtnForeground => LumaStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
     public string LumaBtnBorderBrush => LumaStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     public bool IsLumaInstalled => LumaStatus is GameStatus.Installed or GameStatus.UpdateAvailable;

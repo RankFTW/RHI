@@ -25,7 +25,7 @@ public sealed class UpdateLogWindow : Window
     {
         _updateLogService = updateLogService;
 
-        Title = "Component Updates";
+        Title = Loc.Get("Component Updates");
 
         // Size — 720 × 500 logical px, DPI-scaled
         var hwnd = WindowNative.GetWindowHandle(this);
@@ -41,16 +41,16 @@ public sealed class UpdateLogWindow : Window
         if (AppWindow.TitleBar is { } tb)
         {
             var res = Application.Current.Resources;
-            tb.BackgroundColor               = (Windows.UI.Color)res["TitleBarBackground"];
-            tb.ForegroundColor               = (Windows.UI.Color)res["TitleBarForeground"];
-            tb.InactiveBackgroundColor       = (Windows.UI.Color)res["TitleBarInactiveBackground"];
-            tb.InactiveForegroundColor       = (Windows.UI.Color)res["TitleBarInactiveForeground"];
-            tb.ButtonBackgroundColor         = (Windows.UI.Color)res["TitleBarButtonBackground"];
-            tb.ButtonForegroundColor         = (Windows.UI.Color)res["TitleBarButtonForeground"];
-            tb.ButtonHoverBackgroundColor    = (Windows.UI.Color)res["TitleBarButtonHoverBackground"];
-            tb.ButtonHoverForegroundColor    = (Windows.UI.Color)res["TitleBarButtonHoverForeground"];
-            tb.ButtonPressedBackgroundColor  = (Windows.UI.Color)res["TitleBarButtonPressedBackground"];
-            tb.ButtonPressedForegroundColor  = (Windows.UI.Color)res["TitleBarButtonPressedForeground"];
+            tb.BackgroundColor = (Windows.UI.Color)res["TitleBarBackground"];
+            tb.ForegroundColor = (Windows.UI.Color)res["TitleBarForeground"];
+            tb.InactiveBackgroundColor = (Windows.UI.Color)res["TitleBarInactiveBackground"];
+            tb.InactiveForegroundColor = (Windows.UI.Color)res["TitleBarInactiveForeground"];
+            tb.ButtonBackgroundColor = (Windows.UI.Color)res["TitleBarButtonBackground"];
+            tb.ButtonForegroundColor = (Windows.UI.Color)res["TitleBarButtonForeground"];
+            tb.ButtonHoverBackgroundColor = (Windows.UI.Color)res["TitleBarButtonHoverBackground"];
+            tb.ButtonHoverForegroundColor = (Windows.UI.Color)res["TitleBarButtonHoverForeground"];
+            tb.ButtonPressedBackgroundColor = (Windows.UI.Color)res["TitleBarButtonPressedBackground"];
+            tb.ButtonPressedForegroundColor = (Windows.UI.Color)res["TitleBarButtonPressedForeground"];
             tb.ButtonInactiveBackgroundColor = (Windows.UI.Color)res["TitleBarButtonInactiveBackground"];
             tb.ButtonInactiveForegroundColor = (Windows.UI.Color)res["TitleBarButtonInactiveForeground"];
         }
@@ -58,7 +58,7 @@ public sealed class UpdateLogWindow : Window
         AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Overlapped);
         if (AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter ov)
         {
-            ov.IsResizable   = false;
+            ov.IsResizable = false;
             ov.IsMaximizable = false;
         }
 
@@ -79,7 +79,7 @@ public sealed class UpdateLogWindow : Window
 
         var scroll = new ScrollViewer
         {
-            VerticalScrollBarVisibility   = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Padding = new Thickness(20, 12, 20, 8),
             Content = listPanel,
@@ -92,8 +92,8 @@ public sealed class UpdateLogWindow : Window
         {
             BorderThickness = new Thickness(0, 1, 0, 0),
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
-            Background  = UIFactory.Brush(ResourceKeys.SurfaceStatusBarBrush),
-            Padding     = new Thickness(20, 8, 20, 8),
+            Background = UIFactory.Brush(ResourceKeys.SurfaceStatusBarBrush),
+            Padding = new Thickness(20, 8, 20, 8),
         };
 
         var footerRow = new Grid();
@@ -104,26 +104,25 @@ public sealed class UpdateLogWindow : Window
         var countText = new TextBlock
         {
             VerticalAlignment = VerticalAlignment.Center,
-            FontSize  = 11,
+            FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextDisabledBrush),
         };
         var entries = _updateLogService.GetAll();
-        countText.Text = entries.Count == 0
-            ? "No updates recorded yet."
-            : $"{entries.Count} update{(entries.Count == 1 ? "" : "s")} recorded";
+        countText.Localize("Text", entries.Count == 0
+            ? Loc.Get("No updates recorded yet.")
+            : Loc.Format($"{entries.Count} update{(entries.Count == 1 ? "" : "s")} recorded"));
         Grid.SetColumn(countText, 0);
         footerRow.Children.Add(countText);
 
         var clearBtn = new Button
         {
-            Content     = "Clear History",
-            FontSize    = 11,
-            Padding     = new Thickness(10, 4, 10, 4),
-            Margin      = new Thickness(0, 0, 8, 0),
-            Background  = UIFactory.Brush(ResourceKeys.SurfaceRaisedBrush),
-            Foreground  = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-        };
+            FontSize = 11,
+            Padding = new Thickness(10, 4, 10, 4),
+            Margin = new Thickness(0, 0, 8, 0),
+            Background = UIFactory.Brush(ResourceKeys.SurfaceRaisedBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush)
+        }.Localize("Content", Loc.Get("Clear History"));
         clearBtn.Click += (_, _) =>
         {
             _updateLogService.Clear();
@@ -131,7 +130,7 @@ public sealed class UpdateLogWindow : Window
             {
                 listPanel.Children.Clear();
                 BuildEntryList(listPanel);
-                countText.Text = "No updates recorded yet.";
+                countText.Localize("Text", Loc.Get("No updates recorded yet."));
             });
         };
         Grid.SetColumn(clearBtn, 1);
@@ -139,13 +138,12 @@ public sealed class UpdateLogWindow : Window
 
         var closeBtn = new Button
         {
-            Content     = "Close",
-            FontSize    = 11,
-            Padding     = new Thickness(10, 4, 10, 4),
-            Background  = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-            Foreground  = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-        };
+            FontSize = 11,
+            Padding = new Thickness(10, 4, 10, 4),
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush)
+        }.Localize("Content", Loc.Get("Close"));
         closeBtn.Click += (_, _) => Close();
         Grid.SetColumn(closeBtn, 2);
         footerRow.Children.Add(closeBtn);
@@ -165,23 +163,22 @@ public sealed class UpdateLogWindow : Window
         {
             listPanel.Children.Add(new TextBlock
             {
-                Text       = "No component updates have been recorded yet.\n\nUpdates are captured whenever RHI downloads a new version of ReShade, RenoDX addons, shader packs, OptiScaler, Display Commander, or other components.",
-                FontSize   = 12,
+                FontSize = 12,
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 TextWrapping = TextWrapping.Wrap,
-                Margin     = new Thickness(0, 8, 0, 0),
-            });
+                Margin = new Thickness(0, 8, 0, 0)
+            }.Localize("Text", Loc.Get("No component updates have been recorded yet.\n\nUpdates are captured whenever RHI downloads a new version of ReShade, RenoDX addons, shader packs, OptiScaler, Display Commander, or other components.")));
             return;
         }
 
         // Group by local date (today, yesterday, or full date)
-        var today     = DateTime.Today;
+        var today = DateTime.Today;
         var yesterday = today.AddDays(-1);
 
         string GroupLabel(DateTime dt)
         {
             var d = dt.ToLocalTime().Date;
-            if (d == today)     return "Today";
+            if (d == today) return "Today";
             if (d == yesterday) return "Yesterday";
             return d.ToString("d MMMM yyyy");
         }
@@ -195,12 +192,11 @@ public sealed class UpdateLogWindow : Window
             // Date header
             listPanel.Children.Add(new TextBlock
             {
-                Text       = GroupLabel(group.Key.Add(TimeSpan.Zero)),
-                FontSize   = 11,
+                FontSize = 11,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                Margin     = new Thickness(0, 16, 0, 4),
-            });
+                Margin = new Thickness(0, 16, 0, 4)
+            }.Localize("Text", GroupLabel(group.Key.Add(TimeSpan.Zero))));
 
             listPanel.Children.Add(UIFactory.MakeSeparator());
 
@@ -216,30 +212,28 @@ public sealed class UpdateLogWindow : Window
         var row = new Grid { Margin = new Thickness(0, 5, 0, 5) };
         // Time | Name | Version | Category
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48, GridUnitType.Pixel) });  // time
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1,  GridUnitType.Star) });   // name
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });   // name
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200, GridUnitType.Pixel) });  // version
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130, GridUnitType.Pixel) });  // category
 
         // Time
         var timeText = new TextBlock
         {
-            Text              = entry.Timestamp.ToLocalTime().ToString("HH:mm"),
-            FontSize          = 11,
-            Foreground        = UIFactory.Brush(ResourceKeys.TextDisabledBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextDisabledBrush),
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", entry.Timestamp.ToLocalTime().ToString("HH:mm"));
         Grid.SetColumn(timeText, 0);
         row.Children.Add(timeText);
 
         // Component name
         var nameText = new TextBlock
         {
-            Text              = entry.ComponentName,
-            FontSize          = 12,
-            Foreground        = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
-            TextTrimming      = TextTrimming.CharacterEllipsis,
-        };
+            TextTrimming = TextTrimming.CharacterEllipsis
+        }.Localize("Text", entry.ComponentName);
         Grid.SetColumn(nameText, 1);
         row.Children.Add(nameText);
 
@@ -247,12 +241,11 @@ public sealed class UpdateLogWindow : Window
         string versionStr = BuildVersionString(entry);
         var versionText = new TextBlock
         {
-            Text              = versionStr,
-            FontSize          = 11,
-            Foreground        = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
-            TextTrimming      = TextTrimming.CharacterEllipsis,
-        };
+            TextTrimming = TextTrimming.CharacterEllipsis
+        }.Localize("Text", versionStr);
         Grid.SetColumn(versionText, 2);
         row.Children.Add(versionText);
 
@@ -260,19 +253,18 @@ public sealed class UpdateLogWindow : Window
         var (bgKey, fgKey, borderKey) = CategoryColors(entry.Category);
         var badge = new Border
         {
-            CornerRadius      = new CornerRadius(4),
-            Padding           = new Thickness(6, 2, 6, 2),
-            Background        = UIFactory.Brush(bgKey),
-            BorderBrush       = UIFactory.Brush(borderKey),
-            BorderThickness   = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(6, 2, 6, 2),
+            Background = UIFactory.Brush(bgKey),
+            BorderBrush = UIFactory.Brush(borderKey),
+            BorderThickness = new Thickness(1),
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
-            Child             = new TextBlock
+            Child = new TextBlock
             {
-                Text      = entry.Category,
-                FontSize  = 10,
-                Foreground = UIFactory.Brush(fgKey),
-            },
+                FontSize = 10,
+                Foreground = UIFactory.Brush(fgKey)
+            }.Localize("Text", entry.Category),
         };
         Grid.SetColumn(badge, 3);
         row.Children.Add(badge);
@@ -315,18 +307,18 @@ public sealed class UpdateLogWindow : Window
     // Category → (bg resource key, fg resource key, border resource key)
     private static (string bg, string fg, string border) CategoryColors(string category) => category switch
     {
-        "ReShade"            => (ResourceKeys.AccentTealBgBrush,   ResourceKeys.AccentTealBrush,   ResourceKeys.AccentTealBorderBrush),
-        "Addon"              => (ResourceKeys.AccentGreenBgBrush,  ResourceKeys.AccentGreenBrush,  ResourceKeys.AccentGreenBorderBrush),
-        "Shader Pack"        => (ResourceKeys.AccentPurpleBgBrush, ResourceKeys.AccentPurpleBrush, ResourceKeys.AccentPurpleBorderBrush),
-        "RenoDX DLSS5"       => (ResourceKeys.AccentBlueBgBrush,   ResourceKeys.AccentBlueBrush,   ResourceKeys.AccentBlueBorderBrush),
-        "DLSS Tool"          => (ResourceKeys.AccentBlueBgBrush,   ResourceKeys.AccentBlueBrush,   ResourceKeys.AccentBlueBorderBrush),
-        "OptiScaler"         => (ResourceKeys.AccentAmberBgBrush,  ResourceKeys.AccentAmberBrush,  ResourceKeys.BorderDefaultBrush),
-        "OptiScaler Nightly" => (ResourceKeys.AccentAmberBgBrush,  ResourceKeys.AccentAmberBrush,  ResourceKeys.BorderDefaultBrush),
-        "OptiPatcher"        => (ResourceKeys.AccentAmberBgBrush,  ResourceKeys.AccentAmberBrush,  ResourceKeys.BorderDefaultBrush),
-        "DLSS"               => (ResourceKeys.AccentBlueBgBrush,   ResourceKeys.AccentBlueBrush,   ResourceKeys.AccentBlueBorderBrush),
-        "Streamline"         => (ResourceKeys.AccentBlueBgBrush,   ResourceKeys.AccentBlueBrush,   ResourceKeys.AccentBlueBorderBrush),
-        "dgVoodoo2"          => (ResourceKeys.AccentTealBgBrush,   ResourceKeys.AccentTealBrush,   ResourceKeys.AccentTealBorderBrush),
-        _                    => (ResourceKeys.SurfaceRaisedBrush,  ResourceKeys.TextSecondaryBrush, ResourceKeys.BorderDefaultBrush),
+        "ReShade" => (ResourceKeys.AccentTealBgBrush, ResourceKeys.AccentTealBrush, ResourceKeys.AccentTealBorderBrush),
+        "Addon" => (ResourceKeys.AccentGreenBgBrush, ResourceKeys.AccentGreenBrush, ResourceKeys.AccentGreenBorderBrush),
+        "Shader Pack" => (ResourceKeys.AccentPurpleBgBrush, ResourceKeys.AccentPurpleBrush, ResourceKeys.AccentPurpleBorderBrush),
+        "RenoDX DLSS5" => (ResourceKeys.AccentBlueBgBrush, ResourceKeys.AccentBlueBrush, ResourceKeys.AccentBlueBorderBrush),
+        "DLSS Tool" => (ResourceKeys.AccentBlueBgBrush, ResourceKeys.AccentBlueBrush, ResourceKeys.AccentBlueBorderBrush),
+        "OptiScaler" => (ResourceKeys.AccentAmberBgBrush, ResourceKeys.AccentAmberBrush, ResourceKeys.BorderDefaultBrush),
+        "OptiScaler Nightly" => (ResourceKeys.AccentAmberBgBrush, ResourceKeys.AccentAmberBrush, ResourceKeys.BorderDefaultBrush),
+        "OptiPatcher" => (ResourceKeys.AccentAmberBgBrush, ResourceKeys.AccentAmberBrush, ResourceKeys.BorderDefaultBrush),
+        "DLSS" => (ResourceKeys.AccentBlueBgBrush, ResourceKeys.AccentBlueBrush, ResourceKeys.AccentBlueBorderBrush),
+        "Streamline" => (ResourceKeys.AccentBlueBgBrush, ResourceKeys.AccentBlueBrush, ResourceKeys.AccentBlueBorderBrush),
+        "dgVoodoo2" => (ResourceKeys.AccentTealBgBrush, ResourceKeys.AccentTealBrush, ResourceKeys.AccentTealBorderBrush),
+        _ => (ResourceKeys.SurfaceRaisedBrush, ResourceKeys.TextSecondaryBrush, ResourceKeys.BorderDefaultBrush),
     };
 
     // ── Helpers ───────────────────────────────────────────────────────────
@@ -335,10 +327,10 @@ public sealed class UpdateLogWindow : Window
     {
         try
         {
-            var area    = Microsoft.UI.Windowing.DisplayArea.Primary.WorkArea;
+            var area = Microsoft.UI.Windowing.DisplayArea.Primary.WorkArea;
             var winSize = AppWindow.Size;
             AppWindow.Move(new Windows.Graphics.PointInt32(
-                area.X + (area.Width  - winSize.Width)  / 2,
+                area.X + (area.Width - winSize.Width) / 2,
                 area.Y + (area.Height - winSize.Height) / 2));
         }
         catch { /* non-critical */ }

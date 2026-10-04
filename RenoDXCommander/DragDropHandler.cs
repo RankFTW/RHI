@@ -206,6 +206,7 @@ public partial class DragDropHandler
                                 var preSelectIndex = FuzzyMatchGameIndex(gameNames, Path.GetFileName(file.Path));
                                 var combo = new Microsoft.UI.Xaml.Controls.ComboBox
                                 {
+                                    ItemTemplate = null,
                                     ItemsSource = gameNames,
                                     SelectedIndex = preSelectIndex,
                                     FontSize = 12,
@@ -213,21 +214,21 @@ public partial class DragDropHandler
                                 };
                                 var pickerDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
                                 {
-                                    Title = "🌙 Install Luma Addon",
                                     Content = new Microsoft.UI.Xaml.Controls.StackPanel
                                     {
                                         Spacing = 8,
                                         Children =
                                         {
-                                            new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Install {addonName} to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                                            new Microsoft.UI.Xaml.Controls.TextBlock {
+                                                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                                                FontSize = 12
+                                            }.Localize("Text", Loc.Format($"Install {addonName} to:")),
                                             combo,
                                         }
                                     },
-                                    PrimaryButtonText = "Install",
-                                    CloseButtonText = "Cancel",
                                     XamlRoot = _window.Content.XamlRoot,
-                                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                                };
+                                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+                                }.Localize("Title", Loc.Get("🌙 Install Luma Addon")).Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
                                 var result = await DialogService.ShowSafeAsync(pickerDialog);
                                 if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
                                 {
@@ -276,6 +277,7 @@ public partial class DragDropHandler
 
                                 var combo = new Microsoft.UI.Xaml.Controls.ComboBox
                                 {
+                                    ItemTemplate = null,
                                     ItemsSource = gameNames,
                                     SelectedIndex = preSelectIndex,
                                     FontSize = 12,
@@ -283,21 +285,21 @@ public partial class DragDropHandler
                                 };
                                 var pickerDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
                                 {
-                                    Title = "Install Luma Mod",
                                     Content = new Microsoft.UI.Xaml.Controls.StackPanel
                                     {
                                         Spacing = 8,
                                         Children =
                                         {
-                                            new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Luma mod detected: {Path.GetFileName(file.Path)}\n\nSelect game to install to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                                            new Microsoft.UI.Xaml.Controls.TextBlock {
+                                                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                                                FontSize = 12
+                                            }.Localize("Text", Loc.Format($"Luma mod detected: {Path.GetFileName(file.Path)}\n\nSelect game to install to:")),
                                             combo,
                                         }
                                     },
-                                    PrimaryButtonText = "Install",
-                                    CloseButtonText = "Cancel",
                                     XamlRoot = _window.Content.XamlRoot,
-                                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                                };
+                                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+                                }.Localize("Title", Loc.Get("Install Luma Mod")).Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
                                 var result = await DialogService.ShowSafeAsync(pickerDialog);
                                 if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
                                 {

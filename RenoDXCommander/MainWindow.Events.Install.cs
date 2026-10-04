@@ -21,11 +21,10 @@ public sealed partial class MainWindow
         // Build the progress dialog
         var statusText = new TextBlock
         {
-            Text = "Preparing...",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-        };
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+        }.Localize("Text", Loc.Get("Preparing..."));
         var progressBar = new ProgressBar
         {
             IsIndeterminate = true,
@@ -39,11 +38,10 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Updating All Components",
             Content = panel,
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Updating All Components"));
 
         // Show dialog non-blocking (it stays open while updates run)
         var dialogTask = DialogService.ShowSafeAsync(dialog);
@@ -52,39 +50,39 @@ public sealed partial class MainWindow
         {
             if (!ViewModel.Settings.GlobalSkipRsUpdates)
             {
-                statusText.Text = "Updating ReShade...";
+                statusText.Localize("Text", Loc.Get("Updating ReShade..."));
                 await ViewModel.UpdateAllReShadeAsync();
             }
             if (!ViewModel.Settings.GlobalSkipRdxUpdates)
             {
-                statusText.Text = "Updating RenoDX...";
+                statusText.Localize("Text", Loc.Get("Updating RenoDX..."));
                 await ViewModel.UpdateAllRenoDxAsync();
             }
             if (!ViewModel.Settings.GlobalSkipUlUpdates)
             {
-                statusText.Text = "Updating ReLimiter...";
+                statusText.Localize("Text", Loc.Get("Updating ReLimiter..."));
                 await ViewModel.UpdateAllUlAsync();
             }
             if (!ViewModel.Settings.GlobalSkipDcUpdates)
             {
-                statusText.Text = "Updating Display Commander...";
+                statusText.Localize("Text", Loc.Get("Updating Display Commander..."));
                 await ViewModel.UpdateAllDcAsync();
             }
             if (!ViewModel.Settings.GlobalSkipOsUpdates)
             {
-                statusText.Text = "Updating OptiScaler...";
+                statusText.Localize("Text", Loc.Get("Updating OptiScaler..."));
                 await ViewModel.UpdateAllOsAsync();
             }
             if (!ViewModel.Settings.GlobalSkipRefUpdates)
             {
-                statusText.Text = "Updating RE Framework...";
+                statusText.Localize("Text", Loc.Get("Updating RE Framework..."));
                 await ViewModel.UpdateAllRefAsync();
             }
-            statusText.Text = "Updating DXVK...";
+            statusText.Localize("Text", Loc.Get("Updating DXVK..."));
             await ViewModel.UpdateAllDxvkAsync();
-            statusText.Text = "Updating Luma...";
+            statusText.Localize("Text", Loc.Get("Updating Luma..."));
             await ViewModel.UpdateAllLumaAsync();
-            statusText.Text = "Updating DOF Fix...";
+            statusText.Localize("Text", Loc.Get("Updating DOF Fix..."));
             await ViewModel.UpdateAllDofFixAsync();
         }
         catch (Exception ex)
@@ -137,7 +135,7 @@ public sealed partial class MainWindow
         try
         {
             AuxInstallService.CopyUlIni(card.InstallPath);
-            card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
+            card.UlActionMessage = Loc.Get("✅ relimiter.ini copied to game folder.");
         }
         catch (Exception ex)
         {
@@ -152,7 +150,7 @@ public sealed partial class MainWindow
         try
         {
             AuxInstallService.CopyDcIni(card.InstallPath);
-            card.DcActionMessage = "✅ DisplayCommander.ini copied to game folder.";
+            card.DcActionMessage = Loc.Get("✅ DisplayCommander.ini copied to game folder.");
             card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
         }
         catch (Exception ex)
@@ -215,18 +213,15 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "ℹ DXVK Info",
             Content = new TextBlock
             {
-                Text = content,
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                 FontSize = 13,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            },
-            CloseButtonText = "OK",
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+            }.Localize("Text", content),
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("ℹ DXVK Info")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -306,7 +301,7 @@ public sealed partial class MainWindow
         if (card.DofFixIsInstalling || string.IsNullOrEmpty(card.InstallPath)) return;
 
         card.DofFixIsInstalling = true;
-        card.DofFixActionMessage = "Installing DOF Fix...";
+        card.DofFixActionMessage = Loc.Get("Installing DOF Fix...");
         card.DofFixProgress = 0;
         try
         {
@@ -320,13 +315,13 @@ public sealed partial class MainWindow
             {
                 card.DofFixInstalledVersion = _dofFixService.StagedVersion;
                 card.DofFixStatus = Models.GameStatus.Installed;
-                card.DofFixActionMessage = "✅ DOF Fix installed!";
+                card.DofFixActionMessage = Loc.Get("✅ DOF Fix installed!");
                 card.NotifyAll();
                 card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
             }
             else
             {
-                card.DofFixActionMessage = "❌ Install failed";
+                card.DofFixActionMessage = Loc.Get("❌ Install failed");
             }
         }
         catch (Exception ex)
@@ -349,13 +344,13 @@ public sealed partial class MainWindow
         {
             card.DofFixStatus = Models.GameStatus.NotInstalled;
             card.DofFixInstalledVersion = null;
-            card.DofFixActionMessage = "✖ DOF Fix removed.";
+            card.DofFixActionMessage = Loc.Get("✖ DOF Fix removed.");
             card.NotifyAll();
             card.FadeMessage(m => card.DofFixActionMessage = m, card.DofFixActionMessage);
         }
         else
         {
-            card.DofFixActionMessage = "❌ Uninstall failed";
+            card.DofFixActionMessage = Loc.Get("❌ Uninstall failed");
         }
     }
 
@@ -372,21 +367,18 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "UE DOF Fix — Release Notes",
             Content = new ScrollViewer
             {
                 Content = new TextBlock
                 {
-                    Text = notes ?? "No release notes available.",
                     TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    IsTextSelectionEnabled = true,
-                },
+                    IsTextSelectionEnabled = true
+                }.Localize("Text", notes ?? Loc.Get("No release notes available.")),
                 MaxHeight = 400,
             },
-            CloseButtonText = "OK",
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("UE DOF Fix — Release Notes")).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -394,16 +386,12 @@ public sealed partial class MainWindow
     {
         var dialog = new ContentDialog
         {
-            Title = "DOF Fix Settings",
-            Content = new TextBlock
-            {
-                Text = "No configurable settings available for this component.",
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            },
-            CloseButtonText = "OK",
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("DOF Fix Settings")).Localize("Content", new TextBlock
+        {
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+        }.Localize("Text", Loc.Get("No configurable settings available for this component."))).Localize("CloseButtonText", Loc.Get("OK"));
         await DialogService.ShowSafeAsync(dialog);
     }
 
@@ -497,28 +485,24 @@ public sealed partial class MainWindow
         {
             var dontShowCheck = new CheckBox
             {
-                Content = "Don't show this again",
+                Content = Loc.Get("Don't show this again"),
                 FontSize = 12,
                 Margin = new Thickness(0, 8, 0, 0),
             };
             var panel = new StackPanel { Spacing = 8 };
             panel.Children.Add(new TextBlock
             {
-                Text = "This toggles the engine version to Unreal Engine 5.0–5.6, making this game eligible for the DOF Fix addon.\n\nUse this when RHI cannot detect the UE version automatically (e.g. Game Pass games).",
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                FontSize = 12,
-            });
+                FontSize = 12
+            }.Localize("Text", Loc.Get("This toggles the engine version to Unreal Engine 5.0–5.6, making this game eligible for the DOF Fix addon.\n\nUse this when RHI cannot detect the UE version automatically (e.g. Game Pass games).")));
             panel.Children.Add(dontShowCheck);
 
             var dialog = new ContentDialog
             {
-                Title = "Engine Version Override",
                 Content = panel,
-                PrimaryButtonText = "Continue",
-                CloseButtonText = "Cancel",
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Engine Version Override")).Localize("PrimaryButtonText", Loc.Get("Continue")).Localize("CloseButtonText", Loc.Get("Cancel"));
             var result = await DialogService.ShowSafeAsync(dialog);
 
             if (dontShowCheck.IsChecked == true)
@@ -1049,22 +1033,20 @@ public sealed partial class MainWindow
                 var panel = new StackPanel { Spacing = 8 };
                 panel.Children.Add(new TextBlock
                 {
-                    Text = $"Remove {card.GameName} from RHI?",
                     FontSize = 13,
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                });
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+                }.Localize("Text", Loc.Format($"Remove {card.GameName} from RHI?")));
                 panel.Children.Add(new TextBlock
                 {
-                    Text = $"The following components are installed: {componentList}.",
                     TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                     FontSize = 12,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                });
+                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+                }.Localize("Text", Loc.Format($"The following components are installed: {componentList}.")));
 
                 var uninstallCheck = new CheckBox
                 {
-                    Content = "Also uninstall all RHI-managed components from game folder",
+                    Content = Loc.Get("Also uninstall all RHI-managed components from game folder"),
                     FontSize = 12,
                     IsChecked = false,
                 };
@@ -1072,13 +1054,10 @@ public sealed partial class MainWindow
 
                 var dialog = new ContentDialog
                 {
-                    Title = "Remove Game",
                     Content = panel,
-                    PrimaryButtonText = "Remove",
-                    CloseButtonText = "Cancel",
                     XamlRoot = Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("Remove Game")).Localize("PrimaryButtonText", Loc.Get("Remove")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
                 result = await DialogService.ShowSafeAsync(dialog);
                 uninstallComponents = uninstallCheck.IsChecked == true;
@@ -1088,18 +1067,13 @@ public sealed partial class MainWindow
                 // No components installed — simple confirm
                 var dialog = new ContentDialog
                 {
-                    Title = "Remove Game",
-                    Content = new TextBlock
-                    {
-                        Text = $"Remove {card.GameName} from RHI?",
-                        FontSize = 12,
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    },
-                    PrimaryButtonText = "Remove",
-                    CloseButtonText = "Cancel",
                     XamlRoot = Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("Remove Game")).Localize("Content", new TextBlock
+                {
+                    FontSize = 12,
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+                }.Localize("Text", Loc.Format($"Remove {card.GameName} from RHI?"))).Localize("PrimaryButtonText", Loc.Get("Remove")).Localize("CloseButtonText", Loc.Get("Cancel"));
                 result = await DialogService.ShowSafeAsync(dialog);
             }
 
@@ -1158,19 +1132,22 @@ public sealed partial class MainWindow
         var progressPanel = new StackPanel { Spacing = 8 };
         var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
         var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
-        var progressText = new TextBlock { Text = "Clearing caches...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        var progressText = new TextBlock
+        {
+            FontSize = 13,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+        }.Localize("Text", Loc.Get("Clearing caches..."));
         progressRow.Children.Add(progressRing);
         progressRow.Children.Add(progressText);
         progressPanel.Children.Add(progressRow);
 
         var progressDialog = new ContentDialog
         {
-            Title = "Full Refresh",
             Content = progressPanel,
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
-        
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Full Refresh"));
+
         // Use explicit gate pattern to ensure proper gate release even if operation completes quickly
         bool refreshGateReleased = false;
         progressDialog.Closed += (_, _) => { if (!refreshGateReleased) { refreshGateReleased = true; DialogService.ReleaseDialogGate(); } };

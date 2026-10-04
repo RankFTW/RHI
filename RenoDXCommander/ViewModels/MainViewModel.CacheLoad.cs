@@ -379,10 +379,10 @@ public partial class MainViewModel
         _manualGames = _gameLibraryService.ToManualGames(savedLib);
 
         // 3. Restore all caches from the saved library
-        _engineTypeCache   = savedLib.EngineTypeCache   ?? new(StringComparer.OrdinalIgnoreCase);
+        _engineTypeCache = savedLib.EngineTypeCache ?? new(StringComparer.OrdinalIgnoreCase);
         _resolvedPathCache = savedLib.ResolvedPathCache ?? new(StringComparer.OrdinalIgnoreCase);
-        _addonFileCache    = savedLib.AddonFileCache    ?? new(StringComparer.OrdinalIgnoreCase);
-        _bitnessCache      = savedLib.BitnessCache      ?? new(StringComparer.OrdinalIgnoreCase);
+        _addonFileCache = savedLib.AddonFileCache ?? new(StringComparer.OrdinalIgnoreCase);
+        _bitnessCache = savedLib.BitnessCache ?? new(StringComparer.OrdinalIgnoreCase);
         LastSelectedGameName = savedLib.LastSelectedGame;
 
         // 4. Convert cached games to DetectedGame list and deduplicate
@@ -437,7 +437,7 @@ public partial class MainViewModel
                 _installPathOverrides.TryAdd(key, value);
 
         // 8. Load installed records and aux records from disk (fast local reads)
-        var records    = _installer.LoadAll();
+        var records = _installer.LoadAll();
         var auxRecords = _auxInstaller.LoadAll();
 
         // 9. Build cards from cached data — lightweight path that creates
@@ -569,10 +569,10 @@ public partial class MainViewModel
             // Build engine hint string
             var engineHint = engineOverrideLabel != null
                 ? engineOverrideLabel
-                : engine == EngineType.Unreal       ? FormatEngineHint(EngineType.Unreal, installPath)
+                : engine == EngineType.Unreal ? FormatEngineHint(EngineType.Unreal, installPath)
                 : engine == EngineType.UnrealLegacy ? "Unreal (Legacy)"
-                : engine == EngineType.Unity        ? "Unity"
-                : engine == EngineType.REEngine     ? "RE Engine" : "";
+                : engine == EngineType.Unity ? "Unity"
+                : engine == EngineType.REEngine ? "RE Engine" : "";
 
             var is32Bit = ResolveIs32Bit(game.Name, machineType, game.Source ?? "");
 
@@ -581,49 +581,49 @@ public partial class MainViewModel
 
             var newCard = new GameCardViewModel
             {
-                GameName               = game.Name,
-                DetectedGame           = game,
-                InstallPath            = installPath,
-                Source                 = game.Source,
-                InstalledRecord        = record,
-                Status                 = record != null ? GameStatus.Installed : GameStatus.Available,
+                GameName = game.Name,
+                DetectedGame = game,
+                InstallPath = installPath,
+                Source = game.Source,
+                InstalledRecord = record,
+                Status = record != null ? GameStatus.Installed : GameStatus.Available,
                 InstalledAddonFileName = record?.AddonFileName,
-                RdxInstalledVersion    = savedLib.RdxInstalledVersions?.TryGetValue(savedLibKey, out var rdxVer) == true ? rdxVer : null, // Cached from last session; Phase 2 updates if file changed
-                EngineHint             = engineHint,
-                Is32Bit                = is32Bit,
-                GraphicsApi            = graphicsApi,
-                DetectedApis           = detectedApis,
-                IsHidden               = _hiddenGames.Contains(savedLibKey),
-                IsFavourite            = _favouriteGames.Contains(savedLibKey),
-                IsManuallyAdded        = game.IsManuallyAdded,
-                IsREEngineGame         = engine == EngineType.REEngine,
+                RdxInstalledVersion = savedLib.RdxInstalledVersions?.TryGetValue(savedLibKey, out var rdxVer) == true ? rdxVer : null, // Cached from last session; Phase 2 updates if file changed
+                EngineHint = engineHint,
+                Is32Bit = is32Bit,
+                GraphicsApi = graphicsApi,
+                DetectedApis = detectedApis,
+                IsHidden = _hiddenGames.Contains(savedLibKey),
+                IsFavourite = _favouriteGames.Contains(savedLibKey),
+                IsManuallyAdded = game.IsManuallyAdded,
+                IsREEngineGame = engine == EngineType.REEngine,
 
                 // ReShade state from aux records
-                RsRecord               = rsRec,
-                RsStatus               = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
-                RsInstalledFile        = rsRec?.InstalledAs,
-                RsInstalledVersion     = savedLib.RsInstalledVersions?.TryGetValue(savedLibKey, out var rsVer) == true ? rsVer : null, // Cached from last session; Phase 2 updates if file changed
+                RsRecord = rsRec,
+                RsStatus = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
+                RsInstalledFile = rsRec?.InstalledAs,
+                RsInstalledVersion = savedLib.RsInstalledVersions?.TryGetValue(savedLibKey, out var rsVer) == true ? rsVer : null, // Cached from last session; Phase 2 updates if file changed
 
                 // Per-game settings from GameNameService
                 ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(savedLibKey),
-                ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(savedLibKey),
-                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(savedLibKey),
-                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(savedLibKey),
-                ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(savedLibKey),
-                ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(savedLibKey),
-                UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(savedLibKey),
-                ShaderModeOverride     = _perGameShaderMode.TryGetValue(savedLibKey, out var smCache) ? smCache : null,
-                VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(savedLibKey, out var vrpCache) ? vrpCache : "DirectX",
-                DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
-                LumaFeatureEnabled     = LumaFeatureEnabled,
-                IsLumaMode             = false,
-                LumaRenodxCompatible   = cachedManifest?.LumaRenodxCompat?.Contains(game.Name) == true,
+                ExcludeFromUpdateAllRenoDx = _gameNameService.UpdateAllExcludedRenoDx.Contains(savedLibKey),
+                ExcludeFromUpdateAllUl = _gameNameService.UpdateAllExcludedUl.Contains(savedLibKey),
+                ExcludeFromUpdateAllDc = _gameNameService.UpdateAllExcludedDc.Contains(savedLibKey),
+                ExcludeFromUpdateAllOs = _gameNameService.UpdateAllExcludedOs.Contains(savedLibKey),
+                ExcludeFromUpdateAllRef = _gameNameService.UpdateAllExcludedRef.Contains(savedLibKey),
+                UseNormalReShade = _gameNameService.NormalReShadeGames.Contains(savedLibKey),
+                ShaderModeOverride = _perGameShaderMode.TryGetValue(savedLibKey, out var smCache) ? smCache : null,
+                VulkanRenderingPath = _vulkanRenderingPaths.TryGetValue(savedLibKey, out var vrpCache) ? vrpCache : "DirectX",
+                DllOverrideEnabled = _dllOverrides.ContainsKey(game.Name),
+                LumaFeatureEnabled = LumaFeatureEnabled,
+                IsLumaMode = false,
+                LumaRenodxCompatible = cachedManifest?.LumaRenodxCompat?.Contains(game.Name) == true,
 
                 // Wiki/mod data left empty — Phase 2 MergeCards will fill these in:
                 // Mod, WikiStatus, Maintainer, Notes, IsGenericMod, IsExternalOnly,
                 // ExternalUrl, ExternalLabel, NexusUrl, DiscordUrl, NameUrl,
                 // NexusModsUrl, PcgwUrl, UwFixUrl, UseUeExtended, IsNativeHdrGame
-                WikiStatus             = "—",
+                WikiStatus = "—",
             };
 
             // Dual-API state
@@ -668,10 +668,11 @@ public partial class MainViewModel
                 var osGameManifest = RhiInstallManifest.Read(installPath);
                 newCard.OsInstalledVersion = !string.IsNullOrEmpty(osGameManifest?.Version)
                     ? osGameManifest.Version
-                    : osRec.OsVariant switch {
+                    : osRec.OsVariant switch
+                    {
                         "Nightly" => _optiScalerService.StagedVersionNightly,
-                        "DlssNr"  => _optiScalerService.StagedVersionDlssNr,
-                        _         => _optiScalerService.StagedVersion
+                        "DlssNr" => _optiScalerService.StagedVersionDlssNr,
+                        _ => _optiScalerService.StagedVersion
                     };
             }
 
@@ -828,7 +829,7 @@ public partial class MainViewModel
                 // Set the interposer path from the folder — fall back to sl.common.dll if interposer absent (EA builds)
                 if (dlssCache.StreamlineFolder != null)
                 {
-                    var commonPath     = Path.Combine(dlssCache.StreamlineFolder, "sl.common.dll");
+                    var commonPath = Path.Combine(dlssCache.StreamlineFolder, "sl.common.dll");
                     var interposerPath = Path.Combine(dlssCache.StreamlineFolder, "sl.interposer.dll");
                     detection.StreamlineInterposerPath = File.Exists(commonPath) ? commonPath
                         : File.Exists(interposerPath) ? interposerPath : null;
@@ -915,11 +916,11 @@ public partial class MainViewModel
                 {
                     var pcgwApi =
                         pcgwInfo.HasDirectX12 ? GraphicsApiType.DirectX12 :
-                        pcgwInfo.HasVulkan    ? GraphicsApiType.Vulkan    :
+                        pcgwInfo.HasVulkan ? GraphicsApiType.Vulkan :
                         pcgwInfo.HasDirectX11 ? GraphicsApiType.DirectX11 :
                         pcgwInfo.HasDirectX10 ? GraphicsApiType.DirectX10 :
-                        pcgwInfo.HasDirectX9  ? GraphicsApiType.DirectX9  :
-                        pcgwInfo.HasOpenGL    ? GraphicsApiType.OpenGL    :
+                        pcgwInfo.HasDirectX9 ? GraphicsApiType.DirectX9 :
+                        pcgwInfo.HasOpenGL ? GraphicsApiType.OpenGL :
                         GraphicsApiType.Unknown;
                     if (pcgwApi != GraphicsApiType.Unknown)
                     {
@@ -936,7 +937,7 @@ public partial class MainViewModel
                     // Common for NW.js/Electron games whose runtime imports legacy D3D shims.
                     var pcgwApi =
                         pcgwInfo.HasDirectX12 ? GraphicsApiType.DirectX12 :
-                        pcgwInfo.HasVulkan    ? GraphicsApiType.Vulkan    :
+                        pcgwInfo.HasVulkan ? GraphicsApiType.Vulkan :
                         pcgwInfo.HasDirectX11 ? GraphicsApiType.DirectX11 :
                         GraphicsApiType.Unknown;
                     if (pcgwApi != GraphicsApiType.Unknown)
@@ -996,33 +997,33 @@ public partial class MainViewModel
                     && blockCheck.DlssFsrBlocked && !blockCheck.HdrSupported;
                 if (!lumaBlocked)
                 {
-                // Generic Luma UE mod — available for all DX11 Unreal Engine games
-                var genericLuma = new LumaMod
-                {
-                    Name = game.Name,
-                    IsGenericLuma = true,
-                    Author = "Pumbo",
-                    DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
-                    Status = "✅",
-                };
-                // Notes from the scraped UE wiki table — populated when Phase 2 merge runs
-                // (_lumaGenericEntries may be empty during cache phase; MergeCards will update)
-                if (_lumaGenericEntries.TryGetValue(game.Name, out var cachedGenericEntry))
-                    genericLuma.SpecialNotes = cachedGenericEntry.Notes;
-                newCard.LumaMod = genericLuma;
-                newCard.LumaRenodxCompatible = true;
-                newCard.IsLumaMode = false;
-                if (_lumaGenericEntries.TryGetValue(game.Name, out var clEntry))
-                {
-                    newCard.LumaHdrSupported = clEntry.HdrSupported;
-                    newCard.LumaDlssFsrSupported = clEntry.DlssFsrSupported;
-                }
-                var lumaRec = LumaService.GetRecordByPath(installPath);
-                if (lumaRec != null)
-                {
-                    newCard.LumaRecord = lumaRec;
-                    newCard.LumaStatus = GameStatus.Installed;
-                }
+                    // Generic Luma UE mod — available for all DX11 Unreal Engine games
+                    var genericLuma = new LumaMod
+                    {
+                        Name = game.Name,
+                        IsGenericLuma = true,
+                        Author = "Pumbo",
+                        DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
+                        Status = "✅",
+                    };
+                    // Notes from the scraped UE wiki table — populated when Phase 2 merge runs
+                    // (_lumaGenericEntries may be empty during cache phase; MergeCards will update)
+                    if (_lumaGenericEntries.TryGetValue(game.Name, out var cachedGenericEntry))
+                        genericLuma.SpecialNotes = cachedGenericEntry.Notes;
+                    newCard.LumaMod = genericLuma;
+                    newCard.LumaRenodxCompatible = true;
+                    newCard.IsLumaMode = false;
+                    if (_lumaGenericEntries.TryGetValue(game.Name, out var clEntry))
+                    {
+                        newCard.LumaHdrSupported = clEntry.HdrSupported;
+                        newCard.LumaDlssFsrSupported = clEntry.DlssFsrSupported;
+                    }
+                    var lumaRec = LumaService.GetRecordByPath(installPath);
+                    if (lumaRec != null)
+                    {
+                        newCard.LumaRecord = lumaRec;
+                        newCard.LumaStatus = GameStatus.Installed;
+                    }
                 }
             }
 
@@ -1053,12 +1054,12 @@ public partial class MainViewModel
                 {
                     switch (flag.Trim())
                     {
-                        case "RDX":  if (newCard.Status != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllRenoDx) newCard.Status = GameStatus.UpdateAvailable; break;
-                        case "RS":   if (newCard.RsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllReShade) newCard.RsStatus = GameStatus.UpdateAvailable; break;
-                        case "UL":   if (newCard.UlStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllUl) newCard.UlStatus = GameStatus.UpdateAvailable; break;
-                        case "DC":   if (newCard.DcStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDc) newCard.DcStatus = GameStatus.UpdateAvailable; break;
-                        case "OS":   if (newCard.OsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllOs) newCard.OsStatus = GameStatus.UpdateAvailable; break;
-                        case "REF":  if (!newCard.ExcludeFromUpdateAllRef) newCard.RefStatus = GameStatus.UpdateAvailable; break;
+                        case "RDX": if (newCard.Status != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllRenoDx) newCard.Status = GameStatus.UpdateAvailable; break;
+                        case "RS": if (newCard.RsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllReShade) newCard.RsStatus = GameStatus.UpdateAvailable; break;
+                        case "UL": if (newCard.UlStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllUl) newCard.UlStatus = GameStatus.UpdateAvailable; break;
+                        case "DC": if (newCard.DcStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDc) newCard.DcStatus = GameStatus.UpdateAvailable; break;
+                        case "OS": if (newCard.OsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllOs) newCard.OsStatus = GameStatus.UpdateAvailable; break;
+                        case "REF": if (!newCard.ExcludeFromUpdateAllRef) newCard.RefStatus = GameStatus.UpdateAvailable; break;
                         case "DXVK": if (newCard.DxvkStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDxvk) newCard.DxvkStatus = GameStatus.UpdateAvailable; break;
                         case "LUMA":
                             // Only restore Luma update indicator when NexusFileId is set
@@ -1139,13 +1140,13 @@ public partial class MainViewModel
         {
             var key = GameKey.Parse(LastSelectedGameName);
             _crashReporter.Log($"[CacheLoad.Selection] Restoring from LastSelectedGameName='{LastSelectedGameName}' → parsed key Name='{key.Name}', Store='{key.Store}'");
-            
+
             // Prefer exact match (name + store), fallback to name-only match
             var exactMatch = _allCards.FirstOrDefault(c => key.Matches(c.GameName, c.Source));
             var nameOnlyMatch = _allCards.FirstOrDefault(c => key.MatchesName(c.GameName));
-            
+
             _crashReporter.Log($"[CacheLoad.Selection] exactMatch={(exactMatch != null ? $"'{exactMatch.GameName}|{exactMatch.Source}'" : "null")}, nameOnlyMatch={(nameOnlyMatch != null ? $"'{nameOnlyMatch.GameName}|{nameOnlyMatch.Source}'" : "null")}");
-            
+
             var match = exactMatch ?? nameOnlyMatch;
             if (match != null)
             {
@@ -1155,7 +1156,7 @@ public partial class MainViewModel
         }
 
         // 14. Set StatusText to show cached game count
-        StatusText    = $"{_allCards.Count} games";
+        StatusText = Loc.Format($"{_allCards.Count} games");
         SubStatusText = "";
 
         _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Cache phase complete — {_allCards.Count} cards displayed");

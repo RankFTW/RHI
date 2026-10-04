@@ -1,0 +1,938 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="InterfaceLanguageHeading.Text">
+    <value>Language</value>
+  </data>
+  <data xml:space="preserve" name="InterfaceLanguageRestart.Text">
+    <value>Language changes take effect immediately.</value>
+  </data>
+  <data xml:space="preserve" name="L008de6dab3a8.Content">
+    <value>Apply to All Games</value>
+  </data>
+  <data xml:space="preserve" name="L0155681c76b8.Content">
+    <value>Apply</value>
+  </data>
+  <data xml:space="preserve" name="L01dd2ec139f2.Text">
+    <value>———  Frame limiters — Choose one  ———</value>
+  </data>
+  <data xml:space="preserve" name="L021c5e9e3081.Content">
+    <value>Create Missing Profiles</value>
+  </data>
+  <data xml:space="preserve" name="L021c5e9e3081.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Creates NVIDIA driver profiles for all games that don't have one yet. Ensures global settings like Power Mode and VSync apply to every game.</value>
+  </data>
+  <data xml:space="preserve" name="L028d7d841edb.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Open Nexus Mods page</value>
+  </data>
+  <data xml:space="preserve" name="L0445285f0b0d.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Open game folder in Explorer</value>
+  </data>
+  <data xml:space="preserve" name="L04674df949ea.Text">
+    <value>Links</value>
+  </data>
+  <data xml:space="preserve" name="L05ae1c977d6c.Text">
+    <value>System &amp; Maintenance</value>
+  </data>
+  <data xml:space="preserve" name="L05c746a95108.Text">
+    <value>Not connected</value>
+  </data>
+  <data xml:space="preserve" name="L07944f3bdf8b.Text">
+    <value>Addon Watch Folder</value>
+  </data>
+  <data xml:space="preserve" name="L08bf33a838dd.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Global DMFG max frame count. Games using Dynamic mode inherit this unless overridden per-game.</value>
+  </data>
+  <data xml:space="preserve" name="L0904d1b47de2.Text">
+    <value>GPU Type</value>
+  </data>
+  <data xml:space="preserve" name="L095d2ac9232c.Text">
+    <value> by Microsoft</value>
+  </data>
+  <data xml:space="preserve" name="L09b854936002.Text">
+    <value>Desktop resolution to switch to before a game launches. Restored on game exit.</value>
+  </data>
+  <data xml:space="preserve" name="L0a23b486e9a2.Text">
+    <value>DLSS Inputs</value>
+  </data>
+  <data xml:space="preserve" name="L0e3d041323b9.Text">
+    <value>Somehow I have become a UI guy in multiple aspects of life lol.</value>
+  </data>
+  <data xml:space="preserve" name="L0efffcd2816e.Text">
+    <value>Close to Tray</value>
+  </data>
+  <data xml:space="preserve" name="L115f01ebbc8f.Content">
+    <value>Settings</value>
+  </data>
+  <data xml:space="preserve" name="L115f01ebbc8f.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Open settings</value>
+  </data>
+  <data xml:space="preserve" name="L11ca0f39c027.Text">
+    <value>Output Colour Settings</value>
+  </data>
+  <data xml:space="preserve" name="L11ee931c1c12.Content">
+    <value>Browse</value>
+  </data>
+  <data xml:space="preserve" name="L1334979da282.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Open Ultra+ page for this game</value>
+  </data>
+  <data xml:space="preserve" name="L147b2006b8db.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Toggle per-game HDR auto-switch. Purple = HDR enabled on launch, disabled on exit.</value>
+  </data>
+  <data xml:space="preserve" name="L15eced7f024e.Content">
+    <value>Connect</value>
+  </data>
+  <data xml:space="preserve" name="L16854fd41af4.Text">
+    <value>Universal UE DOF Fix</value>
+  </data>
+  <data xml:space="preserve" name="L16932869cade.Text">
+    <value>Control how RHI manages shader files across your games.</value>
+  </data>
+  <data xml:space="preserve" name="L1870face0ac9.Text">
+    <value>Upscaler redirection layer enabling DLSS, FSR, and XeSS across different GPU vendors. Downloaded from GitHub releases.</value>
+  </data>
+  <data xml:space="preserve" name="L18715fa5d5dd.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Global FPS cap written to all relimiter.ini files. Select a VRR preset or Custom for a manual value.</value>
+  </data>
+  <data xml:space="preserve" name="L193edbf2e192.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Globally enables or disables G-Sync/FreeSync variable refresh rate.</value>
+  </data>
+  <data xml:space="preserve" name="L19ae68056a0f.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Open ultrawide fix page</value>
+  </data>
+  <data xml:space="preserve" name="L1a6798812729.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Global power management mode — applies to all games without a per-game override.</value>
+  </data>
+  <data xml:space="preserve" name="L1a967a24b943.Text">
+    <value>  ·  BSD 3-Clause Licence</value>
+  </data>
+  <data xml:space="preserve" name="L1dd0f9f2c97f.Text">
+    <value>Screenshot key</value>
+  </data>
+  <data xml:space="preserve" name="L1f15eaabdeb4.Text">
+    <value> by doitsujin &amp; contributors</value>
+  </data>
+  <data xml:space="preserve" name="L1fc32787f3db.Content">
+    <value>Links</value>
+  </data>
+  <data xml:space="preserve" name="L1fc32787f3db.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Useful links and resources</value>
+  </data>
+  <data xml:space="preserve" name="L1fc479eaf587.Text">
+    <value>0 shown</value>
+  </data>
+  <data xml:space="preserve" name="L2126099bbcf6.Text">
+    <value> by Crosire</value>
+  </data>
+  <data xml:space="preserve" name="L214d17f9da0d.Text">
+    <value>FPS Limit</value>
+  </data>
+  <data xml:space="preserve" name="L21581289bda0.Content">
+    <value>Available HDR Mods</value>
+  </data>
+  <data xml:space="preserve" name="L21581289bda0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Loading mod data, please wait...</value>
+  </data>
+  <data xml:space="preserve" name="L21e9359741ac.Content">
+    <value>Configure Defaults</value>
+  </data>
+  <data xml:space="preserve" name="L226bc37eaaea.Text">
+    <value>64-bit</value>
+  </data>
+  <data xml:space="preserve" name="L2321af8f8e24.Content">
+    <value>Patch Notes</value>
+  </data>
+  <data xml:space="preserve" name="L2321af8f8e24.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>View recent patch notes</value>
+  </data>
+  <data xml:space="preserve" name="L25149f823b67.Text">
+    <value>Data &amp; Custom Files</value>
+  </data>
+  <data xml:space="preserve" name="L25c7aa93c933.Text">
+    <value>About</value>
+  </data>
+  <data xml:space="preserve" name="L26f3900c3e92.Text">
+    <value>Automatic Updates</value>
+  </data>
+  <data xml:space="preserve" name="L270af76ea75c.Content">
+    <value>Info</value>
+  </data>
+  <data xml:space="preserve" name="L2723a5bdc005.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Launch this game</value>
+  </data>
+  <data xml:space="preserve" name="L27a0593b5dc9.Text">
+    <value>Batch Deploy</value>
+  </data>
+  <data xml:space="preserve" name="L298eb36254ee.Text">
+    <value>DOF Fix</value>
+  </data>
+  <data xml:space="preserve" name="L2aebe71b499c.Content">
+    <value>Favourites</value>
+  </data>
+  <data xml:space="preserve" name="L2d78f34bf00b.Text">
+    <value>Fetches the latest manifest data and checks all components for available updates. Bypasses the 4-hour cooldown.</value>
+  </data>
+  <data xml:space="preserve" name="L2ed009a40ae8.Text">
+    <value>Component Settings</value>
+  </data>
+  <data xml:space="preserve" name="L2f29239a136c.Text">
+    <value>Backup saves all per-game NVIDIA driver settings to a file. Restore loads them back — useful before updating drivers.</value>
+  </data>
+  <data xml:space="preserve" name="L2f9f3694bf41.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Toggle per-game resolution switch. Purple = resolution changes on launch, restores on exit.</value>
+  </data>
+  <data xml:space="preserve" name="L2fa138a348d2.Text">
+    <value>Background Checks</value>
+  </data>
+  <data xml:space="preserve" name="L30a4c0d60568.Text">
+    <value>Preferred Refresh Rate</value>
+  </data>
+  <data xml:space="preserve" name="L30aa6d97d345.Text">
+    <value>Paste your Nexus Mods personal API key. Premium users get one-click downloads and silent auto-updates. Free users get one-click browser downloads.</value>
+  </data>
+  <data xml:space="preserve" name="L31be4f781c54.Text">
+    <value>Screenshots &amp; Hotkeys</value>
+  </data>
+  <data xml:space="preserve" name="L320d95166847.Text">
+    <value>Drop Helper</value>
+  </data>
+  <data xml:space="preserve" name="L33f1e38935d5.Text">
+    <value>Favourite</value>
+  </data>
+  <data xml:space="preserve" name="L35770b1b6093.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>When On, Windows HDR is automatically enabled when launching a game through RHI and disabled when the game exits.</value>
+  </data>
+  <data xml:space="preserve" name="L35e0f469fc15.Text">
+    <value>Minimize to system tray on close. Right-click the tray icon or pinned taskbar icon to quickly launch recent games.</value>
+  </data>
+  <data xml:space="preserve" name="L3622f8ad65c8.Text">
+    <value>Full Refresh</value>
+  </data>
+  <data xml:space="preserve" name="L37976a18d446.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Reset to Print Screen</value>
+  </data>
+  <data xml:space="preserve" name="L3b0339f3197d.Text">
+    <value>When enabled, RHI silently installs component updates in the background after each update check. Games that are running when an update is detected will be retried automatically once they close. Does not apply to app updates.</value>
+  </data>
+  <data xml:space="preserve" name="L3c9aec06e679.Text">
+    <value>On: all update checks run automatically on startup and every 4 hours, including ReShade, RenoDX, OptiScaler, Nexus Mods, and all other components.</value>
+  </data>
+  <data xml:space="preserve" name="L3c9f3078e9a9.Content">
+    <value>Update All</value>
+  </data>
+  <data xml:space="preserve" name="L3e38d8e776d7.Content">
+    <value>AppData Folder</value>
+  </data>
+  <data xml:space="preserve" name="L3e3b3faae67c.Text">
+    <value>ReShade &amp; shader packs · RenoDX HDR mods · Luma Framework · DLSS/Streamline version swaps &amp; presets · NVIDIA driver profile settings (VSync, Low Latency, ReBAR, Smooth Motion, Power) · OptiScaler · ReLimiter &amp; Display Commander frame limiters · RE Framework · DXVK · UE-Extended native HDR · Per-game overrides for everything.</value>
+  </data>
+  <data xml:space="preserve" name="L3f1397f456cb.Content">
+    <value>Other</value>
+  </data>
+  <data xml:space="preserve" name="L3f858a0ed28e.Text">
+    <value>Subfolders</value>
+  </data>
+  <data xml:space="preserve" name="L3f8d00de42d8.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Configure which presets receive the global peak nits value.</value>
+  </data>
+  <data xml:space="preserve" name="L4124260f0854.Content">
+    <value>Updates</value>
+  </data>
+  <data xml:space="preserve" name="L4124260f0854.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>View component update history</value>
+  </data>
+  <data xml:space="preserve" name="L41a6c3e5e8b6.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Manually add a game</value>
+  </data>
+  <data xml:space="preserve" name="L42feab0fb9b4.Content">
+    <value>Export Game Data</value>
+  </data>
+  <data xml:space="preserve" name="L42feab0fb9b4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Gathers game library data (APIs, exe paths, engine info) and copies a JSON file to clipboard — paste into Discord to share with the RHI community database</value>
+  </data>
+  <data xml:space="preserve" name="L438a76da8dc8.Text">
+    <value>Guide</value>
+  </data>
+  <data xml:space="preserve" name="L438f1ed021c8.Text">
+    <value>Peak Nits</value>
+  </data>
+  <data xml:space="preserve" name="L457e182bed03.Text">
+    <value>Global NVIDIA Driver Settings</value>
+  </data>
+  <data xml:space="preserve" name="L4595d6cf19c9.Content">
+    <value>MOTD</value>
+  </data>
+  <data xml:space="preserve" name="L4595d6cf19c9.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Show message of the day</value>
+  </data>
+  <data xml:space="preserve" name="L4608b5253405.Text">
+    <value>Source</value>
+  </data>
+  <data xml:space="preserve" name="L4666de0d8378.Content">
+    <value>Batch Deploy</value>
+  </data>
+  <data xml:space="preserve" name="L467173c61130.PlaceholderText">
+    <value>Press a key...</value>
+  </data>
+  <data xml:space="preserve" name="L46ed38e30a1d.Text">
+    <value>Not registered</value>
+  </data>
+  <data xml:space="preserve" name="L47d46370c538.Text">
+    <value> by ZZZ Projects</value>
+  </data>
+  <data xml:space="preserve" name="L484ddd5f47d0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Highest available forces your max refresh rate. App Setting lets games choose their own refresh rate.</value>
+  </data>
+  <data xml:space="preserve" name="L48b083affda0.Text">
+    <value>HDR mod framework powering 800+ games. The entire reason this app exists.</value>
+  </data>
+  <data xml:space="preserve" name="L496b5e9b79fe.Text">
+    <value>Shaders &amp; Addons</value>
+  </data>
+  <data xml:space="preserve" name="L4bf60e600570.Text">
+    <value>Disable update checks for individual components. When disabled, the component will not be checked during startup or Update All.</value>
+  </data>
+  <data xml:space="preserve" name="L4e27dba55505.Text">
+    <value>Frame rate limiter addon available as an alternative to ReLimiter. The LITE variant is downloaded from GitHub on demand.</value>
+  </data>
+  <data xml:space="preserve" name="L4e36f88dbbf9.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Auto-compiles shaders in the background when idle. Higher = more CPU usage during idle, faster first-time game loads.</value>
+  </data>
+  <data xml:space="preserve" name="L4eb5e8cafe1a.Content">
+    <value>Quick Start</value>
+  </data>
+  <data xml:space="preserve" name="L4eb5e8cafe1a.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Quick Start Guide</value>
+  </data>
+  <data xml:space="preserve" name="L4eb62ba63cad.Text">
+    <value>0 installed</value>
+  </data>
+  <data xml:space="preserve" name="L4fda80761dc3.Content">
+    <value>Donate</value>
+  </data>
+  <data xml:space="preserve" name="L4fda80761dc3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Support the mod authors</value>
+  </data>
+  <data xml:space="preserve" name="L516b1d9b95d1.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>ReLimiter Settings</value>
+  </data>
+  <data xml:space="preserve" name="L516cdc1604f3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Global Resizable BAR — enables large GPU memory transfers for all games. Requires admin and compatible hardware (RTX 30 Series+).</value>
+  </data>
+  <data xml:space="preserve" name="L51edeecfdf59.Text">
+    <value>DX11 modding framework adding HDR support and graphics improvements via the ReShade addon system. Mods are downloaded from official GitHub releases. Drag-and-drop install with auto-detection, update checking, and per-game toggle.</value>
+  </data>
+  <data xml:space="preserve" name="L53337ca76a3b.Content">
+    <value>Update Inclusion</value>
+  </data>
+  <data xml:space="preserve" name="L5342b2135381.Content">
+    <value>Check For Updates</value>
+  </data>
+  <data xml:space="preserve" name="L5342b2135381.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Check all components and the app for available updates</value>
+  </data>
+  <data xml:space="preserve" name="L546b24cdbefd.Text">
+    <value>DMFG Defaults</value>
+  </data>
+  <data xml:space="preserve" name="L548cf5ca34ad.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Controls G-Sync/FreeSync variable refresh rate. Fullscreen and Windowed recommended for seamless experience.</value>
+  </data>
+  <data xml:space="preserve" name="L54f88f8b3216.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Select which monitors to change resolution on.</value>
+  </data>
+  <data xml:space="preserve" name="L573dcce5116d.Text">
+    <value>  ·  Zlib Licence</value>
+  </data>
+  <data xml:space="preserve" name="L58e27a0aaf14.Text">
+    <value>DirectX-to-Vulkan translation layer for DX8/DX9/DX10 games. Includes Lilium HDR fork by EndlesslyFlowering for scRGB HDR output.</value>
+  </data>
+  <data xml:space="preserve" name="L595bd525eb0a.Text">
+    <value>⚠ ReShade, OptiScaler, and DLSS/Streamline modifications may trigger anti-cheat in online/multiplayer games</value>
+  </data>
+  <data xml:space="preserve" name="L5977adbcc7b1.Content">
+    <value>Shaders/Addons</value>
+  </data>
+  <data xml:space="preserve" name="L5977adbcc7b1.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Manage global shaders and ReShade addons</value>
+  </data>
+  <data xml:space="preserve" name="L5a5d6ca8e695.Text">
+    <value>UW Fix</value>
+  </data>
+  <data xml:space="preserve" name="L5b8548734c85.Text">
+    <value>Browse</value>
+  </data>
+  <data xml:space="preserve" name="L5c4786d8e446.Text">
+    <value> by RankFTW</value>
+  </data>
+  <data xml:space="preserve" name="L5f0e18758549.Text">
+    <value>This app would not exist without the work of the following people and projects.</value>
+  </data>
+  <data xml:space="preserve" name="L5f2611037f46.Text">
+    <value>Minimal: only manifests, PCGW data, and DLSS versions update automatically. Component update checks only run when you click Refresh or Update All.</value>
+  </data>
+  <data xml:space="preserve" name="L61ce777fb38d.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Open game config folder in Explorer</value>
+  </data>
+  <data xml:space="preserve" name="L62e95819b85b.Text">
+    <value>Configure preferred DLSS/Streamline versions, presets, and render scales. Use 'Quick Apply' in the Nvidia Profile section to stamp these onto any game.</value>
+  </data>
+  <data xml:space="preserve" name="L62f067d5a0f9.Text">
+    <value>Mod Data Source</value>
+  </data>
+  <data xml:space="preserve" name="L63a1771d5fef.Text">
+    <value>Fixes depth-of-field stepping and tiling artifacts in Unreal Engine 5 games.</value>
+  </data>
+  <data xml:space="preserve" name="L64f76df62c30.Text">
+    <value>Controls the DLSS text overlay NVIDIA shows in the corner of games. Global system setting — affects all games. Requires admin.</value>
+  </data>
+  <data xml:space="preserve" name="L655645fca3c8.Text">
+    <value>  ·  Source-available</value>
+  </data>
+  <data xml:space="preserve" name="L6609c199227d.Text">
+    <value> by praydog</value>
+  </data>
+  <data xml:space="preserve" name="L66bbea8bd5d1.Text">
+    <value>Set display colour depth and dynamic range without opening NVIDIA Control Panel.</value>
+  </data>
+  <data xml:space="preserve" name="L66f4bcf733f0.Text">
+    <value>Start with Windows</value>
+  </data>
+  <data xml:space="preserve" name="L67590a8b063a.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Open PCGamingWiki page</value>
+  </data>
+  <data xml:space="preserve" name="L68e33020d3f0.PlaceholderText">
+    <value>Type or choose screenshot folder</value>
+  </data>
+  <data xml:space="preserve" name="L691a43b51e65.Text">
+    <value>Automatically swap to the newest version when a new release appears. Only affects games currently on the previous latest — manually chosen older versions are left alone.</value>
+  </data>
+  <data xml:space="preserve" name="L69a543997a30.Content">
+    <value>Unreal</value>
+  </data>
+  <data xml:space="preserve" name="L6ae83dccd35c.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>When On, all games share the same OSD presets file. When Off, each game has its own presets.</value>
+  </data>
+  <data xml:space="preserve" name="L6cdcef55c6a2.Content">
+    <value>Auto</value>
+  </data>
+  <data xml:space="preserve" name="L6cdcef55c6a2.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Reads your monitor's peak brightness automatically.</value>
+  </data>
+  <data xml:space="preserve" name="L6ce1328f9af9.PlaceholderText">
+    <value>Press a key...</value>
+  </data>
+  <data xml:space="preserve" name="L6ce1328f9af9.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Press a key to assign it, or Backspace to clear it.</value>
+  </data>
+  <data xml:space="preserve" name="L6d373384d694.Content">
+    <value>Restore Profiles</value>
+  </data>
+  <data xml:space="preserve" name="L6d373384d694.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Restore per-game NVIDIA profile settings from a previous export.</value>
+  </data>
+  <data xml:space="preserve" name="L6eb37aece2d6.Text">
+    <value>DLSS / Streamline Settings</value>
+  </data>
+  <data xml:space="preserve" name="L6ed0061b665d.Text">
+    <value>ReBAR Size Limit</value>
+  </data>
+  <data xml:space="preserve" name="L6f5dc17e6e65.Content">
+    <value>Downloads Folder</value>
+  </data>
+  <data xml:space="preserve" name="L6f861bbfd388.Text">
+    <value>Shared Presets</value>
+  </data>
+  <data xml:space="preserve" name="L701374c5c8ab.Text">
+    <value>Shader Management</value>
+  </data>
+  <data xml:space="preserve" name="L715902049d29.Content">
+    <value>Installed</value>
+  </data>
+  <data xml:space="preserve" name="L71fc503b5e49.Text">
+    <value>Credits &amp; Acknowledgements</value>
+  </data>
+  <data xml:space="preserve" name="L7225bfb77f8d.PlaceholderText">
+    <value>Press a key...</value>
+  </data>
+  <data xml:space="preserve" name="L7225bfb77f8d.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>The key that toggles the ReLimiter OSD overlay in-game.</value>
+  </data>
+  <data xml:space="preserve" name="L7248760698d9.Text">
+    <value>HDR Auto-Toggle</value>
+  </data>
+  <data xml:space="preserve" name="L7359373ee69a.Text">
+    <value>OSD Key</value>
+  </data>
+  <data xml:space="preserve" name="L73f68fabde76.Text">
+    <value>Frame Count</value>
+  </data>
+  <data xml:space="preserve" name="L74888c509fbe.Text">
+    <value>Simplified PC Gaming</value>
+  </data>
+  <data xml:space="preserve" name="L74d381bc23a2.Text">
+    <value>Archive utility used to extract ReShade DLLs from the NSIS installer. 7z.exe and 7z.dll are bundled under the LGPL licence. Copyright © Igor Pavlov.</value>
+  </data>
+  <data xml:space="preserve" name="L7552645b4a0c.PlaceholderText">
+    <value>Filter games...</value>
+  </data>
+  <data xml:space="preserve" name="L766c90ad2a51.Content">
+    <value>Connect GitHub</value>
+  </data>
+  <data xml:space="preserve" name="L769c58dfd58b.Content">
+    <value>Help</value>
+  </data>
+  <data xml:space="preserve" name="L769c58dfd58b.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Support and help resources</value>
+  </data>
+  <data xml:space="preserve" name="L76f662159c1e.Text">
+    <value> by Pumbo (Filoppi)</value>
+  </data>
+  <data xml:space="preserve" name="L7989375c05d7.Text">
+    <value>Register RHI as the nxm:// handler so Nexus "Mod Manager Download" buttons open directly in RHI.</value>
+  </data>
+  <data xml:space="preserve" name="L79e58610fea7.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Hide this game from the sidebar (find it again in the Hidden filter)</value>
+  </data>
+  <data xml:space="preserve" name="L7ca27ebab201.Text">
+    <value>Sign in with GitHub to raise the API rate limit from 60 to 5,000 requests per hour. This improves reliability of update checks, DLSS version lookups, and manifest fetches.</value>
+  </data>
+  <data xml:space="preserve" name="L7d03720dcd31.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Controls how shaders are displayed in the ReShade overlay. Tabs groups effect files into named tabs; Tree shows a collapsible hierarchy.</value>
+  </data>
+  <data xml:space="preserve" name="L7d9536270fe7.Text">
+    <value>The all-in-one game enhancement toolkit for PC. Auto-detects games from 8 storefronts and provides one-click management for ReShade, HDR mods, shaders, DLSS/Streamline, frame limiters, NVIDIA driver profiles, and more — all from one place.</value>
+  </data>
+  <data xml:space="preserve" name="L7df505d9e3a0.Text">
+    <value>Defaults</value>
+  </data>
+  <data xml:space="preserve" name="L7ebff95147e0.Content">
+    <value>Register</value>
+  </data>
+  <data xml:space="preserve" name="L7fc3a11de6ad.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Remove ReLimiter</value>
+  </data>
+  <data xml:space="preserve" name="L8066b140bc4f.Text">
+    <value>MVVM helpers (ObservableObject, RelayCommand, etc.) used throughout the app. Copyright © .NET Foundation.</value>
+  </data>
+  <data xml:space="preserve" name="L8135481c4e0a.Text">
+    <value>Recent Games</value>
+  </data>
+  <data xml:space="preserve" name="L8212ff756f40.Text">
+    <value>Dynamic Range</value>
+  </data>
+  <data xml:space="preserve" name="L8384aa5cb3b7.Text">
+    <value>No RenoDX mod available for this game</value>
+  </data>
+  <data xml:space="preserve" name="L838c0e22a34a.Text">
+    <value>Controls where RHI fetches mod data. RHI Database uses the community-maintained RHI database (recommended). RenoDX Wiki falls back to the RenoDX wiki scraper. Changing this setting triggers an immediate refresh.</value>
+  </data>
+  <data xml:space="preserve" name="L8672ccd3c93f.Text">
+    <value>HDR &amp; Peak Brightness</value>
+  </data>
+  <data xml:space="preserve" name="L8abfe02aa3c0.Text">
+    <value>Deploy DLSS and Streamline DLL versions and DLSS presets to multiple games at once. Backs up originals automatically. Pre-populated with your configured defaults.</value>
+  </data>
+  <data xml:space="preserve" name="L8acaffd57502.Text">
+    <value>Target Resolution</value>
+  </data>
+  <data xml:space="preserve" name="L8c509102eda9.Text">
+    <value> by Igor Pavlov</value>
+  </data>
+  <data xml:space="preserve" name="L8cd7c453f099.Text">
+    <value>System Tray</value>
+  </data>
+  <data xml:space="preserve" name="L8e219bf4d311.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>When On, all shader packs are downloaded and cached at startup. When Off, packs are downloaded on demand when needed.</value>
+  </data>
+  <data xml:space="preserve" name="L8e61d4e330dc.Text">
+    <value>Settings</value>
+  </data>
+  <data xml:space="preserve" name="L8f66db983827.Content">
+    <value>Hidden</value>
+  </data>
+  <data xml:space="preserve" name="L900987eafed3.Content">
+    <value>Refresh</value>
+  </data>
+  <data xml:space="preserve" name="L900987eafed3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Rescan game library and fetch latest mod info</value>
+  </data>
+  <data xml:space="preserve" name="L91adfbce72b0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>The drop helper window enables Discord drag-and-drop in admin mode. Disable if you don't need it. Restart required.</value>
+  </data>
+  <data xml:space="preserve" name="L91f9c02c0514.Text">
+    <value>API Key</value>
+  </data>
+  <data xml:space="preserve" name="L93bb6dc51cc8.Text">
+    <value>VSync</value>
+  </data>
+  <data xml:space="preserve" name="L94f9f9759577.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Remove Luma mod</value>
+  </data>
+  <data xml:space="preserve" name="L95d614b0d514.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Remove ReShade</value>
+  </data>
+  <data xml:space="preserve" name="L9943033383ee.Text">
+    <value>When On, switches to the target resolution on game launch and restores it on exit.</value>
+  </data>
+  <data xml:space="preserve" name="L99c2f6f09bd3.Text">
+    <value>Global Addons</value>
+  </data>
+  <data xml:space="preserve" name="L9a1119bd89c8.Text">
+    <value>Update &amp; Deployment</value>
+  </data>
+  <data xml:space="preserve" name="L9bd347458001.Content">
+    <value>Mass Preset Install</value>
+  </data>
+  <data xml:space="preserve" name="L9e1e2edf6018.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Pick a folder for screenshots</value>
+  </data>
+  <data xml:space="preserve" name="L9e5faa2a51cf.Content">
+    <value>Full Refresh</value>
+  </data>
+  <data xml:space="preserve" name="L9f17c00e0b5e.PlaceholderText">
+    <value>nits</value>
+  </data>
+  <data xml:space="preserve" name="L9fcf0d0d050b.Text">
+    <value>Check For Updates</value>
+  </data>
+  <data xml:space="preserve" name="L9ff8a635c589.Text">
+    <value>Admin Mode</value>
+  </data>
+  <data xml:space="preserve" name="La08b34212dd0.Content">
+    <value>Backup Profiles</value>
+  </data>
+  <data xml:space="preserve" name="La08b34212dd0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Save all per-game NVIDIA profile settings to a backup file.</value>
+  </data>
+  <data xml:space="preserve" name="La0f5efd051f0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Remove RenoDX mod</value>
+  </data>
+  <data xml:space="preserve" name="La16be33b0d9b.Text">
+    <value>Deletes cached DLSS, Streamline, and component staging files to free disk space. Shaders, installed addons, and version metadata are preserved. Files are re-downloaded automatically when needed.</value>
+  </data>
+  <data xml:space="preserve" name="La19c7e10a176.Content">
+    <value>Copy Logs</value>
+  </data>
+  <data xml:space="preserve" name="La19c7e10a176.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Creates a zip archive of all logs and copies it to clipboard — paste directly into Discord</value>
+  </data>
+  <data xml:space="preserve" name="La294f426b83e.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>DOF Fix Settings</value>
+  </data>
+  <data xml:space="preserve" name="La8151bfdf951.Text">
+    <value>What RHI manages</value>
+  </data>
+  <data xml:space="preserve" name="La89ba9526ac0.Text">
+    <value>RES</value>
+  </data>
+  <data xml:space="preserve" name="La9d6d5682426.Text">
+    <value>Adjust NVIDIA Digital Vibrance (color saturation) per-display. Saved values are automatically restored on app startup.</value>
+  </data>
+  <data xml:space="preserve" name="Laa6edce5954e.Text">
+    <value>G-Sync Mode</value>
+  </data>
+  <data xml:space="preserve" name="Laae93f89ad65.Text">
+    <value>Not connected (60 req/hr)</value>
+  </data>
+  <data xml:space="preserve" name="Ladc1b3a0e700.Text">
+    <value>ReShade &amp; Display</value>
+  </data>
+  <data xml:space="preserve" name="Lae5eb515f8e0.Text">
+    <value>Peak brightness (nits) written to reshade.ini presets. HDR auto-toggle enables Windows HDR on game launch and disables on exit.</value>
+  </data>
+  <data xml:space="preserve" name="Laf6f848ab4dd.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Remove Display Commander</value>
+  </data>
+  <data xml:space="preserve" name="Lb00051fb864e.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>RHI Managed: deploy built-in shader packs to all games.
+Custom: use your own shader directory.
+Off: RHI never touches shaders on any game.</value>
+  </data>
+  <data xml:space="preserve" name="Lb04e493cb62f.Text">
+    <value>Single-player only</value>
+  </data>
+  <data xml:space="preserve" name="Lb0db80b8357f.Text">
+    <value>RHI installs ReShade with full addon support, OptiScaler, and can swap DLSS/Streamline DLLs. These modifications may be flagged by anti-cheat in online or multiplayer games. Uninstall ReShade, OptiScaler, and restore DLSS/Streamline defaults before playing online.</value>
+  </data>
+  <data xml:space="preserve" name="Lb1f16f13d360.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Luma Settings</value>
+  </data>
+  <data xml:space="preserve" name="Lb364da2d60cb.PlaceholderText">
+    <value>Downloads folder (default)</value>
+  </data>
+  <data xml:space="preserve" name="Lb3b462cefebf.Text">
+    <value>Open the link below and enter this code:</value>
+  </data>
+  <data xml:space="preserve" name="Lb3c3a7155373.Content">
+    <value>Disconnect</value>
+  </data>
+  <data xml:space="preserve" name="Lb3f63ed3500d.Text">
+    <value>Effect list style</value>
+  </data>
+  <data xml:space="preserve" name="Lb4371d25e3bd.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Global VSync mode — applies to all games without a per-game override.</value>
+  </data>
+  <data xml:space="preserve" name="Lb453b52a4dc7.Text">
+    <value>Post-processing injection framework. Downloaded with full addon support from reshade.me and cached locally. Copyright © Crosire.</value>
+  </data>
+  <data xml:space="preserve" name="Lb48434b7325b.Text">
+    <value>Unofficial companion app. Not affiliated with RenoDX, Crosire, or pmnoxx.</value>
+  </data>
+  <data xml:space="preserve" name="Lb7192fcee086.Text">
+    <value>▶ Launch</value>
+  </data>
+  <data xml:space="preserve" name="Lb7201294d24c.Text">
+    <value>Global Dynamic Multi Frame Generation defaults. Set these once — then just enable Dynamic mode on each game's MFG dialog.</value>
+  </data>
+  <data xml:space="preserve" name="Lb72f16feafa2.Text">
+    <value>——  Recommended  ——</value>
+  </data>
+  <data xml:space="preserve" name="Lb9d9e01690b3.Text">
+    <value>Auto-Update</value>
+  </data>
+  <data xml:space="preserve" name="Lbb0a80fe538a.Text">
+    <value>GPU type, DLSS input settings, and overlay hotkey for OptiScaler installations.</value>
+  </data>
+  <data xml:space="preserve" name="Lbbabe0a2599d.Text">
+    <value>— Admin required</value>
+  </data>
+  <data xml:space="preserve" name="Lbcaf82c7bd22.Content">
+    <value>Reset Nvidia Profiles</value>
+  </data>
+  <data xml:space="preserve" name="Lbcaf82c7bd22.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Removes ALL per-game NVIDIA profile overrides. The global profile will be like new.</value>
+  </data>
+  <data xml:space="preserve" name="Lbdf19b7c4d0b.Text">
+    <value>G-Sync On-Screen Indicator</value>
+  </data>
+  <data xml:space="preserve" name="Lbe0c73527ec5.Text">
+    <value> by Lazorr</value>
+  </data>
+  <data xml:space="preserve" name="Lc069170ed03a.Text">
+    <value>Overlay key</value>
+  </data>
+  <data xml:space="preserve" name="Lc18dd3e4fec3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>ReShade Settings</value>
+  </data>
+  <data xml:space="preserve" name="Lc445de2f4557.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Automatically install ReShade, RenoDX, ReLimiter, DC, OptiScaler, RE Framework, Luma, DXVK and DOF Fix updates silently in the background</value>
+  </data>
+  <data xml:space="preserve" name="Lc5125c0769f3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Maximum disk space for compiled shader cache. Larger = fewer stutters on revisits. 16GB is the driver default.</value>
+  </data>
+  <data xml:space="preserve" name="Lc6bfa0ca8be5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Remove DOF Fix</value>
+  </data>
+  <data xml:space="preserve" name="Lc7217ab90950.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Maximum BAR transfer size. 1GB is optimal for most games. Decrease to 512MB if experiencing ReBAR-related stutters.</value>
+  </data>
+  <data xml:space="preserve" name="Lc7a8c3ae7cb8.Text">
+    <value> by pmnox</value>
+  </data>
+  <data xml:space="preserve" name="Lc8be647d49d3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Global DMFG target frame rate. Off = no target. Max Refresh Rate = match display. Or pick a specific FPS.</value>
+  </data>
+  <data xml:space="preserve" name="Lc8e96b68e783.Text">
+    <value>Shader Pre-Compile</value>
+  </data>
+  <data xml:space="preserve" name="Lc9bd005236c6.Text">
+    <value>———  HDR Mods  ———</value>
+  </data>
+  <data xml:space="preserve" name="Lcb8b2548e3a3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Display Commander Settings</value>
+  </data>
+  <data xml:space="preserve" name="Lcc2046e38fbd.Text">
+    <value>Global Update Checks</value>
+  </data>
+  <data xml:space="preserve" name="Lccc110c62715.Text">
+    <value>Games without an NVIDIA profile don't benefit from global driver settings. Create profiles for all games in your library to ensure global settings apply.</value>
+  </data>
+  <data xml:space="preserve" name="Lcd29758f7c6e.Text">
+    <value>DLSS Hooks</value>
+  </data>
+  <data xml:space="preserve" name="Lcd589faacb93.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Toggle favourite</value>
+  </data>
+  <data xml:space="preserve" name="Lce4953921b7a.Text">
+    <value>Screenshot save path and ReShade key bindings applied to all managed reshade.ini files.</value>
+  </data>
+  <data xml:space="preserve" name="Lce9359876ca3.Text">
+    <value> by falahati</value>
+  </data>
+  <data xml:space="preserve" name="Lcf64a49e5d6a.Text">
+    <value>ReLimiter OSD hotkey and global feature settings applied to all games.</value>
+  </data>
+  <data xml:space="preserve" name="Lcfa14476aed1.Content">
+    <value>Reset</value>
+  </data>
+  <data xml:space="preserve" name="Lcfac7179e86b.Content">
+    <value>Logs Folder</value>
+  </data>
+  <data xml:space="preserve" name="Ld2128770353b.Text">
+    <value>Power Mode</value>
+  </data>
+  <data xml:space="preserve" name="Ld22c628893ec.Text">
+    <value>32-bit</value>
+  </data>
+  <data xml:space="preserve" name="Ld3081ea1f2f3.Text">
+    <value>Global Shaders</value>
+  </data>
+  <data xml:space="preserve" name="Ld3d1126f3f40.Content">
+    <value>Open</value>
+  </data>
+  <data xml:space="preserve" name="Ld3d1126f3f40.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Open the screenshot folder in Explorer</value>
+  </data>
+  <data xml:space="preserve" name="Ld620a8653f1f.Content">
+    <value>Purge Staging Files</value>
+  </data>
+  <data xml:space="preserve" name="Ld620a8653f1f.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Deletes cached DLSS, Streamline, and download files to free disk space. Shaders are preserved.</value>
+  </data>
+  <data xml:space="preserve" name="Ld64d250a3df5.Text">
+    <value>Component Updates</value>
+  </data>
+  <data xml:space="preserve" name="Ld678da4cb9d5.Text">
+    <value> by clshortfuse &amp; contributors</value>
+  </data>
+  <data xml:space="preserve" name="Ld698d138ba20.Content">
+    <value>← Back to Games</value>
+  </data>
+  <data xml:space="preserve" name="Ld77907028771.Text">
+    <value>Colour Depth</value>
+  </data>
+  <data xml:space="preserve" name="Ld810c5613876.Text">
+    <value>.NET wrapper for NVIDIA's NvAPI used for all driver profile management — DLSS presets, render scale, ReBAR, VSync, Smooth Motion, and more.</value>
+  </data>
+  <data xml:space="preserve" name="Ld9378dd432c4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Shows DLSS quality mode, render resolution, and active features on the ReLimiter OSD. Disable if experiencing crashes.</value>
+  </data>
+  <data xml:space="preserve" name="Lda6e396a5e59.Content">
+    <value>New Mods Available</value>
+  </data>
+  <data xml:space="preserve" name="Lda6e396a5e59.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>New RenoDX mods have been added to the wiki</value>
+  </data>
+  <data xml:space="preserve" name="Ldb5fb99ed5ef.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Save current search as a custom filter</value>
+  </data>
+  <data xml:space="preserve" name="Ldb6caf72d75b.Text">
+    <value>Config</value>
+  </data>
+  <data xml:space="preserve" name="Ldb741cfd2764.Text">
+    <value>HTML parser used to scrape game data from the RenoDX wiki. Copyright © ZZZ Projects Inc.</value>
+  </data>
+  <data xml:space="preserve" name="Ldcad4afac222.Text">
+    <value>Quick Start Guide</value>
+  </data>
+  <data xml:space="preserve" name="Ldcc860bcf3a4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>RenoDX Settings</value>
+  </data>
+  <data xml:space="preserve" name="Lde73ae93ce66.Content">
+    <value>Digital Vibrance</value>
+  </data>
+  <data xml:space="preserve" name="Lde73ae93ce66.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Adjust Digital Vibrance (color saturation) per-display. Saved values are restored on app startup.</value>
+  </data>
+  <data xml:space="preserve" name="Le0a3e288b60e.Text">
+    <value>Clears all caches and re-scans everything from disk. Use as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card.</value>
+  </data>
+  <data xml:space="preserve" name="Le0aed2559d32.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Remove RE Framework</value>
+  </data>
+  <data xml:space="preserve" name="Le1109a86797e.Text">
+    <value>UI Design</value>
+  </data>
+  <data xml:space="preserve" name="Le118e0432be5.Text">
+    <value>Loading...</value>
+  </data>
+  <data xml:space="preserve" name="Le12971b60948.Text">
+    <value>  ·  MIT Licence</value>
+  </data>
+  <data xml:space="preserve" name="Le20269535eee.Content">
+    <value>Custom Folder</value>
+  </data>
+  <data xml:space="preserve" name="Le23c14204a9b.Text">
+    <value>Shader Cache Size</value>
+  </data>
+  <data xml:space="preserve" name="Le24e510bc076.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Select the target desktop resolution.</value>
+  </data>
+  <data xml:space="preserve" name="Le26f52700afb.Text">
+    <value>DLSS On-Screen Indicator</value>
+  </data>
+  <data xml:space="preserve" name="Le353832ddb6c.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Check for app updates</value>
+  </data>
+  <data xml:space="preserve" name="Le52ef757c421.Text">
+    <value>Resolution &amp; Colour Control</value>
+  </data>
+  <data xml:space="preserve" name="Le5f6d65402b4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Global FPS cap via NVIDIA driver. VRR-optimal presets cap just below refresh rate to stay in VRR range.</value>
+  </data>
+  <data xml:space="preserve" name="Le703ee333cbe.Text">
+    <value>Driver-level settings applied globally via the base NVIDIA profile. Per-game settings are in the Nvidia Profile section of each game's overrides panel.</value>
+  </data>
+  <data xml:space="preserve" name="Le79aa9d54cf2.Text">
+    <value>Modding framework required for ReShade injection on RE Engine games. Downloaded from nightly builds on GitHub.</value>
+  </data>
+  <data xml:space="preserve" name="Le9d10e2150d7.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Select which display to configure.</value>
+  </data>
+  <data xml:space="preserve" name="Leb8c80ef9b34.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>When On, each game gets its own screenshot subfolder.</value>
+  </data>
+  <data xml:space="preserve" name="Lecb1e0e3fcbf.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Select which monitors to enable HDR on. Empty = primary display only.</value>
+  </data>
+  <data xml:space="preserve" name="Lef19517def8e.Content">
+    <value>Clear Shader Cache</value>
+  </data>
+  <data xml:space="preserve" name="Lef19517def8e.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Deletes the NVIDIA DXCache and GLCache folders. Forces shaders to recompile on next launch.</value>
+  </data>
+  <data xml:space="preserve" name="Lf0d95ae5749d.Text">
+    <value>Target FPS</value>
+  </data>
+  <data xml:space="preserve" name="Lf27663e1a2c1.Text">
+    <value>Cache All Shaders</value>
+  </data>
+  <data xml:space="preserve" name="Lf2e5bc07a0e2.Text">
+    <value>Resolution Auto-Toggle</value>
+  </data>
+  <data xml:space="preserve" name="Lf3d9e96a31cf.Text">
+    <value>Deploy INI files or ReShade presets to multiple games at once. Custom hotkey and screenshot path settings are preserved.</value>
+  </data>
+  <data xml:space="preserve" name="Lf58a7b4c5fa6.Text">
+    <value>Creates a scheduled task to launch RHI with elevated privileges. Required for ReBAR, Low Latency Ultra, and Smooth Motion driver settings. The Drop Helper enables Discord drag-and-drop when running elevated.</value>
+  </data>
+  <data xml:space="preserve" name="Lf90abc1c57be.Text">
+    <value>NXM Protocol Handler</value>
+  </data>
+  <data xml:space="preserve" name="Lfa6506e05059.Text">
+    <value>RHI watches this folder for RenoDX addon files (.addon64/.addon32) and archives. Defaults to your Downloads folder.</value>
+  </data>
+  <data xml:space="preserve" name="Lfbcb3ab7a839.Text">
+    <value> by OptiScaler contributors</value>
+  </data>
+  <data xml:space="preserve" name="Lfce7ed0c8933.Text">
+    <value>Mass INI Deployment</value>
+  </data>
+  <data xml:space="preserve" name="Lfeee8a8d7016.Content">
+    <value>All Games</value>
+  </data>
+  <data xml:space="preserve" name="Lff19caa9f6e7.Text">
+    <value>Components</value>
+  </data>
+</root>

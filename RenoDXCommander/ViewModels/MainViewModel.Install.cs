@@ -48,14 +48,14 @@ public partial class MainViewModel
         if (nowExcluded)
         {
             // Exclude: strip wiki mod — "No RenoDX mod available"
-            card.Mod           = null;
+            card.Mod = null;
             card.IsExternalOnly = false;
-            card.ExternalUrl   = "";
+            card.ExternalUrl = "";
             card.ExternalLabel = "";
-            card.DiscordUrl    = null;
-            card.WikiStatus    = "—";
-            card.Notes         = "";
-            card.IsGenericMod  = false;
+            card.DiscordUrl = null;
+            card.WikiStatus = "—";
+            card.Notes = "";
+            card.IsGenericMod = false;
             if (card.Status != GameStatus.Installed)
                 card.Status = GameStatus.Available;
         }
@@ -72,32 +72,32 @@ public partial class MainViewModel
             // Apply manifest engine override (takes priority over auto-detection)
             var engineOverrideLabel = ResolveEngineOverride(game.Name, out var engineOverride);
             if (engineOverrideLabel != null) engine = engineOverride;
-            var mod         = _gameDetectionService.MatchGame(game, _allMods, _nameMappings);
+            var mod = _gameDetectionService.MatchGame(game, _allMods, _nameMappings);
             // Wiki unlink: completely disconnect the game from wiki — no mod, no generic fallback
             bool isWikiUnlinked1 = _manifestWikiUnlinks.Contains(game.Name);
             if (isWikiUnlinked1) mod = null;
-            var fallback    = (mod == null && !isWikiUnlinked1) ? (engine == EngineType.Unreal ? MakeGenericUnreal()
-                                            : engine == EngineType.Unity  ? MakeGenericUnity()
+            var fallback = (mod == null && !isWikiUnlinked1) ? (engine == EngineType.Unreal ? MakeGenericUnreal()
+                                            : engine == EngineType.Unity ? MakeGenericUnity()
                                             : null) : null;
 
             // Wiki mod matched but has no download URL — inject generic engine addon URL
             if (mod != null && mod.SnapshotUrl == null && mod.NexusUrl == null && mod.DiscordUrl == null)
             {
                 var engineFallback = engine == EngineType.Unreal ? MakeGenericUnreal()
-                                   : engine == EngineType.Unity  ? MakeGenericUnity() : null;
+                                   : engine == EngineType.Unity ? MakeGenericUnity() : null;
                 if (engineFallback != null)
                 {
                     mod = new GameMod
                     {
-                        Name            = mod.Name,
-                        Maintainer      = engineFallback.Maintainer,
-                        SnapshotUrl     = engineFallback.SnapshotUrl,
-                        SnapshotUrl32   = engineFallback.SnapshotUrl32,
-                        Status          = mod.Status,
-                        Notes           = mod.Notes,
-                        NameUrl         = mod.NameUrl,
+                        Name = mod.Name,
+                        Maintainer = engineFallback.Maintainer,
+                        SnapshotUrl = engineFallback.SnapshotUrl,
+                        SnapshotUrl32 = engineFallback.SnapshotUrl32,
+                        Status = mod.Status,
+                        Notes = mod.Notes,
+                        NameUrl = mod.NameUrl,
                         IsGenericUnreal = engineFallback.IsGenericUnreal,
-                        IsGenericUnity  = engineFallback.IsGenericUnity,
+                        IsGenericUnity = engineFallback.IsGenericUnity,
                     };
                     fallback = engineFallback;
                 }
@@ -116,20 +116,20 @@ public partial class MainViewModel
                     effectiveMod = new GameMod { Name = game.Name, SnapshotUrl = snapshotOvUrl, Status = "✅" };
             }
 
-            card.Mod            = effectiveMod;
+            card.Mod = effectiveMod;
             card.IsExternalOnly = effectiveMod?.SnapshotUrl == null &&
                                   (effectiveMod?.NexusUrl != null || effectiveMod?.DiscordUrl != null);
-            card.ExternalUrl    = effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "";
-            card.ExternalLabel  = effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord";
-            card.NexusUrl       = effectiveMod?.NexusUrl;
-            card.DiscordUrl     = effectiveMod?.DiscordUrl;
-            card.WikiStatus     = (mod == null && fallback != null && !card.UseUeExtended && !card.IsNativeHdrGame)
+            card.ExternalUrl = effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "";
+            card.ExternalLabel = effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord";
+            card.NexusUrl = effectiveMod?.NexusUrl;
+            card.DiscordUrl = effectiveMod?.DiscordUrl;
+            card.WikiStatus = (mod == null && fallback != null && !card.UseUeExtended && !card.IsNativeHdrGame)
                                   ? "?"
                                   : effectiveMod?.Status ?? "—";
-            card.Notes          = effectiveMod != null
+            card.Notes = effectiveMod != null
                                   ? BuildNotes(game.Name, effectiveMod, fallback, _genericNotes, card.IsNativeHdrGame)
                                   : "";
-            card.IsGenericMod   = card.UseUeExtended || (fallback != null && mod == null);
+            card.IsGenericMod = card.UseUeExtended || (fallback != null && mod == null);
             if (card.Status != GameStatus.Installed)
                 card.Status = effectiveMod != null ? GameStatus.Available : GameStatus.Available;
         }
@@ -139,7 +139,7 @@ public partial class MainViewModel
 
     public const string DefaultUeExtendedUrl = "https://marat569.github.io/renodx/renodx-ue-extended.addon64";
     public string UeExtendedUrl => _manifest?.ComponentUrls?.TryGetValue("ueExtended", out var url) == true && !string.IsNullOrEmpty(url) ? url : DefaultUeExtendedUrl;
-    public const string UeExtendedFile   = "renodx-ue-extended.addon64";
+    public const string UeExtendedFile = "renodx-ue-extended.addon64";
     public const string GenericUnrealFile = "renodx-unrealengine.addon64";
 
     /// <summary>
@@ -307,10 +307,10 @@ public partial class MainViewModel
         if (card.InstalledRecord != null)
         {
             _installer.RemoveRecord(card.InstalledRecord);
-            card.InstalledRecord        = null;
+            card.InstalledRecord = null;
             card.InstalledAddonFileName = null;
-            card.RdxInstalledVersion    = null;
-            card.Status                 = GameStatus.Available;
+            card.RdxInstalledVersion = null;
+            card.Status = GameStatus.Available;
         }
 
         card.UseUeExtended = nowExtended;
@@ -442,28 +442,28 @@ public partial class MainViewModel
         bool isWikiUnlinked2 = _manifestWikiUnlinks.Contains(game.Name);
         if (isWikiUnlinked2) mod = null;
         var genericUnreal = MakeGenericUnreal();
-        var genericUnity  = MakeGenericUnity();
-        var fallback = (mod == null && !isWikiUnlinked2) ? (engine == EngineType.Unreal      ? genericUnreal
-                                   : engine == EngineType.Unity       ? genericUnity : null) : null;
+        var genericUnity = MakeGenericUnity();
+        var fallback = (mod == null && !isWikiUnlinked2) ? (engine == EngineType.Unreal ? genericUnreal
+                                   : engine == EngineType.Unity ? genericUnity : null) : null;
 
         // Wiki mod matched but has no download URL — inject generic engine addon URL
         if (mod != null && mod.SnapshotUrl == null && mod.NexusUrl == null && mod.DiscordUrl == null)
         {
             var engineFallback = engine == EngineType.Unreal ? genericUnreal
-                               : engine == EngineType.Unity  ? genericUnity : null;
+                               : engine == EngineType.Unity ? genericUnity : null;
             if (engineFallback != null)
             {
                 mod = new GameMod
                 {
-                    Name            = mod.Name,
-                    Maintainer      = engineFallback.Maintainer,
-                    SnapshotUrl     = engineFallback.SnapshotUrl,
-                    SnapshotUrl32   = engineFallback.SnapshotUrl32,
-                    Status          = mod.Status,
-                    Notes           = mod.Notes,
-                    NameUrl         = mod.NameUrl,
+                    Name = mod.Name,
+                    Maintainer = engineFallback.Maintainer,
+                    SnapshotUrl = engineFallback.SnapshotUrl,
+                    SnapshotUrl32 = engineFallback.SnapshotUrl32,
+                    Status = mod.Status,
+                    Notes = mod.Notes,
+                    NameUrl = mod.NameUrl,
                     IsGenericUnreal = engineFallback.IsGenericUnreal,
-                    IsGenericUnity  = engineFallback.IsGenericUnity,
+                    IsGenericUnity = engineFallback.IsGenericUnity,
                 };
                 fallback = engineFallback;
             }
@@ -473,7 +473,7 @@ public partial class MainViewModel
 
         var records = _installer.LoadAll();
         var scanPath = installPath.Length > 0 ? installPath : game.InstallPath;
-        var record  = records.FirstOrDefault(r =>
+        var record = records.FirstOrDefault(r =>
             r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
             r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
             ?? records.FirstOrDefault(r =>
@@ -500,12 +500,12 @@ public partial class MainViewModel
         {
             record = new InstalledModRecord
             {
-                GameName      = game.Name,
-                InstallPath   = scanPath,
-                Store         = game.Source ?? "",
+                GameName = game.Name,
+                InstallPath = scanPath,
+                Store = game.Source ?? "",
                 AddonFileName = addonOnDisk,
-                InstalledAt   = File.GetLastWriteTimeUtc(Path.Combine(scanPath, addonOnDisk)),
-                SnapshotUrl   = ResolveAddonUrl(addonOnDisk),
+                InstalledAt = File.GetLastWriteTimeUtc(Path.Combine(scanPath, addonOnDisk)),
+                SnapshotUrl = ResolveAddonUrl(addonOnDisk),
             };
             _installer.SaveRecordPublic(record);
         }
@@ -516,16 +516,16 @@ public partial class MainViewModel
         {
             effectiveMod = new GameMod
             {
-                Name        = effectiveMod.Name,
-                Maintainer  = effectiveMod.Maintainer,
+                Name = effectiveMod.Name,
+                Maintainer = effectiveMod.Maintainer,
                 SnapshotUrl = addonOverrideUrlM,
-                Status      = effectiveMod.Status,
-                Notes       = effectiveMod.Notes,
-                NexusUrl    = effectiveMod.NexusUrl,
-                DiscordUrl  = effectiveMod.DiscordUrl,
-                NameUrl     = effectiveMod.NameUrl,
+                Status = effectiveMod.Status,
+                Notes = effectiveMod.Notes,
+                NexusUrl = effectiveMod.NexusUrl,
+                DiscordUrl = effectiveMod.DiscordUrl,
+                NameUrl = effectiveMod.NameUrl,
                 IsGenericUnreal = effectiveMod.IsGenericUnreal,
-                IsGenericUnity  = effectiveMod.IsGenericUnity,
+                IsGenericUnity = effectiveMod.IsGenericUnity,
             };
         }
 
@@ -534,8 +534,8 @@ public partial class MainViewModel
         {
             effectiveMod = new GameMod
             {
-                Name       = game.Name,
-                Status     = "💬",
+                Name = game.Name,
+                Status = "💬",
                 DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
             };
         }
@@ -553,9 +553,9 @@ public partial class MainViewModel
             {
                 effectiveMod = new GameMod
                 {
-                    Name        = game.Name,
+                    Name = game.Name,
                     SnapshotUrl = snapshotOverrideUrlM,
-                    Status      = "✅",
+                    Status = "✅",
                 };
             }
         }
@@ -576,8 +576,8 @@ public partial class MainViewModel
         {
             effectiveMod = new GameMod
             {
-                Name       = game.Name,
-                Status     = "💬",
+                Name = game.Name,
+                Status = "💬",
                 DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
             };
         }
@@ -590,11 +590,11 @@ public partial class MainViewModel
         {
             effectiveMod = new GameMod
             {
-                Name            = effectiveMod?.Name ?? "Generic Unreal Engine",
-                Maintainer      = effectiveMod?.Maintainer ?? "ShortFuse",
-                SnapshotUrl     = UeExtendedUrl,
-                Status          = effectiveMod?.Status ?? "✅",
-                Notes           = effectiveMod?.Notes,
+                Name = effectiveMod?.Name ?? "Generic Unreal Engine",
+                Maintainer = effectiveMod?.Maintainer ?? "ShortFuse",
+                SnapshotUrl = UeExtendedUrl,
+                Status = effectiveMod?.Status ?? "✅",
+                Notes = effectiveMod?.Notes,
                 IsGenericUnreal = true,
             };
             if (addonOnDisk == UeExtendedFile || isNativeHdr)
@@ -604,10 +604,10 @@ public partial class MainViewModel
         {
             effectiveMod = new GameMod
             {
-                Name            = "Generic Unreal Engine",
-                Maintainer      = "ShortFuse",
-                SnapshotUrl     = UeExtendedUrl,
-                Status          = "✅",
+                Name = "Generic Unreal Engine",
+                Maintainer = "ShortFuse",
+                SnapshotUrl = UeExtendedUrl,
+                Status = "✅",
                 IsGenericUnreal = true,
             };
             fallback = effectiveMod;
@@ -618,7 +618,7 @@ public partial class MainViewModel
         // UE-Extended whitelist supersedes Nexus/Discord external links
         if (useUeExt && effectiveMod != null)
         {
-            effectiveMod.NexusUrl   = null;
+            effectiveMod.NexusUrl = null;
             effectiveMod.DiscordUrl = null;
         }
 
@@ -645,69 +645,69 @@ public partial class MainViewModel
 
         var card = new GameCardViewModel
         {
-            GameName       = game.Name,
-            Mod            = effectiveMod,
-            DetectedGame   = game,
-            InstallPath    = scanPath,
-            Source         = "Manual",
+            GameName = game.Name,
+            Mod = effectiveMod,
+            DetectedGame = game,
+            InstallPath = scanPath,
+            Source = "Manual",
             InstalledRecord = record,
-            Status         = record != null ? GameStatus.Installed : GameStatus.Available,
-            WikiStatus     = _wikiExclusions.Contains(game.Name)
+            Status = record != null ? GameStatus.Installed : GameStatus.Available,
+            WikiStatus = _wikiExclusions.Contains(game.Name)
                               ? "—"
                               : (effectiveMod?.SnapshotUrl == null && effectiveMod?.DiscordUrl != null && effectiveMod?.NexusUrl == null)
                               ? "💬"
                               : (mod == null && fallback != null && !useUeExt && !isNativeHdr)
                                 ? "?"
                                 : effectiveMod?.Status ?? "—",
-            Maintainer     = effectiveMod?.Maintainer ?? "",
-            IsGenericMod   = useUeExt || (fallback != null && mod == null),
-            EngineHint     = engineOverrideLabel != null
+            Maintainer = effectiveMod?.Maintainer ?? "",
+            IsGenericMod = useUeExt || (fallback != null && mod == null),
+            EngineHint = engineOverrideLabel != null
                            ? (useUeExt && engine == EngineType.Unknown ? FormatEngineHint(EngineType.Unreal, scanPath) : engineOverrideLabel)
                            : (useUeExt && engine == EngineType.Unknown) ? FormatEngineHint(EngineType.Unreal, scanPath)
-                           : engine == EngineType.Unreal       ? FormatEngineHint(EngineType.Unreal, scanPath)
+                           : engine == EngineType.Unreal ? FormatEngineHint(EngineType.Unreal, scanPath)
                            : engine == EngineType.UnrealLegacy ? "Unreal (Legacy)"
-                           : engine == EngineType.Unity        ? "Unity"
-                           : engine == EngineType.REEngine     ? "RE Engine" : "",
-            Notes          = effectiveMod != null ? BuildNotes(game.Name, effectiveMod, fallback, _genericNotes, isNativeHdr) : "",
+                           : engine == EngineType.Unity ? "Unity"
+                           : engine == EngineType.REEngine ? "RE Engine" : "",
+            Notes = effectiveMod != null ? BuildNotes(game.Name, effectiveMod, fallback, _genericNotes, isNativeHdr) : "",
             InstalledAddonFileName = record?.AddonFileName,
             RdxInstalledVersion = record != null ? AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName) : null,
-            IsExternalOnly  = _wikiExclusions.Contains(game.Name)
+            IsExternalOnly = _wikiExclusions.Contains(game.Name)
                               ? false
                               : effectiveMod?.SnapshotUrl == null &&
                                 (effectiveMod?.NexusUrl != null || effectiveMod?.DiscordUrl != null),
-            ExternalUrl     = _wikiExclusions.Contains(game.Name)
+            ExternalUrl = _wikiExclusions.Contains(game.Name)
                               ? ""
                               : effectiveMod?.NexusUrl ?? effectiveMod?.DiscordUrl ?? "",
-            ExternalLabel   = _wikiExclusions.Contains(game.Name)
+            ExternalLabel = _wikiExclusions.Contains(game.Name)
                               ? ""
                               : effectiveMod?.NexusUrl != null ? "Download from Nexus Mods" : "Download from Discord",
-            NexusUrl        = effectiveMod?.NexusUrl,
-            DiscordUrl      = _wikiExclusions.Contains(game.Name)
+            NexusUrl = effectiveMod?.NexusUrl,
+            DiscordUrl = _wikiExclusions.Contains(game.Name)
                               ? null
                               : effectiveMod?.DiscordUrl,
-            NameUrl         = effectiveMod?.NameUrl,
+            NameUrl = effectiveMod?.NameUrl,
             IsManuallyAdded = true,
-            IsFavourite            = _favouriteGames.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
-            UseUeExtended          = useUeExt,
-            IsNativeHdrGame        = isNativeHdr,
-            IsManifestUeExtended   = useUeExt && !isNativeHdr,
-            LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
+            IsFavourite = _favouriteGames.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            UseUeExtended = useUeExt,
+            IsNativeHdrGame = isNativeHdr,
+            IsManifestUeExtended = useUeExt && !isNativeHdr,
+            LumaRenodxCompatible = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
             EngineIniProjectOverride = _manifest?.EngineIniPathOverrides?.TryGetValue(game.Name, out var eiOverride2) == true ? eiOverride2 : null,
             ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
-            ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
-            ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
-            ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
-            ShaderModeOverride     = _perGameShaderMode.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var smO) ? smO : null,
-            Is32Bit                = ResolveIs32Bit(game.Name, manualMachine, "Manual"),
-            GraphicsApi            = DetectGraphicsApi(scanPath, engine, game.Name, "Manual"),
-            DetectedApis           = _DetectAllApisForCard(scanPath, game.Name, "Manual"),
-            VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var vrpManual) ? vrpManual : "DirectX",
-            LumaFeatureEnabled     = LumaFeatureEnabled,
-            RsRecord        = rsRecManual,
-            RsStatus        = rsRecManual != null ? GameStatus.Installed : GameStatus.NotInstalled,
+            ExcludeFromUpdateAllRenoDx = _gameNameService.UpdateAllExcludedRenoDx.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ExcludeFromUpdateAllUl = _gameNameService.UpdateAllExcludedUl.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ExcludeFromUpdateAllRef = _gameNameService.UpdateAllExcludedRef.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ShaderModeOverride = _perGameShaderMode.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var smO) ? smO : null,
+            Is32Bit = ResolveIs32Bit(game.Name, manualMachine, "Manual"),
+            GraphicsApi = DetectGraphicsApi(scanPath, engine, game.Name, "Manual"),
+            DetectedApis = _DetectAllApisForCard(scanPath, game.Name, "Manual"),
+            VulkanRenderingPath = _vulkanRenderingPaths.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var vrpManual) ? vrpManual : "DirectX",
+            LumaFeatureEnabled = LumaFeatureEnabled,
+            RsRecord = rsRecManual,
+            RsStatus = rsRecManual != null ? GameStatus.Installed : GameStatus.NotInstalled,
             RsInstalledFile = rsRecManual?.InstalledAs,
             RsInstalledVersion = rsRecManual != null ? AuxInstallService.ReadInstalledVersion(rsRecManual.InstallPath, rsRecManual.InstalledAs) : null,
-            IsREEngineGame     = engine == EngineType.REEngine,
+            IsREEngineGame = engine == EngineType.REEngine,
         };
 
         card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
@@ -834,7 +834,7 @@ public partial class MainViewModel
             card.Mod.SnapshotUrl = card.Mod.SnapshotUrl32;
         if (string.IsNullOrEmpty(card.InstallPath))
         {
-            card.ActionMessage = "No install path — use 📁 to pick the game folder.";
+            card.ActionMessage = Loc.Get("No install path — use 📁 to pick the game folder.");
             return;
         }
 
@@ -859,13 +859,13 @@ public partial class MainViewModel
         }
 
         card.IsInstalling = true;
-        card.ActionMessage = "Starting download...";
+        card.ActionMessage = Loc.Get("Starting download...");
         _crashReporter.Log($"[MainViewModel.InstallModAsync] Install started: {card.GameName} → {card.InstallPath}");
         try
         {
             var progress = new Progress<(string msg, double pct)>(p =>
             {
-                card.ActionMessage   = p.msg;
+                card.ActionMessage = p.msg;
                 card.InstallProgress = p.pct;
             });
             var record = await _installer.InstallAsync(card.Mod, card.InstallPath, progress, card.GameName, card.Source);
@@ -920,7 +920,7 @@ public partial class MainViewModel
                 // Apply per-game DB upgrades on top of the placeholders
                 {
                     var unityEntry = GetDbUnityEntry(card.GameName);
-                    var upgrades   = unityEntry?.ParsedUpgrades;
+                    var upgrades = unityEntry?.ParsedUpgrades;
                     if (upgrades?.Count > 0)
                     {
                         AuxInstallService.ApplyUnityRenodxUpgrades(card.InstallPath, upgrades);
@@ -1026,10 +1026,10 @@ public partial class MainViewModel
             // manipulation (Clear/Add) is needed, so the rest of the UI is untouched.
             DispatcherQueue?.TryEnqueue(() =>
             {
-                card.InstalledRecord        = record;
+                card.InstalledRecord = record;
                 card.InstalledAddonFileName = record.AddonFileName;
-                card.RdxInstalledVersion    = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName);
-                card.Status                 = GameStatus.Installed;
+                card.RdxInstalledVersion = AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName);
+                card.Status = GameStatus.Installed;
                 card.FadeMessage(m => card.ActionMessage = m, "✅ Installed! Press Home in-game to open ReShade.");
                 _crashReporter.Log($"[MainViewModel.InstallModAsync] Install complete: {card.GameName} — {record.AddonFileName}");
                 // Reset Nexus baseline so update indicator clears after install
@@ -1047,7 +1047,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            DispatcherQueue?.TryEnqueue(() => card.ActionMessage = $"❌ Failed: {ex.Message}");
+            DispatcherQueue?.TryEnqueue(() => card.ActionMessage = Loc.Format($"❌ Failed: {ex.Message}"));
             _crashReporter.WriteCrashReport("InstallModAsync", ex, note: $"Game: {card.GameName}, Path: {card.InstallPath}");
         }
         finally
@@ -1085,11 +1085,11 @@ public partial class MainViewModel
         if (card?.InstalledRecord == null) return;
         _crashReporter.Log($"[MainViewModel.UninstallMod] Uninstalling: {card.GameName}");
         _installer.Uninstall(card.InstalledRecord);
-        card.InstalledRecord        = null;
+        card.InstalledRecord = null;
         card.InstalledAddonFileName = null;
-        card.RdxInstalledVersion    = null;
-        card.Status                 = GameStatus.Available;
-        card.ActionMessage          = "✖ Mod removed.";
+        card.RdxInstalledVersion = null;
+        card.Status = GameStatus.Available;
+        card.ActionMessage = Loc.Get("✖ Mod removed.");
         card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
         // Clear the addon file cache so the next Refresh doesn't think a file is still there.
         if (!string.IsNullOrEmpty(card.InstallPath))

@@ -18,10 +18,17 @@ public partial class App : Application
 
     public App()
     {
-        InitializeComponent();
         // Register crash/error reporting before anything else runs.
         // This catches AppDomain, TaskScheduler, and WinUI exceptions.
         CrashReporter.Register(this);
+
+        // Unpackaged apps must use the Windows App SDK language API, before
+        // InitializeComponent loads XAML resources (the Windows OS API requires package identity).
+        MigrateLegacyAppData();
+        var savedSettings = SettingsViewModel.LoadSettingsFile();
+        Localization.Loc.Initialize(savedSettings.GetValueOrDefault("InterfaceLanguage"));
+        Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = Localization.Loc.Language;
+        InitializeComponent();
 
         // Configure DI container
         var services = new ServiceCollection();
@@ -42,7 +49,7 @@ public partial class App : Application
 
                 // Keep connections alive between downloads so subsequent requests
                 // skip the TCP + TLS handshake.
-                PooledConnectionLifetime  = TimeSpan.FromMinutes(10),
+                PooledConnectionLifetime = TimeSpan.FromMinutes(10),
                 PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
 
                 // Larger initial receive buffer reduces syscall overhead on fast links.
@@ -61,7 +68,7 @@ public partial class App : Application
             // if they need tighter control.
             client.Timeout = TimeSpan.FromMinutes(10);
             client.DefaultRequestVersion = new Version(2, 0);
-            client.DefaultVersionPolicy  = HttpVersionPolicy.RequestVersionOrLower;
+            client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
             return client;
         });
 
@@ -143,8 +150,6 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // ── One-time migration from legacy AppData folders ───────
-        MigrateLegacyAppData();
         DownloadsMigrationService.RunOnce();
 
         // Single-instance check: if another instance is already running,
@@ -224,7 +229,7 @@ public partial class App : Application
             try
             {
                 CrashReporter.Log("[App.OnLaunched] Admin Mode enabled but not elevated — relaunching via scheduled task");
-                
+
                 // Pass minimized flag via signal file (schtasks /Run doesn't support extra args)
                 if (startMinimized)
                 {

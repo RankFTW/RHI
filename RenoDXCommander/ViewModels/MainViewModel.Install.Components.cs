@@ -149,7 +149,7 @@ public partial class MainViewModel
             return;
 
         card.IsInstalling = true;
-        card.ActionMessage = "Installing emulator addons...";
+        card.ActionMessage = Loc.Get("Installing emulator addons...");
         _crashReporter.Log($"[MainViewModel.InstallEmulatorAddonsAsync] Starting bundle install for {card.GameName}");
 
         int installed = 0;
@@ -188,7 +188,7 @@ public partial class MainViewModel
                     failed++;
                     continue;
                 }
-                card.ActionMessage = $"Downloading {wikiName}... ({installed + 1}/{card.EmulatorAddonNames.Count})";
+                card.ActionMessage = Loc.Format($"Downloading {wikiName}... ({installed + 1}/{card.EmulatorAddonNames.Count})");
 
                 try
                 {
@@ -225,8 +225,8 @@ public partial class MainViewModel
                 card.Status = installed > 0 ? GameStatus.Installed : GameStatus.Available;
                 card.InstalledAddonFileName = $"{installed} addons";
                 card.ActionMessage = failed == 0
-                    ? $"✅ {installed} addons installed!"
-                    : $"✅ {installed} installed, {failed} failed.";
+                    ? Loc.Format($"✅ {installed} addons installed!")
+                    : Loc.Format($"✅ {installed} installed, {failed} failed.");
                 card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
                 card.NotifyAll();
                 _filterViewModel.UpdateCounts();
@@ -235,7 +235,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            card.ActionMessage = $"❌ Failed: {ex.Message}";
+            card.ActionMessage = Loc.Format($"❌ Failed: {ex.Message}");
             _crashReporter.WriteCrashReport("InstallEmulatorAddonsAsync", ex, note: $"Game: {card.GameName}");
         }
         finally
@@ -281,7 +281,7 @@ public partial class MainViewModel
 
         card.Status = GameStatus.Available;
         card.InstalledAddonFileName = null;
-        card.ActionMessage = $"✖ {removed} addons removed.";
+        card.ActionMessage = Loc.Format($"✖ {removed} addons removed.");
         card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
         card.NotifyAll();
         SaveLibrary();
@@ -322,7 +322,7 @@ public partial class MainViewModel
         if (!await CheckInstallWarningAsync(card.GameName, "relimiter")) return;
 
         card.UlIsInstalling = true;
-        card.UlActionMessage = "Downloading ReLimiter...";
+        card.UlActionMessage = Loc.Get("Downloading ReLimiter...");
         card.UlProgress = 0;
         try
         {
@@ -401,7 +401,7 @@ public partial class MainViewModel
                 card.UlInstalledVersion = _latestUlVersion?.TrimStart('v', 'V')
                     ?? ReadUlInstalledVersion(card.Is32Bit);
                 card.UlStatus = GameStatus.Installed;
-                card.UlActionMessage = "✅ ReLimiter installed!";
+                card.UlActionMessage = Loc.Get("✅ ReLimiter installed!");
                 card.UlIsInstalling = false;
                 card.NotifyAll();
                 card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
@@ -411,7 +411,7 @@ public partial class MainViewModel
         {
             DispatcherQueue?.TryEnqueue(() =>
             {
-                card.UlActionMessage = $"❌ Install failed: {ex.Message}";
+                card.UlActionMessage = Loc.Format($"❌ Install failed: {ex.Message}");
                 card.UlIsInstalling = false;
                 card.NotifyAll();
             });
@@ -565,13 +565,13 @@ public partial class MainViewModel
             card.UlInstalledFile = null;
             card.UlInstalledVersion = null;
             card.UlStatus = GameStatus.NotInstalled;
-            card.UlActionMessage = "✖ ReLimiter removed.";
+            card.UlActionMessage = Loc.Get("✖ ReLimiter removed.");
             card.NotifyAll();
             card.FadeMessage(m => card.UlActionMessage = m, card.UlActionMessage);
         }
         catch (Exception ex)
         {
-            card.UlActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.UlActionMessage = Loc.Format($"❌ Uninstall failed: {ex.Message}");
             _crashReporter.WriteCrashReport("UninstallUl", ex, note: $"Game: {card.GameName}");
         }
     }
@@ -766,7 +766,7 @@ public partial class MainViewModel
         if (!await CheckInstallWarningAsync(card.GameName, "dc")) return;
 
         card.DcIsInstalling = true;
-        card.DcActionMessage = "Downloading Display Commander...";
+        card.DcActionMessage = Loc.Get("Downloading Display Commander...");
         card.DcProgress = 0;
         try
         {
@@ -827,10 +827,10 @@ public partial class MainViewModel
             // Create and persist AuxInstalledRecord for DC tracking
             var dcRecord = new AuxInstalledRecord
             {
-                GameName    = card.GameName,
+                GameName = card.GameName,
                 InstallPath = card.InstallPath,
-                Store       = card.Source ?? "",
-                AddonType   = "DisplayCommander",
+                Store = card.Source ?? "",
+                AddonType = "DisplayCommander",
                 InstalledAs = targetFileName,
                 InstalledAt = DateTime.UtcNow,
             };
@@ -847,7 +847,7 @@ public partial class MainViewModel
                 if (cachedVersion == "latest_build") cachedVersion = null;
                 card.DcInstalledVersion = peVersion ?? cachedVersion ?? ReadDcInstalledVersion(card.Is32Bit);
                 card.DcStatus = GameStatus.Installed;
-                card.DcActionMessage = "✅ Display Commander installed!";
+                card.DcActionMessage = Loc.Get("✅ Display Commander installed!");
                 card.DcIsInstalling = false;
                 card.NotifyAll();
                 card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
@@ -857,7 +857,7 @@ public partial class MainViewModel
         {
             DispatcherQueue?.TryEnqueue(() =>
             {
-                card.DcActionMessage = $"❌ Install failed: {ex.Message}";
+                card.DcActionMessage = Loc.Format($"❌ Install failed: {ex.Message}");
                 card.DcIsInstalling = false;
                 card.NotifyAll();
             });
@@ -896,13 +896,13 @@ public partial class MainViewModel
             card.DcInstalledFile = null;
             card.DcInstalledVersion = null;
             card.DcStatus = GameStatus.NotInstalled;
-            card.DcActionMessage = "✖ Display Commander removed.";
+            card.DcActionMessage = Loc.Get("✖ Display Commander removed.");
             card.NotifyAll();
             card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
         }
         catch (Exception ex)
         {
-            card.DcActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.DcActionMessage = Loc.Format($"❌ Uninstall failed: {ex.Message}");
             _crashReporter.WriteCrashReport("UninstallDc", ex, note: $"Game: {card.GameName}");
         }
     }
