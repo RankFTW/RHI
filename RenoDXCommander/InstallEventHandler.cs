@@ -198,13 +198,9 @@ public class InstallEventHandler
             {
                 var warningDialog = new ContentDialog
                 {
-                    Title = "⚠ OptiScaler Setup",
-                    Content = "Before installing OptiScaler, please configure your GPU type and DLSS input (AMD/Intel only) settings in the OptiScaler Settings section on the Settings page.\n\nThis ensures OptiScaler is configured correctly for your hardware.",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
                     XamlRoot = xamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("⚠ OptiScaler Setup")).Localize("Content", Loc.Get("Before installing OptiScaler, please configure your GPU type and DLSS input (AMD/Intel only) settings in the OptiScaler Settings section on the Settings page.\n\nThis ensures OptiScaler is configured correctly for your hardware.")).Localize("PrimaryButtonText", Loc.Get("Continue")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
                 var result = await DialogService.ShowSafeAsync(warningDialog);
                 if (result != ContentDialogResult.Primary) return;
@@ -220,7 +216,7 @@ public class InstallEventHandler
         var osVariant = ViewModel.GetOsVariant(card.GameName, card.Source ?? "");
 
         card.OsIsInstalling = true;
-        card.OsActionMessage = "Installing OptiScaler...";
+        card.OsActionMessage = Loc.Get("Installing OptiScaler...");
         card.OsProgress = 0;
         try
         {
@@ -251,7 +247,7 @@ public class InstallEventHandler
             {
                 try
                 {
-                    card.OsActionMessage = "Installing PD-Upscaler REFramework...";
+                    card.OsActionMessage = Loc.Get("Installing PD-Upscaler REFramework...");
                     await _reFrameworkService.InstallPdUpscalerAsync(
                         card.GameName, card.InstallPath, pdArtifact,
                         new Progress<(string message, double percent)>(p =>
@@ -269,7 +265,7 @@ public class InstallEventHandler
                 }
             }
 
-            card.OsActionMessage = "✅ OptiScaler installed!";
+            card.OsActionMessage = Loc.Get("✅ OptiScaler installed!");
             card.OsStatus = GameStatus.Installed;
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
@@ -312,7 +308,7 @@ public class InstallEventHandler
         }
         catch (Exception ex)
         {
-            card.OsActionMessage = $"❌ Install failed: {ex.Message}";
+            card.OsActionMessage = Loc.Format($"❌ Install failed: {ex.Message}");
         }
         finally
         {
@@ -380,14 +376,14 @@ public class InstallEventHandler
             }
             catch (Exception cleanEx) { CrashReporter.Log($"[InstallEventHandler.UninstallOptiScaler] Settings cleanup failed — {cleanEx.Message}"); }
 
-            card.OsActionMessage = "✖ OptiScaler removed.";
+            card.OsActionMessage = Loc.Get("✖ OptiScaler removed.");
             card.OsStatus = GameStatus.Available;
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }
         catch (Exception ex)
         {
-            card.OsActionMessage = $"❌ Uninstall failed: {ex.Message}";
+            card.OsActionMessage = Loc.Format($"❌ Uninstall failed: {ex.Message}");
         }
 
         _window.DispatcherQueue?.TryEnqueue(() =>
@@ -409,7 +405,7 @@ public class InstallEventHandler
             var fgOutput = ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "");
             var fgNvngx = ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? "");
             OptiScalerService.ApplyFgSettings(card.InstallPath, fgInput, fgOutput, fgNvngx);
-            card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
+            card.OsActionMessage = Loc.Get("✅ OptiScaler.ini copied to game folder.");
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }
         catch (Exception ex)
@@ -523,7 +519,7 @@ public class InstallEventHandler
         ViewModel.ToggleUeExtended(card);
 
         // Directly update the badge text based on the new state
-        string newLabel = card.UseUeExtended ? "UE Extended" : "Generic UE";
+        string newLabel = card.UseUeExtended ? "UE Extended" : Loc.Get("Generic UE");
         _window.DetailGenericText.Text = newLabel;
 
         // Update the UE button styling
@@ -541,8 +537,7 @@ public class InstallEventHandler
         }
 
         // Update tooltip
-        ToolTipService.SetToolTip(_window.DetailUeExtendedBtn,
-            card.UseUeExtended ? "Disable UE Extended" : "Enable UE Extended");
+        _window.DetailUeExtendedBtn.Localize("ToolTip", card.UseUeExtended ? Loc.Get("Disable UE Extended") : Loc.Get("Enable UE Extended"));
 
         // Show inline message or warning dialog
         if (card.UseUeExtended)
@@ -565,7 +560,7 @@ public class InstallEventHandler
 
     private static GameCardViewModel? GetCardFromSender(object sender) => sender switch
     {
-        Button btn          when btn.Tag  is GameCardViewModel c => c,
+        Button btn when btn.Tag is GameCardViewModel c => c,
         MenuFlyoutItem item when item.Tag is GameCardViewModel c => c,
         _ => null
     };
@@ -586,21 +581,18 @@ public class InstallEventHandler
 
         var dontShowCheck = new CheckBox
         {
-            Content = "Don't show this again",
+            Content = Loc.Get("Don't show this again"),
             FontSize = 12,
             Margin = new Thickness(0, 12, 0, 0),
         };
 
         var messageText = new TextBlock
         {
-            Text = "Heads up — you're installing both RenoDX and Luma on this game.\n\n" +
-                   "There's no guarantee they'll work well together. If you're using RenoDX for HDR and just want Luma for DLAA, make sure to disable HDR in the Luma mod settings to avoid conflicts.\n\n" +
-                   "If something doesn't look right, uninstalling one of them is the first thing to try. We can't offer support for issues that come from running both together.",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 13,
             LineHeight = 22,
-            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-        };
+            Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+        }.Localize("Text", Loc.Concat(Loc.Get("Heads up — you're installing both RenoDX and Luma on this game.\n\n"), Loc.Get("There's no guarantee they'll work well together. If you're using RenoDX for HDR and just want Luma for DLAA, make sure to disable HDR in the Luma mod settings to avoid conflicts.\n\n"), Loc.Get("If something doesn't look right, uninstalling one of them is the first thing to try. We can't offer support for issues that come from running both together.")));
 
         var content = new StackPanel { Spacing = 4 };
         content.Children.Add(messageText);
@@ -608,14 +600,10 @@ public class InstallEventHandler
 
         var dialog = new ContentDialog
         {
-            Title = "Installing both RenoDX and Luma",
-            Content = content,
-            PrimaryButtonText = "Continue",
-            CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = xamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Installing both RenoDX and Luma")).Localize("Content", content).Localize("PrimaryButtonText", Loc.Get("Continue")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dialog);
 

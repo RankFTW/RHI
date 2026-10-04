@@ -49,45 +49,45 @@ public partial class GameCardViewModel
     {
         get
         {
-            if (RsIsInstalling) return "Installing...";
+            if (RsIsInstalling) return Loc.Get("Installing...");
             // RE Engine games require REFramework before ReShade can be installed
             // (unless user has excluded REF via Update Inclusion toggle)
             if (IsREEngineGame && !IsRefInstalled && !EffectiveLumaMode && !ExcludeFromUpdateAllRef)
-                return "⚠  RE Framework required";
+                return Loc.Get("⚠  RE Framework required");
             if (RequiresVulkanInstall)
             {
                 bool layerInstalled = _vulkanLayerInstalled;
                 if (RsStatus == GameStatus.UpdateAvailable && layerInstalled && IsVulkanRsActive)
-                    return "⬆  Update Vulkan ReShade";
-                if (layerInstalled && IsVulkanRsActive) return "↺  Reinstall Vulkan ReShade";
-                if (layerInstalled) return "⬇  Install Vulkan ReShade";
-                return "⬇  Install Vulkan Layer";
+                    return Loc.Get("⬆  Update Vulkan ReShade");
+                if (layerInstalled && IsVulkanRsActive) return Loc.Get("↺  Reinstall Vulkan ReShade");
+                if (layerInstalled) return Loc.Get("⬇  Install Vulkan ReShade");
+                return Loc.Get("⬇  Install Vulkan Layer");
             }
-            return RsStatus == GameStatus.UpdateAvailable ? "⬆  Update ReShade"
-                 : RsStatus == GameStatus.Installed       ? "↺  Reinstall ReShade"
-                 : "⬇  Install ReShade";
+            return RsStatus == GameStatus.UpdateAvailable ? Loc.Get("⬆  Update ReShade")
+                 : RsStatus == GameStatus.Installed ? Loc.Get("↺  Reinstall ReShade")
+                 : Loc.Get("⬇  Install ReShade");
         }
     }
 
     // Background colours for RS buttons (purple tint when update available, blue otherwise)
-    public string RsBtnBackground  => RsStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string RsBtnForeground  => RsStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
+    public string RsBtnBackground => RsStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
+    public string RsBtnForeground => RsStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
     public string RsBtnBorderBrush => RsStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     public Visibility RsProgressVisibility => RsIsInstalling ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility RsMessageVisibility  => string.IsNullOrEmpty(RsActionMessage) ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility RsInstalledVisible   => !string.IsNullOrEmpty(RsInstalledFile) ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility RsDeleteVisibility   => RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable
+    public Visibility RsMessageVisibility => string.IsNullOrEmpty(RsActionMessage) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility RsInstalledVisible => !string.IsNullOrEmpty(RsInstalledFile) ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility RsDeleteVisibility => RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable
                                                ? Visibility.Visible : Visibility.Collapsed;
 
     // Component table: RS short status text + short action labels
-    public string RsStatusText => RsIsInstalling ? "Installing…"
-        : RsStatus == GameStatus.UpdateAvailable ? (RsInstalledVersion ?? "Update")
-        : RsStatus == GameStatus.Installed       ? (RsInstalledVersion ?? "Installed")
-        : "Ready";
+    public string RsStatusText => RsIsInstalling ? Loc.Get("Installing…")
+        : RsStatus == GameStatus.UpdateAvailable ? (RsInstalledVersion ?? Loc.Get("Update"))
+        : RsStatus == GameStatus.Installed ? (RsInstalledVersion ?? Loc.Get("Installed"))
+        : Loc.Get("Ready");
     public string RsStatusColor => RsIsInstalling ? "#D4A856"
         : RsStatus == GameStatus.UpdateAvailable ? "#B898E8"
-        : RsStatus == GameStatus.Installed       ? "#5ECB7D"
+        : RsStatus == GameStatus.Installed ? "#5ECB7D"
         : "#A0AABB";
     /// <summary>True when this is a Vulkan game and reshade.ini already exists in the game folder.</summary>
     private bool IsVulkanRsActive => RequiresVulkanInstall && _vulkanRsIniExists;
@@ -107,13 +107,13 @@ public partial class GameCardViewModel
                 return "⬇ Install";
             }
             return RsStatus == GameStatus.UpdateAvailable ? "⬆ Update"
-                 : RsStatus == GameStatus.Installed       ? "↺ Reinstall"
+                 : RsStatus == GameStatus.Installed ? "↺ Reinstall"
                  : "⬇ Install";
         }
     }
 
     public bool IsRsNotInstalling => !RsIsInstalling;
-    public bool IsRsInstalled   => RsStatus is GameStatus.Installed or GameStatus.UpdateAvailable
+    public bool IsRsInstalled => RsStatus is GameStatus.Installed or GameStatus.UpdateAvailable
         || (EffectiveLumaMode && LumaStatus is GameStatus.Installed or GameStatus.UpdateAvailable);
 
     // ── Dynamic corner radius for RS install buttons ─────────────────────────────
@@ -138,9 +138,9 @@ public partial class GameCardViewModel
 
     // INI button corner radius: rounded right when it is the rightmost button (delete hidden)
     private bool RsDeleteVisible => RsStatus == GameStatus.Installed || RsStatus == GameStatus.UpdateAvailable;
-    public string RsIniCornerRadius    => RsDeleteVisible ? "0"        : "0,10,10,0";
-    public string RsIniBorderThickness => RsDeleteVisible ? "0,1,0,1"  : "0,1,1,1";
-    public string RsIniMargin          => RsDeleteVisible ? "0,0,1,0"  : "0";
+    public string RsIniCornerRadius => RsDeleteVisible ? "0" : "0,10,10,0";
+    public string RsIniBorderThickness => RsDeleteVisible ? "0,1,0,1" : "0,1,1,1";
+    public string RsIniMargin => RsDeleteVisible ? "0,0,1,0" : "0";
 
     // In Luma mode: ReShade row is still visible — RHI manages ReShade for Luma games
     public Visibility ReShadeRowVisibility => Visibility.Visible;

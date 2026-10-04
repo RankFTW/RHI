@@ -45,19 +45,15 @@ public static class AddonPopupHelper
         {
             var emptyDlg = new ContentDialog
             {
-                Title = "Select Addons",
-                Content = new TextBlock
-                {
-                    Text = "No addons available.",
-                    FontSize = 13,
-                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                },
-                CloseButtonText = "Close",
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 MinWidth = 750,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Select Addons")).Localize("Content", new TextBlock
+            {
+                FontSize = 13,
+                Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+            }.Localize("Text", Loc.Get("No addons available."))).Localize("CloseButtonText", Loc.Get("Close"));
             await DialogService.ShowSafeAsync(emptyDlg);
             return null;
         }
@@ -73,12 +69,11 @@ public static class AddonPopupHelper
             "RHI", "Custom", "Addons");
         var folderLink = new HyperlinkButton
         {
-            Content = "Place custom .addon64/.addon32 files here",
             FontSize = 11,
             Foreground = Brush(ResourceKeys.AccentBlueBrush),
             Padding = new Thickness(0),
-            Margin = new Thickness(0, 0, 0, 4),
-        };
+            Margin = new Thickness(0, 0, 0, 4)
+        }.Localize("Content", Loc.Get("Place custom .addon64/.addon32 files here"));
         folderLink.Click += (_, _) =>
         {
             try
@@ -110,29 +105,26 @@ public static class AddonPopupHelper
             var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             nameRow.Children.Add(new TextBlock
             {
-                Text = entry.PackageName,
                 FontSize = 13,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-            });
+                Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+            }.Localize("Text", entry.PackageName));
             var versionLabel = addonPackService.GetVersionLabel(entry.SectionId);
             if (!string.IsNullOrEmpty(versionLabel))
                 nameRow.Children.Add(new TextBlock
                 {
-                    Text = versionLabel,
                     FontSize = 11,
                     Foreground = Brush(ResourceKeys.TextSecondaryBrush),
                     VerticalAlignment = VerticalAlignment.Center,
-                    Opacity = 0.7,
-                });
+                    Opacity = 0.7
+                }.Localize("Text", Loc.Get(versionLabel)));
             var tickMark = new TextBlock
             {
-                Text = "✓",
                 FontSize = 13,
                 Foreground = Brush(ResourceKeys.AccentGreenBrush),
                 VerticalAlignment = VerticalAlignment.Center,
-                Visibility = isDownloaded ? Visibility.Visible : Visibility.Collapsed,
-            };
+                Visibility = isDownloaded ? Visibility.Visible : Visibility.Collapsed
+            }.Localize("Text", "✓");
             nameRow.Children.Add(tickMark);
             textPanel.Children.Add(nameRow);
 
@@ -140,13 +132,12 @@ public static class AddonPopupHelper
             {
                 textPanel.Children.Add(new TextBlock
                 {
-                    Text = entry.PackageDescription,
                     FontSize = 11,
                     Opacity = 0.6,
                     Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                     TextWrapping = TextWrapping.Wrap,
-                    MaxWidth = 450,
-                });
+                    MaxWidth = 450
+                }.Localize("Text", entry.PackageDescription));
             }
 
             if (!string.IsNullOrEmpty(entry.RepositoryUrl)
@@ -154,12 +145,11 @@ public static class AddonPopupHelper
             {
                 textPanel.Children.Add(new HyperlinkButton
                 {
-                    Content = "How to use",
                     NavigateUri = new Uri(entry.RepositoryUrl),
                     FontSize = 11,
                     Foreground = Brush(ResourceKeys.AccentBlueBrush),
-                    Padding = new Thickness(0),
-                });
+                    Padding = new Thickness(0)
+                }.Localize("Content", Loc.Get("How to use")));
             }
 
             // Right side: toggle — same behavior as global manager
@@ -196,16 +186,14 @@ public static class AddonPopupHelper
             var toggle = new ToggleSwitch
             {
                 IsOn = isSelected,
-                OnContent = "On",
-                OffContent = "Off",
                 VerticalAlignment = VerticalAlignment.Center,
                 IsEnabled = !peerIsSelected,
-                Opacity = peerIsSelected ? 0.35 : 1.0,
-            };
+                Opacity = peerIsSelected ? 0.35 : 1.0
+            }.Localize("OnContent", Loc.Get("On")).Localize("OffContent", Loc.Get("Off"));
             if (peerIsSelected)
-                ToolTipService.SetToolTip(toggle, rtx40MfgConflict
-                    ? "RTX 40 MFG Unlock is already installed and conflicts with this addon. Remove it from the Extras section first."
-                    : $"Disable {mutualExclusivePeer} first to enable this addon.");
+                toggle.Localize("ToolTip", rtx40MfgConflict
+                    ? Loc.Get("RTX 40 MFG Unlock is already installed and conflicts with this addon. Remove it from the Extras section first.")
+                    : Loc.Format($"Disable {mutualExclusivePeer} first to enable this addon."));
 
             // Capture for the lambda
             var capturedEntry = entry;
@@ -253,7 +241,7 @@ public static class AddonPopupHelper
                         peer.Toggle.IsEnabled = !toggle.IsOn;
                         peer.Toggle.Opacity = toggle.IsOn ? 0.35 : 1.0;
                         if (toggle.IsOn)
-                            ToolTipService.SetToolTip(peer.Toggle, $"Disable {entry.PackageName} first to enable this addon.");
+                            peer.Toggle.Localize("ToolTip", Loc.Format($"Disable {entry.PackageName} first to enable this addon."));
                         else
                             ToolTipService.SetToolTip(peer.Toggle, null);
                     }
@@ -307,13 +295,12 @@ public static class AddonPopupHelper
         {
             panel.Children.Add(new TextBlock
             {
-                Text = "Custom Addons",
                 FontSize = 12,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                 Opacity = 0.6,
-                Margin = new Thickness(0, 12, 0, 4),
-            });
+                Margin = new Thickness(0, 12, 0, 4)
+            }.Localize("Text", Loc.Get("Custom Addons")));
 
             foreach (var entry in customAddonsList)
             {
@@ -325,41 +312,36 @@ public static class AddonPopupHelper
                 var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
                 nameRow.Children.Add(new TextBlock
                 {
-                    Text = entry.PackageName,
                     FontSize = 13,
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                });
+                    Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+                }.Localize("Text", entry.PackageName));
                 nameRow.Children.Add(new TextBlock
                 {
-                    Text = "✓",
                     FontSize = 13,
                     Foreground = Brush(ResourceKeys.AccentGreenBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
-                });
+                    VerticalAlignment = VerticalAlignment.Center
+                }.Localize("Text", "✓"));
                 textPanel.Children.Add(nameRow);
 
                 if (!string.IsNullOrEmpty(entry.PackageDescription))
                 {
                     textPanel.Children.Add(new TextBlock
                     {
-                        Text = entry.PackageDescription,
                         FontSize = 11,
                         Opacity = 0.6,
                         Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                         TextWrapping = TextWrapping.Wrap,
-                        MaxWidth = 450,
-                    });
+                        MaxWidth = 450
+                    }.Localize("Text", entry.PackageDescription));
                 }
 
                 bool suppressToggle = false;
                 var toggle = new ToggleSwitch
                 {
                     IsOn = isSelected,
-                    OnContent = "On",
-                    OffContent = "Off",
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
+                    VerticalAlignment = VerticalAlignment.Center
+                }.Localize("OnContent", Loc.Get("On")).Localize("OffContent", Loc.Get("Off"));
                 toggle.Toggled += (s, ev) => { if (suppressToggle) return; };
                 toggles.Add((entry.PackageName, toggle));
 
@@ -392,15 +374,12 @@ public static class AddonPopupHelper
 
         var dlg = new ContentDialog
         {
-            Title = "Select Addons",
             Content = scrollViewer,
-            PrimaryButtonText = "Deploy",
-            CloseButtonText = "Cancel",
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             MinWidth = 750,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Select Addons")).Localize("PrimaryButtonText", Loc.Get("Deploy")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var dialogResult = await DialogService.ShowSafeAsync(dlg);
         if (dialogResult != ContentDialogResult.Primary)

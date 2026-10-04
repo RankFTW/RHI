@@ -27,25 +27,23 @@ public partial class DetailPanelBuilder
 
         // ── Collapsible header ────────────────────────────────────────────────
         const string extrasSectionKey = "Extras";
-        var exSettings   = _window.ViewModel.Settings;
+        var exSettings = _window.ViewModel.Settings;
         bool exCollapsed = exSettings.CollapsedDetailSections.Contains(extrasSectionKey);
 
         var exArrow = new TextBlock
         {
-            Text      = exCollapsed ? "▶" : "▼",
-            FontSize  = 10,
+            FontSize = 10,
             Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin    = new Thickness(0, 0, 6, 0),
-        };
+            Margin = new Thickness(0, 0, 6, 0)
+        }.Localize("Text", exCollapsed ? "▶" : "▼");
         var exTitle = new TextBlock
         {
-            Text       = "Extras",
-            FontSize   = 13,
+            FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", Loc.Get("Extras"));
         var exHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
         exHeaderRow.Children.Add(MakeDragHandle(_window.ExtrasContainer));
         exHeaderRow.Children.Add(exArrow);
@@ -56,12 +54,12 @@ public partial class DetailPanelBuilder
         _window.ExtrasPanel.Children.Add(exBody);
 
         exHeaderRow.PointerEntered += (s, e) => exTitle.Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush);
-        exHeaderRow.PointerExited  += (s, e) => exTitle.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
-        var exHandCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        exHeaderRow.PointerExited += (s, e) => exTitle.Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush);
+        var exHandCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
         var exArrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
-        var exCursorProp  = DetailPanelBuilder.CursorProp;
+        var exCursorProp = DetailPanelBuilder.CursorProp;
         exHeaderRow.PointerEntered += (s, e) => exCursorProp?.SetValue(exHeaderRow, exHandCursor);
-        exHeaderRow.PointerExited  += (s, e) => exCursorProp?.SetValue(exHeaderRow, exArrowCursor);
+        exHeaderRow.PointerExited += (s, e) => exCursorProp?.SetValue(exHeaderRow, exArrowCursor);
 
         // ── Collapsed summary (dict lookups only — no FS calls) ──────────────
         var vm = _window.ViewModel;
@@ -71,14 +69,14 @@ public partial class DetailPanelBuilder
         var dgSvc = App.Services.GetRequiredService<DgVoodooService>();
         bool dgvInstalled = !string.IsNullOrEmpty(installPath) && dgSvc.IsDeployed(installPath);
         var exSummaryEntries = new List<(string, string?)>();
-        if (!string.IsNullOrEmpty(vm.GetUalInstalledAs(gn, gs)))                           exSummaryEntries.Add(("ASI Loader", vm.GetUalInstalledAs(gn, gs)));
-        if (vm.GetRtx40MfgInstalled(gn, gs))                                               exSummaryEntries.Add(("RTX 40 MFG", "On"));
-        if (card.MfgAdaInstalled)                                                          exSummaryEntries.Add(("MFG Ada", "On"));
-        if (vm.GetDlssg2030Installed(gn, gs))                                              exSummaryEntries.Add(("20/30 FG", "On"));
-        if (card.IsOsInstalled)                                                             exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
-        if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs)))                            exSummaryEntries.Add(("DLSS Enabler", "On"));
-        if (card.IsDxvkInstalled)                                                           exSummaryEntries.Add(("DXVK", card.DxvkInstalledVersion ?? "On"));
-        if (dgvInstalled)                                                                   exSummaryEntries.Add(("dgVoodoo2", vm.GetDgVoodooVersion(gn, gs) ?? _window.ViewModel.Manifest?.DgVoodooVersions?.Keys.FirstOrDefault()));
+        if (!string.IsNullOrEmpty(vm.GetUalInstalledAs(gn, gs))) exSummaryEntries.Add(("ASI Loader", vm.GetUalInstalledAs(gn, gs)));
+        if (vm.GetRtx40MfgInstalled(gn, gs)) exSummaryEntries.Add(("RTX 40 MFG", "On"));
+        if (card.MfgAdaInstalled) exSummaryEntries.Add(("MFG Ada", "On"));
+        if (vm.GetDlssg2030Installed(gn, gs)) exSummaryEntries.Add(("20/30 FG", "On"));
+        if (card.IsOsInstalled) exSummaryEntries.Add(("OptiScaler", card.OsInstalledVersion));
+        if (!string.IsNullOrEmpty(vm.GetDeInstalledAs(gn, gs))) exSummaryEntries.Add(("DLSS Enabler", "On"));
+        if (card.IsDxvkInstalled) exSummaryEntries.Add(("DXVK", card.DxvkInstalledVersion ?? "On"));
+        if (dgvInstalled) exSummaryEntries.Add(("dgVoodoo2", vm.GetDgVoodooVersion(gn, gs) ?? _window.ViewModel.Manifest?.DgVoodooVersions?.Keys.FirstOrDefault()));
         var exSummary = DetailPanelBuilder.MakeSectionSummaryInlines(exSummaryEntries);
         if (exSummary != null)
         {
@@ -94,7 +92,7 @@ public partial class DetailPanelBuilder
             if (exSummary != null)
                 exSummary.Visibility = nowCollapsed ? Visibility.Visible : Visibility.Collapsed;
             if (nowCollapsed) exSettings.CollapsedDetailSections.Add(extrasSectionKey);
-            else              exSettings.CollapsedDetailSections.Remove(extrasSectionKey);
+            else exSettings.CollapsedDetailSections.Remove(extrasSectionKey);
             _window.ViewModel.SaveSettingsPublic();
         };
 
@@ -104,7 +102,7 @@ public partial class DetailPanelBuilder
         CrashReporter.Log($"[BuildExtrasSection] UalRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── MFG Unlocks separator ─────────────────────────────────────────────
-        exBody.Children.Add(MakeExtrasSeparator("MFG Unlocks"));
+        exBody.Children.Add(MakeExtrasSeparator(Loc.Get("MFG Unlocks")));
 
         // ── RTX 40 MFG Unlock row ─────────────────────────────────────────────
         __t0 = __exSw.ElapsedMilliseconds;
@@ -122,7 +120,7 @@ public partial class DetailPanelBuilder
         CrashReporter.Log($"[BuildExtrasSection] Dlssg2030Row: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── Other separator ───────────────────────────────────────────────────
-        exBody.Children.Add(MakeExtrasSeparator("Other"));
+        exBody.Children.Add(MakeExtrasSeparator(Loc.Get("Other")));
 
         // ── OptiScaler row ────────────────────────────────────────────────────
         __t0 = __exSw.ElapsedMilliseconds;
@@ -137,7 +135,7 @@ public partial class DetailPanelBuilder
         // ── API Upgrades sub-header + DXVK row ────────────────────────────────
         if (card.IsDxvkToggleVisible)
         {
-            exBody.Children.Add(MakeExtrasSeparator("API Upgrades"));
+            exBody.Children.Add(MakeExtrasSeparator(Loc.Get("API Upgrades")));
             __t0 = __exSw.ElapsedMilliseconds;
             BuildDxvkRow(card, exBody);
             CrashReporter.Log($"[BuildExtrasSection] DxvkRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
@@ -150,7 +148,7 @@ public partial class DetailPanelBuilder
         if (isDx9ForDgv || dgvInstalled)
         {
             if (!card.IsDxvkToggleVisible) // Show separator only if DXVK row wasn't shown
-                exBody.Children.Add(MakeExtrasSeparator("API Upgrades"));
+                exBody.Children.Add(MakeExtrasSeparator(Loc.Get("API Upgrades")));
             __t0 = __exSw.ElapsedMilliseconds;
             BuildDgVoodooRow(card, exBody);
             CrashReporter.Log($"[BuildExtrasSection] DgVoodooRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
@@ -161,7 +159,7 @@ public partial class DetailPanelBuilder
         CrashReporter.Log($"[BuildExtrasSection] Total: {__exSw.ElapsedMilliseconds}ms '{card.GameName}'");
     }
 
-    
+
     public void OnExtrasCardPropertyChanged(GameCardViewModel card, string? propertyName)
     {
         UpdateOsFeedback(card);
@@ -174,7 +172,7 @@ public partial class DetailPanelBuilder
         }
     }
 
-    
+
     public void UpdateOsFeedback(GameCardViewModel card)
     {
         _window.DetailOsProgress.Visibility = card.OsRowVisibility == Visibility.Visible ? card.OsProgressVisibility : Visibility.Collapsed;
@@ -184,7 +182,7 @@ public partial class DetailPanelBuilder
         _window.DetailOsMessage.Foreground = UIFactory.GetBrush(GetMessageColor(card.OsActionMessage));
     }
 
-    
+
     private bool _extrasRebuildPending;
 
     public void RequestExtrasRebuild(GameCardViewModel card)
@@ -211,12 +209,11 @@ public partial class DetailPanelBuilder
 
         var text = new TextBlock
         {
-            Text = $"———  {label}  ———",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", $"———  {label}  ———");
         Grid.SetColumn(text, 3);
         grid.Children.Add(text);
         return grid;
@@ -225,13 +222,13 @@ public partial class DetailPanelBuilder
     private void BuildUalRow(GameCardViewModel card, StackPanel body)
     {
         _window.ViewModel.SetLastUiAction($"BuildUalRow({card.GameName})");
-        var ualSvc    = _window.ViewModel.UalServiceInstance;
-        var gameName  = card.GameName;
-        var store     = card.Source ?? "";
+        var ualSvc = _window.ViewModel.UalServiceInstance;
+        var gameName = card.GameName;
+        var store = card.Source ?? "";
         var installPath = card.InstallPath ?? "";
 
         // Detect current install state
-        var ualRecord   = string.IsNullOrEmpty(installPath) ? null
+        var ualRecord = string.IsNullOrEmpty(installPath) ? null
             : _auxInstallService.FindRecord(gameName, installPath, UltimateAsiLoaderService.AddonType);
         bool isInstalled = ualRecord != null;
         string? installedAs = ualRecord?.InstalledAs;
@@ -251,12 +248,12 @@ public partial class DetailPanelBuilder
         if (isInstalled)
         {
             var staged = card.Is32Bit ? ualSvc.StagedVersion32 : ualSvc.StagedVersion64;
-            statusText  = staged ?? "Installed";
+            statusText = staged ?? "Installed";
             statusColor = "#5ECB7D";
         }
         else
         {
-            statusText  = "Ready";
+            statusText = "Ready";
             statusColor = "#A0AABB";
         }
 
@@ -274,28 +271,26 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "ASI Loader",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTipService.SetToolTip(label, "Ultimate ASI Loader — proxy DLL that loads .asi plugins into game processes.");
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", "ASI Loader");
+        label.Localize("ToolTip", Loc.Get("Ultimate ASI Loader — proxy DLL that loads .asi plugins into game processes."));
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
         // Col 1 — status
         var statusBlock = new TextBlock
         {
-            Text = statusText,
             FontSize = 12,
             Foreground = UIFactory.GetBrush(statusColor),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center,
-            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None,
-        };
+            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None
+        }.Localize("Text", Loc.Get(statusText));
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, $"Installed as: {installedAs}\nClick to open GitHub releases");
+            statusBlock.Localize("ToolTip", Loc.Format($"Installed as: {installedAs}\nClick to open GitHub releases"));
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases"));
         }
@@ -305,7 +300,6 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button (matches Components style)
         var infoBtn = new Button
         {
-            Content = "Info",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -314,9 +308,9 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        ToolTipService.SetToolTip(infoBtn, "Open Ultimate ASI Loader GitHub releases page");
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Info"));
+        infoBtn.Localize("ToolTip", Loc.Get("Open Ultimate ASI Loader GitHub releases page"));
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases"));
         Grid.SetColumn(infoBtn, 2);
@@ -325,7 +319,6 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         var installBtn = new Button
         {
-            Content = isInstalled ? "↺  Reinstall ASI Loader" : "⬇  Install ASI Loader",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -340,11 +333,11 @@ public partial class DetailPanelBuilder
             BorderBrush = isInstalled
                 ? UIFactory.GetBrush("#2A4468")
                 : UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-        };
-        ToolTipService.SetToolTip(installBtn, isInstalled
-            ? $"Reinstall Ultimate ASI Loader (currently '{installedAs}')"
-            : "Install Ultimate ASI Loader — choose which DLL name to use");
+            BorderThickness = new Thickness(1)
+        }.Localize("Content", isInstalled ? Loc.Get("↺  Reinstall ASI Loader") : Loc.Get("⬇  Install ASI Loader"));
+        installBtn.Localize("ToolTip", isInstalled
+            ? Loc.Format($"Reinstall Ultimate ASI Loader (currently '{installedAs}')")
+            : Loc.Get("Install Ultimate ASI Loader — choose which DLL name to use"));
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -352,7 +345,7 @@ public partial class DetailPanelBuilder
             if (chosen == null) return;
 
             installBtn.IsEnabled = false;
-            installBtn.Content = "Installing...";
+            installBtn.Localize("Content", Loc.Get("Installing..."));
             try
             {
                 var (success, hookedOriginal) = await ualSvc.InstallAsync(card, chosen);
@@ -363,17 +356,14 @@ public partial class DetailPanelBuilder
                     {
                         _ = DialogService.ShowSafeAsync(new ContentDialog
                         {
-                            Title = "Original DLL chained",
-                            Content = $"The existing '{chosen}' was renamed to '{hookedOriginal}' so ASI Loader can chain-load it automatically.",
-                            CloseButtonText = "OK",
-                            XamlRoot = _window.Content.XamlRoot,
-                        });
+                            XamlRoot = _window.Content.XamlRoot
+                        }.Localize("Title", Loc.Get("Original DLL chained")).Localize("Content", Loc.Format($"The existing '{chosen}' was renamed to '{hookedOriginal}' so ASI Loader can chain-load it automatically.")).Localize("CloseButtonText", Loc.Get("OK")));
                     }
                     RequestExtrasRebuild(card);
                 }
                 else
                 {
-                    installBtn.Content = "❌ Install failed";
+                    installBtn.Localize("Content", Loc.Get("❌ Install failed"));
                 }
             }
             finally { installBtn.IsEnabled = true; }
@@ -392,20 +382,20 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Content = new TextBlock { FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", "⚙"),
             Tag = card,
         };
-        ToolTipService.SetToolTip(cogBtn, "ASI Loader settings (coming soon)");
+        cogBtn.Localize("ToolTip", Loc.Get("ASI Loader settings (coming soon)"));
         cogBtn.Click += async (s, e) =>
         {
             // Placeholder — settings dialog will be added later
             var dlg = new ContentDialog
             {
-                Title = "ASI Loader Settings",
-                Content = new TextBlock { Text = "No settings available yet.", FontSize = 12 },
-                CloseButtonText = "Close",
-                XamlRoot = _window.Content.XamlRoot,
-            };
+                XamlRoot = _window.Content.XamlRoot
+            }.Localize("Title", Loc.Get("ASI Loader Settings")).Localize("Content", new TextBlock
+            {
+                FontSize = 12
+            }.Localize("Text", Loc.Get("No settings available yet."))).Localize("CloseButtonText", Loc.Get("Close"));
             await DialogService.ShowSafeAsync(dlg);
         };
         Grid.SetColumn(cogBtn, 4);
@@ -422,11 +412,11 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Content = new TextBlock { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }.Localize("Text", "✕"),
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove Ultimate ASI Loader from this game");
+        removeBtn.Localize("ToolTip", Loc.Get("Remove Ultimate ASI Loader from this game"));
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -443,24 +433,24 @@ public partial class DetailPanelBuilder
     private void BuildMfgAdaUnlockRow(GameCardViewModel card, StackPanel body)
     {
         _window.ViewModel.SetLastUiAction($"BuildMfgAdaUnlockRow({card.GameName})");
-        var gameName    = card.GameName;
-        var store       = card.Source ?? "";
+        var gameName = card.GameName;
+        var store = card.Source ?? "";
         var installPath = card.InstallPath ?? "";
 
-        const string DeployFileName  = "renodx-mfgunlock.addon64";
-        var stagedPath  = Path.Combine(
+        const string DeployFileName = "renodx-mfgunlock.addon64";
+        var stagedPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "RHI", "addons", "MFG Ada Unlock.addon64");
 
         // Use cached state from card instead of File.Exists on UI thread
-        bool isInstalled   = card.MfgAdaInstalled;
-        bool rsInstalled   = card.IsRsInstalled;
+        bool isInstalled = card.MfgAdaInstalled;
+        bool rsInstalled = card.IsRsInstalled;
         bool rtx40Conflict = card.Rtx40MfgInstalled;
         // Use AddonPackService.IsDownloaded instead of File.Exists
-        bool staged        = _window.ViewModel.AddonPackServiceInstance.IsDownloaded("MFG Ada Unlock");
+        bool staged = _window.ViewModel.AddonPackServiceInstance.IsDownloaded("MFG Ada Unlock");
 
-        var   addonVersion = AddonPackService.LoadAddonVersion("MFG Ada Unlock");
-        string statusText  = isInstalled ? (string.IsNullOrEmpty(addonVersion) ? "Installed" : $"v{addonVersion}") : "Ready";
+        var addonVersion = AddonPackService.LoadAddonVersion("MFG Ada Unlock");
+        string statusText = isInstalled ? (string.IsNullOrEmpty(addonVersion) ? Loc.Get("Installed") : $"v{addonVersion}") : Loc.Get("Ready");
         string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
 
         var row = new Grid { ColumnSpacing = 8 };
@@ -474,28 +464,26 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "MFG Ada Unlock",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTipService.SetToolTip(label, "MFG Ada Unlock — unlocks DLSS Multi Frame Generation (3x/4x+) on RTX 40-series GPUs. Requires ReShade. In-memory only, no files modified.");
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", "MFG Ada Unlock");
+        label.Localize("ToolTip", Loc.Get("MFG Ada Unlock — unlocks DLSS Multi Frame Generation (3x/4x+) on RTX 40-series GPUs. Requires ReShade. In-memory only, no files modified."));
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
         // Col 1 — status
         var statusBlock = new TextBlock
         {
-            Text = statusText,
             FontSize = 12,
             Foreground = UIFactory.GetBrush(statusColor),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center,
-            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None,
-        };
+            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None
+        }.Localize("Text", Loc.Get(statusText));
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, "Click to open GitHub releases");
+            statusBlock.Localize("ToolTip", Loc.Get("Click to open GitHub releases"));
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx/releases"));
         }
@@ -505,7 +493,6 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button (always blue)
         var infoBtn = new Button
         {
-            Content = "Info",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -514,9 +501,9 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        ToolTipService.SetToolTip(infoBtn, "Open MFG Ada Unlock GitHub page");
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Info"));
+        infoBtn.Localize("ToolTip", Loc.Get("Open MFG Ada Unlock GitHub page"));
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx"));
         Grid.SetColumn(infoBtn, 2);
@@ -527,17 +514,17 @@ public partial class DetailPanelBuilder
         bool btnEnabled = true;
         if (!rsInstalled)
         {
-            btnLabel   = "⚠  ReShade required";
+            btnLabel = "⚠  ReShade required";
             btnEnabled = false;
         }
         else if (rtx40Conflict)
         {
-            btnLabel   = "⚠  RTX 40 MFG installed";
+            btnLabel = "⚠  RTX 40 MFG installed";
             btnEnabled = false;
         }
         else if (!staged)
         {
-            btnLabel   = "⬇  Install MFG Ada Unlock";
+            btnLabel = "⬇  Install MFG Ada Unlock";
             btnEnabled = true; // will download on demand when clicked
         }
         else
@@ -547,7 +534,6 @@ public partial class DetailPanelBuilder
 
         var installBtn = new Button
         {
-            Content = btnLabel,
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -557,19 +543,19 @@ public partial class DetailPanelBuilder
             BorderBrush = isInstalled ? UIFactory.GetBrush("#2A4468") : UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
             IsEnabled = btnEnabled,
-            Opacity = btnEnabled ? 1.0 : 0.35,
-        };
+            Opacity = btnEnabled ? 1.0 : 0.35
+        }.Localize("Content", Loc.Get(btnLabel));
 
         if (!rsInstalled)
-            ToolTipService.SetToolTip(installBtn, "Install ReShade first — MFG Ada Unlock requires it");
+            installBtn.Localize("ToolTip", Loc.Get("Install ReShade first — MFG Ada Unlock requires it"));
         else if (rtx40Conflict)
-            ToolTipService.SetToolTip(installBtn, "RTX 40 MFG Unlock (ASI version) is already installed and conflicts. Remove it first.");
+            installBtn.Localize("ToolTip", Loc.Get("RTX 40 MFG Unlock (ASI version) is already installed and conflicts. Remove it first."));
 
         installBtn.Click += async (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
             installBtn.IsEnabled = false;
-            installBtn.Content   = "Downloading...";
+            installBtn.Localize("Content", Loc.Get("Downloading..."));
             try
             {
                 // Download on demand if not yet staged
@@ -585,7 +571,7 @@ public partial class DetailPanelBuilder
                 if (!File.Exists(stagedPath))
                 {
                     CrashReporter.Log("[BuildMfgAdaUnlockRow] Staged file still not found after download attempt");
-                    _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = "Download failed");
+                    _window.DispatcherQueue?.TryEnqueue(() => installBtn.Content = Loc.Get("Download failed"));
                     return;
                 }
 
@@ -618,26 +604,21 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Content = new TextBlock { FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", "⚙"),
         };
-        ToolTipService.SetToolTip(cogBtn, "MFG Ada Unlock settings");
+        cogBtn.Localize("ToolTip", Loc.Get("MFG Ada Unlock settings"));
         cogBtn.Click += async (s, e) =>
         {
             var dlg = new ContentDialog
             {
                 Title = "MFG Ada Unlock",
-                Content = new TextBlock
-                {
-                    Text = "MFG Ada Unlock unlocks DLSS Multi Frame Generation (3x/4x and above) on RTX 40-series GPUs.\n\n" +
-                           "Configure via the ReShade overlay in-game.",
-                    FontSize = 12,
-                    TextWrapping = TextWrapping.Wrap,
-                },
-                PrimaryButtonText = "Open GitHub",
-                CloseButtonText = "Close",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Content", new TextBlock
+            {
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap
+            }.Localize("Text", Loc.Concat(Loc.Get("MFG Ada Unlock unlocks DLSS Multi Frame Generation (3x/4x and above) on RTX 40-series GPUs.\n\n"), Loc.Get("Configure via the ReShade overlay in-game.")))).Localize("PrimaryButtonText", Loc.Get("Open GitHub")).Localize("CloseButtonText", Loc.Get("Close"));
             var result = await DialogService.ShowSafeAsync(dlg);
             if (result == ContentDialogResult.Primary)
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/mavismmg/MFGAdaUnlock-RenoDx"));
@@ -656,11 +637,11 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Content = new TextBlock { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }.Localize("Text", "✕"),
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove MFG Ada Unlock from this game");
+        removeBtn.Localize("ToolTip", Loc.Get("Remove MFG Ada Unlock from this game"));
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -733,21 +714,19 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "OptiScaler",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
             TextDecorations = osGreyed ? Windows.UI.Text.TextDecorations.Strikethrough : Windows.UI.Text.TextDecorations.None,
             Opacity = osGreyed ? 0.35 : 1.0,
-            Tag = card,
-        };
+            Tag = card
+        }.Localize("Text", "OptiScaler");
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
         // Col 1 — status
         var statusBlock = new TextBlock
         {
-            Text = card.OsStatusText,
             FontSize = 12,
             Foreground = UIFactory.GetBrush(card.OsStatusColor),
             VerticalAlignment = VerticalAlignment.Center,
@@ -755,15 +734,15 @@ public partial class DetailPanelBuilder
             TextDecorations = osGreyed
                 ? Windows.UI.Text.TextDecorations.Strikethrough
                 : (card.IsOsInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None),
-            Opacity = osGreyed ? 0.35 : 1.0,
-        };
+            Opacity = osGreyed ? 0.35 : 1.0
+        }.Localize("Text", card.OsStatusText);
         if (card.IsOsInstalled && !osGreyed)
         {
             var osVariant = _window.ViewModel.GetOsVariant(card.GameName, card.Source ?? "");
             var osWikiUrl = osVariant == "DlssNr"
                 ? "https://github.com/wilsjo2/OptiScaler-DLSSNR-PreSR-Multipass/releases"
                 : "https://github.com/optiscaler/OptiScaler/wiki";
-            ToolTipService.SetToolTip(statusBlock, "Click to open OptiScaler releases");
+            statusBlock.Localize("ToolTip", Loc.Get("Click to open OptiScaler releases"));
             statusBlock.PointerPressed += async (s, e) =>
                 await Windows.System.Launcher.LaunchUriAsync(new Uri(osWikiUrl));
         }
@@ -773,15 +752,14 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
             Height = 32,
             CornerRadius = new CornerRadius(8),
             Tag = card,
-            DataContext = AddonType.OptiScaler,
-        };
+            DataContext = AddonType.OptiScaler
+        }.Localize("Content", Loc.Get("Info"));
         ApplyInfoButtonStyle(infoBtn, card, AddonType.OptiScaler);
         infoBtn.Click += (s, e) => _window.InfoButton_Click(s, e);
         Grid.SetColumn(infoBtn, 2);
@@ -820,12 +798,12 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Content = new TextBlock { FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", "⚙"),
             Tag = card,
             IsEnabled = !osGreyed,
             Opacity = osGreyed ? 0.35 : 1.0,
         };
-        ToolTipService.SetToolTip(cogBtn, "OptiScaler Settings");
+        cogBtn.Localize("ToolTip", Loc.Get("OptiScaler Settings"));
         cogBtn.Click += (s, e) => _window.OsCogButton_ClickInternal(s, e);
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);
@@ -842,12 +820,12 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Content = new TextBlock { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }.Localize("Text", "✕"),
             Tag = card,
             Opacity = (osGreyed || !osShow) ? 0 : 1.0,
             IsHitTestVisible = osShow && !osGreyed,
         };
-        ToolTipService.SetToolTip(deleteBtn, "Remove OptiScaler");
+        deleteBtn.Localize("ToolTip", Loc.Get("Remove OptiScaler"));
         deleteBtn.Click += (s, e) => _window.UninstallOsButton_Click(s, e);
         Grid.SetColumn(deleteBtn, 5);
         row.Children.Add(deleteBtn);
@@ -875,9 +853,9 @@ public partial class DetailPanelBuilder
 
         // RHI-managed filenames to flag as conflict
         var rhiOwned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(card.RsInstalledFile))  rhiOwned.Add(card.RsInstalledFile);
-        if (!string.IsNullOrEmpty(card.OsInstalledFile))  rhiOwned.Add(card.OsInstalledFile);
-        if (!string.IsNullOrEmpty(card.DcInstalledFile))  rhiOwned.Add(card.DcInstalledFile);
+        if (!string.IsNullOrEmpty(card.RsInstalledFile)) rhiOwned.Add(card.RsInstalledFile);
+        if (!string.IsNullOrEmpty(card.OsInstalledFile)) rhiOwned.Add(card.OsInstalledFile);
+        if (!string.IsNullOrEmpty(card.DcInstalledFile)) rhiOwned.Add(card.DcInstalledFile);
 
         string? chosen = null;
 
@@ -893,9 +871,9 @@ public partial class DetailPanelBuilder
         {
             bool isRecommended = UltimateAsiLoaderService.RecommendedNames.Contains(name, StringComparer.OrdinalIgnoreCase);
             bool isRhiConflict = UltimateAsiLoaderService.RhiConflictNames.Contains(name, StringComparer.OrdinalIgnoreCase);
-            bool isTaken       = existingFiles.Contains(name) && !rhiOwned.Contains(name) && name != currentDllName;
-            bool isRhiOwned    = rhiOwned.Contains(name);
-            bool isCurrent     = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
+            bool isTaken = existingFiles.Contains(name) && !rhiOwned.Contains(name) && name != currentDllName;
+            bool isRhiOwned = rhiOwned.Contains(name);
+            bool isCurrent = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
 
             var btn = new Button
             {
@@ -911,12 +889,12 @@ public partial class DetailPanelBuilder
             // Styling
             if (isCurrent)
             {
-                btn.Background   = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
-                btn.BorderBrush  = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+                btn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
+                btn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
             }
             else
             {
-                btn.Background  = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+                btn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
                 btn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush);
             }
 
@@ -924,32 +902,31 @@ public partial class DetailPanelBuilder
             var contentRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             contentRow.Children.Add(new TextBlock
             {
-                Text = name,
                 FontSize = 12,
                 Foreground = isTaken || isRhiOwned
                     ? UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
                     : UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", name));
 
             if (isRecommended)
-                contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Recommended"), "#1A3A20", "#6AE87A", "#2A5A30"));
             if (isTaken)
-                contentRow.Children.Add(MakeBadge("In use", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("In use"), "#2A1818", "#CC6666", "#5A2828"));
             if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Used by RHI"), "#2A1818", "#CC6666", "#5A2828"));
             if (isRhiConflict && !isRhiOwned)
-                contentRow.Children.Add(MakeBadge("May conflict with ReShade/OS", "#2A1A10", "#CC9955", "#5A3A18"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("May conflict with ReShade/OS"), "#2A1A10", "#CC9955", "#5A3A18"));
             if (isCurrent)
-                contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Current"), "#182840", "#7AACDD", "#2A4468"));
 
             btn.Content = contentRow;
 
             // Tooltip for taken files
             if (isTaken)
-                ToolTipService.SetToolTip(btn, $"'{name}' already exists in the game folder. Selecting it will rename the existing file to '{Path.GetFileNameWithoutExtension(name)}Hooked.dll' so ASI Loader can chain-load it.");
+                btn.Localize("ToolTip", Loc.Format($"'{name}' already exists in the game folder. Selecting it will rename the existing file to '{Path.GetFileNameWithoutExtension(name)}Hooked.dll' so ASI Loader can chain-load it."));
             else if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component (ReShade, OptiScaler, or DC). Choose a different name.");
+                btn.Localize("ToolTip", Loc.Get("This filename is already used by an RHI-managed component (ReShade, OptiScaler, or DC). Choose a different name."));
 
             btn.Tag = name;
             btn.Click += (s, ev) =>
@@ -968,7 +945,6 @@ public partial class DetailPanelBuilder
 
         var dialog = new ContentDialog
         {
-            Title = "Choose ASI Loader DLL name",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -976,17 +952,15 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select the filename for ASI Loader. Most games work with version.dll or winmm.dll.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                        TextWrapping = TextWrapping.Wrap,
-                    },
+                        TextWrapping = TextWrapping.Wrap
+                    }.Localize("Text", Loc.Get("Select the filename for ASI Loader. Most games work with version.dll or winmm.dll.")),
                     scrollViewer,
                 }
             },
-            CloseButtonText = "Cancel",
-            XamlRoot = _window.Content.XamlRoot,
-        };
+            XamlRoot = _window.Content.XamlRoot
+        }.Localize("Title", Loc.Get("Choose ASI Loader DLL name")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         await DialogService.ShowSafeAsync(dialog);
         return chosen;
@@ -1016,10 +990,9 @@ public partial class DetailPanelBuilder
             VerticalAlignment = VerticalAlignment.Center,
             Child = new TextBlock
             {
-                Text = text,
                 FontSize = 10,
-                Foreground = UIFactory.GetBrush(fg),
-            },
+                Foreground = UIFactory.GetBrush(fg)
+            }.Localize("Text", text),
         };
     }
 
@@ -1035,17 +1008,17 @@ public partial class DetailPanelBuilder
     private void BuildDlssg2030Row(GameCardViewModel card, StackPanel body)
     {
         _window.ViewModel.SetLastUiAction($"BuildDlssg2030Row({card.GameName})");
-        var svc         = App.Services.GetRequiredService<Dlssg20_30Service>();
-        var gameName    = card.GameName;
-        var store       = card.Source ?? "";
+        var svc = App.Services.GetRequiredService<Dlssg20_30Service>();
+        var gameName = card.GameName;
+        var store = card.Source ?? "";
         var installPath = card.InstallPath ?? "";
 
         var currentDllName = _window.ViewModel.GetDlssg2030InstalledAs(gameName, store);
-        bool isInstalled   = svc.IsInstalledIn(installPath, currentDllName);
+        bool isInstalled = svc.IsInstalledIn(installPath, currentDllName);
         // Use cached state from card instead of File.Exists on UI thread
         bool addonConflict = card.MfgAdaInstalled;
 
-        string statusText  = isInstalled ? (svc.StagedVersion ?? "Installed") : "Ready";
+        string statusText = isInstalled ? (svc.StagedVersion ?? Loc.Get("Installed")) : Loc.Get("Ready");
         string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
 
         var row = new Grid { ColumnSpacing = 8 };
@@ -1059,28 +1032,26 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "20/30 FG Unlock",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTipService.SetToolTip(label, "20/30 FG Unlock — enables DLSS Frame Generation on RTX 20 and 30 series GPUs. D3D12 only. No ASI Loader or ReShade required.");
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", "20/30 FG Unlock");
+        label.Localize("ToolTip", Loc.Get("20/30 FG Unlock — enables DLSS Frame Generation on RTX 20 and 30 series GPUs. D3D12 only. No ASI Loader or ReShade required."));
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
         // Col 1 — status (version SHA when installed)
         var statusBlock = new TextBlock
         {
-            Text = statusText,
             FontSize = 12,
             Foreground = UIFactory.GetBrush(statusColor),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center,
-            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None,
-        };
+            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None
+        }.Localize("Text", Loc.Get(statusText));
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases");
+            statusBlock.Localize("ToolTip", Loc.Format($"Installed as: {currentDllName}\nClick to open GitHub releases"));
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/sdli1995/dlssg_for_sm86"));
         }
@@ -1090,7 +1061,6 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -1099,9 +1069,9 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        ToolTipService.SetToolTip(infoBtn, "Open 20/30 FG Unlock GitHub page");
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Info"));
+        infoBtn.Localize("ToolTip", Loc.Get("Open 20/30 FG Unlock GitHub page"));
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/sdli1995/dlssg_for_sm86"));
         Grid.SetColumn(infoBtn, 2);
@@ -1110,7 +1080,6 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         var installBtn = new Button
         {
-            Content = isInstalled ? "↺  Reinstall 20/30 FG" : "⬇  Install 20/30 FG",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -1118,21 +1087,21 @@ public partial class DetailPanelBuilder
             Background = isInstalled ? UIFactory.GetBrush("#182840") : UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
             Foreground = isInstalled ? UIFactory.GetBrush("#7AACDD") : UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = isInstalled ? UIFactory.GetBrush("#2A4468") : UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-        };
+            BorderThickness = new Thickness(1)
+        }.Localize("Content", isInstalled ? Loc.Get("↺  Reinstall 20/30 FG") : Loc.Get("⬇  Install 20/30 FG"));
 
         if (addonConflict)
         {
             installBtn.IsEnabled = false;
-            installBtn.Opacity   = 0.35;
-            installBtn.Content   = "Uninstall MFG Ada Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (addon) is installed and conflicts. Remove it from the addon picker first.");
+            installBtn.Opacity = 0.35;
+            installBtn.Localize("Content", Loc.Get("Uninstall MFG Ada Unlock first"));
+            installBtn.Localize("ToolTip", Loc.Get("MFG Ada Unlock (addon) is installed and conflicts. Remove it from the addon picker first."));
         }
         else
         {
-            ToolTipService.SetToolTip(installBtn, isInstalled
-                ? $"Reinstall 20/30 FG Unlock (currently deployed as {currentDllName})"
-                : "Install 20/30 FG Unlock — deploys version.dll under a name you choose");
+            installBtn.Localize("ToolTip", isInstalled
+                ? Loc.Format($"Reinstall 20/30 FG Unlock (currently deployed as {currentDllName})")
+                : Loc.Get("Install 20/30 FG Unlock — deploys version.dll under a name you choose"));
         }
 
         installBtn.Click += async (s, e) =>
@@ -1143,7 +1112,7 @@ public partial class DetailPanelBuilder
             if (chosen == null) return;
 
             installBtn.IsEnabled = false;
-            installBtn.Content   = "Installing...";
+            installBtn.Localize("Content", Loc.Get("Installing..."));
             try
             {
                 // If reinstalling with a different name, remove the old one first
@@ -1166,14 +1135,14 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    installBtn.Content   = "Download failed — try again";
+                    installBtn.Localize("Content", Loc.Get("Download failed — try again"));
                     installBtn.IsEnabled = true;
                 }
             }
             catch (Exception ex)
             {
                 CrashReporter.Log($"[BuildDlssg2030Row] Install failed — {ex.Message}");
-                installBtn.Content   = "Install failed";
+                installBtn.Localize("Content", Loc.Get("Install failed"));
                 installBtn.IsEnabled = true;
             }
         };
@@ -1183,15 +1152,17 @@ public partial class DetailPanelBuilder
         // Col 4 — Cog button
         var cogBtn = new Button
         {
-            Width = 36, Height = 32, Padding = new Thickness(0),
+            Width = 36,
+            Height = 32,
+            Padding = new Thickness(0),
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Content = new TextBlock { FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", "⚙"),
         };
-        ToolTipService.SetToolTip(cogBtn, "Select GPU generation");
+        cogBtn.Localize("ToolTip", Loc.Get("Select GPU generation"));
         cogBtn.Click += async (s, e) =>
         {
             var currentGen = _window.ViewModel.GetDlssg2030GpuGen(gameName, store);
@@ -1204,7 +1175,6 @@ public partial class DetailPanelBuilder
             };
             var dlg = new ContentDialog
             {
-                Title = "20/30 FG Unlock — GPU Generation",
                 Content = new StackPanel
                 {
                     Spacing = 8,
@@ -1212,21 +1182,15 @@ public partial class DetailPanelBuilder
                     {
                         new TextBlock
                         {
-                            Text = "Select your GPU generation. This controls which rendering path is used.\n\n" +
-                                   "RTX 30 Series (SM86) — Ampere\n" +
-                                   "RTX 20 Series (SM75) — Turing\n\n" +
-                                   "Reinstall after changing to apply the new setting.",
                             FontSize = 12,
-                            TextWrapping = TextWrapping.Wrap,
-                        },
+                            TextWrapping = TextWrapping.Wrap
+                        }.Localize("Text", Loc.Concat(Loc.Get("Select your GPU generation. This controls which rendering path is used.\n\n"), Loc.Get("RTX 30 Series (SM86) — Ampere\n"), Loc.Get("RTX 20 Series (SM75) — Turing\n\n"), Loc.Get("Reinstall after changing to apply the new setting."))),
                         combo,
                     },
                 },
-                PrimaryButtonText = "Save",
-                CloseButtonText   = "Cancel",
-                XamlRoot          = _window.Content.XamlRoot,
-                RequestedTheme    = ElementTheme.Dark,
-            };
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("20/30 FG Unlock — GPU Generation")).Localize("PrimaryButtonText", Loc.Get("Save")).Localize("CloseButtonText", Loc.Get("Cancel"));
             var result = await DialogService.ShowSafeAsync(dlg);
             if (result == ContentDialogResult.Primary && combo.SelectedItem is string selected)
             {
@@ -1248,17 +1212,19 @@ public partial class DetailPanelBuilder
         // Col 5 — Remove button
         var removeBtn = new Button
         {
-            Width = 36, Height = 32, Padding = new Thickness(0),
+            Width = 36,
+            Height = 32,
+            Padding = new Thickness(0),
             Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Content = new TextBlock { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }.Localize("Text", "✕"),
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove 20/30 FG Unlock from this game");
+        removeBtn.Localize("ToolTip", Loc.Get("Remove 20/30 FG Unlock from this game"));
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -1277,61 +1243,60 @@ public partial class DetailPanelBuilder
         if (string.IsNullOrEmpty(card.InstallPath)) return null;
 
         var rhiOwned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(card.RsInstalledFile))  rhiOwned.Add(card.RsInstalledFile);
-        if (!string.IsNullOrEmpty(card.OsInstalledFile))  rhiOwned.Add(card.OsInstalledFile);
-        if (!string.IsNullOrEmpty(card.DcInstalledFile))  rhiOwned.Add(card.DcInstalledFile);
+        if (!string.IsNullOrEmpty(card.RsInstalledFile)) rhiOwned.Add(card.RsInstalledFile);
+        if (!string.IsNullOrEmpty(card.OsInstalledFile)) rhiOwned.Add(card.OsInstalledFile);
+        if (!string.IsNullOrEmpty(card.DcInstalledFile)) rhiOwned.Add(card.DcInstalledFile);
 
         string? chosen = null;
 
-        var listPanel    = new StackPanel { Spacing = 4 };
+        var listPanel = new StackPanel { Spacing = 4 };
         var scrollViewer = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             MaxHeight = 360,
-            Content   = listPanel,
+            Content = listPanel,
         };
 
         foreach (var name in Dlssg20_30Service.ProxyNames)
         {
-            bool isRecommended  = string.Equals(name, "version.dll", StringComparison.OrdinalIgnoreCase);
-            bool isRhiOwned     = rhiOwned.Contains(name);
-            bool isCurrent      = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
+            bool isRecommended = string.Equals(name, "version.dll", StringComparison.OrdinalIgnoreCase);
+            bool isRhiOwned = rhiOwned.Contains(name);
+            bool isCurrent = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
 
             var btn = new Button
             {
-                HorizontalAlignment        = HorizontalAlignment.Stretch,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
-                Padding         = new Thickness(10, 6, 10, 6),
-                CornerRadius    = new CornerRadius(6),
+                Padding = new Thickness(10, 6, 10, 6),
+                CornerRadius = new CornerRadius(6),
                 BorderThickness = new Thickness(1),
-                IsEnabled       = !isRhiOwned,
-                Opacity         = isRhiOwned ? 0.4 : 1.0,
-                Background  = isCurrent ? UIFactory.Brush(ResourceKeys.AccentBlueBgBrush) : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                IsEnabled = !isRhiOwned,
+                Opacity = isRhiOwned ? 0.4 : 1.0,
+                Background = isCurrent ? UIFactory.Brush(ResourceKeys.AccentBlueBgBrush) : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
                 BorderBrush = isCurrent ? UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush) : UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             };
 
             var contentRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             contentRow.Children.Add(new TextBlock
             {
-                Text = name,
                 FontSize = 12,
                 Foreground = isRhiOwned
                     ? UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
                     : UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", name));
             if (isRecommended)
-                contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Recommended"), "#1A3A20", "#6AE87A", "#2A5A30"));
             if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Used by RHI"), "#2A1818", "#CC6666", "#5A2828"));
             if (isCurrent)
-                contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Current"), "#182840", "#7AACDD", "#2A4468"));
 
             btn.Content = contentRow;
             if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component. Choose a different name.");
+                btn.Localize("ToolTip", Loc.Get("This filename is already used by an RHI-managed component. Choose a different name."));
 
-            btn.Tag    = name;
+            btn.Tag = name;
             btn.Click += (s, ev) =>
             {
                 chosen = (s as Button)?.Tag as string;
@@ -1346,7 +1311,6 @@ public partial class DetailPanelBuilder
 
         var pickerDialog = new ContentDialog
         {
-            Title = "Choose 20/30 FG Unlock DLL name",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -1354,17 +1318,15 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select your GPU generation in the cog (⚙) before installing. Then choose the filename to deploy the DLL as.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                        TextWrapping = TextWrapping.Wrap,
-                    },
+                        TextWrapping = TextWrapping.Wrap
+                    }.Localize("Text", Loc.Get("Select your GPU generation in the cog (⚙) before installing. Then choose the filename to deploy the DLL as.")),
                     scrollViewer,
                 }
             },
-            CloseButtonText = "Cancel",
-            XamlRoot        = _window.Content.XamlRoot,
-        };
+            XamlRoot = _window.Content.XamlRoot
+        }.Localize("Title", Loc.Get("Choose 20/30 FG Unlock DLL name")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         await DialogService.ShowSafeAsync(pickerDialog);
         return chosen;
@@ -1373,18 +1335,18 @@ public partial class DetailPanelBuilder
     private void BuildRtx40MfgRow(GameCardViewModel card, StackPanel body)
     {
         _window.ViewModel.SetLastUiAction($"BuildRtx40MfgRow({card.GameName})");
-        var mfgSvc       = App.Services.GetRequiredService<Rtx40MfgService>();
-        var gameName     = card.GameName;
-        var store        = card.Source ?? "";
-        var installPath  = card.InstallPath ?? "";
+        var mfgSvc = App.Services.GetRequiredService<Rtx40MfgService>();
+        var gameName = card.GameName;
+        var store = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
 
         // Use cached state from card instead of File.Exists on UI thread
-        bool isInstalled   = card.Rtx40MfgInstalled;
+        bool isInstalled = card.Rtx40MfgInstalled;
         bool addonConflict = card.MfgAdaInstalled;
         var currentDllName = _window.ViewModel.GetRtx40MfgInstalledAs(gameName, store);
 
         // Status
-        string statusText  = isInstalled ? (mfgSvc.StagedVersion ?? "Installed") : "Ready";
+        string statusText = isInstalled ? (mfgSvc.StagedVersion ?? Loc.Get("Installed")) : Loc.Get("Ready");
         string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
 
         var row = new Grid { ColumnSpacing = 8 };
@@ -1398,28 +1360,26 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "RTX 40 MFG",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTipService.SetToolTip(label, "RTX 40 MFG Unlock — enables DLSS Multi Frame Generation multipliers beyond 2x (up to 6x) on RTX 40 Series GPUs. Standalone DLL, no ASI Loader required.");
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", "RTX 40 MFG");
+        label.Localize("ToolTip", Loc.Get("RTX 40 MFG Unlock — enables DLSS Multi Frame Generation multipliers beyond 2x (up to 6x) on RTX 40 Series GPUs. Standalone DLL, no ASI Loader required."));
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
         // Col 1 — status
         var statusBlock = new TextBlock
         {
-            Text = statusText,
             FontSize = 12,
             Foreground = UIFactory.GetBrush(statusColor),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center,
-            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None,
-        };
+            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None
+        }.Localize("Text", Loc.Get(statusText));
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases page");
+            statusBlock.Localize("ToolTip", Loc.Format($"Installed as: {currentDllName}\nClick to open GitHub releases page"));
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock/releases"));
         }
@@ -1429,7 +1389,6 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -1438,9 +1397,9 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        ToolTipService.SetToolTip(infoBtn, "Open RTX 40 MFG Unlock GitHub page");
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Info"));
+        infoBtn.Localize("ToolTip", Loc.Get("Open RTX 40 MFG Unlock GitHub page"));
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock"));
         Grid.SetColumn(infoBtn, 2);
@@ -1449,7 +1408,6 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         var installBtn = new Button
         {
-            Content = isInstalled ? "↺  Reinstall RTX 40 MFG" : "⬇  Install RTX 40 MFG",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -1463,21 +1421,21 @@ public partial class DetailPanelBuilder
             BorderBrush = isInstalled
                 ? UIFactory.GetBrush("#2A4468")
                 : UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-        };
+            BorderThickness = new Thickness(1)
+        }.Localize("Content", isInstalled ? Loc.Get("↺  Reinstall RTX 40 MFG") : Loc.Get("⬇  Install RTX 40 MFG"));
 
         if (addonConflict)
         {
             installBtn.IsEnabled = false;
-            installBtn.Opacity   = 0.35;
-            installBtn.Content   = "Uninstall MFG Ada Unlock first";
-            ToolTipService.SetToolTip(installBtn, "MFG Ada Unlock (addon) is already installed and conflicts with RTX 40 MFG Unlock. Remove it from the addon picker first.");
+            installBtn.Opacity = 0.35;
+            installBtn.Localize("Content", Loc.Get("Uninstall MFG Ada Unlock first"));
+            installBtn.Localize("ToolTip", Loc.Get("MFG Ada Unlock (addon) is already installed and conflicts with RTX 40 MFG Unlock. Remove it from the addon picker first."));
         }
         else
         {
-            ToolTipService.SetToolTip(installBtn, isInstalled
-                ? $"Reinstall RTX 40 MFG Unlock (currently deployed as {currentDllName})"
-                : "Install RTX 40 MFG Unlock — deploys RTXMFG.dll under a name you choose");
+            installBtn.Localize("ToolTip", isInstalled
+                ? Loc.Format($"Reinstall RTX 40 MFG Unlock (currently deployed as {currentDllName})")
+                : Loc.Get("Install RTX 40 MFG Unlock — deploys RTXMFG.dll under a name you choose"));
         }
 
         installBtn.Click += async (s, e) =>
@@ -1488,7 +1446,7 @@ public partial class DetailPanelBuilder
             if (chosen == null) return;
 
             installBtn.IsEnabled = false;
-            installBtn.Content   = "Installing...";
+            installBtn.Localize("Content", Loc.Get("Installing..."));
             try
             {
                 // If reinstalling with a different name, remove the old one first
@@ -1511,14 +1469,14 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    installBtn.Content   = "Download failed — try again";
+                    installBtn.Localize("Content", Loc.Get("Download failed — try again"));
                     installBtn.IsEnabled = true;
                 }
             }
             catch (Exception ex)
             {
                 CrashReporter.Log($"[BuildRtx40MfgRow] Install failed — {ex.Message}");
-                installBtn.Content   = "Install failed";
+                installBtn.Localize("Content", Loc.Get("Install failed"));
                 installBtn.IsEnabled = true;
             }
         };
@@ -1536,31 +1494,21 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Content = new TextBlock { FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", "⚙"),
         };
-        ToolTipService.SetToolTip(cogBtn, "RTX 40 MFG settings — configure multiplier mode");
+        cogBtn.Localize("ToolTip", Loc.Get("RTX 40 MFG settings — configure multiplier mode"));
         cogBtn.Click += async (s, e) =>
         {
             var installedNote = isInstalled ? $"\n\nCurrently installed as: {currentDllName}" : "";
             var dlg = new ContentDialog
             {
-                Title = "RTX 40 MFG Settings",
-                Content = new TextBlock
-                {
-                    Text = "Press Backspace in-game to open the RTX 40 MFG menu.\n\n" +
-                           "• Follow game — uses the game's own MFG setting\n" +
-                           "• Fixed 2x–6x — forces a specific multiplier\n" +
-                           "• Dynamic — targets the display refresh rate or a custom FPS value\n\n" +
-                           "If frames freeze above 2x, try setting Frame Generation to Preset B in the NVIDIA App." +
-                           installedNote,
-                    FontSize = 12,
-                    TextWrapping = TextWrapping.Wrap,
-                },
-                PrimaryButtonText = "Open GitHub",
-                CloseButtonText   = "Close",
-                XamlRoot          = _window.Content.XamlRoot,
-                RequestedTheme    = ElementTheme.Dark,
-            };
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("RTX 40 MFG Settings")).Localize("Content", new TextBlock
+            {
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap
+            }.Localize("Text", Loc.Concat(Loc.Get("Press Backspace in-game to open the RTX 40 MFG menu.\n\n"), Loc.Get("• Follow game — uses the game's own MFG setting\n"), Loc.Get("• Fixed 2x–6x — forces a specific multiplier\n"), Loc.Get("• Dynamic — targets the display refresh rate or a custom FPS value\n\n"), Loc.Get("If frames freeze above 2x, try setting Frame Generation to Preset B in the NVIDIA App."), installedNote))).Localize("PrimaryButtonText", Loc.Get("Open GitHub")).Localize("CloseButtonText", Loc.Get("Close"));
             var result = await DialogService.ShowSafeAsync(dlg);
             if (result == ContentDialogResult.Primary)
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dashdogy/RTX40MFG-Unlock"));
@@ -1579,11 +1527,11 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Content = new TextBlock { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }.Localize("Text", "✕"),
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove RTX 40 MFG Unlock from this game");
+        removeBtn.Localize("ToolTip", Loc.Get("Remove RTX 40 MFG Unlock from this game"));
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
@@ -1604,21 +1552,21 @@ public partial class DetailPanelBuilder
     private void BuildDlssEnablerRow(GameCardViewModel card, StackPanel body)
     {
         _window.ViewModel.SetLastUiAction($"BuildDlssEnablerRow({card.GameName})");
-        var deSvc       = App.Services.GetRequiredService<DlssEnablerService>();
-        var gameName    = card.GameName;
-        var store       = card.Source ?? "";
+        var deSvc = App.Services.GetRequiredService<DlssEnablerService>();
+        var gameName = card.GameName;
+        var store = card.Source ?? "";
         var installPath = card.InstallPath ?? "";
 
         var currentDllName = _window.ViewModel.GetDeInstalledAs(gameName, store);
         _window.ViewModel.SetLastUiAction($"BuildDlssEnablerRow:IsInstalled({card.GameName})");
-        bool isInstalled   = deSvc.IsStandaloneInstalledIn(installPath, currentDllName);
+        bool isInstalled = deSvc.IsStandaloneInstalledIn(installPath, currentDllName);
 
         // Mutual exclusivity with OptiScaler
         bool osConflict = card.IsOsInstalled;
 
         _window.ViewModel.SetLastUiAction($"BuildDlssEnablerRow:StagedVersion({card.GameName})");
         // Status text
-        string statusText  = isInstalled ? (deSvc.StagedVersion ?? "Installed") : "Ready";
+        string statusText = isInstalled ? (deSvc.StagedVersion ?? Loc.Get("Installed")) : Loc.Get("Ready");
         string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
 
         _window.ViewModel.SetLastUiAction($"BuildDlssEnablerRow:BuildGrid({card.GameName})");
@@ -1636,28 +1584,26 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "DLSS Enabler",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTipService.SetToolTip(label, "DLSS Enabler — standalone proxy DLL that enables DLSS in games that don't natively support it.");
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", "DLSS Enabler");
+        label.Localize("ToolTip", Loc.Get("DLSS Enabler — standalone proxy DLL that enables DLSS in games that don't natively support it."));
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
         // Col 1 — status
         var statusBlock = new TextBlock
         {
-            Text = statusText,
             FontSize = 12,
             Foreground = UIFactory.GetBrush(statusColor),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center,
-            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None,
-        };
+            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None
+        }.Localize("Text", Loc.Get(statusText));
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases");
+            statusBlock.Localize("ToolTip", Loc.Format($"Installed as: {currentDllName}\nClick to open GitHub releases"));
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/RankFTW/rhi-repo/releases"));
         }
@@ -1667,7 +1613,6 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -1676,9 +1621,9 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        ToolTipService.SetToolTip(infoBtn, "Open DLSS Enabler Nexus page");
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Info"));
+        infoBtn.Localize("ToolTip", Loc.Get("Open DLSS Enabler Nexus page"));
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://www.nexusmods.com/site/mods/757"));
         Grid.SetColumn(infoBtn, 2);
@@ -1693,7 +1638,6 @@ public partial class DetailPanelBuilder
 
         var installBtn = new Button
         {
-            Content = installBtnLabel,
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -1707,21 +1651,21 @@ public partial class DetailPanelBuilder
             BorderBrush = isInstalled
                 ? UIFactory.GetBrush("#2A4468")
                 : UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-        };
+            BorderThickness = new Thickness(1)
+        }.Localize("Content", Loc.Get(installBtnLabel));
 
         if (osConflict)
         {
             installBtn.IsEnabled = false;
             installBtn.IsHitTestVisible = false;
             installBtn.Opacity = 0.35;
-            ToolTipService.SetToolTip(installBtn, "Cannot install alongside OptiScaler — DLSS Enabler is already included within OptiScaler");
+            installBtn.Localize("ToolTip", Loc.Get("Cannot install alongside OptiScaler — DLSS Enabler is already included within OptiScaler"));
         }
         else
         {
-            ToolTipService.SetToolTip(installBtn, isInstalled
-                ? $"Reinstall DLSS Enabler (currently '{currentDllName}')"
-                : "Install DLSS Enabler — choose which DLL name to use");
+            installBtn.Localize("ToolTip", isInstalled
+                ? Loc.Format($"Reinstall DLSS Enabler (currently '{currentDllName}')")
+                : Loc.Get("Install DLSS Enabler — choose which DLL name to use"));
 
             installBtn.Click += async (s, e) =>
             {
@@ -1730,7 +1674,7 @@ public partial class DetailPanelBuilder
                 if (chosen == null) return;
 
                 installBtn.IsEnabled = false;
-                installBtn.Content   = "Installing...";
+                installBtn.Localize("Content", Loc.Get("Installing..."));
                 try
                 {
                     bool ok = await deSvc.InstallStandaloneAsync(gameName, installPath, store, chosen, currentDllName);
@@ -1741,14 +1685,14 @@ public partial class DetailPanelBuilder
                     }
                     else
                     {
-                        installBtn.Content   = "Install failed";
+                        installBtn.Localize("Content", Loc.Get("Install failed"));
                         installBtn.IsEnabled = true;
                     }
                 }
                 catch (Exception ex)
                 {
                     CrashReporter.Log($"[BuildDlssEnablerRow] Install failed — {ex.Message}");
-                    installBtn.Content   = "Install failed";
+                    installBtn.Localize("Content", Loc.Get("Install failed"));
                     installBtn.IsEnabled = true;
                 }
             };
@@ -1767,22 +1711,22 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Content = new TextBlock { FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", "⚙"),
             IsEnabled = !osConflict,
             IsHitTestVisible = !osConflict,
             Opacity = osConflict ? 0.35 : 1.0,
         };
-        ToolTipService.SetToolTip(cogBtn, osConflict ? "Cannot install alongside OptiScaler" : "DLSS Enabler settings");
+        cogBtn.Localize("ToolTip", osConflict ? Loc.Get("Cannot install alongside OptiScaler") : Loc.Get("DLSS Enabler settings"));
         cogBtn.Click += async (s, e) =>
         {
             var dlg = new ContentDialog
             {
-                Title   = "DLSS Enabler Settings",
-                Content = new TextBlock { Text = "No settings available.", FontSize = 12 },
-                CloseButtonText   = "Close",
-                XamlRoot          = _window.Content.XamlRoot,
-                RequestedTheme    = ElementTheme.Dark,
-            };
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("DLSS Enabler Settings")).Localize("Content", new TextBlock
+            {
+                FontSize = 12
+            }.Localize("Text", Loc.Get("No settings available."))).Localize("CloseButtonText", Loc.Get("Close"));
             await DialogService.ShowSafeAsync(dlg);
         };
         Grid.SetColumn(cogBtn, 4);
@@ -1799,11 +1743,11 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Content = new TextBlock { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }.Localize("Text", "✕"),
             Opacity = isInstalled ? 1.0 : 0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove standalone DLSS Enabler from this game");
+        removeBtn.Localize("ToolTip", Loc.Get("Remove standalone DLSS Enabler from this game"));
         removeBtn.Click += (s, e) =>
         {
             if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(currentDllName)) return;
@@ -1823,68 +1767,67 @@ public partial class DetailPanelBuilder
         if (string.IsNullOrEmpty(card.InstallPath)) return null;
 
         var rhiOwned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(card.RsInstalledFile))  rhiOwned.Add(card.RsInstalledFile);
-        if (!string.IsNullOrEmpty(card.OsInstalledFile))  rhiOwned.Add(card.OsInstalledFile);
-        if (!string.IsNullOrEmpty(card.DcInstalledFile))  rhiOwned.Add(card.DcInstalledFile);
+        if (!string.IsNullOrEmpty(card.RsInstalledFile)) rhiOwned.Add(card.RsInstalledFile);
+        if (!string.IsNullOrEmpty(card.OsInstalledFile)) rhiOwned.Add(card.OsInstalledFile);
+        if (!string.IsNullOrEmpty(card.DcInstalledFile)) rhiOwned.Add(card.DcInstalledFile);
 
         string? chosen = null;
 
-        var listPanel    = new StackPanel { Spacing = 4 };
+        var listPanel = new StackPanel { Spacing = 4 };
         var scrollViewer = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             MaxHeight = 420,
-            Content   = listPanel,
+            Content = listPanel,
         };
 
         foreach (var name in MfgDllNames)
         {
-            bool isRecommended  = string.Equals(name, "version.dll", StringComparison.OrdinalIgnoreCase);
-            bool isRhiOwned     = rhiOwned.Contains(name);
+            bool isRecommended = string.Equals(name, "version.dll", StringComparison.OrdinalIgnoreCase);
+            bool isRhiOwned = rhiOwned.Contains(name);
             bool isDxgiConflict = string.Equals(name, "dxgi.dll", StringComparison.OrdinalIgnoreCase)
                                && !string.IsNullOrEmpty(card.RsInstalledFile);
-            bool isCurrent      = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
+            bool isCurrent = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
 
             var btn = new Button
             {
-                HorizontalAlignment        = HorizontalAlignment.Stretch,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
-                Padding         = new Thickness(10, 6, 10, 6),
-                CornerRadius    = new CornerRadius(6),
+                Padding = new Thickness(10, 6, 10, 6),
+                CornerRadius = new CornerRadius(6),
                 BorderThickness = new Thickness(1),
-                IsEnabled       = !isRhiOwned,
-                Opacity         = isRhiOwned ? 0.4 : 1.0,
-                Background  = isCurrent ? UIFactory.Brush(ResourceKeys.AccentBlueBgBrush) : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                IsEnabled = !isRhiOwned,
+                Opacity = isRhiOwned ? 0.4 : 1.0,
+                Background = isCurrent ? UIFactory.Brush(ResourceKeys.AccentBlueBgBrush) : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
                 BorderBrush = isCurrent ? UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush) : UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             };
 
             var contentRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             contentRow.Children.Add(new TextBlock
             {
-                Text = name,
                 FontSize = 12,
                 Foreground = isRhiOwned
                     ? UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
                     : UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", name));
             if (isRecommended)
-                contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Recommended"), "#1A3A20", "#6AE87A", "#2A5A30"));
             if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Used by RHI"), "#2A1818", "#CC6666", "#5A2828"));
             else if (isDxgiConflict)
-                contentRow.Children.Add(MakeBadge("May conflict with ReShade/OS", "#2A1A10", "#CC9955", "#5A3A18"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("May conflict with ReShade/OS"), "#2A1A10", "#CC9955", "#5A3A18"));
             if (isCurrent)
-                contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Current"), "#182840", "#7AACDD", "#2A4468"));
 
             btn.Content = contentRow;
 
             if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component. Choose a different name.");
+                btn.Localize("ToolTip", Loc.Get("This filename is already used by an RHI-managed component. Choose a different name."));
             else if (isDxgiConflict)
-                ToolTipService.SetToolTip(btn, "dxgi.dll may conflict with ReShade or OptiScaler if they also use this name.");
+                btn.Localize("ToolTip", Loc.Get("dxgi.dll may conflict with ReShade or OptiScaler if they also use this name."));
 
-            btn.Tag    = name;
+            btn.Tag = name;
             btn.Click += (s, ev) =>
             {
                 chosen = (s as Button)?.Tag as string;
@@ -1900,7 +1843,6 @@ public partial class DetailPanelBuilder
 
         var pickerDialog = new ContentDialog
         {
-            Title = "Choose RTX 40 MFG DLL name",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -1908,17 +1850,15 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select the filename to deploy RTXMFG.dll as. Choose a name the game loads early, and avoid names already used by other mods.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                        TextWrapping = TextWrapping.Wrap,
-                    },
+                        TextWrapping = TextWrapping.Wrap
+                    }.Localize("Text", Loc.Get("Select the filename to deploy RTXMFG.dll as. Choose a name the game loads early, and avoid names already used by other mods.")),
                     scrollViewer,
                 }
             },
-            CloseButtonText = "Cancel",
-            XamlRoot        = _window.Content.XamlRoot,
-        };
+            XamlRoot = _window.Content.XamlRoot
+        }.Localize("Title", Loc.Get("Choose RTX 40 MFG DLL name")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         await DialogService.ShowSafeAsync(pickerDialog);
         return chosen;
@@ -1930,78 +1870,77 @@ public partial class DetailPanelBuilder
 
         // RHI-managed filenames to flag as conflict
         var rhiOwned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(card.RsInstalledFile))  rhiOwned.Add(card.RsInstalledFile);
-        if (!string.IsNullOrEmpty(card.OsInstalledFile))  rhiOwned.Add(card.OsInstalledFile);
-        if (!string.IsNullOrEmpty(card.DcInstalledFile))  rhiOwned.Add(card.DcInstalledFile);
+        if (!string.IsNullOrEmpty(card.RsInstalledFile)) rhiOwned.Add(card.RsInstalledFile);
+        if (!string.IsNullOrEmpty(card.OsInstalledFile)) rhiOwned.Add(card.OsInstalledFile);
+        if (!string.IsNullOrEmpty(card.DcInstalledFile)) rhiOwned.Add(card.DcInstalledFile);
 
         string? chosen = null;
 
-        var listPanel    = new StackPanel { Spacing = 4 };
+        var listPanel = new StackPanel { Spacing = 4 };
         var scrollViewer = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             MaxHeight = 420,
-            Content   = listPanel,
+            Content = listPanel,
         };
 
         foreach (var name in DeDllNames)
         {
             bool isRecommended = string.Equals(name, "version.dll", StringComparison.OrdinalIgnoreCase);
-            bool isRhiOwned    = rhiOwned.Contains(name);
+            bool isRhiOwned = rhiOwned.Contains(name);
             bool isDxgiConflict = string.Equals(name, "dxgi.dll", StringComparison.OrdinalIgnoreCase)
                                && !string.IsNullOrEmpty(card.RsInstalledFile);
-            bool isCurrent     = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
+            bool isCurrent = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
 
             var btn = new Button
             {
-                HorizontalAlignment        = HorizontalAlignment.Stretch,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
-                Padding         = new Thickness(10, 6, 10, 6),
-                CornerRadius    = new CornerRadius(6),
+                Padding = new Thickness(10, 6, 10, 6),
+                CornerRadius = new CornerRadius(6),
                 BorderThickness = new Thickness(1),
-                IsEnabled       = !isRhiOwned,
-                Opacity         = isRhiOwned ? 0.4 : 1.0,
+                IsEnabled = !isRhiOwned,
+                Opacity = isRhiOwned ? 0.4 : 1.0,
             };
 
             if (isCurrent)
             {
-                btn.Background  = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
+                btn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
                 btn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
             }
             else
             {
-                btn.Background  = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+                btn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
                 btn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush);
             }
 
             var contentRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             contentRow.Children.Add(new TextBlock
             {
-                Text = name,
                 FontSize = 12,
                 Foreground = isRhiOwned
                     ? UIFactory.Brush(ResourceKeys.TextTertiaryBrush)
                     : UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", name));
 
             if (isRecommended)
-                contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Recommended"), "#1A3A20", "#6AE87A", "#2A5A30"));
             if (isRhiOwned)
-                contentRow.Children.Add(MakeBadge("Used by RHI", "#2A1818", "#CC6666", "#5A2828"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Used by RHI"), "#2A1818", "#CC6666", "#5A2828"));
             else if (isDxgiConflict)
-                contentRow.Children.Add(MakeBadge("May conflict with ReShade/OS", "#2A1A10", "#CC9955", "#5A3A18"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("May conflict with ReShade/OS"), "#2A1A10", "#CC9955", "#5A3A18"));
             if (isCurrent)
-                contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
+                contentRow.Children.Add(MakeBadge(Loc.Get("Current"), "#182840", "#7AACDD", "#2A4468"));
 
             btn.Content = contentRow;
 
             if (isRhiOwned)
-                ToolTipService.SetToolTip(btn, "This filename is already used by an RHI-managed component (ReShade, OptiScaler, or DC). Choose a different name.");
+                btn.Localize("ToolTip", Loc.Get("This filename is already used by an RHI-managed component (ReShade, OptiScaler, or DC). Choose a different name."));
             else if (isDxgiConflict)
-                ToolTipService.SetToolTip(btn, "dxgi.dll may conflict with ReShade or OS components if they also use this name.");
+                btn.Localize("ToolTip", Loc.Get("dxgi.dll may conflict with ReShade or OS components if they also use this name."));
 
-            btn.Tag    = name;
+            btn.Tag = name;
             btn.Click += (s, ev) =>
             {
                 chosen = (s as Button)?.Tag as string;
@@ -2017,7 +1956,6 @@ public partial class DetailPanelBuilder
 
         var pickerDialog = new ContentDialog
         {
-            Title = "Choose DLSS Enabler DLL name",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -2025,17 +1963,15 @@ public partial class DetailPanelBuilder
                 {
                     new TextBlock
                     {
-                        Text = "Select the filename for the standalone DLSS Enabler DLL. Most games work with version.dll.",
                         FontSize = 11,
                         Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                        TextWrapping = TextWrapping.Wrap,
-                    },
+                        TextWrapping = TextWrapping.Wrap
+                    }.Localize("Text", Loc.Get("Select the filename for the standalone DLSS Enabler DLL. Most games work with version.dll.")),
                     scrollViewer,
                 }
             },
-            CloseButtonText = "Cancel",
-            XamlRoot        = _window.Content.XamlRoot,
-        };
+            XamlRoot = _window.Content.XamlRoot
+        }.Localize("Title", Loc.Get("Choose DLSS Enabler DLL name")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         await DialogService.ShowSafeAsync(pickerDialog);
         return chosen;
@@ -2059,13 +1995,12 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "DXVK",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = isDisabled ? 0.35 : 1.0,
-            Tag = card,
-        };
+            Tag = card
+        }.Localize("Text", "DXVK");
         if (card.DxvkToggleTooltip != null)
             ToolTipService.SetToolTip(label, card.DxvkToggleTooltip);
         Grid.SetColumn(label, 0);
@@ -2074,7 +2009,6 @@ public partial class DetailPanelBuilder
         // Col 1 — status
         var statusBlock = new TextBlock
         {
-            Text = card.DxvkStatusText,
             FontSize = 12,
             Foreground = UIFactory.GetBrush(card.DxvkStatusColor),
             VerticalAlignment = VerticalAlignment.Center,
@@ -2082,14 +2016,14 @@ public partial class DetailPanelBuilder
             TextDecorations = card.IsDxvkInstalled
                 ? Windows.UI.Text.TextDecorations.Underline
                 : Windows.UI.Text.TextDecorations.None,
-            Opacity = isDisabled ? 0.35 : 1.0,
-        };
+            Opacity = isDisabled ? 0.35 : 1.0
+        }.Localize("Text", card.DxvkStatusText);
         if (card.IsDxvkInstalled && !isDisabled)
         {
-            ToolTipService.SetToolTip(statusBlock, "Click to open DXVK releases");
+            statusBlock.Localize("ToolTip", Loc.Get("Click to open DXVK releases"));
             statusBlock.PointerPressed += (s, e) => _window.DetailDxvkStatus_PointerPressed(s, e);
             statusBlock.PointerEntered += (s, e) => _window.LinkText_PointerEntered(s, e);
-            statusBlock.PointerExited  += (s, e) => _window.LinkText_PointerExited(s, e);
+            statusBlock.PointerExited += (s, e) => _window.LinkText_PointerExited(s, e);
         }
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);
@@ -2097,7 +2031,6 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -2108,8 +2041,8 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
             Tag = card,
-            Opacity = isDisabled ? 0.35 : 1.0,
-        };
+            Opacity = isDisabled ? 0.35 : 1.0
+        }.Localize("Content", Loc.Get("Info"));
         infoBtn.Click += (s, e) => _window.DxvkInfoButton_Click(s, e);
         Grid.SetColumn(infoBtn, 2);
         row.Children.Add(infoBtn);
@@ -2147,12 +2080,12 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Content = new TextBlock { FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", "⚙"),
             Tag = card,
             IsEnabled = !isDisabled,
             Opacity = isDisabled ? 0.35 : 1.0,
         };
-        ToolTipService.SetToolTip(cogBtn, "DXVK Settings");
+        cogBtn.Localize("ToolTip", Loc.Get("DXVK Settings"));
         cogBtn.Click += (s, e) => _window.DxvkCogButton_Click(s, e);
         Grid.SetColumn(cogBtn, 4);
         row.Children.Add(cogBtn);
@@ -2169,12 +2102,12 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Content = new TextBlock { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }.Localize("Text", "✕"),
             Tag = card,
             Opacity = showDelete ? 1.0 : 0.0,
             IsHitTestVisible = showDelete,
         };
-        ToolTipService.SetToolTip(deleteBtn, "Remove DXVK");
+        deleteBtn.Localize("ToolTip", Loc.Get("Remove DXVK"));
         deleteBtn.Click += (s, e) => _window.UninstallDxvkButton_Click(s, e);
         Grid.SetColumn(deleteBtn, 5);
         row.Children.Add(deleteBtn);
@@ -2185,11 +2118,11 @@ public partial class DetailPanelBuilder
     private void BuildDgVoodooRow(GameCardViewModel card, StackPanel body)
     {
         _window.ViewModel.SetLastUiAction($"BuildDgVoodooRow({card.GameName})");
-        var gameName    = card.GameName;
-        var store       = card.Source ?? "";
+        var gameName = card.GameName;
+        var store = card.Source ?? "";
         var installPath = card.InstallPath ?? "";
 
-        var dgSvc   = App.Services.GetRequiredService<DgVoodooService>();
+        var dgSvc = App.Services.GetRequiredService<DgVoodooService>();
         var manifest = _window.ViewModel.Manifest;
 
         bool isInstalled = dgSvc.IsDeployed(installPath);
@@ -2197,7 +2130,7 @@ public partial class DetailPanelBuilder
         // Status: show deployed version — prefer stored per-game override, else latest from manifest
         string? latestVersion = manifest?.DgVoodooVersions?.Keys.FirstOrDefault();
         var activeVersion = _window.ViewModel.GetDgVoodooVersion(gameName, store) ?? latestVersion;
-        string statusText  = isInstalled ? (activeVersion != null ? $"v{activeVersion}" : "Installed") : "Ready";
+        string statusText = isInstalled ? (activeVersion != null ? $"v{activeVersion}" : Loc.Get("Installed")) : Loc.Get("Ready");
         string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
 
         // ── Row grid ──────────────────────────────────────────────────────────
@@ -2212,33 +2145,30 @@ public partial class DetailPanelBuilder
         // Col 0 — label
         var label = new TextBlock
         {
-            Text = "dgVoodoo2",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTipService.SetToolTip(label,
-            "dgVoodoo2 — translates DX9 calls to DX11, enabling ReShade compute shaders and DLSS5 Feeder on DX9 games.\nDeploys D3D9.dll + dgVoodoo.conf to the game folder.");
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", "dgVoodoo2");
+        label.Localize("ToolTip", Loc.Get("dgVoodoo2 — translates DX9 calls to DX11, enabling ReShade compute shaders and DLSS5 Feeder on DX9 games.\nDeploys D3D9.dll + dgVoodoo.conf to the game folder."));
         Grid.SetColumn(label, 0);
         row.Children.Add(label);
 
         // Col 1 — status
         var statusBlock = new TextBlock
         {
-            Text = statusText,
             FontSize = 12,
             Foreground = UIFactory.GetBrush(statusColor),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center,
-            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None,
-        };
+            TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None
+        }.Localize("Text", Loc.Get(statusText));
         if (isInstalled)
         {
-            ToolTipService.SetToolTip(statusBlock, "Click to open dgVoodoo2 releases page");
+            statusBlock.Localize("ToolTip", Loc.Get("Click to open dgVoodoo2 releases page"));
             statusBlock.PointerPressed += (s, e) =>
                 _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dege-diosg/dgVoodoo2/releases"));
             statusBlock.PointerEntered += (s, e) => _window.LinkText_PointerEntered(s, e);
-            statusBlock.PointerExited  += (s, e) => _window.LinkText_PointerExited(s, e);
+            statusBlock.PointerExited += (s, e) => _window.LinkText_PointerExited(s, e);
         }
         Grid.SetColumn(statusBlock, 1);
         row.Children.Add(statusBlock);
@@ -2246,7 +2176,6 @@ public partial class DetailPanelBuilder
         // Col 2 — Info button
         var infoBtn = new Button
         {
-            Content = "Info",
             FontSize = 11,
             Padding = new Thickness(6, 2, 6, 2),
             Width = 36,
@@ -2255,9 +2184,9 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        ToolTipService.SetToolTip(infoBtn, "Open dgVoodoo2 releases page");
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Info"));
+        infoBtn.Localize("ToolTip", Loc.Get("Open dgVoodoo2 releases page"));
         infoBtn.Click += (s, e) =>
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/dege-diosg/dgVoodoo2/releases"));
         Grid.SetColumn(infoBtn, 2);
@@ -2266,7 +2195,6 @@ public partial class DetailPanelBuilder
         // Col 3 — Install button
         var installBtn = new Button
         {
-            Content = isInstalled ? "↺  Redeploy dgVoodoo2" : "⬇  Install dgVoodoo2",
             FontSize = 12,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -2282,17 +2210,16 @@ public partial class DetailPanelBuilder
                 ? UIFactory.GetBrush("#2A4468")
                 : UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
             BorderThickness = new Thickness(1),
-            IsEnabled = manifest?.DgVoodooVersions?.Count > 0,
-        };
-        ToolTipService.SetToolTip(installBtn,
-            isInstalled ? "Redeploy dgVoodoo2 — refreshes D3D9.dll and dgVoodoo.conf from staged version"
-                        : "Install dgVoodoo2 — deploys D3D9.dll and dgVoodoo.conf to the game folder");
+            IsEnabled = manifest?.DgVoodooVersions?.Count > 0
+        }.Localize("Content", isInstalled ? Loc.Get("↺  Redeploy dgVoodoo2") : Loc.Get("⬇  Install dgVoodoo2"));
+        installBtn.Localize("ToolTip", isInstalled ? Loc.Get("Redeploy dgVoodoo2 — refreshes D3D9.dll and dgVoodoo.conf from staged version")
+                        : Loc.Get("Install dgVoodoo2 — deploys D3D9.dll and dgVoodoo.conf to the game folder"));
 
         installBtn.Click += async (s, ev) =>
         {
             if (string.IsNullOrEmpty(installPath) || manifest?.DgVoodooVersions == null) return;
             installBtn.IsEnabled = false;
-            installBtn.Content   = "Installing...";
+            installBtn.Localize("Content", Loc.Get("Installing..."));
             try
             {
                 // Pick version: prefer stored per-game override, then latest from manifest
@@ -2326,7 +2253,7 @@ public partial class DetailPanelBuilder
                             // Copy it to dxgi.dll so ReShade hooks dgVoodoo2's DX11 output.
                             // No sentinel needed on dxgi.dll — this is our file, not a foreign DLL.
                             var sentinelPath = Path.Combine(installPath, "d3d9.dll.original");
-                            var dxgiPath     = Path.Combine(installPath, "dxgi.dll");
+                            var dxgiPath = Path.Combine(installPath, "dxgi.dll");
                             if (File.Exists(sentinelPath) && new FileInfo(sentinelPath).Length > 0)
                             {
                                 File.Copy(sentinelPath, dxgiPath, overwrite: true);
@@ -2355,14 +2282,14 @@ public partial class DetailPanelBuilder
                 }
                 else
                 {
-                    installBtn.Content = "❌ Deploy failed";
+                    installBtn.Localize("Content", Loc.Get("❌ Deploy failed"));
                     installBtn.IsEnabled = true;
                 }
             }
             catch (Exception ex)
             {
                 CrashReporter.Log($"[BuildDgVoodooRow] Install failed for '{gameName}' — {ex.Message}");
-                installBtn.Content   = "❌ Failed";
+                installBtn.Localize("Content", Loc.Get("❌ Failed"));
                 installBtn.IsEnabled = true;
             }
         };
@@ -2380,9 +2307,9 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center },
+            Content = new TextBlock { FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", "⚙"),
         };
-        ToolTipService.SetToolTip(cogBtn, "dgVoodoo2 Settings");
+        cogBtn.Localize("ToolTip", Loc.Get("dgVoodoo2 Settings"));
         cogBtn.Click += async (s, ev) =>
         {
             // Build version list from manifest
@@ -2391,12 +2318,13 @@ public partial class DetailPanelBuilder
             {
                 var noVerDlg = new ContentDialog
                 {
-                    Title = "dgVoodoo2 Settings",
-                    Content = new TextBlock { Text = "No versions available in manifest.", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) },
-                    CloseButtonText = "Close",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("dgVoodoo2 Settings")).Localize("Content", new TextBlock
+                {
+                    FontSize = 12,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+                }.Localize("Text", Loc.Get("No versions available in manifest."))).Localize("CloseButtonText", Loc.Get("Close"));
                 await DialogService.ShowSafeAsync(noVerDlg);
                 return;
             }
@@ -2406,10 +2334,9 @@ public partial class DetailPanelBuilder
             var versionStack = new StackPanel { Spacing = 6 };
             versionStack.Children.Add(new TextBlock
             {
-                Text = "Version",
                 FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+            }.Localize("Text", Loc.Get("Version")));
             var versionCombo = new ComboBox
             {
                 ItemsSource = versions,
@@ -2417,29 +2344,24 @@ public partial class DetailPanelBuilder
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 MaxDropDownHeight = 300,
             };
-            ToolTipService.SetToolTip(versionCombo,
-                "dgVoodoo2 version to deploy. Older versions may work better with certain games (e.g. 2.87.3 for Mass Effect).");
+            versionCombo.Localize("ToolTip", Loc.Get("dgVoodoo2 version to deploy. Older versions may work better with certain games (e.g. 2.87.3 for Mass Effect)."));
             versionStack.Children.Add(versionCombo);
 
             versionStack.Children.Add(new TextBlock
             {
-                Text = "Changing version will immediately redeploy dgVoodoo2 to the game folder.",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 4, 0, 0),
-            });
+                Margin = new Thickness(0, 4, 0, 0)
+            }.Localize("Text", Loc.Get("Changing version will immediately redeploy dgVoodoo2 to the game folder.")));
 
             var cogDlg = new ContentDialog
             {
-                Title = "dgVoodoo2 Settings",
                 Content = versionStack,
-                PrimaryButtonText = "Apply",
-                CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("dgVoodoo2 Settings")).Localize("PrimaryButtonText", Loc.Get("Apply")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
             var result = await DialogService.ShowSafeAsync(cogDlg);
             if (result != ContentDialogResult.Primary) return;
@@ -2480,17 +2402,17 @@ public partial class DetailPanelBuilder
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+            Content = new TextBlock { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }.Localize("Text", "✕"),
             Opacity = isInstalled ? 1.0 : 0.0,
             IsHitTestVisible = isInstalled,
         };
-        ToolTipService.SetToolTip(removeBtn, "Remove dgVoodoo2 from this game");
+        removeBtn.Localize("ToolTip", Loc.Get("Remove dgVoodoo2 from this game"));
         removeBtn.Click += async (s, ev) =>
         {
             if (string.IsNullOrEmpty(installPath)) return;
             // Coexistence guard: don't remove if Luma or Feeder also needs dgVoodoo2
-            bool lumaNeeds    = card.LumaStatus == GameStatus.Installed;
-            bool feederNeeds  = File.Exists(Path.Combine(installPath, "dlss5-feed.addon32"))
+            bool lumaNeeds = card.LumaStatus == GameStatus.Installed;
+            bool feederNeeds = File.Exists(Path.Combine(installPath, "dlss5-feed.addon32"))
                              || File.Exists(Path.Combine(installPath, "dlss5-feed.addon64"));
             if (lumaNeeds || feederNeeds)
             {

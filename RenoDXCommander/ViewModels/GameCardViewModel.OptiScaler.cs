@@ -9,11 +9,11 @@ public partial class GameCardViewModel
 {
     // ── OptiScaler observable properties ───────────────────────────────────────────
     [ObservableProperty] private GameStatus _osStatus = GameStatus.NotInstalled;
-    [ObservableProperty] private bool       _osIsInstalling;
-    [ObservableProperty] private double     _osProgress;
-    [ObservableProperty] private string     _osActionMessage = "";
-    [ObservableProperty] private string?    _osInstalledFile;
-    [ObservableProperty] private string?    _osInstalledVersion;
+    [ObservableProperty] private bool _osIsInstalling;
+    [ObservableProperty] private double _osProgress;
+    [ObservableProperty] private string _osActionMessage = "";
+    [ObservableProperty] private string? _osInstalledFile;
+    [ObservableProperty] private string? _osInstalledVersion;
 
     // Per-game update exclusion
     public bool ExcludeFromUpdateAllOs { get; set; }
@@ -24,25 +24,25 @@ public partial class GameCardViewModel
     public string OsStatusDot => OsStatus == GameStatus.UpdateAvailable ? "🟢"
         : OsStatus == GameStatus.Installed ? "🟢" : "⚪";
 
-    public string OsActionLabel => OsIsInstalling ? "Installing..."
-        : OsStatus == GameStatus.UpdateAvailable ? "⬆  Update OptiScaler"
-        : OsStatus == GameStatus.Installed ? "↺  Reinstall OptiScaler"
-        : "⬇  Install OptiScaler";
+    public string OsActionLabel => OsIsInstalling ? Loc.Get("Installing...")
+        : OsStatus == GameStatus.UpdateAvailable ? Loc.Get("⬆  Update OptiScaler")
+        : OsStatus == GameStatus.Installed ? Loc.Get("↺  Reinstall OptiScaler")
+        : Loc.Get("⬇  Install OptiScaler");
 
-    public string OsBtnBackground  => OsStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string OsBtnForeground  => OsStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
+    public string OsBtnBackground => OsStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
+    public string OsBtnForeground => OsStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
     public string OsBtnBorderBrush => OsStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     public Visibility OsProgressVisibility => OsIsInstalling ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility OsMessageVisibility  => string.IsNullOrEmpty(OsActionMessage)
+    public Visibility OsMessageVisibility => string.IsNullOrEmpty(OsActionMessage)
         ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility OsDeleteVisibility   => OsStatus == GameStatus.Installed
+    public Visibility OsDeleteVisibility => OsStatus == GameStatus.Installed
         || OsStatus == GameStatus.UpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
 
-    public string OsStatusText => OsIsInstalling ? "Installing…"
-        : OsStatus == GameStatus.UpdateAvailable ? "Update"
-        : OsStatus == GameStatus.Installed ? (OsInstalledVersion ?? "Installed")
-        : "Ready";
+    public string OsStatusText => OsIsInstalling ? Loc.Get("Installing…")
+        : OsStatus == GameStatus.UpdateAvailable ? Loc.Get("Update")
+        : OsStatus == GameStatus.Installed ? (OsInstalledVersion ?? Loc.Get("Installed"))
+        : Loc.Get("Ready");
     public string OsStatusColor => OsIsInstalling ? "#D4A856"
         : OsStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : OsStatus == GameStatus.Installed ? "#5ECB7D"

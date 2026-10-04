@@ -32,12 +32,9 @@ public partial class DragDropHandler
         {
             var errDialog = new ContentDialog
             {
-                Title = "7-Zip Not Found",
-                Content = "Cannot extract archive — 7-Zip was not found. Please reinstall RDXC.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("7-Zip Not Found")).Localize("Content", Loc.Get("Cannot extract archive — 7-Zip was not found. Please reinstall RDXC.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
             return false;
         }
@@ -70,7 +67,7 @@ public partial class DragDropHandler
             // Read output asynchronously to prevent deadlock
             var stdoutTask = proc.StandardOutput.ReadToEndAsync();
             var stderrTask = proc.StandardError.ReadToEndAsync();
-            
+
             // Wait asynchronously with 60 second timeout for large archives
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             try
@@ -92,12 +89,9 @@ public partial class DragDropHandler
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] 7z exit code {proc.ExitCode}");
                 var failDialog = new ContentDialog
                 {
-                    Title = "Archive Extraction Failed",
-                    Content = $"Failed to extract '{archiveName}'. The file may be corrupt or in an unsupported format.",
-                    CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("Archive Extraction Failed")).Localize("Content", Loc.Format($"Failed to extract '{archiveName}'. The file may be corrupt or in an unsupported format.")).Localize("CloseButtonText", Loc.Get("OK"));
                 await DialogService.ShowSafeAsync(failDialog);
                 return false;
             }
@@ -116,12 +110,9 @@ public partial class DragDropHandler
                 _crashReporter.Log($"[DragDropHandler.ProcessDroppedArchive] No addon files found in '{archiveName}'");
                 var noAddonDialog = new ContentDialog
                 {
-                    Title = "No Addon Found",
-                    Content = $"No .addon64, .addon32, or .addon files were found inside '{archiveName}'.",
-                    CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("No Addon Found")).Localize("Content", Loc.Format($"No .addon64, .addon32, or .addon files were found inside '{archiveName}'.")).Localize("CloseButtonText", Loc.Get("OK"));
                 await DialogService.ShowSafeAsync(noAddonDialog);
                 return false;
             }
@@ -140,7 +131,7 @@ public partial class DragDropHandler
                 var combo = new ComboBox
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch,
-                    PlaceholderText = "Select addon to install...",
+                    PlaceholderText = Loc.Get("Select addon to install..."),
                 };
                 foreach (var af in addonFiles)
                     combo.Items.Add(new ComboBoxItem { Content = Path.GetFileName(af), Tag = af });
@@ -148,13 +139,10 @@ public partial class DragDropHandler
 
                 var pickDialog = new ContentDialog
                 {
-                    Title = $"Multiple Addons in '{archiveName}'",
                     Content = combo,
-                    PrimaryButtonText = "Install",
-                    CloseButtonText = "Cancel",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Format($"Multiple Addons in '{archiveName}'")).Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
                 if (await DialogService.ShowSafeAsync(pickDialog) != ContentDialogResult.Primary) return false;
                 addonToInstall = (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? addonFiles[0];
             }
@@ -177,6 +165,7 @@ public partial class DragDropHandler
                     var preSelectIndex = FuzzyMatchGameIndex(gameNames, archiveName);
                     var lumaCombo = new ComboBox
                     {
+                        ItemTemplate = null,
                         ItemsSource = gameNames,
                         SelectedIndex = preSelectIndex,
                         FontSize = 12,
@@ -184,21 +173,21 @@ public partial class DragDropHandler
                     };
                     var lumaPickDialog = new ContentDialog
                     {
-                        Title = "🌙 Install Luma Addon",
                         Content = new StackPanel
                         {
                             Spacing = 8,
                             Children =
                             {
-                                new TextBlock { Text = $"Install {archiveName} to:", TextWrapping = TextWrapping.Wrap, FontSize = 12 },
+                                new TextBlock {
+                                    TextWrapping = TextWrapping.Wrap,
+                                    FontSize = 12
+                                }.Localize("Text", Loc.Format($"Install {archiveName} to:")),
                                 lumaCombo,
                             }
                         },
-                        PrimaryButtonText = "Install",
-                        CloseButtonText = "Cancel",
                         XamlRoot = _window.Content.XamlRoot,
-                        RequestedTheme = ElementTheme.Dark,
-                    };
+                        RequestedTheme = ElementTheme.Dark
+                    }.Localize("Title", Loc.Get("🌙 Install Luma Addon")).Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
                     var lumaResult = await DialogService.ShowSafeAsync(lumaPickDialog);
                     if (lumaResult == ContentDialogResult.Primary)
                     {
@@ -241,12 +230,9 @@ public partial class DragDropHandler
         {
             var noGamesDialog = new ContentDialog
             {
-                Title = "No Games Available",
-                Content = "No games are currently detected. Add a game first.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("No Games Available")).Localize("Content", Loc.Get("No games are currently detected. Add a game first.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(noGamesDialog);
             return;
         }
@@ -255,13 +241,14 @@ public partial class DragDropHandler
         var combo = new ComboBox
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            PlaceholderText = "Select a game...",
+            PlaceholderText = Loc.Get("Select a game..."),
+            ItemTemplate = null,
         };
 
         // Sort alphabetically and populate
         var sortedCards = cards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
         foreach (var card in sortedCards)
-            combo.Items.Add(new ComboBoxItem { Content = card.GameName, Tag = card });
+            combo.Items.Add(new ComboBoxItem { ContentTemplate = null, Content = card.GameName, Tag = card });
 
         // Try to auto-select a game by matching addon filename to game names
         var addonNameLower = Path.GetFileNameWithoutExtension(addonFileName).ToLowerInvariant();
@@ -309,22 +296,18 @@ public partial class DragDropHandler
         var panel = new StackPanel { Spacing = 12 };
         panel.Children.Add(new TextBlock
         {
-            Text = $"Install {addonFileName} to a game folder.",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 13,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-        });
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+        }.Localize("Text", Loc.Format($"Install {addonFileName} to a game folder.")));
         panel.Children.Add(combo);
 
         var pickDialog = new ContentDialog
         {
-            Title = isLumaAddon ? "🌙 Install Luma Addon" : "📦 Install RenoDX Addon",
             Content = panel,
-            PrimaryButtonText = "Next",
-            CloseButtonText = "Cancel",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", isLumaAddon ? Loc.Get("🌙 Install Luma Addon") : Loc.Get("📦 Install RenoDX Addon")).Localize("PrimaryButtonText", Loc.Get("Next")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var pickResult = await DialogService.ShowSafeAsync(pickDialog);
         if (pickResult != ContentDialogResult.Primary) return;
@@ -333,12 +316,9 @@ public partial class DragDropHandler
         {
             var noSelection = new ContentDialog
             {
-                Title = "No Game Selected",
-                Content = "Please select a game to install the addon to.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("No Game Selected")).Localize("Content", Loc.Get("Please select a game to install the addon to.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(noSelection);
             return;
         }
@@ -368,26 +348,17 @@ public partial class DragDropHandler
         catch (Exception ex) { _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Failed to check existing addons in '{installPath}' — {ex.Message}"); }
 
         // Confirmation dialog
-        var warningText = $"Are you sure you want to install {addonFileName} for {gameName}?";
+        var warningText = Loc.Format($"Are you sure you want to install {addonFileName} for {gameName}?");
         if (!string.IsNullOrEmpty(existingAddon))
-            warningText += $"\n\nThis will replace the existing addon: {existingAddon}";
-        warningText += $"\n\nInstall path: {installPath}";
+            warningText += Loc.Format($"\n\nThis will replace the existing addon: {existingAddon}");
+        warningText += Loc.Format($"\n\nInstall path: {installPath}");
 
         // Control Ultimate Edition — inject mod-specific warning into the confirm dialog
-        string confirmTitle = "⚠ Confirm Addon Install";
+        string confirmTitle = Loc.Get("⚠ Confirm Addon Install");
         if (ControlUePostInstallService.IsControlAddon(addonFileName))
         {
-            confirmTitle = "⚠ Control UE — Not an HDR Mod";
-            warningText = "This is NOT an HDR mod.\n\n"
-                + "It fixes RT noise using Ray Reconstruction. Two strategies (pick one):\n"
-                + "• Turn off the in-game RT denoiser — use DLSS SR preset M or L\n"
-                + "• Use Ray Reconstruction with extra inputs from the game's shaders\n\n"
-                + "Installing will also:\n"
-                + "• Upgrade DLSS and deploy nvngx_dlssd.dll\n"
-                + "• Set renderer.ini HDR preset to the correct value\n"
-                + "• Clear the DLSS SR preset in the NVIDIA driver profile\n\n"
-                + "These changes are not reverted on uninstall.\n\n"
-                + $"Install path: {installPath}";
+            confirmTitle = Loc.Get("⚠ Control UE — Not an HDR Mod");
+            warningText = Loc.Concat(Loc.Get("This is NOT an HDR mod.\n\n"), Loc.Get("It fixes RT noise using Ray Reconstruction. Two strategies (pick one):\n"), Loc.Get("• Turn off the in-game RT denoiser — use DLSS SR preset M or L\n"), Loc.Get("• Use Ray Reconstruction with extra inputs from the game's shaders\n\n"), Loc.Get("Installing will also:\n"), Loc.Get("• Upgrade DLSS and deploy nvngx_dlssd.dll\n"), Loc.Get("• Set renderer.ini HDR preset to the correct value\n"), Loc.Get("• Clear the DLSS SR preset in the NVIDIA driver profile\n\n"), Loc.Get("These changes are not reverted on uninstall.\n\n"), Loc.Format($"Install path: {installPath}"));
         }
 
         var confirmDialog = new ContentDialog
@@ -395,15 +366,12 @@ public partial class DragDropHandler
             Title = confirmTitle,
             Content = new TextBlock
             {
-                Text = warningText,
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = 13,
-            },
-            PrimaryButtonText = "Install",
-            CloseButtonText = "Cancel",
+                FontSize = 13
+            }.Localize("Text", Loc.Get(warningText)),
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var confirmResult = await DialogService.ShowSafeAsync(confirmDialog);
         if (confirmResult != ContentDialogResult.Primary) return;
@@ -463,13 +431,13 @@ public partial class DragDropHandler
             // Save an InstalledModRecord so the addon survives refresh/restart
             var installRecord = new InstalledModRecord
             {
-                GameName      = gameName,
-                InstallPath   = addonDeployPath,
-                Store         = targetCard.Source ?? "",
+                GameName = gameName,
+                InstallPath = addonDeployPath,
+                Store = targetCard.Source ?? "",
                 AddonFileName = effectiveAddonFileName,
-                InstalledAt   = DateTime.UtcNow,
+                InstalledAt = DateTime.UtcNow,
                 // For named mods from Discord, don't use the card's existing SnapshotUrl (could be UE-Extended)
-                SnapshotUrl   = isNamedMod ? null : targetCard.Mod?.SnapshotUrl,
+                SnapshotUrl = isNamedMod ? null : targetCard.Mod?.SnapshotUrl,
             };
             _modInstallService.SaveRecordPublic(installRecord);
 
@@ -482,11 +450,11 @@ public partial class DragDropHandler
                     modId = modId.Substring(7);
                 App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
                 {
-                    Timestamp     = DateTime.UtcNow,
-                    Category      = "RenoDX",
+                    Timestamp = DateTime.UtcNow,
+                    Category = "RenoDX",
                     ComponentName = gameName,
-                    OldVersion    = previousVersion,
-                    NewVersion    = newVersion ?? (string.IsNullOrEmpty(modId) ? effectiveAddonFileName : modId),
+                    OldVersion = previousVersion,
+                    NewVersion = newVersion ?? (string.IsNullOrEmpty(modId) ? effectiveAddonFileName : modId),
                 });
             }
             catch { }
@@ -550,7 +518,7 @@ public partial class DragDropHandler
             // only fall back to the Discord channel when there's no better download URL.
             if (isNamedMod)
             {
-                var existingNexus    = targetCard.Mod?.NexusUrl ?? targetCard.NexusUrl;
+                var existingNexus = targetCard.Mod?.NexusUrl ?? targetCard.NexusUrl;
                 var existingSnapshot = targetCard.Mod?.SnapshotUrl;
 
                 if (!string.IsNullOrEmpty(existingSnapshot))
@@ -563,26 +531,26 @@ public partial class DragDropHandler
                     // Nexus-hosted mod — preserve the Nexus URL
                     targetCard.Mod = new GameMod
                     {
-                        Name     = gameName,
-                        Status   = "💬",
+                        Name = gameName,
+                        Status = "💬",
                         NexusUrl = existingNexus,
                     };
                     targetCard.IsExternalOnly = true;
-                    targetCard.ExternalUrl    = existingNexus;
-                    targetCard.ExternalLabel  = "Download from Nexus Mods";
+                    targetCard.ExternalUrl = existingNexus;
+                    targetCard.ExternalLabel = "Download from Nexus Mods";
                 }
                 else
                 {
                     // No known URL — fall back to Discord channel
                     targetCard.Mod = new GameMod
                     {
-                        Name       = gameName,
-                        Status     = "💬",
+                        Name = gameName,
+                        Status = "💬",
                         DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
                     };
                     targetCard.IsExternalOnly = true;
-                    targetCard.ExternalUrl    = "https://discord.gg/gF4GRJWZ2A";
-                    targetCard.ExternalLabel  = "Download from Discord";
+                    targetCard.ExternalUrl = "https://discord.gg/gF4GRJWZ2A";
+                    targetCard.ExternalLabel = "Download from Discord";
                 }
             }
 
@@ -610,12 +578,9 @@ public partial class DragDropHandler
 
             var successDialog = new ContentDialog
             {
-                Title = "✅ Addon Installed",
-                Content = $"{addonFileName} has been installed for {gameName}.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("✅ Addon Installed")).Localize("Content", Loc.Format($"{addonFileName} has been installed for {gameName}.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(successDialog);
         }
         catch (Exception ex)
@@ -623,12 +588,9 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Install failed — {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Install Failed",
-                Content = $"Failed to install addon: {ex.Message}",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Install Failed")).Localize("Content", Loc.Format($"Failed to install addon: {ex.Message}")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
         }
     }
@@ -647,12 +609,9 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Invalid URL: {url}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Invalid URL",
-                Content = "The dropped URL could not be parsed. Please check the link and try again.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Invalid URL")).Localize("Content", Loc.Get("The dropped URL could not be parsed. Please check the link and try again.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
             return;
         }
@@ -664,12 +623,9 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Could not extract filename from URL: {url}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Invalid URL",
-                Content = "Could not determine a filename from the dropped URL.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Invalid URL")).Localize("Content", Loc.Get("Could not determine a filename from the dropped URL.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
             return;
         }
@@ -701,6 +657,7 @@ public partial class DragDropHandler
 
                         var combo = new ComboBox
                         {
+                            ItemTemplate = null,
                             ItemsSource = gameNames,
                             SelectedIndex = preSelectIndex,
                             FontSize = 12,
@@ -708,21 +665,21 @@ public partial class DragDropHandler
                         };
                         var pickerDialog = new ContentDialog
                         {
-                            Title = "Install Luma Mod",
                             Content = new StackPanel
                             {
                                 Spacing = 8,
                                 Children =
                                 {
-                                    new TextBlock { Text = $"Luma mod detected: {filename}\n\nSelect game to install to:", TextWrapping = TextWrapping.Wrap, FontSize = 12 },
+                                    new TextBlock {
+                                        TextWrapping = TextWrapping.Wrap,
+                                        FontSize = 12
+                                    }.Localize("Text", Loc.Format($"Luma mod detected: {filename}\n\nSelect game to install to:")),
                                     combo,
                                 }
                             },
-                            PrimaryButtonText = "Install",
-                            CloseButtonText = "Cancel",
                             XamlRoot = _window.Content.XamlRoot,
-                            RequestedTheme = ElementTheme.Dark,
-                        };
+                            RequestedTheme = ElementTheme.Dark
+                        }.Localize("Title", Loc.Get("Install Luma Mod")).Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
                         var result = await DialogService.ShowSafeAsync(pickerDialog);
                         if (result == ContentDialogResult.Primary)
                         {
@@ -756,12 +713,9 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Unsupported extension '{ext}' for file '{filename}' from URL: {url}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Unsupported File Type",
-                Content = $"Only .addon64 and .addon32 files are supported.\n\nThe URL points to: {filename}",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Unsupported File Type")).Localize("Content", Loc.Format($"Only .addon64 and .addon32 files are supported.\n\nThe URL points to: {filename}")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
             return;
         }
@@ -776,11 +730,10 @@ public partial class DragDropHandler
         // ── Step 4: Show progress dialog and download ─────────────────────────────
         var progressText = new TextBlock
         {
-            Text = $"Downloading {filename}...",
             TextWrapping = TextWrapping.Wrap,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 13,
-        };
+            FontSize = 13
+        }.Localize("Text", Loc.Format($"Downloading {filename}..."));
         var progressBar = new ProgressBar
         {
             Minimum = 0,
@@ -791,15 +744,14 @@ public partial class DragDropHandler
         };
         var progressDialog = new ContentDialog
         {
-            Title = "⬇ Downloading Addon",
             Content = new StackPanel
             {
                 Spacing = 12,
                 Children = { progressText, progressBar },
             },
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("⬇ Downloading Addon"));
 
         // Show dialog non-blocking (acquire dialog gate to prevent concurrent dialogs)
         if (!DialogService.TryAcquireDialogGate())
@@ -824,12 +776,9 @@ public partial class DragDropHandler
                     if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                     var errDialog = new ContentDialog
                     {
-                        Title = "❌ Download Failed",
-                        Content = $"The server returned HTTP {(int)response.StatusCode}.\n\nURL: {url}",
-                        CloseButtonText = "OK",
                         XamlRoot = _window.Content.XamlRoot,
-                        RequestedTheme = ElementTheme.Dark,
-                    };
+                        RequestedTheme = ElementTheme.Dark
+                    }.Localize("Title", Loc.Get("❌ Download Failed")).Localize("Content", Loc.Format($"The server returned HTTP {(int)response.StatusCode}.\n\nURL: {url}")).Localize("CloseButtonText", Loc.Get("OK"));
                     await DialogService.ShowSafeAsync(errDialog);
                     return;
                 }
@@ -858,14 +807,14 @@ public partial class DragDropHandler
                             _window.DispatcherQueue.TryEnqueue(() =>
                             {
                                 progressBar.Value = pct;
-                                progressText.Text = $"Downloading {filename}... {downloaded / 1024} KB ({pct:F0}%)";
+                                progressText.Localize("Text", Loc.Format($"Downloading {filename}... {downloaded / 1024} KB ({pct:F0}%)"));
                             });
                         }
                         else
                         {
                             _window.DispatcherQueue.TryEnqueue(() =>
                             {
-                                progressText.Text = $"Downloading {filename}... {downloaded / 1024} KB";
+                                progressText.Localize("Text", Loc.Format($"Downloading {filename}... {downloaded / 1024} KB"));
                             });
                         }
                     }
@@ -880,12 +829,9 @@ public partial class DragDropHandler
                 if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
-                    Title = "❌ Download Failed",
-                    Content = $"A network error occurred while downloading the addon.\n\n{ex.Message}",
-                    CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("❌ Download Failed")).Localize("Content", Loc.Format($"A network error occurred while downloading the addon.\n\n{ex.Message}")).Localize("CloseButtonText", Loc.Get("OK"));
                 await DialogService.ShowSafeAsync(errDialog);
                 return;
             }
@@ -896,12 +842,9 @@ public partial class DragDropHandler
                 if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
-                    Title = "❌ Download Timed Out",
-                    Content = "The download timed out. Please check your connection and try again.",
-                    CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("❌ Download Timed Out")).Localize("Content", Loc.Get("The download timed out. Please check your connection and try again.")).Localize("CloseButtonText", Loc.Get("OK"));
                 await DialogService.ShowSafeAsync(errDialog);
                 return;
             }
@@ -920,19 +863,17 @@ public partial class DragDropHandler
                 if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
                 var errDialog = new ContentDialog
                 {
-                    Title = "❌ Invalid Addon File",
-                    Content = "The downloaded file is not a valid addon binary. The server may have returned an error page.",
-                    CloseButtonText = "OK",
                     XamlRoot = _window.Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("❌ Invalid Addon File")).Localize("Content", Loc.Get("The downloaded file is not a valid addon binary. The server may have returned an error page.")).Localize("CloseButtonText", Loc.Get("OK"));
                 await DialogService.ShowSafeAsync(errDialog);
                 return;
             }
 
             // ── Step 7: Dismiss progress and route to existing install flow ───────
             progressDialog.Hide();
-            if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); };
+            if (!gateReleased) { gateReleased = true; DialogService.ReleaseDialogGate(); }
+            ;
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] PE validation passed for '{filename}', routing to ProcessDroppedAddon");
             await ProcessDroppedAddon(cachePath);
         }

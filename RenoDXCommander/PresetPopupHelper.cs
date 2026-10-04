@@ -40,7 +40,7 @@ public static class PresetPopupHelper
                 TextWrapping = TextWrapping.Wrap,
             };
             var emptyLinkRun = new Microsoft.UI.Xaml.Documents.Hyperlink();
-            emptyLinkRun.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = PresetsDir });
+            emptyLinkRun.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { }.Localize("Text", PresetsDir));
             emptyLinkRun.Click += (s, ev) =>
             {
                 try { System.Diagnostics.Process.Start("explorer.exe", PresetsDir); }
@@ -50,7 +50,6 @@ public static class PresetPopupHelper
 
             var emptyDlg = new ContentDialog
             {
-                Title = "Select ReShade Presets",
                 Content = new StackPanel
                 {
                     Spacing = 8,
@@ -58,27 +57,23 @@ public static class PresetPopupHelper
                     {
                         new TextBlock
                         {
-                            Text = "No preset files found.",
                             FontSize = 13,
-                            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                        },
+                            Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+                        }.Localize("Text", Loc.Get("No preset files found.")),
                         new TextBlock
                         {
-                            Text = "Place .ini files in:",
                             FontSize = 11,
                             Opacity = 0.6,
-                            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                        },
+                            Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+                        }.Localize("Text", Loc.Get("Place .ini files in:")),
                         emptyPathLink,
                     },
                 },
-                PrimaryButtonText = "Open Folder",
-                CloseButtonText = "Cancel",
                 XamlRoot = xamlRoot,
                 Background = Brush(ResourceKeys.SurfaceOverlayBrush),
                 RequestedTheme = ElementTheme.Dark,
-                MinWidth = 500,
-            };
+                MinWidth = 500
+            }.Localize("Title", Loc.Get("Select ReShade Presets")).Localize("PrimaryButtonText", Loc.Get("Open Folder")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
             var emptyResult = await DialogService.ShowSafeAsync(emptyDlg);
             if (emptyResult == ContentDialogResult.Primary)
@@ -100,9 +95,12 @@ public static class PresetPopupHelper
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 6),
         };
-        pathLink.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = "Presets from: " });
+        pathLink.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run
+        {
+
+        }.Localize("Text", Loc.Get("Presets from: ")));
         var linkRun = new Microsoft.UI.Xaml.Documents.Hyperlink();
-        linkRun.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = PresetsDir });
+        linkRun.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { }.Localize("Text", PresetsDir));
         linkRun.Click += (s, e) =>
         {
             try { System.Diagnostics.Process.Start("explorer.exe", PresetsDir); }
@@ -117,10 +115,9 @@ public static class PresetPopupHelper
             {
                 Content = new TextBlock
                 {
-                    Text = file,
                     FontSize = 13,
-                    Foreground = Brush(ResourceKeys.TextPrimaryBrush),
-                },
+                    Foreground = Brush(ResourceKeys.TextPrimaryBrush)
+                }.Localize("Text", file),
                 IsChecked = false,
             };
             checkBoxes.Add((file, cb));
@@ -136,16 +133,13 @@ public static class PresetPopupHelper
 
         var dlg = new ContentDialog
         {
-            Title = "Select ReShade Presets",
             Content = scrollViewer,
-            PrimaryButtonText = "Deploy",
             IsPrimaryButtonEnabled = false,
-            CloseButtonText = "Cancel",
             XamlRoot = xamlRoot,
             Background = Brush(ResourceKeys.SurfaceOverlayBrush),
             RequestedTheme = ElementTheme.Dark,
-            MinWidth = 500,
-        };
+            MinWidth = 500
+        }.Localize("Title", Loc.Get("Select ReShade Presets")).Localize("PrimaryButtonText", Loc.Get("Deploy")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         // Enable Deploy only when at least one preset is ticked
         foreach (var (_, box) in checkBoxes)

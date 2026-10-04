@@ -12,24 +12,24 @@ public partial class GameCardViewModel
     public string UlStatusDot => UlStatus == GameStatus.UpdateAvailable ? "🟢"
         : UlStatus == GameStatus.Installed ? "🟢" : "⚪";
 
-    public string UlActionLabel => UlIsInstalling ? "Installing..."
-        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? "⚠  ReShade required"
-        : UlStatus == GameStatus.UpdateAvailable ? "⬆  Update ReLimiter"
-        : UlStatus == GameStatus.Installed ? "↺  Reinstall ReLimiter"
-        : "⬇  Install ReLimiter";
+    public string UlActionLabel => UlIsInstalling ? Loc.Get("Installing...")
+        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? Loc.Get("⚠  ReShade required")
+        : UlStatus == GameStatus.UpdateAvailable ? Loc.Get("⬆  Update ReLimiter")
+        : UlStatus == GameStatus.Installed ? Loc.Get("↺  Reinstall ReLimiter")
+        : Loc.Get("⬇  Install ReLimiter");
 
-    public string UlBtnBackground  => UlStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string UlBtnForeground  => UlStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
+    public string UlBtnBackground => UlStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
+    public string UlBtnForeground => UlStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
     public string UlBtnBorderBrush => UlStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     public Visibility UlProgressVisibility => UlIsInstalling ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility UlMessageVisibility  => string.IsNullOrEmpty(UlActionMessage) ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility UlDeleteVisibility   => UlStatus == GameStatus.Installed || UlStatus == GameStatus.UpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility UlMessageVisibility => string.IsNullOrEmpty(UlActionMessage) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility UlDeleteVisibility => UlStatus == GameStatus.Installed || UlStatus == GameStatus.UpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
 
-    public string UlStatusText => UlIsInstalling ? "Installing…"
-        : UlStatus == GameStatus.UpdateAvailable ? "Update"
-        : UlStatus == GameStatus.Installed ? (UlInstalledVersion ?? "Installed")
-        : "Ready";
+    public string UlStatusText => UlIsInstalling ? Loc.Get("Installing…")
+        : UlStatus == GameStatus.UpdateAvailable ? Loc.Get("Update")
+        : UlStatus == GameStatus.Installed ? (UlInstalledVersion ?? Loc.Get("Installed"))
+        : Loc.Get("Ready");
     public string UlStatusColor => UlIsInstalling ? "#D4A856"
         : UlStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : UlStatus == GameStatus.Installed ? "#5ECB7D"

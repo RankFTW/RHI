@@ -28,12 +28,9 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Failed to read '{iniPath}' — {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Read Error",
-                Content = $"Failed to read the file: {ex.Message}",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Read Error")).Localize("Content", Loc.Format($"Failed to read the file: {ex.Message}")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
             return;
         }
@@ -43,12 +40,9 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] '{fileName}' is not a recognised ReShade preset");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Not a ReShade Preset",
-                Content = "This file is not a recognised ReShade preset. A valid preset must contain a Techniques= line with at least one @.fx entry.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Not a ReShade Preset")).Localize("Content", Loc.Get("This file is not a recognised ReShade preset. A valid preset must contain a Techniques= line with at least one @.fx entry.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
             return;
         }
@@ -66,12 +60,9 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Failed to copy to presets folder — {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Storage Error",
-                Content = $"Failed to save preset to the presets folder: {ex.Message}",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Storage Error")).Localize("Content", Loc.Format($"Failed to save preset to the presets folder: {ex.Message}")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
             return;
         }
@@ -82,12 +73,9 @@ public partial class DragDropHandler
         {
             var noGamesDialog = new ContentDialog
             {
-                Title = "No Games Available",
-                Content = "No games are currently detected. Add a game first.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("No Games Available")).Localize("Content", Loc.Get("No games are currently detected. Add a game first.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(noGamesDialog);
             return;
         }
@@ -95,12 +83,13 @@ public partial class DragDropHandler
         var combo = new ComboBox
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            PlaceholderText = "Select a game...",
+            PlaceholderText = Loc.Get("Select a game..."),
+            ItemTemplate = null,
         };
 
         var sortedCards = cards.OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase).ToList();
         foreach (var card in sortedCards)
-            combo.Items.Add(new ComboBoxItem { Content = card.GameName, Tag = card });
+            combo.Items.Add(new ComboBoxItem { ContentTemplate = null, Content = card.GameName, Tag = card });
 
         // Auto-select the currently selected game in the sidebar
         if (ViewModel.SelectedGame != null)
@@ -118,22 +107,18 @@ public partial class DragDropHandler
         var panel = new StackPanel { Spacing = 12 };
         panel.Children.Add(new TextBlock
         {
-            Text = $"Install {fileName} to a game folder.",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 13,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-        });
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+        }.Localize("Text", Loc.Format($"Install {fileName} to a game folder.")));
         panel.Children.Add(combo);
 
         var pickDialog = new ContentDialog
         {
-            Title = "🎨 Install ReShade Preset",
             Content = panel,
-            PrimaryButtonText = "Next",
-            CloseButtonText = "Cancel",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("🎨 Install ReShade Preset")).Localize("PrimaryButtonText", Loc.Get("Next")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var pickResult = await DialogService.ShowSafeAsync(pickDialog);
         if (pickResult != ContentDialogResult.Primary) return;
@@ -142,12 +127,9 @@ public partial class DragDropHandler
         {
             var noSelection = new ContentDialog
             {
-                Title = "No Game Selected",
-                Content = "Please select a game to install the preset to.",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("No Game Selected")).Localize("Content", Loc.Get("Please select a game to install the preset to.")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(noSelection);
             return;
         }
@@ -167,12 +149,9 @@ public partial class DragDropHandler
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedPreset] Failed to deploy preset — {ex.Message}");
             var errDialog = new ContentDialog
             {
-                Title = "❌ Deploy Failed",
-                Content = $"Failed to copy preset to game folder: {ex.Message}",
-                CloseButtonText = "OK",
                 XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            };
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("❌ Deploy Failed")).Localize("Content", Loc.Format($"Failed to copy preset to game folder: {ex.Message}")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(errDialog);
             return;
         }
@@ -180,13 +159,9 @@ public partial class DragDropHandler
         // ── Step 5: Shader confirmation dialog ───────────────────────────────
         var shaderDialog = new ContentDialog
         {
-            Title = "🔧 Install Shaders?",
-            Content = "Also install the required shaders and textures?",
-            PrimaryButtonText = "Yes",
-            CloseButtonText = "No",
             XamlRoot = _window.Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("🔧 Install Shaders?")).Localize("Content", Loc.Get("Also install the required shaders and textures?")).Localize("PrimaryButtonText", Loc.Get("Yes")).Localize("CloseButtonText", Loc.Get("No"));
 
         var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
         if (shaderResult == ContentDialogResult.Primary)

@@ -63,53 +63,40 @@ public static class ControlUePostInstallService
 
             content.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
             {
-                Text = "⚠ This is NOT an HDR mod.",
                 FontSize = 14,
                 FontWeight = new Windows.UI.Text.FontWeight(700),
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+            }.Localize("Text", Loc.Get("⚠ This is NOT an HDR mod.")));
 
             content.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
             {
-                Text = "It fixes RT noise using Ray Reconstruction. Two strategies (pick one, they are mutually exclusive):\n"
-                     + "  •  Turn off the in-game RT denoiser and use DLSS Super Resolution preset M or L\n"
-                     + "  •  Use Ray Reconstruction with extra inputs derived from the game's shaders "
-                     + "(game denoiser is turned off here too — RR needs that)\n\n"
-                     + "⚠ DLSS, Ray Tracing, and SSAO must all be enabled in-game for Ray Reconstruction to work correctly.",
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                 FontSize = 13,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+            }.Localize("Text", Loc.Concat(Loc.Get("It fixes RT noise using Ray Reconstruction. Two strategies (pick one, they are mutually exclusive):\n"), Loc.Get("  •  Turn off the in-game RT denoiser and use DLSS Super Resolution preset M or L\n"), Loc.Get("  •  Use Ray Reconstruction with extra inputs derived from the game's shaders "), Loc.Get("(game denoiser is turned off here too — RR needs that)\n\n"), Loc.Get("⚠ DLSS, Ray Tracing, and SSAO must all be enabled in-game for Ray Reconstruction to work correctly."))));
 
             content.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
             {
-                Text = "Clicking Install will also:",
                 FontSize = 13,
                 FontWeight = new Windows.UI.Text.FontWeight(600),
                 Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 0),
-            });
+                Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 0)
+            }.Localize("Text", Loc.Get("Clicking Install will also:")));
 
             content.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
             {
-                Text = "  •  Upgrade nvngx_dlss.dll to the newest available version\n"
-                     + "  •  Deploy nvngx_dlssd.dll (DLSS Ray Reconstruction runtime)\n"
-                     + "  •  Set renderer.ini HDR preset to the correct value\n"
-                     + "  •  Clear the DLSS SR preset set in the NVIDIA driver profile for this game\n"
-                     + "  •  If OptiScaler FG = Yes: installs OptiScaler Nightly with Frame Generation pre-configured, deploys Streamline and nvngx_dlssg.dll, renames OptiScaler to winmm.dll and ReShade to dxgi.dll, and applies all required FG INI settings",
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                 FontSize = 13,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+            }.Localize("Text", Loc.Concat(Loc.Get("  •  Upgrade nvngx_dlss.dll to the newest available version\n"), Loc.Get("  •  Deploy nvngx_dlssd.dll (DLSS Ray Reconstruction runtime)\n"), Loc.Get("  •  Set renderer.ini HDR preset to the correct value\n"), Loc.Get("  •  Clear the DLSS SR preset set in the NVIDIA driver profile for this game\n"), Loc.Get("  •  If OptiScaler FG = Yes: installs OptiScaler Nightly with Frame Generation pre-configured, deploys Streamline and nvngx_dlssg.dll, renames OptiScaler to winmm.dll and ReShade to dxgi.dll, and applies all required FG INI settings"))));
 
             content.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
             {
-                Text = "These extra changes are not reverted when uninstalling the mod.",
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                 FontSize = 12,
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-                Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 0),
-            });
+                Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 0)
+            }.Localize("Text", Loc.Get("These extra changes are not reverted when uninstalling the mod.")));
 
             // ── OptiScaler FG + HDR combos ────────────────────────────────────
             content.Children.Add(new Microsoft.UI.Xaml.Controls.Border
@@ -127,11 +114,10 @@ public static class ControlUePostInstallService
             var optiStack = new Microsoft.UI.Xaml.Controls.StackPanel { Spacing = 4 };
             optiStack.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
             {
-                Text = "Install OptiScaler FG",
                 FontSize = 12,
                 FontWeight = new Windows.UI.Text.FontWeight(600),
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+            }.Localize("Text", Loc.Get("Install OptiScaler FG")));
             var optiCombo = new Microsoft.UI.Xaml.Controls.ComboBox
             {
                 ItemsSource = new[] { "No", "Yes" },
@@ -140,7 +126,7 @@ public static class ControlUePostInstallService
                 MaxDropDownHeight = 300,
             };
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(optiCombo,
-                "Installs OptiScaler Nightly with Frame Generation configured for Control UE.\nRenames OptiScaler to winmm.dll and ReShade to dxgi.dll.");
+                Loc.Get("Installs OptiScaler Nightly with Frame Generation configured for Control UE.\nRenames OptiScaler to winmm.dll and ReShade to dxgi.dll."));
             optiStack.Children.Add(optiCombo);
             Microsoft.UI.Xaml.Controls.Grid.SetColumn(optiStack, 0);
             comboRow.Children.Add(optiStack);
@@ -149,11 +135,10 @@ public static class ControlUePostInstallService
             var hdrStack = new Microsoft.UI.Xaml.Controls.StackPanel { Spacing = 4 };
             hdrStack.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
             {
-                Text = "Using HDR?",
                 FontSize = 12,
                 FontWeight = new Windows.UI.Text.FontWeight(600),
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            });
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+            }.Localize("Text", Loc.Get("Using HDR?")));
             var hdrCombo = new Microsoft.UI.Xaml.Controls.ComboBox
             {
                 ItemsSource = new[] { "No", "Yes" },
@@ -164,7 +149,7 @@ public static class ControlUePostInstallService
                 Opacity = 0.45,
             };
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(hdrCombo,
-                "If Yes, writes FgSlHdr10=1 to reshade.ini so the FG shader uses HDR10. Only available when installing OptiScaler FG.");
+                Loc.Get("If Yes, writes FgSlHdr10=1 to reshade.ini so the FG shader uses HDR10. Only available when installing OptiScaler FG."));
             hdrStack.Children.Add(hdrCombo);
             Microsoft.UI.Xaml.Controls.Grid.SetColumn(hdrStack, 1);
             comboRow.Children.Add(hdrStack);
@@ -176,20 +161,16 @@ public static class ControlUePostInstallService
             {
                 bool optiOn = optiCombo.SelectedItem as string == "Yes";
                 hdrCombo.IsEnabled = optiOn;
-                hdrCombo.Opacity   = optiOn ? 1.0 : 0.45;
+                hdrCombo.Opacity = optiOn ? 1.0 : 0.45;
                 if (!optiOn) hdrCombo.SelectedIndex = 0;
             };
 
             var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
             {
-                Title = "Control Ultimate Edition — RenoDX Mod",
-                Content = content,
-                PrimaryButtonText = "Install",
-                CloseButtonText = "Cancel",
                 DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.Primary,
                 XamlRoot = xamlRoot,
-                RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-            };
+                RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Control Ultimate Edition — RenoDX Mod")).Localize("Content", content).Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
             var result = await DialogService.ShowSafeAsync(dialog);
             if (result != Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
@@ -367,9 +348,9 @@ public static class ControlUePostInstallService
         {
             CrashReporter.Log($"[ControlUePostInstall] Step 6 — installing OptiScaler Nightly FG for '{gameName}'");
 
-            var optiSvc  = App.Services.GetRequiredService<IOptiScalerService>();
-            var dllSvc   = App.Services.GetRequiredService<IDllOverrideService>();
-            var vm       = App.Services.GetRequiredService<ViewModels.MainViewModel>();
+            var optiSvc = App.Services.GetRequiredService<IOptiScalerService>();
+            var dllSvc = App.Services.GetRequiredService<IDllOverrideService>();
+            var vm = App.Services.GetRequiredService<ViewModels.MainViewModel>();
 
             // Find the card for this game
             var card = vm.AllCards.FirstOrDefault(c =>
@@ -400,9 +381,9 @@ public static class ControlUePostInstallService
             vm.SetOsFgNvngxReplacement(gameName, "None", store);
 
             // ── Run the install ────────────────────────────────────────────────
-            var gpuType    = vm.Settings.OsGpuType;
+            var gpuType = vm.Settings.OsGpuType;
             var dlssInputs = vm.Settings.OsDlssInputs;
-            var hotkey     = vm.Settings.OsHotkey;
+            var hotkey = vm.Settings.OsHotkey;
 
             var record = await optiSvc.InstallAsync(
                 card,
@@ -427,7 +408,7 @@ public static class ControlUePostInstallService
 
             // Deploy DLSS Enabler
             var dlssEnablerSvc = App.Services.GetRequiredService<DlssEnablerService>();
-            var optiScalerDir  = Path.Combine(installPath, "OptiScaler");
+            var optiScalerDir = Path.Combine(installPath, "OptiScaler");
             _ = dlssEnablerSvc.InstallAsync(optiScalerDir);
 
             // ── Apply OptiScaler INI settings ──────────────────────────────────
@@ -435,9 +416,9 @@ public static class ControlUePostInstallService
             OptiScalerService.SetOptiScalerIniValue(installPath, "Upscalers", "Dx12Upscaler", "dlss");
 
             // [FrameGen]
-            OptiScalerService.SetOptiScalerIniValue(installPath, "FrameGen", "Enabled",   "true");
-            OptiScalerService.SetOptiScalerIniValue(installPath, "FrameGen", "FGInput",   "upscaler");
-            OptiScalerService.SetOptiScalerIniValue(installPath, "FrameGen", "FGOutput",  "dlssg");
+            OptiScalerService.SetOptiScalerIniValue(installPath, "FrameGen", "Enabled", "true");
+            OptiScalerService.SetOptiScalerIniValue(installPath, "FrameGen", "FGInput", "upscaler");
+            OptiScalerService.SetOptiScalerIniValue(installPath, "FrameGen", "FGOutput", "dlssg");
 
             // [fakenvapi]
             OptiScalerService.SetOptiScalerIniValue(installPath, "fakenvapi", "ForceReflex", "2");

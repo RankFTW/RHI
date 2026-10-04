@@ -75,27 +75,27 @@ public sealed partial class MainWindow
                     break;
                 case nameof(ViewModel.StatusText):
                 case nameof(ViewModel.SubStatusText):
-                    LoadingTitle.Text    = ViewModel.StatusText;
+                    LoadingTitle.Text = ViewModel.StatusText;
                     LoadingSubtitle.Text = ViewModel.SubStatusText;
-                    StatusBarText.Text   = ViewModel.StatusText
+                    StatusBarText.Text = ViewModel.StatusText
                         + (string.IsNullOrEmpty(ViewModel.SubStatusText) ? "" : $"  —  {ViewModel.SubStatusText}");
                     break;
                 case nameof(ViewModel.InstalledCount):
                     InstalledCountText.Text = $"{ViewModel.InstalledCount} ReShade";
                     break;
                 case nameof(ViewModel.TotalGames):
-                    GameCountText.Text = $"{ViewModel.TotalGames} shown";
+                    GameCountText.Localize("Text", Loc.Format($"{ViewModel.TotalGames} shown"));
                     break;
                 case nameof(ViewModel.HiddenCount):
-                    HiddenCountText.Text = ViewModel.HiddenCount > 0
-                        ? $"· {ViewModel.HiddenCount} hidden" : "";
+                    HiddenCountText.Localize("Text", ViewModel.HiddenCount > 0
+                        ? Loc.Format($"· {ViewModel.HiddenCount} hidden") : "");
                     break;
                 case nameof(ViewModel.FilterMode):
                     RefreshFilterButtonStyles();
                     break;
                 case nameof(ViewModel.AnyUpdateAvailable):
-                    UpdateBtn.Background  = UIFactory.GetBrush(ViewModel.UpdateAllBtnBackground);
-                    UpdateBtn.Foreground  = UIFactory.GetBrush(ViewModel.UpdateAllBtnForeground);
+                    UpdateBtn.Background = UIFactory.GetBrush(ViewModel.UpdateAllBtnBackground);
+                    UpdateBtn.Foreground = UIFactory.GetBrush(ViewModel.UpdateAllBtnForeground);
                     UpdateBtn.BorderBrush = UIFactory.GetBrush(ViewModel.UpdateAllBtnBorder);
                     // Force WinUI to re-evaluate the Normal visual state so it picks up
                     // the new brushes immediately instead of waiting for pointer interaction.
@@ -103,9 +103,9 @@ public sealed partial class MainWindow
                     break;
                 case nameof(ViewModel.IsBackgroundScanning):
                     HdrModsListBtn.IsEnabled = !ViewModel.IsBackgroundScanning;
-                    ToolTipService.SetToolTip(HdrModsListBtn, ViewModel.IsBackgroundScanning
-                        ? "Loading mod data, please wait..."
-                        : "Browse all games with available HDR mods");
+                    HdrModsListBtn.Localize("ToolTip", ViewModel.IsBackgroundScanning
+                        ? Loc.Get("Loading mod data, please wait...")
+                        : Loc.Get("Browse all games with available HDR mods"));
                     break;
                 case nameof(ViewModel.CurrentPage):
                     UpdatePageVisibility();
@@ -122,8 +122,8 @@ public sealed partial class MainWindow
         // LoadingPanel stays Collapsed always — skeleton loading replaces it.
         GameViewPanel.Visibility = ViewModel.CurrentPage == AppPage.GameView ? Visibility.Visible : Visibility.Collapsed;
         SettingsPanel.Visibility = ViewModel.CurrentPage == AppPage.Settings ? Visibility.Visible : Visibility.Collapsed;
-        AboutPanel.Visibility    = ViewModel.CurrentPage == AppPage.About    ? Visibility.Visible : Visibility.Collapsed;
-        FaqPanel.Visibility      = ViewModel.CurrentPage == AppPage.Faq      ? Visibility.Visible : Visibility.Collapsed;
+        AboutPanel.Visibility = ViewModel.CurrentPage == AppPage.About ? Visibility.Visible : Visibility.Collapsed;
+        FaqPanel.Visibility = ViewModel.CurrentPage == AppPage.Faq ? Visibility.Visible : Visibility.Collapsed;
 
         // Auto-select first game if nothing is selected
         if (GameList.SelectedItem == null && ViewModel.DisplayedGames.Count > 0)
@@ -138,16 +138,16 @@ public sealed partial class MainWindow
     /// </summary>
     private void RefreshFilterButtonStyles()
     {
-        var active   = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipActiveBrush]).Color;
+        var active = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipActiveBrush]).Color;
         var inactive = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipDefaultBrush]).Color;
-        var activeFg   = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.TextPrimaryBrush]).Color;
+        var activeFg = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.TextPrimaryBrush]).Color;
         var inactiveFg = ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
 
         foreach (var b in new[] { FilterFavourites, FilterInstalled, FilterDetected, FilterUnreal, FilterUnity, FilterOther, FilterRenoDX, FilterLuma, FilterHidden })
         {
             bool isActive = ViewModel.ActiveFilters.Contains(b.Tag as string ?? "");
-            b.Background  = new SolidColorBrush(isActive ? active   : inactive);
-            b.Foreground  = new SolidColorBrush(isActive ? activeFg : inactiveFg);
+            b.Background = new SolidColorBrush(isActive ? active : inactive);
+            b.Foreground = new SolidColorBrush(isActive ? activeFg : inactiveFg);
         }
     }
 
@@ -172,13 +172,13 @@ public sealed partial class MainWindow
         {
             var key = GameKey.Parse(ViewModel.LastSelectedGameName);
             _crashReporter.Log($"[UISync.SyncSelection] Restoring selection from LastSelectedGameName='{ViewModel.LastSelectedGameName}' → parsed key Name='{key.Name}', Store='{key.Store}'");
-            
+
             // Prefer exact match (name + store), fallback to name-only match
             var exactMatch = ViewModel.DisplayedGames.FirstOrDefault(c => key.Matches(c.GameName, c.Source));
             var nameOnlyMatch = ViewModel.DisplayedGames.FirstOrDefault(c => key.MatchesName(c.GameName));
-            
+
             _crashReporter.Log($"[UISync.SyncSelection] exactMatch={(exactMatch != null ? $"'{exactMatch.GameName}|{exactMatch.Source}'" : "null")}, nameOnlyMatch={(nameOnlyMatch != null ? $"'{nameOnlyMatch.GameName}|{nameOnlyMatch.Source}'" : "null")}");
-            
+
             var lastMatch = exactMatch ?? nameOnlyMatch;
             if (lastMatch != null)
             {
@@ -218,7 +218,7 @@ public sealed partial class MainWindow
 
     internal void UpdateLumaToggleStyle(bool isLumaMode)
     {
-        DetailLumaToggleText.Text = isLumaMode ? "Luma ON" : "Luma OFF";
+        DetailLumaToggleText.Localize("Text", isLumaMode ? Loc.Get("Luma ON") : Loc.Get("Luma OFF"));
         if (isLumaMode)
         {
             DetailLumaToggle.Background = Brush(ResourceKeys.AccentGreenBgBrush);
@@ -293,7 +293,7 @@ public sealed partial class MainWindow
 
     private static GameCardViewModel? GetCardFromSender(object sender) => sender switch
     {
-        Button btn          when btn.Tag  is GameCardViewModel c => c,
+        Button btn when btn.Tag is GameCardViewModel c => c,
         MenuFlyoutItem item when item.Tag is GameCardViewModel c => c,
         _ => null
     };

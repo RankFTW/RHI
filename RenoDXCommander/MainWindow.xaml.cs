@@ -20,7 +20,7 @@ public sealed partial class MainWindow : Window
     public MainViewModel ViewModel { get; }
 
     // Sensible default — used on first launch before any saved size exists
-    private const int DefaultWidth  = 1280;
+    private const int DefaultWidth = 1280;
     private const int DefaultHeight = 1000;
 
     private readonly ICrashReporter _crashReporter;
@@ -61,6 +61,7 @@ public sealed partial class MainWindow : Window
         _optiScalerService = App.Services.GetRequiredService<IOptiScalerService>();
         _addonPackService = viewModel.AddonPackServiceInstance;
         InitializeComponent();
+        InitializeLanguageSelector();
         // Hide immediately if starting minimized — must be before any Activate() call
         if (App._startMinimized)
             AppWindow.Hide();
@@ -167,14 +168,14 @@ public sealed partial class MainWindow : Window
         if (AppWindow.TitleBar is { } titleBar)
         {
             var res = Application.Current.Resources;
-            titleBar.BackgroundColor              = (Windows.UI.Color)res["TitleBarBackground"];
-            titleBar.ForegroundColor              = (Windows.UI.Color)res["TitleBarForeground"];
-            titleBar.InactiveBackgroundColor      = (Windows.UI.Color)res["TitleBarInactiveBackground"];
-            titleBar.InactiveForegroundColor      = (Windows.UI.Color)res["TitleBarInactiveForeground"];
-            titleBar.ButtonBackgroundColor        = (Windows.UI.Color)res["TitleBarButtonBackground"];
-            titleBar.ButtonForegroundColor        = (Windows.UI.Color)res["TitleBarButtonForeground"];
-            titleBar.ButtonHoverBackgroundColor   = (Windows.UI.Color)res["TitleBarButtonHoverBackground"];
-            titleBar.ButtonHoverForegroundColor   = (Windows.UI.Color)res["TitleBarButtonHoverForeground"];
+            titleBar.BackgroundColor = (Windows.UI.Color)res["TitleBarBackground"];
+            titleBar.ForegroundColor = (Windows.UI.Color)res["TitleBarForeground"];
+            titleBar.InactiveBackgroundColor = (Windows.UI.Color)res["TitleBarInactiveBackground"];
+            titleBar.InactiveForegroundColor = (Windows.UI.Color)res["TitleBarInactiveForeground"];
+            titleBar.ButtonBackgroundColor = (Windows.UI.Color)res["TitleBarButtonBackground"];
+            titleBar.ButtonForegroundColor = (Windows.UI.Color)res["TitleBarButtonForeground"];
+            titleBar.ButtonHoverBackgroundColor = (Windows.UI.Color)res["TitleBarButtonHoverBackground"];
+            titleBar.ButtonHoverForegroundColor = (Windows.UI.Color)res["TitleBarButtonHoverForeground"];
             titleBar.ButtonPressedBackgroundColor = (Windows.UI.Color)res["TitleBarButtonPressedBackground"];
             titleBar.ButtonPressedForegroundColor = (Windows.UI.Color)res["TitleBarButtonPressedForeground"];
             titleBar.ButtonInactiveBackgroundColor = (Windows.UI.Color)res["TitleBarButtonInactiveBackground"];
@@ -323,7 +324,7 @@ public sealed partial class MainWindow : Window
     public void StartMinimizedToTray()
     {
         _crashReporter.Log("[MainWindow] StartMinimizedToTray called");
-        
+
         // Force tray icon initialization regardless of setting (user explicitly wants to start minimized)
         TrayIconService.Initialize(
             _windowStateManager.Hwnd,
@@ -339,7 +340,7 @@ public sealed partial class MainWindow : Window
                 }
             });
         TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentGamesMenu ? ViewModel.Settings.RecentLaunches : new List<string>());
-        
+
         // Update jump list if enabled
         if (ViewModel.Settings.RecentGamesMenu && ViewModel.Settings.RecentLaunches.Count > 0)
             _ = Task.Run(() => TrayIconService.UpdateJumpList(ViewModel.Settings.RecentLaunches));
@@ -518,6 +519,7 @@ public sealed partial class MainWindow : Window
                 // Always show picker — pre-select the matched game if found
                 var combo = new ComboBox
                 {
+                    ItemTemplate = null,
                     ItemsSource = gameNames,
                     SelectedIndex = autoMatchIndex >= 0 ? autoMatchIndex : 0,
                     FontSize = 12,
@@ -525,21 +527,21 @@ public sealed partial class MainWindow : Window
                 };
                 var pickerDialog = new ContentDialog
                 {
-                    Title = "🌙 Install Luma Addon",
                     Content = new StackPanel
                     {
                         Spacing = 8,
                         Children =
                         {
-                            new TextBlock { Text = $"Install {Path.GetFileName(filePath)} to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                            new TextBlock {
+                                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                                FontSize = 12
+                            }.Localize("Text", Loc.Format($"Install {Path.GetFileName(filePath)} to:")),
                             combo,
                         }
                     },
-                    PrimaryButtonText = "Install",
-                    CloseButtonText = "Cancel",
                     XamlRoot = Content.XamlRoot,
-                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                };
+                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+                }.Localize("Title", Loc.Get("🌙 Install Luma Addon")).Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
                 var result = await DialogService.ShowSafeAsync(pickerDialog);
                 if (result != ContentDialogResult.Primary) return;
                 var selectedName = combo.SelectedItem as string;
@@ -603,31 +605,31 @@ public sealed partial class MainWindow : Window
             _pendingSelectionCard = card;
             if (_selectionDebounceTimer == null)
             {
-                        _selectionDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
-                        _selectionDebounceTimer.Tick += (s, ev) =>
-                        {
-                            _selectionDebounceTimer.Stop();
-                            var target = _pendingSelectionCard;
-                            if (target != null && target == ViewModel.SelectedGame)
-                            {
-                                _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel start: '{target.GameName}'");
-                                PopulateDetailPanel(target);
-                                _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel done, BuildOverridesPanel start: '{target.GameName}'");
-                                DetailPanel.Visibility = Visibility.Visible;
-                                BuildOverridesPanel(target);
-                                _crashReporter?.Log($"[SelectionDebounce] BuildOverridesPanel done: '{target.GameName}'");
-                                if (OverridesContainer.Visibility != Visibility.Visible)        OverridesContainer.Visibility = Visibility.Visible;
-                                if (NeuralRenderingContainer.Visibility != Visibility.Visible)  NeuralRenderingContainer.Visibility = Visibility.Visible;
-                                if (NvidiaProfileDlssContainer.Visibility != Visibility.Visible)   NvidiaProfileDlssContainer.Visibility = Visibility.Visible;
-                                if (NvidiaProfileDriverContainer.Visibility != Visibility.Visible) NvidiaProfileDriverContainer.Visibility = Visibility.Visible;
-                                if (ManagementContainer.Visibility != Visibility.Visible)       ManagementContainer.Visibility = Visibility.Visible;
-                                _detailPanelBuilder.ApplySectionOrder();
-                                _crashReporter?.Log($"[SelectionDebounce] ApplySectionOrder done: '{target.GameName}'");
-                            }
-                        };
-                    }
+                _selectionDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+                _selectionDebounceTimer.Tick += (s, ev) =>
+                {
                     _selectionDebounceTimer.Stop();
-                    _selectionDebounceTimer.Start();
+                    var target = _pendingSelectionCard;
+                    if (target != null && target == ViewModel.SelectedGame)
+                    {
+                        _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel start: '{target.GameName}'");
+                        PopulateDetailPanel(target);
+                        _crashReporter?.Log($"[SelectionDebounce] PopulateDetailPanel done, BuildOverridesPanel start: '{target.GameName}'");
+                        DetailPanel.Visibility = Visibility.Visible;
+                        BuildOverridesPanel(target);
+                        _crashReporter?.Log($"[SelectionDebounce] BuildOverridesPanel done: '{target.GameName}'");
+                        if (OverridesContainer.Visibility != Visibility.Visible) OverridesContainer.Visibility = Visibility.Visible;
+                        if (NeuralRenderingContainer.Visibility != Visibility.Visible) NeuralRenderingContainer.Visibility = Visibility.Visible;
+                        if (NvidiaProfileDlssContainer.Visibility != Visibility.Visible) NvidiaProfileDlssContainer.Visibility = Visibility.Visible;
+                        if (NvidiaProfileDriverContainer.Visibility != Visibility.Visible) NvidiaProfileDriverContainer.Visibility = Visibility.Visible;
+                        if (ManagementContainer.Visibility != Visibility.Visible) ManagementContainer.Visibility = Visibility.Visible;
+                        _detailPanelBuilder.ApplySectionOrder();
+                        _crashReporter?.Log($"[SelectionDebounce] ApplySectionOrder done: '{target.GameName}'");
+                    }
+                };
+            }
+            _selectionDebounceTimer.Stop();
+            _selectionDebounceTimer.Start();
         }
         else
         {

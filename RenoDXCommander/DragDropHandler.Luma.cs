@@ -155,7 +155,6 @@ public partial class DragDropHandler
                         };
                         dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
                         {
-                            Title = "Select Folder",
                             Content = new Microsoft.UI.Xaml.Controls.StackPanel
                             {
                                 Spacing = 8,
@@ -163,18 +162,15 @@ public partial class DragDropHandler
                                 {
                                     new Microsoft.UI.Xaml.Controls.TextBlock
                                     {
-                                        Text = "This archive contains multiple game folders.\nSelect the folder to install:",
                                         TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                                        FontSize = 12,
-                                    },
+                                        FontSize = 12
+                                    }.Localize("Text", Loc.Get("This archive contains multiple game folders.\nSelect the folder to install:")),
                                     combo,
                                 }
                             },
-                            PrimaryButtonText = "Install",
-                            CloseButtonText = "Cancel",
                             XamlRoot = _window.Content.XamlRoot,
-                            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
-                        };
+                            RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark
+                        }.Localize("Title", Loc.Get("Select Folder")).Localize("PrimaryButtonText", Loc.Get("Install")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
                         // Show dialog and handle result in continuation on UI thread
                         _ = ShowFolderPickerDialogAsync(dialog, combo, tcs);
@@ -294,11 +290,11 @@ public partial class DragDropHandler
             // Build a LumaInstalledRecord tracking the deployed file
             var record = new Models.LumaInstalledRecord
             {
-                GameName       = gameName,
-                InstallPath    = card.InstallPath,
-                Store          = card.Source ?? "",
+                GameName = gameName,
+                InstallPath = card.InstallPath,
+                Store = card.Source ?? "",
                 InstalledFiles = new List<string> { addonFileName },
-                InstalledAt    = DateTime.UtcNow,
+                InstalledAt = DateTime.UtcNow,
             };
             _lumaService.SaveLumaRecord(record);
 

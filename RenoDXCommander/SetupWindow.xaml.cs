@@ -27,7 +27,7 @@ public sealed partial class SetupWindow : Window
     {
         InitializeComponent();
 
-        Title = "RHI Setup";
+        Title = Loc.Get("RHI Setup");
 
         // Size and position — scale by display DPI so window is correct at any Windows scaling setting
         var hwndForDpi = WindowNative.GetWindowHandle(this);
@@ -46,16 +46,16 @@ public sealed partial class SetupWindow : Window
         if (AppWindow.TitleBar is { } titleBar)
         {
             var res = Application.Current.Resources;
-            titleBar.BackgroundColor               = (Windows.UI.Color)res["TitleBarBackground"];
-            titleBar.ForegroundColor               = (Windows.UI.Color)res["TitleBarForeground"];
-            titleBar.InactiveBackgroundColor       = (Windows.UI.Color)res["TitleBarInactiveBackground"];
-            titleBar.InactiveForegroundColor       = (Windows.UI.Color)res["TitleBarInactiveForeground"];
-            titleBar.ButtonBackgroundColor         = (Windows.UI.Color)res["TitleBarButtonBackground"];
-            titleBar.ButtonForegroundColor         = (Windows.UI.Color)res["TitleBarButtonForeground"];
-            titleBar.ButtonHoverBackgroundColor    = (Windows.UI.Color)res["TitleBarButtonHoverBackground"];
-            titleBar.ButtonHoverForegroundColor    = (Windows.UI.Color)res["TitleBarButtonHoverForeground"];
-            titleBar.ButtonPressedBackgroundColor  = (Windows.UI.Color)res["TitleBarButtonPressedBackground"];
-            titleBar.ButtonPressedForegroundColor  = (Windows.UI.Color)res["TitleBarButtonPressedForeground"];
+            titleBar.BackgroundColor = (Windows.UI.Color)res["TitleBarBackground"];
+            titleBar.ForegroundColor = (Windows.UI.Color)res["TitleBarForeground"];
+            titleBar.InactiveBackgroundColor = (Windows.UI.Color)res["TitleBarInactiveBackground"];
+            titleBar.InactiveForegroundColor = (Windows.UI.Color)res["TitleBarInactiveForeground"];
+            titleBar.ButtonBackgroundColor = (Windows.UI.Color)res["TitleBarButtonBackground"];
+            titleBar.ButtonForegroundColor = (Windows.UI.Color)res["TitleBarButtonForeground"];
+            titleBar.ButtonHoverBackgroundColor = (Windows.UI.Color)res["TitleBarButtonHoverBackground"];
+            titleBar.ButtonHoverForegroundColor = (Windows.UI.Color)res["TitleBarButtonHoverForeground"];
+            titleBar.ButtonPressedBackgroundColor = (Windows.UI.Color)res["TitleBarButtonPressedBackground"];
+            titleBar.ButtonPressedForegroundColor = (Windows.UI.Color)res["TitleBarButtonPressedForeground"];
             titleBar.ButtonInactiveBackgroundColor = (Windows.UI.Color)res["TitleBarButtonInactiveBackground"];
             titleBar.ButtonInactiveForegroundColor = (Windows.UI.Color)res["TitleBarButtonInactiveForeground"];
         }
@@ -64,7 +64,7 @@ public sealed partial class SetupWindow : Window
         AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Overlapped);
         if (AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter overlapped)
         {
-            overlapped.IsResizable  = false;
+            overlapped.IsResizable = false;
             overlapped.IsMaximizable = false;
         }
 
@@ -78,7 +78,7 @@ public sealed partial class SetupWindow : Window
             var displayArea = Microsoft.UI.Windowing.DisplayArea.Primary;
             var workArea = displayArea.WorkArea;
             var winSize = AppWindow.Size;
-            int x = workArea.X + (workArea.Width  - winSize.Width)  / 2;
+            int x = workArea.X + (workArea.Width - winSize.Width) / 2;
             int y = workArea.Y + (workArea.Height - winSize.Height) / 2;
             AppWindow.Move(new Windows.Graphics.PointInt32(x, y));
         }
@@ -97,31 +97,22 @@ public sealed partial class SetupWindow : Window
         // ── Title ──
         root.Children.Add(new TextBlock
         {
-            Text = "Welcome to RHI",
             FontSize = 22,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-        });
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+        }.Localize("Text", Loc.Get("Welcome to RHI")));
 
         // ── Description ──
-        const string description =
-            "RHI can manage ReShade across all your games automatically. Here's what that includes:\n\n" +
-            "  - Installs and updates ReShade for each game with one click\n" +
-            "  - Keeps the correct DLL name per game based on what the game needs\n" +
-            "  - Manages shader packs globally - install once, deployed to every game automatically\n" +
-            "  - Backs up any shaders already in your game folders before taking over\n" +
-            "  - Keeps ReShade in sync when you install RenoDX, OptiScaler, or other components\n\n" +
-            "If you already have a custom ReShade setup - specific shader collections, hand-tuned configs, " +
-            "or a version you prefer - choose \"I'll manage it myself\" and RHI will leave ReShade completely alone.";
+        string description =
+            Loc.Concat(Loc.Get("RHI can manage ReShade across all your games automatically. Here's what that includes:\n\n"), Loc.Get("  - Installs and updates ReShade for each game with one click\n"), Loc.Get("  - Keeps the correct DLL name per game based on what the game needs\n"), Loc.Get("  - Manages shader packs globally - install once, deployed to every game automatically\n"), Loc.Get("  - Backs up any shaders already in your game folders before taking over\n"), Loc.Get("  - Keeps ReShade in sync when you install RenoDX, OptiScaler, or other components\n\n"), Loc.Get("If you already have a custom ReShade setup - specific shader collections, hand-tuned configs, "), Loc.Get("or a version you prefer - choose \"I'll manage it myself\" and RHI will leave ReShade completely alone."));
 
         root.Children.Add(new TextBlock
         {
-            Text = description,
             FontSize = 13,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             TextWrapping = TextWrapping.Wrap,
-            LineHeight = 20,
-        });
+            LineHeight = 20
+        }.Localize("Text", description));
 
         // ── Spacer ──
         root.Children.Add(new Border { Height = 4 });
@@ -140,32 +131,30 @@ public sealed partial class SetupWindow : Window
         // "Manage ReShade for me" — accent blue style
         var manageBtn = new Button
         {
-            Content = "Manage ReShade for me",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             FontSize = 14,
             Padding = new Thickness(12, 10, 12, 10),
             Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
             Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            CornerRadius = new CornerRadius(6),
-        };
+            CornerRadius = new CornerRadius(6)
+        }.Localize("Content", Loc.Get("Manage ReShade for me"));
         VisualStateManager.GoToState(manageBtn, "Normal", false);
 
         var selfBtn = new Button
         {
-            Content = "I'll manage it myself",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             FontSize = 14,
             Padding = new Thickness(12, 10, 12, 10),
             Background = UIFactory.Brush(ResourceKeys.SurfaceRaisedBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            CornerRadius = new CornerRadius(6),
-        };
+            CornerRadius = new CornerRadius(6)
+        }.Localize("Content", Loc.Get("I'll manage it myself"));
         VisualStateManager.GoToState(selfBtn, "Normal", false);
 
         manageBtn.Click += (_, _) => Complete(true);
-        selfBtn.Click   += (_, _) => Complete(false);
+        selfBtn.Click += (_, _) => Complete(false);
 
         buttonPanel.Children.Add(manageBtn);
         buttonPanel.Children.Add(selfBtn);

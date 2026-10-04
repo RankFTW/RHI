@@ -1,4 +1,4 @@
-﻿// MainWindow.Events.cs — Button click handlers and user-initiated event handlers.
+// MainWindow.Events.cs — Button click handlers and user-initiated event handlers.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
@@ -28,21 +28,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Full Refresh",
-            Content = "This will clear all caches and re-scan everything from scratch:\n\n" +
-                      "• Re-detects all games from every storefront\n" +
-                      "• Re-scans DLSS/Streamline DLL paths\n" +
-                      "• Re-detects graphics APIs and engine types\n" +
-                      "• Rebuilds shader and addon deployment state\n\n" +
-                      "Try a normal Refresh first — it handles most issues without the full rescan. " +
-                      "Use Full Refresh as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card.\n\n" +
-                      "The next couple of restarts may take a few seconds longer while caches are rebuilt.\n\n" +
-                      "Do not close RHI while the refresh is in progress — closing early will result in a missing library and the scan will need to be repeated.",
-            PrimaryButtonText = "Continue",
-            CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = Content.XamlRoot,
-        };
+            XamlRoot = Content.XamlRoot
+        }.Localize("Title", Loc.Get("Full Refresh")).Localize("Content", Loc.Concat(Loc.Get("This will clear all caches and re-scan everything from scratch:\n\n"), Loc.Get("• Re-detects all games from every storefront\n"), Loc.Get("• Re-scans DLSS/Streamline DLL paths\n"), Loc.Get("• Re-detects graphics APIs and engine types\n"), Loc.Get("• Rebuilds shader and addon deployment state\n\n"), Loc.Get("Try a normal Refresh first — it handles most issues without the full rescan. "), Loc.Get("Use Full Refresh as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card.\n\n"), Loc.Get("The next couple of restarts may take a few seconds longer while caches are rebuilt.\n\n"), Loc.Get("Do not close RHI while the refresh is in progress — closing early will result in a missing library and the scan will need to be repeated."))).Localize("PrimaryButtonText", Loc.Get("Continue")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         var result = await DialogService.ShowSafeAsync(dialog);
         if (result != ContentDialogResult.Primary) return;
@@ -66,18 +54,21 @@ public sealed partial class MainWindow
         var progressPanel = new StackPanel { Spacing = 8 };
         var progressRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
         var progressRing = new ProgressRing { IsActive = true, Width = 20, Height = 20 };
-        var progressText = new TextBlock { Text = "Fetching manifest...", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+        var progressText = new TextBlock
+        {
+            FontSize = 13,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+        }.Localize("Text", Loc.Get("Fetching manifest..."));
         progressRow.Children.Add(progressRing);
         progressRow.Children.Add(progressText);
         progressPanel.Children.Add(progressRow);
 
         var progressDialog = new ContentDialog
         {
-            Title = "Checking for updates...",
             Content = progressPanel,
             XamlRoot = Content.XamlRoot,
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Checking for updates..."));
 
         // Fire-and-forget the ShowAsync — we'll Hide() it when done
         // (ShowAsync returns when the dialog is dismissed; we dismiss it via Hide())
@@ -89,14 +80,14 @@ public sealed partial class MainWindow
             ViewModel.ForceNextUpdateCheck();
 
             // Trigger a Refresh (which fetches manifests + wiki + runs update checks)
-            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components...");
+            DispatcherQueue?.TryEnqueue(() => progressText.Text = Loc.Get("Checking components..."));
             await ViewModel.RefreshAsync();
 
             // Trigger silent auto-install of any updates found
             ViewModel.TriggerAutoUpdate();
 
             // Check app update
-            DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking app version...");
+            DispatcherQueue?.TryEnqueue(() => progressText.Text = Loc.Get("Checking app version..."));
             await _dialogService.CheckForAppUpdateAsync();
         }
         catch (Exception ex)
@@ -176,7 +167,7 @@ public sealed partial class MainWindow
             if (requiresVulkan)
                 ViewModel.DeployShadersForCard(gameName);
 
-            card.RsActionMessage = "✅ reshade.ini merged into game folder.";
+            card.RsActionMessage = Loc.Get("✅ reshade.ini merged into game folder.");
         }
         catch (Exception ex)
         {
@@ -196,11 +187,10 @@ public sealed partial class MainWindow
         {
             content.Children.Add(new TextBlock
             {
-                Text = "Engine.ini Settings",
                 FontSize = 13,
                 Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                Margin = new Thickness(0, 0, 0, 4),
-            });
+                Margin = new Thickness(0, 0, 0, 4)
+            }.Localize("Text", Loc.Get("Engine.ini Settings")));
 
             var cogGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
             cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -211,11 +201,10 @@ public sealed partial class MainWindow
             // ── HDR on First Boot ──────────────────────────────────────────────
             var hdrLabel = new TextBlock
             {
-                Text = "HDR on First Boot",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", Loc.Get("HDR on First Boot"));
             Grid.SetRow(hdrLabel, 0); Grid.SetColumn(hdrLabel, 0);
             cogGrid.Children.Add(hdrLabel);
 
@@ -223,11 +212,7 @@ public sealed partial class MainWindow
             hdrCombo.Items.Add("Default");
             hdrCombo.Items.Add("Off");
             hdrCombo.Items.Add("On");
-            ToolTipService.SetToolTip(hdrCombo,
-                "Controls EnableHDR and DisplayMode in the [Luma] section of reshade.ini.\n" +
-                "Default: leaves both keys as-is (Luma controls them).\n" +
-                "Off: sets EnableHDR=0 and DisplayMode=0.\n" +
-                "On: sets EnableHDR=1 and DisplayMode=1.");
+            hdrCombo.Localize("ToolTip", Loc.Concat(Loc.Get("Controls EnableHDR and DisplayMode in the [Luma] section of reshade.ini.\n"), Loc.Get("Default: leaves both keys as-is (Luma controls them).\n"), Loc.Get("Off: sets EnableHDR=0 and DisplayMode=0.\n"), Loc.Get("On: sets EnableHDR=1 and DisplayMode=1.")));
 
             var currentHdr = AuxInstallService.GetLumaReshadeIniValue(card.InstallPath, "EnableHDR");
             // Default = key absent or never set by RHI; Off = "0"; On = "1"
@@ -241,14 +226,14 @@ public sealed partial class MainWindow
                 {
                     AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "EnableHDR");
                     AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "DisplayMode");
-                    card.LumaActionMessage = "✅ HDR reset to Luma default.";
+                    card.LumaActionMessage = Loc.Get("✅ HDR reset to Luma default.");
                 }
                 else
                 {
                     bool hdrOn = hdrCombo.SelectedIndex == 2;
                     AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrOn ? "1" : "0");
                     AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", hdrOn ? "1" : "0");
-                    card.LumaActionMessage = hdrOn ? "✅ HDR enabled in reshade.ini." : "✅ HDR disabled in reshade.ini.";
+                    card.LumaActionMessage = hdrOn ? Loc.Get("✅ HDR enabled in reshade.ini.") : Loc.Get("✅ HDR disabled in reshade.ini.");
                 }
                 card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
             };
@@ -258,20 +243,17 @@ public sealed partial class MainWindow
             // ── TAA Settings ───────────────────────────────────────────────────
             var taaLabel = new TextBlock
             {
-                Text = "TAA Settings",
                 FontSize = 11,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", Loc.Get("TAA Settings"));
             Grid.SetRow(taaLabel, 1); Grid.SetColumn(taaLabel, 0);
             cogGrid.Children.Add(taaLabel);
 
             var taaCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
             taaCombo.Items.Add("Off");
             taaCombo.Items.Add("On");
-            ToolTipService.SetToolTip(taaCombo,
-                "Writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini.\n" +
-                "Forces TAA with high quality for Luma HDR compatibility.");
+            taaCombo.Localize("ToolTip", Loc.Concat(Loc.Get("Writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini.\n"), Loc.Get("Forces TAA with high quality for Luma HDR compatibility.")));
 
             bool taaActive = ViewModel.IsLumaTaaEnabled(card.GameName);
             taaCombo.SelectedIndex = taaActive ? 1 : 0;
@@ -291,7 +273,7 @@ public sealed partial class MainWindow
                     AuxInstallService.ApplyEngineIniCustomKeys(
                         card.InstallPath, taaKeys, card.EngineIniProjectOverride, card.GameName, card.Source);
                     ViewModel.SetLumaTaaEnabled(card.GameName, true);
-                    card.LumaActionMessage = "✅ TAA settings written to Engine.ini.";
+                    card.LumaActionMessage = Loc.Get("✅ TAA settings written to Engine.ini.");
                 }
                 else
                 {
@@ -300,7 +282,7 @@ public sealed partial class MainWindow
                         taaKeys.Select(k => k.Key),
                         card.EngineIniProjectOverride, card.GameName, card.Source);
                     ViewModel.SetLumaTaaEnabled(card.GameName, false);
-                    card.LumaActionMessage = "✅ TAA settings removed from Engine.ini.";
+                    card.LumaActionMessage = Loc.Get("✅ TAA settings removed from Engine.ini.");
                 }
                 card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
             };
@@ -312,12 +294,9 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "Luma Settings",
-            Content = content,
-            CloseButtonText = "Close",
             DefaultButton = ContentDialogButton.Close,
-            XamlRoot = this.Content.XamlRoot,
-        };
+            XamlRoot = this.Content.XamlRoot
+        }.Localize("Title", Loc.Get("Luma Settings")).Localize("Content", content).Localize("CloseButtonText", Loc.Get("Close"));
 
         await DialogService.ShowSafeAsync(dialog);
     }
@@ -374,12 +353,9 @@ public sealed partial class MainWindow
         {
             await DialogService.ShowSafeAsync(new ContentDialog
             {
-                Title = "Support the Mod Authors",
-                Content = "No donation links available.",
-                CloseButtonText = "Close",
                 XamlRoot = Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark,
-            });
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Support the Mod Authors")).Localize("Content", Loc.Get("No donation links available.")).Localize("CloseButtonText", Loc.Get("Close")));
             return;
         }
 
@@ -388,27 +364,25 @@ public sealed partial class MainWindow
 
         var intro = new TextBlock
         {
-            Text = "These are the people who make the mods RHI manages. If you enjoy their work, consider supporting them.",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 0, 0, 8),
-        };
+            Margin = new Thickness(0, 0, 0, 8)
+        }.Localize("Text", Loc.Get("These are the people who make the mods RHI manages. If you enjoy their work, consider supporting them."));
         panel.Children.Add(intro);
 
         var warning = new TextBlock
         {
-            Text = "⚠ Important: To receive early access to RenoDX mods, you MUST link your Discord account to Ko-fi BEFORE donating. Donations made without linking first cannot be retroactively credited.",
             FontSize = 12,
             Foreground = UIFactory.GetBrush("#F0A500"),
             TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 0, 0, 14),
-        };
+            Margin = new Thickness(0, 0, 0, 14)
+        }.Localize("Text", Loc.Get("⚠ Important: To receive early access to RenoDX mods, you MUST link your Discord account to Ko-fi BEFORE donating. Donations made without linking first cannot be retroactively credited."));
         panel.Children.Add(warning);
 
-        var handCursor  = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        var handCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
         var arrowCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
-        var cursorProp  = DetailPanelBuilder.CursorProp;
+        var cursorProp = DetailPanelBuilder.CursorProp;
 
         foreach (var name in entries)
         {
@@ -423,23 +397,21 @@ public sealed partial class MainWindow
 
             var nameBlock = new TextBlock
             {
-                Text = name,
                 FontSize = 13,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
+                VerticalAlignment = VerticalAlignment.Center
+            }.Localize("Text", name);
             Grid.SetColumn(nameBlock, 0);
             row.Children.Add(nameBlock);
 
             var roleBlock = new TextBlock
             {
-                Text = role ?? "",
                 FontSize = 12,
                 Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-            };
+                TextTrimming = TextTrimming.CharacterEllipsis
+            }.Localize("Text", role ?? "");
             Grid.SetColumn(roleBlock, 1);
             row.Children.Add(roleBlock);
 
@@ -483,13 +455,11 @@ public sealed partial class MainWindow
 
         var dialog = new ContentDialog
         {
-            Title = "❤ Support the Mod Authors",
             Content = scroll,
-            CloseButtonText = "Close",
             XamlRoot = Content.XamlRoot,
             Background = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("❤ Support the Mod Authors")).Localize("CloseButtonText", Loc.Get("Close"));
 
         await DialogService.ShowSafeAsync(dialog);
     }
@@ -605,7 +575,7 @@ public sealed partial class MainWindow
             if (requiresVulkan)
                 ViewModel.DeployShadersForCard(gameName);
 
-            card.RsActionMessage = "✅ reshade.ini merged into game folder.";
+            card.RsActionMessage = Loc.Get("✅ reshade.ini merged into game folder.");
         }
         catch (Exception ex)
         {
@@ -621,7 +591,7 @@ public sealed partial class MainWindow
         {
             var installPath = card.InstallPath;
             await Task.Run(() => AuxInstallService.CopyUlIni(installPath));
-            card.UlActionMessage = "✅ relimiter.ini copied to game folder.";
+            card.UlActionMessage = Loc.Get("✅ relimiter.ini copied to game folder.");
         }
         catch (Exception ex)
         {
@@ -637,7 +607,7 @@ public sealed partial class MainWindow
         {
             var installPath = card.InstallPath;
             await Task.Run(() => AuxInstallService.CopyDcIni(installPath));
-            card.DcActionMessage = "✅ DisplayCommander.ini copied to game folder.";
+            card.DcActionMessage = Loc.Get("✅ DisplayCommander.ini copied to game folder.");
             card.FadeMessage(m => card.DcActionMessage = m, card.DcActionMessage);
         }
         catch (Exception ex)
@@ -655,7 +625,7 @@ public sealed partial class MainWindow
             var sourceIni = Services.OptiScalerService.OsIniPath;
             if (!File.Exists(sourceIni))
             {
-                card.OsActionMessage = "❌ No OptiScaler.ini found in INIs folder.";
+                card.OsActionMessage = Loc.Get("❌ No OptiScaler.ini found in INIs folder.");
                 return;
             }
             var installPath = card.InstallPath;
@@ -665,7 +635,7 @@ public sealed partial class MainWindow
                 File.Copy(sourceIni, destIni, overwrite: true);
                 Services.OptiScalerService.EnforceLoadReshade(destIni);
             });
-            card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
+            card.OsActionMessage = Loc.Get("✅ OptiScaler.ini copied to game folder.");
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }
         catch (Exception ex)
@@ -706,7 +676,7 @@ public sealed partial class MainWindow
         // Also refresh the detail panel icon if this is the selected game
         if (card == ViewModel.SelectedGame)
         {
-            DetailFavIcon.Text = "Favourite";
+            DetailFavIcon.Localize("Text", Loc.Get("Favourite"));
             var favColor = card.IsFavourite
                 ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
                 : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
@@ -740,9 +710,8 @@ public sealed partial class MainWindow
         // ── Open Folder ──
         var openFolderItem = new MenuFlyoutItem
         {
-            Text = "📂 Open Folder",
-            Tag = card,
-        };
+            Tag = card
+        }.Localize("Text", Loc.Get("📂 Open Folder"));
         openFolderItem.Click += CardOpenFolder_Click;
         menu.Items.Add(openFolderItem);
 
@@ -762,9 +731,8 @@ public sealed partial class MainWindow
         {
             var discussionItem = new MenuFlyoutItem
             {
-                Text = "ℹ Discussion / Instructions",
-                Tag = card,
-            };
+                Tag = card
+            }.Localize("Text", Loc.Get("ℹ Discussion / Instructions"));
             discussionItem.Click += async (s, ev) =>
             {
                 if (card.NameUrl != null)
@@ -778,9 +746,8 @@ public sealed partial class MainWindow
         {
             var notesItem = new MenuFlyoutItem
             {
-                Text = "💬 View Notes",
-                Tag = card,
-            };
+                Tag = card
+            }.Localize("Text", Loc.Get("💬 View Notes"));
             notesItem.Click += async (s, ev) =>
             {
                 // Create a temporary Button to pass through ShowAddonInfoDialogAsync
@@ -957,19 +924,21 @@ public sealed partial class MainWindow
         var currentQuery = SearchBox.Text?.Trim() ?? "";
         if (string.IsNullOrEmpty(currentQuery)) return;
 
-        var nameBox = new TextBox { PlaceholderText = "Filter name", Text = currentQuery, Width = 350 };
+        var nameBox = new TextBox
+        {
+            Text = currentQuery,
+            Width = 350
+        }.Localize("PlaceholderText", Loc.Get("Filter name"));
         var errorText = new TextBlock
         {
-            Text = "",
             Foreground = Brush(ResourceKeys.AccentRedBrush),
             Visibility = Visibility.Collapsed,
             TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 4, 0, 0),
-        };
+            Margin = new Thickness(0, 4, 0, 0)
+        }.Localize("Text", "");
 
         var dialog = new ContentDialog
         {
-            Title = "Save Custom Filter",
             Content = new StackPanel
             {
                 Spacing = 8,
@@ -977,20 +946,17 @@ public sealed partial class MainWindow
                 {
                     new TextBlock
                     {
-                        Text = $"Save the current search \"{currentQuery}\" as a custom filter:",
                         TextWrapping = TextWrapping.Wrap,
-                        Foreground = Brush(ResourceKeys.TextSecondaryBrush),
-                    },
+                        Foreground = Brush(ResourceKeys.TextSecondaryBrush)
+                    }.Localize("Text", Loc.Format($"Save the current search \"{currentQuery}\" as a custom filter:")),
                     nameBox,
                     errorText,
                 }
             },
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
             XamlRoot = Content.XamlRoot,
             Background = Brush(ResourceKeys.SurfaceToolbarBrush),
-            RequestedTheme = ElementTheme.Dark,
-        };
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Save Custom Filter")).Localize("PrimaryButtonText", Loc.Get("Save")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
         // Validate inline before closing the dialog
         dialog.PrimaryButtonClick += (s, args) =>
@@ -998,14 +964,14 @@ public sealed partial class MainWindow
             var name = nameBox.Text?.Trim() ?? "";
             if (string.IsNullOrEmpty(name))
             {
-                errorText.Text = "Please enter a filter name.";
+                errorText.Localize("Text", Loc.Get("Please enter a filter name."));
                 errorText.Visibility = Visibility.Visible;
                 args.Cancel = true;
                 return;
             }
             if (ViewModel.Filter.CustomFilterNameExists(name))
             {
-                errorText.Text = $"A filter named \"{name}\" already exists.";
+                errorText.Localize("Text", Loc.Format($"A filter named \"{name}\" already exists."));
                 errorText.Visibility = Visibility.Visible;
                 args.Cancel = true;
                 return;
@@ -1060,7 +1026,10 @@ public sealed partial class MainWindow
 
             // Right-click context menu with "Delete" option (Req 5.1–5.5)
             var flyout = new MenuFlyout();
-            var deleteItem = new MenuFlyoutItem { Text = "Delete" };
+            var deleteItem = new MenuFlyoutItem
+            {
+
+            }.Localize("Text", Loc.Get("Delete"));
             deleteItem.Click += (s, args) =>
             {
                 ViewModel.Filter.RemoveCustomFilter(chipName);
@@ -1130,23 +1099,27 @@ public sealed partial class MainWindow
         nameBox.SelectAll();
         var nameDialog = new ContentDialog
         {
-            Title           = "Name This Game",
-            Content         = new StackPanel
+            Content = new StackPanel
             {
                 Spacing = 10,
                 Children =
                 {
-                    new TextBlock { Text = $"Selected: {filePath}", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush), FontSize = 11 },
-                    new TextBlock { Text = "Enter the game name:", TextWrapping = TextWrapping.Wrap, Foreground = Brush(ResourceKeys.TextSecondaryBrush) },
+                    new TextBlock {
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = Brush(ResourceKeys.TextSecondaryBrush),
+                        FontSize = 11
+                    }.Localize("Text", Loc.Format($"Selected: {filePath}")),
+                    new TextBlock {
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = Brush(ResourceKeys.TextSecondaryBrush)
+                    }.Localize("Text", Loc.Get("Enter the game name:")),
                     nameBox
                 }
             },
-            PrimaryButtonText   = "Add Game",
-            CloseButtonText     = "Cancel",
-            XamlRoot            = Content.XamlRoot,
-            Background          = Brush(ResourceKeys.SurfaceToolbarBrush),
-            RequestedTheme      = ElementTheme.Dark,
-        };
+            XamlRoot = Content.XamlRoot,
+            Background = Brush(ResourceKeys.SurfaceToolbarBrush),
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("Name This Game")).Localize("PrimaryButtonText", Loc.Get("Add Game")).Localize("CloseButtonText", Loc.Get("Cancel"));
         var result = await DialogService.ShowSafeAsync(nameDialog);
         if (result != ContentDialogResult.Primary) return;
 
@@ -1156,7 +1129,10 @@ public sealed partial class MainWindow
 
         var game = new DetectedGame
         {
-            Name = gameName, InstallPath = folder, Source = "Manual", IsManuallyAdded = true
+            Name = gameName,
+            InstallPath = folder,
+            Source = "Manual",
+            IsManuallyAdded = true
         };
         ViewModel.AddManualGameCommand.Execute(game);
     }
@@ -1176,7 +1152,7 @@ public sealed partial class MainWindow
         ViewModel.ToggleFavouriteCommand.Execute(card);
 
         // Refresh the detail panel icon to reflect the new state
-        DetailFavIcon.Text = "Favourite";
+        DetailFavIcon.Localize("Text", Loc.Get("Favourite"));
         var favColor = card.IsFavourite
             ? ((SolidColorBrush)Application.Current.Resources[ResourceKeys.AccentAmberBrush]).Color
             : ((SolidColorBrush)Application.Current.Resources[ResourceKeys.ChipTextBrush]).Color;
@@ -1230,20 +1206,13 @@ public sealed partial class MainWindow
             {
                 var warningDialog = new ContentDialog
                 {
-                    Title = "⚠ ReShade Addons",
-                    Content = new TextBlock
-                    {
-                        Text = "ReShade addons are advanced features intended for experienced users who understand what they are.\n\n" +
-                               "Addons can modify game rendering behaviour and may cause instability. " +
-                               "Only proceed if you are comfortable managing ReShade addons.",
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                        MaxWidth = 450,
-                    },
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
                     XamlRoot = Content.XamlRoot,
-                    RequestedTheme = ElementTheme.Dark,
-                };
+                    RequestedTheme = ElementTheme.Dark
+                }.Localize("Title", Loc.Get("⚠ ReShade Addons")).Localize("Content", new TextBlock
+                {
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    MaxWidth = 450
+                }.Localize("Text", Loc.Concat(Loc.Get("ReShade addons are advanced features intended for experienced users who understand what they are.\n\n"), Loc.Get("Addons can modify game rendering behaviour and may cause instability. "), Loc.Get("Only proceed if you are comfortable managing ReShade addons.")))).Localize("PrimaryButtonText", Loc.Get("Continue")).Localize("CloseButtonText", Loc.Get("Cancel"));
 
                 var result = await DialogService.ShowSafeAsync(warningDialog);
 

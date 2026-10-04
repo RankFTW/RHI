@@ -54,25 +54,23 @@ public partial class DetailPanelBuilder
 
         // ── Collapsible header ────────────────────────────────────────────────
         const string overridesSectionKey = "GameOverrides";
-        var ovSettings  = _window.ViewModel.Settings;
+        var ovSettings = _window.ViewModel.Settings;
         bool ovCollapsed = ovSettings.CollapsedDetailSections.Contains(overridesSectionKey);
 
         var ovArrow = new TextBlock
         {
-            Text      = ovCollapsed ? "▶" : "▼",
-            FontSize  = 10,
+            FontSize = 10,
             Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin    = new Thickness(0, 0, 6, 0),
-        };
+            Margin = new Thickness(0, 0, 6, 0)
+        }.Localize("Text", ovCollapsed ? "▶" : "▼");
         var ovTitle = new TextBlock
         {
-            Text       = "Game Overrides",
-            FontSize   = 13,
+            FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", Loc.Get("Game Overrides"));
         _window.OverridesHeaderRow.Children.Add(MakeDragHandle(_window.OverridesContainer));
         _window.OverridesHeaderRow.Children.Add(ovArrow);
         _window.OverridesHeaderRow.Children.Add(ovTitle);
@@ -90,7 +88,7 @@ public partial class DetailPanelBuilder
         // persistent XAML element — handlers stack up across rebuilds without this)
         if (_ovHeaderPressedHandler != null) _window.OverridesHeaderRow.PointerPressed -= _ovHeaderPressedHandler;
         if (_ovHeaderEnteredHandler != null) _window.OverridesHeaderRow.PointerEntered -= _ovHeaderEnteredHandler;
-        if (_ovHeaderExitedHandler  != null) _window.OverridesHeaderRow.PointerExited  -= _ovHeaderExitedHandler;
+        if (_ovHeaderExitedHandler != null) _window.OverridesHeaderRow.PointerExited -= _ovHeaderExitedHandler;
 
         _ovHeaderEnteredHandler = (s, e) =>
         {
@@ -128,34 +126,29 @@ public partial class DetailPanelBuilder
                     ovSum.Visibility = Visibility.Collapsed;
             }
             if (nowCollapsed) ovSettings.CollapsedDetailSections.Add(overridesSectionKey);
-            else              ovSettings.CollapsedDetailSections.Remove(overridesSectionKey);
+            else ovSettings.CollapsedDetailSections.Remove(overridesSectionKey);
             _window.ViewModel.SaveSettingsPublic();
         };
 
         _window.OverridesHeaderRow.PointerEntered += _ovHeaderEnteredHandler;
-        _window.OverridesHeaderRow.PointerExited  += _ovHeaderExitedHandler;
+        _window.OverridesHeaderRow.PointerExited += _ovHeaderExitedHandler;
         _window.OverridesHeaderRow.PointerPressed += _ovHeaderPressedHandler;
 
         // ── Game name + Wiki name ────────────────────────────────────────────────
         var detectedBox = new TextBox
         {
-            Header = "Game name (editable)",
             Text = gameName,
             FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        ToolTipService.SetToolTip(detectedBox,
-            "The display name for this game. Edit and press Enter to rename. Reset reverts to the auto-detected store name.");
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        }.Localize("Header", Loc.Get("Game name (editable)"));
+        detectedBox.Localize("ToolTip", Loc.Get("The display name for this game. Edit and press Enter to rename. Reset reverts to the auto-detected store name."));
         var wikiBox = new TextBox
         {
-            Header = "Wiki mod name",
-            PlaceholderText = "Exact wiki name",
             Text = _window.ViewModel.GetUserNameMapping(gameName) ?? "",
             FontSize = 12,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        ToolTipService.SetToolTip(wikiBox,
-            "Override the name used to look up this game on the RenoDX/Luma wiki. Leave blank to use the game name. Press Enter to save.");
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        }.Localize("Header", Loc.Get("Wiki mod name")).Localize("PlaceholderText", Loc.Get("Exact wiki name"));
+        wikiBox.Localize("ToolTip", Loc.Get("Override the name used to look up this game on the RenoDX/Luma wiki. Leave blank to use the game name. Press Enter to save."));
         var originalStoreName = _window.ViewModel.GetOriginalStoreName(gameName);
 
         // Mutable captured name so rename handler can update it for subsequent handlers
@@ -163,15 +156,14 @@ public partial class DetailPanelBuilder
 
         var resetBtn = new Button
         {
-            Content = "Reset",
             FontSize = 12,
             VerticalAlignment = VerticalAlignment.Bottom,
             Padding = new Thickness(10, 6, 10, 6),
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-        };
-        ToolTipService.SetToolTip(resetBtn, "Reset game name back to auto-detected and clear wiki name mapping.");
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush)
+        }.Localize("Content", Loc.Get("Reset"));
+        resetBtn.Localize("ToolTip", Loc.Get("Reset game name back to auto-detected and clear wiki name mapping."));
         resetBtn.Click += (s, ev) =>
         {
             var resetName = (originalStoreName ?? gameName).Trim();
@@ -213,8 +205,7 @@ public partial class DetailPanelBuilder
             ItemsSource = rsNames,
             SelectedItem = DllDefaultSentinel, // default = no override
         };
-        ToolTipService.SetToolTip(rsNameBox,
-            "Override the ReShade DLL filename. Select a name to rename the installed DLL immediately. Select -------- to revert to the default name.");
+        rsNameBox.Localize("ToolTip", Loc.Get("Override the ReShade DLL filename. Select a name to rename the installed DLL immediately. Select -------- to revert to the default name."));
         if (!string.IsNullOrEmpty(existingRsName))
         {
             if (rsNames.Contains(existingRsName, StringComparer.OrdinalIgnoreCase))
@@ -266,7 +257,7 @@ public partial class DetailPanelBuilder
 
         var osNameBox = new ComboBox
         {
-            PlaceholderText = "Select OptiScaler DLL name",
+            PlaceholderText = Loc.Get("Select OptiScaler DLL name"),
             FontSize = 12,
             IsEnabled = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -552,7 +543,7 @@ public partial class DetailPanelBuilder
         resetWikiRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         // Restyle reset button to blue accent
-        resetBtn.Content = "Reset";
+        resetBtn.Localize("Content", Loc.Get("Reset"));
         resetBtn.FontSize = 12;
         resetBtn.Height = 32;
         resetBtn.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -575,8 +566,7 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        ToolTipService.SetToolTip(wikiExcludeCombo,
-            "Included = this game is looked up on the RenoDX and Luma wikis. Excluded = skip wiki lookups for this game.");
+        wikiExcludeCombo.Localize("ToolTip", Loc.Get("Included = this game is looked up on the RenoDX and Luma wikis. Excluded = skip wiki lookups for this game."));
         wikiExcludeCombo.SelectionChanged += (s, ev) =>
         {
             var selected = wikiExcludeCombo.SelectedItem as string;
@@ -612,10 +602,9 @@ public partial class DetailPanelBuilder
 
         var dllOverrideLabel = new TextBlock
         {
-            Text = "DLL naming overrides",
             FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-        };
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+        }.Localize("Text", Loc.Get("DLL naming overrides"));
         topRightColumn.Children.Add(dllOverrideLabel);
 
         // 3 DLL name boxes side by side, always visible
@@ -627,9 +616,9 @@ public partial class DetailPanelBuilder
         dllBoxesGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         // Label row
-        var rsLabel = new TextBlock { Text = "ReShade", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
-        var dcLabel = new TextBlock { Text = "Display Commander", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
-        var osLabel = new TextBlock { Text = "OptiScaler", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
+        var rsLabel = new TextBlock { FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) }.Localize("Text", "ReShade");
+        var dcLabel = new TextBlock { FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) }.Localize("Text", "Display Commander");
+        var osLabel = new TextBlock { FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) }.Localize("Text", "OptiScaler");
         Grid.SetColumn(rsLabel, 0); Grid.SetRow(rsLabel, 0);
         Grid.SetColumn(dcLabel, 1); Grid.SetRow(dcLabel, 0);
         Grid.SetColumn(osLabel, 2); Grid.SetRow(osLabel, 0);
@@ -648,7 +637,6 @@ public partial class DetailPanelBuilder
         // Reset DLL Names button — reverts all three DLLs to defaults and clears the config
         resetDllBtn = new Button
         {
-            Content = "Reset DLL Names",
             FontSize = 12,
             Height = 28,
             HorizontalAlignment = HorizontalAlignment.Right,
@@ -658,10 +646,9 @@ public partial class DetailPanelBuilder
             Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
             BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        ToolTipService.SetToolTip(resetDllBtn,
-            "Revert all DLL names back to defaults and clear saved overrides.");
+            CornerRadius = new CornerRadius(8)
+        }.Localize("Content", Loc.Get("Reset DLL Names"));
+        resetDllBtn.Localize("ToolTip", Loc.Get("Revert all DLL names back to defaults and clear saved overrides."));
         resetDllBtn.Click += async (s, e) =>
         {
             resetDllBtn.IsEnabled = false;
@@ -792,8 +779,7 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        ToolTipService.SetToolTip(shaderModeCombo,
-            "Global = use global shader selection. Custom = use custom shader directories. Select = pick per-game packs. Off = no shaders.");
+        shaderModeCombo.Localize("ToolTip", Loc.Get("Global = use global shader selection. Custom = use custom shader directories. Select = pick per-game packs. Off = no shaders."));
 
         // Allow re-opening the Select picker when already on Select
         shaderModeCombo.DropDownClosed += (s, ev) =>
@@ -956,11 +942,10 @@ public partial class DetailPanelBuilder
         // ── Bitness Override ComboBox (left column of Bitness & API Row) ─────────
         var bitnessLabel = new TextBlock
         {
-            Text = "Bitness",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            Margin = new Thickness(0, 0, 0, 8),
-        };
+            Margin = new Thickness(0, 0, 0, 8)
+        }.Localize("Text", Loc.Get("Bitness"));
 
         var bitnessItems = new[] { "Auto", "32-bit", "64-bit" };
         var currentBitnessOverride = _window.ViewModel.GetBitnessOverride(gameName, card.Source);
@@ -978,8 +963,7 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        ToolTipService.SetToolTip(bitnessCombo,
-            "Override the auto-detected bitness for this game. Auto uses PE header detection. 32-bit or 64-bit forces the value.");
+        bitnessCombo.Localize("ToolTip", Loc.Get("Override the auto-detected bitness for this game. Auto uses PE header detection. 32-bit or 64-bit forces the value."));
 
         bitnessCombo.SelectionChanged += (s, e) =>
         {
@@ -1062,15 +1046,10 @@ public partial class DetailPanelBuilder
         // ── API Override ComboBox (single selection, placed in left panel below bitness) ──────
         var apiLabel = new TextBlock
         {
-            Text = "Graphics API",
             FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-        };
-        ToolTipService.SetToolTip(apiLabel,
-            "Override the detected graphics API for this game.\n\n" +
-            "Auto uses the auto-detected value from PE header scanning.\n" +
-            "User overrides set here take precedence over manifest and auto-detected values.\n" +
-            "Reset Overrides reverts to auto-detection.");
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush)
+        }.Localize("Text", Loc.Get("Graphics API"));
+        apiLabel.Localize("ToolTip", Loc.Concat(Loc.Get("Override the detected graphics API for this game.\n\n"), Loc.Get("Auto uses the auto-detected value from PE header scanning.\n"), Loc.Get("User overrides set here take precedence over manifest and auto-detected values.\n"), Loc.Get("Reset Overrides reverts to auto-detection.")));
 
         var apiDropdownItems = new[] { "Auto", "DirectX8", "DirectX9", "DirectX10", "DirectX11", "DirectX12", "Vulkan", "OpenGL" };
         var existingApiOverride = _window.ViewModel.GetApiOverride(gameName, card.Source);
@@ -1103,8 +1082,7 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        ToolTipService.SetToolTip(apiCombo,
-            "Override the detected graphics API for this game.\nAuto uses PE header scanning. Reset Overrides reverts to auto-detection.");
+        apiCombo.Localize("ToolTip", Loc.Get("Override the detected graphics API for this game.\nAuto uses PE header scanning. Reset Overrides reverts to auto-detection."));
 
         apiCombo.SelectionChanged += (s, ev) =>
         {
@@ -1113,13 +1091,13 @@ public partial class DetailPanelBuilder
             // Map dropdown label to enum names for persistence
             List<string>? apiEnumNames = selected switch
             {
-                "DirectX8"  => new() { "DirectX8" },
-                "DirectX9"  => new() { "DirectX9" },
+                "DirectX8" => new() { "DirectX8" },
+                "DirectX9" => new() { "DirectX9" },
                 "DirectX10" => new() { "DirectX10" },
                 "DirectX11" => new() { "DirectX11" },
                 "DirectX12" => new() { "DirectX12" },
-                "Vulkan"    => new() { "Vulkan" },
-                "OpenGL"    => new() { "OpenGL" },
+                "Vulkan" => new() { "Vulkan" },
+                "OpenGL" => new() { "OpenGL" },
                 _ => null, // "Auto" clears the override
             };
 
@@ -1178,7 +1156,8 @@ public partial class DetailPanelBuilder
                 // Rebuild the detail panel immediately — don't rely on RequestReselect
                 // since it's a no-op when the game is already selected.
                 _window.PopulateDetailPanel(targetCard);
-                _window.RequestReselect(capturedName);            }
+                _window.RequestReselect(capturedName);
+            }
         };
 
         // Add API dropdown to bitness panel (right column, side by side)
@@ -1237,5 +1216,6 @@ public partial class DetailPanelBuilder
         CrashReporter.Log($"[BuildOverridesPanel] Dxvk+Management done: '{card.GameName}'");
 
         BuildExtrasSection(card);
-        CrashReporter.Log($"[BuildOverridesPanel] Extras done: '{card.GameName}'");    }
+        CrashReporter.Log($"[BuildOverridesPanel] Extras done: '{card.GameName}'");
+    }
 }

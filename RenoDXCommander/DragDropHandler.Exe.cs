@@ -13,7 +13,7 @@ public partial class DragDropHandler
 {
     public async Task ProcessDroppedExe(string exePath)
     {
-        var exeDir  = Path.GetDirectoryName(exePath)!;
+        var exeDir = Path.GetDirectoryName(exePath)!;
         var exeName = Path.GetFileNameWithoutExtension(exePath);
 
         // ── Ryubing emulator detection ────────────────────────────────────────
@@ -55,13 +55,10 @@ public partial class DragDropHandler
         {
             var dupDialog = new ContentDialog
             {
-                Title           = "Game Already Exists",
-                Content         = $"\"{existingCard.GameName}\" is already in your library at:\n{existingCard.InstallPath}",
-                CloseButtonText = "OK",
-                XamlRoot        = _window.Content.XamlRoot,
-                Background      = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
-                RequestedTheme  = ElementTheme.Dark,
-            };
+                XamlRoot = _window.Content.XamlRoot,
+                Background = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
+                RequestedTheme = ElementTheme.Dark
+            }.Localize("Title", Loc.Get("Game Already Exists")).Localize("Content", Loc.Format($"\"{existingCard.GameName}\" is already in your library at:\n{existingCard.InstallPath}")).Localize("CloseButtonText", Loc.Get("OK"));
             await DialogService.ShowSafeAsync(dupDialog);
             return;
         }
@@ -70,36 +67,33 @@ public partial class DragDropHandler
         var nameBox = new TextBox { Text = gameName, Width = 380 };
         var engineLabel = engine switch
         {
-            EngineType.Unreal       => "Unreal Engine",
-            EngineType.UnrealLegacy => "Unreal Engine (Legacy)",
-            EngineType.Unity        => "Unity",
-            _                       => "Unknown"
+            EngineType.Unreal => Loc.Get("Unreal Engine"),
+            EngineType.UnrealLegacy => Loc.Get("Unreal Engine (Legacy)"),
+            EngineType.Unity => "Unity",
+            _ => Loc.Get("Unknown")
         };
 
         var confirmPanel = new StackPanel { Spacing = 8 };
         confirmPanel.Children.Add(new TextBlock
         {
-            Text = "Game name:", Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-        });
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush)
+        }.Localize("Text", Loc.Get("Game name:")));
         confirmPanel.Children.Add(nameBox);
         confirmPanel.Children.Add(new TextBlock
         {
-            Text = $"Engine: {engineLabel}\nInstall path: {installPath}",
             TextWrapping = TextWrapping.Wrap,
-            Foreground   = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
-            FontSize     = 12, Margin = new Thickness(0, 6, 0, 0),
-        });
+            Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+            FontSize = 12,
+            Margin = new Thickness(0, 6, 0, 0)
+        }.Localize("Text", Loc.Format($"Engine: {engineLabel}\nInstall path: {installPath}")));
 
         var confirmDialog = new ContentDialog
         {
-            Title             = "➕ Add Dropped Game",
-            Content           = confirmPanel,
-            PrimaryButtonText = "Add Game",
-            CloseButtonText   = "Cancel",
-            XamlRoot          = _window.Content.XamlRoot,
-            Background        = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
-            RequestedTheme    = ElementTheme.Dark,
-        };
+            Content = confirmPanel,
+            XamlRoot = _window.Content.XamlRoot,
+            Background = UIFactory.Brush(ResourceKeys.SurfaceToolbarBrush),
+            RequestedTheme = ElementTheme.Dark
+        }.Localize("Title", Loc.Get("➕ Add Dropped Game")).Localize("PrimaryButtonText", Loc.Get("Add Game")).Localize("CloseButtonText", Loc.Get("Cancel"));
         var result = await DialogService.ShowSafeAsync(confirmDialog);
         if (result != ContentDialogResult.Primary) return;
 
@@ -109,7 +103,10 @@ public partial class DragDropHandler
         _crashReporter.Log($"[DragDropHandler.ProcessDroppedExe] Adding game '{finalName}' at '{installPath}'");
         var game = new DetectedGame
         {
-            Name = finalName, InstallPath = gameRoot, Source = "Manual", IsManuallyAdded = true
+            Name = finalName,
+            InstallPath = gameRoot,
+            Source = "Manual",
+            IsManuallyAdded = true
         };
         ViewModel.AddManualGameCommand.Execute(game);
 
@@ -132,7 +129,7 @@ public partial class DragDropHandler
 
         // If the exe is inside Binaries\Win64, Binaries\WinGDK, or Binaries\Win32,
         // the game root is two levels up.
-        var dirName   = Path.GetFileName(dir) ?? "";
+        var dirName = Path.GetFileName(dir) ?? "";
         var parentDir = Path.GetDirectoryName(dir);
         var parentName = parentDir != null ? Path.GetFileName(parentDir) ?? "" : "";
 
@@ -232,7 +229,7 @@ public partial class DragDropHandler
     /// </summary>
     public static string InferGameName(string exePath, string gameRoot, EngineType engine)
     {
-        var exeName     = Path.GetFileNameWithoutExtension(exePath);
+        var exeName = Path.GetFileNameWithoutExtension(exePath);
         var rootDirName = Path.GetFileName(gameRoot) ?? exeName;
 
         if (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy)

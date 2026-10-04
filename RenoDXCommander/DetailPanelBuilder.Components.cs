@@ -52,19 +52,17 @@ public partial class DetailPanelBuilder
 
         grid.Children.Add(new TextBlock
         {
-            Text = label,
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", label));
 
         grid.Children.Add(new TextBlock
         {
-            Text = "◄",
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
+            VerticalAlignment = VerticalAlignment.Center
+        }.Localize("Text", "◄"));
 
         return grid;
     }
@@ -90,7 +88,7 @@ public partial class DetailPanelBuilder
         }
 
         var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
-        ToolTipService.SetToolTip(infoBtn, tooltip);
+        infoBtn.Localize("ToolTip", tooltip);
 
         if (sourceType is InfoSourceType.None)
         {
@@ -154,13 +152,13 @@ public partial class DetailPanelBuilder
                 {
                     // Use cached Vulkan layer version from card instead of reading from disk
                     var vulkanVersion = card.VulkanLayerInstalledVersion;
-                    _window.DetailRsStatus.Text = (vulkanVersion ?? "Installed") + "\n(Vulkan)";
+                    _window.DetailRsStatus.Localize("Text", Loc.Concat((vulkanVersion ?? Loc.Get("Installed")), Loc.Get("\n(Vulkan)")));
                     _window.DetailRsStatus.Foreground = UIFactory.GetBrush("#5ECB7D");
                     _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.Underline;
                 }
                 else
                 {
-                    _window.DetailRsStatus.Text = "Ready";
+                    _window.DetailRsStatus.Localize("Text", Loc.Get("Ready"));
                     _window.DetailRsStatus.Foreground = UIFactory.GetBrush("#A0AABB");
                     _window.DetailRsStatus.TextDecorations = Windows.UI.Text.TextDecorations.None;
                 }
@@ -245,7 +243,7 @@ public partial class DetailPanelBuilder
             var ulLabel = WithInfoArrow(card.UlActionLabel, HasRealInfoContent(card, AddonType.ReLimiter), card.UlStatus == GameStatus.UpdateAvailable, _window.DetailUlInstallBtn);
             if (card.IsDcInstalled || card.UseNormalReShade)
             {
-                _window.DetailUlInstallBtn.Content = new TextBlock { Text = card.UlActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center };
+                _window.DetailUlInstallBtn.Content = new TextBlock { TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", card.UlActionLabel);
                 _window.DetailUlInstallBtn.HorizontalContentAlignment = HorizontalAlignment.Center;
             }
             else
@@ -295,7 +293,7 @@ public partial class DetailPanelBuilder
             var dcLabel = WithInfoArrow(card.DcActionLabel, HasRealInfoContent(card, AddonType.DisplayCommander), card.DcStatus == GameStatus.UpdateAvailable, _window.DetailDcInstallBtn);
             if (card.IsUlInstalled || card.UseNormalReShade)
             {
-                _window.DetailDcInstallBtn.Content = new TextBlock { Text = card.DcActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center };
+                _window.DetailDcInstallBtn.Content = new TextBlock { TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough, HorizontalAlignment = HorizontalAlignment.Center }.Localize("Text", card.DcActionLabel);
                 _window.DetailDcInstallBtn.HorizontalContentAlignment = HorizontalAlignment.Center;
             }
             else
@@ -377,7 +375,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxLabel.TextDecorations = extStrike;
                 _window.DetailRdxLabel.Opacity = rdxGreyed ? 0.35 : 1.0;
 
-                _window.DetailRdxStatus.Text = card.IsRdxInstalled ? (card.RdxInstalledVersion ?? "Installed") : "";
+                _window.DetailRdxStatus.Localize("Text", card.IsRdxInstalled ? (card.RdxInstalledVersion ?? Loc.Get("Installed")) : "");
                 _window.DetailRdxStatus.Foreground = UIFactory.GetBrush("#5ECB7D");
                 _window.DetailRdxStatus.TextDecorations = card.UseNormalReShade
                     ? Windows.UI.Text.TextDecorations.Strikethrough
@@ -387,7 +385,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
                 var extLabel = WithInfoArrow(card.ExternalDisplayLabel, HasRealInfoContent(card, AddonType.RenoDX), card.Status == GameStatus.UpdateAvailable, _window.DetailRdxInstallBtn);
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
-                    ? (object)new TextBlock { Text = card.ExternalDisplayLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
+                    ? (object)new TextBlock { TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }.Localize("Text", card.ExternalDisplayLabel)
                     : extLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.UseNormalReShade ? false : true;
                 var isNexusUpdate = card.Status == GameStatus.UpdateAvailable;
@@ -421,7 +419,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxStatus.Opacity = rdxGreyed ? 0.35 : 1.0;
                 var rdxLabel = WithInfoArrow(card.InstallActionLabel, HasRealInfoContent(card, AddonType.RenoDX), card.Status == GameStatus.UpdateAvailable, _window.DetailRdxInstallBtn);
                 _window.DetailRdxInstallBtn.Content = card.UseNormalReShade
-                    ? (object)new TextBlock { Text = card.InstallActionLabel, TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }
+                    ? (object)new TextBlock { TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough }.Localize("Text", card.InstallActionLabel)
                     : rdxLabel;
                 _window.DetailRdxInstallBtn.IsEnabled = card.UseNormalReShade ? false : card.CanInstall;
                 _window.DetailRdxInstallBtn.Background = UIFactory.GetBrush(card.InstallBtnBackground);
@@ -483,7 +481,8 @@ public partial class DetailPanelBuilder
         {
             _window.DetailLumaRow.Visibility = Visibility.Collapsed;
             _window.DetailLumaRow.Opacity = 1.0;
-        }        _window.DetailUeExtendedBtn.Tag = card;
+        }
+        _window.DetailUeExtendedBtn.Tag = card;
         _window.DetailUeExtendedBtn.Opacity = 1;
         _window.DetailUeExtendedBtn.IsHitTestVisible = true;
 

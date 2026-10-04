@@ -1,0 +1,938 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="InterfaceLanguageHeading.Text">
+    <value>语言</value>
+  </data>
+  <data xml:space="preserve" name="InterfaceLanguageRestart.Text">
+    <value>切换语言后立即生效。</value>
+  </data>
+  <data xml:space="preserve" name="L008de6dab3a8.Content">
+    <value>应用到所有游戏</value>
+  </data>
+  <data xml:space="preserve" name="L0155681c76b8.Content">
+    <value>应用</value>
+  </data>
+  <data xml:space="preserve" name="L01dd2ec139f2.Text">
+    <value>———  帧率限制器（选择一个）  ———</value>
+  </data>
+  <data xml:space="preserve" name="L021c5e9e3081.Content">
+    <value>创建缺失的配置</value>
+  </data>
+  <data xml:space="preserve" name="L021c5e9e3081.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>为尚无配置的所有游戏创建 NVIDIA 驱动配置，确保电源模式、垂直同步等全局设置适用于每个游戏。</value>
+  </data>
+  <data xml:space="preserve" name="L028d7d841edb.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>打开 Nexus Mods 页面</value>
+  </data>
+  <data xml:space="preserve" name="L0445285f0b0d.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>在资源管理器中打开游戏文件夹</value>
+  </data>
+  <data xml:space="preserve" name="L04674df949ea.Text">
+    <value>链接</value>
+  </data>
+  <data xml:space="preserve" name="L05ae1c977d6c.Text">
+    <value>系统与维护</value>
+  </data>
+  <data xml:space="preserve" name="L05c746a95108.Text">
+    <value>未连接</value>
+  </data>
+  <data xml:space="preserve" name="L07944f3bdf8b.Text">
+    <value>插件监视文件夹</value>
+  </data>
+  <data xml:space="preserve" name="L08bf33a838dd.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>全局 DMFG 最大帧数。动态模式游戏沿用此值，除非单独覆盖。</value>
+  </data>
+  <data xml:space="preserve" name="L0904d1b47de2.Text">
+    <value>显卡类型</value>
+  </data>
+  <data xml:space="preserve" name="L095d2ac9232c.Text">
+    <value> 作者：Microsoft</value>
+  </data>
+  <data xml:space="preserve" name="L09b854936002.Text">
+    <value>游戏启动前切换到此桌面分辨率，退出后恢复。</value>
+  </data>
+  <data xml:space="preserve" name="L0a23b486e9a2.Text">
+    <value>DLSS 输入</value>
+  </data>
+  <data xml:space="preserve" name="L0e3d041323b9.Text">
+    <value>不知不觉，我在生活中的多个领域都成了做 UI 的人，哈哈。</value>
+  </data>
+  <data xml:space="preserve" name="L0efffcd2816e.Text">
+    <value>关闭时最小化到托盘</value>
+  </data>
+  <data xml:space="preserve" name="L115f01ebbc8f.Content">
+    <value>设置</value>
+  </data>
+  <data xml:space="preserve" name="L115f01ebbc8f.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>打开设置</value>
+  </data>
+  <data xml:space="preserve" name="L11ca0f39c027.Text">
+    <value>输出色彩设置</value>
+  </data>
+  <data xml:space="preserve" name="L11ee931c1c12.Content">
+    <value>浏览</value>
+  </data>
+  <data xml:space="preserve" name="L1334979da282.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>打开此游戏的 Ultra+ 页面</value>
+  </data>
+  <data xml:space="preserve" name="L147b2006b8db.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>切换此游戏的 HDR 自动开关。紫色表示启动时开启 HDR，退出时关闭。</value>
+  </data>
+  <data xml:space="preserve" name="L15eced7f024e.Content">
+    <value>连接</value>
+  </data>
+  <data xml:space="preserve" name="L16854fd41af4.Text">
+    <value>通用 UE 景深修复</value>
+  </data>
+  <data xml:space="preserve" name="L16932869cade.Text">
+    <value>控制 RHI 在各游戏中管理着色器文件的方式。</value>
+  </data>
+  <data xml:space="preserve" name="L1870face0ac9.Text">
+    <value>在不同显卡厂商之间支持 DLSS、FSR 和 XeSS 的超分辨率重定向层。从 GitHub 发行版下载。</value>
+  </data>
+  <data xml:space="preserve" name="L18715fa5d5dd.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>写入所有 relimiter.ini 文件的全局帧率上限。选择 VRR 预设或“自定义”以手动输入。</value>
+  </data>
+  <data xml:space="preserve" name="L193edbf2e192.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>全局启用或禁用 G-Sync/FreeSync 可变刷新率。</value>
+  </data>
+  <data xml:space="preserve" name="L19ae68056a0f.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>打开超宽屏修复页面</value>
+  </data>
+  <data xml:space="preserve" name="L1a6798812729.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>全局电源管理模式，应用于没有单独覆盖设置的所有游戏。</value>
+  </data>
+  <data xml:space="preserve" name="L1a967a24b943.Text">
+    <value>  ·  BSD 3-Clause 许可证</value>
+  </data>
+  <data xml:space="preserve" name="L1dd0f9f2c97f.Text">
+    <value>截图快捷键</value>
+  </data>
+  <data xml:space="preserve" name="L1f15eaabdeb4.Text">
+    <value> 作者：doitsujin 及贡献者</value>
+  </data>
+  <data xml:space="preserve" name="L1fc32787f3db.Content">
+    <value>链接</value>
+  </data>
+  <data xml:space="preserve" name="L1fc32787f3db.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>实用链接和资源</value>
+  </data>
+  <data xml:space="preserve" name="L1fc479eaf587.Text">
+    <value>显示 0 个</value>
+  </data>
+  <data xml:space="preserve" name="L2126099bbcf6.Text">
+    <value> 作者：Crosire</value>
+  </data>
+  <data xml:space="preserve" name="L214d17f9da0d.Text">
+    <value>帧率上限</value>
+  </data>
+  <data xml:space="preserve" name="L21581289bda0.Content">
+    <value>可用 HDR 模组</value>
+  </data>
+  <data xml:space="preserve" name="L21581289bda0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>正在加载模组数据，请稍候…</value>
+  </data>
+  <data xml:space="preserve" name="L21e9359741ac.Content">
+    <value>配置默认值</value>
+  </data>
+  <data xml:space="preserve" name="L226bc37eaaea.Text">
+    <value>64 位</value>
+  </data>
+  <data xml:space="preserve" name="L2321af8f8e24.Content">
+    <value>更新日志</value>
+  </data>
+  <data xml:space="preserve" name="L2321af8f8e24.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>查看近期更新日志</value>
+  </data>
+  <data xml:space="preserve" name="L25149f823b67.Text">
+    <value>数据与自定义文件</value>
+  </data>
+  <data xml:space="preserve" name="L25c7aa93c933.Text">
+    <value>关于</value>
+  </data>
+  <data xml:space="preserve" name="L26f3900c3e92.Text">
+    <value>自动更新</value>
+  </data>
+  <data xml:space="preserve" name="L270af76ea75c.Content">
+    <value>信息</value>
+  </data>
+  <data xml:space="preserve" name="L2723a5bdc005.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>启动此游戏</value>
+  </data>
+  <data xml:space="preserve" name="L27a0593b5dc9.Text">
+    <value>批量部署</value>
+  </data>
+  <data xml:space="preserve" name="L298eb36254ee.Text">
+    <value>景深修复</value>
+  </data>
+  <data xml:space="preserve" name="L2aebe71b499c.Content">
+    <value>收藏</value>
+  </data>
+  <data xml:space="preserve" name="L2d78f34bf00b.Text">
+    <value>获取最新清单并检查所有组件的可用更新，忽略 4 小时检查间隔。</value>
+  </data>
+  <data xml:space="preserve" name="L2ed009a40ae8.Text">
+    <value>组件设置</value>
+  </data>
+  <data xml:space="preserve" name="L2f29239a136c.Text">
+    <value>备份会将所有游戏的 NVIDIA 驱动设置保存到文件；还原会重新载入，适合在更新驱动前使用。</value>
+  </data>
+  <data xml:space="preserve" name="L2f9f3694bf41.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>切换此游戏的自动分辨率设置。紫色表示启动时更改分辨率，退出时恢复。</value>
+  </data>
+  <data xml:space="preserve" name="L2fa138a348d2.Text">
+    <value>后台检查</value>
+  </data>
+  <data xml:space="preserve" name="L30a4c0d60568.Text">
+    <value>首选刷新率</value>
+  </data>
+  <data xml:space="preserve" name="L30aa6d97d345.Text">
+    <value>粘贴 Nexus Mods 个人 API 密钥。高级会员可一键下载并静默自动更新；免费用户可一键通过浏览器下载。</value>
+  </data>
+  <data xml:space="preserve" name="L31be4f781c54.Text">
+    <value>截图与快捷键</value>
+  </data>
+  <data xml:space="preserve" name="L320d95166847.Text">
+    <value>拖放助手</value>
+  </data>
+  <data xml:space="preserve" name="L33f1e38935d5.Text">
+    <value>收藏</value>
+  </data>
+  <data xml:space="preserve" name="L35770b1b6093.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>开启后，通过 RHI 启动游戏时自动开启 Windows HDR，游戏退出时关闭。</value>
+  </data>
+  <data xml:space="preserve" name="L35e0f469fc15.Text">
+    <value>关闭时最小化到系统托盘。右键单击托盘或固定的任务栏图标可快速启动最近的游戏。</value>
+  </data>
+  <data xml:space="preserve" name="L3622f8ad65c8.Text">
+    <value>完整刷新</value>
+  </data>
+  <data xml:space="preserve" name="L37976a18d446.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>重置为 Print Screen</value>
+  </data>
+  <data xml:space="preserve" name="L3b0339f3197d.Text">
+    <value>启用后，每次检查更新都会在后台静默安装组件更新。正在运行的游戏会在退出后自动重试。不适用于应用自身更新。</value>
+  </data>
+  <data xml:space="preserve" name="L3c9aec06e679.Text">
+    <value>开启：启动时及每隔 4 小时自动检查所有更新，包括 ReShade、RenoDX、OptiScaler、Nexus Mods 和其他组件。</value>
+  </data>
+  <data xml:space="preserve" name="L3c9f3078e9a9.Content">
+    <value>全部更新</value>
+  </data>
+  <data xml:space="preserve" name="L3e38d8e776d7.Content">
+    <value>应用数据文件夹</value>
+  </data>
+  <data xml:space="preserve" name="L3e3b3faae67c.Text">
+    <value>ReShade 与着色器包 · RenoDX HDR 模组 · Luma Framework · DLSS/Streamline 版本替换与预设 · NVIDIA 驱动配置（垂直同步、低延迟、ReBAR、Smooth Motion、电源管理）· OptiScaler · ReLimiter 与 Display Commander 帧率限制器 · RE Framework · DXVK · UE-Extended 原生 HDR · 各项功能的游戏独立覆盖设置。</value>
+  </data>
+  <data xml:space="preserve" name="L3f1397f456cb.Content">
+    <value>其他</value>
+  </data>
+  <data xml:space="preserve" name="L3f858a0ed28e.Text">
+    <value>子文件夹</value>
+  </data>
+  <data xml:space="preserve" name="L3f8d00de42d8.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>配置哪些预设使用全局峰值亮度值。</value>
+  </data>
+  <data xml:space="preserve" name="L4124260f0854.Content">
+    <value>更新记录</value>
+  </data>
+  <data xml:space="preserve" name="L4124260f0854.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>查看组件更新历史</value>
+  </data>
+  <data xml:space="preserve" name="L41a6c3e5e8b6.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>手动添加游戏</value>
+  </data>
+  <data xml:space="preserve" name="L42feab0fb9b4.Content">
+    <value>导出游戏数据</value>
+  </data>
+  <data xml:space="preserve" name="L42feab0fb9b4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>收集游戏库数据（图形 API、EXE 路径、引擎信息）并将 JSON 文件复制到剪贴板，可粘贴到 Discord 与 RHI 社区数据库分享</value>
+  </data>
+  <data xml:space="preserve" name="L438a76da8dc8.Text">
+    <value>指南</value>
+  </data>
+  <data xml:space="preserve" name="L438f1ed021c8.Text">
+    <value>峰值亮度</value>
+  </data>
+  <data xml:space="preserve" name="L457e182bed03.Text">
+    <value>全局 NVIDIA 驱动设置</value>
+  </data>
+  <data xml:space="preserve" name="L4595d6cf19c9.Content">
+    <value>每日消息</value>
+  </data>
+  <data xml:space="preserve" name="L4595d6cf19c9.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>显示每日消息</value>
+  </data>
+  <data xml:space="preserve" name="L4608b5253405.Text">
+    <value>来源</value>
+  </data>
+  <data xml:space="preserve" name="L4666de0d8378.Content">
+    <value>批量部署</value>
+  </data>
+  <data xml:space="preserve" name="L467173c61130.PlaceholderText">
+    <value>请按一个键…</value>
+  </data>
+  <data xml:space="preserve" name="L46ed38e30a1d.Text">
+    <value>未注册</value>
+  </data>
+  <data xml:space="preserve" name="L47d46370c538.Text">
+    <value> 作者：ZZZ Projects</value>
+  </data>
+  <data xml:space="preserve" name="L484ddd5f47d0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>“最高可用”强制使用最高刷新率；“应用设置”允许游戏自行选择。</value>
+  </data>
+  <data xml:space="preserve" name="L48b083affda0.Text">
+    <value>为 800 多款游戏提供 HDR 的模组框架，也是本应用诞生的初衷。</value>
+  </data>
+  <data xml:space="preserve" name="L496b5e9b79fe.Text">
+    <value>着色器与插件</value>
+  </data>
+  <data xml:space="preserve" name="L4bf60e600570.Text">
+    <value>禁用特定组件的更新检查。禁用后，启动或“全部更新”时不会检查该组件。</value>
+  </data>
+  <data xml:space="preserve" name="L4e27dba55505.Text">
+    <value>可作为 ReLimiter 替代方案的帧率限制插件。按需从 GitHub 下载 LITE 版本。</value>
+  </data>
+  <data xml:space="preserve" name="L4e36f88dbbf9.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>空闲时在后台自动编译着色器。级别越高，空闲 CPU 占用越大，首次游戏加载越快。</value>
+  </data>
+  <data xml:space="preserve" name="L4eb5e8cafe1a.Content">
+    <value>快速入门</value>
+  </data>
+  <data xml:space="preserve" name="L4eb5e8cafe1a.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>快速入门指南</value>
+  </data>
+  <data xml:space="preserve" name="L4eb62ba63cad.Text">
+    <value>已安装 0 个</value>
+  </data>
+  <data xml:space="preserve" name="L4fda80761dc3.Content">
+    <value>捐赠</value>
+  </data>
+  <data xml:space="preserve" name="L4fda80761dc3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>支持模组作者</value>
+  </data>
+  <data xml:space="preserve" name="L516b1d9b95d1.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>ReLimiter 设置</value>
+  </data>
+  <data xml:space="preserve" name="L516cdc1604f3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>全局 Resizable BAR，为所有游戏启用大块显存传输。需要管理员权限及兼容硬件（RTX 30 系列及更新型号）。</value>
+  </data>
+  <data xml:space="preserve" name="L51edeecfdf59.Text">
+    <value>通过 ReShade 插件系统添加 HDR 和画面改进的 DX11 模组框架。模组从 GitHub 官方发行版下载，支持拖放安装、自动检测、更新检查及游戏独立开关。</value>
+  </data>
+  <data xml:space="preserve" name="L53337ca76a3b.Content">
+    <value>更新范围</value>
+  </data>
+  <data xml:space="preserve" name="L5342b2135381.Content">
+    <value>检查更新</value>
+  </data>
+  <data xml:space="preserve" name="L5342b2135381.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>检查所有组件和应用的可用更新</value>
+  </data>
+  <data xml:space="preserve" name="L546b24cdbefd.Text">
+    <value>DMFG 默认值</value>
+  </data>
+  <data xml:space="preserve" name="L548cf5ca34ad.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>控制 G-Sync/FreeSync 可变刷新率。建议同时启用全屏和窗口模式。</value>
+  </data>
+  <data xml:space="preserve" name="L54f88f8b3216.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>选择要更改分辨率的显示器。</value>
+  </data>
+  <data xml:space="preserve" name="L573dcce5116d.Text">
+    <value>  ·  Zlib 许可证</value>
+  </data>
+  <data xml:space="preserve" name="L58e27a0aaf14.Text">
+    <value>适用于 DX8/DX9/DX10 游戏的 DirectX 到 Vulkan 转换层。包含 EndlesslyFlowering 的 Lilium HDR 分支，支持 scRGB HDR 输出。</value>
+  </data>
+  <data xml:space="preserve" name="L595bd525eb0a.Text">
+    <value>⚠ ReShade、OptiScaler 和 DLSS/Streamline 修改可能触发在线或多人游戏的反作弊检测</value>
+  </data>
+  <data xml:space="preserve" name="L5977adbcc7b1.Content">
+    <value>着色器 / 插件</value>
+  </data>
+  <data xml:space="preserve" name="L5977adbcc7b1.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>管理全局着色器和 ReShade 插件</value>
+  </data>
+  <data xml:space="preserve" name="L5a5d6ca8e695.Text">
+    <value>超宽屏修复</value>
+  </data>
+  <data xml:space="preserve" name="L5b8548734c85.Text">
+    <value>浏览</value>
+  </data>
+  <data xml:space="preserve" name="L5c4786d8e446.Text">
+    <value> 作者：RankFTW</value>
+  </data>
+  <data xml:space="preserve" name="L5f0e18758549.Text">
+    <value>本应用离不开以下作者和项目的贡献。</value>
+  </data>
+  <data xml:space="preserve" name="L5f2611037f46.Text">
+    <value>精简：仅自动更新清单、PCGW 数据和 DLSS 版本。点击“刷新”或“全部更新”时才检查组件更新。</value>
+  </data>
+  <data xml:space="preserve" name="L61ce777fb38d.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>在资源管理器中打开游戏配置文件夹</value>
+  </data>
+  <data xml:space="preserve" name="L62e95819b85b.Text">
+    <value>配置首选 DLSS/Streamline 版本、预设和渲染比例。在 NVIDIA 配置区使用“快速应用”将这些设置应用到游戏。</value>
+  </data>
+  <data xml:space="preserve" name="L62f067d5a0f9.Text">
+    <value>模组数据来源</value>
+  </data>
+  <data xml:space="preserve" name="L63a1771d5fef.Text">
+    <value>修复虚幻引擎 5 游戏中的景深阶梯和分块伪影。</value>
+  </data>
+  <data xml:space="preserve" name="L64f76df62c30.Text">
+    <value>控制 NVIDIA 在游戏角落显示的 DLSS 文本浮层。此全局系统设置影响所有游戏，需要管理员权限。</value>
+  </data>
+  <data xml:space="preserve" name="L655645fca3c8.Text">
+    <value>  ·  源代码可用</value>
+  </data>
+  <data xml:space="preserve" name="L6609c199227d.Text">
+    <value> 作者：praydog</value>
+  </data>
+  <data xml:space="preserve" name="L66bbea8bd5d1.Text">
+    <value>设置显示器的色深和动态范围，无需打开 NVIDIA 控制面板。</value>
+  </data>
+  <data xml:space="preserve" name="L66f4bcf733f0.Text">
+    <value>随 Windows 启动</value>
+  </data>
+  <data xml:space="preserve" name="L67590a8b063a.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>打开 PCGamingWiki 页面</value>
+  </data>
+  <data xml:space="preserve" name="L68e33020d3f0.PlaceholderText">
+    <value>输入或选择截图文件夹</value>
+  </data>
+  <data xml:space="preserve" name="L691a43b51e65.Text">
+    <value>新版本发布时自动替换为最新版。仅更新当前使用上一最新版的游戏；手动选定的旧版本保持原样。</value>
+  </data>
+  <data xml:space="preserve" name="L69a543997a30.Content">
+    <value>虚幻引擎</value>
+  </data>
+  <data xml:space="preserve" name="L6ae83dccd35c.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>开启时，所有游戏共享 OSD 预设文件；关闭时，各游戏使用独立预设。</value>
+  </data>
+  <data xml:space="preserve" name="L6cdcef55c6a2.Content">
+    <value>自动</value>
+  </data>
+  <data xml:space="preserve" name="L6cdcef55c6a2.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>自动读取显示器的峰值亮度。</value>
+  </data>
+  <data xml:space="preserve" name="L6ce1328f9af9.PlaceholderText">
+    <value>请按一个键…</value>
+  </data>
+  <data xml:space="preserve" name="L6ce1328f9af9.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>按键进行绑定，或按退格键清除。</value>
+  </data>
+  <data xml:space="preserve" name="L6d373384d694.Content">
+    <value>还原配置</value>
+  </data>
+  <data xml:space="preserve" name="L6d373384d694.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>从先前导出的文件还原游戏的 NVIDIA 配置设置。</value>
+  </data>
+  <data xml:space="preserve" name="L6eb37aece2d6.Text">
+    <value>DLSS / Streamline 设置</value>
+  </data>
+  <data xml:space="preserve" name="L6ed0061b665d.Text">
+    <value>ReBAR 大小限制</value>
+  </data>
+  <data xml:space="preserve" name="L6f5dc17e6e65.Content">
+    <value>下载文件夹</value>
+  </data>
+  <data xml:space="preserve" name="L6f861bbfd388.Text">
+    <value>共享预设</value>
+  </data>
+  <data xml:space="preserve" name="L701374c5c8ab.Text">
+    <value>着色器管理</value>
+  </data>
+  <data xml:space="preserve" name="L715902049d29.Content">
+    <value>已安装</value>
+  </data>
+  <data xml:space="preserve" name="L71fc503b5e49.Text">
+    <value>鸣谢与致谢</value>
+  </data>
+  <data xml:space="preserve" name="L7225bfb77f8d.PlaceholderText">
+    <value>请按一个键…</value>
+  </data>
+  <data xml:space="preserve" name="L7225bfb77f8d.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>在游戏内切换 ReLimiter OSD 浮层的按键。</value>
+  </data>
+  <data xml:space="preserve" name="L7248760698d9.Text">
+    <value>HDR 自动开关</value>
+  </data>
+  <data xml:space="preserve" name="L7359373ee69a.Text">
+    <value>OSD 快捷键</value>
+  </data>
+  <data xml:space="preserve" name="L73f68fabde76.Text">
+    <value>帧数</value>
+  </data>
+  <data xml:space="preserve" name="L74888c509fbe.Text">
+    <value>让电脑游戏更简单</value>
+  </data>
+  <data xml:space="preserve" name="L74d381bc23a2.Text">
+    <value>用于从 NSIS 安装程序中提取 ReShade DLL 的压缩工具。内附的 7z.exe 和 7z.dll 遵循 LGPL 许可证。版权所有 © Igor Pavlov。</value>
+  </data>
+  <data xml:space="preserve" name="L7552645b4a0c.PlaceholderText">
+    <value>筛选游戏…</value>
+  </data>
+  <data xml:space="preserve" name="L766c90ad2a51.Content">
+    <value>连接 GitHub</value>
+  </data>
+  <data xml:space="preserve" name="L769c58dfd58b.Content">
+    <value>帮助</value>
+  </data>
+  <data xml:space="preserve" name="L769c58dfd58b.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>支持与帮助资源</value>
+  </data>
+  <data xml:space="preserve" name="L76f662159c1e.Text">
+    <value> 作者：Pumbo（Filoppi）</value>
+  </data>
+  <data xml:space="preserve" name="L7989375c05d7.Text">
+    <value>将 RHI 注册为 nxm:// 处理程序，使 Nexus 的“Mod Manager Download”按钮直接在 RHI 中打开。</value>
+  </data>
+  <data xml:space="preserve" name="L79e58610fea7.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>从侧栏隐藏此游戏（可在“已隐藏”筛选中找回）</value>
+  </data>
+  <data xml:space="preserve" name="L7ca27ebab201.Text">
+    <value>登录 GitHub，将 API 限额从每小时 60 次提高到 5,000 次，以改善更新检查、DLSS 版本查询和清单获取的可靠性。</value>
+  </data>
+  <data xml:space="preserve" name="L7d03720dcd31.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>设置 ReShade 浮层中着色器的显示方式。“标签页”按效果文件分组；“树状”显示可折叠的层级列表。</value>
+  </data>
+  <data xml:space="preserve" name="L7d9536270fe7.Text">
+    <value>一站式电脑游戏增强工具。自动识别 8 个游戏平台的游戏，提供 ReShade、HDR 模组、着色器、DLSS/Streamline、帧率限制器、NVIDIA 驱动配置等功能的一键管理。</value>
+  </data>
+  <data xml:space="preserve" name="L7df505d9e3a0.Text">
+    <value>默认值</value>
+  </data>
+  <data xml:space="preserve" name="L7ebff95147e0.Content">
+    <value>注册</value>
+  </data>
+  <data xml:space="preserve" name="L7fc3a11de6ad.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>移除 ReLimiter</value>
+  </data>
+  <data xml:space="preserve" name="L8066b140bc4f.Text">
+    <value>应用中使用的 MVVM 工具（ObservableObject、RelayCommand 等）。版权所有 © .NET Foundation。</value>
+  </data>
+  <data xml:space="preserve" name="L8135481c4e0a.Text">
+    <value>最近的游戏</value>
+  </data>
+  <data xml:space="preserve" name="L8212ff756f40.Text">
+    <value>动态范围</value>
+  </data>
+  <data xml:space="preserve" name="L8384aa5cb3b7.Text">
+    <value>此游戏没有可用的 RenoDX 模组</value>
+  </data>
+  <data xml:space="preserve" name="L838c0e22a34a.Text">
+    <value>设置 RHI 获取模组数据的来源。推荐使用社区维护的 RHI 数据库；RenoDX Wiki 使用 Wiki 抓取器。更改后立即刷新。</value>
+  </data>
+  <data xml:space="preserve" name="L8672ccd3c93f.Text">
+    <value>HDR 与峰值亮度</value>
+  </data>
+  <data xml:space="preserve" name="L8abfe02aa3c0.Text">
+    <value>同时向多个游戏部署 DLSS、Streamline DLL 版本及 DLSS 预设。自动备份原始文件，并预填已配置的默认值。</value>
+  </data>
+  <data xml:space="preserve" name="L8acaffd57502.Text">
+    <value>目标分辨率</value>
+  </data>
+  <data xml:space="preserve" name="L8c509102eda9.Text">
+    <value> 作者：Igor Pavlov</value>
+  </data>
+  <data xml:space="preserve" name="L8cd7c453f099.Text">
+    <value>系统托盘</value>
+  </data>
+  <data xml:space="preserve" name="L8e219bf4d311.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>开启时，启动时下载并缓存所有着色器包；关闭时，在需要时按需下载。</value>
+  </data>
+  <data xml:space="preserve" name="L8e61d4e330dc.Text">
+    <value>设置</value>
+  </data>
+  <data xml:space="preserve" name="L8f66db983827.Content">
+    <value>已隐藏</value>
+  </data>
+  <data xml:space="preserve" name="L900987eafed3.Content">
+    <value>刷新</value>
+  </data>
+  <data xml:space="preserve" name="L900987eafed3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>重新扫描游戏库并获取最新模组信息</value>
+  </data>
+  <data xml:space="preserve" name="L91adfbce72b0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>拖放助手窗口可在管理员模式下支持 Discord 拖放。不需要时可禁用。需要重新启动。</value>
+  </data>
+  <data xml:space="preserve" name="L91f9c02c0514.Text">
+    <value>API 密钥</value>
+  </data>
+  <data xml:space="preserve" name="L93bb6dc51cc8.Text">
+    <value>垂直同步</value>
+  </data>
+  <data xml:space="preserve" name="L94f9f9759577.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>移除 Luma 模组</value>
+  </data>
+  <data xml:space="preserve" name="L95d614b0d514.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>移除 ReShade</value>
+  </data>
+  <data xml:space="preserve" name="L9943033383ee.Text">
+    <value>开启后，在游戏启动时切换到目标分辨率，退出时恢复。</value>
+  </data>
+  <data xml:space="preserve" name="L99c2f6f09bd3.Text">
+    <value>全局插件</value>
+  </data>
+  <data xml:space="preserve" name="L9a1119bd89c8.Text">
+    <value>更新与部署</value>
+  </data>
+  <data xml:space="preserve" name="L9bd347458001.Content">
+    <value>批量安装预设</value>
+  </data>
+  <data xml:space="preserve" name="L9e1e2edf6018.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>选择截图文件夹</value>
+  </data>
+  <data xml:space="preserve" name="L9e5faa2a51cf.Content">
+    <value>完整刷新</value>
+  </data>
+  <data xml:space="preserve" name="L9f17c00e0b5e.PlaceholderText">
+    <value>尼特</value>
+  </data>
+  <data xml:space="preserve" name="L9fcf0d0d050b.Text">
+    <value>检查更新</value>
+  </data>
+  <data xml:space="preserve" name="L9ff8a635c589.Text">
+    <value>管理员模式</value>
+  </data>
+  <data xml:space="preserve" name="La08b34212dd0.Content">
+    <value>备份配置</value>
+  </data>
+  <data xml:space="preserve" name="La08b34212dd0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>将所有游戏的 NVIDIA 配置设置保存到备份文件。</value>
+  </data>
+  <data xml:space="preserve" name="La0f5efd051f0.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>移除 RenoDX 模组</value>
+  </data>
+  <data xml:space="preserve" name="La16be33b0d9b.Text">
+    <value>删除缓存的 DLSS、Streamline 和组件暂存文件以释放磁盘空间。保留着色器、已安装插件及版本信息，需要时会自动重新下载。</value>
+  </data>
+  <data xml:space="preserve" name="La19c7e10a176.Content">
+    <value>复制日志</value>
+  </data>
+  <data xml:space="preserve" name="La19c7e10a176.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>将所有日志打包为 ZIP 并复制到剪贴板，可直接粘贴到 Discord</value>
+  </data>
+  <data xml:space="preserve" name="La294f426b83e.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>景深修复设置</value>
+  </data>
+  <data xml:space="preserve" name="La8151bfdf951.Text">
+    <value>RHI 管理的内容</value>
+  </data>
+  <data xml:space="preserve" name="La89ba9526ac0.Text">
+    <value>分辨率</value>
+  </data>
+  <data xml:space="preserve" name="La9d6d5682426.Text">
+    <value>分别调整各显示器的 NVIDIA 数字鲜艳度（色彩饱和度）。应用启动时自动恢复已保存的值。</value>
+  </data>
+  <data xml:space="preserve" name="Laa6edce5954e.Text">
+    <value>G-Sync 模式</value>
+  </data>
+  <data xml:space="preserve" name="Laae93f89ad65.Text">
+    <value>未连接（60 次/小时）</value>
+  </data>
+  <data xml:space="preserve" name="Ladc1b3a0e700.Text">
+    <value>ReShade 与显示</value>
+  </data>
+  <data xml:space="preserve" name="Lae5eb515f8e0.Text">
+    <value>将峰值亮度（尼特）写入 reshade.ini 预设。HDR 自动开关会在游戏启动时开启 Windows HDR，退出时关闭。</value>
+  </data>
+  <data xml:space="preserve" name="Laf6f848ab4dd.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>移除 Display Commander</value>
+  </data>
+  <data xml:space="preserve" name="Lb00051fb864e.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>RHI 管理：向所有游戏部署内置着色器包。
+自定义：使用自己的着色器目录。
+关闭：RHI 不修改任何游戏的着色器。</value>
+  </data>
+  <data xml:space="preserve" name="Lb04e493cb62f.Text">
+    <value>仅限单人游戏</value>
+  </data>
+  <data xml:space="preserve" name="Lb0db80b8357f.Text">
+    <value>RHI 安装带完整插件支持的 ReShade、OptiScaler，并可替换 DLSS/Streamline DLL。这些修改可能被在线或多人游戏的反作弊检测。在线游玩前，请卸载 ReShade、OptiScaler 并还原 DLSS/Streamline 默认文件。</value>
+  </data>
+  <data xml:space="preserve" name="Lb1f16f13d360.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Luma 设置</value>
+  </data>
+  <data xml:space="preserve" name="Lb364da2d60cb.PlaceholderText">
+    <value>下载文件夹（默认）</value>
+  </data>
+  <data xml:space="preserve" name="Lb3b462cefebf.Text">
+    <value>打开下方链接并输入此代码：</value>
+  </data>
+  <data xml:space="preserve" name="Lb3c3a7155373.Content">
+    <value>断开连接</value>
+  </data>
+  <data xml:space="preserve" name="Lb3f63ed3500d.Text">
+    <value>效果列表样式</value>
+  </data>
+  <data xml:space="preserve" name="Lb4371d25e3bd.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>全局垂直同步模式，应用于没有单独覆盖设置的所有游戏。</value>
+  </data>
+  <data xml:space="preserve" name="Lb453b52a4dc7.Text">
+    <value>后处理注入框架。从 reshade.me 下载完整插件支持版本并缓存到本地。版权所有 © Crosire。</value>
+  </data>
+  <data xml:space="preserve" name="Lb48434b7325b.Text">
+    <value>非官方配套应用，与 RenoDX、Crosire 或 pmnoxx 无隶属关系。</value>
+  </data>
+  <data xml:space="preserve" name="Lb7192fcee086.Text">
+    <value>▶ 启动</value>
+  </data>
+  <data xml:space="preserve" name="Lb7201294d24c.Text">
+    <value>全局动态多帧生成默认值。设置一次后，在各游戏的 MFG 对话框中启用动态模式即可。</value>
+  </data>
+  <data xml:space="preserve" name="Lb72f16feafa2.Text">
+    <value>——  推荐  ——</value>
+  </data>
+  <data xml:space="preserve" name="Lb9d9e01690b3.Text">
+    <value>自动更新</value>
+  </data>
+  <data xml:space="preserve" name="Lbb0a80fe538a.Text">
+    <value>设置 OptiScaler 的显卡类型、DLSS 输入和浮层快捷键。</value>
+  </data>
+  <data xml:space="preserve" name="Lbbabe0a2599d.Text">
+    <value>— 需要管理员权限</value>
+  </data>
+  <data xml:space="preserve" name="Lbcaf82c7bd22.Content">
+    <value>重置 NVIDIA 配置</value>
+  </data>
+  <data xml:space="preserve" name="Lbcaf82c7bd22.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>移除所有游戏的 NVIDIA 配置覆盖设置，全局配置恢复为初始状态。</value>
+  </data>
+  <data xml:space="preserve" name="Lbdf19b7c4d0b.Text">
+    <value>G-Sync 屏幕指示器</value>
+  </data>
+  <data xml:space="preserve" name="Lbe0c73527ec5.Text">
+    <value> 作者：Lazorr</value>
+  </data>
+  <data xml:space="preserve" name="Lc069170ed03a.Text">
+    <value>浮层快捷键</value>
+  </data>
+  <data xml:space="preserve" name="Lc18dd3e4fec3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>ReShade 设置</value>
+  </data>
+  <data xml:space="preserve" name="Lc445de2f4557.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>在后台静默安装 ReShade、RenoDX、ReLimiter、DC、OptiScaler、RE Framework、Luma、DXVK 和景深修复的更新</value>
+  </data>
+  <data xml:space="preserve" name="Lc5125c0769f3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>编译后着色器缓存的最大磁盘空间。较大的缓存可减少再次访问时的卡顿。驱动默认值为 16GB。</value>
+  </data>
+  <data xml:space="preserve" name="Lc6bfa0ca8be5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>移除景深修复</value>
+  </data>
+  <data xml:space="preserve" name="Lc7217ab90950.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>最大 BAR 传输大小。大多数游戏建议使用 1GB；出现 ReBAR 相关卡顿时可降至 512MB。</value>
+  </data>
+  <data xml:space="preserve" name="Lc7a8c3ae7cb8.Text">
+    <value> 作者：pmnox</value>
+  </data>
+  <data xml:space="preserve" name="Lc8be647d49d3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>全局 DMFG 目标帧率。关闭表示不设置目标；最高刷新率表示匹配显示器；也可选择具体帧率。</value>
+  </data>
+  <data xml:space="preserve" name="Lc8e96b68e783.Text">
+    <value>着色器预编译</value>
+  </data>
+  <data xml:space="preserve" name="Lc9bd005236c6.Text">
+    <value>———  HDR 模组  ———</value>
+  </data>
+  <data xml:space="preserve" name="Lcb8b2548e3a3.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>Display Commander 设置</value>
+  </data>
+  <data xml:space="preserve" name="Lcc2046e38fbd.Text">
+    <value>全局更新检查</value>
+  </data>
+  <data xml:space="preserve" name="Lccc110c62715.Text">
+    <value>没有 NVIDIA 配置的游戏无法使用全局驱动设置。为游戏库中的所有游戏创建配置，以确保全局设置生效。</value>
+  </data>
+  <data xml:space="preserve" name="Lcd29758f7c6e.Text">
+    <value>DLSS 挂钩</value>
+  </data>
+  <data xml:space="preserve" name="Lcd589faacb93.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>切换收藏状态</value>
+  </data>
+  <data xml:space="preserve" name="Lce4953921b7a.Text">
+    <value>将截图保存路径和 ReShade 快捷键应用到所有受管理的 reshade.ini 文件。</value>
+  </data>
+  <data xml:space="preserve" name="Lce9359876ca3.Text">
+    <value> 作者：falahati</value>
+  </data>
+  <data xml:space="preserve" name="Lcf64a49e5d6a.Text">
+    <value>将 ReLimiter OSD 快捷键和全局功能设置应用到所有游戏。</value>
+  </data>
+  <data xml:space="preserve" name="Lcfa14476aed1.Content">
+    <value>重置</value>
+  </data>
+  <data xml:space="preserve" name="Lcfac7179e86b.Content">
+    <value>日志文件夹</value>
+  </data>
+  <data xml:space="preserve" name="Ld2128770353b.Text">
+    <value>电源管理模式</value>
+  </data>
+  <data xml:space="preserve" name="Ld22c628893ec.Text">
+    <value>32 位</value>
+  </data>
+  <data xml:space="preserve" name="Ld3081ea1f2f3.Text">
+    <value>全局着色器</value>
+  </data>
+  <data xml:space="preserve" name="Ld3d1126f3f40.Content">
+    <value>打开</value>
+  </data>
+  <data xml:space="preserve" name="Ld3d1126f3f40.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>在资源管理器中打开截图文件夹</value>
+  </data>
+  <data xml:space="preserve" name="Ld620a8653f1f.Content">
+    <value>清理暂存文件</value>
+  </data>
+  <data xml:space="preserve" name="Ld620a8653f1f.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>删除缓存的 DLSS、Streamline 和下载文件以释放磁盘空间。保留着色器。</value>
+  </data>
+  <data xml:space="preserve" name="Ld64d250a3df5.Text">
+    <value>组件更新</value>
+  </data>
+  <data xml:space="preserve" name="Ld678da4cb9d5.Text">
+    <value> 作者：clshortfuse 及贡献者</value>
+  </data>
+  <data xml:space="preserve" name="Ld698d138ba20.Content">
+    <value>← 返回游戏</value>
+  </data>
+  <data xml:space="preserve" name="Ld77907028771.Text">
+    <value>色深</value>
+  </data>
+  <data xml:space="preserve" name="Ld810c5613876.Text">
+    <value>NVIDIA NvAPI 的 .NET 封装，用于驱动配置管理，包括 DLSS 预设、渲染比例、ReBAR、垂直同步、Smooth Motion 等。</value>
+  </data>
+  <data xml:space="preserve" name="Ld9378dd432c4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>在 ReLimiter OSD 上显示 DLSS 质量模式、渲染分辨率及启用的功能。如发生崩溃，可关闭此项。</value>
+  </data>
+  <data xml:space="preserve" name="Lda6e396a5e59.Content">
+    <value>有新的模组可用</value>
+  </data>
+  <data xml:space="preserve" name="Lda6e396a5e59.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>RenoDX Wiki 新增了模组</value>
+  </data>
+  <data xml:space="preserve" name="Ldb5fb99ed5ef.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>将当前搜索保存为自定义筛选</value>
+  </data>
+  <data xml:space="preserve" name="Ldb6caf72d75b.Text">
+    <value>配置</value>
+  </data>
+  <data xml:space="preserve" name="Ldb741cfd2764.Text">
+    <value>用于从 RenoDX Wiki 抓取游戏数据的 HTML 解析器。版权所有 © ZZZ Projects Inc。</value>
+  </data>
+  <data xml:space="preserve" name="Ldcad4afac222.Text">
+    <value>快速入门指南</value>
+  </data>
+  <data xml:space="preserve" name="Ldcc860bcf3a4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>RenoDX 设置</value>
+  </data>
+  <data xml:space="preserve" name="Lde73ae93ce66.Content">
+    <value>数字鲜艳度</value>
+  </data>
+  <data xml:space="preserve" name="Lde73ae93ce66.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>分别调整各显示器的数字鲜艳度（色彩饱和度）。应用启动时恢复已保存的值。</value>
+  </data>
+  <data xml:space="preserve" name="Le0a3e288b60e.Text">
+    <value>清除所有缓存并从磁盘重新扫描。如果游戏缺失、路径变更、游戏新增 DLSS 或详情缺少 DLSS 区域，可尝试此操作。</value>
+  </data>
+  <data xml:space="preserve" name="Le0aed2559d32.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>移除 RE Framework</value>
+  </data>
+  <data xml:space="preserve" name="Le1109a86797e.Text">
+    <value>界面设计</value>
+  </data>
+  <data xml:space="preserve" name="Le118e0432be5.Text">
+    <value>正在加载…</value>
+  </data>
+  <data xml:space="preserve" name="Le12971b60948.Text">
+    <value>  ·  MIT 许可证</value>
+  </data>
+  <data xml:space="preserve" name="Le20269535eee.Content">
+    <value>自定义文件夹</value>
+  </data>
+  <data xml:space="preserve" name="Le23c14204a9b.Text">
+    <value>着色器缓存大小</value>
+  </data>
+  <data xml:space="preserve" name="Le24e510bc076.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>选择目标桌面分辨率。</value>
+  </data>
+  <data xml:space="preserve" name="Le26f52700afb.Text">
+    <value>DLSS 屏幕指示器</value>
+  </data>
+  <data xml:space="preserve" name="Le353832ddb6c.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>检查应用更新</value>
+  </data>
+  <data xml:space="preserve" name="Le52ef757c421.Text">
+    <value>分辨率与色彩控制</value>
+  </data>
+  <data xml:space="preserve" name="Le5f6d65402b4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>通过 NVIDIA 驱动设置全局帧率上限。VRR 优化预设将上限设为略低于刷新率，以保持在 VRR 范围内。</value>
+  </data>
+  <data xml:space="preserve" name="Le703ee333cbe.Text">
+    <value>通过 NVIDIA 基础配置全局应用驱动设置。单独游戏的设置位于各游戏覆盖面板的 NVIDIA 配置区。</value>
+  </data>
+  <data xml:space="preserve" name="Le79aa9d54cf2.Text">
+    <value>RE Engine 游戏注入 ReShade 所需的模组框架。从 GitHub 下载每日构建版本。</value>
+  </data>
+  <data xml:space="preserve" name="Le9d10e2150d7.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>选择要配置的显示器。</value>
+  </data>
+  <data xml:space="preserve" name="Leb8c80ef9b34.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>开启后，每个游戏使用独立的截图子文件夹。</value>
+  </data>
+  <data xml:space="preserve" name="Lecb1e0e3fcbf.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>选择要开启 HDR 的显示器。留空表示仅使用主显示器。</value>
+  </data>
+  <data xml:space="preserve" name="Lef19517def8e.Content">
+    <value>清除着色器缓存</value>
+  </data>
+  <data xml:space="preserve" name="Lef19517def8e.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip">
+    <value>删除 NVIDIA DXCache 和 GLCache 文件夹。下次启动时将重新编译着色器。</value>
+  </data>
+  <data xml:space="preserve" name="Lf0d95ae5749d.Text">
+    <value>目标帧率</value>
+  </data>
+  <data xml:space="preserve" name="Lf27663e1a2c1.Text">
+    <value>缓存所有着色器</value>
+  </data>
+  <data xml:space="preserve" name="Lf2e5bc07a0e2.Text">
+    <value>分辨率自动切换</value>
+  </data>
+  <data xml:space="preserve" name="Lf3d9e96a31cf.Text">
+    <value>同时向多个游戏部署 INI 文件或 ReShade 预设。保留自定义快捷键和截图路径设置。</value>
+  </data>
+  <data xml:space="preserve" name="Lf58a7b4c5fa6.Text">
+    <value>创建计划任务，以管理员权限启动 RHI。ReBAR、超低延迟和 Smooth Motion 驱动设置需要此权限。拖放助手可在提权时支持 Discord 拖放。</value>
+  </data>
+  <data xml:space="preserve" name="Lf90abc1c57be.Text">
+    <value>NXM 协议处理程序</value>
+  </data>
+  <data xml:space="preserve" name="Lfa6506e05059.Text">
+    <value>RHI 监视此文件夹中的 RenoDX 插件文件（.addon64/.addon32）和压缩包。默认为“下载”文件夹。</value>
+  </data>
+  <data xml:space="preserve" name="Lfbcb3ab7a839.Text">
+    <value> 作者：OptiScaler 贡献者</value>
+  </data>
+  <data xml:space="preserve" name="Lfce7ed0c8933.Text">
+    <value>批量 INI 部署</value>
+  </data>
+  <data xml:space="preserve" name="Lfeee8a8d7016.Content">
+    <value>所有游戏</value>
+  </data>
+  <data xml:space="preserve" name="Lff19caa9f6e7.Text">
+    <value>组件</value>
+  </data>
+</root>

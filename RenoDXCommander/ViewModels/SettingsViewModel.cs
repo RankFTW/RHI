@@ -17,6 +17,7 @@ public partial class SettingsViewModel : ObservableObject
         "RHI", "settings.json");
 
     [ObservableProperty] private bool _skipUpdateCheck;
+    [ObservableProperty] private string _interfaceLanguage = Localization.Loc.DefaultLanguage;
     [ObservableProperty] private bool _betaOptIn;
     [ObservableProperty] private bool _verboseLogging;
     [ObservableProperty] private string _lastSeenVersion = "";
@@ -188,6 +189,8 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public void LoadSettingsFromDict(Dictionary<string, string> s)
     {
+        InterfaceLanguage = s.TryGetValue("InterfaceLanguage", out var language)
+            ? Localization.Loc.NormalizeLanguage(language) : Localization.Loc.DefaultLanguage;
         if (s.TryGetValue("SkipUpdateCheck", out var sucVal))
             SkipUpdateCheck = sucVal == "true";
 
@@ -302,11 +305,11 @@ public partial class SettingsViewModel : ObservableObject
                 // Migration: remove old "RenoDX DLSS5" name — renamed to "DLSS5 Tool"
                 addons.RemoveAll(a => a.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase));
                 // Migration: remove NR addons that moved out of the addon picker
-                addons.RemoveAll(a => a.Equals("DLSS5 Tool",           StringComparison.OrdinalIgnoreCase)
+                addons.RemoveAll(a => a.Equals("DLSS5 Tool", StringComparison.OrdinalIgnoreCase)
                                    || a.Equals("DLSS Tool (ShortFuse)", StringComparison.OrdinalIgnoreCase)
-                                   || a.Equals("MFG Ada Unlock",        StringComparison.OrdinalIgnoreCase)
-                                   || a.Equals("DLSS5 Feeder",          StringComparison.OrdinalIgnoreCase)
-                                   || a.Equals("DLSS5 DX11 Bridge",     StringComparison.OrdinalIgnoreCase));
+                                   || a.Equals("MFG Ada Unlock", StringComparison.OrdinalIgnoreCase)
+                                   || a.Equals("DLSS5 Feeder", StringComparison.OrdinalIgnoreCase)
+                                   || a.Equals("DLSS5 DX11 Bridge", StringComparison.OrdinalIgnoreCase));
                 EnabledGlobalAddons = addons;
             }
             catch { EnabledGlobalAddons = new(); }
@@ -374,13 +377,13 @@ public partial class SettingsViewModel : ObservableObject
             catch { RecentLaunches = new(); }
         }
         // Nexus Mods (dev-unlocked only — stored but never logged)
-        if (s.TryGetValue("NexusApiKey",    out var nakVal)) NexusApiKey    = nakVal ?? "";
+        if (s.TryGetValue("NexusApiKey", out var nakVal)) NexusApiKey = nakVal ?? "";
         if (s.TryGetValue("NexusIsPremium", out var nipVal)) NexusIsPremium = nipVal == "true";
-        if (s.TryGetValue("NexusUsername",  out var nunVal)) NexusUsername  = nunVal ?? "";
+        if (s.TryGetValue("NexusUsername", out var nunVal)) NexusUsername = nunVal ?? "";
 
         // GitHub OAuth token — never logged, applied to HttpClient after load
         if (s.TryGetValue("GitHubOAuthToken", out var ghotVal) && !string.IsNullOrEmpty(ghotVal)) GitHubOAuthToken = ghotVal;
-        if (s.TryGetValue("GitHubUsername",   out var ghuVal)  && !string.IsNullOrEmpty(ghuVal))  GitHubUsername  = ghuVal;
+        if (s.TryGetValue("GitHubUsername", out var ghuVal) && !string.IsNullOrEmpty(ghuVal)) GitHubUsername = ghuVal;
 
         // DLSS/Streamline defaults
         if (s.TryGetValue("DefaultDlssVersion", out var ddv)) DefaultDlssVersion = ddv ?? "";
@@ -460,14 +463,15 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public void SaveSettingsToDict(Dictionary<string, string> s)
     {
-        s["SkipUpdateCheck"]   = SkipUpdateCheck ? "true" : "false";
-        s["BetaOptIn"]         = BetaOptIn ? "true" : "false";
-        s["VerboseLogging"]    = VerboseLogging ? "true" : "false";
-        s["LastSeenVersion"]   = LastSeenVersion;
-        s["ShaderDeployMode"]  = SelectedShaderPacks.Count > 0 ? "Select" : "Off";
+        s["InterfaceLanguage"] = Localization.Loc.NormalizeLanguage(InterfaceLanguage);
+        s["SkipUpdateCheck"] = SkipUpdateCheck ? "true" : "false";
+        s["BetaOptIn"] = BetaOptIn ? "true" : "false";
+        s["VerboseLogging"] = VerboseLogging ? "true" : "false";
+        s["LastSeenVersion"] = LastSeenVersion;
+        s["ShaderDeployMode"] = SelectedShaderPacks.Count > 0 ? "Select" : "Off";
         s["SelectedShaderPacks"] = JsonSerializer.Serialize(SelectedShaderPacks);
-        s["UseCustomShaders"]  = UseCustomShaders ? "true" : "false";
-        s["GlobalShadersOff"]  = GlobalShadersOff ? "true" : "false";
+        s["UseCustomShaders"] = UseCustomShaders ? "true" : "false";
+        s["GlobalShadersOff"] = GlobalShadersOff ? "true" : "false";
         if (!string.IsNullOrWhiteSpace(AddonWatchFolder))
             s["AddonWatchFolder"] = AddonWatchFolder;
         s["ScreenshotPath"] = ScreenshotPath;
@@ -484,7 +488,7 @@ public partial class SettingsViewModel : ObservableObject
         s["OsFirstTimeWarningDismissed"] = OsFirstTimeWarningDismissed ? "true" : "false";
         s["UeExtendedWarningDismissed"] = UeExtendedWarningDismissed ? "true" : "false";
         s["PerGameScreenshotFolders"] = PerGameScreenshotFolders ? "true" : "false";
-        s["RsVariableListUseTabs"]    = RsVariableListUseTabs ? "true" : "false";
+        s["RsVariableListUseTabs"] = RsVariableListUseTabs ? "true" : "false";
         s["AddonWarningDismissed"] = AddonWarningDismissed ? "true" : "false";
         s["DxvkWarningDismissed"] = DxvkWarningDismissed ? "true" : "false";
         s["MfgWarningDismissed"] = MfgWarningDismissed ? "true" : "false";
@@ -528,13 +532,13 @@ public partial class SettingsViewModel : ObservableObject
         s["StartWithWindows"] = StartWithWindows ? "true" : "false";
         if (RecentLaunches.Count > 0) s["RecentLaunches"] = System.Text.Json.JsonSerializer.Serialize(RecentLaunches);
         // Nexus Mods — key stored as-is (local settings.json, not transmitted anywhere)
-        if (!string.IsNullOrEmpty(NexusApiKey))    s["NexusApiKey"]    = NexusApiKey;
-        if (NexusIsPremium)                        s["NexusIsPremium"] = "true";
-        if (!string.IsNullOrEmpty(NexusUsername))  s["NexusUsername"]  = NexusUsername;
+        if (!string.IsNullOrEmpty(NexusApiKey)) s["NexusApiKey"] = NexusApiKey;
+        if (NexusIsPremium) s["NexusIsPremium"] = "true";
+        if (!string.IsNullOrEmpty(NexusUsername)) s["NexusUsername"] = NexusUsername;
 
         // GitHub OAuth token — never logged
         if (!string.IsNullOrEmpty(GitHubOAuthToken)) s["GitHubOAuthToken"] = GitHubOAuthToken; else s.Remove("GitHubOAuthToken");
-        if (!string.IsNullOrEmpty(GitHubUsername))   s["GitHubUsername"]   = GitHubUsername;   else s.Remove("GitHubUsername");
+        if (!string.IsNullOrEmpty(GitHubUsername)) s["GitHubUsername"] = GitHubUsername; else s.Remove("GitHubUsername");
 
         // DLSS/Streamline defaults
         if (!string.IsNullOrEmpty(DefaultDlssVersion)) s["DefaultDlssVersion"] = DefaultDlssVersion;

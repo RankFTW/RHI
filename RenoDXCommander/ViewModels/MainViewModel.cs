@@ -11,7 +11,7 @@ namespace RenoDXCommander.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    private readonly HttpClient        _http;
+    private readonly HttpClient _http;
     public HttpClient HttpClient => _http;
     private readonly IModInstallService _installer;
     private readonly IAuxInstallService _auxInstaller;
@@ -89,7 +89,7 @@ public partial class MainViewModel : ObservableObject
         set => _settingsViewModel.LastSeenVersion = value;
     }
 
-    public string UpdateButtonTooltip => "Update ReShade, RenoDX, ReLimiter, Display Commander, and RE Framework for all games";
+    public string UpdateButtonTooltip => Loc.Get("Update ReShade, RenoDX, ReLimiter, Display Commander, and RE Framework for all games");
 
     /// <summary>
     /// The global shader picker button is disabled while custom shaders are active.
@@ -240,7 +240,7 @@ public partial class MainViewModel : ObservableObject
     public void DismissNewWikiMods()
     {
         if (NewWikiMods.Count == 0) return;
-        _seenWikiModsService.MarkAsSeen(NewWikiMods);        NewWikiMods = new List<string>();
+        _seenWikiModsService.MarkAsSeen(NewWikiMods); NewWikiMods = new List<string>();
         _crashReporter.Log("[MainViewModel.DismissNewWikiMods] Marked new mods as seen");
     }
 
@@ -250,8 +250,8 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public void RefreshStatusBarText()
     {
-        if (!string.IsNullOrEmpty(StatusText) && StatusText.Contains("games detected"))
-            StatusText = $"{_allCards.Count} games detected · {InstalledCount} ReShade installs";
+        if (!string.IsNullOrEmpty(StatusText) && StatusText.Contains(Loc.Get("games detected")))
+            StatusText = Loc.Format($"{_allCards.Count} games detected · {InstalledCount} ReShade installs");
     }
 
     /// <summary>
@@ -537,14 +537,14 @@ public partial class MainViewModel : ObservableObject
         foreach (var mod in _allMods)
         {
             if (string.IsNullOrWhiteSpace(mod.Name)) continue;
-            var rdxUrl    = mod.SnapshotUrl ?? mod.NexusUrl ?? mod.DiscordUrl;
+            var rdxUrl = mod.SnapshotUrl ?? mod.NexusUrl ?? mod.DiscordUrl;
             var rdxStatus = mod.Status == "🚧" ? "WIP" : "Done";
             dict[mod.Name] = new HdrModEntry(
-                Name:        mod.Name,
+                Name: mod.Name,
                 RenoDXStatus: rdxStatus,
-                RenoDXUrl:   rdxUrl,
-                LumaStatus:  null,
-                LumaUrl:     null);
+                RenoDXUrl: rdxUrl,
+                LumaStatus: null,
+                LumaUrl: null);
         }
 
         // UE-Extended entries — add to dict if not already covered by a named mod
@@ -556,11 +556,11 @@ public partial class MainViewModel : ObservableObject
             if (!dict.ContainsKey(kv.Key))
             {
                 dict[kv.Key] = new HdrModEntry(
-                    Name:        kv.Value.Name,
+                    Name: kv.Value.Name,
                     RenoDXStatus: ueStatus,
-                    RenoDXUrl:   null,
-                    LumaStatus:  null,
-                    LumaUrl:     null);
+                    RenoDXUrl: null,
+                    LumaStatus: null,
+                    LumaUrl: null);
             }
             // If a named mod already exists, don't overwrite it — named mod takes priority
         }
@@ -573,18 +573,18 @@ public partial class MainViewModel : ObservableObject
             var unityStatus = string.Equals(kv.Value.Status, "WIP", StringComparison.OrdinalIgnoreCase)
                 ? "WIP" : "Done";
             dict[kv.Key] = new HdrModEntry(
-                Name:        kv.Value.Name,
+                Name: kv.Value.Name,
                 RenoDXStatus: unityStatus,
-                RenoDXUrl:   null,
-                LumaStatus:  null,
-                LumaUrl:     null);
+                RenoDXUrl: null,
+                LumaStatus: null,
+                LumaUrl: null);
         }
 
         // Luma mods — merge into existing entries or add new ones
         foreach (var luma in _lumaMods)
         {
             if (string.IsNullOrWhiteSpace(luma.Name) || luma.IsGenericLuma) continue;
-            var lumaUrl    = luma.DownloadUrl ?? luma.NexusUrl;
+            var lumaUrl = luma.DownloadUrl ?? luma.NexusUrl;
             var lumaStatus = luma.Status == "🚧" ? "WIP" : "Done";
             if (dict.TryGetValue(luma.Name, out var existing))
             {
@@ -593,11 +593,11 @@ public partial class MainViewModel : ObservableObject
             else
             {
                 dict[luma.Name] = new HdrModEntry(
-                    Name:        luma.Name,
+                    Name: luma.Name,
                     RenoDXStatus: null,
-                    RenoDXUrl:   null,
-                    LumaStatus:  lumaStatus,
-                    LumaUrl:     lumaUrl);
+                    RenoDXUrl: null,
+                    LumaStatus: lumaStatus,
+                    LumaUrl: lumaUrl);
             }
         }
 
@@ -612,7 +612,7 @@ public partial class MainViewModel : ObservableObject
     private HashSet<string> _manifestNativeHdrGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _manifestNoUeExtendedGames = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Per-game UE-Extended compat config — takes priority over nativeHdrGames and ueExtendedGames.</summary>
-    private Dictionary<string, UeExtendedCompatEntry> _manifestUeExtendedCompat = new(StringComparer.OrdinalIgnoreCase);    private HashSet<string> _manifestBlacklist = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, UeExtendedCompatEntry> _manifestUeExtendedCompat = new(StringComparer.OrdinalIgnoreCase); private HashSet<string> _manifestBlacklist = new(StringComparer.OrdinalIgnoreCase);
     private List<string> _manifestBlacklistPrefixes = new();
     private HashSet<string> _manifest32BitGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _manifest64BitGames = new(StringComparer.OrdinalIgnoreCase);
@@ -640,7 +640,7 @@ public partial class MainViewModel : ObservableObject
 
     // Settings file I/O delegated to SettingsViewModel
 
-    [ObservableProperty] private string _statusText = "Loading...";
+    [ObservableProperty] private string _statusText = Loc.Get("Loading...");
     [ObservableProperty] private string _subStatusText = "";
     [ObservableProperty] private bool _isLoading = true;
     [ObservableProperty] private bool _isBackgroundScanning;
@@ -782,7 +782,7 @@ public partial class MainViewModel : ObservableObject
         _nrCostScalerService = App.Services.GetRequiredService<DlssNrCostScalerService>();
         _rtx40MfgService = App.Services.GetRequiredService<Rtx40MfgService>();
         _dlssg2030Service = App.Services.GetRequiredService<Dlssg20_30Service>();
-        _ualService    = App.Services.GetRequiredService<UltimateAsiLoaderService>();
+        _ualService = App.Services.GetRequiredService<UltimateAsiLoaderService>();
         _autoUpdateService = App.Services.GetRequiredService<AutoUpdateService>();
         _autoUpdateService.SetViewModel(this);
         _customReShadeHashService = App.Services.GetRequiredService<CustomReShadeHashService>();
@@ -851,11 +851,11 @@ public partial class MainViewModel : ObservableObject
 
                 App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
                 {
-                    Timestamp     = DateTime.UtcNow,
-                    Category      = "RenoDX",
+                    Timestamp = DateTime.UtcNow,
+                    Category = "RenoDX",
                     ComponentName = record.GameName,
-                    OldVersion    = record.PreviousVersion,
-                    NewVersion    = version ?? (string.IsNullOrEmpty(modId) ? record.AddonFileName ?? "" : modId),
+                    OldVersion = record.PreviousVersion,
+                    NewVersion = version ?? (string.IsNullOrEmpty(modId) ? record.AddonFileName ?? "" : modId),
                 });
             }
             catch { /* never let update log errors surface */ }

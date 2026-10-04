@@ -12,25 +12,25 @@ public partial class GameCardViewModel
     public string DcStatusDot => DcStatus == GameStatus.UpdateAvailable ? "🟢"
         : DcStatus == GameStatus.Installed ? "🟢" : "⚪";
 
-    public string DcActionLabel => DcIsInstalling ? "Installing..."
-        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? "⚠  ReShade required"
-        : DcStatus == GameStatus.UpdateAvailable ? "⬆  Update DC"
-        : DcStatus == GameStatus.Installed ? "↺  Reinstall DC"
-        : "⬇  Install DC";
+    public string DcActionLabel => DcIsInstalling ? Loc.Get("Installing...")
+        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? Loc.Get("⚠  ReShade required")
+        : DcStatus == GameStatus.UpdateAvailable ? Loc.Get("⬆  Update DC")
+        : DcStatus == GameStatus.Installed ? Loc.Get("↺  Reinstall DC")
+        : Loc.Get("⬇  Install DC");
 
-    public string DcBtnBackground  => DcStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
-    public string DcBtnForeground  => DcStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
+    public string DcBtnBackground => DcStatus == GameStatus.UpdateAvailable ? "#201838" : "#182840";
+    public string DcBtnForeground => DcStatus == GameStatus.UpdateAvailable ? "#B898E8" : "#7AACDD";
     public string DcBtnBorderBrush => DcStatus == GameStatus.UpdateAvailable ? "#3A2860" : "#2A4468";
 
     public Visibility DcProgressVisibility => DcIsInstalling ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility DcMessageVisibility  => string.IsNullOrEmpty(DcActionMessage) ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility DcDeleteVisibility   => DcStatus == GameStatus.Installed || DcStatus == GameStatus.UpdateAvailable
+    public Visibility DcMessageVisibility => string.IsNullOrEmpty(DcActionMessage) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility DcDeleteVisibility => DcStatus == GameStatus.Installed || DcStatus == GameStatus.UpdateAvailable
         ? Visibility.Visible : Visibility.Collapsed;
 
-    public string DcStatusText => DcIsInstalling ? "Installing…"
-        : DcStatus == GameStatus.UpdateAvailable ? "Update"
-        : DcStatus == GameStatus.Installed ? (DcInstalledVersion ?? "Installed")
-        : "Ready";
+    public string DcStatusText => DcIsInstalling ? Loc.Get("Installing…")
+        : DcStatus == GameStatus.UpdateAvailable ? Loc.Get("Update")
+        : DcStatus == GameStatus.Installed ? (DcInstalledVersion ?? Loc.Get("Installed"))
+        : Loc.Get("Ready");
     public string DcStatusColor => DcIsInstalling ? "#D4A856"
         : DcStatus == GameStatus.UpdateAvailable ? "#B898E8"
         : DcStatus == GameStatus.Installed ? "#5ECB7D"
