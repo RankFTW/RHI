@@ -130,8 +130,7 @@ public static class CrashReporter
 
     /// <summary>
     /// Returns the last <paramref name="count"/> breadcrumb entries that contain "[UIAction]",
-    /// as short action-name strings (timestamp and prefix stripped). Used by the heartbeat
-    /// freeze handler to include a recent-actions timeline in the freeze log entry.
+    /// preserving the timestamp so the freeze log shows exactly when each action occurred.
     /// </summary>
     public static List<string> GetRecentUiActions(int count)
     {
@@ -140,9 +139,8 @@ public static class CrashReporter
         for (int i = all.Length - 1; i >= 0 && result.Count < count; i--)
         {
             var entry = all[i];
-            var idx = entry.IndexOf("[UIAction] ", StringComparison.Ordinal);
-            if (idx >= 0)
-                result.Add(entry.Substring(idx + "[UIAction] ".Length));
+            if (entry.IndexOf("[UIAction] ", StringComparison.Ordinal) >= 0)
+                result.Add(entry); // keep full entry including timestamp
         }
         result.Reverse();
         return result;

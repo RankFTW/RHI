@@ -121,6 +121,73 @@ public partial class MainViewModel
                     if (recentActions.Count > 0)
                         CrashReporter.LogSync($"[Heartbeat] Recent UI actions: {string.Join(" → ", recentActions)}");
 
+                    // ── 3b. UI thread ThreadState + WaitReason ───────────────────────────
+                    // WaitReason requires ThreadState == Wait; any other state throws.
+                    // LpcReceive (9) / LpcReply (10) = cross-process COM/RPC wait — points
+                    // at a hung shell, overlay, or input-method server.
+                    try
+                    {
+                        var uiNativeId = UiThreadNativeId;
+                        if (uiNativeId > 0)
+                        {
+                            using var procWR = System.Diagnostics.Process.GetCurrentProcess();
+                            var uiThread = procWR.Threads
+                                .Cast<System.Diagnostics.ProcessThread>()
+                                .FirstOrDefault(t => t.Id == (int)uiNativeId);
+                            if (uiThread != null)
+                            {
+                                var state = uiThread.ThreadState;
+                                string waitInfo = state == System.Diagnostics.ThreadState.Wait
+                                    ? $"WaitReason={uiThread.WaitReason} ({(int)uiThread.WaitReason})"
+                                    : "N/A (not in Wait state)";
+                                CrashReporter.LogSync($"[Heartbeat.Wait] UI thread state={state} | {waitInfo}");
+                            }
+                            else
+                            {
+                                CrashReporter.LogSync($"[Heartbeat.Wait] UI thread not found (OSId={uiNativeId})");
+                            }
+                        }
+                        else
+                        {
+                            CrashReporter.LogSync("[Heartbeat.Wait] UiThreadNativeId not captured");
+                        }
+                    }
+                    catch (Exception wrEx)
+                    {
+                        CrashReporter.LogSync($"[Heartbeat.Wait] ThreadState/WaitReason read failed: {wrEx.GetType().Name}: {wrEx.Message}");
+                    }
+
+                    // ── 3c. Non-Microsoft loaded modules ─────────────────────────────────
+                    // Injected overlay or hook DLLs are a plausible cause of a native wait.
+                    // Filter to modules whose path is not under Windows, dotnet, or Microsoft
+                    // folders — anything left is third-party and worth knowing about.
+                    try
+                    {
+                        using var procMod = System.Diagnostics.Process.GetCurrentProcess();
+                        var thirdParty = procMod.Modules
+                            .Cast<System.Diagnostics.ProcessModule>()
+                            .Where(m =>
+                            {
+                                var p = m.FileName ?? "";
+                                return !p.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.Windows), StringComparison.OrdinalIgnoreCase)
+                                    && !p.Contains(@"\dotnet\", StringComparison.OrdinalIgnoreCase)
+                                    && !p.Contains(@"\Microsoft\", StringComparison.OrdinalIgnoreCase)
+                                    && !p.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase);
+                            })
+                            .Select(m => System.IO.Path.GetFileName(m.FileName ?? "?"))
+                            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+
+                        if (thirdParty.Count > 0)
+                            CrashReporter.LogSync($"[Heartbeat.Modules] Third-party modules ({thirdParty.Count}): {string.Join(", ", thirdParty)}");
+                        else
+                            CrashReporter.LogSync("[Heartbeat.Modules] No third-party modules detected");
+                    }
+                    catch (Exception modEx)
+                    {
+                        CrashReporter.LogSync($"[Heartbeat.Modules] Module enumeration failed: {modEx.GetType().Name}: {modEx.Message}");
+                    }
+
                     // ── 4. ClrMD stack capture — once per stall ─────────────────────────
                     // ClrMD is loaded dynamically (not a static package reference) to avoid
                     // crashing the WinUI XAML compiler's type resolution during publish.
@@ -260,6 +327,21 @@ public partial class MainViewModel
                             }
                         });
 
+                        // ── 4b. Native stack via StackWalk64 — runs for all users ──────────
+                        // Complements ClrMD: captures the native call stack of the UI thread.
+                        // This is the only way to see frames below Application.Start (inside
+                        // WinUI native code) that ClrMD cannot reach.
+                        //
+                        // Safety contract (see NativeInterop.cs comment):
+                        //   • OpenThread / SuspendThread / GetThreadContext / ResumeThread
+                        //     The CONTEXT buffer is stack-allocated (unsafe stackalloc) BEFORE
+                        //     SuspendThread. ResumeThread is called immediately after GetThreadContext.
+                        //     Zero managed allocations between Suspend and Resume.
+                        //   • StackWalk64 and all DbgHelp functions run AFTER ResumeThread under
+                        //     _nativeStackLock (DbgHelp is single-threaded).
+                        //   • Module name resolution uses Process.Modules (pure .NET) post-resume.
+                        _ = Task.Run(CaptureNativeUiThreadStack);
+
                         // ── 5. Minidump fallback — dev only (unlock.txt), fires ~10s after freeze ──
                         // Writes a full-memory dump to %LocalAppData%\RHI\freeze_dump.dmp.
                         // Not written for regular users — nearly 1 GB and contains process memory.
@@ -351,6 +433,148 @@ public partial class MainViewModel
                     }
                 }
             }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+        }
+    }
+
+    // DbgHelp is single-threaded — serialize all StackWalk64 / Sym* calls.
+    private static readonly object _nativeStackLock = new();
+    private static bool _symInitialized;
+
+    // Stable delegates for StackWalk64 callbacks — must be held in static fields
+    // so the GC never collects them while StackWalk64 is running.
+    [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Winapi)]
+    private delegate IntPtr SymFunctionTableAccess64Delegate(IntPtr hProcess, ulong addrBase);
+    [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Winapi)]
+    private delegate ulong SymGetModuleBase64Delegate(IntPtr hProcess, ulong addr);
+
+    private static readonly SymFunctionTableAccess64Delegate _symFuncTableAccess64Del =
+        (p, a) => NativeInterop.SymFunctionTableAccess64(p, a);
+    private static readonly SymGetModuleBase64Delegate _symGetModuleBase64Del =
+        (p, a) => NativeInterop.SymGetModuleBase64(p, a);
+    private static readonly IntPtr _symFuncTableAccess64Ptr =
+        System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(_symFuncTableAccess64Del);
+    private static readonly IntPtr _symGetModuleBase64Ptr =
+        System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(_symGetModuleBase64Del);
+
+    /// <summary>
+    /// Captures a native call stack of the UI thread using StackWalk64.
+    /// Safe to call from a background thread. The suspend window is minimal:
+    /// SuspendThread → GetThreadContext (copies CONTEXT blob) → ResumeThread.
+    /// All further work (stack walking, module resolution) happens after resume.
+    /// </summary>
+    private unsafe void CaptureNativeUiThreadStack()
+    {
+        var uiNativeId = UiThreadNativeId;
+        if (uiNativeId == 0) { CrashReporter.LogSync("[Heartbeat.Native] UiThreadNativeId not captured"); return; }
+
+        IntPtr hThread = IntPtr.Zero;
+        try
+        {
+            // Open with suspend + context rights
+            hThread = NativeInterop.OpenThread(
+                NativeInterop.THREAD_SUSPEND_RESUME | NativeInterop.THREAD_GET_CONTEXT | NativeInterop.THREAD_QUERY_INFORMATION,
+                false, uiNativeId);
+            if (hThread == IntPtr.Zero)
+            {
+                CrashReporter.LogSync($"[Heartbeat.Native] OpenThread failed (error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()})");
+                return;
+            }
+
+            // Pre-allocate CONTEXT blob on the stack (unsafe stackalloc = no heap allocation).
+            // Set ContextFlags = CONTEXT_ALL at offset 48 before the call.
+            byte* ctxBuf = stackalloc byte[NativeInterop.CONTEXT_X64_SIZE];
+            System.Runtime.CompilerServices.Unsafe.InitBlock(ctxBuf, 0, (uint)NativeInterop.CONTEXT_X64_SIZE);
+            // ContextFlags is at byte offset 48 in x64 CONTEXT
+            *(uint*)(ctxBuf + 48) = NativeInterop.CONTEXT_ALL_FLAGS;
+
+            var ctxPtr = (IntPtr)ctxBuf;
+
+            // ── SUSPEND WINDOW: no managed allocations ──────────────────────────
+            NativeInterop.SuspendThread(hThread);
+            bool ctxOk = NativeInterop.GetThreadContext(hThread, ctxPtr);
+            NativeInterop.ResumeThread(hThread);
+            // ── END SUSPEND WINDOW ──────────────────────────────────────────────
+
+            if (!ctxOk)
+            {
+                CrashReporter.LogSync($"[Heartbeat.Native] GetThreadContext failed (error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()})");
+                return;
+            }
+
+            // Extract Rip (offset 248), Rsp (offset 152), Rbp (offset 160) from x64 CONTEXT
+            ulong rip = *(ulong*)(ctxBuf + 248);
+            ulong rsp = *(ulong*)(ctxBuf + 152);
+            ulong rbp = *(ulong*)(ctxBuf + 160);
+
+            CrashReporter.LogSync($"[Heartbeat.Native] Context captured: RIP=0x{rip:X16} RSP=0x{rsp:X16} RBP=0x{rbp:X16}");
+
+            // Walk stack post-resume — DbgHelp is single-threaded, must serialize
+            var hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
+            var frames = new ulong[64]; // pre-allocated, no heap ops in walk loop
+            int frameCount = 0;
+
+            lock (_nativeStackLock)
+            {
+                if (!_symInitialized)
+                {
+                    NativeInterop.SymInitialize(hProcess, IntPtr.Zero, true);
+                    _symInitialized = true;
+                }
+
+                var sf = new NativeInterop.STACKFRAME64();
+                sf.AddrPC.Offset    = rip;
+                sf.AddrPC.Mode      = 3; // AddrModeFlat
+                sf.AddrStack.Offset = rsp;
+                sf.AddrStack.Mode   = 3;
+                sf.AddrFrame.Offset = rbp;
+                sf.AddrFrame.Mode   = 3;
+
+                for (int i = 0; i < frames.Length; i++)
+                {
+                    bool ok = NativeInterop.StackWalk64(
+                        NativeInterop.IMAGE_FILE_MACHINE_AMD64,
+                        hProcess, hThread,
+                        ref sf, ctxPtr,
+                        IntPtr.Zero,               // ReadMemoryRoutine — null = use default (ReadProcessMemory)
+                        _symFuncTableAccess64Ptr,  // pre-pinned static delegate
+                        _symGetModuleBase64Ptr,    // pre-pinned static delegate
+                        IntPtr.Zero);              // TranslateAddress — null (not needed for flat 64-bit)
+                    if (!ok || sf.AddrPC.Offset == 0) break;
+                    frames[i] = sf.AddrPC.Offset;
+                    frameCount++;
+                }
+            }
+
+            // Resolve module names post-lock using pure .NET Process.Modules
+            var modules = System.Diagnostics.Process.GetCurrentProcess().Modules
+                .Cast<System.Diagnostics.ProcessModule>()
+                .Select(m => (Base: (ulong)m.BaseAddress.ToInt64(), Size: (ulong)m.ModuleMemorySize, Name: System.IO.Path.GetFileName(m.FileName ?? "?")))
+                .ToArray();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"[Heartbeat.Native] Native stack ({frameCount} frames):");
+            for (int i = 0; i < frameCount; i++)
+            {
+                var addr = frames[i];
+                var mod = modules.FirstOrDefault(m => addr >= m.Base && addr < m.Base + m.Size);
+                var modName = mod.Name ?? "?";
+                var offset = mod.Name != null ? addr - mod.Base : 0;
+                sb.AppendLine(mod.Name != null
+                    ? $"  {i,2}: {modName}+0x{offset:X}"
+                    : $"  {i,2}: 0x{addr:X16}");
+            }
+            if (frameCount == 0)
+                sb.AppendLine("  (no frames captured — thread may be in kernel wait or context was invalid)");
+            CrashReporter.LogSync(sb.ToString());
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.LogSync($"[Heartbeat.Native] Native stack capture failed: {ex.GetType().Name}: {ex.Message}");
+        }
+        finally
+        {
+            if (hThread != IntPtr.Zero)
+                NativeInterop.CloseHandle(hThread);
         }
     }
 

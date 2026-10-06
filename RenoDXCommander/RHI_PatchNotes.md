@@ -36,7 +36,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ### Maintenance
 - Changing Smooth Motion or ReBAR Enable in the Driver Settings section now rebuilds only that section instead of the entire game overrides panel.
-- Improved internal freeze diagnostic logging to capture more detail when a UI freeze occurs. When RHI freezes, the session log now includes the managed call stack for every thread at the time of the freeze — this makes freeze reports much more useful for diagnosing the cause.
+- Improved internal freeze diagnostic logging to capture more detail when a UI freeze occurs. When RHI freezes, the session log now includes the managed call stack for every thread at the time of the freeze — this makes freeze reports much more useful for diagnosing the cause. Additional information is now captured on freeze: the UI thread wait state and wait reason (identifies cross-process COM/RPC waits), a native call stack showing frames inside WinUI native code below the managed stack, and a list of any third-party DLLs loaded into the process (overlay or hook software). Timestamps are now included on each action in the recent-actions timeline.
 
 ## v2.8.5
 

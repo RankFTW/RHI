@@ -828,7 +828,7 @@ public partial class DetailPanelBuilder
             var targetPanel = nvBody ?? _window.NvidiaProfileDriverPanel;
             var isElevatedCapture = d.IsAdmin;
             _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:AddToTree({capturedName})");
-            _window.DispatcherQueue?.TryEnqueue(
+            var enqueued = _window.DispatcherQueue?.TryEnqueue(
                 Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
                 () =>
                 {
@@ -851,6 +851,7 @@ public partial class DetailPanelBuilder
                     });
                     _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData:Done({capturedName})");
                 });
+            CrashReporter.Log($"[BuildDriverProfileSectionWithData] TryEnqueue(Low) for grid add returned {enqueued?.ToString() ?? "null (no dispatcher)"} for '{capturedName}'");
         }
         // Admin notice is now added inside the deferred TryEnqueue above when nvidiaPresetService.IsSupported.
         // When not supported we still need to add it immediately.
