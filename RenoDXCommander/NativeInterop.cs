@@ -479,6 +479,39 @@ internal static class NativeInterop
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool CloseHandle(IntPtr hObject);
 
+    // SYMBOL_INFO for SymFromAddr — name buffer appended inline after the struct.
+    // We allocate a fixed buffer of MAX_SYM_NAME + sizeof(SYMBOL_INFO) bytes.
+    internal const int MAX_SYM_NAME = 256;
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct SYMBOL_INFO
+    {
+        public uint   SizeOfStruct;  // must be sizeof(SYMBOL_INFO) = 88
+        public uint   TypeIndex;
+        public ulong  Reserved1, Reserved2;
+        public uint   Index;
+        public uint   Size;
+        public ulong  ModBase;
+        public uint   Flags;
+        public ulong  Value;
+        public ulong  Address;
+        public uint   Register;
+        public uint   Scope;
+        public uint   Tag;
+        public uint   NameLen;
+        public uint   MaxNameLen;
+        // Name[1] is appended here — we handle it by reading from the pinned buffer directly
+        public unsafe fixed char Name[MAX_SYM_NAME + 1];
+    }
+
+    [DllImport("dbghelp.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern unsafe bool SymFromAddr(
+        IntPtr       hProcess,
+        ulong        Address,
+        out ulong    Displacement,
+        SYMBOL_INFO* Symbol);
+
     [DllImport("dbghelp.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool SymInitialize(IntPtr hProcess, IntPtr userSearchPath, bool fInvadeProcess);

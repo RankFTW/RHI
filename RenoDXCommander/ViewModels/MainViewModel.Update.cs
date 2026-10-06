@@ -125,12 +125,15 @@ public partial class MainViewModel
                     // WaitReason requires ThreadState == Wait; any other state throws.
                     // LpcReceive (9) / LpcReply (10) = cross-process COM/RPC wait — points
                     // at a hung shell, overlay, or input-method server.
+                    // Refresh() forces a re-snapshot of thread state — without it the
+                    // Threads collection reports state from when the Process was created.
                     try
                     {
                         var uiNativeId = UiThreadNativeId;
                         if (uiNativeId > 0)
                         {
                             using var procWR = System.Diagnostics.Process.GetCurrentProcess();
+                            procWR.Refresh(); // force fresh thread state snapshot
                             var uiThread = procWR.Threads
                                 .Cast<System.Diagnostics.ProcessThread>()
                                 .FirstOrDefault(t => t.Id == (int)uiNativeId);
@@ -157,19 +160,55 @@ public partial class MainViewModel
                         CrashReporter.LogSync($"[Heartbeat.Wait] ThreadState/WaitReason read failed: {wrEx.GetType().Name}: {wrEx.Message}");
                     }
 
-                    // ── 3c. Non-Microsoft loaded modules ─────────────────────────────────
-                    // Injected overlay or hook DLLs are a plausible cause of a native wait.
-                    // Filter to modules whose path is not under Windows, dotnet, or Microsoft
-                    // folders — anything left is third-party and worth knowing about.
+                    // ── 3c. Loaded modules ────────────────────────────────────────────────
+                    // Two buckets:
+                    //   GPU/driver — nvapi64, nvwgf2um*, amdxx*, atio*, ig7icd*, atig*, etc.
+                    //                Live in System32 so the \Windows\ filter would hide them.
+                    //                Logged with FileVersion and LastWriteTime: a driver bug or
+                    //                stale driver is a prime candidate for a native GPU wait.
+                    //   Third-party — anything outside \Windows\, \dotnet\, \Microsoft\,
+                    //                 \WindowsApps\. Overlays, hooks, injected DLLs.
                     try
                     {
                         using var procMod = System.Diagnostics.Process.GetCurrentProcess();
-                        var thirdParty = procMod.Modules
-                            .Cast<System.Diagnostics.ProcessModule>()
+                        var allModules = procMod.Modules.Cast<System.Diagnostics.ProcessModule>().ToList();
+
+                        // GPU / driver DLLs — match by filename prefix regardless of path
+                        static bool IsGpuDriver(string name)
+                        {
+                            var n = name.ToLowerInvariant();
+                            return n.StartsWith("nvapi") || n.StartsWith("nvwgf2") || n.StartsWith("nvcuda")
+                                || n.StartsWith("amdxx") || n.StartsWith("atio") || n.StartsWith("atig")
+                                || n.StartsWith("ig7icd") || n.StartsWith("ig75icd") || n.StartsWith("igdusc")
+                                || n.StartsWith("d3d12core") || n.StartsWith("dxgi")
+                                || n.StartsWith("dxcore") || n.StartsWith("directml");
+                        }
+
+                        var gpuMods = allModules
+                            .Where(m => IsGpuDriver(System.IO.Path.GetFileName(m.FileName ?? "")))
+                            .Select(m =>
+                            {
+                                var fn = m.FileName ?? "";
+                                string ver = "?", date = "?";
+                                try { var fi = System.IO.File.Exists(fn)
+                                    ? System.Diagnostics.FileVersionInfo.GetVersionInfo(fn) : null;
+                                    ver = fi?.FileVersion ?? "?"; } catch { }
+                                try { date = System.IO.File.GetLastWriteTime(fn).ToString("yyyy-MM-dd"); } catch { }
+                                return $"{System.IO.Path.GetFileName(fn)} v{ver} ({date})";
+                            })
+                            .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+
+                        if (gpuMods.Count > 0)
+                            CrashReporter.LogSync($"[Heartbeat.Modules] GPU/driver DLLs ({gpuMods.Count}): {string.Join(", ", gpuMods)}");
+
+                        // Third-party non-GPU modules
+                        var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+                        var thirdParty = allModules
                             .Where(m =>
                             {
                                 var p = m.FileName ?? "";
-                                return !p.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.Windows), StringComparison.OrdinalIgnoreCase)
+                                return !p.StartsWith(winDir, StringComparison.OrdinalIgnoreCase)
                                     && !p.Contains(@"\dotnet\", StringComparison.OrdinalIgnoreCase)
                                     && !p.Contains(@"\Microsoft\", StringComparison.OrdinalIgnoreCase)
                                     && !p.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase);
@@ -460,7 +499,10 @@ public partial class MainViewModel
     /// Captures a native call stack of the UI thread using StackWalk64.
     /// Safe to call from a background thread. The suspend window is minimal:
     /// SuspendThread → GetThreadContext (copies CONTEXT blob) → ResumeThread.
-    /// All further work (stack walking, module resolution) happens after resume.
+    /// All further work (stack walking, symbol resolution) happens after resume.
+    ///
+    /// Alignment: x64 CONTEXT requires 16-byte alignment. We allocate SIZE+16 extra
+    /// bytes and align the pointer manually — stackalloc alone does not guarantee it.
     /// </summary>
     private unsafe void CaptureNativeUiThreadStack()
     {
@@ -470,7 +512,6 @@ public partial class MainViewModel
         IntPtr hThread = IntPtr.Zero;
         try
         {
-            // Open with suspend + context rights
             hThread = NativeInterop.OpenThread(
                 NativeInterop.THREAD_SUSPEND_RESUME | NativeInterop.THREAD_GET_CONTEXT | NativeInterop.THREAD_QUERY_INFORMATION,
                 false, uiNativeId);
@@ -480,16 +521,20 @@ public partial class MainViewModel
                 return;
             }
 
-            // Pre-allocate CONTEXT blob on the stack (unsafe stackalloc = no heap allocation).
-            // Set ContextFlags = CONTEXT_ALL at offset 48 before the call.
-            byte* ctxBuf = stackalloc byte[NativeInterop.CONTEXT_X64_SIZE];
+            // Allocate CONTEXT + 16 extra bytes for alignment, then align to 16-byte boundary.
+            // stackalloc guarantees no heap allocation — zero-init via Unsafe.InitBlock.
+            // CONTEXT_X64_SIZE = 1232 bytes; with 16 extra the aligned pointer is always valid.
+            byte* ctxRaw = stackalloc byte[NativeInterop.CONTEXT_X64_SIZE + 16];
+            // Align up to next 16-byte boundary
+            var rawAddr = (ulong)ctxRaw;
+            var alignedAddr = (rawAddr + 15UL) & ~15UL;
+            byte* ctxBuf = (byte*)alignedAddr;
             System.Runtime.CompilerServices.Unsafe.InitBlock(ctxBuf, 0, (uint)NativeInterop.CONTEXT_X64_SIZE);
-            // ContextFlags is at byte offset 48 in x64 CONTEXT
-            *(uint*)(ctxBuf + 48) = NativeInterop.CONTEXT_ALL_FLAGS;
-
+            // ContextFlags at byte offset 48 in x64 CONTEXT — CONTEXT_FULL = 0x10007
+            *(uint*)(ctxBuf + 48) = 0x00010007u;
             var ctxPtr = (IntPtr)ctxBuf;
 
-            // ── SUSPEND WINDOW: no managed allocations ──────────────────────────
+            // ── SUSPEND WINDOW: zero managed allocations ────────────────────────
             NativeInterop.SuspendThread(hThread);
             bool ctxOk = NativeInterop.GetThreadContext(hThread, ctxPtr);
             NativeInterop.ResumeThread(hThread);
@@ -497,7 +542,8 @@ public partial class MainViewModel
 
             if (!ctxOk)
             {
-                CrashReporter.LogSync($"[Heartbeat.Native] GetThreadContext failed (error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()})");
+                int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                CrashReporter.LogSync($"[Heartbeat.Native] GetThreadContext failed — Win32 error {err} (998=misalignment, 5=access denied)");
                 return;
             }
 
@@ -505,18 +551,19 @@ public partial class MainViewModel
             ulong rip = *(ulong*)(ctxBuf + 248);
             ulong rsp = *(ulong*)(ctxBuf + 152);
             ulong rbp = *(ulong*)(ctxBuf + 160);
-
             CrashReporter.LogSync($"[Heartbeat.Native] Context captured: RIP=0x{rip:X16} RSP=0x{rsp:X16} RBP=0x{rbp:X16}");
 
-            // Walk stack post-resume — DbgHelp is single-threaded, must serialize
             var hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
-            var frames = new ulong[64]; // pre-allocated, no heap ops in walk loop
+            var frames = new ulong[64];
             int frameCount = 0;
 
             lock (_nativeStackLock)
             {
                 if (!_symInitialized)
                 {
+                    // invadeProcess=true: loads export tables from already-loaded modules so
+                    // SymFromAddr can resolve exported names (e.g. NtWaitForSingleObject+0x14).
+                    // No symbol path = no network, no PDB downloads — exports only.
                     NativeInterop.SymInitialize(hProcess, IntPtr.Zero, true);
                     _symInitialized = true;
                 }
@@ -535,33 +582,64 @@ public partial class MainViewModel
                         NativeInterop.IMAGE_FILE_MACHINE_AMD64,
                         hProcess, hThread,
                         ref sf, ctxPtr,
-                        IntPtr.Zero,               // ReadMemoryRoutine — null = use default (ReadProcessMemory)
-                        _symFuncTableAccess64Ptr,  // pre-pinned static delegate
-                        _symGetModuleBase64Ptr,    // pre-pinned static delegate
-                        IntPtr.Zero);              // TranslateAddress — null (not needed for flat 64-bit)
+                        IntPtr.Zero,
+                        _symFuncTableAccess64Ptr,
+                        _symGetModuleBase64Ptr,
+                        IntPtr.Zero);
                     if (!ok || sf.AddrPC.Offset == 0) break;
                     frames[i] = sf.AddrPC.Offset;
                     frameCount++;
                 }
             }
 
-            // Resolve module names post-lock using pure .NET Process.Modules
+            // Resolve frames post-lock: try SymFromAddr for exported name, fall back to module+offset.
+            // SymFromAddr is safe after resume — uses only loaded module exports, no network.
             var modules = System.Diagnostics.Process.GetCurrentProcess().Modules
                 .Cast<System.Diagnostics.ProcessModule>()
-                .Select(m => (Base: (ulong)m.BaseAddress.ToInt64(), Size: (ulong)m.ModuleMemorySize, Name: System.IO.Path.GetFileName(m.FileName ?? "?")))
+                .Select(m => (
+                    Base: (ulong)m.BaseAddress.ToInt64(),
+                    Size: (ulong)m.ModuleMemorySize,
+                    Name: System.IO.Path.GetFileName(m.FileName ?? "?")))
                 .ToArray();
 
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"[Heartbeat.Native] Native stack ({frameCount} frames):");
+
+            // Pre-allocate SYMBOL_INFO on the stack — unsafe fixed buffer avoids heap
+            NativeInterop.SYMBOL_INFO symInfo;
+            symInfo.SizeOfStruct = (uint)sizeof(NativeInterop.SYMBOL_INFO);
+            symInfo.MaxNameLen   = NativeInterop.MAX_SYM_NAME;
+
             for (int i = 0; i < frameCount; i++)
             {
                 var addr = frames[i];
-                var mod = modules.FirstOrDefault(m => addr >= m.Base && addr < m.Base + m.Size);
-                var modName = mod.Name ?? "?";
-                var offset = mod.Name != null ? addr - mod.Base : 0;
-                sb.AppendLine(mod.Name != null
-                    ? $"  {i,2}: {modName}+0x{offset:X}"
-                    : $"  {i,2}: 0x{addr:X16}");
+
+                // Try to get exported symbol name via SymFromAddr
+                string frameName;
+                ulong displacement = 0;
+                // Re-zero the name area before each call
+                System.Runtime.CompilerServices.Unsafe.InitBlock(symInfo.Name, 0, (uint)(NativeInterop.MAX_SYM_NAME * 2));
+                bool symOk;
+                lock (_nativeStackLock)
+                {
+                    symOk = NativeInterop.SymFromAddr(hProcess, addr, out displacement, &symInfo);
+                }
+
+                if (symOk && symInfo.NameLen > 0)
+                {
+                    var name = new string(symInfo.Name, 0, (int)symInfo.NameLen);
+                    frameName = $"{name}+0x{displacement:X}";
+                }
+                else
+                {
+                    // Fall back to module+offset
+                    var mod = modules.FirstOrDefault(m => addr >= m.Base && addr < m.Base + m.Size);
+                    frameName = mod.Name != null
+                        ? $"{mod.Name}+0x{addr - mod.Base:X}"
+                        : $"0x{addr:X16}";
+                }
+
+                sb.AppendLine($"  {i,2}: {frameName}");
             }
             if (frameCount == 0)
                 sb.AppendLine("  (no frames captured — thread may be in kernel wait or context was invalid)");
