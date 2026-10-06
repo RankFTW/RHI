@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55405,
-  "generated": "2026-10-06T08:25:35Z",
+  "game_count": 55423,
+  "generated": "2026-10-06T21:28:32Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -2737,7 +2737,7 @@
     "A Way Out": {
       "steam_appid": 1222700,
       "dx11": true,
-      "config_path": "%USERPROFILE%\\Documents\\My Games\\A Way Out\\",
+      "config_path": "%USERPROFILE%\\Documents\\My Games\\A Way Out\\, %LOCALAPPDATA%\\Haze1\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
     "A way up!": {
@@ -22771,6 +22771,7 @@
       "steam_appid": 705020,
       "engine": "Unity"
     },
+    "Boulder Dash": {},
     "Boulder Dash - 30th Anniversary": {
       "steam_appid": 502320,
       "dx9": true,
@@ -22874,6 +22875,9 @@
     "Boundel": {
       "steam_appid": 454070,
       "engine": "Unity"
+    },
+    "Bounder": {
+      "steam_appid": 2062480
     },
     "Bounders and Cads": {
       "steam_appid": 312020,
@@ -26705,6 +26709,7 @@
       "steam_appid": 802040,
       "engine": "RPG Maker"
     },
+    "Captive (1992)": {},
     "Captive of Fortune": {
       "steam_appid": 711350
     },
@@ -45796,6 +45801,7 @@
     "Disney's Dinosaur Activity Center": {
       "config_path": "<path-to-game>\\engine.ini, <path-to-game>\\tango.ini"
     },
+    "Disney's Girlfriends": {},
     "Disney's Hercules": {
       "steam_appid": 987400,
       "config_path": "<path-to-game>\\DISNEY.INI"
@@ -46463,6 +46469,9 @@
     },
     "Dog Jam": {
       "steam_appid": 895120
+    },
+    "Dog Man: Bark in Action": {
+      "steam_appid": 4782240
     },
     "Dog Man: Mission Impawsible": {
       "steam_appid": 3112730,
@@ -66796,6 +66805,7 @@
       "steam_appid": 3010850,
       "dx12": true,
       "config_path": "%LOCALAPPDATA%\\Microsoft\\Gears of War E-Day\\Saves\\",
+      "config_path_xbox": "%LOCALAPPDATA%\\FairlightConcept\\Saved\\Config\\WinGDK",
       "engine": "Unreal Engine 5"
     },
     "Gears of War: Reloaded": {
@@ -73165,7 +73175,7 @@
     "Halo: Campaign Evolved": {
       "steam_appid": 2806050,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Meteorite\\Saved\\Config\\<user-id>\\",
+      "config_path": "%LOCALAPPDATA%\\Meteorite\\Saved\\Config\\<user-id>, %LOCALAPPDATA%\\Meteorite\\Saved\\Config\\Windows\\GameUserSettings.ini",
       "engine": "Unreal Engine 5"
     },
     "Halo: Combat Evolved": {
@@ -84885,7 +84895,7 @@
     "It Takes Two": {
       "steam_appid": 1426210,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\ItTakesTwo\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\ItTakesTwo\\Saved\\Config\\WindowsNoEditor\\*.ini",
       "engine": "Unreal Engine 4"
     },
     "It Will Find You": {
@@ -85721,6 +85731,7 @@
     "Jerusalem: The Three Roads to the Holy Land": {
       "engine": "Omni3D"
     },
+    "Jessie's Wild West Rodeo": {},
     "Jesters Poker": {
       "steam_appid": 800840
     },
@@ -86675,6 +86686,9 @@
     },
     "Jumphobia: Homeward Bound": {
       "steam_appid": 1781380
+    },
+    "Jumping Jack": {
+      "steam_appid": 1978200
     },
     "Jumping Jazz Cats": {
       "steam_appid": 1951780,
@@ -92721,7 +92735,7 @@
     "Lego Harry Potter: Years 1-4": {
       "steam_appid": 21130,
       "dx9": true,
-      "config_path": "%APPDATA%\\WB Games\\LEGO┬« Harry PotterÔäó\\pcconfig.txt",
+      "config_path": "%APPDATA%\\WB Games\\LEGO® Harry Potter™\\pcconfig.txt",
       "engine": "Nu2"
     },
     "Lego Harry Potter: Years 5-7": {
@@ -92763,6 +92777,9 @@
       "engine": "Nu2"
     },
     "Lego Legacy: Heroes Unboxed": {},
+    "Lego Legends of Chima Online": {
+      "engine": "Unity"
+    },
     "Lego Loco": {
       "config_path": "<path-to-game>\\Exe\\LEGO.INI, <path-to-game>\\art-res\\EE.INI"
     },
@@ -92784,6 +92801,9 @@
       "dx11": true,
       "config_path": "%APPDATA%\\Warner Bros. Interactive Entertainment\\LEGO MARVEL's Avengers\\",
       "engine": "Nu2"
+    },
+    "Lego Minifigures Online": {
+      "steam_appid": 324790
     },
     "Lego My Style: Kindergarten": {},
     "Lego My Style: Preschool": {},
@@ -95620,6 +95640,7 @@
       "steam_appid": 404040,
       "config_path": "<path-to-game>\\settings.cfg"
     },
+    "Lords of Midnight: The Citadel": {},
     "Lords of New York": {
       "steam_appid": 404070
     },
@@ -101110,7 +101131,7 @@
       "steam_appid": 784080,
       "dx11": true,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\MW5Mercs\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\MW5Mercs\\Saved\\Config\\WindowsNoEditor\\, %LOCALAPPDATA%\\MW5Mercs\\Saved\\SavedHOTAS\\HOTASMappings.Remap",
       "engine": "Unreal Engine 4"
     },
     "MechWarrior Online": {
@@ -124771,7 +124792,7 @@
     "Post Void": {
       "steam_appid": 1285670,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Post_Void\\config.ini",
+      "config_path": "%LOCALAPPDATA%\\Post_Void\\*\\settings.dat",
       "engine": "GameMaker"
     },
     "Post War Dreams": {
@@ -131712,6 +131733,7 @@
     "Red Gate": {
       "steam_appid": 1076600
     },
+    "Red Ghost": {},
     "Red Goblin: Cursed Forest": {
       "steam_appid": 364480,
       "engine": "Unity"
@@ -134532,6 +134554,7 @@
       "steam_appid": 2118510,
       "engine": "Unity"
     },
+    "Ring Cycle": {},
     "Ring II: Twilight of the Gods": {
       "engine": "CINERGY"
     },
@@ -146178,6 +146201,7 @@
     "Sky Sanctuary": {
       "steam_appid": 526130
     },
+    "Sky Shark": {},
     "Sky Shepherd": {
       "steam_appid": 1060450
     },
@@ -148153,6 +148177,7 @@
     "Soko Match": {
       "steam_appid": 518320
     },
+    "Sokoban": {},
     "Sokoban Land DX": {
       "steam_appid": 670850
     },
@@ -151574,8 +151599,7 @@
     },
     "Spider-Man: Edge of Time (EdgeOfTimeRecompiled)": {
       "dx12": true,
-      "vulkan": true,
-      "engine": "Goliath Engine"
+      "vulkan": true
     },
     "Spider-Man: Far From Home - Virtual Reality Experience": {
       "steam_appid": 1067800,
@@ -151970,7 +151994,7 @@
     "Split Fiction": {
       "steam_appid": 2001120,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\SplitFiction\\Settings.Split\\",
+      "config_path": "%LOCALAPPDATA%\\SplitFiction\\Settings.Split, %LOCALAPPDATA%\\SplitFiction\\LocalSettings.Split",
       "engine": "Unreal Engine 5"
     },
     "Split of Knight": {
@@ -153268,6 +153292,7 @@
       "engine": "Unreal Engine 1"
     },
     "Star Trek: The Next Generation ÔÇô A Final Unity": {},
+    "Star Trek: The Next Generation – A Final Unity": {},
     "Star Trek: Voyager - Across the Unknown": {
       "steam_appid": 2643390,
       "engine": "Unreal Engine 5"
@@ -153409,6 +153434,8 @@
     },
     "Star Wars: Galactic Racer": {
       "steam_appid": 4078430,
+      "dx12": true,
+      "config_path": "%LOCALAPPDATA%\\StarWarsGalacticRacer\\Saved\\",
       "engine": "Unreal Engine 5"
     },
     "Star Wars: Galaxy of Heroes": {
@@ -153921,6 +153948,7 @@
       "steam_appid": 888130,
       "engine": "Unreal Engine 4"
     },
+    "Starquake": {},
     "Starquake Academy": {
       "steam_appid": 978040
     },
@@ -164898,6 +164926,7 @@
       "engine": "Unreal Engine 4"
     },
     "The Computer Edition of Risk: The World Conquest Game": {},
+    "The Computer Edition of Scrabble": {},
     "The Con Simulator": {
       "steam_appid": 917020
     },
@@ -173804,7 +173833,6 @@
     },
     "Thea: The Awakening": {
       "steam_appid": 378720,
-      "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\MuHa Games\\Thea: The Awakening",
       "engine": "Unity"
     },
@@ -194171,6 +194199,10 @@
     "Yohjo Simulator": {
       "steam_appid": 415950,
       "engine": "Unreal Engine 4"
+    },
+    "Yoiyami Biscuit": {
+      "steam_appid": 3619760,
+      "dx11": true
     },
     "Yoiyami Dancers: Twilight Danmaku Dancers": {
       "steam_appid": 1998530,
