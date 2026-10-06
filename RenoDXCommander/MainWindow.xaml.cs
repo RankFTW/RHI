@@ -189,6 +189,7 @@ public sealed partial class MainWindow : Window
         this.Activated += MainWindow_Activated;
         ViewModel.SetDispatcher(DispatcherQueue);
         ViewModel.UiThreadNativeId = NativeInterop.GetCurrentThreadId(); // capture UI thread ID for freeze diagnostics
+        ViewModel.MainWindowHwnd   = WinRT.Interop.WindowNative.GetWindowHandle(this); // for pump-responsiveness probe
         ViewModel.ConfirmForeignDxgiOverwrite = _dialogService.ShowForeignDxgiConfirmDialogAsync;
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
         ViewModel.RequestOverridesPanelRebuild = card =>

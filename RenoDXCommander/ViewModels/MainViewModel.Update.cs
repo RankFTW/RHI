@@ -18,6 +18,9 @@ public partial class MainViewModel
     /// <summary>Native thread ID of the UI thread — captured once at startup for CPU sampling.</summary>
     internal uint UiThreadNativeId { get; set; }
 
+    /// <summary>HWND of the main window — captured once at startup for pump-responsiveness probe.</summary>
+    internal IntPtr MainWindowHwnd { get; set; }
+
     /// <summary>Prevents more than one stack capture per freeze event.</summary>
     private int _freezeStackCaptured; // 0 = not captured, 1 = captured; Interlocked
 
@@ -158,6 +161,36 @@ public partial class MainViewModel
                     catch (Exception wrEx)
                     {
                         CrashReporter.LogSync($"[Heartbeat.Wait] ThreadState/WaitReason read failed: {wrEx.GetType().Name}: {wrEx.Message}");
+                    }
+
+                    // ── 3b2. Pump-responsiveness probe ────────────────────────────────────
+                    // SendMessageTimeout(WM_NULL, 1s): returns immediately if the UI thread
+                    // is in a message wait; times out if it's blocked in any other native wait.
+                    // IsHungAppWindow: Windows 5s heuristic — independent check.
+                    // Together these distinguish "pump idle" from "thread stuck".
+                    try
+                    {
+                        var hwnd = MainWindowHwnd;
+                        if (hwnd != IntPtr.Zero)
+                        {
+                            var smtResult = NativeInterop.SendMessageTimeoutW(
+                                hwnd, NativeInterop.WM_NULL, IntPtr.Zero, IntPtr.Zero,
+                                NativeInterop.SMTO_ABORTIFHUNG | NativeInterop.SMTO_BLOCK,
+                                1000, out IntPtr _smtOut);
+                            bool isHung = NativeInterop.IsHungAppWindow(hwnd);
+                            string pumpState = smtResult != IntPtr.Zero
+                                ? "responded (pump alive — thread is in a message wait or just resumed)"
+                                : $"timed out (pump not responding — thread blocked in non-message wait) | IsHungAppWindow={isHung}";
+                            CrashReporter.LogSync($"[Heartbeat.Pump] WM_NULL probe: {pumpState}");
+                        }
+                        else
+                        {
+                            CrashReporter.LogSync("[Heartbeat.Pump] MainWindowHwnd not captured");
+                        }
+                    }
+                    catch (Exception pumpEx)
+                    {
+                        CrashReporter.LogSync($"[Heartbeat.Pump] Pump probe failed: {pumpEx.GetType().Name}: {pumpEx.Message}");
                     }
 
                     // ── 3c. Loaded modules ────────────────────────────────────────────────
@@ -556,56 +589,29 @@ public partial class MainViewModel
             CrashReporter.LogSync($"[Heartbeat.Native] Context captured: RIP=0x{rip:X16} RSP=0x{rsp:X16} RBP=0x{rbp:X16}");
 
             var hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
-            var frames = new ulong[64];
-            int frameCount = 0;
+            var frames   = new ulong[1]; // top frame only — walk is disabled pending stability fix
+            var imgBases = new ulong[1];
+            int frameCount = 1;
+            frames[0]   = rip;
 
-            lock (_nativeStackLock)
+            // Resolve module for the top frame via GetModuleHandleExW(FROM_ADDRESS)
+            if (NativeInterop.GetModuleHandleExW(
+                    NativeInterop.GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                    NativeInterop.GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                    (IntPtr)(long)rip, out IntPtr _hmodTop) && _hmodTop != IntPtr.Zero)
             {
-                if (!_symInitialized)
-                {
-                    // invadeProcess=true: loads export tables from already-loaded modules so
-                    // SymFromAddr can resolve exported names (e.g. NtWaitForSingleObject+0x14).
-                    // No symbol path = no network, no PDB downloads — exports only.
-                    NativeInterop.SymInitialize(hProcess, IntPtr.Zero, true);
-                    _symInitialized = true;
-                }
-
-                var sf = new NativeInterop.STACKFRAME64();
-                sf.AddrPC.Offset    = rip;
-                sf.AddrPC.Mode      = 3; // AddrModeFlat
-                sf.AddrStack.Offset = rsp;
-                sf.AddrStack.Mode   = 3;
-                sf.AddrFrame.Offset = rbp;
-                sf.AddrFrame.Mode   = 3;
-
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    bool ok = NativeInterop.StackWalk64(
-                        NativeInterop.IMAGE_FILE_MACHINE_AMD64,
-                        hProcess, hThread,
-                        ref sf, ctxPtr,
-                        IntPtr.Zero,
-                        _symFuncTableAccess64Ptr,
-                        _symGetModuleBase64Ptr,
-                        IntPtr.Zero);
-                    if (!ok || sf.AddrPC.Offset == 0) break;
-                    frames[i] = sf.AddrPC.Offset;
-                    frameCount++;
-                }
+                imgBases[0] = (ulong)(long)_hmodTop;
+                // Prefer the image base from RtlLookupFunctionEntry (more precise than module handle)
+                NativeInterop.RtlLookupFunctionEntry(rip, out ulong imgBaseTop, IntPtr.Zero);
+                if (imgBaseTop != 0) imgBases[0] = imgBaseTop;
             }
 
-            // Resolve frames post-lock.
-            // Priority: SymFromAddr (exported name) → PE export table scan → module+offset.
-            // Also log PE version/timestamp for each unique module that appears in the stack.
-            var modules = System.Diagnostics.Process.GetCurrentProcess().Modules
-                .Cast<System.Diagnostics.ProcessModule>()
-                .Select(m => (
-                    Base:     (ulong)m.BaseAddress.ToInt64(),
-                    Size:     (ulong)m.ModuleMemorySize,
-                    Name:     System.IO.Path.GetFileName(m.FileName ?? "?"),
-                    FullPath: m.FileName ?? ""))
-                .ToArray();
+            CrashReporter.LogSync("[Heartbeat.Native] Walk: top-frame-only mode (RtlVirtualUnwind disabled — crashes on managed frames)");
 
+            // Resolve frames: use GetModuleHandleExW(FROM_ADDRESS) for accurate module lookup
+            // (doesn't miss KnownDlls or late-loaded modules like Process.Modules can).
+            // SymFromAddr still attempted first; PE export fallback handles the rest.
+            var hProcess2 = System.Diagnostics.Process.GetCurrentProcess().Handle;
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"[Heartbeat.Native] Native stack ({frameCount} frames):");
 
@@ -620,32 +626,50 @@ public partial class MainViewModel
             for (int i = 0; i < frameCount; i++)
             {
                 var addr = frames[i];
-                var mod  = modules.FirstOrDefault(m => addr >= m.Base && addr < m.Base + m.Size);
 
-                // Log PE version + TimeDateStamp + SizeOfImage for each unique module once.
-                // Read from already-mapped memory — no file I/O, no P/Invoke.
-                if (mod.Name != null && loggedModules.Add(mod.Name))
+                // Resolve module from address — accurate even for KnownDlls / late-loaded modules
+                string modName     = "?";
+                string modFullPath = "";
+                ulong  modBase     = imgBases[i]; // from RtlLookupFunctionEntry
+
+                // GetModuleHandleExW(FROM_ADDRESS) for name — doesn't increment refcount
+                if (NativeInterop.GetModuleHandleExW(
+                        NativeInterop.GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                        NativeInterop.GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                        (IntPtr)addr, out IntPtr hMod) && hMod != IntPtr.Zero)
+                {
+                    var sb2 = new System.Text.StringBuilder(512);
+                    if (NativeInterop.GetModuleFileNameW(hMod, sb2, (uint)sb2.Capacity) > 0)
+                    {
+                        modFullPath = sb2.ToString();
+                        modName     = System.IO.Path.GetFileName(modFullPath);
+                        // Sync imgBase from module handle if RtlLookupFunctionEntry returned 0
+                        if (modBase == 0) modBase = (ulong)hMod.ToInt64();
+                    }
+                }
+
+                // Log PE version + TimeDateStamp + SizeOfImage once per unique module
+                if (modName != "?" && loggedModules.Add(modName))
                 {
                     try
                     {
                         string fileVer = "?";
                         try { fileVer = System.Diagnostics.FileVersionInfo
-                            .GetVersionInfo(mod.FullPath).FileVersion ?? "?"; } catch { }
+                            .GetVersionInfo(modFullPath).FileVersion ?? "?"; } catch { }
 
-                        // PE: e_lfanew at base+0x3C, TimeDateStamp at NtHeaders+0x08, SizeOfImage at NtHeaders+0x50
                         uint ts = 0, soi = 0;
                         try
                         {
-                            var basePtr = (byte*)mod.Base;
+                            var basePtr = (byte*)modBase;
                             int lfanew  = *(int*)(basePtr + 0x3C);
                             ts  = *(uint*)(basePtr + lfanew + 0x08);
                             soi = *(uint*)(basePtr + lfanew + 0x50);
                         }
                         catch { }
 
-                        sb.AppendLine($"       [{mod.Name}  ver={fileVer}  ts=0x{ts:X8}  soi=0x{soi:X}]");
+                        sb.AppendLine($"       [{modName}  ver={fileVer}  ts=0x{ts:X8}  soi=0x{soi:X}]");
                     }
-                    catch { /* never suppress the frame itself */ }
+                    catch { }
                 }
 
                 // Try SymFromAddr first
@@ -655,7 +679,7 @@ public partial class MainViewModel
                 bool symOk;
                 lock (_nativeStackLock)
                 {
-                    symOk = NativeInterop.SymFromAddr(hProcess, addr, out displacement, &symInfo);
+                    symOk = NativeInterop.SymFromAddr(hProcess2, addr, out displacement, &symInfo);
                 }
 
                 if (symOk && symInfo.NameLen > 0)
@@ -663,33 +687,26 @@ public partial class MainViewModel
                     var name = new string(symInfo.Name, 0, (int)symInfo.NameLen);
                     frameName = $"{name}+0x{displacement:X}";
                 }
-                else if (mod.Name != null)
+                else if (modBase != 0)
                 {
                     // PE export table fallback: find nearest exported name at or below addr.
-                    // Reads from already-mapped module memory — safe, no allocation.
                     string? exportName = null;
                     uint    exportDisp = 0;
                     try
                     {
-                        var basePtr = (byte*)mod.Base;
-                        var rva     = (uint)(addr - mod.Base);
+                        var basePtr = (byte*)modBase;
+                        var rva     = (uint)(addr - modBase);
                         int lfanew  = *(int*)(basePtr + 0x3C);
-                        // DataDirectory[0] = Export at NtHeaders + 0x88 (OptionalHeader offset 0x70 + 0x18)
                         uint expDirRva  = *(uint*)(basePtr + lfanew + 0x88);
                         uint expDirSize = *(uint*)(basePtr + lfanew + 0x8C);
                         if (expDirRva != 0 && expDirSize != 0)
                         {
-                            var expDir = (uint*)(basePtr + expDirRva);
-                            // IMAGE_EXPORT_DIRECTORY layout (all uint):
-                            // +0  Characteristics, +4 TimeDateStamp, +8 MajorVer/MinorVer
-                            // +12 Name, +16 Base, +20 NumberOfFunctions, +24 NumberOfNames
-                            // +28 AddressOfFunctions, +32 AddressOfNames, +36 AddressOfNameOrdinals
-                            uint numFuncs   = expDir[5];  // NumberOfFunctions
-                            uint numNames   = expDir[6];  // NumberOfNames
-                            uint* funcs     = (uint*)(basePtr + expDir[7]);  // AddressOfFunctions
-                            uint* names     = (uint*)(basePtr + expDir[8]);  // AddressOfNames
-                            ushort* ords    = (ushort*)(basePtr + expDir[9]); // AddressOfNameOrdinals
-
+                            var expDir  = (uint*)(basePtr + expDirRva);
+                            uint numFuncs = expDir[5];
+                            uint numNames = expDir[6];
+                            uint* funcs   = (uint*)(basePtr + expDir[7]);
+                            uint* names   = (uint*)(basePtr + expDir[8]);
+                            ushort* ords  = (ushort*)(basePtr + expDir[9]);
                             uint bestRva = 0;
                             uint bestIdx = uint.MaxValue;
                             for (uint n = 0; n < numNames; n++)
@@ -697,13 +714,8 @@ public partial class MainViewModel
                                 ushort ord  = ords[n];
                                 if (ord >= numFuncs) continue;
                                 uint funcRva = funcs[ord];
-                                // Skip forwarded exports (RVA inside export section)
                                 if (funcRva >= expDirRva && funcRva < expDirRva + expDirSize) continue;
-                                if (funcRva <= rva && funcRva > bestRva)
-                                {
-                                    bestRva = funcRva;
-                                    bestIdx = n;
-                                }
+                                if (funcRva <= rva && funcRva > bestRva) { bestRva = funcRva; bestIdx = n; }
                             }
                             if (bestIdx != uint.MaxValue)
                             {
@@ -712,11 +724,11 @@ public partial class MainViewModel
                             }
                         }
                     }
-                    catch { /* fall through to module+offset */ }
+                    catch { }
 
                     frameName = exportName != null
                         ? $"{exportName}+0x{exportDisp:X}"
-                        : $"{mod.Name}+0x{addr - mod.Base:X}";
+                        : (modName != "?" ? $"{modName}+0x{addr - modBase:X}" : $"0x{addr:X16}");
                 }
                 else
                 {

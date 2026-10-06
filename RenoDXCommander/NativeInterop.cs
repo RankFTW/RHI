@@ -414,6 +414,79 @@ internal static class NativeInterop
     internal const uint THREAD_QUERY_INFORMATION = 0x0040;
     internal const uint IMAGE_FILE_MACHINE_AMD64 = 0x8664;
 
+    // ── Module lookup from address ───────────────────────────────────────────────
+    internal const uint GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS        = 0x00000004;
+    internal const uint GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT  = 0x00000002;
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetModuleHandleExW(
+        uint   dwFlags,
+        IntPtr lpModuleName,   // address when FROM_ADDRESS flag is set
+        out IntPtr phModule);
+
+    [DllImport("kernel32.dll")]
+    internal static extern IntPtr GetModuleHandleW(
+        [MarshalAs(UnmanagedType.LPWStr)] string? lpModuleName);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    internal static extern uint GetModuleFileNameW(
+        IntPtr hModule,
+        System.Text.StringBuilder lpFilename,
+        uint nSize);
+
+    // ── x64 stack unwinding (no DbgHelp needed for the walk itself) ──────────────
+    // RUNTIME_FUNCTION: three DWORDs — BeginAddress, EndAddress, UnwindInfoAddress (all RVAs)
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct RUNTIME_FUNCTION
+    {
+        public uint BeginAddress;
+        public uint EndAddress;
+        public uint UnwindInfoAddress;
+    }
+
+    // RtlLookupFunctionEntry returns a pointer to RUNTIME_FUNCTION for ControlPc,
+    // and outputs the ImageBase of the containing module.
+    // HistoryTable (3rd param) is an optional cache — pass IntPtr.Zero.
+    [DllImport("kernel32.dll")]
+    internal static extern IntPtr RtlLookupFunctionEntry(
+        ulong    ControlPc,
+        out ulong ImageBase,
+        IntPtr   HistoryTable);
+
+    // RtlVirtualUnwind unwinds one frame. Updates ContextRecord in place.
+    // HandlerData and EstablisherFrame are output only — we don't use them.
+    // ContextPointers (last param) may be null.
+    [DllImport("kernel32.dll")]
+    internal static extern IntPtr RtlVirtualUnwind(
+        uint     HandlerType,   // UNW_FLAG_NHANDLER = 0
+        ulong    ImageBase,
+        ulong    ControlPc,
+        IntPtr   FunctionEntry, // PRUNTIME_FUNCTION from RtlLookupFunctionEntry
+        IntPtr   ContextRecord, // PCONTEXT — updated in place
+        out IntPtr HandlerData,
+        out ulong  EstablisherFrame,
+        IntPtr   ContextPointers);  // PKNONVOLATILE_CONTEXT_POINTERS — may be null
+
+    // ── Message pump probe ───────────────────────────────────────────────────────
+    internal const uint WM_NULL         = 0x0000;
+    internal const uint SMTO_ABORTIFHUNG = 0x0002;
+    internal const uint SMTO_BLOCK       = 0x0001;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern IntPtr SendMessageTimeoutW(
+        IntPtr hWnd,
+        uint   Msg,
+        IntPtr wParam,
+        IntPtr lParam,
+        uint   fuFlags,
+        uint   uTimeout,
+        out IntPtr lpdwResult);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool IsHungAppWindow(IntPtr hwnd);
+
     // ── Event / wait for native-block test ──────────────────────────────────────
     internal const uint WAIT_TIMEOUT   = 0x00000102;
     internal const uint WAIT_OBJECT_0  = 0x00000000;
