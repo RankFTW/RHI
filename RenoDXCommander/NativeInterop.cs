@@ -563,6 +563,15 @@ internal static class NativeInterop
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool ReadProcessMemory(
+        IntPtr hProcess,
+        IntPtr lpBaseAddress,
+        IntPtr lpBuffer,
+        UIntPtr nSize,
+        out UIntPtr lpNumberOfBytesRead);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool CloseHandle(IntPtr hObject);
 
     // SYMBOL_INFO for SymFromAddr — name buffer appended inline after the struct.

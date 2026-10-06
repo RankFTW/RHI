@@ -399,19 +399,12 @@ public partial class MainViewModel
                             }
                         });
 
-                        // ── 4b. Native stack via StackWalk64 — runs for all users ──────────
-                        // Complements ClrMD: captures the native call stack of the UI thread.
-                        // This is the only way to see frames below Application.Start (inside
-                        // WinUI native code) that ClrMD cannot reach.
-                        //
-                        // Safety contract (see NativeInterop.cs comment):
-                        //   • OpenThread / SuspendThread / GetThreadContext / ResumeThread
-                        //     The CONTEXT buffer is stack-allocated (unsafe stackalloc) BEFORE
-                        //     SuspendThread. ResumeThread is called immediately after GetThreadContext.
-                        //     Zero managed allocations between Suspend and Resume.
-                        //   • StackWalk64 and all DbgHelp functions run AFTER ResumeThread under
-                        //     _nativeStackLock (DbgHelp is single-threaded).
-                        //   • Module name resolution uses Process.Modules (pure .NET) post-resume.
+                        // ── 4b. Native stack capture — runs for all users ────────────────
+                        // Captures the UI thread's native call stack using SuspendThread +
+                        // GetThreadContext + ResumeThread. Walk is top-frame-only (safe).
+                        // RtlVirtualUnwind crashes on JIT frames — disabled until a safe
+                        // unwinder is available. Top frame alone distinguishes message-wait
+                        // (NtUserGetMessage) from a blocked wait (NtWaitForSingleObject etc).
                         _ = Task.Run(CaptureNativeUiThreadStack);
 
                         // ── 5. Minidump fallback — dev only (unlock.txt), fires ~10s after freeze ──
@@ -508,25 +501,9 @@ public partial class MainViewModel
         }
     }
 
-    // DbgHelp is single-threaded — serialize all StackWalk64 / Sym* calls.
+    // DbgHelp is single-threaded — serialize SymFromAddr calls.
     private static readonly object _nativeStackLock = new();
     private static bool _symInitialized;
-
-    // Stable delegates for StackWalk64 callbacks — must be held in static fields
-    // so the GC never collects them while StackWalk64 is running.
-    [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Winapi)]
-    private delegate IntPtr SymFunctionTableAccess64Delegate(IntPtr hProcess, ulong addrBase);
-    [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Winapi)]
-    private delegate ulong SymGetModuleBase64Delegate(IntPtr hProcess, ulong addr);
-
-    private static readonly SymFunctionTableAccess64Delegate _symFuncTableAccess64Del =
-        (p, a) => NativeInterop.SymFunctionTableAccess64(p, a);
-    private static readonly SymGetModuleBase64Delegate _symGetModuleBase64Del =
-        (p, a) => NativeInterop.SymGetModuleBase64(p, a);
-    private static readonly IntPtr _symFuncTableAccess64Ptr =
-        System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(_symFuncTableAccess64Del);
-    private static readonly IntPtr _symGetModuleBase64Ptr =
-        System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(_symGetModuleBase64Del);
 
     internal void CaptureNativeUiThreadStackPublic() => CaptureNativeUiThreadStack();
 
@@ -571,8 +548,17 @@ public partial class MainViewModel
 
             // ── SUSPEND WINDOW: zero managed allocations ────────────────────────
             NativeInterop.SuspendThread(hThread);
-            bool ctxOk = NativeInterop.GetThreadContext(hThread, ctxPtr);
-            NativeInterop.ResumeThread(hThread);
+            bool ctxOk;
+            try
+            {
+                ctxOk = NativeInterop.GetThreadContext(hThread, ctxPtr);
+            }
+            finally
+            {
+                // ResumeThread is ALWAYS called — even if GetThreadContext throws.
+                // A thread left suspended is a silent hang.
+                NativeInterop.ResumeThread(hThread);
+            }
             // ── END SUSPEND WINDOW ──────────────────────────────────────────────
 
             if (!ctxOk)
@@ -588,7 +574,6 @@ public partial class MainViewModel
             ulong rbp = *(ulong*)(ctxBuf + 160);
             CrashReporter.LogSync($"[Heartbeat.Native] Context captured: RIP=0x{rip:X16} RSP=0x{rsp:X16} RBP=0x{rbp:X16}");
 
-            var hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
             var frames   = new ulong[1]; // top frame only — walk is disabled pending stability fix
             var imgBases = new ulong[1];
             int frameCount = 1;
@@ -740,6 +725,143 @@ public partial class MainViewModel
             if (frameCount == 0)
                 sb.AppendLine("  (no frames captured — thread may be in kernel wait or context was invalid)");
             CrashReporter.LogSync(sb.ToString());
+
+            // ── RSP stack scan — heuristic return-address search ─────────────────
+            // Copies 12 KB from RSP upward using ReadProcessMemory (fails safely, no AV).
+            // Scans the copy for 8-byte values that: (a) fall inside a loaded module,
+            // (b) are preceded by a call-like byte pattern (E8 = near call, FF = indirect).
+            // Labels entries with PE export names. Output is heuristic — some will be stale
+            // values on the stack, not real callers. Useful for identifying frames 1-4.
+            if (rsp != 0)
+            {
+                try
+                {
+                    const int ScanBytes   = 12 * 1024; // 12 KB
+                    const int MaxHits     = 10;
+                    var stackCopy = System.Runtime.InteropServices.Marshal.AllocHGlobal(ScanBytes);
+                    try
+                    {
+                        var hProc = System.Diagnostics.Process.GetCurrentProcess().Handle;
+                        bool readOk = NativeInterop.ReadProcessMemory(
+                            hProc, (IntPtr)(long)rsp, stackCopy,
+                            (UIntPtr)ScanBytes, out _);
+
+                        if (!readOk)
+                        {
+                            CrashReporter.LogSync($"[Heartbeat.Scan] ReadProcessMemory failed (error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()})");
+                        }
+                        else
+                        {
+                            var scanSb  = new System.Text.StringBuilder();
+                            scanSb.AppendLine("[Heartbeat.Scan] Probable return addresses (heuristic, may include stale values):");
+                            int hits = 0;
+                            unsafe
+                            {
+                                byte* buf = (byte*)stackCopy;
+                                for (int off = 0; off + 8 <= ScanBytes && hits < MaxHits; off += 8)
+                                {
+                                    ulong candidate = *(ulong*)(buf + off);
+                                    // Must be a canonical x64 address in user space
+                                    if (candidate < 0x10000UL || candidate > 0x7FFF_FFFF_FFFFUL) continue;
+
+                                    // Check for call-like byte at candidate-5 (E8 = near call)
+                                    // or candidate-6 (FF 15 / FF D0 = indirect call via mem/reg)
+                                    // We read from the process memory at that location.
+                                    // Skip the check if ReadProcessMemory fails for that address — just include the hit anyway.
+                                    // The call-prefix filter reduces noise but isn't required.
+                                    bool likelyReturn = false;
+                                    try
+                                    {
+                                        byte prefix = 0;
+                                        UIntPtr nRead;
+                                        if (NativeInterop.ReadProcessMemory(hProc,
+                                            (IntPtr)(long)(candidate - 5), (IntPtr)(&prefix), (UIntPtr)1, out nRead)
+                                            && nRead == (UIntPtr)1 && prefix == 0xE8)
+                                            likelyReturn = true;
+                                        else if (!likelyReturn && NativeInterop.ReadProcessMemory(hProc,
+                                            (IntPtr)(long)(candidate - 6), (IntPtr)(&prefix), (UIntPtr)1, out nRead)
+                                            && nRead == (UIntPtr)1 && prefix == 0xFF)
+                                            likelyReturn = true;
+                                    }
+                                    catch { likelyReturn = true; } // can't read prefix — include conservatively
+
+                                    if (!likelyReturn) continue;
+
+                                    // Resolve module
+                                    if (!NativeInterop.GetModuleHandleExW(
+                                            NativeInterop.GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                                            NativeInterop.GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                            (IntPtr)(long)candidate, out IntPtr hScanMod) || hScanMod == IntPtr.Zero)
+                                        continue; // not in any loaded module
+
+                                    string scanModName = "?";
+                                    ulong  scanModBase = (ulong)(long)hScanMod;
+                                    var sb3 = new System.Text.StringBuilder(512);
+                                    if (NativeInterop.GetModuleFileNameW(hScanMod, sb3, (uint)sb3.Capacity) > 0)
+                                        scanModName = System.IO.Path.GetFileName(sb3.ToString());
+
+                                    // Get RtlLookupFunctionEntry image base (more precise than hMod)
+                                    NativeInterop.RtlLookupFunctionEntry(candidate, out ulong scanImgBase, IntPtr.Zero);
+                                    if (scanImgBase != 0) scanModBase = scanImgBase;
+
+                                    // Export name lookup
+                                    string scanFrame;
+                                    try
+                                    {
+                                        uint scanRva = (uint)(candidate - scanModBase);
+                                        byte* scanBase = (byte*)scanModBase;
+                                        int scanLfanew = *(int*)(scanBase + 0x3C);
+                                        uint expRva  = *(uint*)(scanBase + scanLfanew + 0x88);
+                                        uint expSize = *(uint*)(scanBase + scanLfanew + 0x8C);
+                                        string? expName = null;
+                                        uint   expDisp  = 0;
+                                        if (expRva != 0 && expSize != 0)
+                                        {
+                                            var expDir   = (uint*)(scanBase + expRva);
+                                            uint nFuncs  = expDir[5], nNames = expDir[6];
+                                            uint* funcs  = (uint*)(scanBase + expDir[7]);
+                                            uint* names  = (uint*)(scanBase + expDir[8]);
+                                            ushort* ords = (ushort*)(scanBase + expDir[9]);
+                                            uint bestRva2 = 0; uint bestIdx2 = uint.MaxValue;
+                                            for (uint n = 0; n < nNames; n++)
+                                            {
+                                                ushort ord = ords[n];
+                                                if (ord >= nFuncs) continue;
+                                                uint fr = funcs[ord];
+                                                if (fr >= expRva && fr < expRva + expSize) continue;
+                                                if (fr <= scanRva && fr > bestRva2) { bestRva2 = fr; bestIdx2 = n; }
+                                            }
+                                            if (bestIdx2 != uint.MaxValue)
+                                            {
+                                                expName = new string((sbyte*)(scanBase + names[bestIdx2]));
+                                                expDisp = scanRva - bestRva2;
+                                            }
+                                        }
+                                        scanFrame = expName != null
+                                            ? $"{expName}+0x{expDisp:X}"
+                                            : $"{scanModName}+0x{scanRva:X}";
+                                    }
+                                    catch { scanFrame = $"{scanModName}+0x{candidate - scanModBase:X}"; }
+
+                                    scanSb.AppendLine($"  {hits,2}: {scanFrame}  (rsp+0x{off:X})");
+                                    hits++;
+                                }
+                            }
+                            if (hits == 0)
+                                scanSb.AppendLine("  (no return addresses found — thread may be in kernel with no user frames on stack)");
+                            CrashReporter.LogSync(scanSb.ToString());
+                        }
+                    }
+                    finally
+                    {
+                        System.Runtime.InteropServices.Marshal.FreeHGlobal(stackCopy);
+                    }
+                }
+                catch (Exception scanEx)
+                {
+                    CrashReporter.LogSync($"[Heartbeat.Scan] Stack scan failed: {scanEx.GetType().Name}: {scanEx.Message}");
+                }
+            }
         }
         catch (Exception ex)
         {
