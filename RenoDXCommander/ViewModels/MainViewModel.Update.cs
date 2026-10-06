@@ -495,6 +495,8 @@ public partial class MainViewModel
     private static readonly IntPtr _symGetModuleBase64Ptr =
         System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(_symGetModuleBase64Del);
 
+    internal void CaptureNativeUiThreadStackPublic() => CaptureNativeUiThreadStack();
+
     /// <summary>
     /// Captures a native call stack of the UI thread using StackWalk64.
     /// Safe to call from a background thread. The suspend window is minimal:
@@ -592,32 +594,63 @@ public partial class MainViewModel
                 }
             }
 
-            // Resolve frames post-lock: try SymFromAddr for exported name, fall back to module+offset.
-            // SymFromAddr is safe after resume — uses only loaded module exports, no network.
+            // Resolve frames post-lock.
+            // Priority: SymFromAddr (exported name) → PE export table scan → module+offset.
+            // Also log PE version/timestamp for each unique module that appears in the stack.
             var modules = System.Diagnostics.Process.GetCurrentProcess().Modules
                 .Cast<System.Diagnostics.ProcessModule>()
                 .Select(m => (
-                    Base: (ulong)m.BaseAddress.ToInt64(),
-                    Size: (ulong)m.ModuleMemorySize,
-                    Name: System.IO.Path.GetFileName(m.FileName ?? "?")))
+                    Base:     (ulong)m.BaseAddress.ToInt64(),
+                    Size:     (ulong)m.ModuleMemorySize,
+                    Name:     System.IO.Path.GetFileName(m.FileName ?? "?"),
+                    FullPath: m.FileName ?? ""))
                 .ToArray();
 
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"[Heartbeat.Native] Native stack ({frameCount} frames):");
 
-            // Pre-allocate SYMBOL_INFO on the stack — unsafe fixed buffer avoids heap
+            // Pre-allocate SYMBOL_INFO on the stack
             NativeInterop.SYMBOL_INFO symInfo;
             symInfo.SizeOfStruct = (uint)sizeof(NativeInterop.SYMBOL_INFO);
             symInfo.MaxNameLen   = NativeInterop.MAX_SYM_NAME;
 
+            // Track which modules we've already logged version info for
+            var loggedModules = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             for (int i = 0; i < frameCount; i++)
             {
                 var addr = frames[i];
+                var mod  = modules.FirstOrDefault(m => addr >= m.Base && addr < m.Base + m.Size);
 
-                // Try to get exported symbol name via SymFromAddr
+                // Log PE version + TimeDateStamp + SizeOfImage for each unique module once.
+                // Read from already-mapped memory — no file I/O, no P/Invoke.
+                if (mod.Name != null && loggedModules.Add(mod.Name))
+                {
+                    try
+                    {
+                        string fileVer = "?";
+                        try { fileVer = System.Diagnostics.FileVersionInfo
+                            .GetVersionInfo(mod.FullPath).FileVersion ?? "?"; } catch { }
+
+                        // PE: e_lfanew at base+0x3C, TimeDateStamp at NtHeaders+0x08, SizeOfImage at NtHeaders+0x50
+                        uint ts = 0, soi = 0;
+                        try
+                        {
+                            var basePtr = (byte*)mod.Base;
+                            int lfanew  = *(int*)(basePtr + 0x3C);
+                            ts  = *(uint*)(basePtr + lfanew + 0x08);
+                            soi = *(uint*)(basePtr + lfanew + 0x50);
+                        }
+                        catch { }
+
+                        sb.AppendLine($"       [{mod.Name}  ver={fileVer}  ts=0x{ts:X8}  soi=0x{soi:X}]");
+                    }
+                    catch { /* never suppress the frame itself */ }
+                }
+
+                // Try SymFromAddr first
                 string frameName;
                 ulong displacement = 0;
-                // Re-zero the name area before each call
                 System.Runtime.CompilerServices.Unsafe.InitBlock(symInfo.Name, 0, (uint)(NativeInterop.MAX_SYM_NAME * 2));
                 bool symOk;
                 lock (_nativeStackLock)
@@ -630,13 +663,64 @@ public partial class MainViewModel
                     var name = new string(symInfo.Name, 0, (int)symInfo.NameLen);
                     frameName = $"{name}+0x{displacement:X}";
                 }
+                else if (mod.Name != null)
+                {
+                    // PE export table fallback: find nearest exported name at or below addr.
+                    // Reads from already-mapped module memory — safe, no allocation.
+                    string? exportName = null;
+                    uint    exportDisp = 0;
+                    try
+                    {
+                        var basePtr = (byte*)mod.Base;
+                        var rva     = (uint)(addr - mod.Base);
+                        int lfanew  = *(int*)(basePtr + 0x3C);
+                        // DataDirectory[0] = Export at NtHeaders + 0x88 (OptionalHeader offset 0x70 + 0x18)
+                        uint expDirRva  = *(uint*)(basePtr + lfanew + 0x88);
+                        uint expDirSize = *(uint*)(basePtr + lfanew + 0x8C);
+                        if (expDirRva != 0 && expDirSize != 0)
+                        {
+                            var expDir = (uint*)(basePtr + expDirRva);
+                            // IMAGE_EXPORT_DIRECTORY layout (all uint):
+                            // +0  Characteristics, +4 TimeDateStamp, +8 MajorVer/MinorVer
+                            // +12 Name, +16 Base, +20 NumberOfFunctions, +24 NumberOfNames
+                            // +28 AddressOfFunctions, +32 AddressOfNames, +36 AddressOfNameOrdinals
+                            uint numFuncs   = expDir[5];  // NumberOfFunctions
+                            uint numNames   = expDir[6];  // NumberOfNames
+                            uint* funcs     = (uint*)(basePtr + expDir[7]);  // AddressOfFunctions
+                            uint* names     = (uint*)(basePtr + expDir[8]);  // AddressOfNames
+                            ushort* ords    = (ushort*)(basePtr + expDir[9]); // AddressOfNameOrdinals
+
+                            uint bestRva = 0;
+                            uint bestIdx = uint.MaxValue;
+                            for (uint n = 0; n < numNames; n++)
+                            {
+                                ushort ord  = ords[n];
+                                if (ord >= numFuncs) continue;
+                                uint funcRva = funcs[ord];
+                                // Skip forwarded exports (RVA inside export section)
+                                if (funcRva >= expDirRva && funcRva < expDirRva + expDirSize) continue;
+                                if (funcRva <= rva && funcRva > bestRva)
+                                {
+                                    bestRva = funcRva;
+                                    bestIdx = n;
+                                }
+                            }
+                            if (bestIdx != uint.MaxValue)
+                            {
+                                exportName = new string((sbyte*)(basePtr + names[bestIdx]));
+                                exportDisp = rva - bestRva;
+                            }
+                        }
+                    }
+                    catch { /* fall through to module+offset */ }
+
+                    frameName = exportName != null
+                        ? $"{exportName}+0x{exportDisp:X}"
+                        : $"{mod.Name}+0x{addr - mod.Base:X}";
+                }
                 else
                 {
-                    // Fall back to module+offset
-                    var mod = modules.FirstOrDefault(m => addr >= m.Base && addr < m.Base + m.Size);
-                    frameName = mod.Name != null
-                        ? $"{mod.Name}+0x{addr - mod.Base:X}"
-                        : $"0x{addr:X16}";
+                    frameName = $"0x{addr:X16}";
                 }
 
                 sb.AppendLine($"  {i,2}: {frameName}");

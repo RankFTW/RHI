@@ -414,6 +414,19 @@ internal static class NativeInterop
     internal const uint THREAD_QUERY_INFORMATION = 0x0040;
     internal const uint IMAGE_FILE_MACHINE_AMD64 = 0x8664;
 
+    // ── Event / wait for native-block test ──────────────────────────────────────
+    internal const uint WAIT_TIMEOUT   = 0x00000102;
+    internal const uint WAIT_OBJECT_0  = 0x00000000;
+    internal const uint INFINITE       = 0xFFFFFFFF;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    internal static extern IntPtr CreateEventW(
+        IntPtr lpEventAttributes, bool bManualReset, bool bInitialState,
+        [MarshalAs(UnmanagedType.LPWStr)] string? lpName);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    internal static extern uint WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
+
     // x64 CONTEXT block is exactly 1232 bytes (winnt.h CONTEXT for AMD64).
     // We treat it as an opaque byte blob; StackWalk64 reads/modifies it internally.
     internal const int CONTEXT_X64_SIZE = 1232;
