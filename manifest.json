@@ -821,6 +821,9 @@
     "REANIMAL": {
       "renodx": "REANIMAL has native HDR that is literally \u0022HDR Den made\u0022.\rThere is no need to add RenoDX to this game."
     },
+    "Arknights: Endfield": {
+      "renodx": "\u26A0 The latest RenoDX mod for Arknights: Endfield is only available through Discord and is not yet on GitHub.\n\nThe main build has also switched from DX11 to Vulkan — make sure you are using the correct version for your setup."
+    },
     "Gears of War: E-Day": {
       "renodx": "\u26A0 ReShade with addon support requires Easy Anti-Cheat to be disabled. EAC can be disabled with Ultra+."
     },
