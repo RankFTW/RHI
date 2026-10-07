@@ -3,9 +3,7 @@ set OUT=C:\Users\Mark\OneDrive\Documents\RDXC\Publish\RHI
 set SRC=RenoDXCommander
 
 :: Force close RHI and helpers if running so the publish can replace the EXE
-taskkill /F /IM RHI.exe >nul 2>nul
-taskkill /F /IM RHI-Stats.exe >nul 2>nul
-taskkill /F /IM RHI.DropHelper.exe >nul 2>nul
+powershell -NoProfile -Command "Get-Process RHI,'RHI-Stats','RHI.DropHelper' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue"
 timeout /t 2 /nobreak >nul
 
 dotnet publish %SRC%\RenoDXCommander.csproj -c Release -r win-x64 -p:PublishSingleFile=true -p:Platform=x64 --self-contained false -o "%OUT%"
