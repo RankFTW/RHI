@@ -37,6 +37,9 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 **Diagnostics**
 - Fixed freeze diagnostic logging writing several megabytes per second during a long freeze, which could cause an out-of-memory crash. The detailed diagnostic data (thread stacks, module list, call scan) now only writes once per freeze, not every 10 seconds.
 - Fixed session log files growing without limit. Logs now roll to a new file at 20 MB, keeping the existing limit of 10 files.
+- Fixed the recent-actions timeline in freeze logs growing exponentially during a long freeze — each tick was including the previous tick's summary in its own output, causing the log size to double every 10 seconds. This was the root cause of the 1.7 GB log file.
+- Fixed the async log channel being unbounded. A log flood during a freeze could now exhaust memory before the process was killed. The channel is now bounded at 5000 entries and drops the oldest when full.
+- Unhandled exceptions caught by the WinUI dispatcher are now logged immediately to the session log, so they're visible even if the app continues running.
 
 ### Maintenance
 - Changing Smooth Motion or ReBAR Enable in the Driver Settings section now rebuilds only that section instead of the entire game overrides panel.

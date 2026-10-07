@@ -281,7 +281,7 @@ public class SettingsHandler
             var spinBtn  = new Microsoft.UI.Xaml.Controls.Button { Content = "Test PEGGED (10s spin)", FontSize = 11 };
             spinBtn.Click  += (s, e) => { var end = DateTime.UtcNow.AddSeconds(10); while (DateTime.UtcNow < end) { } };
 
-            // Native Block: WaitForSingleObject on an unsignaled event — pure native wait,
+            // Native Block: WaitForSingleObject on an unsignaled event — pure native wait, WaitForSingleObject on an unsignaled event — pure native wait,
             // no managed frames above the wait. Expected top: ntdll!NtWaitForSingleObject,
             // then KERNELBASE!WaitForSingleObjectEx, then the managed-to-native boundary.
             var nativeBlockBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test Native Block (30s)", FontSize = 11 };
@@ -312,6 +312,20 @@ public class SettingsHandler
             btnRow.Children.Add(spinBtn);
             btnRow.Children.Add(nativeBlockBtn);
             btnRow.Children.Add(idleBaselineBtn);
+
+            // Dispatcher Exception: throws inside a TryEnqueue callback.
+            // Checks whether app.UnhandledException fires, e.Handled = true takes effect,
+            // and whether the dispatcher keeps running afterwards (timer + probes should continue).
+            var dispExBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test Dispatcher Exception", FontSize = 11 };
+            dispExBtn.Click += (s, e) =>
+            {
+                CrashReporter.LogSync("[FreezeDiag] Test Dispatcher Exception: about to throw inside TryEnqueue(Normal)");
+                _window.DispatcherQueue?.TryEnqueue(() =>
+                {
+                    throw new InvalidOperationException("FreezeDiag: intentional dispatcher exception test");
+                });
+            };
+            btnRow.Children.Add(dispExBtn);
             inner.Children.Add(btnRow);
             card.Child = inner;
             _window.SettingsCardsPanel.Children.Add(card);

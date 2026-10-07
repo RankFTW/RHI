@@ -40,9 +40,15 @@ public static class CrashReporter
     private static volatile bool _verboseLogging;
     private static readonly object _verboseLogLock = new();
 
-    /// <summary>Channel for async log writes - entries are written on a background thread.</summary>
-    private static readonly Channel<string> _logChannel = Channel.CreateUnbounded<string>(
-        new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+    /// <summary>Channel for async log writes. Bounded at 5000 entries — oldest dropped on overflow
+    /// so a log flood (e.g. during a freeze) can't exhaust memory or take the process down.</summary>
+    private static readonly Channel<string> _logChannel = Channel.CreateBounded<string>(
+        new BoundedChannelOptions(5000)
+        {
+            SingleReader = true,
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.DropOldest,
+        });
 
     /// <summary>Background task that drains the log channel and writes to disk.</summary>
     private static Task? _drainTask;
@@ -158,8 +164,14 @@ public static class CrashReporter
         for (int i = all.Length - 1; i >= 0 && result.Count < count; i--)
         {
             var entry = all[i];
-            if (entry.IndexOf("[UIAction] ", StringComparison.Ordinal) >= 0)
-                result.Add(entry); // keep full entry including timestamp
+            // Match only entries where [UIAction] follows the timestamp prefix — not entries
+            // that merely contain "[UIAction]" embedded in a "Recent UI actions:" summary line.
+            // The timestamp prefix is "[HH:mm:ss.fff] " (16 chars). A genuine UIAction entry
+            // looks like "[02:01:35.152] [UIAction] ...".
+            // A summary line looks like "[02:01:44.697] [Heartbeat] Recent UI actions: ... [UIAction] ..."
+            // The check: [UIAction] must appear at position 16 (immediately after the timestamp).
+            if (entry.Length > 27 && entry.IndexOf("[UIAction] ", 16, StringComparison.Ordinal) == 16)
+                result.Add(entry);
         }
         result.Reverse();
         return result;
@@ -299,6 +311,10 @@ public static class CrashReporter
         // 3. WinUI / XAML dispatcher exceptions
         app.UnhandledException += (_, e) =>
         {
+            // Log synchronously first — the async channel may not drain before the process exits.
+            // This also captures exceptions thrown inside dispatcher callbacks, which set
+            // e.Handled = true and continue running with a potentially dead dispatcher.
+            LogSync($"[CrashReporter] app.UnhandledException at {DateTime.Now:HH:mm:ss.fff}: {e.Exception?.GetType().Name}: {e.Exception?.Message}");
             WriteCrashReport("Microsoft.UI.Xaml.Application.UnhandledException", e.Exception,
                 note: $"WinUI exception. Handled = true (app will attempt to continue). Message: {e.Message}");
             e.Handled = true; // Try to keep the app alive
