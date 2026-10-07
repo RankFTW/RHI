@@ -124,6 +124,14 @@ public partial class MainViewModel
                     if (recentActions.Count > 0)
                         CrashReporter.LogSync($"[Heartbeat] Recent UI actions: {string.Join(" → ", recentActions)}");
 
+                    // ── 3b–5. Detailed diagnostics — once per stall only ─────────────────
+                    // The UI FROZEN + CPU lines above fire every heartbeat tick so the log
+                    // shows the full freeze duration. Everything below is expensive and
+                    // verbose (thread stacks, RSP scan, module list) — gate it so it only
+                    // runs once per freeze event, not every 10 seconds.
+                    if (System.Threading.Interlocked.CompareExchange(ref _freezeStackCaptured, 1, 0) == 0)
+                    {
+
                     // ── 3b. UI thread ThreadState + WaitReason ───────────────────────────
                     // WaitReason requires ThreadState == Wait; any other state throws.
                     // LpcReceive (9) / LpcReply (10) = cross-process COM/RPC wait — points
@@ -260,15 +268,13 @@ public partial class MainViewModel
                         CrashReporter.LogSync($"[Heartbeat.Modules] Module enumeration failed: {modEx.GetType().Name}: {modEx.Message}");
                     }
 
-                    // ── 4. ClrMD stack capture — once per stall ─────────────────────────
+                    // ── 4. ClrMD stack capture ───────────────────────────────────────────
                     // ClrMD is loaded dynamically (not a static package reference) to avoid
                     // crashing the WinUI XAML compiler's type resolution during publish.
                     // Frame enumeration may return 0 frames in single-file publish without PDB;
                     // we log the count explicitly so the cause is visible in the log.
-                    if (System.Threading.Interlocked.CompareExchange(ref _freezeStackCaptured, 1, 0) == 0)
+                    _ = Task.Run(() =>
                     {
-                        _ = Task.Run(() =>
-                        {
                             try
                             {
                                 var clrMdPath = System.IO.Path.Combine(
@@ -495,7 +501,7 @@ public partial class MainViewModel
                                 CrashReporter.LogSync($"[Heartbeat.Dump] Minidump failed: {ex.GetType().Name}: {ex.Message}");
                             }
                         });
-                    }
+                    } // end once-per-stall diagnostics gate
                 }
             }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
         }
