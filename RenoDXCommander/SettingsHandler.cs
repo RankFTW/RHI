@@ -226,10 +226,13 @@ public class SettingsHandler
         _window.DropHelperCombo.SelectedIndex = ViewModel.Settings.DropHelperEnabled ? 1 : 0;
         _window.DropHelperCombo.IsEnabled = VulkanLayerService.IsRunningAsAdmin();
 
-        // Initialize tray combos
+        // Initialize tray combos — guard with IsLoadingSettings so SelectionChanged
+        // handlers don't fire and write to the registry/settings during init.
+        ViewModel.Settings.IsLoadingSettings = true;
         _window.CloseToTrayCombo.SelectedIndex = ViewModel.Settings.CloseToTray ? 1 : 0;
         _window.RecentGamesCombo.SelectedIndex = ViewModel.Settings.RecentGamesMenu ? 1 : 0;
         _window.StartWithWindowsCombo.SelectedIndex = ViewModel.Settings.StartWithWindows ? 1 : 0;
+        ViewModel.Settings.IsLoadingSettings = false;
 
         // Initialize Nexus Mods card (dev-only)
         if (FeatureFlags.NexusMods)
