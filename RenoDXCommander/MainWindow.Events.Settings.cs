@@ -1306,7 +1306,7 @@ public sealed partial class MainWindow
 
     private void CloseToTrayCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings || TrayComboInitializing) return;
         ViewModel.Settings.CloseToTray = ((ComboBox)sender).SelectedIndex == 1;
         ViewModel.SaveSettingsPublic();
 
@@ -1330,7 +1330,7 @@ public sealed partial class MainWindow
 
     private void RecentGamesCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings || TrayComboInitializing) return;
         ViewModel.Settings.RecentGamesMenu = ((ComboBox)sender).SelectedIndex == 1;
         ViewModel.SaveSettingsPublic();
         // Update jump list immediately
@@ -1342,7 +1342,7 @@ public sealed partial class MainWindow
 
     private void StartWithWindowsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings || TrayComboInitializing) return;
         var enabled = ((ComboBox)sender).SelectedIndex == 1;
         ViewModel.Settings.StartWithWindows = enabled;
         ViewModel.SaveSettingsPublic();

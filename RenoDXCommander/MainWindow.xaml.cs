@@ -47,6 +47,9 @@ public sealed partial class MainWindow : Window
 
     private string? _pendingReselect;
     private bool _forceClose;
+
+    /// <summary>Set during Settings panel init to suppress SelectionChanged side-effects on tray combos.</summary>
+    internal bool TrayComboInitializing;
     private DispatcherTimer? _shutdownSignalTimer;
     private DispatcherTimer? _launchTimer;
     private readonly CancellationTokenSource _lifetime = new();
