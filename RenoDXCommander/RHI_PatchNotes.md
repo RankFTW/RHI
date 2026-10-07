@@ -2,7 +2,7 @@
 
 To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. Takes about 30 seconds.
 
-## v2.8.6 Beta 2
+## v2.8.6 Beta 4
 
 ### Bug Fixes
 
@@ -36,7 +36,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ### Maintenance
 - Changing Smooth Motion or ReBAR Enable in the Driver Settings section now rebuilds only that section instead of the entire game overrides panel.
-- Improved internal freeze diagnostic logging to capture more detail when a UI freeze occurs. When RHI freezes, the session log now includes the managed call stack for every thread at the time of the freeze — this makes freeze reports much more useful for diagnosing the cause. Additional information is now captured on freeze: the UI thread wait state and wait reason (identifies cross-process COM/RPC waits), a native top-frame identifying which system function the UI thread is blocked in, a heuristic scan of the thread's stack for probable return addresses (helps identify whether the wait is inside WinUI, a GPU driver, or a COM/RPC path), a pump-responsiveness probe (distinguishes a blocked thread from an idle one), and a list of GPU driver DLLs with version and timestamp alongside any third-party injected modules. Timestamps are included on each action in the recent-actions timeline.
+- Improved internal freeze diagnostic logging. When RHI freezes, the session log now captures significantly more detail to help track down the cause — including what the UI thread is actually waiting on, a heuristic scan of the call stack, GPU driver versions, and a list of third-party software injected into the process.
 
 ## v2.8.5
 
