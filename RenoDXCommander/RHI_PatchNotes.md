@@ -39,7 +39,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ### Maintenance
 - Changing Smooth Motion or ReBAR Enable in the Driver Settings section now rebuilds only that section instead of the entire game overrides panel.
-- Improved internal freeze diagnostic logging. When RHI freezes, the session log now captures significantly more detail to help track down the cause — including what the UI thread is actually waiting on, a heuristic scan of the call stack, GPU driver versions, and a list of third-party software injected into the process.
+- Improved internal freeze diagnostic logging. When RHI freezes, the session log now captures significantly more detail to help track down the cause — including what the UI thread is actually waiting on, a heuristic scan of the call stack, GPU driver versions, a list of third-party software injected into the process, and now: which dispatcher priority levels (High, Normal, Low) are still running versus stalled, true freeze onset time from a 1-second dispatcher timer, and periodic resource counters (memory, handles, GDI/USER objects) to detect leaks during long sessions.
 
 ## v2.8.5
 

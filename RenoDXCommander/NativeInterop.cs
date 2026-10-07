@@ -414,6 +414,33 @@ internal static class NativeInterop
     internal const uint THREAD_QUERY_INFORMATION = 0x0040;
     internal const uint IMAGE_FILE_MACHINE_AMD64 = 0x8664;
 
+    // ── Resource counters (GDI/USER objects, memory) ────────────────────────────
+
+    // GetGuiResources flags
+    internal const uint GR_GDIOBJECTS  = 0;
+    internal const uint GR_USEROBJECTS = 1;
+
+    [DllImport("user32.dll")]
+    internal static extern uint GetGuiResources(IntPtr hProcess, uint uiFlags);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct MEMORYSTATUSEX
+    {
+        public uint    dwLength;          // must be set to sizeof(MEMORYSTATUSEX)
+        public uint    dwMemoryLoad;
+        public ulong   ullTotalPhys;
+        public ulong   ullAvailPhys;
+        public ulong   ullTotalPageFile;
+        public ulong   ullAvailPageFile;
+        public ulong   ullTotalVirtual;
+        public ulong   ullAvailVirtual;
+        public ulong   ullAvailExtendedVirtual;
+    }
+
+    [DllImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
+
     // ── Module lookup from address ───────────────────────────────────────────────
     internal const uint GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS        = 0x00000004;
     internal const uint GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT  = 0x00000002;

@@ -24,6 +24,48 @@ public partial class MainViewModel
     /// <summary>Prevents more than one stack capture per freeze event.</summary>
     private int _freezeStackCaptured; // 0 = not captured, 1 = captured; Interlocked
 
+    /// <summary>Timestamp of the last DispatcherQueueTimer tick — for true freeze onset detection.</summary>
+    private long _dispatcherTimerLastTickUtc; // DateTime.UtcNow.Ticks — read/write via Interlocked
+
+    private System.Threading.Timer? _resourceLogTimer;
+
+    /// <summary>Logs process resource counters — private bytes, GC heap, handles, GDI/USER objects, system memory.</summary>
+    private static void LogResourceCounters(string context)
+    {
+        try
+        {
+            using var proc = System.Diagnostics.Process.GetCurrentProcess();
+            proc.Refresh();
+            long privateBytes  = proc.PrivateMemorySize64;
+            long workingSet    = proc.WorkingSet64;
+            long gcHeap        = GC.GetTotalMemory(false);
+            int  handleCount   = proc.HandleCount;
+            int  threadCount   = proc.Threads.Count;
+
+            // GDI and USER objects — diagnostic for WinUI dispatcher failure from resource exhaustion
+            var hProc = proc.Handle;
+            uint gdiObj  = NativeInterop.GetGuiResources(hProc, NativeInterop.GR_GDIOBJECTS);
+            uint userObj = NativeInterop.GetGuiResources(hProc, NativeInterop.GR_USEROBJECTS);
+
+            // System memory
+            var mem = new NativeInterop.MEMORYSTATUSEX { dwLength = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeInterop.MEMORYSTATUSEX>() };
+            NativeInterop.GlobalMemoryStatusEx(ref mem);
+            long availPhysMB   = (long)(mem.ullAvailPhys   / 1024 / 1024);
+            long availPageMB   = (long)(mem.ullAvailPageFile / 1024 / 1024);
+            uint memLoadPct    = mem.dwMemoryLoad;
+
+            CrashReporter.LogSync(
+                $"[Resources] {context} | " +
+                $"Private={privateBytes/1024/1024}MB WS={workingSet/1024/1024}MB GC={gcHeap/1024/1024}MB | " +
+                $"Handles={handleCount} Threads={threadCount} GDI={gdiObj} USER={userObj} | " +
+                $"SysAvailPhys={availPhysMB}MB AvailPage={availPageMB}MB MemLoad={memLoadPct}%");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.LogSync($"[Resources] {context} — failed: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
     internal void StopBackgroundWork()
     {
         lock (_backgroundTimerLock)
@@ -33,6 +75,8 @@ public partial class MainViewModel
             _heartbeatTimer = null;
             _updateCheckTimer?.Dispose();
             _updateCheckTimer = null;
+            _resourceLogTimer?.Dispose();
+            _resourceLogTimer = null;
         }
         _backgroundLifetime.Cancel();
         PeriodicAppUpdateCheck = null;
@@ -56,6 +100,33 @@ public partial class MainViewModel
         lock (_backgroundTimerLock)
         {
             if (_backgroundStopped || _heartbeatTimer != null) return;
+
+            // ── 5-minute resource counter timer ─────────────────────────────────
+            // Logs private bytes, GC heap, handles, GDI/USER objects, system memory.
+            // Runs independently of heartbeat so it fires even during long freezes.
+            _resourceLogTimer = new System.Threading.Timer(_ =>
+            {
+                if (_backgroundStopped) return;
+                LogResourceCounters("periodic-5min");
+            }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
+
+            // ── DispatcherQueueTimer last-tick tracker ───────────────────────────
+            // A DispatcherQueueTimer fires on the UI thread via the dispatcher.
+            // Tracking when it last ticked tells us the true onset of a stall:
+            // if the timer stopped ticking before the heartbeat probe failed,
+            // the dispatcher was already dead before the navigation.
+            _dispatcherTimerLastTickUtc = DateTime.UtcNow.Ticks;
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                var dqt = DispatcherQueue!.CreateTimer();
+                dqt.Interval = TimeSpan.FromSeconds(1);
+                dqt.IsRepeating = true;
+                dqt.Tick += (_, _) =>
+                {
+                    System.Threading.Interlocked.Exchange(ref _dispatcherTimerLastTickUtc, DateTime.UtcNow.Ticks);
+                };
+                dqt.Start();
+            });
             _heartbeatTimer = new System.Threading.Timer(async _ =>
             {
                 if (_backgroundStopped) return;
@@ -132,7 +203,13 @@ public partial class MainViewModel
                     if (System.Threading.Interlocked.CompareExchange(ref _freezeStackCaptured, 1, 0) == 0)
                     {
 
-                    // ── 3b. UI thread ThreadState + WaitReason ───────────────────────────
+                    // ── 3a. Dispatcher timer last-tick + resource counters ────────────────
+                    // How long ago did the DispatcherQueueTimer last fire? That's the true onset.
+                    var timerLastTick = new DateTime(System.Threading.Interlocked.Read(ref _dispatcherTimerLastTickUtc), DateTimeKind.Utc);
+                    var timerAgo = DateTime.UtcNow - timerLastTick;
+                    CrashReporter.LogSync($"[Heartbeat.Timer] DispatcherQueueTimer last ticked {timerAgo.TotalSeconds:F1}s ago (at {timerLastTick:HH:mm:ss.fff} UTC)");
+
+                    LogResourceCounters("at-freeze");
                     // WaitReason requires ThreadState == Wait; any other state throws.
                     // LpcReceive (9) / LpcReply (10) = cross-process COM/RPC wait — points
                     // at a hung shell, overlay, or input-method server.
@@ -412,6 +489,37 @@ public partial class MainViewModel
                         // unwinder is available. Top frame alone distinguishes message-wait
                         // (NtUserGetMessage) from a blocked wait (NtWaitForSingleObject etc).
                         _ = Task.Run(CaptureNativeUiThreadStack);
+
+                        // ── 4c. Multi-priority dispatcher probes ─────────────────────────────
+                        // Enqueue probes at High, Normal and Low. Log which ones complete
+                        // within 2 seconds. If High/Normal run but Low doesn't, only the
+                        // low-priority queue is starved. If none run, the dispatcher is wedged.
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var probeHigh   = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                                var probeNormal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                                var probeLow    = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                                bool qHigh   = DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.High,   () => probeHigh.TrySetResult(true))   == true;
+                                bool qNormal = DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () => probeNormal.TrySetResult(true)) == true;
+                                bool qLow    = DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,    () => probeLow.TrySetResult(true))    == true;
+
+                                CrashReporter.LogSync($"[Heartbeat.Probes] Enqueued: High={qHigh} Normal={qNormal} Low={qLow} — waiting 2s for results...");
+
+                                bool rHigh = false, rNormal = false, rLow = false;
+                                try { await probeHigh.Task.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);   rHigh   = true; } catch (TimeoutException) { }
+                                try { await probeNormal.Task.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false); rNormal = true; } catch (TimeoutException) { }
+                                try { await probeLow.Task.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);    rLow    = true; } catch (TimeoutException) { }
+
+                                CrashReporter.LogSync($"[Heartbeat.Probes] Completed: High={rHigh} Normal={rNormal} Low={rLow}");
+                            }
+                            catch (Exception ex)
+                            {
+                                CrashReporter.LogSync($"[Heartbeat.Probes] Multi-priority probe failed: {ex.GetType().Name}: {ex.Message}");
+                            }
+                        });
 
                         // ── 5. Minidump fallback — dev only (unlock.txt), fires ~10s after freeze ──
                         // Writes a full-memory dump to %LocalAppData%\RHI\freeze_dump.dmp.
