@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55429,
-  "generated": "2026-10-07T15:45:27Z",
+  "game_count": 55435,
+  "generated": "2026-10-07T19:31:00Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -5640,7 +5640,7 @@
     "Aion 2": {
       "steam_appid": 3393110,
       "dx12": true,
-      "config_path": "%localappdata%\\AION2\\Saved_Steam\\Config\\Windows",
+      "config_path": "%localappdata%\\AION2\\Saved_Steam\\Config\\Windows ''(Steam)''",
       "engine": "Unreal Engine 5"
     },
     "AIPD - Artificial Intelligence Police Department": {
@@ -20154,6 +20154,10 @@
       "steam_appid": 812100
     },
     "Blake and Mortimer: The Tables of Babylon": {},
+    "Blake Stone: Aliens of Gold": {
+      "steam_appid": 358190,
+      "engine": "Wolfenstein 3D engine"
+    },
     "Blake Stone: Planet Strike": {
       "steam_appid": 358310,
       "engine": "Wolfenstein 3D engine"
@@ -36796,10 +36800,10 @@
     },
     "Crusader: Adventure Out of Time": {},
     "Crusader: No Regret": {
-      "engine": "Enhanced Ultima VIII: Pagan engine"
+      "engine": "Pagan engine"
     },
     "Crusader: No Remorse": {
-      "engine": "Enhanced Ultima VIII: Pagan engine"
+      "engine": "Pagan engine"
     },
     "Crusaders of Light": {
       "steam_appid": 775220
@@ -45783,6 +45787,9 @@
     },
     "Disney SpellStruck": {
       "opengl": true
+    },
+    "Disney Trivia Challenge": {
+      "engine": "ImaginEngine Technology"
     },
     "Disney Universe": {
       "steam_appid": 316260,
@@ -58013,7 +58020,7 @@
     "Fallout Tactics: Brotherhood of Steel": {
       "steam_appid": 38420,
       "config_path": "<path-to-game>\\core\\bos.cfg",
-      "engine": "Phoenix (Micro Fort├®)"
+      "engine": "Phoenix (Micro Forté)"
     },
     "Fallout: New Vegas": {
       "steam_appid": 22380,
@@ -60789,6 +60796,7 @@
     },
     "Fire": {
       "steam_appid": 325520,
+      "dx9": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\Daedalic Entertainment GmbH\\Fire\\",
       "engine": "Unity"
     },
@@ -87231,6 +87239,7 @@
       "steam_appid": 636490
     },
     "Ka'Roo": {},
+    "Ka-50 Hokum": {},
     "Kaan: Barbarian's Blade": {
       "config_path": "<path-to-game>\\general.cfg"
     },
@@ -93518,6 +93527,10 @@
     },
     "Liberty VR": {
       "steam_appid": 649660
+    },
+    "Liberté": {
+      "steam_appid": 1590160,
+      "engine": "Unity"
     },
     "Libert├®": {
       "steam_appid": 1590160,
@@ -152852,7 +152865,7 @@
     },
     "Star Control": {
       "steam_appid": 358920,
-      "engine": "M├¬l├®e engine"
+      "engine": "Mêlée engine"
     },
     "Star Control 3": {
       "steam_appid": 358930
@@ -163956,13 +163969,13 @@
     "The Bard's Tale III: Thief of Fate": {},
     "The Bard's Tale IV: Barrows Deep": {
       "steam_appid": 566090,
-      "config_path": "%LOCALAPPDATA%\\Packages\\181CBCCD.TheBardsTaleIV_9y3t8zad226mc\\LocalCache\\Local\\BardsTale4DC\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Packages\\181CBCCD.TheBardsTaleIV_9y3t8zad226mc\\LocalCache\\Local\\BardsTale4DC\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "The Bard's Tale IV: Director's Cut": {
       "steam_appid": 1091980,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\BardsTale4DC\\Saved\\SaveGames\\",
+      "config_path": "%LOCALAPPDATA%\\BardsTale4DC\\Saved\\SaveGames\\BT_Prefs.sav, %LOCALAPPDATA%\\BardsTale4DC\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
     "The Bard's Tale Trilogy": {
@@ -165873,7 +165886,7 @@
     "The Elder Scrolls IV: Oblivion Remastered": {
       "steam_appid": 2623190,
       "dx12": true,
-      "config_path": "%USERPROFILE%\\Documents\\My Games\\Oblivion Remastered\\Saved\\Config\\Windows\\",
+      "config_path": "%USERPROFILE%\\Documents\\My Games\\Oblivion Remastered\\Saved\\Config\\Windows\\, %USERPROFILE%\\Documents\\My Games\\Oblivion Remastered\\Saved\\SaveGames\\Save_Settings.sav, <path-to-game>\\OblivionRemastered\\Content\\Dev\\ObvData\\*.ini, <path-to-game>\\OblivionRemastered\\Content\\Dev\\ObvData\\Data\\Plugins.txt",
       "config_path_xbox": "%USERPROFILE%\\Documents\\My Games\\Oblivion Remastered\\Saved\\Config\\WinGDK\\",
       "engine": "Unreal Engine 5"
     },
@@ -176652,7 +176665,17 @@
       "opengl": true,
       "config_path": "%APPDATA%\\TRX2\\<user-id>\\savegame.dat"
     },
+    "Tomb Raider IV–VI Remastered": {
+      "steam_appid": 2525380,
+      "opengl": true,
+      "config_path": "%APPDATA%\\TRX2\\<user-id>\\savegame.dat"
+    },
     "Tomb Raider IÔÇôIII Remastered": {
+      "steam_appid": 2478970,
+      "opengl": true,
+      "config_path": "%APPDATA%\\TRX\\<user-id>\\savegame.dat"
+    },
+    "Tomb Raider I–III Remastered": {
       "steam_appid": 2478970,
       "opengl": true,
       "config_path": "%APPDATA%\\TRX\\<user-id>\\savegame.dat"
@@ -176672,6 +176695,7 @@
       "config_path": "<path-to-game>"
     },
     "Tomb Raider: Definitive Edition": {
+      "dx11": true,
       "engine": "Crystal Engine"
     },
     "Tomb Raider: Legacy of Atlantis": {
