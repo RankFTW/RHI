@@ -87,7 +87,9 @@ public partial class MainViewModel
     internal void SetLastUiAction(string action)
     {
         _lastUiAction = action;
+        var entry = $"[{DateTime.Now:HH:mm:ss.fff}] [UIAction] {action}";
         _crashReporter.Log($"[UIAction] {action}");
+        CrashReporter.RecordUiAction(entry); // dedicated ring buffer, never contaminated by diagnostic output
     }
 
     /// <summary>
@@ -193,7 +195,12 @@ public partial class MainViewModel
                     //       quick kill still leaves the most useful lines.
                     CrashReporter.LogSync($"[Heartbeat] *** UI FROZEN *** last action: {_lastUiAction} | UI thread CPU: {cpuInfo}");
                     if (recentActions.Count > 0)
-                        CrashReporter.LogSync($"[Heartbeat] Recent UI actions: {string.Join(" → ", recentActions)}");
+                    {
+                        // Cap the summary line at 4 KB — belt-and-suspenders against any future feedback path.
+                        var summary = string.Join(" → ", recentActions);
+                        if (summary.Length > 4096) summary = summary.Substring(0, 4096) + "… (truncated)";
+                        CrashReporter.LogSync($"[Heartbeat] Recent UI actions: {summary}");
+                    }
 
                     // ── 3b–5. Detailed diagnostics — once per stall only ─────────────────
                     // The UI FROZEN + CPU lines above fire every heartbeat tick so the log
@@ -610,6 +617,51 @@ public partial class MainViewModel
                             }
                         });
                     } // end once-per-stall diagnostics gate
+
+                        // ── 6. Auto-restart after 60s of confirmed total dispatcher death ──────
+                        // Only fires when ALL three priority probes (High, Normal, Low) failed,
+                        // which means the dispatcher is completely unresponsive — not just slow.
+                        // Restarts the process so the user isn't stuck waiting for Task Manager.
+                        // Gated separately from the once-per-stall block so it fires every tick
+                        // until it confirms the dispatcher is truly dead and restarts.
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await Task.Delay(60_000).ConfigureAwait(false);
+                                if (_backgroundStopped) return;
+
+                                // Confirm all three priorities are dead before restarting
+                                var h2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                                var n2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                                var l2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                                DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.High,   () => h2.TrySetResult(true));
+                                DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () => n2.TrySetResult(true));
+                                DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,    () => l2.TrySetResult(true));
+                                bool hOk = false, nOk = false, lOk = false;
+                                try { await h2.Task.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false); hOk = true; } catch (TimeoutException) { }
+                                try { await n2.Task.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false); nOk = true; } catch (TimeoutException) { }
+                                try { await l2.Task.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false); lOk = true; } catch (TimeoutException) { }
+
+                                if (hOk || nOk || lOk)
+                                {
+                                    // Dispatcher recovered — don't restart
+                                    CrashReporter.LogSync($"[Heartbeat.Restart] Dispatcher recovered after 60s (High={hOk} Normal={nOk} Low={lOk}) — restart cancelled");
+                                    return;
+                                }
+
+                                CrashReporter.LogSync("[Heartbeat.Restart] All dispatcher priorities unresponsive after 60s — restarting RHI");
+                                CrashReporter.Shutdown(); // flush log before exit
+                                var exePath = Environment.ProcessPath;
+                                if (!string.IsNullOrEmpty(exePath))
+                                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exePath) { UseShellExecute = true });
+                                Environment.Exit(2); // exit code 2 = auto-restart
+                            }
+                            catch (Exception ex)
+                            {
+                                CrashReporter.LogSync($"[Heartbeat.Restart] Auto-restart failed: {ex.GetType().Name}: {ex.Message}");
+                            }
+                        });
                 }
             }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
         }

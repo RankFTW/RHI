@@ -153,27 +153,32 @@ public static class CrashReporter
 
     private static readonly ConcurrentQueue<string> _breadcrumbs = new();
 
+    // ── UIAction ring buffer — fed only by SetLastUiAction ───────────────────────
+    // Kept separate from the main breadcrumb buffer so diagnostic output can never
+    // be read back into a later diagnostic (the feedback loop that caused the 1.7 GB log).
+    private const int MaxUiActions = 20;
+    private static readonly ConcurrentQueue<string> _uiActionRing = new();
+
+    internal static void RecordUiAction(string timestampedEntry)
+    {
+        _uiActionRing.Enqueue(timestampedEntry);
+        while (_uiActionRing.Count > MaxUiActions)
+            _uiActionRing.TryDequeue(out _);
+    }
+
     /// <summary>
-    /// Returns the last <paramref name="count"/> breadcrumb entries that contain "[UIAction]",
-    /// preserving the timestamp so the freeze log shows exactly when each action occurred.
+    /// Returns the last <paramref name="count"/> UI action entries from the dedicated
+    /// UIAction ring buffer. This buffer is written only by <c>SetLastUiAction</c> and
+    /// never contains diagnostic output, so it cannot feed back into itself.
+    /// Summary lines are capped at 4 KB to prevent unbounded growth even if this changes.
     /// </summary>
     public static List<string> GetRecentUiActions(int count)
     {
-        var all = _breadcrumbs.ToArray();
-        var result = new List<string>(count);
-        for (int i = all.Length - 1; i >= 0 && result.Count < count; i--)
-        {
-            var entry = all[i];
-            // Match only entries where [UIAction] follows the timestamp prefix — not entries
-            // that merely contain "[UIAction]" embedded in a "Recent UI actions:" summary line.
-            // The timestamp prefix is "[HH:mm:ss.fff] " (16 chars). A genuine UIAction entry
-            // looks like "[02:01:35.152] [UIAction] ...".
-            // A summary line looks like "[02:01:44.697] [Heartbeat] Recent UI actions: ... [UIAction] ..."
-            // The check: [UIAction] must appear at position 16 (immediately after the timestamp).
-            if (entry.Length > 27 && entry.IndexOf("[UIAction] ", 16, StringComparison.Ordinal) == 16)
-                result.Add(entry);
-        }
-        result.Reverse();
+        var all = _uiActionRing.ToArray();
+        var result = new List<string>(Math.Min(count, all.Length));
+        int start = Math.Max(0, all.Length - count);
+        for (int i = start; i < all.Length; i++)
+            result.Add(all[i]);
         return result;
     }
 
