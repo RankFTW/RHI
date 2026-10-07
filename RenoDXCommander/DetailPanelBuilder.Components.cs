@@ -138,6 +138,9 @@ public partial class DetailPanelBuilder
             var refShow = card.RefDeleteVisibility == Visibility.Visible;
             _window.DetailRefDeleteBtn.Opacity = refShow ? 1 : 0;
             _window.DetailRefDeleteBtn.IsHitTestVisible = refShow;
+            _window.DetailRefCogBtn.Tag = card;
+            _window.DetailRefCogBtn.Opacity = card.IsRefInstalled ? 1.0 : 0.35;
+            _window.DetailRefCogBtn.IsEnabled = card.IsRefInstalled;
             ApplyInfoButtonStyle(_window.DetailRefInfoBtn, card, AddonType.REFramework);
         }
 

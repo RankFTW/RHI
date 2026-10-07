@@ -8,6 +8,9 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ### Bug Fixes
 
+**RE Framework**
+- Added a ⚙ cog button to the RE Framework row. It contains a "Delete _storage_ folder" button for clearing the RE Framework save data cache from the game folder.
+
 **Start with Windows**
 - Fixed "Start with Windows" disabling itself on every launch. The settings panel was removing the Windows startup entry while initialising, causing it to always be off after the first restart.
 

@@ -2112,6 +2112,75 @@ public sealed partial class MainWindow
         await DialogService.ShowSafeAsync(dialog);
     }
 
+    private async void RefCogButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
+        if (string.IsNullOrEmpty(card.InstallPath)) return;
+
+        var installPath = card.InstallPath;
+        var content = new StackPanel { Spacing = 12 };
+
+        // Delete _storage_ folder
+        var storageDir = System.IO.Path.Combine(installPath, "_storage_");
+        bool storageExists = System.IO.Directory.Exists(storageDir);
+
+        var deleteStorageBtn = new Button
+        {
+            Content = "Delete _storage_ folder",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(12, 7, 12, 7),
+            FontSize = 12,
+            IsEnabled = storageExists,
+            Opacity = storageExists ? 1.0 : 0.45,
+        };
+        var statusText = new TextBlock
+        {
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            Text = storageExists ? $"Found: {storageDir}" : "_storage_ folder not found in game directory.",
+            TextWrapping = TextWrapping.Wrap,
+        };
+
+        deleteStorageBtn.Click += async (s, ev) =>
+        {
+            deleteStorageBtn.IsEnabled = false;
+            deleteStorageBtn.Content = "Deleting...";
+            try
+            {
+                await Task.Run(() => System.IO.Directory.Delete(storageDir, recursive: true));
+                statusText.Text = "✅ _storage_ folder deleted.";
+                statusText.Foreground = UIFactory.GetBrush("#5ECB7D");
+                CrashReporter.Log($"[RefCogButton_Click] Deleted _storage_ folder: '{storageDir}'");
+            }
+            catch (Exception ex)
+            {
+                statusText.Text = $"❌ {ex.Message}";
+                statusText.Foreground = UIFactory.GetBrush("#E85050");
+                deleteStorageBtn.IsEnabled = true;
+                deleteStorageBtn.Content = "Delete _storage_ folder";
+                CrashReporter.Log($"[RefCogButton_Click] Failed to delete _storage_ folder: {ex.Message}");
+            }
+        };
+
+        content.Children.Add(deleteStorageBtn);
+        content.Children.Add(statusText);
+
+        var dialog = new ContentDialog
+        {
+            Title = "RE Framework Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
     private async void OsCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
