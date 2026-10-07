@@ -202,6 +202,19 @@ public partial class MainViewModel
 
         _crashReporter.Log($"[MainViewModel.InitializeAsync] Started (forceRescan={forceRescan})");
 
+        // Check for unclean-restart marker — written by auto-restart before Environment.Exit(2).
+        // Presence means the previous session ended with a UI freeze, not a clean user close.
+        var uncleanMarkerPath = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "rhi_unclean_restart");
+        if (System.IO.File.Exists(uncleanMarkerPath))
+        {
+            string markerContent = "";
+            try { markerContent = System.IO.File.ReadAllText(uncleanMarkerPath).Trim(); } catch { }
+            _crashReporter.Log($"[MainViewModel.InitializeAsync] UNCLEAN RESTART detected — previous session was killed by auto-restart at {markerContent}. Check restart_log.txt for pattern.");
+            try { System.IO.File.Delete(uncleanMarkerPath); } catch { }
+        }
+
         // Sync global peak nits setting for INI deploys
         AuxInstallService.GlobalPeakNits = _settingsViewModel.PeakNits;
         AuxInstallService.GlobalPeakNitsEnabled = _settingsViewModel.PeakNitsEnabled;

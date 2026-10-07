@@ -708,7 +708,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(TrustedPathCachePath)!);
                 var json = JsonSerializer.Serialize(_trustedPathCache, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(TrustedPathCachePath, json);
+                FileHelper.WriteAllTextAtomic(TrustedPathCachePath, json, "DlssStreamlineService.SaveTrustedCache");
             }
             catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.SaveTrustedCache] Failed — {ex.Message}"); }
         }

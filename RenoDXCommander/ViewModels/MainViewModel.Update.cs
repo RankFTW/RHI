@@ -676,8 +676,14 @@ public partial class MainViewModel
                                     return;
                                 }
 
-                                // Record this restart
+                                // Record this restart and write the unclean-restart marker so the next
+                                // session knows it was auto-restarted (not a clean user launch).
                                 try { System.IO.File.AppendAllText(restartLogPath, now.ToString("O") + Environment.NewLine); }
+                                catch { }
+                                var uncleanMarkerPath = System.IO.Path.Combine(
+                                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                    "RHI", "rhi_unclean_restart");
+                                try { System.IO.File.WriteAllText(uncleanMarkerPath, now.ToString("O")); }
                                 catch { }
 
                                 CrashReporter.LogSync($"[Heartbeat.Restart] All dispatcher priorities unresponsive after 30s — restarting RHI (restart #{recentRestarts + 1} in 5-min window)");

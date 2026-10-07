@@ -178,7 +178,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_settingsFilePath)!);
         var json = JsonSerializer.Serialize(settings);
-        FileHelper.WriteAllTextWithRetry(_settingsFilePath, json, "SettingsViewModel.SaveSettingsFile");
+        FileHelper.WriteAllTextAtomic(_settingsFilePath, json, "SettingsViewModel.SaveSettingsFile");
     }
 
     /// <summary>

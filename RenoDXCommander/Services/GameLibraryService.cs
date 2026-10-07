@@ -111,7 +111,7 @@ public class GameLibraryService : IGameLibraryService
         Directory.CreateDirectory(Path.GetDirectoryName(LibraryPath)!);
         var json = JsonSerializer.Serialize(lib, JsonOpts);
 
-        FileHelper.WriteAllTextWithRetry(LibraryPath, json, "GameLibraryService.Save");
+        FileHelper.WriteAllTextAtomic(LibraryPath, json, "GameLibraryService.Save");
     }
 
     public List<DetectedGame> ToDetectedGames(SavedGameLibrary lib) =>

@@ -273,9 +273,13 @@ public class SettingsHandler
             });
             var btnRow = new Microsoft.UI.Xaml.Controls.StackPanel
             {
-                Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal,
+                Orientation = Microsoft.UI.Xaml.Controls.Orientation.Vertical,
                 Spacing     = 8,
             };
+            var btnRowTop = new Microsoft.UI.Xaml.Controls.StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+            var btnRowBot = new Microsoft.UI.Xaml.Controls.StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+            btnRow.Children.Add(btnRowTop);
+            btnRow.Children.Add(btnRowBot);
             var sleepBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test IDLE (30s sleep)", FontSize = 11 };
             sleepBtn.Click += (s, e) => System.Threading.Thread.Sleep(30000);
             var spinBtn  = new Microsoft.UI.Xaml.Controls.Button { Content = "Test PEGGED (10s spin)", FontSize = 11 };
@@ -308,10 +312,10 @@ public class SettingsHandler
                 });
             };
 
-            btnRow.Children.Add(sleepBtn);
-            btnRow.Children.Add(spinBtn);
-            btnRow.Children.Add(nativeBlockBtn);
-            btnRow.Children.Add(idleBaselineBtn);
+            btnRowTop.Children.Add(sleepBtn);
+            btnRowTop.Children.Add(spinBtn);
+            btnRowTop.Children.Add(nativeBlockBtn);
+            btnRowTop.Children.Add(idleBaselineBtn);
 
             // Dispatcher Exception: throws inside a TryEnqueue callback.
             // Checks whether app.UnhandledException fires, e.Handled = true takes effect,
@@ -325,10 +329,12 @@ public class SettingsHandler
                     throw new InvalidOperationException("FreezeDiag: intentional dispatcher exception test");
                 });
             };
-            btnRow.Children.Add(dispExBtn);
+            btnRowBot.Children.Add(dispExBtn);
 
             // Stress Loop: selects each game in turn every 1.5s for 30 passes.
             // Reproduces rapid-navigation freeze patterns and shows which game/build triggers it.
+            // Each selection is logged with a sequential counter and timestamp so the last logged
+            // entry before [Heartbeat] *** UI FROZEN *** pinpoints exactly which game killed the dispatcher.
             var stressBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Stress Loop (30 passes)", FontSize = 11 };
             stressBtn.Click += (s, e) =>
             {
@@ -339,6 +345,7 @@ public class SettingsHandler
                 {
                     try
                     {
+                        int selectionCount = 0;
                         for (int pass = 0; pass < 30; pass++)
                         {
                             List<GameCardViewModel> games = new();
@@ -346,10 +353,12 @@ public class SettingsHandler
                             await System.Threading.Tasks.Task.Delay(100).ConfigureAwait(false);
                             foreach (var card in games)
                             {
+                                selectionCount++;
+                                CrashReporter.Log($"[FreezeDiag] Stress loop selection #{selectionCount} (pass {pass + 1}/30): {card.GameName}");
                                 _window.RequestReselect(card.GameName);
                                 await System.Threading.Tasks.Task.Delay(1500).ConfigureAwait(false);
                             }
-                            CrashReporter.Log($"[FreezeDiag] Stress loop pass {pass + 1}/30 complete");
+                            CrashReporter.Log($"[FreezeDiag] Stress loop pass {pass + 1}/30 complete ({selectionCount} selections so far)");
                         }
                     }
                     finally
@@ -359,7 +368,7 @@ public class SettingsHandler
                     }
                 });
             };
-            btnRow.Children.Add(stressBtn);
+            btnRowBot.Children.Add(stressBtn);
             inner.Children.Add(btnRow);
             card.Child = inner;
             _window.SettingsCardsPanel.Children.Add(card);
