@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55423,
-  "generated": "2026-10-06T21:28:32Z",
+  "game_count": 55429,
+  "generated": "2026-10-07T15:45:27Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -10516,6 +10516,7 @@
     "Arctic Fleet": {
       "steam_appid": 983880
     },
+    "Arctic Moves": {},
     "Arctic Trucker Simulator": {
       "steam_appid": 273890,
       "engine": "Unity"
@@ -33008,7 +33009,7 @@
     "Comanche": {
       "steam_appid": 879000,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Comanche\\Saved\\Config\\WindowsClient\\",
+      "config_path": "%LOCALAPPDATA%\\Comanche\\Saved\\Config\\WindowsClient",
       "engine": "Unreal Engine 4"
     },
     "Comanche 2": {},
@@ -36795,10 +36796,10 @@
     },
     "Crusader: Adventure Out of Time": {},
     "Crusader: No Regret": {
-      "engine": "Pagan engine"
+      "engine": "Enhanced Ultima VIII: Pagan engine"
     },
     "Crusader: No Remorse": {
-      "engine": "Pagan engine"
+      "engine": "Enhanced Ultima VIII: Pagan engine"
     },
     "Crusaders of Light": {
       "steam_appid": 775220
@@ -40974,6 +40975,9 @@
     "Dead of Night": {
       "steam_appid": 656630
     },
+    "Dead of the Brain": {
+      "steam_appid": 5056390
+    },
     "Dead or Alive 5 Last Round": {
       "steam_appid": 311730,
       "dx9": true,
@@ -43063,6 +43067,9 @@
     },
     "Demented Pixie": {
       "steam_appid": 559450
+    },
+    "Dementium II": {
+      "steam_appid": 5342930
     },
     "Dementium II HD": {
       "steam_appid": 217100,
@@ -45513,6 +45520,10 @@
     "Disciples: Sacred Lands": {
       "steam_appid": 281450,
       "config_path": "<path-to-game>\\Exe\\DISCIPLE.INI"
+    },
+    "Disco Ball Simulator 2000": {
+      "steam_appid": 5089020,
+      "engine": "Unity"
     },
     "Disco Bullets": {
       "steam_appid": 1148850
@@ -55026,7 +55037,7 @@
     "Escape the Backrooms": {
       "steam_appid": 1943950,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\EscapeTheBackrooms\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\EscapeTheBackrooms\\Saved\\Config\\WindowsNoEditor, %LOCALAPPDATA%\\EscapeTheBackrooms\\Saved\\SaveGames\\GameSettings_SaveSlot.sav",
       "engine": "Unreal Engine 4"
     },
     "Escape the Bunker": {
@@ -66806,7 +66817,7 @@
       "steam_appid": 3010850,
       "dx12": true,
       "config_path": "%LOCALAPPDATA%\\Microsoft\\Gears of War E-Day\\Saves\\",
-      "config_path_xbox": "%LOCALAPPDATA%\\FairlightConcept\\Saved\\Config\\WinGDK",
+      "config_path_xbox": "%LOCALAPPDATA%\\Packages\\Microsoft.Fairlightbasegame_8wekyb3d8bbwe\\SystemAppData\\wgs",
       "engine": "Unreal Engine 5"
     },
     "Gears of War: Reloaded": {
@@ -73445,6 +73456,7 @@
     "HANGMAN": {
       "steam_appid": 717520
     },
+    "Hangman (1991)": {},
     "Hangover": {
       "steam_appid": 770440
     },
@@ -85535,7 +85547,8 @@
       "config_path": "<path-to-game>/data"
     },
     "Jarheads": {
-      "steam_appid": 661250
+      "steam_appid": 661250,
+      "engine": "Unity"
     },
     "Jars": {
       "steam_appid": 1590750,
@@ -88031,7 +88044,9 @@
     "Kemonomichi-White Moment-": {
       "steam_appid": 843760
     },
-    "Kemuri": {},
+    "Kemuri": {
+      "steam_appid": 2667460
+    },
     "Ken Follett's The Pillars of the Earth": {
       "steam_appid": 234270,
       "dx9": true,
@@ -89089,7 +89104,7 @@
     "Kingdom Hearts III": {
       "steam_appid": 2552450,
       "dx11": true,
-      "config_path": "%USERPROFILE%\\Documents\\My Games\\KINGDOM HEARTS III\\Steam\\<user-id>\\Config\\",
+      "config_path": "%USERPROFILE%\\Documents\\My Games\\KINGDOM HEARTS III\\Steam\\<user-id>\\Config",
       "engine": "Unreal Engine 4"
     },
     "Kingdom Hearts IV": {
@@ -91686,7 +91701,7 @@
     },
     "Last Train Home": {
       "steam_appid": 1469610,
-      "config_path": "<path-to-game>\\Train\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "<path-to-game>\\Train\\Saved\\Config\\WindowsNoEditor\\*.ini",
       "engine": "Unreal Engine 4"
     },
     "Last War 2044": {
@@ -105104,6 +105119,7 @@
     "Mole Game": {
       "steam_appid": 1158410
     },
+    "Mole's Quest": {},
     "Molecats": {
       "steam_appid": 338290
     },
@@ -118295,7 +118311,6 @@
       "config_path": "%USERPROFILE%\\Documents\\Overwatch\\Settings\\Settings_v0.ini"
     },
     "Overwatch 2": {
-      "steam_appid": 2357570,
       "dx11": true,
       "dx12": true,
       "config_path": "%USERPROFILE%\\Documents\\Overwatch\\Settings\\Settings_v0.ini"
@@ -133160,7 +133175,7 @@
       "steam_appid": 2713000,
       "dx12": true,
       "config_path": "%APPDATA%\\Resonance A Plague Tale Legacy\\ENGINESETTINGS",
-      "config_path_xbox": "%USERPROFILE%\\Documents\\Resonance A Plague Tale Legacy\\ENGINESETTINGS",
+      "config_path_xbox": "%USERPROFILE%\\Documents\\My Games\\Resonance A Plague Tale Legacy",
       "engine": "Zouna"
     },
     "Resort Boss: Golf": {
@@ -171375,7 +171390,7 @@
     "The Saboteur": {
       "steam_appid": 24880,
       "dx9": true,
-      "config_path": "%USERPROFILE%\\Documents\\My Games\\The SaboteurÔäó\\SaveGames\\config.ini, %USERPROFILE%\\Documents\\My Games\\The SaboteurÔäó\\SaveGames\\settings.dat, <path-to-game>\\InputTemplates.txt",
+      "config_path": "%USERPROFILE%\\Documents\\My Games\\The Saboteur™\\SaveGames\\config.ini, %USERPROFILE%\\Documents\\My Games\\The Saboteur™\\SaveGames\\settings.dat, <path-to-game>\\InputTemplates.txt",
       "engine": "Odin"
     },
     "The Sacred Stone: A Story Adventure": {
@@ -171650,8 +171665,7 @@
     },
     "The Settlers 7: Paths to a Kingdom": {
       "steam_appid": 48120,
-      "dx9": true,
-      "config_path": "%USERPROFILE%\\Documents\\Settlers7\\"
+      "dx9": true
     },
     "The Settlers II: 10th Anniversary": {
       "dx9": true,
@@ -173834,6 +173848,7 @@
     },
     "Thea: The Awakening": {
       "steam_appid": 378720,
+      "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\MuHa Games\\Thea: The Awakening",
       "engine": "Unity"
     },
@@ -192734,6 +192749,8 @@
     },
     "Worms Ultimate Mayhem": {
       "steam_appid": 70600,
+      "dx9": true,
+      "opengl": true,
       "config_path": "<path-to-game>\\"
     },
     "Worms W.M.D": {
