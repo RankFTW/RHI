@@ -547,6 +547,12 @@ public partial class MainViewModel
             var ctxPtr = (IntPtr)ctxBuf;
 
             // ── SUSPEND WINDOW: zero managed allocations ────────────────────────
+            // Only GetThreadContext runs inside the window — no module lookups,
+            // no locks, no allocations. GetModuleHandleExW may take the loader
+            // lock; calling it while the UI thread is suspended could deadlock
+            // if the UI thread holds that lock (e.g. during a DLL load freeze).
+            // All module resolution and name lookups run after ResumeThread.
+            var suspendSw = System.Diagnostics.Stopwatch.StartNew();
             NativeInterop.SuspendThread(hThread);
             bool ctxOk;
             try
@@ -556,8 +562,11 @@ public partial class MainViewModel
             finally
             {
                 // ResumeThread is ALWAYS called — even if GetThreadContext throws.
-                // A thread left suspended is a silent hang.
+                // Safety limit: if we somehow reach here after 200ms, resume anyway.
                 NativeInterop.ResumeThread(hThread);
+                suspendSw.Stop();
+                if (suspendSw.ElapsedMilliseconds > 200)
+                    CrashReporter.LogSync($"[Heartbeat.Native] WARNING: suspend window took {suspendSw.ElapsedMilliseconds}ms — possible deadlock risk");
             }
             // ── END SUSPEND WINDOW ──────────────────────────────────────────────
 
@@ -727,48 +736,66 @@ public partial class MainViewModel
             CrashReporter.LogSync(sb.ToString());
 
             // ── RSP stack scan — heuristic return-address search ─────────────────
-            // Copies 12 KB from RSP upward using ReadProcessMemory (fails safely, no AV).
-            // Scans the copy for 8-byte values that: (a) fall inside a loaded module,
-            // (b) are preceded by a call-like byte pattern (E8 = near call, FF = indirect).
-            // Labels entries with PE export names. Output is heuristic — some will be stale
-            // values on the stack, not real callers. Useful for identifying frames 1-4.
+            // ReadProcessMemory copies the stack while the thread is already resumed.
+            // Uses VirtualQuery to clamp the read to committed memory (avoids guard pages).
+            // Uses bytes-actually-read even on partial copy (error 299) so shallow stacks work.
+            // Export-offset threshold: if the nearest export is > 0x1000 bytes away, prints
+            // "module+0xRVA (no nearby export)" instead of a misleading name.
+            // All module resolution happens here, post-resume — no loader lock risk.
             if (rsp != 0)
             {
                 try
                 {
-                    const int ScanBytes   = 12 * 1024; // 12 KB
-                    const int MaxHits     = 10;
-                    var stackCopy = System.Runtime.InteropServices.Marshal.AllocHGlobal(ScanBytes);
+                    const int MaxScanBytes = 12 * 1024; // 12 KB ceiling
+                    const int MaxHits      = 10;
+                    const uint ExportOffsetThreshold = 0x1000; // max offset before name is misleading
+
+                    // Clamp read to committed memory region starting at RSP
+                    int scanBytes = MaxScanBytes;
+                    if (NativeInterop.VirtualQuery((IntPtr)(long)rsp,
+                            out NativeInterop.MEMORY_BASIC_INFORMATION mbi,
+                            (UIntPtr)System.Runtime.InteropServices.Marshal.SizeOf<NativeInterop.MEMORY_BASIC_INFORMATION>()) != UIntPtr.Zero
+                        && mbi.State == 0x1000 /* MEM_COMMIT */)
+                    {
+                        ulong regionEnd  = (ulong)(long)mbi.BaseAddress + (ulong)mbi.RegionSize;
+                        ulong available  = regionEnd > rsp ? regionEnd - rsp : 0;
+                        if (available < (ulong)MaxScanBytes)
+                            scanBytes = (int)available;
+                    }
+
+                    if (scanBytes < 8) goto skipScan;
+
+                    var stackCopy = System.Runtime.InteropServices.Marshal.AllocHGlobal(scanBytes);
                     try
                     {
                         var hProc = System.Diagnostics.Process.GetCurrentProcess().Handle;
                         bool readOk = NativeInterop.ReadProcessMemory(
                             hProc, (IntPtr)(long)rsp, stackCopy,
-                            (UIntPtr)ScanBytes, out _);
+                            (UIntPtr)scanBytes, out UIntPtr bytesRead);
 
-                        if (!readOk)
+                        int actualBytes = (int)bytesRead;
+
+                        // Use bytes actually read even on partial copy (error 299 = partial)
+                        if (!readOk && actualBytes < 8)
                         {
-                            CrashReporter.LogSync($"[Heartbeat.Scan] ReadProcessMemory failed (error {System.Runtime.InteropServices.Marshal.GetLastWin32Error()})");
+                            int err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                            CrashReporter.LogSync($"[Heartbeat.Scan] ReadProcessMemory failed (error {err}, bytesRead={actualBytes})");
                         }
                         else
                         {
-                            var scanSb  = new System.Text.StringBuilder();
-                            scanSb.AppendLine("[Heartbeat.Scan] Probable return addresses (heuristic, may include stale values):");
+                            var scanSb = new System.Text.StringBuilder();
+                            scanSb.AppendLine($"[Heartbeat.Scan] Probable return addresses (heuristic, {actualBytes} bytes scanned, may include stale values):");
                             int hits = 0;
                             unsafe
                             {
                                 byte* buf = (byte*)stackCopy;
-                                for (int off = 0; off + 8 <= ScanBytes && hits < MaxHits; off += 8)
+                                for (int off = 0; off + 8 <= actualBytes && hits < MaxHits; off += 8)
                                 {
                                     ulong candidate = *(ulong*)(buf + off);
-                                    // Must be a canonical x64 address in user space
                                     if (candidate < 0x10000UL || candidate > 0x7FFF_FFFF_FFFFUL) continue;
 
-                                    // Check for call-like byte at candidate-5 (E8 = near call)
-                                    // or candidate-6 (FF 15 / FF D0 = indirect call via mem/reg)
-                                    // We read from the process memory at that location.
-                                    // Skip the check if ReadProcessMemory fails for that address — just include the hit anyway.
-                                    // The call-prefix filter reduces noise but isn't required.
+                                    // Call-prefix filter: E8 at candidate-5 (near call)
+                                    // or FF at candidate-6 (indirect call)
                                     bool likelyReturn = false;
                                     try
                                     {
@@ -783,16 +810,15 @@ public partial class MainViewModel
                                             && nRead == (UIntPtr)1 && prefix == 0xFF)
                                             likelyReturn = true;
                                     }
-                                    catch { likelyReturn = true; } // can't read prefix — include conservatively
+                                    catch { likelyReturn = true; }
 
                                     if (!likelyReturn) continue;
 
-                                    // Resolve module
                                     if (!NativeInterop.GetModuleHandleExW(
                                             NativeInterop.GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                                             NativeInterop.GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                                             (IntPtr)(long)candidate, out IntPtr hScanMod) || hScanMod == IntPtr.Zero)
-                                        continue; // not in any loaded module
+                                        continue;
 
                                     string scanModName = "?";
                                     ulong  scanModBase = (ulong)(long)hScanMod;
@@ -800,11 +826,10 @@ public partial class MainViewModel
                                     if (NativeInterop.GetModuleFileNameW(hScanMod, sb3, (uint)sb3.Capacity) > 0)
                                         scanModName = System.IO.Path.GetFileName(sb3.ToString());
 
-                                    // Get RtlLookupFunctionEntry image base (more precise than hMod)
                                     NativeInterop.RtlLookupFunctionEntry(candidate, out ulong scanImgBase, IntPtr.Zero);
                                     if (scanImgBase != 0) scanModBase = scanImgBase;
 
-                                    // Export name lookup
+                                    // Export name lookup with offset threshold
                                     string scanFrame;
                                     try
                                     {
@@ -831,15 +856,16 @@ public partial class MainViewModel
                                                 if (fr >= expRva && fr < expRva + expSize) continue;
                                                 if (fr <= scanRva && fr > bestRva2) { bestRva2 = fr; bestIdx2 = n; }
                                             }
-                                            if (bestIdx2 != uint.MaxValue)
+                                            if (bestIdx2 != uint.MaxValue && (scanRva - bestRva2) <= ExportOffsetThreshold)
                                             {
                                                 expName = new string((sbyte*)(scanBase + names[bestIdx2]));
                                                 expDisp = scanRva - bestRva2;
                                             }
                                         }
+                                        // Apply threshold: large offsets get RVA only (not a misleading name)
                                         scanFrame = expName != null
                                             ? $"{expName}+0x{expDisp:X}"
-                                            : $"{scanModName}+0x{scanRva:X}";
+                                            : $"{scanModName}+0x{scanRva:X} (no nearby export)";
                                     }
                                     catch { scanFrame = $"{scanModName}+0x{candidate - scanModBase:X}"; }
 
@@ -848,7 +874,7 @@ public partial class MainViewModel
                                 }
                             }
                             if (hits == 0)
-                                scanSb.AppendLine("  (no return addresses found — thread may be in kernel with no user frames on stack)");
+                                scanSb.AppendLine("  (no return addresses found)");
                             CrashReporter.LogSync(scanSb.ToString());
                         }
                     }
@@ -856,6 +882,7 @@ public partial class MainViewModel
                     {
                         System.Runtime.InteropServices.Marshal.FreeHGlobal(stackCopy);
                     }
+                    skipScan:;
                 }
                 catch (Exception scanEx)
                 {

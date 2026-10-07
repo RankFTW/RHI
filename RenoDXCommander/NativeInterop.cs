@@ -570,6 +570,25 @@ internal static class NativeInterop
         UIntPtr nSize,
         out UIntPtr lpNumberOfBytesRead);
 
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct MEMORY_BASIC_INFORMATION
+    {
+        public IntPtr  BaseAddress;
+        public IntPtr  AllocationBase;
+        public uint    AllocationProtect;
+        public ushort  PartitionId;
+        public UIntPtr RegionSize;
+        public uint    State;   // MEM_COMMIT=0x1000, MEM_RESERVE=0x2000, MEM_FREE=0x10000
+        public uint    Protect;
+        public uint    Type;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    internal static extern UIntPtr VirtualQuery(
+        IntPtr lpAddress,
+        out MEMORY_BASIC_INFORMATION lpBuffer,
+        UIntPtr dwLength);
+
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool CloseHandle(IntPtr hObject);
