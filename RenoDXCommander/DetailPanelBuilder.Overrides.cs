@@ -1238,5 +1238,6 @@ public partial class DetailPanelBuilder
         CrashReporter.Log($"[BuildOverridesPanel] Dxvk+Management done: '{card.GameName}'");
 
         BuildExtrasSection(card);
-        CrashReporter.Log($"[BuildOverridesPanel] Extras done: '{card.GameName}'");    }
+        CrashReporter.Log($"[BuildOverridesPanel] Extras done: '{card.GameName}'");
+    }
 }
