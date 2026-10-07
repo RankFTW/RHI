@@ -36,6 +36,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 **Diagnostics**
 - Fixed freeze diagnostic logging writing several megabytes per second during a long freeze, which could cause an out-of-memory crash. The detailed diagnostic data (thread stacks, module list, call scan) now only writes once per freeze, not every 10 seconds.
+- Fixed session log files growing without limit. Logs now roll to a new file at 20 MB, keeping the existing limit of 10 files.
 
 ### Maintenance
 - Changing Smooth Motion or ReBAR Enable in the Driver Settings section now rebuilds only that section instead of the entire game overrides panel.
