@@ -34,6 +34,9 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 **Appearance**
 - Fixed all dialogs rendering in light theme on systems with Windows set to light mode. RHI now forces dark theme on every dialog regardless of system setting.
 
+**Diagnostics**
+- Fixed freeze diagnostic logging writing several megabytes per second during a long freeze, which could cause an out-of-memory crash. The detailed diagnostic data (thread stacks, module list, call scan) now only writes once per freeze, not every 10 seconds.
+
 ### Maintenance
 - Changing Smooth Motion or ReBAR Enable in the Driver Settings section now rebuilds only that section instead of the entire game overrides panel.
 - Improved internal freeze diagnostic logging. When RHI freezes, the session log now captures significantly more detail to help track down the cause — including what the UI thread is actually waiting on, a heuristic scan of the call stack, GPU driver versions, and a list of third-party software injected into the process.
