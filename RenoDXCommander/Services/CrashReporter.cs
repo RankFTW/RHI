@@ -48,13 +48,18 @@ public static class CrashReporter
     private static Task? _drainTask;
 
     /// <summary>Session log file path, created fresh each time the app starts.</summary>
-    private static readonly string SessionLogPath;
+    private static string SessionLogPath = string.Empty;
 
     /// <summary>Gets the current session log file path (for cleanup on early exit).</summary>
     public static string CurrentSessionLogPath => SessionLogPath;
 
     /// <summary>Maximum number of session log files kept on disk.</summary>
     private const int MaxSessionLogs = 10;
+
+    /// <summary>Maximum session log file size before rolling to a new file (20 MB).</summary>
+    private const long MaxSessionLogBytes = 20 * 1024 * 1024;
+
+    private static long _sessionLogBytes = 0; // approximate bytes written to current file
 
     static CrashReporter()
     {
@@ -87,7 +92,21 @@ public static class CrashReporter
                 {
                     lock (_verboseLogLock)
                     {
+                        // Roll to a new file when the current one exceeds 20 MB.
+                        // Prevents unbounded growth during long freezes.
+                        var entryBytes = Encoding.UTF8.GetByteCount(entry) + 2; // +2 for newline
+                        if (_sessionLogBytes + entryBytes > MaxSessionLogBytes)
+                        {
+                            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                            SessionLogPath = Path.Combine(LogDir, $"session_{timestamp}.txt");
+                            File.WriteAllText(SessionLogPath,
+                                $"═══ RHI v{AppVersion} — Log rolled at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
+                                Encoding.UTF8);
+                            _sessionLogBytes = 0;
+                            PruneSessionLogs();
+                        }
                         File.AppendAllText(SessionLogPath, entry + Environment.NewLine, Encoding.UTF8);
+                        _sessionLogBytes += entryBytes;
                     }
                 }
                 catch { /* Never let logging crash the app */ }
@@ -180,7 +199,19 @@ public static class CrashReporter
         {
             lock (_verboseLogLock)
             {
+                var entryBytes = Encoding.UTF8.GetByteCount(entry) + 2;
+                if (_sessionLogBytes + entryBytes > MaxSessionLogBytes)
+                {
+                    var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                    SessionLogPath = Path.Combine(LogDir, $"session_{timestamp}.txt");
+                    File.WriteAllText(SessionLogPath,
+                        $"═══ RHI v{AppVersion} — Log rolled at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ═══{Environment.NewLine}",
+                        Encoding.UTF8);
+                    _sessionLogBytes = 0;
+                    PruneSessionLogs();
+                }
                 File.AppendAllText(SessionLogPath, entry + Environment.NewLine, Encoding.UTF8);
+                _sessionLogBytes += entryBytes;
             }
         }
         catch { /* Never let logging crash the app */ }
