@@ -4,6 +4,9 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ## v2.8.6 Beta 5
 
+### Manifest Updates
+- The Witcher 3: Wild Hunt - Game of the Year Edition now installs the same RenoDX mod as the standard edition.
+
 ### Bug Fixes
 
 **RenoDX**
