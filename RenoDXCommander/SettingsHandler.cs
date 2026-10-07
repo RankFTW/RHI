@@ -369,6 +369,66 @@ public class SettingsHandler
                 });
             };
             btnRowBot.Children.Add(stressBtn);
+
+            // Test Fast Restart: directly triggers the auto-restart path after 5 seconds.
+            // Bypasses freeze detection entirely — just tests that restart, unclean marker,
+            // and relaunch all work correctly.
+            var btnRowBot2 = new Microsoft.UI.Xaml.Controls.StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8 };
+            var fastRestartBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test Fast Restart (5s)", FontSize = 11 };
+            fastRestartBtn.Click += (s, e) =>
+            {
+                if (!fastRestartBtn.IsEnabled) return;
+                fastRestartBtn.IsEnabled = false;
+                CrashReporter.LogSync("[FreezeDiag] Test Fast Restart: restarting in 5s");
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(5_000).ConfigureAwait(false);
+
+                    var restartLogPath = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "restart_log.txt");
+                    var now = DateTime.UtcNow;
+                    try { System.IO.File.AppendAllText(restartLogPath, now.ToString("O") + Environment.NewLine); } catch { }
+
+                    var uncleanMarkerPath = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "rhi_unclean_restart");
+                    try { System.IO.File.WriteAllText(uncleanMarkerPath, now.ToString("O")); } catch { }
+
+                    CrashReporter.LogSync("[FreezeDiag] Test Fast Restart: executing restart now");
+                    CrashReporter.Shutdown();
+                    var exePath = Environment.ProcessPath;
+                    if (!string.IsNullOrEmpty(exePath))
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exePath) { UseShellExecute = true });
+                    Environment.Exit(2);
+                });
+            };
+            btnRowBot2.Children.Add(fastRestartBtn);
+
+            // Test Known Signature Freeze: blocks the dispatcher thread in a managed semaphore wait
+            // while the Win32 pump stays alive. This matches the real freeze signature:
+            // CPU=IDLE, pump responded, High probe times out → fast-path restart (~5s).
+            var knownSigBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test Known Sig Freeze (10s)", FontSize = 11 };
+            knownSigBtn.Click += (s, e) =>
+            {
+                if (!knownSigBtn.IsEnabled) return;
+                knownSigBtn.IsEnabled = false;
+                CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: blocking dispatcher in managed wait for 10s");
+                var sem = new System.Threading.SemaphoreSlim(0, 1);
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(10_000).ConfigureAwait(false);
+                    sem.Release();
+                    _window.DispatcherQueue?.TryEnqueue(() => knownSigBtn.IsEnabled = true);
+                    CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: released after 10s");
+                });
+                _window.DispatcherQueue?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
+                {
+                    CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: dispatcher thread entering managed wait");
+                    sem.Wait();
+                    CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: dispatcher thread unblocked");
+                });
+            };
+            btnRowBot2.Children.Add(knownSigBtn);
+            inner.Children.Add(btnRowBot2);
             inner.Children.Add(btnRow);
             card.Child = inner;
             _window.SettingsCardsPanel.Children.Add(card);

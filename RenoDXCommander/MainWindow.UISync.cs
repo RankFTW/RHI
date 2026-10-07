@@ -55,19 +55,29 @@ public sealed partial class MainWindow
                         // Show one-line notice in status bar if this session was auto-restarted after a freeze
                         if (ViewModel.WasAutoRestarted)
                         {
-                            StatusBarText.Text = "⚠ RHI restarted after a UI freeze — check Settings → session log for details";
-                            // Fade back to normal status after 10 seconds
-                            _ = System.Threading.Tasks.Task.Delay(10_000).ContinueWith(_ =>
-                                DispatcherQueue?.TryEnqueue(() => StatusBarText.Text = ViewModel.StatusText));
+                            var msg = "⚠ RHI restarted after a UI freeze — check Settings → session log for details";
+                            // Defer slightly so StatusText updates that fire immediately after loading
+                            // don't overwrite the notice before the user sees it.
+                            _ = System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
+                                DispatcherQueue?.TryEnqueue(() =>
+                                {
+                                    StatusBarText.Text = msg;
+                                    _ = System.Threading.Tasks.Task.Delay(12_000).ContinueWith(__ =>
+                                        DispatcherQueue?.TryEnqueue(() => { if (StatusBarText.Text == msg) StatusBarText.Text = ViewModel.StatusText; }));
+                                }));
                         }
 
                         // Show one-line notice if the GitHub token was found to be expired/revoked at startup
                         if (App._gitHubTokenExpiredOnStartup)
                         {
                             var msg = "⚠ GitHub session expired — go to Settings → GitHub API and re-connect to restore the download rate limit";
-                            StatusBarText.Text = msg;
-                            _ = System.Threading.Tasks.Task.Delay(15_000).ContinueWith(_ =>
-                                DispatcherQueue?.TryEnqueue(() => { if (StatusBarText.Text == msg) StatusBarText.Text = ViewModel.StatusText; }));
+                            _ = System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
+                                DispatcherQueue?.TryEnqueue(() =>
+                                {
+                                    StatusBarText.Text = msg;
+                                    _ = System.Threading.Tasks.Task.Delay(15_000).ContinueWith(__ =>
+                                        DispatcherQueue?.TryEnqueue(() => { if (StatusBarText.Text == msg) StatusBarText.Text = ViewModel.StatusText; }));
+                                }));
                         }
                         // On Refresh (silent=true), the ListView still has its old item selected
                         // so SelectionChanged never fires and PopulateDetailPanel never runs.
