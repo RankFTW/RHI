@@ -8,6 +8,9 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ### Bug Fixes
 
+**Start with Windows**
+- Fixed "Start with Windows" disabling itself on every launch. The settings panel was removing the Windows startup entry while initialising, causing it to always be off after the first restart.
+
 **GitHub API**
 - Fixed RenoDX mods not appearing for users whose GitHub session had expired. Previously RHI would keep using a stale login token without realising it had stopped working, causing mods, updates, and downloads to silently fail while the settings page still showed "Connected". RHI now checks the token is valid at startup and clears it immediately if not, showing a notice in the status bar so you know to sign in again.
 
