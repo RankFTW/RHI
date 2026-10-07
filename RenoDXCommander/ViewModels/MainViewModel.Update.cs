@@ -27,6 +27,9 @@ public partial class MainViewModel
     /// <summary>Timestamp of the last DispatcherQueueTimer tick — for true freeze onset detection.</summary>
     private long _dispatcherTimerLastTickUtc; // DateTime.UtcNow.Ticks — read/write via Interlocked
 
+    /// <summary>Held in a field to prevent GC collection — DispatcherQueueTimer is a COM object.</summary>
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _freezeDiagTimer;
+
     private System.Threading.Timer? _resourceLogTimer;
 
     /// <summary>Logs process resource counters — private bytes, GC heap, handles, GDI/USER objects, system memory.</summary>
@@ -120,14 +123,15 @@ public partial class MainViewModel
             _dispatcherTimerLastTickUtc = DateTime.UtcNow.Ticks;
             DispatcherQueue?.TryEnqueue(() =>
             {
-                var dqt = DispatcherQueue!.CreateTimer();
-                dqt.Interval = TimeSpan.FromSeconds(1);
-                dqt.IsRepeating = true;
-                dqt.Tick += (_, _) =>
+                _freezeDiagTimer = DispatcherQueue!.CreateTimer();
+                _freezeDiagTimer.Interval = TimeSpan.FromSeconds(1);
+                _freezeDiagTimer.IsRepeating = true;
+                _freezeDiagTimer.Tick += (_, _) =>
                 {
                     System.Threading.Interlocked.Exchange(ref _dispatcherTimerLastTickUtc, DateTime.UtcNow.Ticks);
                 };
-                dqt.Start();
+                _freezeDiagTimer.Start();
+                CrashReporter.Log("[Heartbeat] DispatcherQueueTimer started successfully");
             });
             _heartbeatTimer = new System.Threading.Timer(async _ =>
             {
