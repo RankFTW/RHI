@@ -262,9 +262,11 @@ public partial class App : Application
         MainViewModel.LoadGameApiCache();
 
         // Apply any stored GitHub OAuth token to the shared HttpClient before the window loads.
-        // The HttpClient singleton was built before settings were loaded — patch it here.
-        // Fire-and-forget: validates the token first (auto-clears if expired/revoked).
-        _ = ApplyStoredGitHubTokenAsync();
+        // Await it so startup network requests (manifest, wiki, shader packs) go out with a
+        // validated token — or no token at all if it's expired. Fire-and-forget caused a 401
+        // storm: token was applied, all startup requests fired, validation came back 401 and
+        // stripped the token, but by then all requests were already in-flight with a bad header.
+        await ApplyStoredGitHubTokenAsync();
 
         // Check if first-launch setup is needed
         // Check if first-launch setup is needed.
@@ -453,42 +455,48 @@ public partial class App : Application
 
             var http = Services.GetRequiredService<HttpClient>();
 
-            // Apply the token IMMEDIATELY so startup network requests are authenticated.
-            // Validation happens after — if the token turns out to be revoked, we clear it
-            // on the next launch. This avoids a race where all startup requests fire before
-            // the async validation returns, hitting the unauthenticated 60 req/hour limit.
-            DevUnlockService.UpdateToken(token);
-            GitHubAuthService.ApplyTokenToHttpClient(http, token);
-            CrashReporter.Log("[App.ApplyStoredGitHubToken] GitHub OAuth token applied from settings");
-
-            // Now validate in the background — clear if revoked so next launch is clean.
+            // Validate BEFORE applying — a bad token causes 401 storms on all startup requests.
+            // Use a 4s timeout so slow connections don't stall startup badly.
+            // On network failure, fall through and apply anyway (token may still be valid, just unreachable).
+            bool tokenValid = true;
             try
             {
+                using var valCts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
                 var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, "https://api.github.com/user");
                 req.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
                 req.Headers.TryAddWithoutValidation("User-Agent", "RHI");
-                using var resp = await http.SendAsync(req, System.Net.Http.HttpCompletionOption.ResponseHeadersRead);
+                using var resp = await http.SendAsync(req, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, valCts.Token);
                 if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    CrashReporter.Log("[App.ApplyStoredGitHubToken] Token is expired or revoked (401) — clearing from settings for next launch");
-                    // Remove from the default header so remaining requests in this session go unauthenticated
-                    // (better than sending a known-bad token that causes 401s everywhere)
-                    http.DefaultRequestHeaders.Remove("Authorization");
-                    DevUnlockService.UpdateToken(null);
+                    tokenValid = false;
+                    CrashReporter.Log("[App.ApplyStoredGitHubToken] Token is expired or revoked (401) — clearing from settings");
                     settings.Remove("GitHubOAuthToken");
+                    settings.Remove("GitHubUsername");
                     SettingsViewModel.SaveSettingsFile(settings);
+                    // Flag for the window to show a re-auth notice once it opens
+                    _gitHubTokenExpiredOnStartup = true;
                 }
             }
             catch (Exception valEx)
             {
-                CrashReporter.Log($"[App.ApplyStoredGitHubToken] Token validation failed (network?) — keeping token — {valEx.Message}");
+                // Network error — optimistically apply the token; may work once online
+                CrashReporter.Log($"[App.ApplyStoredGitHubToken] Token validation failed (network?) — applying anyway — {valEx.Message}");
             }
+
+            if (!tokenValid) return;
+
+            DevUnlockService.UpdateToken(token);
+            GitHubAuthService.ApplyTokenToHttpClient(http, token);
+            CrashReporter.Log("[App.ApplyStoredGitHubToken] GitHub OAuth token validated and applied from settings");
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[App.ApplyStoredGitHubToken] Failed — {ex.Message}");
         }
     }
+
+    /// <summary>Set when the stored OAuth token was found to be expired/revoked at startup.</summary>
+    internal static bool _gitHubTokenExpiredOnStartup;
 
     private static async Task<bool> IsAdminTaskRegisteredAsync()
     {

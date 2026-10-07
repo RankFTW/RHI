@@ -212,7 +212,25 @@ public partial class MainViewModel
             string markerContent = "";
             try { markerContent = System.IO.File.ReadAllText(uncleanMarkerPath).Trim(); } catch { }
             _crashReporter.Log($"[MainViewModel.InitializeAsync] UNCLEAN RESTART detected — previous session was killed by auto-restart at {markerContent}. Check restart_log.txt for pattern.");
+            WasAutoRestarted = true;
             try { System.IO.File.Delete(uncleanMarkerPath); } catch { }
+        }
+
+        // Check for pending-dump marker — written by the dump task before MiniDumpWriteDump starts.
+        // If present, the previous session froze and wrote (or attempted) a dump. Log path and size.
+        var pendingDumpMarker = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "rhi_pending_dump");
+        if (System.IO.File.Exists(pendingDumpMarker))
+        {
+            string dumpInfo = "";
+            try { dumpInfo = System.IO.File.ReadAllText(pendingDumpMarker).Trim(); } catch { }
+            // dumpInfo is either "path" (write started but log line may be lost) or "path|SizeMB" (write confirmed)
+            var dumpPath = dumpInfo.Contains('|') ? dumpInfo.Split('|')[0] : dumpInfo;
+            var dumpSize = dumpInfo.Contains('|') ? dumpInfo.Split('|')[1] : "size unknown";
+            bool dumpExists = !string.IsNullOrEmpty(dumpPath) && System.IO.File.Exists(dumpPath);
+            _crashReporter.Log($"[MainViewModel.InitializeAsync] Previous session freeze dump: '{System.IO.Path.GetFileName(dumpPath)}' ({dumpSize}) — {(dumpExists ? "EXISTS on disk" : "NOT FOUND on disk")}");
+            try { System.IO.File.Delete(pendingDumpMarker); } catch { }
         }
 
         // Sync global peak nits setting for INI deploys

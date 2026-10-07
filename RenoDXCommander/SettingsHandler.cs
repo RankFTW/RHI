@@ -2444,11 +2444,25 @@ public class SettingsHandler
 
     public void RefreshGitHubStatus()
     {
+        // If the token was cleared at startup due to 401, make sure the in-memory values are also cleared
+        if (App._gitHubTokenExpiredOnStartup)
+        {
+            ViewModel.Settings.GitHubOAuthToken = "";
+            ViewModel.Settings.GitHubUsername   = "";
+        }
+
         var token    = ViewModel.Settings.GitHubOAuthToken;
         var username = ViewModel.Settings.GitHubUsername;
         bool connected = !string.IsNullOrEmpty(token);
 
-        if (connected)
+        if (App._gitHubTokenExpiredOnStartup)
+        {
+            _window.GitHubStatusText.Text       = "GitHub session expired — please re-connect to restore the 5,000 req/hr limit";
+            _window.GitHubStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentAmberDimBrush);
+            _window.GitHubConnectBtn.Content    = "Re-connect";
+            _window.GitHubDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+        }
+        else if (connected)
         {
             var display = string.IsNullOrEmpty(username) ? "GitHub" : $"@{username}";
             _window.GitHubStatusText.Text       = $"Connected as {display} · 5,000 req/hr";

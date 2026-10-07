@@ -21,6 +21,13 @@ public class WindowStateManager
     private OleDropTarget? _oleDropTarget; // prevent GC of COM drop target
     private bool _oleInitialized;
 
+    /// <summary>
+    /// UTC ticks of the last system resume from sleep/hibernate.
+    /// Zero if no resume has been observed this session.
+    /// Read by the heartbeat timer to apply a 30s grace period after wake.
+    /// </summary>
+    internal long LastResumeUtcTicks; // read/write via Interlocked
+
     private static readonly string _windowSettingsPath = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "window_main.json");
@@ -264,6 +271,14 @@ public class WindowStateManager
         {
             TrayIconService.HandleTrayMessage(lParam);
             return IntPtr.Zero;
+        }
+
+        if (msg == NativeInterop.WM_POWERBROADCAST &&
+            ((uint)wParam == NativeInterop.PBT_APMRESUMEAUTOMATIC ||
+             (uint)wParam == NativeInterop.PBT_APMRESUMESUSPEND))
+        {
+            System.Threading.Interlocked.Exchange(ref LastResumeUtcTicks, DateTime.UtcNow.Ticks);
+            _crashReporter.Log($"[WindowStateManager.WndProc] WM_POWERBROADCAST: system resumed from sleep at {DateTime.UtcNow:HH:mm:ss.fff} UTC — freeze detection suppressed for 30s");
         }
 
         return NativeInterop.CallWindowProc(_origWndProc, hWnd, msg, wParam, lParam);

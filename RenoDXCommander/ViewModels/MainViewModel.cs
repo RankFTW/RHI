@@ -652,6 +652,9 @@ public partial class MainViewModel : ObservableObject
     public bool HasInitialized => _hasInitialized;
     public void MarkInitialized() => _hasInitialized = true;
 
+    /// <summary>True when this session was started by the auto-restart after a UI freeze.</summary>
+    public bool WasAutoRestarted { get; set; }
+
     /// <summary>
     /// The game name that was selected when the app last closed.
     /// Set from the saved library on startup; consumed by TryRestoreSelection.

@@ -1,53 +1,51 @@
+⚠ **If you were already connected to GitHub, please sign in again after this update** — a bug in previous versions caused expired sessions to go undetected, which is now fixed, but your stored session may already be stale.
+
 ⚠ **Sign in with GitHub — strongly recommended** — almost everything RHI downloads comes from GitHub: ReShade, RenoDX, OptiScaler, DLSS versions, shader packs, Luma mods, manifests, update checks, and more. Without a GitHub account connected, all of this shares a single limit of **60 requests per hour**. That quota runs out fast, and when it does, downloads silently fail — installs abort, update checks are skipped, and staging shows as unavailable with no obvious reason why. Signing in raises the limit to **5,000 requests per hour**.
 
 To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. Takes about 30 seconds.
 
-## v2.8.6 Beta 5
-
-### Manifest Updates
-- The Witcher 3: Wild Hunt - Game of the Year Edition now installs the same RenoDX mod as the standard edition.
+## v2.8.6 Beta 6
 
 ### Bug Fixes
 
-**RenoDX**
-- Fixed the installed mod version not appearing after a fresh install until you navigate away and back to the game. The detail panel now updates immediately.
-- Fixed game-specific notes from the RHI database not appearing in the RenoDX info dialog for UE-Extended games. Previously these notes were only injected for NativeHDR games — they now also appear for any game with a DB comment regardless of tier.
-
-**MFG Ada Unlock**
-- Fixed the update check skipping MFG Ada Unlock for users whose staging file was deleted or missing. RHI now also checks addons that are tracked in game folders (via the deployment record) even when the local staging copy is absent.
+**GitHub API**
+- Fixed RenoDX mods not appearing for users whose GitHub session had expired. Previously RHI would keep using a stale login token without realising it had stopped working, causing mods, updates, and downloads to silently fail while the settings page still showed "Connected". RHI now checks the token is valid at startup and clears it immediately if not, showing a notice in the status bar so you know to sign in again.
 
 **UI Freeze**
-- Fixed a recurring freeze that could happen after switching between games with DLSS and Neural Rendering installed. Navigating away and back to the same game quickly could queue two back-to-back panel rebuilds, causing the UI thread to hang.
-- Fixed a freeze that could occur when opening the Settings panel while a game was selected. Changing certain global driver settings (VSync, ReBAR) was triggering a detail panel rebuild in the background, which conflicted with the NVAPI reads that Settings needs to open.
-- Fixed several places where RHI was reading NVIDIA driver settings on the UI thread before opening a dialog. Opening Configure RTX HDR, Multi Frame Gen settings, or DXVK settings could block the UI for up to 25 seconds if NVAPI was slow or unresponsive (most common after waking from GPU sleep). Values are now fetched on a background thread before the dialog is built.
-- Fixed DLSS version information being refreshed on the UI thread after swapping a DLSS DLL. The version read involves synchronous disk I/O across several DLL paths, which could stall the UI on a slow disk or with antivirus active.
+- RHI now detects and recovers from the UI freeze in about 5 seconds, down from up to 60 seconds previously.
+- Fixed the auto-restart incorrectly firing after waking the PC from sleep. A 30-second grace period now suppresses the restart check immediately after a system resume.
+- Fixed the auto-restart firing while an install or download was in progress. The restart is now deferred for up to 30 seconds if any component is mid-install.
+- Fixed a recurring freeze that could happen after switching between games quickly. Navigating away and back to the same game could queue two back-to-back panel rebuilds, causing the UI thread to hang.
+- Fixed a freeze that could occur when opening the Settings panel while a game was selected. Changing certain global driver settings (VSync, ReBAR) was triggering a panel rebuild that conflicted with the Settings page opening.
+- Fixed several places where RHI was reading NVIDIA driver settings on the UI thread before opening a dialog. Opening Configure RTX HDR, Multi Frame Gen settings, or DXVK settings could block the UI for up to 25 seconds if NVAPI was slow or unresponsive. Values are now fetched in the background before the dialog opens.
+- Fixed DLSS version information being refreshed on the UI thread after swapping a DLSS DLL, which could stall the UI on a slow disk or with antivirus active.
+- Fixed settings, game library, and addon deployment records being left in a corrupt state if RHI was killed mid-write. These files are now written safely so a forced restart can never leave them half-written.
+- After an auto-restart, RHI reselects the game that was open before the freeze and shows a brief notice in the status bar.
 
 **Process Doesn't Close**
-- Fixed RHI staying open and using CPU after you close the window. Background tasks (update checks, shader sync, addon sync) were running to completion regardless of whether the window had been closed. They now stop when RHI closes. A hard exit fallback also ensures the process always terminates within a few seconds.
-
-**Refresh**
-- Fixed the game detail panel going blank after pressing Refresh. The card was being rebuilt correctly, but the panels weren't being made visible again.
-
-**Engine.ini**
-- Fixed Engine.ini not being written on install for games that have never been launched, when the config path comes from the PCGW database. RHI now creates the full folder chain if it doesn't exist yet.
-
-**Drag-Drop RenoDX Mods**
-- Fixed RHI incorrectly offering to delete an existing RenoDX mod when a `.addon64` file with a non-standard name was dropped onto a game. The existing mod is now left untouched.
+- Fixed RHI staying open and using CPU after you close the window. Background tasks now stop when RHI closes, and a hard exit fallback ensures the process always terminates within a few seconds.
 
 **Appearance**
 - Fixed all dialogs rendering in light theme on systems with Windows set to light mode. RHI now forces dark theme on every dialog regardless of system setting.
 
-**Diagnostics**
-- Fixed freeze diagnostic logging writing several megabytes per second during a long freeze, which could cause an out-of-memory crash. The detailed diagnostic data (thread stacks, module list, call scan) now only writes once per freeze, not every 10 seconds.
-- Fixed session log files growing without limit. Logs now roll to a new file at 20 MB, keeping the existing limit of 10 files.
-- Fixed the recent-actions timeline in freeze logs growing exponentially during a long freeze — each tick was including the previous tick's summary in its own output, causing the log size to double every 10 seconds. This was the root cause of the 1.7 GB log file. The fix moves UI action tracking into its own dedicated buffer that diagnostic output can never enter, and caps the summary line at 4 KB as a belt-and-suspenders backstop.
-- Fixed the async log channel being unbounded. A log flood during a freeze could now exhaust memory before the process was killed. The channel is now bounded at 5000 entries and drops the oldest when full.
-- Unhandled exceptions caught by the WinUI dispatcher are now logged immediately to the session log, so they're visible even if the app continues running.
-- RHI now restarts itself automatically after a 60-second confirmed freeze where all dispatcher priority levels are unresponsive. This prevents being stuck waiting for Task Manager while the freeze cause is still being investigated.
+**Refresh**
+- Fixed the game detail panel going blank after pressing Refresh.
 
-### Maintenance
-- Changing Smooth Motion or ReBAR Enable in the Driver Settings section now rebuilds only that section instead of the entire game overrides panel.
-- Improved internal freeze diagnostic logging. When RHI freezes, the session log now captures significantly more detail to help track down the cause — including what the UI thread is actually waiting on, a heuristic scan of the call stack, GPU driver versions, a list of third-party software injected into the process, and now: which dispatcher priority levels (High, Normal, Low) are still running versus stalled, true freeze onset time from a 1-second dispatcher timer, and periodic resource counters (memory, handles, GDI/USER objects) to detect leaks during long sessions.
+**RenoDX**
+- Fixed the installed mod version not appearing after a fresh install until you navigate away and back to the game. The detail panel now updates immediately.
+- Fixed game-specific notes from the RHI database not appearing in the RenoDX info dialog for UE-Extended games.
+
+**MFG Ada Unlock**
+- Fixed the update check skipping MFG Ada Unlock for users whose staging file was deleted or missing.
+
+**Drag-Drop RenoDX Mods**
+- Fixed RHI incorrectly offering to delete an existing RenoDX mod when a `.addon64` file with a non-standard name was dropped onto a game.
+
+**Engine.ini**
+- Fixed Engine.ini not being written on install for games that have never been launched when the config path comes from the PCGW database.
+
+### Manifest Updates
+- The Witcher 3: Wild Hunt - Game of the Year Edition now installs the same RenoDX mod as the standard edition.
 
 ## v2.8.5
 
