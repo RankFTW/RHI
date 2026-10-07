@@ -622,20 +622,18 @@ public partial class MainViewModel
                         });
                     } // end once-per-stall diagnostics gate
 
-                        // ── 6. Auto-restart after 60s of confirmed total dispatcher death ──────
-                        // Only fires when ALL three priority probes (High, Normal, Low) failed,
-                        // which means the dispatcher is completely unresponsive — not just slow.
-                        // Restarts the process so the user isn't stuck waiting for Task Manager.
-                        // Gated separately from the once-per-stall block so it fires every tick
-                        // until it confirms the dispatcher is truly dead and restarts.
+                        // ── 6. Auto-restart after 30s of confirmed total dispatcher death ──────
+                        // Only fires when ALL three priority probes (High, Normal, Low) failed.
+                        // Loop guard: reads/writes %LocalAppData%\RHI\restart_log.txt (timestamps).
+                        // Max 2 restarts in any 5-minute window — if exceeded, logs and gives up.
                         _ = Task.Run(async () =>
                         {
                             try
                             {
-                                await Task.Delay(60_000).ConfigureAwait(false);
+                                await Task.Delay(30_000).ConfigureAwait(false);
                                 if (_backgroundStopped) return;
 
-                                // Confirm all three priorities are dead before restarting
+                                // Confirm all three priorities are still dead
                                 var h2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                                 var n2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                                 var l2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -649,13 +647,41 @@ public partial class MainViewModel
 
                                 if (hOk || nOk || lOk)
                                 {
-                                    // Dispatcher recovered — don't restart
-                                    CrashReporter.LogSync($"[Heartbeat.Restart] Dispatcher recovered after 60s (High={hOk} Normal={nOk} Low={lOk}) — restart cancelled");
+                                    CrashReporter.LogSync($"[Heartbeat.Restart] Dispatcher recovered after 30s (High={hOk} Normal={nOk} Low={lOk}) — restart cancelled");
                                     return;
                                 }
 
-                                CrashReporter.LogSync("[Heartbeat.Restart] All dispatcher priorities unresponsive after 60s — restarting RHI");
-                                CrashReporter.Shutdown(); // flush log before exit
+                                // Loop guard: count restarts in the last 5 minutes
+                                var restartLogPath = System.IO.Path.Combine(
+                                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                    "RHI", "restart_log.txt");
+                                var now = DateTime.UtcNow;
+                                var window = now.AddMinutes(-5);
+                                var recentRestarts = 0;
+                                try
+                                {
+                                    if (System.IO.File.Exists(restartLogPath))
+                                    {
+                                        var lines = System.IO.File.ReadAllLines(restartLogPath);
+                                        recentRestarts = lines.Count(l =>
+                                            DateTime.TryParse(l, System.Globalization.CultureInfo.InvariantCulture,
+                                                System.Globalization.DateTimeStyles.AssumeUniversal, out var t) && t > window);
+                                    }
+                                }
+                                catch { }
+
+                                if (recentRestarts >= 2)
+                                {
+                                    CrashReporter.LogSync($"[Heartbeat.Restart] Loop guard triggered — {recentRestarts} restarts in the last 5 minutes. Not restarting.");
+                                    return;
+                                }
+
+                                // Record this restart
+                                try { System.IO.File.AppendAllText(restartLogPath, now.ToString("O") + Environment.NewLine); }
+                                catch { }
+
+                                CrashReporter.LogSync($"[Heartbeat.Restart] All dispatcher priorities unresponsive after 30s — restarting RHI (restart #{recentRestarts + 1} in 5-min window)");
+                                CrashReporter.Shutdown();
                                 var exePath = Environment.ProcessPath;
                                 if (!string.IsNullOrEmpty(exePath))
                                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exePath) { UseShellExecute = true });
@@ -673,7 +699,6 @@ public partial class MainViewModel
 
     // DbgHelp is single-threaded — serialize SymFromAddr calls.
     private static readonly object _nativeStackLock = new();
-    private static bool _symInitialized;
 
     internal void CaptureNativeUiThreadStackPublic() => CaptureNativeUiThreadStack();
 

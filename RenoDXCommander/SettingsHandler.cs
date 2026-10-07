@@ -326,6 +326,40 @@ public class SettingsHandler
                 });
             };
             btnRow.Children.Add(dispExBtn);
+
+            // Stress Loop: selects each game in turn every 1.5s for 30 passes.
+            // Reproduces rapid-navigation freeze patterns and shows which game/build triggers it.
+            var stressBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Stress Loop (30 passes)", FontSize = 11 };
+            stressBtn.Click += (s, e) =>
+            {
+                if (!stressBtn.IsEnabled) return;
+                stressBtn.IsEnabled = false;
+                CrashReporter.LogSync("[FreezeDiag] Stress loop started");
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    try
+                    {
+                        for (int pass = 0; pass < 30; pass++)
+                        {
+                            List<GameCardViewModel> games = new();
+                            _window.DispatcherQueue?.TryEnqueue(() => games = _window.ViewModel.DisplayedGames.ToList());
+                            await System.Threading.Tasks.Task.Delay(100).ConfigureAwait(false);
+                            foreach (var card in games)
+                            {
+                                _window.RequestReselect(card.GameName);
+                                await System.Threading.Tasks.Task.Delay(1500).ConfigureAwait(false);
+                            }
+                            CrashReporter.Log($"[FreezeDiag] Stress loop pass {pass + 1}/30 complete");
+                        }
+                    }
+                    finally
+                    {
+                        _window.DispatcherQueue?.TryEnqueue(() => stressBtn.IsEnabled = true);
+                        CrashReporter.LogSync("[FreezeDiag] Stress loop finished");
+                    }
+                });
+            };
+            btnRow.Children.Add(stressBtn);
             inner.Children.Add(btnRow);
             card.Child = inner;
             _window.SettingsCardsPanel.Children.Add(card);
