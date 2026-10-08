@@ -1565,6 +1565,91 @@ public sealed partial class MainWindow
     // DLDSR Control Handlers
     // ═══════════════════════════════════════════════════════════════════════════
 
+    private async void DldsrInfoBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var content = new StackPanel { Spacing = 12, MaxWidth = 480 };
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "How DLDSR Control Works",
+            FontSize = 14,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+        });
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "DLDSR (Deep Learning Dynamic Super Resolution) renders games at higher resolutions and downscales with AI for sharper image quality. This feature lets you switch DLDSR presets without opening NVIDIA Control Panel.",
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+        });
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "Initial Setup (One Time)",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "1. Open NVIDIA Control Panel → Manage 3D Settings → Global Settings\n" +
+                   "2. Find \"DSR - Factors\" and enable the DLDSR factors you want (e.g. 1.78x DL, 2.25x DL)\n" +
+                   "3. Click Apply and wait for the ~15 second display blackout\n" +
+                   "4. Come back here and click \"Capture Current\" to save this state\n" +
+                   "5. Repeat steps 2-4 for each DLDSR configuration you want to save (e.g. \"Off\", \"2.25x only\", \"1.78x + 2.25x\")",
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+        });
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "Daily Use",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "Select a saved state from the dropdown and click Apply. RHI writes the registry values directly and triggers a display reset (~15 seconds of blackout while the driver reinitializes).",
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+        });
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "DSR Smoothness",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = UIFactory.Brush(ResourceKeys.AccentTealBrush),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "Controls the sharpening/smoothing applied during downscale. Lower = sharper (can show aliasing), higher = smoother (softer image). 33% is NVIDIA's default. This can be changed independently without recapturing states.",
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+        });
+
+        var dialog = new ContentDialog
+        {
+            Title = "DLDSR Control",
+            Content = content,
+            CloseButtonText = "Got it",
+            XamlRoot = Content.XamlRoot,
+        };
+        await DialogService.ShowSafeAsync(dialog);
+    }
+
     private async void DldsrApplyBtn_Click(object sender, RoutedEventArgs e)
     {
         if (DldsrStateCombo.SelectedItem is not string selectedLabel || string.IsNullOrEmpty(selectedLabel))
@@ -1956,6 +2041,23 @@ public sealed partial class MainWindow
     private void AboutButton_Click(object sender, RoutedEventArgs e)
     {
         AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+        // Show installed Windows App Runtime version
+        try
+        {
+            var runtimePkg = Windows.ApplicationModel.Package.Current.Dependencies
+                .FirstOrDefault(d => d.Id.Name.StartsWith("Microsoft.WindowsAppRuntime.", StringComparison.OrdinalIgnoreCase)
+                                  && !d.Id.Name.Contains("CBS", StringComparison.OrdinalIgnoreCase));
+            if (runtimePkg != null)
+            {
+                var v = runtimePkg.Id.Version;
+                AboutRuntimeText.Text = $"Windows App Runtime {v.Major}.{v.Minor}.{v.Build}";
+            }
+            else
+            {
+                AboutRuntimeText.Text = "";
+            }
+        }
+        catch { AboutRuntimeText.Text = ""; }
         ViewModel.NavigateToAboutCommand.Execute(null);
     }
 

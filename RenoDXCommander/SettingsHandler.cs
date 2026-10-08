@@ -49,6 +49,18 @@ public class SettingsHandler
         // Sync toggle state with ViewModel
         _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+        try
+        {
+            var runtimePkg = Windows.ApplicationModel.Package.Current.Dependencies
+                .FirstOrDefault(d => d.Id.Name.StartsWith("Microsoft.WindowsAppRuntime.", StringComparison.OrdinalIgnoreCase)
+                                  && !d.Id.Name.Contains("CBS", StringComparison.OrdinalIgnoreCase));
+            if (runtimePkg != null)
+            {
+                var v = runtimePkg.Id.Version;
+                _window.AboutRuntimeText.Text = $"Windows App Runtime {v.Major}.{v.Minor}.{v.Build}";
+            }
+        }
+        catch { }
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
         // Populate screenshot path and per-game combo
