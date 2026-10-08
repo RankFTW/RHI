@@ -1181,6 +1181,7 @@ public partial class MainViewModel
             // Also check for RHI app updates on the UI thread
             DispatcherQueue?.TryEnqueue(() =>
             {
+                CrashReporter.Log("[RefreshTrigger] 4h periodic timer — PeriodicAppUpdateCheck dispatched to UI thread");
                 PeriodicAppUpdateCheck?.Invoke();
             });
         }, null, interval, interval);

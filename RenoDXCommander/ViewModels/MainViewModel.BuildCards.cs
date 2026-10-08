@@ -1555,7 +1555,10 @@ public partial class MainViewModel
                             _crashReporter.Log($"[BuildCards] PCGW resolved post-loop: '{card.GameName}' → {url}");
                             // If this card is currently selected, trigger a panel rebuild so the PCGW button appears
                             if (SelectedGame == card)
+                            {
+                                _crashReporter.Log($"[RefreshTrigger] PCGW URL resolved for selected '{card.GameName}' — dispatching RequestCardRebuild");
                                 DispatcherQueue?.TryEnqueue(() => RequestCardRebuild?.Invoke(card));
+                            }
                         }
                     }
                     catch (Exception ex)

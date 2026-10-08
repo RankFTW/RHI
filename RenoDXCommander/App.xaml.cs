@@ -193,6 +193,7 @@ public partial class App : Application
         }
 
         CrashReporter.Log($"[App.OnLaunched] Args: [{string.Join(", ", cmdArgs)}], startMinimized={startMinimized}");
+        CrashReporter.Log($"[App.OnLaunched] Windows App SDK build target: 2.5.1 | Runtime: {GetWindowsAppRuntimeVersion()}");
 
         if (!SingleInstanceService.TryAcquire())
         {
@@ -498,6 +499,28 @@ public partial class App : Application
 
     /// <summary>Set when the stored OAuth token was found to be expired/revoked at startup.</summary>
     internal static bool _gitHubTokenExpiredOnStartup;
+
+    private static string GetWindowsAppRuntimeVersion()
+    {
+        try
+        {
+            var windowsApps = @"C:\Program Files\WindowsApps";
+            if (!System.IO.Directory.Exists(windowsApps)) return "unknown";
+            var dirs = System.IO.Directory.GetDirectories(windowsApps, "Microsoft.WindowsAppRuntime.*_x64__*");
+            foreach (var dir in dirs.OrderByDescending(d => d))
+            {
+                var parts = System.IO.Path.GetFileName(dir).Split('_');
+                if (parts.Length >= 2 && parts[1].Contains('.'))
+                {
+                    var v = parts[1];
+                    if (v.EndsWith(".0")) v = v[..^2];
+                    return v;
+                }
+            }
+            return "not found";
+        }
+        catch (Exception ex) { return $"error: {ex.Message}"; }
+    }
 
     private static async Task<bool> IsAdminTaskRegisteredAsync()
     {

@@ -2041,23 +2041,35 @@ public sealed partial class MainWindow
     private void AboutButton_Click(object sender, RoutedEventArgs e)
     {
         AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
-        // Show installed Windows App Runtime version
+        // Show installed Windows App Runtime version — scan WindowsApps for the installed runtime folder
         try
         {
-            var runtimePkg = Windows.ApplicationModel.Package.Current.Dependencies
-                .FirstOrDefault(d => d.Id.Name.StartsWith("Microsoft.WindowsAppRuntime.", StringComparison.OrdinalIgnoreCase)
-                                  && !d.Id.Name.Contains("CBS", StringComparison.OrdinalIgnoreCase));
-            if (runtimePkg != null)
+            string runtimeVersion = "";
+            var windowsApps = @"C:\Program Files\WindowsApps";
+            if (System.IO.Directory.Exists(windowsApps))
             {
-                var v = runtimePkg.Id.Version;
-                AboutRuntimeText.Text = $"Windows App Runtime {v.Major}.{v.Minor}.{v.Build}";
+                // Match Microsoft.WindowsAppRuntime.2_X.Y.Z.0_x64__* or similar
+                var dirs = System.IO.Directory.GetDirectories(windowsApps, "Microsoft.WindowsAppRuntime.*_x64__*");
+                foreach (var dir in dirs.OrderByDescending(d => d))
+                {
+                    var folder = System.IO.Path.GetFileName(dir);
+                    var parts = folder.Split('_');
+                    if (parts.Length >= 2 && parts[1].Contains('.'))
+                    {
+                        runtimeVersion = parts[1];
+                        if (runtimeVersion.EndsWith(".0")) runtimeVersion = runtimeVersion[..^2];
+                        break;
+                    }
+                }
             }
-            else
-            {
-                AboutRuntimeText.Text = "";
-            }
+            CrashReporter.Log($"[About] Runtime version from WindowsApps: '{runtimeVersion}'");
+            AboutRuntimeText.Text = runtimeVersion.Length > 0 ? $"Windows App Runtime {runtimeVersion}" : "";
         }
-        catch { AboutRuntimeText.Text = ""; }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[About] Runtime version read failed: {ex.Message}");
+            AboutRuntimeText.Text = "";
+        }
         ViewModel.NavigateToAboutCommand.Execute(null);
     }
 

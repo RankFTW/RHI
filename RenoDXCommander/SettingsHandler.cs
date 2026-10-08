@@ -49,18 +49,29 @@ public class SettingsHandler
         // Sync toggle state with ViewModel
         _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
+        // Show installed Windows App Runtime version
         try
         {
-            var runtimePkg = Windows.ApplicationModel.Package.Current.Dependencies
-                .FirstOrDefault(d => d.Id.Name.StartsWith("Microsoft.WindowsAppRuntime.", StringComparison.OrdinalIgnoreCase)
-                                  && !d.Id.Name.Contains("CBS", StringComparison.OrdinalIgnoreCase));
-            if (runtimePkg != null)
+            string runtimeVersion = "";
+            var windowsApps = @"C:\Program Files\WindowsApps";
+            if (System.IO.Directory.Exists(windowsApps))
             {
-                var v = runtimePkg.Id.Version;
-                _window.AboutRuntimeText.Text = $"Windows App Runtime {v.Major}.{v.Minor}.{v.Build}";
+                var dirs = System.IO.Directory.GetDirectories(windowsApps, "Microsoft.WindowsAppRuntime.*_x64__*");
+                foreach (var dir in dirs.OrderByDescending(d => d))
+                {
+                    var folder = System.IO.Path.GetFileName(dir);
+                    var parts = folder.Split('_');
+                    if (parts.Length >= 2 && parts[1].Contains('.'))
+                    {
+                        runtimeVersion = parts[1];
+                        if (runtimeVersion.EndsWith(".0")) runtimeVersion = runtimeVersion[..^2];
+                        break;
+                    }
+                }
             }
+            _window.AboutRuntimeText.Text = runtimeVersion.Length > 0 ? $"Windows App Runtime {runtimeVersion}" : "";
         }
-        catch { }
+        catch { _window.AboutRuntimeText.Text = ""; }
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
         // Populate screenshot path and per-game combo
@@ -450,6 +461,41 @@ public class SettingsHandler
             };
             btnRowBot2.Children.Add(knownSigBtn);
             inner.Children.Add(btnRowBot2);
+
+            // EmptyWorkingSet stress: trims the process working set then immediately triggers
+            // a card rebuild — reproduces the idle/trim/wake/rebuild pattern seen in freezes 4 and 5.
+            var btnRowBot3 = new Microsoft.UI.Xaml.Controls.StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 8, Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 0) };
+            var ewsBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "EmptyWS + Rebuild (visible)", FontSize = 11 };
+            ewsBtn.Click += (s, e) =>
+            {
+                CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet + Rebuild (visible): trimming then RequestCardRebuild");
+                NativeInterop.EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
+                CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet done — triggering RequestCardRebuild");
+                var card2 = _window.ViewModel.SelectedGame;
+                if (card2 != null) _window.ViewModel.RequestCardRebuild?.Invoke(card2);
+                else CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet: no selected game");
+            };
+            var ewsMinBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "EmptyWS + Rebuild (minimised)", FontSize = 11 };
+            ewsMinBtn.Click += (s, e) =>
+            {
+                CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet + Rebuild (minimised): hiding, trimming, rebuilding after 500ms");
+                _window.AppWindow.Hide();
+                NativeInterop.EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(500).ConfigureAwait(false);
+                    CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet (minimised): triggering RequestCardRebuild from background");
+                    var card2 = _window.ViewModel.SelectedGame;
+                    if (card2 != null) _window.DispatcherQueue?.TryEnqueue(() => _window.ViewModel.RequestCardRebuild?.Invoke(card2));
+                    await System.Threading.Tasks.Task.Delay(5000).ConfigureAwait(false);
+                    _window.DispatcherQueue?.TryEnqueue(() => { _window.AppWindow.Show(); _window.Activate(); });
+                    CrashReporter.LogSync("[FreezeDiag] EmptyWorkingSet (minimised): window restored");
+                });
+            };
+            btnRowBot3.Children.Add(ewsBtn);
+            btnRowBot3.Children.Add(ewsMinBtn);
+            inner.Children.Add(btnRowBot3);
+
             inner.Children.Add(btnRow);
             card.Child = inner;
             _window.SettingsCardsPanel.Children.Add(card);

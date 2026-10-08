@@ -498,6 +498,10 @@ internal static class NativeInterop
     // ── Message pump probe ───────────────────────────────────────────────────────
     internal const uint WM_NULL         = 0x0000;
     internal const uint WM_POWERBROADCAST = 0x0218;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool EmptyWorkingSet(IntPtr hProcess);
     internal const uint PBT_APMRESUMEAUTOMATIC = 0x0012; // system resumed from sleep
     internal const uint PBT_APMRESUMESUSPEND   = 0x0007; // user-initiated resume
     internal const uint SMTO_ABORTIFHUNG = 0x0002;
