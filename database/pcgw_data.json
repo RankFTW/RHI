@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55435,
-  "generated": "2026-10-07T19:31:00Z",
+  "game_count": 55445,
+  "generated": "2026-10-08T07:16:53Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -14579,6 +14579,7 @@
       "config_path": "C:\\hegames.ini",
       "engine": "SCUMM"
     },
+    "Backyard Baseball '09": {},
     "Backyard Baseball (2026)": {
       "steam_appid": 3935020
     },
@@ -14599,6 +14600,7 @@
     "Backyard Basketball": {
       "steam_appid": 3170580
     },
+    "Backyard Basketball 2004": {},
     "Backyard Brawl": {
       "steam_appid": 954170
     },
@@ -14607,6 +14609,8 @@
       "config_path": "%WINDIR%\\hegames.ini",
       "engine": "SCUMM"
     },
+    "Backyard Football '08": {},
+    "Backyard Football '09": {},
     "Backyard Football 2002": {
       "config_path": "C:\\hegames.ini",
       "engine": "SCUMM"
@@ -14634,6 +14638,7 @@
       "steam_appid": 3170410,
       "engine": "SCUMM"
     },
+    "Backyard Soccer 2004": {},
     "Backyard Soccer MLS Edition": {
       "config_path": "C:\\Windows\\hegames.ini"
     },
@@ -23112,7 +23117,7 @@
     "BPM: Bullets per Minute": {
       "steam_appid": 1286350,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\BPM\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\BPM\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "BQM - BlockQuest Maker": {
@@ -27698,6 +27703,10 @@
     "Castles": {
       "steam_appid": 666660
     },
+    "Castles & Catapults": {
+      "steam_appid": 1641060,
+      "engine": "Blitz3D"
+    },
     "Castles (2015)": {
       "steam_appid": 384010
     },
@@ -30145,7 +30154,7 @@
     "Chorus": {
       "steam_appid": 1153640,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\SpacePrototype\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\SpacePrototype\\Config\\WindowsNoEditor\\, %LOCALAPPDATA%\\SpacePrototype\\Saved\\Config\\WindowsNoEditor\\",
       "engine": "Unreal Engine 4"
     },
     "Chosen 2": {
@@ -38364,7 +38373,7 @@
     "Cygni: All Guns Blazing": {
       "steam_appid": 1248080,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Cygni\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Cygni\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Cylne": {
@@ -42494,10 +42503,14 @@
       "steam_appid": 328670
     },
     "Deer Hunter": {},
+    "Deer Hunter 2003": {
+      "engine": "Serious Engine"
+    },
     "Deer Hunter 2004": {
       "config_path": "<path-to-game>\\Game\\Profiles\\Settings.cfg",
       "engine": "Aspen"
     },
+    "Deer Hunter 5: Tracking Trophies": {},
     "Deer Hunter II": {
       "steam_appid": 1212190
     },
@@ -55919,16 +55932,16 @@
     "Everspace": {
       "steam_appid": 396750,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\RSG\\Saved\\Config\\WindowsNoEditor\\",
-      "config_path_xbox": "%LOCALAPPDATA%\\Packages\\ROCKFISHGames.EVERSPACE_wm11qtfe9fmzj\\LocalState\\RSG\\Saved\\Config\\UWP\\",
+      "config_path": "%LOCALAPPDATA%\\RSG\\Saved\\Config\\WindowsNoEditor",
+      "config_path_xbox": "%LOCALAPPDATA%\\Packages\\ROCKFISHGames.EVERSPACE_wm11qtfe9fmzj\\LocalState\\RSG\\Saved\\Config\\UWP",
       "engine": "Unreal Engine 4"
     },
     "Everspace 2": {
       "steam_appid": 1128920,
       "dx11": true,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\ES2\\Saved\\Config\\Windows\\",
-      "config_path_xbox": "%LOCALAPPDATA%\\ES2\\Saved\\Config\\WinGDK\\",
+      "config_path": "%LOCALAPPDATA%\\ES2\\Saved\\Config\\Windows, %LOCALAPPDATA%\\ES2\\Saved\\Config\\WindowsNoEditor",
+      "config_path_xbox": "%LOCALAPPDATA%\\ES2\\Saved\\Config\\WinGDK",
       "engine": "Unreal Engine 4"
     },
     "EverStopped": {
@@ -60253,7 +60266,7 @@
     "Filcher": {
       "steam_appid": 1355650,
       "dx11": true,
-      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Johan Hj├ñrpe\\Filcher\\KeyBindings.dat, HKEY_CURRENT_USER\\SOFTWARE\\Johan Hj├ñrpe\\Filcher",
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Johan Hjärpe\\Filcher\\KeyBindings.dat, HKEY_CURRENT_USER\\SOFTWARE\\Johan Hjärpe\\Filcher",
       "engine": "Unity"
     },
     "FILE 9": {
@@ -66464,7 +66477,8 @@
     },
     "Garfield: Caught in the Act": {},
     "Garfield: Escape From Monday": {
-      "steam_appid": 3932790
+      "steam_appid": 3932790,
+      "config_path": "%LOCALAPPDATA%\\GFD\\Saved\\Config\\Windows\\GameUserSettings.ini"
     },
     "Garfield: It's All about Phonics - Kindergarten": {},
     "Garfield: Lasagna World Tour": {},
@@ -69873,7 +69887,7 @@
     "Gothic 1 Remake": {
       "steam_appid": 1297900,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\G1R\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\G1R\\Saved\\Config\\Windows\\GameUserSettings.ini, %LOCALAPPDATA%\\G1R\\Saved\\SaveGames\\EnhancedInputUserSettings.sav",
       "engine": "Unreal Engine 5"
     },
     "Gothic 3": {
@@ -92778,7 +92792,7 @@
     "Lego Indiana Jones 2: The Adventure Continues": {
       "steam_appid": 32450,
       "dx9": true,
-      "config_path": "%APPDATA%\\LucasArts\\LEGO┬« Indiana JonesÔäó 2\\pcconfig.txt",
+      "config_path": "%APPDATA%\\LucasArts\\LEGO® Indiana Jones™ 2\\pcconfig.txt",
       "engine": "Nu2"
     },
     "Lego Indiana Jones: The Original Adventures": {
@@ -133088,6 +133102,7 @@
     },
     "Resident Evil Re:Verse": {
       "steam_appid": 1236300,
+      "dx12": true,
       "engine": "RE Engine"
     },
     "Resident Evil Requiem": {
@@ -150903,6 +150918,9 @@
       "steam_appid": 388120,
       "engine": "Ren'Py"
     },
+    "Spam": {
+      "steam_appid": 2902720
+    },
     "Spandex Force: Champion Rising": {
       "steam_appid": 380560
     },
@@ -153464,7 +153482,7 @@
     "Star Wars: Galactic Racer": {
       "steam_appid": 4078430,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\StarWarsGalacticRacer\\Saved\\",
+      "config_path": "%LOCALAPPDATA%\\StarWarsGalacticRacer\\Saved\\Config\\Windows",
       "engine": "Unreal Engine 5"
     },
     "Star Wars: Galaxy of Heroes": {
@@ -187484,6 +187502,9 @@
     },
     "War Mongrels": {
       "steam_appid": 1101790,
+      "dx11": true,
+      "dx12": true,
+      "config_path": "<path-to-game>\\WM\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "War of Beach": {
@@ -193306,6 +193327,10 @@
     },
     "X-COM: UFO Defense": {
       "steam_appid": 7760
+    },
+    "X-Force Under Attack": {
+      "steam_appid": 2446740,
+      "engine": "Unity"
     },
     "X-Games: Pro Boarder": {},
     "X-Men Legends II: Rise of Apocalypse": {
