@@ -2046,13 +2046,8 @@ public sealed partial class MainWindow
         {
             var runtimeVersion = App.GetWindowsAppRuntimeVersion();
             CrashReporter.Log($"[About] Runtime version: '{runtimeVersion}'");
-            AboutRuntimeText.Text = runtimeVersion.Length > 0 && runtimeVersion != "unknown" ? $"Windows App Runtime {runtimeVersion}" : "";
         }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[About] Runtime version read failed: {ex.Message}");
-            AboutRuntimeText.Text = "";
-        }
+        catch { }
         ViewModel.NavigateToAboutCommand.Execute(null);
     }
 

@@ -50,12 +50,6 @@ public class SettingsHandler
         _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
         // Show installed Windows App Runtime version
-        try
-        {
-            var runtimeVersion = App.GetWindowsAppRuntimeVersion();
-            _window.AboutRuntimeText.Text = runtimeVersion.Length > 0 && runtimeVersion != "unknown" ? $"Windows App Runtime {runtimeVersion}" : "";
-        }
-        catch { _window.AboutRuntimeText.Text = ""; }
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
         // Populate screenshot path and per-game combo

@@ -3221,7 +3221,6 @@
                                 </HyperlinkButton>
                             </StackPanel>
                         </Border>
-                        <TextBlock x:Name="AboutRuntimeText" x:FieldModifier="internal" FontSize="11" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
