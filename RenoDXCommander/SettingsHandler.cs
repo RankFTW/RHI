@@ -287,9 +287,9 @@ public class SettingsHandler
             btnRow.Children.Add(btnRowTop);
             btnRow.Children.Add(btnRowBot);
             var sleepBtn = new Microsoft.UI.Xaml.Controls.Button { Content = "Test IDLE (30s sleep)", FontSize = 11 };
-            sleepBtn.Click += (s, e) => System.Threading.Thread.Sleep(30000);
+            sleepBtn.Click += (s, e) => { _window.ViewModel.IsTestFreezeActive = true; System.Threading.Thread.Sleep(30000); _window.ViewModel.IsTestFreezeActive = false; };
             var spinBtn  = new Microsoft.UI.Xaml.Controls.Button { Content = "Test PEGGED (10s spin)", FontSize = 11 };
-            spinBtn.Click  += (s, e) => { var end = DateTime.UtcNow.AddSeconds(10); while (DateTime.UtcNow < end) { } };
+            spinBtn.Click  += (s, e) => { _window.ViewModel.IsTestFreezeActive = true; var end = DateTime.UtcNow.AddSeconds(10); while (DateTime.UtcNow < end) { } _window.ViewModel.IsTestFreezeActive = false; };
 
             // Native Block: WaitForSingleObject on an unsignaled event — pure native wait, WaitForSingleObject on an unsignaled event — pure native wait,
             // no managed frames above the wait. Expected top: ntdll!NtWaitForSingleObject,
@@ -300,8 +300,9 @@ public class SettingsHandler
                 var hEvent = NativeInterop.CreateEventW(IntPtr.Zero, true, false, null); // unsignaled manual-reset
                 if (hEvent != IntPtr.Zero)
                 {
+                    _window.ViewModel.IsTestFreezeActive = true;
                     try    { NativeInterop.WaitForSingleObject(hEvent, 30000); }
-                    finally { NativeInterop.CloseHandle(hEvent); }
+                    finally { NativeInterop.CloseHandle(hEvent); _window.ViewModel.IsTestFreezeActive = false; }
                 }
             };
 
@@ -418,11 +419,13 @@ public class SettingsHandler
                 if (!knownSigBtn.IsEnabled) return;
                 knownSigBtn.IsEnabled = false;
                 CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: blocking dispatcher in managed wait for 10s");
+                _window.ViewModel.IsTestFreezeActive = true;
                 var sem = new System.Threading.SemaphoreSlim(0, 1);
                 _ = System.Threading.Tasks.Task.Run(async () =>
                 {
                     await System.Threading.Tasks.Task.Delay(10_000).ConfigureAwait(false);
                     sem.Release();
+                    _window.ViewModel.IsTestFreezeActive = false;
                     _window.DispatcherQueue?.TryEnqueue(() => knownSigBtn.IsEnabled = true);
                     CrashReporter.LogSync("[FreezeDiag] Test Known Signature Freeze: released after 10s");
                 });
