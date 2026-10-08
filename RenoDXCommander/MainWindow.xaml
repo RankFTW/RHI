@@ -1604,6 +1604,117 @@
                         </Border>
 
                         <!-- ══════════════════════════════════════════════════════════
+                             CARD 2b2: DLDSR CONTROL (dev-only — gated by ResolutionControl feature flag)
+                             ══════════════════════════════════════════════════════════ -->
+                        <Border x:Name="DldsrControlCard" x:FieldModifier="internal"
+                                Visibility="Collapsed"
+                                Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="DLDSR Control" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                           Text="Enable DLDSR (Deep Learning Dynamic Super Resolution) factors without opening NVIDIA Control Panel. Requires capturing states first via NVIDIA CP. ~15 second display blackout on apply."/>
+
+                                <Grid ColumnSpacing="12" RowSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Row 0: Current State Display -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Spacing="4">
+                                        <TextBlock Text="Current State" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="DldsrCurrentStateText" x:FieldModifier="internal"
+                                                   Text="(not checked)"
+                                                   FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+
+                                    <!-- Row 1: DSR Smoothness Slider -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="DSR Smoothness" FontSize="12"
+                                                       Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="DldsrSmoothnessValueText" x:FieldModifier="internal"
+                                                       Text="33%" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <Slider x:Name="DldsrSmoothnessSlider" x:FieldModifier="internal"
+                                                Minimum="0" Maximum="100" StepFrequency="1" TickFrequency="10"
+                                                HorizontalAlignment="Stretch"
+                                                ToolTipService.ToolTip="Adjust DSR smoothness (0-100%). Lower values are sharper, higher values are smoother. ~15 second display blackout on apply."/>
+                                    </StackPanel>
+                                    <Button Grid.Row="1" Grid.Column="1" 
+                                            x:Name="DldsrSmoothnessApplyBtn" x:FieldModifier="internal"
+                                            Content="Set" Click="DldsrSmoothnessApplyBtn_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource ChipTextBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                                            BorderThickness="1" CornerRadius="6"
+                                            Padding="16,6" MinWidth="0" MinHeight="0"
+                                            FontSize="12" VerticalAlignment="Bottom"
+                                            ToolTipService.ToolTip="Apply the selected smoothness value. Causes ~15 second display blackout."/>
+
+                                    <!-- Row 2: Saved States combo + Apply button -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="Saved States" FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <ComboBox x:Name="DldsrStateCombo" x:FieldModifier="internal"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="Select a previously captured DLDSR state to apply."/>
+                                    </StackPanel>
+                                    <Button Grid.Row="2" Grid.Column="1" 
+                                            x:Name="DldsrApplyBtn" x:FieldModifier="internal"
+                                            Content="Apply" Click="DldsrApplyBtn_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}"
+                                            BorderThickness="1" CornerRadius="6"
+                                            Padding="16,6" MinWidth="0" MinHeight="0"
+                                            FontSize="12" VerticalAlignment="Bottom"
+                                            ToolTipService.ToolTip="Apply the selected DLDSR state. Causes ~15 second display blackout."/>
+
+                                    <!-- Row 3: Capture / Delete buttons -->
+                                    <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
+                                                Orientation="Horizontal" Spacing="8">
+                                        <Button x:Name="DldsrCaptureBtn" x:FieldModifier="internal"
+                                                Content="Capture Current" Click="DldsrCaptureBtn_Click"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="12,6" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                ToolTipService.ToolTip="Capture the current DLDSR state from NVIDIA Control Panel. Configure DLDSR in NVIDIA CP first, then capture."/>
+                                        <Button x:Name="DldsrDeleteBtn" x:FieldModifier="internal"
+                                                Content="Delete" Click="DldsrDeleteBtn_Click"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="12,6" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                ToolTipService.ToolTip="Delete the currently selected saved state."/>
+                                        <Button x:Name="DldsrRefreshBtn" x:FieldModifier="internal"
+                                                Content="Refresh" Click="DldsrRefreshBtn_Click"
+                                                Background="{StaticResource SurfaceOverlayBrush}"
+                                                Foreground="{StaticResource ChipTextBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="12,6" MinWidth="0" MinHeight="0"
+                                                FontSize="11"
+                                                ToolTipService.ToolTip="Refresh the current DLDSR state from registry."/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ══════════════════════════════════════════════════════════
                              CARD 2c: NEXUS MODS (dev-only — hidden by DevUnlockService)
                              ══════════════════════════════════════════════════════════ -->
                         <Border x:Name="NexusModsCard" x:FieldModifier="internal"

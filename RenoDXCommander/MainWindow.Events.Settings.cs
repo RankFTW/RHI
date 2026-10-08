@@ -1561,6 +1561,232 @@ public sealed partial class MainWindow
             : UIFactory.Brush(ResourceKeys.ChipTextBrush);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DLDSR Control Handlers
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    private async void DldsrApplyBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (DldsrStateCombo.SelectedItem is not string selectedLabel || string.IsNullOrEmpty(selectedLabel))
+            return;
+
+        DldsrApplyBtn.IsEnabled = false;
+        DldsrApplyBtn.Content = "Applying...";
+
+        try
+        {
+            var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+            var success = await dldsrService.ApplyStateAsync(selectedLabel);
+            if (success)
+            {
+                _crashReporter.Log($"[DLDSR] Applied state '{selectedLabel}'");
+                // Give the driver a moment to fully initialize and write registry values
+                await Task.Delay(500);
+                // Refresh the DLDSR current state
+                _settingsHandler.RefreshDldsrCurrentState();
+                // Also refresh the resolution dropdown in case DLDSR factors appeared
+                if (ResolutionTargetCombo != null)
+                {
+                    var resolutions = ResolutionToggleService.GetSupportedResolutions();
+                    ResolutionTargetCombo.ItemsSource = resolutions;
+                    var stored = ViewModel.Settings.ResolutionTarget;
+                    if (!string.IsNullOrEmpty(stored))
+                    {
+                        var match = resolutions.FirstOrDefault(r => r.Key == stored);
+                        if (match != null) ResolutionTargetCombo.SelectedItem = match;
+                    }
+                }
+            }
+            else
+            {
+                _crashReporter.Log($"[DLDSR] Failed to apply state '{selectedLabel}'");
+                var dlg = new ContentDialog
+                {
+                    Title = "DLDSR Apply Failed",
+                    Content = "Failed to apply DLDSR state. Check logs for details.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                };
+                await DialogService.ShowSafeAsync(dlg);
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[DLDSR] Exception applying state — {ex.Message}");
+            var dlg = new ContentDialog
+            {
+                Title = "DLDSR Apply Failed",
+                Content = ex.Message,
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+            };
+            await DialogService.ShowSafeAsync(dlg);
+        }
+        finally
+        {
+            DldsrApplyBtn.IsEnabled = true;
+            DldsrApplyBtn.Content = "Apply";
+        }
+    }
+
+    private async void DldsrCaptureBtn_Click(object sender, RoutedEventArgs e)
+    {
+        // Show input dialog to get a label for the capture
+        var inputBox = new TextBox
+        {
+            PlaceholderText = "e.g. DLDSR 2.25x + 1.78x",
+            FontSize = 12,
+            Width = 300,
+        };
+        var dialog = new ContentDialog
+        {
+            Title = "Capture DLDSR State",
+            Content = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Enter a label for this DLDSR configuration.\nFirst enable the DLDSR factors you want in NVIDIA Control Panel, then capture here.",
+                        FontSize = 12,
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    },
+                    inputBox,
+                },
+            },
+            PrimaryButtonText = "Capture",
+            CloseButtonText = "Cancel",
+            XamlRoot = Content.XamlRoot,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        var label = inputBox.Text?.Trim();
+        if (string.IsNullOrEmpty(label))
+        {
+            var errDlg = new ContentDialog
+            {
+                Title = "Invalid Label",
+                Content = "Please enter a label for the capture.",
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+            };
+            await DialogService.ShowSafeAsync(errDlg);
+            return;
+        }
+
+        try
+        {
+            var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+            dldsrService.CaptureCurrentState(label);
+            _crashReporter.Log($"[DLDSR] Captured state as '{label}'");
+            _settingsHandler.RefreshDldsrStateCombo();
+            _settingsHandler.RefreshDldsrCurrentState();
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[DLDSR] Failed to capture state — {ex.Message}");
+            var errDlg = new ContentDialog
+            {
+                Title = "DLDSR Capture Failed",
+                Content = ex.Message,
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+            };
+            await DialogService.ShowSafeAsync(errDlg);
+        }
+    }
+
+    private async void DldsrDeleteBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (DldsrStateCombo.SelectedItem is not string selectedLabel || string.IsNullOrEmpty(selectedLabel))
+            return;
+
+        var confirm = new ContentDialog
+        {
+            Title = "Delete DLDSR Capture",
+            Content = $"Delete the capture '{selectedLabel}'?",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            XamlRoot = Content.XamlRoot,
+        };
+
+        var result = await DialogService.ShowSafeAsync(confirm);
+        if (result != ContentDialogResult.Primary) return;
+
+        try
+        {
+            var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+            dldsrService.DeleteCapture(selectedLabel);
+            _crashReporter.Log($"[DLDSR] Deleted capture '{selectedLabel}'");
+            _settingsHandler.RefreshDldsrStateCombo();
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[DLDSR] Failed to delete capture — {ex.Message}");
+        }
+    }
+
+    private void DldsrRefreshBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _settingsHandler.RefreshDldsrCurrentState();
+        _settingsHandler.RefreshDldsrStateCombo();
+    }
+
+    private async void DldsrSmoothnessApplyBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var smoothness = (int)DldsrSmoothnessSlider.Value;
+
+        DldsrSmoothnessApplyBtn.IsEnabled = false;
+        DldsrSmoothnessApplyBtn.Content = "Setting...";
+
+        try
+        {
+            var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+            var success = await dldsrService.SetSmoothnessAsync(smoothness);
+            if (success)
+            {
+                _crashReporter.Log($"[DLDSR] Set smoothness to {smoothness}%");
+                // Give the driver a moment to fully initialize and write registry values
+                await Task.Delay(500);
+                // Refresh the DLDSR current state and smoothness display
+                _settingsHandler.RefreshDldsrCurrentState();
+            }
+            else
+            {
+                _crashReporter.Log($"[DLDSR] Failed to set smoothness to {smoothness}%");
+                var dlg = new ContentDialog
+                {
+                    Title = "Smoothness Apply Failed",
+                    Content = "Failed to set DSR smoothness. Check logs for details.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot,
+                };
+                await DialogService.ShowSafeAsync(dlg);
+            }
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[DLDSR] Exception setting smoothness — {ex.Message}");
+            var dlg = new ContentDialog
+            {
+                Title = "Smoothness Apply Failed",
+                Content = ex.Message,
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot,
+            };
+            await DialogService.ShowSafeAsync(dlg);
+        }
+        finally
+        {
+            DldsrSmoothnessApplyBtn.IsEnabled = true;
+            DldsrSmoothnessApplyBtn.Content = "Set";
+        }
+    }
+
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         try

@@ -6,10 +6,26 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ## v2.8.6 Beta 6
 
-### Bug Fixes
+### New
+
+**DLDSR Control**
+- Enable or disable DLDSR (Deep Learning Dynamic Super Resolution) factors directly from RHI without opening NVIDIA Control Panel.
+- **DSR Smoothness slider** — adjust the smoothness setting (0-100%) directly from RHI. Lower values are sharper, higher values are smoother. NVIDIA recommends 33% as the default.
+- **How to use:**
+  1. Open **NVIDIA Control Panel → Manage 3D Settings → DSR – Factors**
+  2. Enable the DLDSR factors you want (e.g. 1.78x DL, 2.25x DL)
+  3. In RHI Settings, scroll to **DLDSR Control** and click **Capture Current** — give it a name like "1.78x + 2.25x"
+  4. Now you can disable DLDSR in NVIDIA Control Panel
+  5. Whenever you want those factors back, select your saved state and click **Apply** — the screen goes black for ~15 seconds while the GPU restarts, then DLDSR is active
+  6. Use the **DSR Smoothness** slider to adjust sharpness/smoothness without recapturing
+- Useful for toggling DLDSR on/off without navigating NVIDIA Control Panel each time
+- Requires Admin Mode or running RHI as Administrator to read/write the driver registry keys
+- Multiple configurations can be saved (e.g. "Off", "1.78x only", "1.78x + 2.25x")
 
 **RE Framework**
 - Added a ⚙ cog button to the RE Framework row. It contains a "Delete _storage_ folder" button — RE Framework uses this folder as a cache and rebuilds it on every launch, so deleting it is safe.
+
+### Bug Fixes
 
 **Start with Windows**
 - Fixed "Start with Windows" disabling itself on every launch. The settings panel was removing the Windows startup entry while initialising, causing it to always be off after the first restart.

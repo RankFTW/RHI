@@ -203,6 +203,9 @@ public class SettingsHandler
                 _window.ColorRangeCombo.IsEnabled     = false;
                 _window.ColorApplyBtn.IsEnabled       = false;
             }
+
+            // Initialize DLDSR Control
+            InitDldsrControl();
         }
 
         // Populate DLSS defaults summary
@@ -576,6 +579,91 @@ public class SettingsHandler
         {
             ViewModel.Settings.RenoDxDbSource = tag;
             ViewModel.SaveSettingsPublic();
+        }
+    }
+
+    // ── DLDSR Control ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Initializes the DLDSR Control card: shows it, populates the saved states combo, and refreshes current state.
+    /// </summary>
+    private void InitDldsrControl()
+    {
+        _window.DldsrControlCard.Visibility = Visibility.Visible;
+        RefreshDldsrStateCombo();
+        RefreshDldsrCurrentState();
+
+        // Wire up slider value changed to update the text display
+        _window.DldsrSmoothnessSlider.ValueChanged += (s, e) =>
+        {
+            _window.DldsrSmoothnessValueText.Text = $"{(int)e.NewValue}%";
+        };
+    }
+
+    /// <summary>
+    /// Populates the DLDSR saved states combo from the captures file.
+    /// </summary>
+    public void RefreshDldsrStateCombo()
+    {
+        var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+        var captures = dldsrService.LoadCaptures();
+        _window.DldsrStateCombo.ItemsSource = captures.Select(c => c.Label).ToList();
+        if (_window.DldsrStateCombo.Items.Count > 0)
+            _window.DldsrStateCombo.SelectedIndex = 0;
+    }
+
+    /// <summary>
+    /// Reads the current DLDSR state from the registry and displays it.
+    /// </summary>
+    public void RefreshDldsrCurrentState()
+    {
+        try
+        {
+            var dldsrService = App.Services.GetRequiredService<IDldsrService>();
+            var states = dldsrService.GetCurrentState();
+
+            if (states.Count == 0)
+            {
+                // Check if it's due to admin rights
+                if (!VulkanLayerService.IsRunningAsAdmin())
+                {
+                    _window.DldsrCurrentStateText.Text = "Admin required to read DLDSR state";
+                }
+                else
+                {
+                    _window.DldsrCurrentStateText.Text = "No DLDSR-capable monitors detected";
+                }
+                return;
+            }
+
+            // Update smoothness slider from the first monitor's state
+            var firstSmoothness = dldsrService.GetCurrentSmoothness();
+            if (firstSmoothness >= 0 && firstSmoothness <= 100)
+            {
+                _window.DldsrSmoothnessSlider.Value = firstSmoothness;
+                _window.DldsrSmoothnessValueText.Text = $"{firstSmoothness}%";
+            }
+
+            // Build a summary: "Monitor1: DLDSR 2.25x (matches: dldsr-on)"
+            var lines = new List<string>();
+            foreach (var s in states)
+            {
+                var factorPart = string.IsNullOrEmpty(s.EnabledFactors) ? "Off" : s.EnabledFactors;
+                var matchPart = string.IsNullOrEmpty(s.MatchesCapture) ? "" : $" (matches: {s.MatchesCapture})";
+                // Shorten monitor ID for display (take last part after underscore)
+                var shortId = s.MonitorId.Contains('_') 
+                    ? s.MonitorId.Substring(s.MonitorId.LastIndexOf('_') + 1) 
+                    : s.MonitorId;
+                if (shortId.Length > 12) shortId = shortId.Substring(0, 12) + "...";
+                lines.Add($"{shortId}: {factorPart}, {s.Smoothness}% smooth{matchPart}");
+            }
+
+            _window.DldsrCurrentStateText.Text = string.Join("\n", lines);
+        }
+        catch (Exception ex)
+        {
+            _window.DldsrCurrentStateText.Text = $"Error: {ex.Message}";
+            CrashReporter.Log($"[SettingsHandler.RefreshDldsrCurrentState] {ex.Message}");
         }
     }
 
