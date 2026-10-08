@@ -4,12 +4,16 @@
 
 To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. Takes about 30 seconds.
 
-## v2.8.6 Beta 6
+## v2.8.6 Beta 7
+
+### Important
+- **This update requires the Windows App Runtime 2.5.1.** If you installed via the RHI installer this is handled automatically. If you updated by replacing the exe manually, download and run the full installer to get the runtime update — the exe alone is not enough. The runtime update includes reliability fixes for WinUI 3 that may reduce the frequency of the UI freeze.
 
 ### New
 
 **DLDSR Control**
 - Enable or disable DLDSR (Deep Learning Dynamic Super Resolution) factors directly from RHI without opening NVIDIA Control Panel.
+- **Info button** — click ⓘ next to the header for step-by-step instructions on capturing and applying DLDSR states.
 - **DSR Smoothness slider** — adjust the smoothness setting (0-100%) directly from RHI. Lower values are sharper, higher values are smoother. NVIDIA recommends 33% as the default.
 - **How to use:**
   1. Open **NVIDIA Control Panel → Manage 3D Settings → DSR – Factors**
@@ -26,6 +30,9 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Added a ⚙ cog button to the RE Framework row. It contains a "Delete _storage_ folder" button — RE Framework uses this folder as a cache and rebuilds it on every launch, so deleting it is safe.
 
 ### Bug Fixes
+
+**Output Colour Settings**
+- Fixed the Colour Depth and Dynamic Range dropdowns being empty and unclickable. The NVAPI display enumeration method was returning "device not found" for all monitors.
 
 **Start with Windows**
 - Fixed "Start with Windows" disabling itself on every launch. The settings panel was removing the Windows startup entry while initialising, causing it to always be off after the first restart.
