@@ -565,7 +565,7 @@
     "Terminator\u2122: Resistance": "%LOCALAPPDATA%\\Terminator\\Saved\\Config\\WindowsNoEditor",
     "RoboCop: Rogue City - Unfinished Business": "RoboCopUnfinishedBusiness",
     "The Sinking City 2": "TSC2",
-    "STAR WARS: Galactic Racer\u2122": "%LOCALAPPDATA%\\StarWarsGalacticRacer\\Saved"
+    "STAR WARS: Galactic Racer\u2122": "%LOCALAPPDATA%\\StarWarsGalacticRacer\\Saved\\Config\\Windows"
   },
   "graphicsApiOverrides": {
     "Outlast": "DX9",
