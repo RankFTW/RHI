@@ -52,24 +52,8 @@ public class SettingsHandler
         // Show installed Windows App Runtime version
         try
         {
-            string runtimeVersion = "";
-            var windowsApps = @"C:\Program Files\WindowsApps";
-            if (System.IO.Directory.Exists(windowsApps))
-            {
-                var dirs = System.IO.Directory.GetDirectories(windowsApps, "Microsoft.WindowsAppRuntime.*_x64__*");
-                foreach (var dir in dirs.OrderByDescending(d => d))
-                {
-                    var folder = System.IO.Path.GetFileName(dir);
-                    var parts = folder.Split('_');
-                    if (parts.Length >= 2 && parts[1].Contains('.'))
-                    {
-                        runtimeVersion = parts[1];
-                        if (runtimeVersion.EndsWith(".0")) runtimeVersion = runtimeVersion[..^2];
-                        break;
-                    }
-                }
-            }
-            _window.AboutRuntimeText.Text = runtimeVersion.Length > 0 ? $"Windows App Runtime {runtimeVersion}" : "";
+            var runtimeVersion = App.GetWindowsAppRuntimeVersion();
+            _window.AboutRuntimeText.Text = runtimeVersion.Length > 0 && runtimeVersion != "unknown" ? $"Windows App Runtime {runtimeVersion}" : "";
         }
         catch { _window.AboutRuntimeText.Text = ""; }
         // Populate addon watch folder textbox

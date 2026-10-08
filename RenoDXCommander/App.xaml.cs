@@ -500,24 +500,30 @@ public partial class App : Application
     /// <summary>Set when the stored OAuth token was found to be expired/revoked at startup.</summary>
     internal static bool _gitHubTokenExpiredOnStartup;
 
-    private static string GetWindowsAppRuntimeVersion()
+    internal static string GetWindowsAppRuntimeVersion()
     {
         try
         {
             var windowsApps = @"C:\Program Files\WindowsApps";
             if (!System.IO.Directory.Exists(windowsApps)) return "unknown";
             var dirs = System.IO.Directory.GetDirectories(windowsApps, "Microsoft.WindowsAppRuntime.*_x64__*");
-            foreach (var dir in dirs.OrderByDescending(d => d))
+            Version? best = null;
+            string bestStr = "";
+            foreach (var dir in dirs)
             {
-                var parts = System.IO.Path.GetFileName(dir).Split('_');
-                if (parts.Length >= 2 && parts[1].Contains('.'))
+                var folderName = System.IO.Path.GetFileName(dir);
+                // Skip experimental/preview builds
+                if (folderName.Contains("experimental", StringComparison.OrdinalIgnoreCase) ||
+                    folderName.Contains("preview", StringComparison.OrdinalIgnoreCase)) continue;
+                var parts = folderName.Split('_');
+                if (parts.Length >= 2 && Version.TryParse(parts[1], out var v) && (best == null || v > best))
                 {
-                    var v = parts[1];
-                    if (v.EndsWith(".0")) v = v[..^2];
-                    return v;
+                    best = v;
+                    bestStr = parts[1];
+                    if (bestStr.EndsWith(".0")) bestStr = bestStr[..^2];
                 }
             }
-            return "not found";
+            return bestStr.Length > 0 ? bestStr : "unknown";
         }
         catch (Exception ex) { return $"error: {ex.Message}"; }
     }

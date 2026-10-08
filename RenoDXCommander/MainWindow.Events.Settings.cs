@@ -2044,26 +2044,9 @@ public sealed partial class MainWindow
         // Show installed Windows App Runtime version — scan WindowsApps for the installed runtime folder
         try
         {
-            string runtimeVersion = "";
-            var windowsApps = @"C:\Program Files\WindowsApps";
-            if (System.IO.Directory.Exists(windowsApps))
-            {
-                // Match Microsoft.WindowsAppRuntime.2_X.Y.Z.0_x64__* or similar
-                var dirs = System.IO.Directory.GetDirectories(windowsApps, "Microsoft.WindowsAppRuntime.*_x64__*");
-                foreach (var dir in dirs.OrderByDescending(d => d))
-                {
-                    var folder = System.IO.Path.GetFileName(dir);
-                    var parts = folder.Split('_');
-                    if (parts.Length >= 2 && parts[1].Contains('.'))
-                    {
-                        runtimeVersion = parts[1];
-                        if (runtimeVersion.EndsWith(".0")) runtimeVersion = runtimeVersion[..^2];
-                        break;
-                    }
-                }
-            }
-            CrashReporter.Log($"[About] Runtime version from WindowsApps: '{runtimeVersion}'");
-            AboutRuntimeText.Text = runtimeVersion.Length > 0 ? $"Windows App Runtime {runtimeVersion}" : "";
+            var runtimeVersion = App.GetWindowsAppRuntimeVersion();
+            CrashReporter.Log($"[About] Runtime version: '{runtimeVersion}'");
+            AboutRuntimeText.Text = runtimeVersion.Length > 0 && runtimeVersion != "unknown" ? $"Windows App Runtime {runtimeVersion}" : "";
         }
         catch (Exception ex)
         {
