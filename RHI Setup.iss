@@ -64,6 +64,8 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Type: filesandordirs; Name: "{localappdata}\RHI"
 
 [Run]
+; Install Windows App Runtime 2.5.1 if not already present
+Filename: "{tmp}\windowsappruntimeinstall-x64.exe"; Parameters: "--quiet"; StatusMsg: "Installing Windows App Runtime 2.5.1..."; Flags: waituntilterminated; Check: NeedsWindowsAppRuntime
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: BeginForegroundHandoff; AfterInstall: CompleteForegroundHandoff
 
 [Code]
@@ -72,6 +74,8 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 const
   ForegroundReadyProperty = 'RHI.ForegroundReady.v1';
   ForegroundRequestMessage = 'RHI.ForegroundRequest.v1';
+  // Windows App Runtime 2.5.1 — required minimum version
+  RuntimeInstallerUrl = 'https://aka.ms/windowsappsdk/2.5/latest/windowsappruntimeinstall-x64.exe';
 
 var
   ForegroundProgress: TOutputProgressWizardPage;
@@ -210,12 +214,35 @@ begin
   end;
 end;
 
+function NeedsWindowsAppRuntime(): Boolean;
+var
+  KeyPath: String;
+begin
+  // Check if Windows App Runtime 2.5.x is installed
+  KeyPath := 'SOFTWARE\Microsoft\WindowsAppRuntime\2.5';
+  Result := not (RegKeyExists(HKLM, KeyPath) or RegKeyExists(HKLM64, KeyPath));
+end;
+
 function InitializeSetup(): Boolean;
 var
   SignalDir, SignalPath: String;
   WaitCount: Integer;
+  DownloadOk: Boolean;
 begin
   Result := True;
+
+  // Download Windows App Runtime 2.5.1 if not already installed
+  if NeedsWindowsAppRuntime() then
+  begin
+    DownloadOk := True;
+    DownloadTemporaryFile(RuntimeInstallerUrl, 'windowsappruntimeinstall-x64.exe', '', DownloadOk);
+    if not DownloadOk then
+    begin
+      MsgBox('Failed to download the Windows App Runtime. Please install it manually from:' + #13#10 + RuntimeInstallerUrl, mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
 
   // Only signal if RHI is actually running
   if not IsRhiRunning() then Exit;
