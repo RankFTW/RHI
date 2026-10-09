@@ -832,9 +832,9 @@ public partial class DetailPanelBuilder
                 lumeniteFxPresent = Directory.Exists(shadersDir) &&
                     Directory.GetFiles(shadersDir, "lumenite_Kernel.fx", SearchOption.AllDirectories).Length > 0;
 
-                // dgVoodoo2 (DX9 Feeder)
-                isDx9Feeder = card.DetectedApis.Contains(GraphicsApiType.DirectX9)
-                           || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9);
+                // dgVoodoo2 (DX9 Feeder) — only when DX9 is the PRIMARY graphics API,
+                // not just present in DetectedApis (UE4 games have a legacy DX9 shim in DetectedApis).
+                isDx9Feeder = card.GraphicsApi == GraphicsApiType.DirectX9;
                 dgVoodooOk = isDx9Feeder && App.Services.GetRequiredService<DgVoodooService>().IsDeployed(installPath);
                 scanSucceeded = true;
                 }
@@ -1364,8 +1364,7 @@ public partial class DetailPanelBuilder
                     // Call InstallReShadeInternalAsync directly with the forced filename instead of
                     // going through InstallReShadeCommand which uses auto-detection (returns d3d9.dll for DX9).
                     bool feederDx9 = selKey == NrMethodFeeder
-                        && (card.DetectedApis.Contains(GraphicsApiType.DirectX9)
-                            || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9));
+                        && card.GraphicsApi == GraphicsApiType.DirectX9;
                     if (feederDx9)
                         await _window.ViewModel.InstallReShadeInternalAsync(card, "dxgi.dll").ConfigureAwait(false);
                     else

@@ -34,6 +34,9 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 **Output Colour Settings**
 - Fixed the Colour Depth and Dynamic Range dropdowns being empty and unclickable. The NVAPI display enumeration method was returning "device not found" for all monitors.
 
+**Neural Rendering**
+- Fixed dgVoodoo2 appearing as a required component for DX11/DX12 games. UE4 games contain a legacy DX9 import as a compatibility shim which was being misread as the game running DX9. dgVoodoo2 is now only required when DX9 is the game's primary graphics API.
+
 **Start with Windows**
 - Fixed "Start with Windows" disabling itself on every launch. The settings panel was removing the Windows startup entry while initialising, causing it to always be off after the first restart.
 
