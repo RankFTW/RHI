@@ -4,10 +4,10 @@
 
 #define MyAppName "RHI"
 #ifndef PublishDir
-  #define PublishDir SourcePath + "RenoDXCommander\bin\installer\publish"
+  #define PublishDir SourcePath + "RenoDXCommander\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64"
 #endif
 #ifndef InstallerOutputDir
-  #define InstallerOutputDir SourcePath + "RenoDXCommander\bin\installer"
+  #define InstallerOutputDir SourcePath
 #endif
 #ifndef MyAppVersion
   #define MyAppVersion GetVersionNumbersString(PublishDir + "\RHI.exe")
@@ -17,29 +17,18 @@
 #define MyAppExeName "RHI.exe"
 
 [Setup]
-; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
-; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{05342962-55F5-4BA3-BFD3-DBA01D2B8BCB}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-;AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
-; "ArchitecturesAllowed=x64compatible" specifies that Setup cannot run
-; on anything but x64 and Windows 11 on Arm.
 ArchitecturesAllowed=x64compatible
-; "ArchitecturesInstallIn64BitMode=x64compatible" requests that the
-; install be done in "64-bit mode" on x64 or Windows 11 on Arm,
-; meaning it should use the native 64-bit Program Files directory and
-; the 64-bit view of the registry.
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
-; Uncomment the following line to run in non administrative install mode (install for current user only).
-;PrivilegesRequired=lowest
 OutputDir={#InstallerOutputDir}
 OutputBaseFilename=RHI-Setup
 SetupIconFile={#PublishDir}\icon.ico
@@ -54,7 +43,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -64,22 +52,16 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Type: filesandordirs; Name: "{localappdata}\RHI"
 
 [Run]
-; Install Windows App Runtime 2.5.1 if not already present
-Filename: "{tmp}\windowsappruntimeinstall-x64.exe"; Parameters: "--quiet"; StatusMsg: "Installing Windows App Runtime 2.5.1..."; Flags: waituntilterminated; Check: NeedsWindowsAppRuntime
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: BeginForegroundHandoff; AfterInstall: CompleteForegroundHandoff
 
 [Code]
-// Shared protocol names with Services/ForegroundActivation.cs. Discover the
-// window rather than the launch PID: Admin Mode may replace the initial process.
 const
   ForegroundReadyProperty = 'RHI.ForegroundReady.v1';
   ForegroundRequestMessage = 'RHI.ForegroundRequest.v1';
-  RuntimeInstallerUrl = 'https://aka.ms/windowsappsdk/2.5/latest/windowsappruntimeinstall-x64.exe';
 
 var
   ForegroundProgress: TOutputProgressWizardPage;
 
-// Inno Setup 6 runs a 32-bit installer, even with x64compatible installation mode.
 function FindNextTopLevelWindow(Parent, AfterWindow: HWND; ClassName, WindowName: Longint): HWND;
   external 'FindWindowExW@user32.dll stdcall';
 function ReadWindowProperty(Window: HWND; Name: String): THandle;
@@ -106,7 +88,6 @@ var
   Size: DWORD;
 begin
   Result := False;
-  // PROCESS_QUERY_LIMITED_INFORMATION: works for both regular and elevated RHI.
   Process := OpenTargetProcess($1000, False, ProcessId);
   if Process = 0 then Exit;
   try
@@ -116,30 +97,6 @@ begin
     begin
       SetLength(ImagePath, Size);
       Result := CompareText(ImagePath, ExpandConstant('{app}\{#MyAppExeName}')) = 0;
-    end;
-  finally
-    CloseTargetHandle(Process);
-  end;
-end;
-
-// Lightweight version used during InitializeSetup — {app} constant not yet available.
-// Checks only the exe filename, not the full path.
-function IsRhiExeProcess(ProcessId: DWORD): Boolean;
-var
-  Process: THandle;
-  ImagePath: String;
-  Size: DWORD;
-begin
-  Result := False;
-  Process := OpenTargetProcess($1000, False, ProcessId);
-  if Process = 0 then Exit;
-  try
-    Size := 32768;
-    SetLength(ImagePath, Size);
-    if ReadProcessImage(Process, 0, ImagePath, Size) then
-    begin
-      SetLength(ImagePath, Size);
-      Result := CompareText(ExtractFileName(ImagePath), '{#MyAppExeName}') = 0;
     end;
   finally
     CloseTargetHandle(Process);
@@ -185,8 +142,6 @@ begin
   Window := 0;
   ProcessId := 0;
   try
-    // Bounded wait for readiness. SetProgress services the wizard's messages;
-    // no synchronous calls are made into RHI's UI thread.
     for Attempt := 0 to 199 do
     begin
       ForegroundProgress.SetProgress(Attempt, 200);
@@ -204,7 +159,6 @@ begin
     Exit;
   end;
 
-  // Revalidate after pumping messages, before granting permission.
   CurrentProcessId := 0;
   ReadWindowProcessId(Window, CurrentProcessId);
   if (CurrentProcessId <> ProcessId) or not IsInstalledRhiProcess(ProcessId) then Exit;
@@ -216,71 +170,41 @@ begin
   else
     Log(Format('RHI foreground permission refused for PID %d; RHI will use taskbar attention if necessary.', [ProcessId]));
 
-  // Do not let the installer regain focus after delivering the request.
   WizardForm.Hide;
   if not PostForegroundMessage(Window, Message, 0, 0) then
     Log('RHI foreground handoff: could not post activation request.');
 end;
 
-function NeedsWindowsAppRuntime(): Boolean;
-var
-  KeyPath: String;
-begin
-  KeyPath := 'SOFTWARE\Microsoft\WindowsAppRuntime\2.5';
-  Result := not (RegKeyExists(HKLM, KeyPath) or RegKeyExists(HKLM64, KeyPath));
-end;
-
 function IsRhiRunning(): Boolean;
 var
-  Window: HWND;
-  ProcessId: DWORD;
+  WMI: Variant;
+  Procs: Variant;
 begin
   Result := False;
-  Window := FindNextTopLevelWindow(0, 0, 0, 0);
-  while Window <> 0 do
-  begin
-    ProcessId := 0;
-    ReadWindowProcessId(Window, ProcessId);
-    if (ProcessId <> 0) and IsRhiExeProcess(ProcessId) then
-    begin
-      Result := True;
-      Exit;
-    end;
-    Window := FindNextTopLevelWindow(0, Window, 0, 0);
+  try
+    WMI := CreateOleObject('WbemScripting.SWbemLocator');
+    WMI := WMI.ConnectServer('.', 'root\cimv2');
+    Procs := WMI.ExecQuery('SELECT * FROM Win32_Process WHERE Name="RHI.exe"');
+    Result := (Procs.Count > 0);
+  except
   end;
 end;
 
 function InitializeSetup(): Boolean;
 var
   SignalDir, SignalPath: String;
-  WaitCount, ResultCode: Integer;
+  WaitCount: Integer;
 begin
   Result := True;
 
-  // Download Windows App Runtime 2.5.1 if not already installed
-  if NeedsWindowsAppRuntime() then
-  begin
-    if not ShellExec('', 'powershell.exe',
-        '-NoProfile -NonInteractive -Command "Invoke-WebRequest -Uri ''' + RuntimeInstallerUrl + ''' -OutFile ''' + ExpandConstant('{tmp}\windowsappruntimeinstall-x64.exe') + ''' -UseBasicParsing"',
-        '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
-    begin
-      MsgBox('Failed to download the Windows App Runtime. Please install it manually from:' + #13#10 + RuntimeInstallerUrl, mbError, MB_OK);
-      Result := False;
-      Exit;
-    end;
-  end;
-
-  // Only signal if RHI is actually running
   if not IsRhiRunning() then Exit;
 
-  // Write shutdown signal file to %LocalAppData%\RHI\
   SignalDir := ExpandConstant('{localappdata}\RHI');
   if not DirExists(SignalDir) then
     ForceDirectories(SignalDir);
   SignalPath := SignalDir + '\rhi_shutdown_requested';
   SaveStringToFile(SignalPath, 'update', False);
 
-  // Wait up to 10 seconds for RHI to close itself
   WaitCount := 0;
   while (WaitCount < 20) and IsRhiRunning() do
   begin
@@ -288,9 +212,5 @@ begin
     WaitCount := WaitCount + 1;
   end;
 
-  // Never leave a request for the newly installed process to consume on launch.
   DeleteFile(SignalPath);
-
-  // If still running, Inno's default CloseApplications will handle it
 end;
-
