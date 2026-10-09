@@ -35,6 +35,11 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Pinning a build freezes that game at that version and excludes it from auto-updates. Useful when a newer nightly breaks something.
 - Pinned builds download on demand the first time and cache locally for future installs.
 
+### Changes
+
+**Control Ultimate Edition — OptiScaler FG**
+- When installing OptiScaler FG via the Control install dialog, RHI now automatically pins the game to OptiScaler nightly build 2026-10-04. Newer nightly builds break DLSS Frame Generation compatibility with Control — this ensures it works correctly out of the box.
+
 **GitHub Personal Access Token**
 - Added a PAT input field in Settings → GitHub API as an alternative to the OAuth sign-in flow.
 - Paste any classic PAT (no scopes needed — RHI only reads public repos). The token is saved locally and never expires unless you revoke it on GitHub.
