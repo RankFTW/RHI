@@ -64,6 +64,8 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Type: filesandordirs; Name: "{localappdata}\RHI"
 
 [Run]
+; Install Windows App Runtime 2.5.1 if not already present
+Filename: "{tmp}\windowsappruntimeinstall-x64.exe"; Parameters: "--quiet"; StatusMsg: "Installing Windows App Runtime 2.5.1..."; Flags: waituntilterminated; Check: NeedsWindowsAppRuntime
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: BeginForegroundHandoff; AfterInstall: CompleteForegroundHandoff
 
 [Code]
@@ -72,6 +74,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 const
   ForegroundReadyProperty = 'RHI.ForegroundReady.v1';
   ForegroundRequestMessage = 'RHI.ForegroundRequest.v1';
+  RuntimeInstallerUrl = 'https://aka.ms/windowsappsdk/2.5/latest/windowsappruntimeinstall-x64.exe';
 
 var
   ForegroundProgress: TOutputProgressWizardPage;
@@ -195,6 +198,14 @@ begin
     Log('RHI foreground handoff: could not post activation request.');
 end;
 
+function NeedsWindowsAppRuntime(): Boolean;
+var
+  KeyPath: String;
+begin
+  KeyPath := 'SOFTWARE\Microsoft\WindowsAppRuntime\2.5';
+  Result := not (RegKeyExists(HKLM, KeyPath) or RegKeyExists(HKLM64, KeyPath));
+end;
+
 function IsRhiRunning(): Boolean;
 var
   WMI: Variant;
@@ -213,9 +224,22 @@ end;
 function InitializeSetup(): Boolean;
 var
   SignalDir, SignalPath: String;
-  WaitCount: Integer;
+  WaitCount, ResultCode: Integer;
 begin
   Result := True;
+
+  // Download Windows App Runtime 2.5.1 if not already installed
+  if NeedsWindowsAppRuntime() then
+  begin
+    if not ShellExec('', 'powershell.exe',
+        '-NoProfile -NonInteractive -Command "Invoke-WebRequest -Uri ''' + RuntimeInstallerUrl + ''' -OutFile ''' + ExpandConstant('{tmp}\windowsappruntimeinstall-x64.exe') + ''' -UseBasicParsing"',
+        '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+    begin
+      MsgBox('Failed to download the Windows App Runtime. Please install it manually from:' + #13#10 + RuntimeInstallerUrl, mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
 
   // Only signal if RHI is actually running
   if not IsRhiRunning() then Exit;
