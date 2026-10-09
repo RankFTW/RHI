@@ -96,7 +96,7 @@ public static class ControlUePostInstallService
                      + "  •  Deploy nvngx_dlssd.dll (DLSS Ray Reconstruction runtime)\n"
                      + "  •  Set renderer.ini HDR preset to the correct value\n"
                      + "  •  Clear the DLSS SR preset set in the NVIDIA driver profile for this game\n"
-                     + "  •  If OptiScaler FG = Yes: installs OptiScaler Nightly with Frame Generation pre-configured, deploys Streamline and nvngx_dlssg.dll, renames OptiScaler to winmm.dll and ReShade to dxgi.dll, and applies all required FG INI settings",
+                     + "  •  If OptiScaler FG = Yes: installs OptiScaler Nightly build 2026-10-04 with Frame Generation pre-configured, deploys Streamline and nvngx_dlssg.dll, renames OptiScaler to winmm.dll and ReShade to dxgi.dll, and applies all required FG INI settings",
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
                 FontSize = 13,
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -399,6 +399,17 @@ public static class ControlUePostInstallService
             vm.SetOsFgOutput(gameName, "dlssg", store);
             vm.SetOsFgNvngxReplacement(gameName, "None", store);
 
+            // Pin to the known-good nightly build for Control UE FG
+            const string ControlUeRequiredNightlyBuild = "20261004";
+            vm.SetOsNightlyBuild(gameName, ControlUeRequiredNightlyBuild, store);
+
+            // ── Ensure the pinned build is staged ─────────────────────────────
+            if (!optiSvc.IsNightlyBuildStaged(ControlUeRequiredNightlyBuild))
+            {
+                CrashReporter.Log($"[ControlUePostInstall] Step 6 — staging nightly build {ControlUeRequiredNightlyBuild}...");
+                await optiSvc.EnsureNightlyBuildStagingAsync(ControlUeRequiredNightlyBuild).ConfigureAwait(false);
+            }
+
             // ── Run the install ────────────────────────────────────────────────
             var gpuType    = vm.Settings.OsGpuType;
             var dlssInputs = vm.Settings.OsDlssInputs;
@@ -410,13 +421,18 @@ public static class ControlUePostInstallService
                 gpuType: gpuType,
                 dlssInputs: dlssInputs,
                 hotkey: hotkey,
-                variant: "Nightly").ConfigureAwait(false);
+                variant: "Nightly",
+                nightlyBuildHint: ControlUeRequiredNightlyBuild).ConfigureAwait(false);
 
             if (record == null)
             {
                 CrashReporter.Log("[ControlUePostInstall] Step 6 — OptiScaler install returned null (staging not ready?)");
                 return;
             }
+
+            // Update the card's displayed version immediately
+            if (!string.IsNullOrEmpty(record.OsNightlyBuild))
+                card.OsInstalledVersion = record.OsNightlyBuild;
 
             // Clear DLSS skip cache so next scan detects the deployed DLLs
             var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();

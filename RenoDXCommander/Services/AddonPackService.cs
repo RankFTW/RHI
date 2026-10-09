@@ -736,7 +736,15 @@ public class AddonPackService : IAddonPackService
                     continue;
                 }
 
+                // If remote version resolved to "unknown" (HEAD failed), skip — don't overwrite a valid stored version with unknown
+                if (remoteVersion == "unknown")
+                {
+                    CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] '{entry.PackageName}' remote version resolved to 'unknown' — skipping update to avoid false update.");
+                    continue;
+                }
+                // If stored version is "unknown" and remote is now valid, allow re-download to establish a baseline
                 CrashReporter.Log($"[AddonPackService.CheckAndUpdateAllAsync] Update available for '{entry.PackageName}': {storedVersion} → {remoteVersion}. Downloading...");
+
                 await _downloadLock.WaitAsync();
                 try { await DownloadAddonAsync(entry, versionOverride: remoteVersion); }
                 finally { _downloadLock.Release(); }
