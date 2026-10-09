@@ -102,6 +102,7 @@
     "L.A. Noire",
     "LEGO\u00AE Builder\u0027s Journey",
     "MIO: Memories in Orbit",
+    "Mirror's Edge™ Catalyst",
     "Northern Journey",
     "Outer Wilds",
     "Resident Evil",
@@ -864,10 +865,6 @@
       "url": "https://www.nexusmods.com/assassinscreedblackflagresynced/mods/42",
       "label": "Get on Nexus"
     },
-    "Cyberpunk 2077": {
-      "url": "https://discord.gg/gF4GRJWZ2A",
-      "label": "Get on Discord"
-    },
     "Max Payne 3": {
       "url": "https://www.nexusmods.com/maxpayne3/mods/218",
       "label": "Get on Nexus"
@@ -1025,11 +1022,6 @@
     },
     "Directive 8020": {
       "notes": "\u2139\uFE0F Uses UE-Extended for HDR. RHI handles all file placement automatically. If the game has an in-game HDR option, enable that too."
-    },
-    "Cyberpunk 2077": {
-      "notes": "\u26A0\uFE0F The RenoDX mod for Cyberpunk 2077 is a WIP. Always get the latest build directly from the RenoDX Discord \u2014 it is updated more frequently than any wiki download.\n\nSee Creepy\u0027s Cyberpunk RenoDX Guide for setup instructions:",
-      "notesUrl": "https://www.hdrmods.com/Cyberpunk",
-      "notesUrlLabel": "Creepy\u0027s Cyberpunk RenoDX Guide"
     },
     "Dishonored": {
       "notes": "\u2139\uFE0F This game has both 32-bit and 64-bit RenoDX builds.\n\n\u2022 64-bit (default) \u2014 for the Microsoft Store and Epic Games Store versions.\n\u2022 32-bit \u2014 for the Steam version. Enable 32-bit mode in \uD83C\uDFAF Overrides to use this."
