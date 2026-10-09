@@ -233,7 +233,6 @@ begin
   // Download Windows App Runtime 2.5.1 if not already installed
   if NeedsWindowsAppRuntime() then
   begin
-    DownloadOk := True;
     // Use PowerShell Invoke-WebRequest to download — works on all Inno Setup 6 versions
     if not ShellExec('', 'powershell.exe',
         '-NoProfile -NonInteractive -Command "Invoke-WebRequest -Uri ''' + RuntimeInstallerUrl + ''' -OutFile ''' + ExpandConstant('{tmp}\windowsappruntimeinstall-x64.exe') + ''' -UseBasicParsing"',
