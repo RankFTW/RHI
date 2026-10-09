@@ -327,6 +327,10 @@ public partial class MainViewModel
 
                     LogResourceCounters("at-freeze");
 
+                    // Window inventory at freeze — compare class/handle state against startup
+                    try { WindowStateManagerRef?.LogWindowInventory("at-freeze"); }
+                    catch (Exception winvEx) { CrashReporter.LogSync($"[Heartbeat.WindowInventory] Failed: {winvEx.GetType().Name}: {winvEx.Message}"); }
+
                     // ThreadState + WaitReason
                     try
                     {

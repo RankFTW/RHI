@@ -28,6 +28,9 @@ public class WindowStateManager
     /// </summary>
     internal long LastResumeUtcTicks; // read/write via Interlocked
 
+    /// <summary>Counter for unexpected WM_APP (0x8000) messages that don't match the tray icon signature.</summary>
+    private int _unexpectedWmAppCount;
+
     private static readonly string _windowSettingsPath = System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "window_main.json");
@@ -50,6 +53,37 @@ public class WindowStateManager
 
     /// <summary>The native HWND of the managed window.</summary>
     public IntPtr Hwnd => _hwnd;
+
+    /// <summary>
+    /// Logs the windows owned by the UI thread: HWND, class name, IsWindow, and a WM_NULL PostMessage probe.
+    /// Call at startup and from the freeze block to detect missing or orphaned windows.
+    /// </summary>
+    public void LogWindowInventory(string context)
+    {
+        try
+        {
+            var threadId = NativeInterop.GetCurrentThreadId();
+            var windows = new System.Collections.Generic.List<string>();
+            NativeInterop.EnumWindowsProc callback = (hwnd, _) =>
+            {
+                var sb = new System.Text.StringBuilder(256);
+                NativeInterop.GetClassName(hwnd, sb, sb.Capacity);
+                bool isValid = NativeInterop.IsWindow(hwnd);
+                bool posted  = NativeInterop.PostMessage(hwnd, NativeInterop.WM_NULL, IntPtr.Zero, IntPtr.Zero);
+                windows.Add($"hwnd=0x{hwnd:X} class={sb} IsWindow={isValid} WM_NULL_posted={posted}");
+                return true;
+            };
+            NativeInterop.EnumThreadWindows(threadId, callback, IntPtr.Zero);
+            GC.KeepAlive(callback);
+            _crashReporter.Log(windows.Count > 0
+                ? $"[WindowStateManager.WindowInventory:{context}] {windows.Count} window(s) on UI thread: {string.Join(" | ", windows)}"
+                : $"[WindowStateManager.WindowInventory:{context}] No windows found on UI thread (threadId={threadId})");
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[WindowStateManager.WindowInventory:{context}] Failed: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// Enables or disables window size locking for Compact mode.
@@ -269,8 +303,23 @@ public class WindowStateManager
 
         if (msg == (uint)TrayIconService.WM_TRAYICON)
         {
-            TrayIconService.HandleTrayMessage(lParam);
-            return IntPtr.Zero;
+            // Guard: only handle genuine tray callbacks (wParam == icon ID 1, lParam low word is a mouse message).
+            // If something else sends WM_APP (0x8000) to our hwnd and we swallow it, we might drop
+            // a framework wake-up message. Forward non-tray 0x8000 messages to avoid that.
+            bool isTrayCallback = (wParam.ToInt64() == 1) && ((lParam.ToInt64() & 0xFFFF) is
+                0x0200 or 0x0201 or 0x0202 or 0x0203 or 0x0204 or 0x0205 or 0x0206 or // WM_MOUSE*
+                0x020A or 0x020E or // WM_MOUSEWHEEL, WM_MOUSEHWHEEL
+                0x007F); // NIN_BALLOONSHOW and similar tray notifications
+            if (isTrayCallback)
+            {
+                TrayIconService.HandleTrayMessage(lParam);
+                return IntPtr.Zero;
+            }
+            // Log the first few unexpected 0x8000 messages — may indicate a message ID collision.
+            int seen = System.Threading.Interlocked.Increment(ref _unexpectedWmAppCount);
+            if (seen <= 10)
+                _crashReporter.Log($"[WindowStateManager.WndProc] Unexpected 0x8000 message (not tray): wParam=0x{wParam.ToInt64():X} lParam=0x{lParam.ToInt64():X} (occurrence {seen})");
+            return NativeInterop.CallWindowProc(_origWndProc, hWnd, msg, wParam, lParam);
         }
 
         if (msg == NativeInterop.WM_POWERBROADCAST &&

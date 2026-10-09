@@ -133,6 +133,7 @@ public sealed partial class MainWindow : Window
         _windowStateManager = new WindowStateManager(this, hwnd, _dragDropHandler, _crashReporter);
         _windowStateManager.InstallWndProcSubclass();
         _windowStateManager.EnableDragAccept(ViewModel.Settings.DropHelperEnabled);
+        _windowStateManager.LogWindowInventory("startup");
 
         // Initialize system tray
         if (ViewModel.Settings.CloseToTray || ViewModel.Settings.RecentGamesMenu)
