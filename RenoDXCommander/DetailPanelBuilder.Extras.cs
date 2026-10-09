@@ -144,8 +144,7 @@ public partial class DetailPanelBuilder
         }
 
         // ── dgVoodoo2 standalone row — DX9 games or already installed ─────────
-        bool isDx9ForDgv = card.DetectedApis.Contains(GraphicsApiType.DirectX9)
-                        || (card.DetectedApis.Count == 0 && card.GraphicsApi == GraphicsApiType.DirectX9);
+        bool isDx9ForDgv = card.GraphicsApi == GraphicsApiType.DirectX9;
         // dgvInstalled already computed above for the summary
         if (isDx9ForDgv || dgvInstalled)
         {
