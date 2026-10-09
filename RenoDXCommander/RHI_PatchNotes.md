@@ -46,7 +46,8 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Fixed the Colour Depth and Dynamic Range dropdowns being empty and unclickable. The NVAPI display enumeration was returning "device not found" for all monitors.
 
 **DLDSR Control**
-- Fixed the DSR Smoothness slider causing a GPU driver restart (brief screen blackout). Smoothness is a rendering parameter that takes effect immediately — no restart required.
+- Fixed the DSR Smoothness Set button wiping DLDSR factor settings. The slider was reading from live registry after a GPU restart, which resets the factor bits. It now reads from the last applied capture file instead.
+- Setting smoothness and then clicking Apply now applies both the DLDSR factors and the slider smoothness value together in a single GPU restart.
 
 **Neural Rendering**
 - Fixed dgVoodoo2 appearing as a required component for DX11/DX12 games. UE4 games contain a legacy DX9 import as a compatibility shim that was being misread as the game running DX9. dgVoodoo2 is now only required when DX9 is the game's primary graphics API.

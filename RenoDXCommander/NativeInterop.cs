@@ -747,6 +747,11 @@ internal static class NativeInterop
     [DllImport("user32.dll")]
     internal static extern bool EnumThreadWindows(uint dwThreadId, EnumWindowsProc lpfn, IntPtr lParam);
 
+    /// <summary>Triggers a display mode refresh without changing resolution. Pass null DEVMODE to reset to registered default.</summary>
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    internal static extern int ChangeDisplaySettingsEx(
+        string? lpszDeviceName, IntPtr lpDevMode, IntPtr hwnd, uint dwflags, IntPtr lParam);
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     internal static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
 

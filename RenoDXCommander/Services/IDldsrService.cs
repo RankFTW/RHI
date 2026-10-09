@@ -69,7 +69,7 @@ public interface IDldsrService
     /// <param name="label">The label of the capture to apply.</param>
     /// <param name="progress">Optional progress reporter for status updates.</param>
     /// <returns>True if successful, false otherwise.</returns>
-    Task<bool> ApplyStateAsync(string label, IProgress<string>? progress = null);
+    Task<bool> ApplyStateAsync(string label, IProgress<string>? progress = null, int? smoothnessOverride = null);
 
     /// <summary>
     /// Path to the captures JSON file (%LocalAppData%\RHI\dldsr-captures.json).

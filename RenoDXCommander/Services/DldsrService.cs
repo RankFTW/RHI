@@ -241,11 +241,10 @@ public class DldsrService : IDldsrService
         Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
         "RHI");
 
-    public async Task<bool> ApplyStateAsync(string label, IProgress<string>? progress = null)
+    public async Task<bool> ApplyStateAsync(string label, IProgress<string>? progress = null, int? smoothnessOverride = null)
     {
-        CrashReporter.Log($"[DldsrService.ApplyStateAsync] Applying state '{label}'");
+        CrashReporter.Log($"[DldsrService.ApplyStateAsync] Applying state '{label}'" + (smoothnessOverride.HasValue ? $" with smoothness override {smoothnessOverride}%" : ""));
         progress?.Report("Loading capture...");
-
         var captures = LoadCaptures();
         var capture = captures.FirstOrDefault(c => c.Label.Equals(label, StringComparison.OrdinalIgnoreCase));
         if (capture == null)
@@ -269,7 +268,39 @@ public class DldsrService : IDldsrService
         var stateFile = Path.Combine(ProgramDataDir, "dldsr-state.json");
         try
         {
-            var stateJson = JsonSerializer.Serialize(capture, _jsonOptions);
+            // If a smoothness override is provided, bake it into the capture blobs before writing
+            DldsrCapture captureToApply = capture;
+            if (smoothnessOverride.HasValue)
+            {
+                var modifiedMonitors = capture.Monitors.Select(mon =>
+                {
+                    if (!mon.Values.TryGetValue(SmoothScalingDataName, out var hex)) return mon;
+                    try
+                    {
+                        var bytes = (byte[])hex.Split(',').Select(b => Convert.ToByte(b.Trim(), 16)).ToArray().Clone();
+                        if (bytes.Length == 32)
+                        {
+                            var sb = BitConverter.GetBytes((uint)smoothnessOverride.Value);
+                            Array.Copy(sb, 0, bytes, 12, 4);
+                            uint checksum = 0;
+                            for (int i = 0; i < 28; i++) checksum += bytes[i];
+                            var cb = BitConverter.GetBytes(checksum);
+                            Array.Copy(cb, 0, bytes, 28, 4);
+                            var newValues = new Dictionary<string, string>(mon.Values)
+                            {
+                                [SmoothScalingDataName] = string.Join(",", bytes.Select(b => b.ToString("X2")))
+                            };
+                            return new DldsrMonitorCapture(mon.MonitorId, newValues);
+                        }
+                    }
+                    catch { }
+                    return mon;
+                }).ToList();
+                captureToApply = new DldsrCapture(capture.Label, capture.Time, capture.Driver, modifiedMonitors);
+                CrashReporter.Log($"[DldsrService.ApplyStateAsync] Baked smoothness {smoothnessOverride}% into capture");
+            }
+
+            var stateJson = JsonSerializer.Serialize(captureToApply, _jsonOptions);
             await File.WriteAllTextAsync(stateFile, stateJson);
             CrashReporter.Log($"[DldsrService.ApplyStateAsync] Wrote state file to {stateFile}");
         }
@@ -669,11 +700,50 @@ try {
 
         try
         {
-            // Read current state from all monitors
+            // Read current state from the last applied capture file — NOT from live registry.
+            // After a GPU restart, the driver may reset DisplayDatabase to defaults before
+            // the next read, which would zero out the DLDSR factor bits. The capture file
+            // always contains the correct blob with factors intact.
+            var lastStateFile = Path.Combine(ProgramDataDir, "dldsr-state.json");
+            DldsrCapture? existingCapture = null;
+            try
+            {
+                if (File.Exists(lastStateFile))
+                {
+                    var json = await File.ReadAllTextAsync(lastStateFile);
+                    existingCapture = JsonSerializer.Deserialize<DldsrCapture>(json, _jsonOptions);
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DldsrService.SetSmoothnessAsync] Failed to read state file — {ex.Message}");
+            }
+
             var monitorData = new List<(string MonitorId, byte[] SmoothData, byte[] MultData)>();
 
-            using (var baseKey = Registry.LocalMachine.OpenSubKey(DisplayDbPath))
+            if (existingCapture != null)
             {
+                // Use the saved capture as the base — has correct factor bits
+                foreach (var mon in existingCapture.Monitors)
+                {
+                    var smoothHex = mon.Values.TryGetValue(SmoothScalingDataName, out var sh) ? sh : null;
+                    var multHex = mon.Values.TryGetValue(SmoothScalingMultiplierDataName, out var mh) ? mh : null;
+                    if (smoothHex == null || multHex == null) continue;
+                    try
+                    {
+                        var smoothData = smoothHex.Split(',').Select(b => Convert.ToByte(b.Trim(), 16)).ToArray();
+                        var multData = multHex.Split(',').Select(b => Convert.ToByte(b.Trim(), 16)).ToArray();
+                        if (smoothData.Length == 32)
+                            monitorData.Add((mon.MonitorId, smoothData, multData));
+                    }
+                    catch { }
+                }
+            }
+
+            // Fallback to live registry if no state file exists
+            if (monitorData.Count == 0)
+            {
+                using var baseKey = Registry.LocalMachine.OpenSubKey(DisplayDbPath);
                 if (baseKey == null)
                 {
                     CrashReporter.Log("[DldsrService.SetSmoothnessAsync] DisplayDatabase key not found");
@@ -744,7 +814,19 @@ try {
                 return false;
             }
 
-            // Smoothness is a rendering parameter — no GPU restart needed (unlike DLDSR factor changes)
+            // GPU restart required — the driver reads DisplayDatabase at adapter startup only,
+            // not live. nvcontainer.exe updates smoothness live via a privileged IPC channel
+            // that is not available to third-party apps.
+            progress?.Report("Restarting GPU adapter...");
+            if (!await RestartGpuAdapterAsync())
+            {
+                CrashReporter.Log("[DldsrService.SetSmoothnessAsync] Failed to restart GPU adapter");
+                return false;
+            }
+
+            progress?.Report("Waiting for displays...");
+            await Task.Delay(12000);
+
             CrashReporter.Log($"[DldsrService.SetSmoothnessAsync] Successfully set smoothness to {smoothness}%");
             return true;
         }

@@ -1661,7 +1661,7 @@ public sealed partial class MainWindow
         try
         {
             var dldsrService = App.Services.GetRequiredService<IDldsrService>();
-            var success = await dldsrService.ApplyStateAsync(selectedLabel);
+            var success = await dldsrService.ApplyStateAsync(selectedLabel, smoothnessOverride: (int)DldsrSmoothnessSlider.Value);
             if (success)
             {
                 _crashReporter.Log($"[DLDSR] Applied state '{selectedLabel}'");
