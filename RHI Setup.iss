@@ -52,6 +52,10 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Type: filesandordirs; Name: "{localappdata}\RHI"
 
 [Run]
+; Download Windows App Runtime 2.5.1 if not already installed (only runs if missing)
+Filename: "powershell.exe"; Parameters: "-NoProfile -NonInteractive -WindowStyle Hidden -Command ""Invoke-WebRequest -Uri 'https://aka.ms/windowsappsdk/2.5/latest/windowsappruntimeinstall-x64.exe' -OutFile '{tmp}\windowsappruntimeinstall-x64.exe' -UseBasicParsing"""; StatusMsg: "Downloading Windows App Runtime 2.5.1..."; Flags: waituntilterminated; Check: NeedsWindowsAppRuntime
+; Install Windows App Runtime 2.5.1 if not already installed
+Filename: "{tmp}\windowsappruntimeinstall-x64.exe"; Parameters: "--quiet"; StatusMsg: "Installing Windows App Runtime 2.5.1..."; Flags: waituntilterminated; Check: NeedsWindowsAppRuntime
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; BeforeInstall: BeginForegroundHandoff; AfterInstall: CompleteForegroundHandoff
 
 [Code]
@@ -173,6 +177,14 @@ begin
   WizardForm.Hide;
   if not PostForegroundMessage(Window, Message, 0, 0) then
     Log('RHI foreground handoff: could not post activation request.');
+end;
+
+function NeedsWindowsAppRuntime(): Boolean;
+var
+  KeyPath: String;
+begin
+  KeyPath := 'SOFTWARE\Microsoft\WindowsAppRuntime\2.5';
+  Result := not (RegKeyExists(HKLM, KeyPath) or RegKeyExists(HKLM64, KeyPath));
 end;
 
 function IsRhiRunning(): Boolean;
