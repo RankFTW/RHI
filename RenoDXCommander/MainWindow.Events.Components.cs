@@ -1153,6 +1153,9 @@ public sealed partial class MainWindow
         } // end hasRenoDxMod
 
         // ── RTX HDR Toggle ─────────────────────────────────────────────────────
+        // autoHdrCombo is declared here at method scope so the RTX HDR SelectionChanged
+        // handler can reference it for mutual exclusivity (before the Auto HDR section builds it).
+        ComboBox? autoHdrCombo = null;
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
         content.Children.Add(new TextBlock
         {
@@ -1202,6 +1205,23 @@ public sealed partial class MainWindow
             {
                 gameNameService.RtxHdrGames.Add(card.GameName);
                 card.IsRtxHdrEnabled = true;
+
+                // Mutual exclusivity: if Auto HDR is on, turn it off
+                if (card.IsAutoHdrEnabled)
+                {
+                    gameNameService.AutoHdrGames.Remove(card.GameName);
+                    card.IsAutoHdrEnabled = false;
+                    autoHdrCombo!.SelectedIndex = 0;
+                    var capturedAutoHdrSvc = App.Services.GetRequiredService<IAutoHdrService>();
+                    var capturedAutoHdrCard = card;
+                    _ = Task.Run(() =>
+                    {
+                        var exePath = capturedAutoHdrSvc.ResolveExePath(
+                            capturedAutoHdrCard.GameName, capturedAutoHdrCard.InstallPath,
+                            gameNameService.LaunchExeOverrides, ViewModel.Manifest?.LaunchExeOverrides);
+                        if (!string.IsNullOrEmpty(exePath)) capturedAutoHdrSvc.Disable(exePath);
+                    });
+                }
 
                 // Uninstall RenoDX if installed
                 if (card.Status == GameStatus.Installed && card.InstalledRecord != null)
@@ -1293,14 +1313,14 @@ public sealed partial class MainWindow
         });
         content.Children.Add(new TextBlock
         {
-            Text = "Windows 11 Auto HDR forced via registry. Requires HDR and Auto HDR enabled in Windows Settings.",
+            Text = "Windows 11 Auto HDR forced via registry. Works without the global Auto HDR setting enabled.",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
             TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 4),
         });
 
-        var autoHdrCombo = new ComboBox { FontSize = 11, MinWidth = 100 };
+        autoHdrCombo = new ComboBox { FontSize = 11, MinWidth = 100 };
         autoHdrCombo.Items.Add("Off");
         autoHdrCombo.Items.Add("On");
 
@@ -1402,7 +1422,7 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
-        dialog.Resources["ContentDialogMaxWidth"] = 740.0;
+        dialog.Resources["ContentDialogMaxWidth"] = 520.0;
         await DialogService.ShowSafeAsync(dialog);
         _detailPanelBuilder?.UpdateDetailComponentRows(card);
     }
@@ -1868,7 +1888,7 @@ public sealed partial class MainWindow
         // ── Info note ─────────────────────────────────────────────────────────
         content.Children.Add(new TextBlock
         {
-            Text = "Changes take effect on the next game launch. Requires HDR and Auto HDR enabled in Windows Settings → System → Display.",
+            Text = "Changes take effect on the next game launch.",
             FontSize = 11,
             Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
             TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,

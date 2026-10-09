@@ -675,6 +675,28 @@ public sealed partial class MainWindow
                 }
             }
 
+            // ── Auto HDR Windows HDR launch toggle ──
+            // Only fires for games that have per-game Auto HDR enabled AND the launch toggle set to "On".
+            // If the user already has Windows HDR on, we note that so we don't disable it on exit.
+            bool shouldToggleAutoHdrHdr = _gameNameService.AutoHdrGames.Contains(gameName)
+                && _gameNameService.AutoHdrLaunchToggle.TryGetValue(gameName, out var ahtv)
+                && string.Equals(ahtv, "On", StringComparison.OrdinalIgnoreCase);
+            bool autoHdrHdrWasAlreadyOn = false;
+            if (shouldToggleAutoHdrHdr)
+            {
+                autoHdrHdrWasAlreadyOn = HdrToggleService.IsHdrEnabled();
+                if (!autoHdrHdrWasAlreadyOn)
+                {
+                    var autoHdrTargets = ViewModel.Settings.HdrTargetDisplays;
+                    HdrToggleService.EnableHdr(autoHdrTargets.Count > 0 ? autoHdrTargets : null);
+                    _crashReporter.Log($"[MainWindow.LaunchGameAsync] Auto HDR HDR toggle: enabled Windows HDR for '{gameName}'");
+                }
+                else
+                {
+                    _crashReporter.Log($"[MainWindow.LaunchGameAsync] Auto HDR HDR toggle: HDR was already on for '{gameName}' — won't disable on exit");
+                }
+            }
+
             // 1. User override (absolute path)
             if (_gameNameService.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
                 && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
@@ -686,7 +708,7 @@ public sealed partial class MainWindow
                     UseShellExecute = true,
                     WorkingDirectory = System.IO.Path.GetDirectoryName(userExe) ?? "",
                 });
-                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
+                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                 return;
             }
 
@@ -739,7 +761,7 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Steam: {steamUri}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                 return;
             }
 
@@ -749,7 +771,7 @@ public sealed partial class MainWindow
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                 return;
             }
 
@@ -761,7 +783,7 @@ public sealed partial class MainWindow
                 var uri = $"shell:AppsFolder\\{card.DetectedGame.XboxAumid}";
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Xbox AUMID: {card.DetectedGame.XboxAumid}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri) { UseShellExecute = true });
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                 return;
             }
 
@@ -791,7 +813,7 @@ public sealed partial class MainWindow
                         UseShellExecute = true,
                         WorkingDirectory = installPath,
                     });
-                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
+                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                     return;
                 }
             }
@@ -822,7 +844,7 @@ public sealed partial class MainWindow
     /// Monitors a launched process and disables HDR when it exits (if we enabled it).
     /// For protocol launches (Steam/Epic URL) where proc is null, polls for the game exe by name.
     /// </summary>
-    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? store, string? installPath = null, List<uint>? hdrTargets = null, bool shouldToggleRes = false, ResolutionToggleService.DisplayResolution? resolutionToRestore = null)
+    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? store, string? installPath = null, List<uint>? hdrTargets = null, bool shouldToggleRes = false, ResolutionToggleService.DisplayResolution? resolutionToRestore = null, bool shouldToggleAutoHdrHdr = false, bool autoHdrHdrWasAlreadyOn = false)
     {
         // Find the card to set IsRunning — match both name and store for multi-store support
         var card = ViewModel.AllCards.FirstOrDefault(c =>
@@ -880,10 +902,11 @@ public sealed partial class MainWindow
                     }
 
                     if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
+                    if (shouldToggleAutoHdrHdr && !autoHdrHdrWasAlreadyOn) HdrToggleService.DisableHdr(hdrTargets);
                     if (shouldToggleRes && resolutionToRestore != null) ResolutionToggleService.SetResolution(resolutionToRestore);
                     else if (shouldToggleRes) ResolutionToggleService.RestoreResolution();
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
-                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}{(shouldToggleRes ? " — resolution restored" : "")}");
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}{(shouldToggleAutoHdrHdr && !autoHdrHdrWasAlreadyOn ? " — Auto HDR HDR disabled" : "")}{(shouldToggleRes ? " — resolution restored" : "")}");
                 }
                 catch (Exception ex)
                 {
@@ -936,10 +959,11 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' — found process '{gameProc.ProcessName}' (PID {gameProc.Id}), waiting for exit...");
                     await gameProc.WaitForExitAsync();
                     if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
+                    if (shouldToggleAutoHdrHdr && !autoHdrHdrWasAlreadyOn) HdrToggleService.DisableHdr(hdrTargets);
                     if (shouldToggleRes && resolutionToRestore != null) ResolutionToggleService.SetResolution(resolutionToRestore);
                     else if (shouldToggleRes) ResolutionToggleService.RestoreResolution();
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
-                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}{(shouldToggleRes ? " — resolution restored" : "")}");
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}{(shouldToggleAutoHdrHdr && !autoHdrHdrWasAlreadyOn ? " — Auto HDR HDR disabled" : "")}{(shouldToggleRes ? " — resolution restored" : "")}");
                 }
                 catch (Exception ex)
                 {

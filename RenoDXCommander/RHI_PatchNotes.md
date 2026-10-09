@@ -37,7 +37,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 **Auto HDR (per-game)**
 - Force Windows Auto HDR on a per-game basis from the RenoDX ⚙ cog, directly below the RTX HDR section.
-- Works on any GPU — no NVIDIA App required. Requires Windows 11 with HDR and Auto HDR enabled in Settings → System → Display.
+- Works on any GPU — no NVIDIA App required. Does not require the global Auto HDR toggle in Windows Settings — the per-exe registry entry is sufficient on its own.
 - Writes to two registry locations: a `D3DBehaviors` subkey under `HKCU\Software\Microsoft\Direct3D` to force the game into the Auto HDR pipeline, and `AutoHDRStrength` under `HKCU\Software\Microsoft\DirectX\UserGpuPreferences` to control brightness — exactly the same mechanism as ledoge's autohdr_force tool.
 - Click **Configure Auto HDR** on the RenoDX row to open the settings dialog and adjust brightness (0–100). 0 = no boost, 50 = default, 100 = maximum (~1000 nits peak).
 - Mutual exclusivity with RTX HDR — enabling one disables the other, and enabling either uninstalls any active RenoDX mod.

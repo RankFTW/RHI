@@ -99,6 +99,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game AutoHDRStrength value (0–100). Key = game name (name-only).</summary>
     private Dictionary<string, int> _autoHdrStrengths = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game Windows HDR launch toggle for Auto HDR games. "On" = enable HDR on launch and restore on exit. Absent = leave HDR alone.</summary>
+    private Dictionary<string, string> _autoHdrLaunchToggle = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Games where Streamline should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
     private HashSet<string> _osDeployStreamline = new(StringComparer.OrdinalIgnoreCase);
 
@@ -226,6 +229,8 @@ public class GameNameService : IGameNameService
     public HashSet<string> AutoHdrGames => _autoHdrGames;
     /// <summary>Per-game AutoHDRStrength (0–100). Name-only key.</summary>
     public Dictionary<string, int> AutoHdrStrengths => _autoHdrStrengths;
+    /// <summary>Per-game Windows HDR launch toggle for Auto HDR games. "On" = enable HDR on launch/restore on exit. Absent = leave HDR alone.</summary>
+    public Dictionary<string, string> AutoHdrLaunchToggle => _autoHdrLaunchToggle;
     public Dictionary<string, string> OriginalDetectedNames => _originalDetectedNames;
 
     /// <summary>Games where Streamline should be deployed. Composite-keyed "GameName|Store".</summary>
@@ -637,6 +642,10 @@ public class GameNameService : IGameNameService
         _autoHdrStrengths = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in autoHdrStrengthsRaw) _autoHdrStrengths[kv.Key] = kv.Value;
 
+        var autoHdrLaunchDict = Load<Dictionary<string, string>>("AutoHdrLaunchToggle", new(StringComparer.OrdinalIgnoreCase));
+        _autoHdrLaunchToggle = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in autoHdrLaunchDict) _autoHdrLaunchToggle[kv.Key] = kv.Value;
+
         _osDeployStreamline = new HashSet<string>(
             Load<List<string>>("OsDeployStreamline", new()), StringComparer.OrdinalIgnoreCase);
 
@@ -889,6 +898,10 @@ public class GameNameService : IGameNameService
                     s["AutoHdrStrengths"] = JsonSerializer.Serialize(_autoHdrStrengths);
                 else
                     s.Remove("AutoHdrStrengths");
+                if (_autoHdrLaunchToggle.Count > 0)
+                    s["AutoHdrLaunchToggle"] = JsonSerializer.Serialize(_autoHdrLaunchToggle);
+                else
+                    s.Remove("AutoHdrLaunchToggle");
                 s["OsDeployStreamline"]  = JsonSerializer.Serialize(_osDeployStreamline.ToList());
                 if (_dgVoodooStandaloneGames.Count > 0) s["DgVoodooStandaloneGames"] = JsonSerializer.Serialize(_dgVoodooStandaloneGames.ToList());
                 else s.Remove("DgVoodooStandaloneGames");
@@ -1073,6 +1086,7 @@ public class GameNameService : IGameNameService
         MigrateHashSet(_rtxHdrGames, oldName, newName);
         MigrateHashSet(_autoHdrGames, oldName, newName);
         MigrateDict(_autoHdrStrengths, oldName, newName);
+        MigrateDict(_autoHdrLaunchToggle, oldName, newName);
 
         // Migrate composite-keyed Dictionaries (independent per store)
         MigrateCompositeDict(_perGameShaderMode, oldName, newName);

@@ -7,6 +7,10 @@ powershell -NoProfile -Command "Get-Process RHI,'RHI-Stats','RHI.DropHelper' -Er
 timeout /t 2 /nobreak >nul
 
 dotnet publish %SRC%\RenoDXCommander.csproj -c Release -r win-x64 -p:PublishSingleFile=true -p:Platform=x64 --self-contained false -o "%OUT%"
+if %errorlevel% neq 0 (
+    echo dotnet publish failed, trying MSBuild...
+    "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" %SRC%\RenoDXCommander.csproj /t:Publish /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:PublishSingleFile=true /p:SelfContained=false /p:PublishDir="%OUT%"
+)
 
 :: Build and copy the drop helper (non-elevated overlay for admin mode drag-drop)
 dotnet build RHI.DropHelper\RHI.DropHelper.csproj -c Release -v quiet

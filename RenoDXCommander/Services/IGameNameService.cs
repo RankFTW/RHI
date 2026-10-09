@@ -147,6 +147,9 @@ public interface IGameNameService
     /// <summary>Per-game AutoHDRStrength (0–100). Name-only key.</summary>
     Dictionary<string, int> AutoHdrStrengths { get; }
 
+    /// <summary>Per-game Windows HDR launch toggle for Auto HDR games. "On" = enable HDR on launch/restore on exit.</summary>
+    Dictionary<string, string> AutoHdrLaunchToggle { get; }
+
     /// <summary>Games where Streamline should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
     HashSet<string> OsDeployStreamline { get; }
 
