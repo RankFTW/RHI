@@ -1651,10 +1651,18 @@ public sealed partial class MainWindow
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
         });
 
+        var scrollViewer = new ScrollViewer
+        {
+            Content = content,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            MaxHeight = 520,
+            Padding = new Thickness(0, 0, 16, 0),
+        };
+
         var dialog = new ContentDialog
         {
             Title = "DLDSR Control",
-            Content = content,
+            Content = scrollViewer,
             CloseButtonText = "Got it",
             XamlRoot = Content.XamlRoot,
         };
