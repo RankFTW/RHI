@@ -208,16 +208,23 @@ end;
 
 function IsRhiRunning(): Boolean;
 var
-  WMI: Variant;
-  Procs: Variant;
+  Window: HWND;
+  ProcessId: DWORD;
 begin
+  // Use window enumeration instead of WMI — WMI is slow (can take 30-60s on cold start).
+  // Enumerate all top-level windows and look for one owned by RHI.exe at the install path.
   Result := False;
-  try
-    WMI := CreateOleObject('WbemScripting.SWbemLocator');
-    WMI := WMI.ConnectServer('.', 'root\cimv2');
-    Procs := WMI.ExecQuery('SELECT * FROM Win32_Process WHERE Name="RHI.exe"');
-    Result := (Procs.Count > 0);
-  except
+  Window := FindNextTopLevelWindow(0, 0, 0, 0);
+  while Window <> 0 do
+  begin
+    ProcessId := 0;
+    ReadWindowProcessId(Window, ProcessId);
+    if (ProcessId <> 0) and IsInstalledRhiProcess(ProcessId) then
+    begin
+      Result := True;
+      Exit;
+    end;
+    Window := FindNextTopLevelWindow(0, Window, 0, 0);
   end;
 end;
 
