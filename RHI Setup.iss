@@ -44,7 +44,7 @@ OutputDir={#InstallerOutputDir}
 OutputBaseFilename=RHI-Setup
 SetupIconFile={#PublishDir}\icon.ico
 SolidCompression=yes
-WizardStyle=modern
+WizardStyle=modern dynamic
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
