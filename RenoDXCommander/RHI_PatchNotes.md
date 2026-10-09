@@ -13,7 +13,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 **DLDSR Control**
 - Enable or disable DLDSR (Deep Learning Dynamic Super Resolution) factors directly from RHI without opening NVIDIA Control Panel.
-- **DSR Smoothness slider** — adjust smoothness (0–100%) without recapturing or restarting your GPU. Lower = sharper, higher = smoother. NVIDIA recommends 33%.
+- **DSR Smoothness slider** — adjust smoothness (0–100%) without recapturing. Lower = sharper, higher = smoother. NVIDIA recommends 33%. Applying smoothness causes the same ~15 second display blackout as applying a full state.
 - **Info button** — click ⓘ next to the header for step-by-step instructions on capturing and applying DLDSR states.
 - **How to use:**
   1. Open **NVIDIA Control Panel → Manage 3D Settings → DSR – Factors**
@@ -21,7 +21,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
   3. In RHI Settings, scroll to **DLDSR Control** and click **Capture Current** — give it a name like "1.78x + 2.25x"
   4. Now you can disable DLDSR in NVIDIA Control Panel
   5. Whenever you want those factors back, select your saved state and click **Apply** — the screen goes black for ~15 seconds while the GPU restarts, then DLDSR is active
-  6. Use the **DSR Smoothness** slider to adjust sharpness/smoothness at any time without recapturing
+  6. Use the **DSR Smoothness** slider and click **Set** to adjust sharpness/smoothness. This also causes a brief blackout — set it before clicking Apply if you want to apply both in one restart.
 - Useful for toggling DLDSR on/off without navigating NVIDIA Control Panel each time
 - Multiple configurations can be saved (e.g. "Off", "1.78x only", "1.78x + 2.25x")
 - Requires Admin Mode or running RHI as Administrator to read/write the driver registry keys
