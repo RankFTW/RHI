@@ -681,7 +681,9 @@ public partial class MainViewModel
                 newCard.OsInstalledVersion = !string.IsNullOrEmpty(osGameManifest?.Version)
                     ? osGameManifest.Version
                     : osRec.OsVariant switch {
-                        "Nightly" => _optiScalerService.StagedVersionNightly,
+                        "Nightly" => !string.IsNullOrEmpty(osRec.OsNightlyBuild)
+                            ? osRec.OsNightlyBuild
+                            : _optiScalerService.StagedVersionNightly,
                         "DlssNr"  => _optiScalerService.StagedVersionDlssNr,
                         _         => _optiScalerService.StagedVersion
                     };

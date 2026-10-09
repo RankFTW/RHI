@@ -33,7 +33,8 @@ public partial class OptiScalerService
         string gpuType = "NVIDIA",
         bool dlssInputs = true,
         string? hotkey = null,
-        string variant = "Stable")
+        string variant = "Stable",
+        string? nightlyBuildHint = null)
     {
         try
         {
@@ -50,9 +51,20 @@ public partial class OptiScalerService
             // ── 2. Resolve effective staging dir based on variant ────────────
             bool isNightly = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase);
             bool isDlssNr  = variant.Equals("DlssNr",  StringComparison.OrdinalIgnoreCase);
-            var effectiveStagingDir = isDlssNr ? DlssNrStagingDir
-                : isNightly ? NightlyStagingDir
-                : StagingDir;
+            string? effectiveNightlyBuild = null;
+            string effectiveStagingDir;
+            if (isNightly)
+            {
+                effectiveNightlyBuild = nightlyBuildHint ?? GetLatestStagedNightlyBuild();
+                effectiveStagingDir = effectiveNightlyBuild != null
+                    ? GetNightlyBuildDir(effectiveNightlyBuild)
+                    : NightlyStagingDir;
+                CrashReporter.Log($"[OptiScalerService.InstallAsync] Nightly: hint={nightlyBuildHint ?? "(null)"}, effective={effectiveNightlyBuild ?? "(null)"}, stagingDir={effectiveStagingDir}");
+            }
+            else
+            {
+                effectiveStagingDir = isDlssNr ? DlssNrStagingDir : StagingDir;
+            }
 
             // ── 3. If updating, force re-download staging to get the latest version ──
             bool hasUpdate = isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate;
@@ -182,6 +194,8 @@ public partial class OptiScalerService
                 // Skip version.txt — it's RHI's staging metadata, not an OptiScaler file
                 if (fileName.Equals("version.txt", StringComparison.OrdinalIgnoreCase))
                     continue;
+                if (fileName.Equals("available_builds.json", StringComparison.OrdinalIgnoreCase))
+                    continue;
 
                 // Skip non-game files: scripts, docs, executables, licence files
                 if (fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)
@@ -231,6 +245,9 @@ public partial class OptiScalerService
                 if (dirName.Equals("redist", StringComparison.OrdinalIgnoreCase))
                     continue;
                 if (dirName.Equals("docs", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                // Skip dated nightly build subfolders (8-digit names) — staging-only, not game content
+                if (dirName != null && dirName.Length == 8 && dirName.All(char.IsDigit))
                     continue;
 
                 var destSubDir = Path.Combine(card.InstallPath, dirName);
@@ -374,6 +391,7 @@ public partial class OptiScalerService
                 RemoteFileSize = null,
                 InstalledAt    = DateTime.UtcNow,
                 OsVariant      = variant.Equals("Stable", StringComparison.OrdinalIgnoreCase) ? null : variant,
+                OsNightlyBuild = isNightly ? effectiveNightlyBuild : null,
             };
             _auxInstaller.SaveAuxRecord(record);
             CrashReporter.Log($"[OptiScalerService.InstallAsync] Saved tracking record for {card.GameName}");
@@ -471,6 +489,7 @@ public partial class OptiScalerService
                 {
                     var fn = Path.GetFileName(stagingFile);
                     if (fn.Equals("version.txt", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (fn.Equals("available_builds.json", StringComparison.OrdinalIgnoreCase)) continue;
                     if (fn.Equals(RhiInstallManifest.FileName, StringComparison.OrdinalIgnoreCase)) continue;
                     if (fn.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)
                         || fn.EndsWith(".sh", StringComparison.OrdinalIgnoreCase)
@@ -1110,6 +1129,8 @@ public partial class OptiScalerService
 
                 if (fileName.Equals("version.txt", StringComparison.OrdinalIgnoreCase))
                     continue;
+                if (fileName.Equals("available_builds.json", StringComparison.OrdinalIgnoreCase))
+                    continue;
 
                 // Skip non-game files: scripts, docs, executables, licence files
                 if (fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)
@@ -1150,6 +1171,9 @@ public partial class OptiScalerService
                 if (dirName.Equals("redist", StringComparison.OrdinalIgnoreCase))
                     continue;
                 if (dirName.Equals("docs", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                // Skip dated nightly build subfolders (8-digit names) — staging-only, not game content
+                if (dirName != null && dirName.Length == 8 && dirName.All(char.IsDigit))
                     continue;
 
                 var destSubDir = Path.Combine(gameDir, dirName);
@@ -1265,8 +1289,8 @@ public partial class OptiScalerService
             if (record != null)
             {
                 record.InstalledAt = DateTime.UtcNow;
-                // Persist the variant so future reads (BuildCards, UpdateAsync) stay correct
                 record.OsVariant = isNightly ? "Nightly" : null;
+                record.OsNightlyBuild = isNightly ? effectiveNightlyBuild : null;
                 _auxInstaller.SaveAuxRecord(record);
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated tracking record for {card.GameName}");
             }
@@ -1289,6 +1313,7 @@ public partial class OptiScalerService
                 {
                     var fn = Path.GetFileName(stagingFile);
                     if (fn.Equals("version.txt", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (fn.Equals("available_builds.json", StringComparison.OrdinalIgnoreCase)) continue;
                     if (fn.Equals(RhiInstallManifest.FileName, StringComparison.OrdinalIgnoreCase)) continue;
                     if (fn.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)
                         || fn.EndsWith(".sh", StringComparison.OrdinalIgnoreCase)

@@ -130,7 +130,8 @@ public interface IOptiScalerService
         string gpuType = "NVIDIA",
         bool dlssInputs = true,
         string? hotkey = null,
-        string variant = "Stable");
+        string variant = "Stable",
+        string? nightlyBuildHint = null);
 
     /// <summary>
     /// Uninstalls OptiScaler from the specified game folder.

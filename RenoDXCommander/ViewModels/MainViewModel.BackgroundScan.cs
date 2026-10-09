@@ -108,7 +108,16 @@ public partial class MainViewModel
                 try
                 {
                     if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly"))
+                    {
                         await _optiScalerService.EnsureNightlyStagingAsync();
+                        // Fetch available builds list so the cog build selector is populated immediately
+                        await _optiScalerService.FetchAvailableNightlyBuildsAsync();
+                    }
+                    else
+                    {
+                        // Fetch the list even when no nightly game is installed — user may switch variant
+                        _ = _optiScalerService.FetchAvailableNightlyBuildsAsync();
+                    }
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
             });

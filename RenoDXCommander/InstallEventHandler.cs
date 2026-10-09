@@ -222,9 +222,10 @@ public class InstallEventHandler
         card.OsIsInstalling = true;
         card.OsActionMessage = "Installing OptiScaler...";
         card.OsProgress = 0;
+        AuxInstalledRecord? osRecord = null;
         try
         {
-            var osRecord = await _optiScalerService.InstallAsync(card,
+            osRecord = await _optiScalerService.InstallAsync(card,
                 new Progress<(string message, double percent)>(p =>
                 {
                     card.OsActionMessage = p.message;
@@ -233,7 +234,8 @@ public class InstallEventHandler
                 gpuType,
                 useDlssInputs,
                 ViewModel.Settings.OsHotkey,
-                osVariant);
+                osVariant,
+                nightlyBuildHint: osVariant == "Nightly" ? ViewModel.GetOsNightlyBuild(card.GameName, card.Source ?? "") : null);
 
             if (osRecord == null)
             {
@@ -317,6 +319,9 @@ public class InstallEventHandler
         finally
         {
             card.OsIsInstalling = false;
+            // Update installed version from the record — shows the actual build date rather than latest staged
+            if (osRecord != null && osVariant == "Nightly" && !string.IsNullOrEmpty(osRecord.OsNightlyBuild))
+                card.OsInstalledVersion = osRecord.OsNightlyBuild;
             _window.DispatcherQueue?.TryEnqueue(() =>
             {
                 card.NotifyAll();
