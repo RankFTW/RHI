@@ -226,8 +226,7 @@ end;
 function InitializeSetup(): Boolean;
 var
   SignalDir, SignalPath: String;
-  WaitCount: Integer;
-  DownloadOk: Boolean;
+  WaitCount, ResultCode: Integer;
 begin
   Result := True;
 
@@ -235,8 +234,10 @@ begin
   if NeedsWindowsAppRuntime() then
   begin
     DownloadOk := True;
-    DownloadTemporaryFile(RuntimeInstallerUrl, 'windowsappruntimeinstall-x64.exe', '', DownloadOk);
-    if not DownloadOk then
+    // Use PowerShell Invoke-WebRequest to download — works on all Inno Setup 6 versions
+    if not ShellExec('', 'powershell.exe',
+        '-NoProfile -NonInteractive -Command "Invoke-WebRequest -Uri ''' + RuntimeInstallerUrl + ''' -OutFile ''' + ExpandConstant('{tmp}\windowsappruntimeinstall-x64.exe') + ''' -UseBasicParsing"',
+        '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
     begin
       MsgBox('Failed to download the Windows App Runtime. Please install it manually from:' + #13#10 + RuntimeInstallerUrl, mbError, MB_OK);
       Result := False;
