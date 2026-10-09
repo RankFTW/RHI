@@ -182,9 +182,25 @@ end;
 function NeedsWindowsAppRuntime(): Boolean;
 var
   KeyPath: String;
+  ResultCode: Integer;
 begin
+  // Check registry key written by the bootstrapper installer
   KeyPath := 'SOFTWARE\Microsoft\WindowsAppRuntime\2.5';
-  Result := not (RegKeyExists(HKLM, KeyPath) or RegKeyExists(HKLM64, KeyPath));
+  if RegKeyExists(HKLM, KeyPath) or RegKeyExists(HKLM64, KeyPath) then
+  begin
+    Result := False;
+    Exit;
+  end;
+  // Fallback: use PowerShell to check if the MSIX package is already installed
+  // (covers cases where 2.5.1 was installed via Store/MSIX rather than the bootstrapper)
+  Result := True;
+  if ShellExec('', 'powershell.exe',
+      '-NoProfile -NonInteractive -Command "if (Get-AppxPackage -Name Microsoft.WindowsAppRuntime.2 | Where-Object { $_.Version -like ''2.5*'' }) { exit 0 } else { exit 1 }"',
+      '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    if ResultCode = 0 then
+      Result := False;
+  end;
 end;
 
 function IsRhiRunning(): Boolean;
