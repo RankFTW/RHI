@@ -900,6 +900,12 @@ public sealed partial class MainWindow
     private void GitHubDisconnectBtn_Click(object sender, RoutedEventArgs e)
         => _settingsHandler.GitHubDisconnectBtn_Click(sender, e);
 
+    private void GitHubPatSaveBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.GitHubPatSaveBtn_Click(sender, e);
+
+    private void GitHubPatClearBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.GitHubPatClearBtn_Click(sender, e);
+
     private async void NexusModsLink_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender);

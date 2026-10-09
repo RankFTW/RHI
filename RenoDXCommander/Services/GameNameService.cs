@@ -54,6 +54,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable", "Nightly", or "DlssNr".</summary>
     private Dictionary<string, string> _osVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game pinned nightly build date. Key = "GameName|Store", Value = date string e.g. "20261008". Absent = "Latest" (always auto-update).</summary>
+    private Dictionary<string, string> _osNightlyBuild = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value = e.g. "310.8.2" or "310.8.SF-v2". Absent = default (310.8.2).</summary>
     private Dictionary<string, string> _osNrRuntime = new(StringComparer.OrdinalIgnoreCase);
 
@@ -187,6 +190,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, int> LiliumPresetOverrides => _liliumPresetOverrides;
     /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable", "Nightly", or "DlssNr".</summary>
     public Dictionary<string, string> OsVariantOverrides => _osVariantOverrides;
+    /// <summary>Per-game pinned nightly build date. Key = "GameName|Store", Value = date string e.g. "20261008". Absent = "Latest".</summary>
+    public Dictionary<string, string> OsNightlyBuild => _osNightlyBuild;
     /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value e.g. "310.8.2". Absent = default.</summary>
     public Dictionary<string, string> OsNrRuntime => _osNrRuntime;
     /// <summary>Per-game Neural Rendering method override. Key = "GameName|Store", Value = "DLSS5Tool", "DLSS5ToolBridge", "ShortFuse", or "Feeder". Absent = auto-detect.</summary>
@@ -529,6 +534,11 @@ public class GameNameService : IGameNameService
         _osVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in osVariantOvDict) _osVariantOverrides[kv.Key] = kv.Value;
 
+        var osNightlyBuildDict = Load<Dictionary<string, string>>("OsNightlyBuild",
+            new(StringComparer.OrdinalIgnoreCase));
+        _osNightlyBuild = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osNightlyBuildDict) _osNightlyBuild[kv.Key] = kv.Value;
+
         var osNrRuntimeDict = Load<Dictionary<string, string>>("OsNrRuntime",
             new(StringComparer.OrdinalIgnoreCase));
         _osNrRuntime = new(StringComparer.OrdinalIgnoreCase);
@@ -839,6 +849,8 @@ public class GameNameService : IGameNameService
                 s["DxvkVariantOverrides"] = JsonSerializer.Serialize(_dxvkVariantOverrides);
                 s["LiliumPresetOverrides"] = JsonSerializer.Serialize(_liliumPresetOverrides);
                 s["OsVariantOverrides"] = JsonSerializer.Serialize(_osVariantOverrides);
+                if (_osNightlyBuild.Count > 0) s["OsNightlyBuild"] = JsonSerializer.Serialize(_osNightlyBuild);
+                else s.Remove("OsNightlyBuild");
                 s["NrMethodOverrides"] = JsonSerializer.Serialize(_nrMethodOverrides);
                 if (_nrAddonVersion.Count > 0) s["NrAddonVersion"] = JsonSerializer.Serialize(_nrAddonVersion);
                 else s.Remove("NrAddonVersion");
@@ -1053,6 +1065,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_liliumPresetOverrides, oldName, newName);
         MigrateCompositeDict(_customReShadeSelection, oldName, newName);
         MigrateCompositeDict(_osVariantOverrides, oldName, newName);
+        MigrateCompositeDict(_osNightlyBuild, oldName, newName);
         MigrateCompositeDict(_nrMethodOverrides, oldName, newName);
         MigrateCompositeDict(_nrAddonVersion, oldName, newName);
         MigrateCompositeDict(_nrDllVersion, oldName, newName);

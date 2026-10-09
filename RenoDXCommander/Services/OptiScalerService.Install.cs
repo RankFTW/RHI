@@ -969,42 +969,71 @@ public partial class OptiScalerService
     public async Task UpdateAsync(
         GameCardViewModel card,
         IProgress<(string message, double percent)>? progress = null,
-        string? variantHint = null)
+        string? variantHint = null,
+        string? nightlyBuildHint = null)
     {
         try
         {
             progress?.Report(("Preparing OptiScaler update...", 5));
 
             // ── Read variant from tracking record ─────────────────────────
-            // variantHint (from caller's GetOsVariant) takes priority — handles legacy
-            // records where OsVariant was not yet persisted (pre-nightly field addition).
             var record = _auxInstaller.FindRecord(card.GameName, card.InstallPath, AddonType);
             var variant = record?.OsVariant ?? variantHint ?? "Stable";
             CrashReporter.Log($"[OptiScalerService.UpdateAsync] {card.GameName}: record.OsVariant={record?.OsVariant ?? "(null)"}, variantHint={variantHint ?? "(null)"}, effective={variant}");
             bool isNightly = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase);
             bool isDlssNr  = variant.Equals("DlssNr",  StringComparison.OrdinalIgnoreCase);
-            var effectiveStagingDir = isDlssNr ? DlssNrStagingDir
-                : isNightly ? NightlyStagingDir
-                : StagingDir;
+
+            // For nightly: use the pinned build dir if specified, otherwise the latest staged build
+            string effectiveStagingDir;
+            string? effectiveNightlyBuild = null;
+            if (isNightly)
+            {
+                effectiveNightlyBuild = nightlyBuildHint ?? GetLatestStagedNightlyBuild();
+                effectiveStagingDir = effectiveNightlyBuild != null
+                    ? GetNightlyBuildDir(effectiveNightlyBuild)
+                    : NightlyStagingDir; // fallback (triggers re-download below)
+            }
+            else
+            {
+                effectiveStagingDir = isDlssNr ? DlssNrStagingDir : StagingDir;
+            }
 
             // ── 1. Force re-download staging to get the latest version ────
             bool hasUpdate = isDlssNr ? HasUpdateDlssNr : isNightly ? HasUpdateNightly : HasUpdate;
-            if (hasUpdate)
+            if (hasUpdate && isNightly && effectiveNightlyBuild == null)
+            {
+                // No pinned build — update to latest
+                CrashReporter.Log("[OptiScalerService.UpdateAsync] Nightly update available — will fetch latest");
+            }
+            else if (hasUpdate && !isNightly)
             {
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] Update available ({variant}) — clearing staging for fresh download");
                 if (isDlssNr) ClearDlssNrStaging();
-                else if (isNightly) ClearNightlyStaging();
                 else ClearStaging();
             }
 
-            bool stagingReady = isDlssNr ? IsStagingReadyDlssNr : isNightly ? IsStagingReadyNightly : IsStagingReady;
+            bool stagingReady = isDlssNr ? IsStagingReadyDlssNr
+                : isNightly ? (effectiveNightlyBuild != null ? IsNightlyBuildStaged(effectiveNightlyBuild) : IsStagingReadyNightly)
+                : IsStagingReady;
             if (!stagingReady)
             {
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] {variant} staging not ready — downloading");
                 if (isDlssNr) await EnsureDlssNrStagingAsync(progress);
-                else if (isNightly) await EnsureNightlyStagingAsync(progress);
+                else if (isNightly)
+                {
+                    if (effectiveNightlyBuild != null)
+                        await EnsureNightlyBuildStagingAsync(effectiveNightlyBuild, progress);
+                    else
+                        await EnsureNightlyStagingAsync(progress);
+                    // Re-resolve the effective build and dir after download
+                    effectiveNightlyBuild = GetLatestStagedNightlyBuild();
+                    if (effectiveNightlyBuild != null)
+                        effectiveStagingDir = GetNightlyBuildDir(effectiveNightlyBuild);
+                }
                 else await EnsureStagingAsync(progress);
-                stagingReady = isDlssNr ? IsStagingReadyDlssNr : isNightly ? IsStagingReadyNightly : IsStagingReady;
+                stagingReady = isDlssNr ? IsStagingReadyDlssNr
+                    : isNightly ? (effectiveNightlyBuild != null ? IsNightlyBuildStaged(effectiveNightlyBuild) : IsStagingReadyNightly)
+                    : IsStagingReady;
                 if (!stagingReady)
                 {
                     CrashReporter.Log($"[OptiScalerService.UpdateAsync] {variant} staging still not ready after download attempt — aborting");

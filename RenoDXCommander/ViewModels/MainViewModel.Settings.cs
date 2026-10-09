@@ -227,6 +227,38 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── OptiScaler Nightly Build ──────────────────────────────────────────────
+
+    /// <summary>Returns the pinned nightly build date for a game. Empty string = "Latest" (auto-update).</summary>
+    public string GetOsNightlyBuild(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsNightlyBuild.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.OsNightlyBuild.TryGetValue(gameName, out var v2) && !string.IsNullOrEmpty(v2)) return v2;
+        return ""; // absent = Latest
+    }
+
+    /// <summary>Sets the pinned nightly build date for a game. Null or empty = Latest (removes pin and auto-update exemption).</summary>
+    public void SetOsNightlyBuild(string gameName, string? buildDate, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(buildDate))
+        {
+            _gameNameService.OsNightlyBuild.Remove(key);
+            _gameNameService.OsNightlyBuild.Remove(gameName);
+            // Remove auto-update exemption when reverting to Latest
+            _gameNameService.UpdateAllExcludedOs.Remove(key);
+            _gameNameService.UpdateAllExcludedOs.Remove(gameName);
+        }
+        else
+        {
+            _gameNameService.OsNightlyBuild[key] = buildDate;
+            // Pin a specific build → exempt this game from OptiScaler auto-updates
+            _gameNameService.UpdateAllExcludedOs.Add(key);
+        }
+        SaveNameMappings();
+    }
+
     // ── NR Runtime ────────────────────────────────────────────────────────────
 
     /// <summary>Returns the NR runtime version for a game. Empty string = use newest from manifest.</summary>

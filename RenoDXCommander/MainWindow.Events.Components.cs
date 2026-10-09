@@ -2345,8 +2345,69 @@ public sealed partial class MainWindow
         }
         RefreshUpscalerCombo(apiDefault);
 
+        // ── Nightly Build selector (row 1, nightly only — between Version and Upscaler) ──
+        if (ViewModel.GetOsVariant(card.GameName, card.Source ?? "") == "Nightly")
+        {
+            var currentBuild = ViewModel.GetOsNightlyBuild(card.GameName, card.Source ?? "");
+            var availableBuilds = _optiScalerService.AvailableNightlyBuilds;
+
+            var buildItems = new List<string> { "Latest (auto-update)" };
+            foreach (var b in availableBuilds)
+            {
+                if (b.Length == 8 && b.All(char.IsDigit))
+                    buildItems.Add($"{b[..4]}-{b[4..6]}-{b[6..8]}");
+            }
+            if (availableBuilds.Count == 0)
+                buildItems.Add("(fetching builds...)");
+
+            bool isInstalled = card.IsOsInstalled;
+            var buildCombo = new ComboBox
+            {
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                IsEnabled = !isInstalled,
+                Opacity = isInstalled ? 0.45 : 1.0,
+            };
+            var tooltip = isInstalled
+                ? "Uninstall OptiScaler first to change the build version."
+                : "Pin to a specific nightly build. Pinned games are excluded from auto-update. 'Latest' always tracks the newest build.";
+            ToolTipService.SetToolTip(buildCombo, tooltip);
+            buildCombo.ItemsSource = buildItems;
+
+            string selectedBuildItem = "Latest (auto-update)";
+            if (!string.IsNullOrEmpty(currentBuild) && currentBuild.Length == 8 && currentBuild.All(char.IsDigit))
+                selectedBuildItem = $"{currentBuild[..4]}-{currentBuild[4..6]}-{currentBuild[6..8]}";
+            buildCombo.SelectedItem = buildItems.Contains(selectedBuildItem) ? selectedBuildItem : "Latest (auto-update)";
+
+            bool buildComboInitializing = true;
+            AddRow(unifiedGrid, 1, "Nightly Build", buildCombo, null, null);
+            buildComboInitializing = false;
+
+            buildCombo.SelectionChanged += async (s, ev) =>
+            {
+                if (buildComboInitializing) return;
+                var sel = buildCombo.SelectedItem as string ?? "Latest (auto-update)";
+                if (sel == "Latest (auto-update)" || sel == "(fetching builds...)")
+                {
+                    ViewModel.SetOsNightlyBuild(card.GameName, null, card.Source ?? "");
+                    return;
+                }
+                var buildDate = sel.Replace("-", "");
+                if (buildDate.Length != 8 || !buildDate.All(char.IsDigit)) return;
+
+                ViewModel.SetOsNightlyBuild(card.GameName, buildDate, card.Source ?? "");
+                CrashReporter.Log($"[OsCog] Pinned nightly build {buildDate} for '{card.GameName}'");
+
+                if (!_optiScalerService.IsNightlyBuildStaged(buildDate))
+                {
+                    CrashReporter.Log($"[OsCog] Build {buildDate} not staged — downloading on demand");
+                    await _optiScalerService.EnsureNightlyBuildStagingAsync(buildDate);
+                }
+            };
+        }
+
         bool apiComboInitializing = true;
-        AddRow(unifiedGrid, 1, "Upscaler API", apiCombo, "Upscaler", apiUpscalerCombo);
+        AddRow(unifiedGrid, 2, "Upscaler API", apiCombo, "Upscaler", apiUpscalerCombo);
         apiComboInitializing = false;
 
         apiCombo.SelectionChanged += (s, ev) =>
@@ -2429,18 +2490,16 @@ public sealed partial class MainWindow
             FgNvngxToIni  = (string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", "Combo" => "Combo", _ => "None" };
             string IniToFgInput(string v) => v switch { "upscaler" => "OptiFG (Upscaler)", "dlssg" => "DLSSG via Streamline", "nvngxfg" => "DLSSG via Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => "Auto (Default)" };
             string IniToFgOutput(string v) => v switch { "fsrfg" => "FSR FG", "dlssg" => "DLSSG", "xefg" => "XeFG", _ => "Auto (Default)" };
-            string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", "Combo" => "Combo", _ => "None (Real DLSSG)" };
-
-            // Separator row between version and nightly settings (spans all 4 columns)
+            string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", "Combo" => "Combo", _ => "None (Real DLSSG)" };            // Separator row between version/build and nightly settings (spans all 4 columns)
             unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var versionSep = MakeSeparator();
-            Grid.SetRow(versionSep, 2); Grid.SetColumn(versionSep, 0); Grid.SetColumnSpan(versionSep, 4);
+            Grid.SetRow(versionSep, 3); Grid.SetColumn(versionSep, 0); Grid.SetColumnSpan(versionSep, 4);
             unifiedGrid.Children.Add(versionSep);
 
             // Section heading: Frame Generation Settings
             unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var fgHeading = new TextBlock { Text = "Frame Generation Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) };
-            Grid.SetRow(fgHeading, 3); Grid.SetColumn(fgHeading, 0); Grid.SetColumnSpan(fgHeading, 4);
+            Grid.SetRow(fgHeading, 4); Grid.SetColumn(fgHeading, 0); Grid.SetColumnSpan(fgHeading, 4);
             unifiedGrid.Children.Add(fgHeading);
 
             // Row 4: FG Enabled — master on/off, first option in the FG section
@@ -2452,7 +2511,7 @@ public sealed partial class MainWindow
             };
             ToolTipService.SetToolTip(fgEnabledCombo,
                 "Enables Frame Generation. Default (auto) is false — set to True to enable.");
-            AddRow(unifiedGrid, 4, "FG Enabled", fgEnabledCombo, null, null);
+            AddRow(unifiedGrid, 5, "FG Enabled", fgEnabledCombo, null, null);
 
             // All nightly rows go into the same unifiedGrid so columns align with the version row above
             // Row 2: Streamline/DLSS Enabler (combined) | Streamline Version
@@ -2471,7 +2530,7 @@ public sealed partial class MainWindow
             combinedCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = combinedOn ? "Yes" : "No" };
             ToolTipService.SetToolTip(combinedCombo, "Deploys Streamline and DLSS Enabler to the game's OptiScaler folder. Required for DLSS Frame Generation with OptiScaler.");
             var slVersionCombo = new ComboBox { ItemsSource = slVersions.Count > 0 ? (IEnumerable<string>)slVersions : new[] { slVersionDefault }, SelectedItem = slVersionDefault, IsEnabled = combinedOn };
-            AddRow(unifiedGrid, 5, "Streamline/DLSS Enabler", combinedCombo, "Streamline Version", slVersionCombo);
+            AddRow(unifiedGrid, 6, "Streamline/DLSS Enabler", combinedCombo, "Streamline Version", slVersionCombo);
 
             // Row 4: FG Input (left) | HUD Fix (right)
             fgInputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
@@ -2499,7 +2558,7 @@ public sealed partial class MainWindow
             hudFixCombo = new ComboBox { ItemsSource = new[] { "Default", "On", "Off" }, SelectedItem = hudFixSelected };
             ToolTipService.SetToolTip(hudFixCombo!, "HUD Fix: enables hudless resource tracking for Frame Generation. On = HUDFix=true in [OptiFG].");
 
-            AddRow(unifiedGrid, 6, "FG Input", fgInputCombo!, "HUD Fix", hudFixCombo!);
+            AddRow(unifiedGrid, 7, "FG Input", fgInputCombo!, "HUD Fix", hudFixCombo!);
 
             // Row 5: FG Output (left) | FG Nvngx Override (right)
             fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
@@ -2509,7 +2568,7 @@ public sealed partial class MainWindow
             object? nvngxSelected = nvngxItems.FirstOrDefault(i => i is ComboBoxItem cb ? (cb.Content as string) == currentNvngxDisplay : (i as string) == currentNvngxDisplay) ?? nvngxItems[0];
             fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
             ToolTipService.SetToolTip(fgNvngxCombo!, "Only relevant when FG Output = DLSSG. Enabler requires Deploy Streamline + Deploy DLSS Enabler.");
-            AddRow(unifiedGrid, 7, "FG Output", fgOutputCombo!, "FG Nvngx Override", fgNvngxCombo!);
+            AddRow(unifiedGrid, 8, "FG Output", fgOutputCombo!, "FG Nvngx Override", fgNvngxCombo!);
 
             bool fgOutputIsDlssg = fgOutputCombo!.SelectedItem as string == "DLSSG";
             fgNvngxCombo!.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
@@ -2556,7 +2615,7 @@ public sealed partial class MainWindow
             ToolTipService.SetToolTip(reflexMarkersCombo,
                 "UseGamesReflexMarkers: whether to use the game's Reflex markers for Frame Generation timing. Default is true.");
 
-            AddRow(unifiedGrid, 8, "Force Reflex", forceReflexCombo, "Use Games Reflex Markers", reflexMarkersCombo);
+            AddRow(unifiedGrid, 9, "Force Reflex", forceReflexCombo, "Use Games Reflex Markers", reflexMarkersCombo);
 
             // ── Wire handlers ──────────────────────────────────────────────
             combinedCombo!.SelectionChanged += (s, ev) =>
@@ -3316,7 +3375,7 @@ public sealed partial class MainWindow
             {
                 int row = Grid.GetRow(child);
                 int col = Grid.GetColumn(child);
-                if (row >= 1 || col >= 2)
+                if (row >= 2 || col >= 2)
                 {
                     child.IsHitTestVisible = false;
                     child.Opacity = 0.45;

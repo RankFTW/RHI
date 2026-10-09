@@ -822,9 +822,10 @@ public partial class OptiScalerService
     {
         try
         {
-            // Capture the current version BEFORE any staging clear that may happen
-            // in the caller (UpdateAsync/InstallAsync) — so OldVersion is available for the update log.
             var previousStagedVersion = StagedVersionNightly;
+
+            // Run flat-to-versioned migration on every call — no-op once already clean
+            await MigrateFlatNightlyStagingIfNeededAsync().ConfigureAwait(false);
 
             if (IsStagingReadyNightly && !HasUpdateNightly)
             {
@@ -843,7 +844,8 @@ public partial class OptiScalerService
             }
             if (json == null)
             {
-                CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] API returned null");
+                CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] ETag hit — staging is current");
+                progress?.Report(("OptiScaler Nightly up to date", 100));
                 return;
             }
 
@@ -882,185 +884,36 @@ public partial class OptiScalerService
                 return;
             }
 
-            if (assetName == null || downloadUrl == null)
+            if (tagName == null || assetName == null || downloadUrl == null)
             {
                 CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] No .7z asset found");
                 return;
             }
 
-            var cachedVersion = StagedVersionNightly;
-            if (cachedVersion != null && string.Equals(cachedVersion, tagName, StringComparison.Ordinal) && IsStagingReadyNightly)
+            if (IsNightlyBuildStaged(tagName))
             {
-                CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Already up to date ({tagName})");
+                CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Already staged ({tagName})");
+                HasUpdateNightly = false;
                 progress?.Report(("OptiScaler Nightly up to date", 100));
                 return;
             }
 
-            progress?.Report(($"Downloading OptiScaler Nightly ({assetName})...", 10));
-            CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Downloading {assetName} from {downloadUrl}");
+            CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Downloading {assetName}");
+            await DownloadAndExtractNightlyBuildAsync(tagName, assetName, downloadUrl, progress).ConfigureAwait(false);
 
-            Directory.CreateDirectory(NightlyStagingDir);
-            var tempArchive = Path.Combine(NightlyStagingDir, assetName + ".tmp");
-
-            try
+            if (IsNightlyBuildStaged(tagName))
             {
-                using var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
-                if (!dlResp.IsSuccessStatusCode)
+                HasUpdateNightly = false;
+                CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] Staging complete");
+                App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
                 {
-                    CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Download failed ({dlResp.StatusCode})");
-                    return;
-                }
-
-                var total = dlResp.Content.Headers.ContentLength ?? -1L;
-                long downloaded = 0;
-                var buf = new byte[1024 * 1024];
-
-                using (var net = await dlResp.Content.ReadAsStreamAsync())
-                using (var file = new FileStream(tempArchive, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
-                {
-                    int read;
-                    while ((read = await net.ReadAsync(buf)) > 0)
-                    {
-                        await file.WriteAsync(buf.AsMemory(0, read));
-                        downloaded += read;
-                        if (total > 0)
-                        {
-                            var pct = 10 + (double)downloaded / total * 60;
-                            progress?.Report(($"Downloading OptiScaler Nightly... {downloaded / 1024} KB / {total / 1024} KB", pct));
-                        }
-                    }
-                }
-
-                CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Downloaded {downloaded} bytes");
+                    Timestamp     = DateTime.UtcNow,
+                    Category      = "OptiScaler Nightly",
+                    ComponentName = "OptiScaler (Nightly)",
+                    OldVersion    = previousStagedVersion,
+                    NewVersion    = tagName,
+                });
             }
-            catch (Exception ex)
-            {
-                if (File.Exists(tempArchive)) try { File.Delete(tempArchive); } catch { }
-                CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Download exception — {ex.Message}");
-                return;
-            }
-
-            progress?.Report(("Extracting OptiScaler Nightly...", 75));
-            try
-            {
-                var sevenZipExe = Find7ZipExe();
-                if (sevenZipExe == null)
-                {
-                    CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] 7-Zip not found — cannot extract archive");
-                    if (File.Exists(tempArchive)) try { File.Delete(tempArchive); } catch { }
-                    return;
-                }
-
-                var tempExtractDir = Path.Combine(Path.GetTempPath(), $"RHI_optiscaler_nightly_{Guid.NewGuid():N}");
-                Directory.CreateDirectory(tempExtractDir);
-
-                try
-                {
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = sevenZipExe,
-                        Arguments = $"x \"{tempArchive}\" -o\"{tempExtractDir}\" -y",
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                    };
-
-                    CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Running {psi.FileName} {psi.Arguments}");
-
-                    using var proc = Process.Start(psi);
-                    if (proc == null)
-                    {
-                        CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] Failed to start 7z process");
-                        return;
-                    }
-
-                    var stdoutTask = proc.StandardOutput.ReadToEndAsync();
-                    var stderrTask = proc.StandardError.ReadToEndAsync();
-
-                    // Use async wait with 120 second timeout for archive extraction
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
-                    try
-                    {
-                        await proc.WaitForExitAsync(cts.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        proc.Kill();
-                        CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] 7z process timed out — killed");
-                        return;
-                    }
-
-                    var stderr = await stderrTask;
-                    if (!string.IsNullOrWhiteSpace(stderr))
-                        CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] 7z stderr: {stderr}");
-
-                    if (proc.ExitCode != 0)
-                    {
-                        CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] 7z exit code {proc.ExitCode}");
-                        return;
-                    }
-
-                    var dllCandidates = Directory.GetFiles(tempExtractDir, "OptiScaler.dll", SearchOption.AllDirectories);
-                    if (dllCandidates.Length == 0)
-                    {
-                        CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] OptiScaler.dll not found in extracted archive");
-                        return;
-                    }
-
-                    var sourceDir = Path.GetDirectoryName(dllCandidates[0])!;
-
-                    foreach (var existingFile in Directory.GetFiles(NightlyStagingDir))
-                    {
-                        try { File.Delete(existingFile); } catch { }
-                    }
-
-                    foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
-                    {
-                        var relativePath = Path.GetRelativePath(sourceDir, file);
-                        var destPath = Path.Combine(NightlyStagingDir, relativePath);
-                        Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                        File.Copy(file, destPath, overwrite: true);
-                    }
-
-                    CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Extracted to nightly staging from {sourceDir}");
-                }
-                finally
-                {
-                    try { Directory.Delete(tempExtractDir, recursive: true); } catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Failed to clean up temp dir — {ex.Message}"); }
-                }
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Extraction failed — {ex.Message}");
-                return;
-            }
-            finally
-            {
-                if (File.Exists(tempArchive)) try { File.Delete(tempArchive); } catch { }
-            }
-
-            try
-            {
-                File.WriteAllText(NightlyVersionFilePath, tagName ?? "unknown");
-                CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Version tag written: {tagName}");
-            }
-            catch (Exception ex)
-            {
-                CrashReporter.Log($"[OptiScalerService.EnsureNightlyStagingAsync] Failed to write version file — {ex.Message}");
-            }
-
-            HasUpdateNightly = false;
-            progress?.Report(("OptiScaler Nightly staging ready", 100));
-            CrashReporter.Log("[OptiScalerService.EnsureNightlyStagingAsync] Staging complete");
-            App.Services.GetRequiredService<IUpdateLogService>().Record(new Models.UpdateLogEntry
-            {
-                Timestamp     = DateTime.UtcNow,
-                Category      = "OptiScaler Nightly",
-                ComponentName = "OptiScaler (Nightly)",
-                OldVersion    = previousStagedVersion,
-                NewVersion    = tagName ?? "unknown",
-            });
         }
         catch (Exception ex)
         {
@@ -1096,14 +949,434 @@ public partial class OptiScalerService
     {
         try
         {
-            if (Directory.Exists(NightlyStagingDir))
-                Directory.Delete(NightlyStagingDir, true);
-            CrashReporter.Log("[OptiScalerService.ClearNightlyStaging] Nightly staging folder cleared");
+            // Only remove the flat-layout version.txt (legacy) and available_builds.json.
+            // Versioned subdirs are preserved so pinned builds remain available offline.
+            if (File.Exists(NightlyVersionFilePath)) File.Delete(NightlyVersionFilePath);
+            if (File.Exists(NightlyAvailableBuildsPath)) File.Delete(NightlyAvailableBuildsPath);
+            _availableNightlyBuilds.Clear();
+            HasUpdateNightly = false;
+            CrashReporter.Log("[OptiScalerService.ClearNightlyStaging] Nightly staging cache cleared (versioned builds preserved)");
         }
         catch (Exception ex)
         {
             CrashReporter.Log($"[OptiScalerService.ClearNightlyStaging] Failed — {ex.Message}");
         }
+    }
+
+    // ── Available nightly builds list ─────────────────────────────────────────
+
+    private readonly List<string> _availableNightlyBuilds = new();
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> AvailableNightlyBuilds => _availableNightlyBuilds;
+
+    /// <inheritdoc />
+    public async Task FetchAvailableNightlyBuildsAsync()
+    {
+        try
+        {
+            string? json;
+            try { json = await _etagCache.GetWithETagAsync(_http, NightlyReleasesApi).ConfigureAwait(false); }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.FetchAvailableNightlyBuildsAsync] API request failed — {ex.Message}");
+                // Fall back to cached list on disk
+                TryLoadAvailableBuildsCache();
+                return;
+            }
+
+            if (json == null)
+            {
+                CrashReporter.Log("[OptiScalerService.FetchAvailableNightlyBuildsAsync] ETag hit — using cached list");
+                if (_availableNightlyBuilds.Count == 0) TryLoadAvailableBuildsCache();
+                return;
+            }
+
+            var builds = new List<string>();
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var release in root.EnumerateArray())
+                    {
+                        if (release.TryGetProperty("tag_name", out var tagEl))
+                        {
+                            var tag = tagEl.GetString() ?? "";
+                            // Strip "nightly-" prefix → date string e.g. "20261008"
+                            var date = tag.StartsWith("nightly-", StringComparison.OrdinalIgnoreCase)
+                                ? tag.Substring("nightly-".Length)
+                                : tag;
+                            if (date.Length == 8 && date.All(char.IsDigit))
+                                builds.Add(date);
+                        }
+                        if (builds.Count >= 30) break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.FetchAvailableNightlyBuildsAsync] Parse failed — {ex.Message}");
+                TryLoadAvailableBuildsCache();
+                return;
+            }
+
+            _availableNightlyBuilds.Clear();
+            _availableNightlyBuilds.AddRange(builds);
+
+            // Persist to disk
+            try
+            {
+                Directory.CreateDirectory(NightlyStagingRoot);
+                System.IO.File.WriteAllText(NightlyAvailableBuildsPath,
+                    System.Text.Json.JsonSerializer.Serialize(builds));
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.FetchAvailableNightlyBuildsAsync] Cache write failed — {ex.Message}");
+            }
+
+            CrashReporter.Log($"[OptiScalerService.FetchAvailableNightlyBuildsAsync] {builds.Count} builds cached (newest: {builds.FirstOrDefault() ?? "none"})");
+
+            // Migrate flat layout if needed (first run after update)
+            await MigrateFlatNightlyStagingIfNeededAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.FetchAvailableNightlyBuildsAsync] Unexpected error — {ex.Message}");
+        }
+    }
+
+    private void TryLoadAvailableBuildsCache()
+    {
+        try
+        {
+            if (!System.IO.File.Exists(NightlyAvailableBuildsPath)) return;
+            var json = System.IO.File.ReadAllText(NightlyAvailableBuildsPath);
+            var builds = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
+            if (builds == null) return;
+            _availableNightlyBuilds.Clear();
+            _availableNightlyBuilds.AddRange(builds);
+            CrashReporter.Log($"[OptiScalerService.TryLoadAvailableBuildsCache] Loaded {builds.Count} builds from cache");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.TryLoadAvailableBuildsCache] Failed — {ex.Message}");
+        }
+    }
+
+    // ── Flat → versioned staging migration ────────────────────────────────────
+
+    /// <summary>
+    /// On first launch after the versioned-subfolders update, moves files from the old flat
+    /// optiscaler-nightly\ root into a dated subfolder (using the version.txt date as the name).
+    /// No-op if already migrated or no flat staging exists.
+    /// </summary>
+    private async Task MigrateFlatNightlyStagingIfNeededAsync()
+    {
+        try
+        {
+            // Flat staging is identified by OptiScaler.dll existing directly in the root
+            var flatDll = Path.Combine(NightlyStagingRoot, "OptiScaler.dll");
+            if (!System.IO.File.Exists(flatDll)) return;
+
+            // Read the version from the flat version.txt
+            var flatVersionPath = Path.Combine(NightlyStagingRoot, "version.txt");
+            var buildDate = System.IO.File.Exists(flatVersionPath)
+                ? System.IO.File.ReadAllText(flatVersionPath).Trim()
+                : null;
+
+            if (string.IsNullOrEmpty(buildDate) || buildDate.Length != 8 || !buildDate.All(char.IsDigit))
+            {
+                // No version.txt — try the already-staged dated subfolders (most recent wins)
+                buildDate = GetLatestStagedNightlyBuild();
+                if (buildDate == null)
+                {
+                    // Fall back to available builds list if populated
+                    buildDate = _availableNightlyBuilds.FirstOrDefault();
+                }
+                if (buildDate == null)
+                {
+                    CrashReporter.Log("[OptiScalerService.MigrateFlatNightlyStaging] No build date available for migration — skipping");
+                    return;
+                }
+                CrashReporter.Log($"[OptiScalerService.MigrateFlatNightlyStaging] No version.txt — using build date {buildDate} from existing staged folder");
+            }
+
+            var destDir = GetNightlyBuildDir(buildDate);
+            if (Directory.Exists(destDir))
+            {
+                // Already migrated for this date — delete flat files
+                CrashReporter.Log($"[OptiScalerService.MigrateFlatNightlyStaging] Versioned dir already exists for {buildDate} — cleaning up flat files");
+            }
+            else
+            {
+                Directory.CreateDirectory(destDir);
+                // Move all files from the flat root (except available_builds.json) into the dated subdir
+                foreach (var file in Directory.GetFiles(NightlyStagingRoot, "*", SearchOption.TopDirectoryOnly))
+                {
+                    var fn = Path.GetFileName(file);
+                    if (fn.Equals("available_builds.json", StringComparison.OrdinalIgnoreCase)) continue;
+                    var dest = Path.Combine(destDir, fn);
+                    System.IO.File.Copy(file, dest, overwrite: true);
+                }
+                CrashReporter.Log($"[OptiScalerService.MigrateFlatNightlyStaging] Migrated flat staging to {buildDate}\\");
+            }
+
+            // Delete flat root files (keep only available_builds.json and subdirs)
+            foreach (var file in Directory.GetFiles(NightlyStagingRoot, "*", SearchOption.TopDirectoryOnly))
+            {
+                var fn = Path.GetFileName(file);
+                if (fn.Equals("available_builds.json", StringComparison.OrdinalIgnoreCase)) continue;
+                try { System.IO.File.Delete(file); } catch { }
+            }
+
+            // Delete flat root subdirs that are NOT 8-digit date folders (i.e. old Licenses\, OptiScaler\ etc.)
+            foreach (var subDir in Directory.GetDirectories(NightlyStagingRoot))
+            {
+                var dirName = Path.GetFileName(subDir);
+                // Skip already-migrated dated subdirs (8-digit names)
+                if (dirName != null && dirName.Length == 8 && dirName.All(char.IsDigit)) continue;
+                // Copy into dated subdir first if not already there
+                var destSubDir = Path.Combine(destDir, dirName!);
+                if (!Directory.Exists(destSubDir))
+                {
+                    try
+                    {
+                        await Task.Run(() => {
+                            Directory.CreateDirectory(destSubDir);
+                            foreach (var f in Directory.GetFiles(subDir, "*", SearchOption.AllDirectories))
+                            {
+                                var rel = Path.GetRelativePath(subDir, f);
+                                var df = Path.Combine(destSubDir, rel);
+                                Directory.CreateDirectory(Path.GetDirectoryName(df)!);
+                                System.IO.File.Copy(f, df, overwrite: true);
+                            }
+                        }).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.MigrateFlatNightlyStaging] Failed to migrate subdir {dirName} — {ex.Message}"); }
+                }
+                // Always delete the flat subdir — whether we just copied it or it was already in destDir
+                try { Directory.Delete(subDir, recursive: true); }
+                catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.MigrateFlatNightlyStaging] Failed to delete flat subdir {dirName} — {ex.Message}"); }
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.MigrateFlatNightlyStaging] Unexpected error — {ex.Message}");
+        }
+    }
+
+    // ── Task 6: On-demand specific build staging ──────────────────────────────
+
+    /// <inheritdoc />
+    public async Task EnsureNightlyBuildStagingAsync(string buildDate, IProgress<(string message, double percent)>? progress = null)
+    {
+        try
+        {
+            if (IsNightlyBuildStaged(buildDate))
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureNightlyBuildStagingAsync] Build {buildDate} already staged — skipping");
+                progress?.Report(($"OptiScaler Nightly {buildDate} ready", 100));
+                return;
+            }
+
+            progress?.Report(($"Checking OptiScaler Nightly {buildDate}...", 5));
+
+            // Fetch the releases list to find the download URL for this specific build
+            string? json;
+            try { json = await _etagCache.GetWithETagAsync(_http, NightlyReleasesApi).ConfigureAwait(false); }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureNightlyBuildStagingAsync] API request failed — {ex.Message}");
+                return;
+            }
+            if (json == null)
+            {
+                // ETag hit — re-fetch without cache for specific build lookup
+                try
+                {
+                    using var resp = await _http.GetAsync(NightlyReleasesApi).ConfigureAwait(false);
+                    json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[OptiScalerService.EnsureNightlyBuildStagingAsync] Forced fetch failed — {ex.Message}");
+                    return;
+                }
+            }
+
+            string? assetName = null, downloadUrl = null;
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Array)
+                {
+                    CrashReporter.Log("[OptiScalerService.EnsureNightlyBuildStagingAsync] Unexpected API response format");
+                    return;
+                }
+                foreach (var release in root.EnumerateArray())
+                {
+                    if (!release.TryGetProperty("tag_name", out var tagEl)) continue;
+                    var tag = tagEl.GetString() ?? "";
+                    var date = tag.StartsWith("nightly-", StringComparison.OrdinalIgnoreCase)
+                        ? tag.Substring("nightly-".Length) : tag;
+                    if (!date.Equals(buildDate, StringComparison.Ordinal)) continue;
+
+                    if (release.TryGetProperty("assets", out var assets))
+                        foreach (var asset in assets.EnumerateArray())
+                        {
+                            var name = asset.GetProperty("name").GetString() ?? "";
+                            if (name.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
+                            {
+                                assetName = name;
+                                downloadUrl = asset.GetProperty("browser_download_url").GetString();
+                                break;
+                            }
+                        }
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureNightlyBuildStagingAsync] Parse failed — {ex.Message}");
+                return;
+            }
+
+            if (assetName == null || downloadUrl == null)
+            {
+                CrashReporter.Log($"[OptiScalerService.EnsureNightlyBuildStagingAsync] No .7z asset found for build {buildDate}");
+                return;
+            }
+
+            // Reuse the same download+extract logic as EnsureNightlyStagingAsync but target a versioned subdir
+            await DownloadAndExtractNightlyBuildAsync(buildDate, assetName, downloadUrl, progress).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.EnsureNightlyBuildStagingAsync] Unexpected error — {ex.Message}");
+        }
+    }
+
+    /// <summary>Shared download + extract logic for any nightly build date.</summary>
+    private async Task DownloadAndExtractNightlyBuildAsync(
+        string buildDate, string assetName, string downloadUrl,
+        IProgress<(string message, double percent)>? progress)
+    {
+        var destDir = GetNightlyBuildDir(buildDate);
+        Directory.CreateDirectory(destDir);
+        var tempArchive = Path.Combine(destDir, assetName + ".tmp");
+
+        try
+        {
+            using var dlResp = await _http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+            if (!dlResp.IsSuccessStatusCode)
+            {
+                CrashReporter.Log($"[OptiScalerService.DownloadNightlyBuild] Download failed ({dlResp.StatusCode})");
+                return;
+            }
+
+            var total = dlResp.Content.Headers.ContentLength ?? -1L;
+            long downloaded = 0;
+            var buf = new byte[1024 * 1024];
+
+            using (var net = await dlResp.Content.ReadAsStreamAsync())
+            using (var file = new FileStream(tempArchive, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
+            {
+                int read;
+                while ((read = await net.ReadAsync(buf)) > 0)
+                {
+                    await file.WriteAsync(buf.AsMemory(0, read));
+                    downloaded += read;
+                    if (total > 0)
+                        progress?.Report(($"Downloading {buildDate}... {downloaded / 1024} KB / {total / 1024} KB", 10 + (double)downloaded / total * 60));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (System.IO.File.Exists(tempArchive)) try { System.IO.File.Delete(tempArchive); } catch { }
+            CrashReporter.Log($"[OptiScalerService.DownloadNightlyBuild] Download exception — {ex.Message}");
+            return;
+        }
+
+        progress?.Report(($"Extracting OptiScaler Nightly {buildDate}...", 75));
+        try
+        {
+            var sevenZipExe = Find7ZipExe();
+            if (sevenZipExe == null)
+            {
+                CrashReporter.Log("[OptiScalerService.DownloadNightlyBuild] 7-Zip not found");
+                return;
+            }
+
+            var tempExtractDir = Path.Combine(Path.GetTempPath(), $"RHI_opti_nightly_{buildDate}_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempExtractDir);
+
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = sevenZipExe,
+                    Arguments = $"x \"{tempArchive}\" -o\"{tempExtractDir}\" -y",
+                    UseShellExecute = false, CreateNoWindow = true,
+                    RedirectStandardOutput = true, RedirectStandardError = true,
+                };
+                using var proc = Process.Start(psi);
+                if (proc == null) { CrashReporter.Log("[OptiScalerService.DownloadNightlyBuild] Failed to start 7z"); return; }
+
+                var stderrTask = proc.StandardError.ReadToEndAsync();
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+                try { await proc.WaitForExitAsync(cts.Token); }
+                catch (OperationCanceledException) { proc.Kill(); CrashReporter.Log("[OptiScalerService.DownloadNightlyBuild] 7z timed out"); return; }
+
+                if (proc.ExitCode != 0)
+                {
+                    CrashReporter.Log($"[OptiScalerService.DownloadNightlyBuild] 7z exit {proc.ExitCode}");
+                    return;
+                }
+
+                var dllCandidates = Directory.GetFiles(tempExtractDir, "OptiScaler.dll", SearchOption.AllDirectories);
+                if (dllCandidates.Length == 0)
+                {
+                    CrashReporter.Log("[OptiScalerService.DownloadNightlyBuild] OptiScaler.dll not found in archive");
+                    return;
+                }
+
+                var sourceDir = Path.GetDirectoryName(dllCandidates[0])!;
+
+                // Clear any existing files in the dest dir first
+                foreach (var f in Directory.GetFiles(destDir))
+                    try { System.IO.File.Delete(f); } catch { }
+
+                foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = Path.GetRelativePath(sourceDir, file);
+                    var dp = Path.Combine(destDir, rel);
+                    Directory.CreateDirectory(Path.GetDirectoryName(dp)!);
+                    System.IO.File.Copy(file, dp, overwrite: true);
+                }
+
+                CrashReporter.Log($"[OptiScalerService.DownloadNightlyBuild] Extracted {buildDate} to {destDir}");
+            }
+            finally
+            {
+                try { Directory.Delete(tempExtractDir, recursive: true); } catch { }
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.DownloadNightlyBuild] Extraction failed — {ex.Message}");
+            return;
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempArchive)) try { System.IO.File.Delete(tempArchive); } catch { }
+        }
+
+        progress?.Report(($"OptiScaler Nightly {buildDate} ready", 100));
     }
 
     // ── DLSS NR variant staging ───────────────────────────────────────────────

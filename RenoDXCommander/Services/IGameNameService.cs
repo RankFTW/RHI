@@ -100,6 +100,8 @@ public interface IGameNameService
 
     /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable", "Nightly", or "DlssNr".</summary>
     Dictionary<string, string> OsVariantOverrides { get; }
+    /// <summary>Per-game pinned nightly build date. Key = "GameName|Store", Value = date string e.g. "20261008". Absent = "Latest".</summary>
+    Dictionary<string, string> OsNightlyBuild { get; }
     /// <summary>Per-game NR runtime version override. Key = "GameName|Store", Value e.g. "310.8.2". Absent = default.</summary>
     Dictionary<string, string> OsNrRuntime { get; }
 

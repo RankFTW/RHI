@@ -75,12 +75,23 @@ public partial class OptiScalerService : IOptiScalerService
     private static readonly string GitHubReleasesApi =
         "https://api.github.com/repos/optiscaler/OptiScaler/releases/latest";
 
-    private static readonly string NightlyStagingDir = Path.Combine(
+    private static readonly string NightlyStagingRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "optiscaler-nightly");
-    private static readonly string NightlyVersionFilePath = Path.Combine(NightlyStagingDir, "version.txt");
+    // Legacy flat staging dir (pre-versioned) — used only for migration detection
+    private static readonly string NightlyStagingDir = NightlyStagingRoot;
+    private static readonly string NightlyVersionFilePath = Path.Combine(NightlyStagingRoot, "version.txt");
+    private static readonly string NightlyAvailableBuildsPath = Path.Combine(NightlyStagingRoot, "available_builds.json");
     private const string NightlyReleasesApi =
-        "https://api.github.com/repos/optiscaler/OptiScaler-nightly/releases";
+        "https://api.github.com/repos/optiscaler/OptiScaler-nightly/releases?per_page=30";
+
+    /// <summary>Returns the versioned staging folder for a specific nightly build date (e.g. "20261008").</summary>
+    private static string GetNightlyBuildDir(string buildDate) =>
+        Path.Combine(NightlyStagingRoot, buildDate);
+
+    /// <summary>Returns the version.txt path for a specific nightly build date.</summary>
+    private static string GetNightlyBuildVersionPath(string buildDate) =>
+        Path.Combine(GetNightlyBuildDir(buildDate), "version.txt");
 
     // ── OptiPatcher constants ─────────────────────────────────────────────────
     private static readonly string OptiPatcherReleasesApi =
@@ -179,6 +190,9 @@ public partial class OptiScalerService : IOptiScalerService
         _etagCache = etagCache;
         _dxvkServiceLazy = dxvkServiceLazy;
         _dlssStreamlineServiceLazy = dlssStreamlineServiceLazy;
+        // Pre-populate the available builds list from the on-disk cache so the cog
+        // dialog shows real entries immediately, before FetchAvailableNightlyBuildsAsync runs.
+        TryLoadAvailableBuildsCache();
     }
 
     // ── Properties ────────────────────────────────────────────────────────────
@@ -223,10 +237,17 @@ public partial class OptiScalerService : IOptiScalerService
     }
 
     /// <inheritdoc />
-    public bool IsStagingReadyNightly =>
-        Directory.Exists(NightlyStagingDir)
-        && File.Exists(NightlyVersionFilePath)
-        && File.Exists(Path.Combine(NightlyStagingDir, "OptiScaler.dll"));
+    public bool IsStagingReadyNightly
+    {
+        get
+        {
+            // Check if ANY versioned subfolder has a valid staging (latest build available)
+            var latestBuild = GetLatestStagedNightlyBuild();
+            if (latestBuild == null) return false;
+            var dir = GetNightlyBuildDir(latestBuild);
+            return Directory.Exists(dir) && File.Exists(Path.Combine(dir, "OptiScaler.dll"));
+        }
+    }
 
     /// <inheritdoc />
     public bool HasUpdateNightly
@@ -240,9 +261,33 @@ public partial class OptiScalerService : IOptiScalerService
     {
         get
         {
-            try { return File.Exists(NightlyVersionFilePath) ? File.ReadAllText(NightlyVersionFilePath).Trim() : null; }
+            try
+            {
+                var latestBuild = GetLatestStagedNightlyBuild();
+                return latestBuild;
+            }
             catch { return null; }
         }
+    }
+
+    /// <summary>Returns the most recently staged nightly build date string, or null if no versioned builds exist.</summary>
+    public string? GetLatestStagedNightlyBuild()
+    {
+        if (!Directory.Exists(NightlyStagingRoot)) return null;
+        // Look for dated subdirs (8-digit date strings like "20261008")
+        var builds = Directory.GetDirectories(NightlyStagingRoot)
+            .Select(Path.GetFileName)
+            .Where(d => d != null && d.Length == 8 && d.All(char.IsDigit))
+            .OrderByDescending(d => d)
+            .ToList();
+        return builds.FirstOrDefault();
+    }
+
+    /// <summary>Returns whether a specific nightly build date is already staged and valid.</summary>
+    public bool IsNightlyBuildStaged(string buildDate)
+    {
+        var dir = GetNightlyBuildDir(buildDate);
+        return Directory.Exists(dir) && File.Exists(Path.Combine(dir, "OptiScaler.dll"));
     }
 
     // ── DLSS NR variant ───────────────────────────────────────────────────────

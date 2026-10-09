@@ -73,6 +73,24 @@ public interface IOptiScalerService
     /// <summary>Removes the nightly staging folder contents.</summary>
     void ClearNightlyStaging();
 
+    /// <summary>Returns the most recently staged nightly build date string (e.g. "20261008"), or null if none staged.</summary>
+    string? GetLatestStagedNightlyBuild();
+
+    /// <summary>Whether a specific nightly build date is already staged and valid.</summary>
+    bool IsNightlyBuildStaged(string buildDate);
+
+    /// <summary>
+    /// Returns the list of available nightly builds (up to 30) fetched from GitHub.
+    /// Cached in available_builds.json. Returns cached list immediately; call FetchAvailableNightlyBuildsAsync to refresh.
+    /// </summary>
+    IReadOnlyList<string> AvailableNightlyBuilds { get; }
+
+    /// <summary>Fetches the list of available nightly builds from GitHub and caches to available_builds.json.</summary>
+    Task FetchAvailableNightlyBuildsAsync();
+
+    /// <summary>Ensures the staging folder for a specific nightly build date is downloaded and ready.</summary>
+    Task EnsureNightlyBuildStagingAsync(string buildDate, IProgress<(string message, double percent)>? progress = null);
+
     /// <summary>Whether the DLSS NR staging folder contains a valid OptiScaler DLSS NR release.</summary>
     bool IsStagingReadyDlssNr { get; }
 
@@ -126,7 +144,8 @@ public interface IOptiScalerService
     Task UpdateAsync(
         GameCardViewModel card,
         IProgress<(string message, double percent)>? progress = null,
-        string? variantHint = null);
+        string? variantHint = null,
+        string? nightlyBuildHint = null);
 
     // ── INI management ────────────────────────────────────────────────────────
 

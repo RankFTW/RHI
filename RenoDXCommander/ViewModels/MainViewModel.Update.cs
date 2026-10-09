@@ -2063,7 +2063,15 @@ public partial class MainViewModel
         foreach (var card in osCards)
         {
             var cardVariant = GetOsVariant(card.GameName, card.Source ?? "");
-            try { await _optiScalerService.UpdateAsync(card, variantHint: cardVariant); }
+            // For nightly: pass the pinned build date if set (exempt games are already filtered out above)
+            var nightlyBuild = cardVariant == "Nightly" ? GetOsNightlyBuild(card.GameName, card.Source ?? "") : null;
+            if (!string.IsNullOrEmpty(nightlyBuild))
+            {
+                // Pinned build — should have been excluded by ExcludeFromUpdateAllOs, but guard here too
+                _crashReporter.Log($"[UpdateAllOsAsync] Skipping '{card.GameName}' — pinned to nightly build {nightlyBuild}");
+                continue;
+            }
+            try { await _optiScalerService.UpdateAsync(card, variantHint: cardVariant, nightlyBuildHint: null); }
             catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Failed for '{card.GameName}': {ex.Message}"); }
         }
 
@@ -2354,6 +2362,8 @@ public partial class MainViewModel
             if (anyNightly)
             {
                 await _optiScalerService.CheckForNightlyUpdateAsync().ConfigureAwait(false);
+                // Also refresh the available builds list so the cog dialog has current entries
+                _ = _optiScalerService.FetchAvailableNightlyBuildsAsync();
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS nightly update result: {_optiScalerService.HasUpdateNightly}");
             }
 

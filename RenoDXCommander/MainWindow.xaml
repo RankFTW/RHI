@@ -1924,6 +1924,39 @@
                                                     CornerRadius="6" Padding="12,4" MinWidth="0"
                                                     FontSize="11" HorizontalAlignment="Left"/>
                                         </StackPanel>
+
+                                        <!-- PAT (Personal Access Token) alternative -->
+                                        <TextBlock Margin="0,8,0,0" FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}"
+                                                   Text="Or paste a GitHub Personal Access Token (PAT) — stays valid until you revoke it. No scopes needed, just generate and paste."/>
+                                        <HyperlinkButton NavigateUri="https://github.com/settings/tokens/new?description=RHI&amp;scopes="
+                                                         FontSize="11" Padding="0" Margin="0,-4,0,0"
+                                                         Content="Create a token at github.com/settings/tokens (no boxes to tick)"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBox x:Name="GitHubPatBox" x:FieldModifier="internal"
+                                                     PlaceholderText="ghp_..."
+                                                     FontSize="11" Width="220" CornerRadius="6"
+                                                     IsSpellCheckEnabled="False"
+                                                     InputScope="Url"/>
+                                            <Button x:Name="GitHubPatSaveBtn" x:FieldModifier="internal"
+                                                    Content="Save"
+                                                    Click="GitHubPatSaveBtn_Click"
+                                                    Background="{StaticResource AccentBlueBgBrush}"
+                                                    Foreground="{StaticResource AccentBlueBrush}"
+                                                    BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="10,4" MinWidth="0" FontSize="11"/>
+                                            <Button x:Name="GitHubPatClearBtn" x:FieldModifier="internal"
+                                                    Content="Clear"
+                                                    Click="GitHubPatClearBtn_Click"
+                                                    Background="Transparent"
+                                                    Foreground="{StaticResource AccentRedBrush}"
+                                                    BorderBrush="{StaticResource AccentRedBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="10,4" MinWidth="0" FontSize="11"/>
+                                        </StackPanel>
+                                        <TextBlock x:Name="GitHubPatStatusText" x:FieldModifier="internal"
+                                                   FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextTertiaryBrush}"
+                                                   Text="" Visibility="Collapsed"/>
                                     </StackPanel>
                                 </Grid>
                         </Border>

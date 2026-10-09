@@ -744,18 +744,7 @@ try {
                 return false;
             }
 
-            // Restart GPU adapter
-            progress?.Report("Restarting GPU adapter...");
-            if (!await RestartGpuAdapterAsync())
-            {
-                CrashReporter.Log("[DldsrService.SetSmoothnessAsync] Failed to restart GPU adapter");
-                return false;
-            }
-
-            // Wait for displays to come back
-            progress?.Report("Waiting for displays...");
-            await Task.Delay(12000);
-
+            // Smoothness is a rendering parameter — no GPU restart needed (unlike DLDSR factor changes)
             CrashReporter.Log($"[DldsrService.SetSmoothnessAsync] Successfully set smoothness to {smoothness}%");
             return true;
         }
