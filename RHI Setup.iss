@@ -122,6 +122,30 @@ begin
   end;
 end;
 
+// Lightweight version used during InitializeSetup — {app} constant not yet available.
+// Checks only the exe filename, not the full path.
+function IsRhiExeProcess(ProcessId: DWORD): Boolean;
+var
+  Process: THandle;
+  ImagePath: String;
+  Size: DWORD;
+begin
+  Result := False;
+  Process := OpenTargetProcess($1000, False, ProcessId);
+  if Process = 0 then Exit;
+  try
+    Size := 32768;
+    SetLength(ImagePath, Size);
+    if ReadProcessImage(Process, 0, ImagePath, Size) then
+    begin
+      SetLength(ImagePath, Size);
+      Result := CompareText(ExtractFileName(ImagePath), '{#MyAppExeName}') = 0;
+    end;
+  finally
+    CloseTargetHandle(Process);
+  end;
+end;
+
 function FindReadyRhiWindow(var ProcessId: DWORD): HWND;
 var
   Window: HWND;
@@ -211,15 +235,13 @@ var
   Window: HWND;
   ProcessId: DWORD;
 begin
-  // Use window enumeration instead of WMI — WMI is slow (can take 30-60s on cold start).
-  // Enumerate all top-level windows and look for one owned by RHI.exe at the install path.
   Result := False;
   Window := FindNextTopLevelWindow(0, 0, 0, 0);
   while Window <> 0 do
   begin
     ProcessId := 0;
     ReadWindowProcessId(Window, ProcessId);
-    if (ProcessId <> 0) and IsInstalledRhiProcess(ProcessId) then
+    if (ProcessId <> 0) and IsRhiExeProcess(ProcessId) then
     begin
       Result := True;
       Exit;
