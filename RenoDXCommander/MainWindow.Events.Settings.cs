@@ -1579,7 +1579,9 @@ public sealed partial class MainWindow
 
         content.Children.Add(new TextBlock
         {
-            Text = "DLDSR (Deep Learning Dynamic Super Resolution) renders games at higher resolutions and downscales with AI for sharper image quality. This feature lets you switch DLDSR presets without opening NVIDIA Control Panel.",
+            Text = "DLDSR (Deep Learning Dynamic Super Resolution) renders games at higher resolutions and downscales with AI for sharper image quality. This feature lets you switch DLDSR presets without opening NVIDIA Control Panel.\n\n" +
+                   "DLDSR uses a Lanczos algorithm — less jaggies, more stable, but can look slightly painterly. Standard DSR uses a Gaussian filter — more natural but with more aliasing. DLDSR is generally sharper than DSR at equivalent settings.\n\n" +
+                   "Recommended factors: DLDSR 2.25x offers the best balance of quality and performance. DSR 4.00x uses significantly more VRAM. DLDSR 1.78x is the most VRAM-friendly option.",
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
@@ -1634,7 +1636,16 @@ public sealed partial class MainWindow
 
         content.Children.Add(new TextBlock
         {
-            Text = "Controls the sharpening/smoothing applied during downscale. Lower = sharper (can show aliasing), higher = smoother (softer image). 33% is NVIDIA's default.\n\nChanging smoothness causes the same ~15 second display blackout as applying a full state. Tip: set smoothness first, then click Apply — both will apply together in a single restart.",
+            Text = "Controls the sharpening/smoothing applied during downscale. 100 = no sharpening (pure Lanczos downscale). Lower values add sharpening — the image gets progressively sharper as you reduce it.\n\n" +
+                   "Recommended DLDSR smoothness values (from r/MotionClarity):\n" +
+                   "  • 100 — No sharpening\n" +
+                   "  • 80 — Sharp without artifacts\n" +
+                   "  • 75 — Clear\n" +
+                   "  • 65 — Clearer\n" +
+                   "  • 55-65 — Similar clarity to DSR 4.00x at 0% (recommended range)\n" +
+                   "  • 45 — As sharp as DSR 4.00x everywhere\n\n" +
+                   "Note: DLDSR uses a Lanczos algorithm — it is naturally much sharper than standard DSR (Gaussian), so it requires higher smoothness values for a comparable look.\n\n" +
+                   "Changing smoothness causes the same ~15 second display blackout as applying a full state. Tip: set smoothness first, then click Apply — both will apply together in a single restart.",
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
