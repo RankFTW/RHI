@@ -27,6 +27,8 @@ public partial class GameCardViewModel : ObservableObject
 
     [ObservableProperty] private bool _isExternalOnly;
     [ObservableProperty] private bool _isRtxHdrEnabled;
+    [ObservableProperty] private bool _isAutoHdrEnabled;
+    [ObservableProperty] private int  _autoHdrStrength = 50; // 0–100, maps to AutoHDRStrength registry value
     [ObservableProperty] private bool _isGenericMod;
     [ObservableProperty] private string _externalUrl   = "";
     [ObservableProperty] private string _externalLabel = "";

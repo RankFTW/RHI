@@ -55,7 +55,7 @@ public partial class OptiScalerService
             string effectiveStagingDir;
             if (isNightly)
             {
-                effectiveNightlyBuild = nightlyBuildHint ?? GetLatestStagedNightlyBuild();
+                effectiveNightlyBuild = !string.IsNullOrEmpty(nightlyBuildHint) ? nightlyBuildHint : GetLatestStagedNightlyBuild();
                 effectiveStagingDir = effectiveNightlyBuild != null
                     ? GetNightlyBuildDir(effectiveNightlyBuild)
                     : NightlyStagingDir;
@@ -1007,7 +1007,7 @@ public partial class OptiScalerService
             string? effectiveNightlyBuild = null;
             if (isNightly)
             {
-                effectiveNightlyBuild = nightlyBuildHint ?? GetLatestStagedNightlyBuild();
+                effectiveNightlyBuild = !string.IsNullOrEmpty(nightlyBuildHint) ? nightlyBuildHint : GetLatestStagedNightlyBuild();
                 effectiveStagingDir = effectiveNightlyBuild != null
                     ? GetNightlyBuildDir(effectiveNightlyBuild)
                     : NightlyStagingDir; // fallback (triggers re-download below)
@@ -1660,7 +1660,9 @@ public partial class OptiScalerService
     /// <summary>
     /// Static version of <see cref="IsOptiScalerFile"/> for use by the foreign DLL
     /// protection system (<see cref="AuxInstallService.IdentifyDxgiFile"/>).
-    /// Reads the first ~2 MB of a DLL file and scans for OptiScaler binary signatures.
+    /// Uses FileVersionInfo.FileDescription (PE version resource) for a fast, reliable check.
+    /// OptiScaler always has FileDescription = "OptiScaler" and CompanyName = "nitec".
+    /// Falls back to binary signature scan if the version resource is absent or unreadable.
     /// </summary>
     public static bool IsOptiScalerFileStatic(string filePath)
     {
@@ -1668,8 +1670,26 @@ public partial class OptiScalerService
         {
             if (!File.Exists(filePath)) return false;
 
+            // Fast path: check PE version resource — OptiScaler always reports
+            // FileDescription = "OptiScaler" and CompanyName = "nitec".
+            // This avoids reading 32 MB of binary and is unambiguous.
+            try
+            {
+                var fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(filePath);
+                if (string.Equals(fvi.FileDescription, "OptiScaler", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(fvi.CompanyName, "nitec", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            catch
+            {
+                // Version resource unreadable — fall through to binary scan
+            }
+
+            // Fallback: binary scan for unique internal strings.
+            // OptiScaler's string data lives near the END of its ~24 MB binary,
+            // so the cap must be at least 32 MB to reach it.
             using var stream = File.OpenRead(filePath);
-            var bufferSize = (int)Math.Min(stream.Length, 8 * 1024 * 1024);
+            var bufferSize = (int)Math.Min(stream.Length, 32 * 1024 * 1024);
             var buffer = new byte[bufferSize];
             int totalRead = 0;
             while (totalRead < bufferSize)

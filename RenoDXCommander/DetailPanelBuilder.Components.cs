@@ -364,7 +364,7 @@ public partial class DetailPanelBuilder
         bool showRdx = !isLumaMode || card.LumaRenodxCompatible;
         _window.DetailRdxRow.Visibility = showRdx ? Visibility.Visible : Visibility.Collapsed;
 
-        bool rdxGreyed = !card.IsRtxHdrEnabled && (card.UseNormalReShade || (!card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade)
+        bool rdxGreyed = !card.IsRtxHdrEnabled && !card.IsAutoHdrEnabled && (card.UseNormalReShade || (!card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade)
             || (card.Mod?.SnapshotUrl == null && !card.IsExternalOnly && string.IsNullOrEmpty(card.InstalledAddonFileName)));
         _window.DetailRdxRow.Opacity = 1.0;
         _window.DetailRdxRow.IsHitTestVisible = true;
@@ -433,7 +433,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
                 _window.DetailRdxInstallBtn.Opacity = rdxGreyed ? 0.35 : 1.0;
                 bool noModAvailable = card.Mod?.SnapshotUrl == null && !card.IsExternalOnly && string.IsNullOrEmpty(card.InstalledAddonFileName);
-                _window.DetailRdxInstallBtn.IsHitTestVisible = card.IsRtxHdrEnabled || (!noModAvailable && !card.UseNormalReShade && (card.IsRsInstalled || card.ExcludeFromUpdateAllReShade));
+                _window.DetailRdxInstallBtn.IsHitTestVisible = card.IsRtxHdrEnabled || card.IsAutoHdrEnabled || (!noModAvailable && !card.UseNormalReShade && (card.IsRsInstalled || card.ExcludeFromUpdateAllReShade));
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var rdxShow = card.ReinstallRowVisibility == Visibility.Visible;
                 _window.DetailRdxDeleteBtn.Opacity = rdxShow ? 1 : 0;

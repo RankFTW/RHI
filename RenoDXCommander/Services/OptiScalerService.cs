@@ -157,10 +157,24 @@ public partial class OptiScalerService : IOptiScalerService
 
     // ── Binary signature markers ──────────────────────────────────────────────
     // Unique strings embedded in OptiScaler.dll that distinguish it from ReShade
-    // and other proxy DLLs. Checked via binary scan of the first ~2 MB.
+    // and other proxy DLLs. Checked via binary scan of the full DLL (capped at 32 MB).
+    //
+    // IMPORTANT: OptiScaler's string data lives near the END of its ~24 MB binary
+    // (PE .rdata section offset ~24 MB). The old 8 MB scan cap missed all unique
+    // strings and only matched the generic "OptiScaler" reference, which is also
+    // present in unrelated tools like RTX Encore. The cap is raised to 32 MB so
+    // the scan always reaches the string section.
+    //
+    // Signatures confirmed unique to OptiScaler's own binary (not present in RTX Encore,
+    // ReShade, or other proxy DLLs):
+    //   "optiscaler/OptiScaler" — GitHub URL embedded in the binary (wiki links etc.)
+    //   "OptiScaler_DontLoad"   — OptiScaler-specific registry escape-hatch key
+    //   "optiscaler.dll"        — OptiScaler's internal self-reference
     private static readonly byte[][] OptiScalerSignatures =
     [
-        Encoding.ASCII.GetBytes("OptiScaler"),
+        Encoding.ASCII.GetBytes("optiscaler/OptiScaler"),
+        Encoding.ASCII.GetBytes("OptiScaler_DontLoad"),
+        Encoding.ASCII.GetBytes("optiscaler.dll"),
     ];
 
     // ── Dependencies (injected via DI) ────────────────────────────────────────

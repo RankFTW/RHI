@@ -1282,6 +1282,118 @@ public sealed partial class MainWindow
         rtxHdrRow.Children.Add(rtxHdrCombo);
         content.Children.Add(rtxHdrRow);
 
+        // ── Auto HDR Toggle ────────────────────────────────────────────────────
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
+        content.Children.Add(new TextBlock
+        {
+            Text = "Auto HDR",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = "Windows 11 Auto HDR forced via registry. Requires HDR and Auto HDR enabled in Windows Settings.",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 4),
+        });
+
+        var autoHdrCombo = new ComboBox { FontSize = 11, MinWidth = 100 };
+        autoHdrCombo.Items.Add("Off");
+        autoHdrCombo.Items.Add("On");
+
+        var autoHdrService = App.Services.GetRequiredService<IAutoHdrService>();
+        bool isAutoHdrEnabled = gameNameService.AutoHdrGames.Contains(card.GameName);
+        int autoHdrStrength = gameNameService.AutoHdrStrengths.TryGetValue(card.GameName, out var savedStrength) ? savedStrength : 50;
+        card.IsAutoHdrEnabled = isAutoHdrEnabled;
+        card.AutoHdrStrength  = autoHdrStrength;
+        autoHdrCombo.SelectedIndex = isAutoHdrEnabled ? 1 : 0;
+
+        autoHdrCombo.SelectionChanged += (s, ev) =>
+        {
+            bool enableAh = autoHdrCombo.SelectedIndex == 1;
+
+            if (enableAh)
+            {
+                gameNameService.AutoHdrGames.Add(card.GameName);
+                card.IsAutoHdrEnabled = true;
+
+                // Mutual exclusivity: if RTX HDR is on, turn it off first
+                if (card.IsRtxHdrEnabled)
+                {
+                    gameNameService.RtxHdrGames.Remove(card.GameName);
+                    card.IsRtxHdrEnabled = false;
+                    rtxHdrCombo.SelectedIndex = 0;
+                    var capturedDlssSvc = App.Services.GetRequiredService<DlssPresetService>();
+                    var capturedName2 = card.GameName; var capturedPath2 = card.InstallPath;
+                    _ = Task.Run(() =>
+                    {
+                        capturedDlssSvc.SetRtxHdrEnable(capturedName2, capturedPath2, 0x00);
+                        capturedDlssSvc.SetRtxHdrContrast(capturedName2, capturedPath2, 100);
+                        capturedDlssSvc.SetRtxHdrSaturation(capturedName2, capturedPath2, 100);
+                        capturedDlssSvc.SetRtxHdrPeakBrightness(capturedName2, capturedPath2, 0);
+                        capturedDlssSvc.SetRtxHdrMiddleGrey(capturedName2, capturedPath2, 50);
+                        capturedDlssSvc.DeleteSettingRaw(capturedName2, capturedPath2, 0x00432F84);
+                    });
+                }
+
+                // Mutual exclusivity: uninstall RenoDX if installed
+                if (card.Status == GameStatus.Installed && card.InstalledRecord != null)
+                    ViewModel.UninstallMod(card);
+
+                // Write registry entry on background thread
+                var capturedEnableCard = card;
+                var capturedEnableStrength = card.AutoHdrStrength;
+                _ = Task.Run(() =>
+                {
+                    var exePath = autoHdrService.ResolveExePath(
+                        capturedEnableCard.GameName,
+                        capturedEnableCard.InstallPath,
+                        gameNameService.LaunchExeOverrides,
+                        ViewModel.Manifest?.LaunchExeOverrides);
+                    if (!string.IsNullOrEmpty(exePath))
+                        autoHdrService.Enable(exePath, capturedEnableStrength);
+                    else
+                        CrashReporter.Log($"[RdxCog.AutoHDR] Could not resolve exe for '{capturedEnableCard.GameName}' — registry not written");
+                });
+            }
+            else
+            {
+                gameNameService.AutoHdrGames.Remove(card.GameName);
+                card.IsAutoHdrEnabled = false;
+
+                var capturedDisableCard = card;
+                _ = Task.Run(() =>
+                {
+                    var exePath = autoHdrService.ResolveExePath(
+                        capturedDisableCard.GameName,
+                        capturedDisableCard.InstallPath,
+                        gameNameService.LaunchExeOverrides,
+                        ViewModel.Manifest?.LaunchExeOverrides);
+                    if (!string.IsNullOrEmpty(exePath))
+                        autoHdrService.Disable(exePath);
+                });
+            }
+
+            card.NotifyAll();
+            ViewModel.SaveSettingsPublic();
+            _detailPanelBuilder?.UpdateDetailComponentRows(card);
+            PopulateDetailPanel(card);
+        };
+
+        var autoHdrRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
+        autoHdrRow.Children.Add(new TextBlock
+        {
+            Text = "Enable Auto HDR",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        autoHdrRow.Children.Add(autoHdrCombo);
+        content.Children.Add(autoHdrRow);
+
         var dialog = new ContentDialog
         {
             Title = "RenoDX Settings",
@@ -1654,6 +1766,165 @@ public sealed partial class MainWindow
             CrashReporter.Log($"[RtxHdrConfigButton_Click] Applied RTX HDR settings for '{card.GameName}': PeakNits={peakNits}, Contrast={contrastStored}, Sat={satStored}, MidGrey={middleGrey}, Deband=0x{debanding:X2}");
         });
         card.ActionMessage = "✅ RTX HDR settings applied.";
+        card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+    }
+
+    internal async void AutoHdrConfigButton_Click(object sender, RoutedEventArgs e)
+    {
+        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel
+                ?? (sender as Button)?.Tag as GameCardViewModel;
+        if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
+
+        var autoHdrService  = App.Services.GetRequiredService<IAutoHdrService>();
+        var gameNameService = App.Services.GetRequiredService<IGameNameService>();
+
+        // Resolve the exe path so we can read the live registry value
+        var exePath = autoHdrService.ResolveExePath(
+            card.GameName, card.InstallPath,
+            gameNameService.LaunchExeOverrides,
+            ViewModel.Manifest?.LaunchExeOverrides);
+
+        // Read current strength from registry (fall back to persisted value, then 50)
+        int currentStrength = 50;
+        if (!string.IsNullOrEmpty(exePath))
+        {
+            var liveStrength = autoHdrService.GetStrength(exePath);
+            currentStrength = liveStrength >= 0 ? liveStrength : card.AutoHdrStrength;
+        }
+        else
+        {
+            currentStrength = card.AutoHdrStrength;
+        }
+
+        var content = new StackPanel { Spacing = 6 };
+
+        // ── Brightness / Intensity ────────────────────────────────────────────
+        string StrengthLabel(int val)
+        {
+            if (val == 0)   return "Brightness: 0 — off (no boost)";
+            if (val == 50)  return "Brightness: 50 — default";
+            if (val == 100) return "Brightness: 100 — maximum (~1000 nits peak)";
+            return $"Brightness: {val}";
+        }
+
+        var strengthRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var strengthLabel = new TextBlock
+        {
+            Text = StrengthLabel(currentStrength),
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            MinWidth = 220,
+        };
+        var strengthWarning = new TextBlock
+        {
+            Text = "⚠ High values may look unnatural",
+            FontSize = 10,
+            Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = currentStrength > 75 ? 1.0 : 0.0,
+        };
+        strengthRow.Children.Add(strengthLabel);
+        strengthRow.Children.Add(strengthWarning);
+
+        var strengthSlider = new Slider
+        {
+            Minimum = 0,
+            Maximum = 100,
+            StepFrequency = 1,
+            Value = currentStrength,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        strengthSlider.ValueChanged += (s, ev) =>
+        {
+            strengthLabel.Text  = StrengthLabel((int)strengthSlider.Value);
+            strengthWarning.Opacity = (int)strengthSlider.Value > 75 ? 1.0 : 0.0;
+        };
+        content.Children.Add(strengthRow);
+        content.Children.Add(strengthSlider);
+
+        // ── Preset buttons ────────────────────────────────────────────────────
+        var presetsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 2, 0, 4) };
+        foreach (var (label, value) in new[] { ("Low (25)", 25), ("Default (50)", 50), ("High (75)", 75), ("Max (100)", 100) })
+        {
+            var btn = new Button
+            {
+                Content = label,
+                FontSize = 11,
+                Padding = new Thickness(10, 4, 10, 4),
+            };
+            var capturedValue = value;
+            btn.Click += (s, ev) =>
+            {
+                strengthSlider.Value = capturedValue;
+                strengthLabel.Text   = StrengthLabel(capturedValue);
+                strengthWarning.Opacity = capturedValue > 75 ? 1.0 : 0.0;
+            };
+            presetsPanel.Children.Add(btn);
+        }
+        content.Children.Add(presetsPanel);
+
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 4) });
+
+        // ── Info note ─────────────────────────────────────────────────────────
+        content.Children.Add(new TextBlock
+        {
+            Text = "Changes take effect on the next game launch. Requires HDR and Auto HDR enabled in Windows Settings → System → Display.",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+        });
+
+        if (string.IsNullOrEmpty(exePath))
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = "⚠ Could not resolve game exe path — registry will not be written.",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush),
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+        }
+        else
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = $"Exe: {exePath}",
+                FontSize = 10,
+                Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush),
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                Margin = new Thickness(0, 2, 0, 0),
+            });
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "Auto HDR Settings",
+            Content = new ScrollViewer { Content = content, MaxHeight = 600, Padding = new Thickness(0, 0, 16, 0) },
+            PrimaryButtonText = "Apply",
+            CloseButtonText   = "Cancel",
+            XamlRoot          = Content.XamlRoot,
+            RequestedTheme    = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        int newStrength = (int)strengthSlider.Value;
+        card.AutoHdrStrength = newStrength;
+        gameNameService.AutoHdrStrengths[card.GameName] = newStrength;
+        ViewModel.SaveSettingsPublic();
+
+        if (!string.IsNullOrEmpty(exePath))
+        {
+            _ = Task.Run(() =>
+            {
+                autoHdrService.Enable(exePath, newStrength);
+                CrashReporter.Log($"[AutoHdrConfigButton_Click] Applied Auto HDR strength={newStrength} for '{card.GameName}' exe='{exePath}'");
+            });
+        }
+
+        card.ActionMessage = "✅ Auto HDR settings applied.";
         card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
     }
 

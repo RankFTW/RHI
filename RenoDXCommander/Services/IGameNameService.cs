@@ -141,6 +141,12 @@ public interface IGameNameService
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     HashSet<string> RtxHdrGames { get; }
 
+    /// <summary>Games with Windows Auto HDR forced via registry. Name-only.</summary>
+    HashSet<string> AutoHdrGames { get; }
+
+    /// <summary>Per-game AutoHDRStrength (0–100). Name-only key.</summary>
+    Dictionary<string, int> AutoHdrStrengths { get; }
+
     /// <summary>Games where Streamline should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
     HashSet<string> OsDeployStreamline { get; }
 

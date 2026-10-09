@@ -69,6 +69,13 @@ public class InstallEventHandler
             return;
         }
 
+        // If Auto HDR is active, open the Auto HDR configuration dialog
+        if (checkCard?.IsAutoHdrEnabled == true)
+        {
+            _window.AutoHdrConfigButton_Click(sender, e);
+            return;
+        }
+
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
 
         // Warn when installing RenoDX alongside an already-installed Luma mod
@@ -235,7 +242,7 @@ public class InstallEventHandler
                 useDlssInputs,
                 ViewModel.Settings.OsHotkey,
                 osVariant,
-                nightlyBuildHint: osVariant == "Nightly" ? ViewModel.GetOsNightlyBuild(card.GameName, card.Source ?? "") : null);
+                nightlyBuildHint: osVariant == "Nightly" ? (ViewModel.GetOsNightlyBuild(card.GameName, card.Source ?? "") is { Length: > 0 } b ? b : null) : null);
 
             if (osRecord == null)
             {

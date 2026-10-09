@@ -700,6 +700,8 @@ public partial class MainViewModel
                 IsManuallyAdded        = game.IsManuallyAdded,
                 UseUeExtended          = useUeExt,
                 IsRtxHdrEnabled        = _gameNameService.RtxHdrGames.Contains(game.Name),
+                IsAutoHdrEnabled       = _gameNameService.AutoHdrGames.Contains(game.Name),
+                AutoHdrStrength        = _gameNameService.AutoHdrStrengths.TryGetValue(game.Name, out var ahStr) ? ahStr : 50,
                 IsExternalOnly         = _wikiExclusions.Contains(game.Name)
                                          ? false
                                          : effectiveMod?.SnapshotUrl == null &&

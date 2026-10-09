@@ -93,6 +93,12 @@ public class GameNameService : IGameNameService
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     private HashSet<string> _rtxHdrGames = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Games with Windows Auto HDR forced via registry. Name-only (not composite-keyed).</summary>
+    private HashSet<string> _autoHdrGames = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game AutoHDRStrength value (0–100). Key = game name (name-only).</summary>
+    private Dictionary<string, int> _autoHdrStrengths = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Games where Streamline should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
     private HashSet<string> _osDeployStreamline = new(StringComparer.OrdinalIgnoreCase);
 
@@ -216,6 +222,10 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> CustomReShadeSelection => _customReShadeSelection;
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     public HashSet<string> RtxHdrGames => _rtxHdrGames;
+    /// <summary>Games with Windows Auto HDR forced via registry. Name-only.</summary>
+    public HashSet<string> AutoHdrGames => _autoHdrGames;
+    /// <summary>Per-game AutoHDRStrength (0–100). Name-only key.</summary>
+    public Dictionary<string, int> AutoHdrStrengths => _autoHdrStrengths;
     public Dictionary<string, string> OriginalDetectedNames => _originalDetectedNames;
 
     /// <summary>Games where Streamline should be deployed. Composite-keyed "GameName|Store".</summary>
@@ -621,6 +631,12 @@ public class GameNameService : IGameNameService
         _rtxHdrGames = new HashSet<string>(
             Load<List<string>>("RtxHdrGames", _rtxHdrGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
 
+        _autoHdrGames = new HashSet<string>(
+            Load<List<string>>("AutoHdrGames", _autoHdrGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
+        var autoHdrStrengthsRaw = Load<Dictionary<string, int>>("AutoHdrStrengths", new());
+        _autoHdrStrengths = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in autoHdrStrengthsRaw) _autoHdrStrengths[kv.Key] = kv.Value;
+
         _osDeployStreamline = new HashSet<string>(
             Load<List<string>>("OsDeployStreamline", new()), StringComparer.OrdinalIgnoreCase);
 
@@ -868,6 +884,11 @@ public class GameNameService : IGameNameService
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
                 s["RtxHdrGames"]         = JsonSerializer.Serialize(_rtxHdrGames?.ToList() ?? new List<string>());
+                s["AutoHdrGames"]        = JsonSerializer.Serialize(_autoHdrGames?.ToList() ?? new List<string>());
+                if (_autoHdrStrengths.Count > 0)
+                    s["AutoHdrStrengths"] = JsonSerializer.Serialize(_autoHdrStrengths);
+                else
+                    s.Remove("AutoHdrStrengths");
                 s["OsDeployStreamline"]  = JsonSerializer.Serialize(_osDeployStreamline.ToList());
                 if (_dgVoodooStandaloneGames.Count > 0) s["DgVoodooStandaloneGames"] = JsonSerializer.Serialize(_dgVoodooStandaloneGames.ToList());
                 else s.Remove("DgVoodooStandaloneGames");
@@ -1050,6 +1071,8 @@ public class GameNameService : IGameNameService
         MigrateHashSet(_ueExtendedGames, oldName, newName);
         MigrateHashSet(_ueExtendedOptOutGames, oldName, newName);
         MigrateHashSet(_rtxHdrGames, oldName, newName);
+        MigrateHashSet(_autoHdrGames, oldName, newName);
+        MigrateDict(_autoHdrStrengths, oldName, newName);
 
         // Migrate composite-keyed Dictionaries (independent per store)
         MigrateCompositeDict(_perGameShaderMode, oldName, newName);
