@@ -1634,7 +1634,7 @@ public sealed partial class MainWindow
 
         content.Children.Add(new TextBlock
         {
-            Text = "Controls the sharpening/smoothing applied during downscale. Lower = sharper (can show aliasing), higher = smoother (softer image). 33% is NVIDIA's default. This can be changed independently without recapturing states.",
+            Text = "Controls the sharpening/smoothing applied during downscale. Lower = sharper (can show aliasing), higher = smoother (softer image). 33% is NVIDIA's default.\n\nChanging smoothness causes the same ~15 second display blackout as applying a full state. Tip: set smoothness first, then click Apply — both will apply together in a single restart.",
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap,
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
