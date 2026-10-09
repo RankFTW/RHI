@@ -70,11 +70,32 @@ public partial class MainViewModel
             long availPageMB   = (long)(mem.ullAvailPageFile / 1024 / 1024);
             uint memLoadPct    = mem.dwMemoryLoad;
 
+            // OS build + GPU driver (at-freeze only, too slow for periodic)
+            string osBuild = "", gpuDriver = "";
+            if (context == "at-freeze")
+            {
+                osBuild = App.GetWindowsBuildNumber();
+                try
+                {
+                    var gd = proc.Modules.Cast<System.Diagnostics.ProcessModule>()
+                        .FirstOrDefault(m => m.ModuleName?.StartsWith("nvwgf2", StringComparison.OrdinalIgnoreCase) == true
+                                          || m.ModuleName?.StartsWith("atig", StringComparison.OrdinalIgnoreCase) == true
+                                          || m.ModuleName?.StartsWith("atio", StringComparison.OrdinalIgnoreCase) == true);
+                    if (gd?.FileName != null)
+                    {
+                        var fi = System.Diagnostics.FileVersionInfo.GetVersionInfo(gd.FileName);
+                        gpuDriver = $" | GPU driver: {gd.ModuleName} v{fi.FileVersion}";
+                    }
+                }
+                catch { }
+            }
+
             CrashReporter.LogSync(
                 $"[Resources] {context} | " +
                 $"Private={privateBytes/1024/1024}MB WS={workingSet/1024/1024}MB GC={gcHeap/1024/1024}MB | " +
                 $"Handles={handleCount} Threads={threadCount} GDI={gdiObj} USER={userObj} | " +
-                $"SysAvailPhys={availPhysMB}MB AvailPage={availPageMB}MB MemLoad={memLoadPct}%");
+                $"SysAvailPhys={availPhysMB}MB AvailPage={availPageMB}MB MemLoad={memLoadPct}%" +
+                (osBuild.Length > 0 ? $" | OS={osBuild}{gpuDriver}" : ""));
         }
         catch (Exception ex)
         {
@@ -106,6 +127,29 @@ public partial class MainViewModel
         var entry = $"[{DateTime.Now:HH:mm:ss.fff}] [UIAction] {action}";
         _crashReporter.Log($"[UIAction] {action}");
         CrashReporter.RecordUiAction(entry); // dedicated ring buffer, never contaminated by diagnostic output
+        // Also record as a callback-start in the enqueue ring so it appears in the dispatcher timeline
+        var callerThread = System.Threading.Thread.CurrentThread;
+        CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Callback:Start] N UI({callerThread.ManagedThreadId}) {action}");
+    }
+
+    /// <summary>
+    /// Wraps TryEnqueue with ring-buffer recording.
+    /// Records the enqueue call (from calling thread) and wraps the callback to record start/end.
+    /// </summary>
+    internal bool TrackedTryEnqueue(string label, Action callback,
+        Microsoft.UI.Dispatching.DispatcherQueuePriority priority = Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal)
+    {
+        if (DispatcherQueue == null) return false;
+        var callerThread = System.Threading.Thread.CurrentThread;
+        var priorityChar = priority == Microsoft.UI.Dispatching.DispatcherQueuePriority.High ? "H"
+                         : priority == Microsoft.UI.Dispatching.DispatcherQueuePriority.Low  ? "L" : "N";
+        CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Enqueue] {priorityChar} T{callerThread.ManagedThreadId}({callerThread.Name ?? "bg"}) {label}");
+        return DispatcherQueue.TryEnqueue(priority, () =>
+        {
+            CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Callback:Start] {priorityChar} UI {label}");
+            try { callback(); }
+            finally { CrashReporter.RecordEnqueueAction($"[{DateTime.Now:HH:mm:ss.fff}] [Callback:End] {priorityChar} UI {label}"); }
+        });
     }
 
     /// <summary>
@@ -253,6 +297,15 @@ public partial class MainViewModel
                     var summary = string.Join(" → ", recentActions);
                     if (summary.Length > 4096) summary = summary.Substring(0, 4096) + "… (truncated)";
                     CrashReporter.LogSync($"[Heartbeat] Recent UI actions: {summary}");
+                }
+
+                // ── Dump dispatcher enqueue ring ──────────────────────────────────
+                var enqueueEvents = CrashReporter.GetRecentEnqueueActions(50);
+                if (enqueueEvents.Count > 0)
+                {
+                    var enqueueStr = string.Join(" | ", enqueueEvents);
+                    if (enqueueStr.Length > 8192) enqueueStr = enqueueStr.Substring(0, 8192) + "… (truncated)";
+                    CrashReporter.LogSync($"[Heartbeat.Enqueue] Last {enqueueEvents.Count} dispatcher events: {enqueueStr}");
                 }
 
                 // ── Classify the stall ────────────────────────────────────────────

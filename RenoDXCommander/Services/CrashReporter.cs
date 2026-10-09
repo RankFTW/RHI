@@ -159,6 +159,30 @@ public static class CrashReporter
     private const int MaxUiActions = 20;
     private static readonly ConcurrentQueue<string> _uiActionRing = new();
 
+    // ── Dispatcher enqueue ring buffer ────────────────────────────────────────────
+    // Records every TryEnqueue call: priority, calling thread name/id, timestamp, label.
+    // Dumped in the freeze block alongside UIAction history.
+    // Format: "[HH:mm:ss.fff] [Enqueue|CallbackStart|CallbackEnd] priority thread label"
+    private const int MaxEnqueueActions = 50;
+    private static readonly ConcurrentQueue<string> _enqueueRing = new();
+
+    internal static void RecordEnqueueAction(string timestampedEntry)
+    {
+        _enqueueRing.Enqueue(timestampedEntry);
+        while (_enqueueRing.Count > MaxEnqueueActions)
+            _enqueueRing.TryDequeue(out _);
+    }
+
+    public static List<string> GetRecentEnqueueActions(int count)
+    {
+        var all = _enqueueRing.ToArray();
+        var result = new List<string>(Math.Min(count, all.Length));
+        int start = Math.Max(0, all.Length - count);
+        for (int i = start; i < all.Length; i++)
+            result.Add(all[i]);
+        return result;
+    }
+
     internal static void RecordUiAction(string timestampedEntry)
     {
         _uiActionRing.Enqueue(timestampedEntry);
