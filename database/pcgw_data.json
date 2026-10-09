@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55445,
-  "generated": "2026-10-08T07:16:53Z",
+  "game_count": 55471,
+  "generated": "2026-10-09T11:04:51Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -115,6 +115,7 @@
     "***": {
       "steam_appid": 1034230
     },
+    "*NSYNC Hotline": {},
     ".EXE": {
       "steam_appid": 471640
     },
@@ -7235,7 +7236,7 @@
     "Alone in the Dark (2024)": {
       "steam_appid": 1310410,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\AloneInTheDark\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\AloneInTheDark\\Saved\\Config\\WindowsNoEditor\\GameUserSettings.ini",
       "engine": "Unreal Engine 4"
     },
     "Alone in the Dark 2": {
@@ -10160,8 +10161,8 @@
     "ARC Raiders": {
       "steam_appid": 1808500,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\PioneerGame\\Saved\\",
-      "config_path_xbox": "%LOCALAPPDATA%\\PioneerGame\\Saved\\Config\\WinGDKClient\\",
+      "config_path": "%LOCALAPPDATA%\\PioneerGame\\Saved, %LOCALAPPDATA%\\PioneerGame_Entrophy\\Saved",
+      "config_path_xbox": "%LOCALAPPDATA%\\PioneerGame\\Saved\\Config\\WinGDKClient",
       "engine": "Unreal Engine 5"
     },
     "Arc Savior": {
@@ -14601,6 +14602,7 @@
       "steam_appid": 3170580
     },
     "Backyard Basketball 2004": {},
+    "Backyard Basketball 2007": {},
     "Backyard Brawl": {
       "steam_appid": 954170
     },
@@ -16229,7 +16231,7 @@
     "Battle Chess: Game of Kings": {
       "steam_appid": 200150,
       "dx9": true,
-      "config_path": "%LOCALAPPDATA%\\Olde Sk├╝├╝l\\Battlechess Game of Kings\\LocalConfig.ini"
+      "config_path": "%LOCALAPPDATA%\\Olde Sküül\\Battlechess Game of Kings\\LocalConfig.ini"
     },
     "Battle Commanders": {
       "steam_appid": 628880
@@ -21632,6 +21634,7 @@
     "Blue Solar: Chaos War": {
       "steam_appid": 501430
     },
+    "Blue Takes You to School": {},
     "Blue Tear": {
       "steam_appid": 563340
     },
@@ -24376,6 +24379,13 @@
     "Bryce's Movement Engine┬╣": {
       "steam_appid": 1117420
     },
+    "Brütal Legend": {
+      "steam_appid": 225260,
+      "dx9": true,
+      "opengl": true,
+      "config_path": "%APPDATA%\\Doublefine\\BrutalLegend\\screen.dat",
+      "engine": "Buddha"
+    },
     "Br├╝tal Legend": {
       "steam_appid": 225260,
       "dx9": true,
@@ -25667,6 +25677,8 @@
     "Cabela's Sportsman's Challenge": {
       "config_path": "<path-to-game>\\csc.ini"
     },
+    "Cabela's Ultimate Deer Hunt": {},
+    "Cabela's Ultimate Deer Hunt 2": {},
     "Cabernet": {
       "steam_appid": 2401410,
       "config_path": "HKEY_CURRENT_USER\\SOFTWARE\\Party for Introverts\\Cabernet",
@@ -27093,6 +27105,7 @@
     },
     "Carmageddon: Max Damage": {
       "steam_appid": 505170,
+      "dx11": true,
       "config_path": "<path-to-game>\\Data_Misc\\config",
       "engine": "Beelzebub"
     },
@@ -27103,7 +27116,7 @@
     },
     "Carmageddon: Rogue Shift": {
       "steam_appid": 1712100,
-      "config_path": "%LOCALAPPDATA%\\Carma\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\Carma\\Saved\\Config\\Windows",
       "engine": "Unreal Engine 5"
     },
     "Carmen Sandiego": {
@@ -31674,6 +31687,8 @@
     },
     "Clive Barker's Hellraiser: Revival": {
       "steam_appid": 1551980,
+      "dx12": true,
+      "config_path": "%LOCALAPPDATA%\\Local\\Hellraiser\\Saved\\Config\\Windows\\",
       "engine": "Unreal Engine 5"
     },
     "Clive Barker's Jericho": {
@@ -38707,6 +38722,8 @@
     "DAISENRYAKU PERFECT 4.0/ÕñºµêªþòÑÒâæÒâ╝ÒâòÒéºÒé»Òâê4.0": {
       "steam_appid": 868410
     },
+    "Daisy's Garden": {},
+    "Daisy's Garden 2": {},
     "Daka Dara": {
       "steam_appid": 1040480
     },
@@ -42552,7 +42569,7 @@
       "dx11": true,
       "vulkan": true,
       "opengl": true,
-      "config_path": "<path-to-game>\\"
+      "config_path": "<path-to-game>\\preferences.txt, %LOCALAPPDATA%\\Introversion\\Defcon\\preferences.txt"
     },
     "Defcon 5": {},
     "DEFCON VR": {
@@ -43598,6 +43615,12 @@
     },
     "Dereliction": {
       "steam_appid": 969420
+    },
+    "DERELIKT": {
+      "steam_appid": 3810510,
+      "dx11": true,
+      "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Visuwyg\\DERELIKT\\PersistentData\\*\\settings.stg, HKEY_CURRENT_USER\\Software\\Visuwyg\\DERELIKT",
+      "engine": "Unity"
     },
     "Derora": {
       "steam_appid": 700540
@@ -45751,6 +45774,7 @@
     },
     "Disney Infinity 1.0: Gold Edition": {
       "steam_appid": 541640,
+      "dx9": true,
       "engine": "Octane (Avalanche Software)"
     },
     "Disney Infinity 2.0": {
@@ -58292,6 +58316,7 @@
     },
     "Fantasy Life i: The Girl Who Steals Time": {
       "steam_appid": 2993780,
+      "config_path": "%LOCALAPPDATA%\\Game\\Saved\\Config\\Windows, %LOCALAPPDATA%\\Game\\Saved\\ImGui",
       "engine": "Unreal Engine 5"
     },
     "Fantasy Little Jobs": {
@@ -59234,7 +59259,7 @@
     "Fatekeeper": {
       "steam_appid": 2186990,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\SLASHER\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\SLASHER\\Saved\\Config\\Windows\\, %LOCALAPPDATA%\\SLASHER\\Saved\\GameSettings\\",
       "engine": "Unreal Engine 5"
     },
     "Fateless": {
@@ -62921,7 +62946,10 @@
       "engine": "Unity"
     },
     "Forever Ago": {
-      "steam_appid": 1215940
+      "steam_appid": 1215940,
+      "dx11": true,
+      "config_path_xbox": "%USERPROFILE%\\AppData\\LocalLow\\Third Shift\\ForeverAgo",
+      "engine": "Unity"
     },
     "Forever Home": {
       "steam_appid": 718200
@@ -75209,7 +75237,7 @@
     "Hell is Us": {
       "steam_appid": 1620730,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\HellIsUs\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\HellIsUs\\Saved\\Config\\Windows\\GameUserSettings.ini",
       "engine": "Unreal Engine 5"
     },
     "Hell Knights": {
@@ -80810,6 +80838,9 @@
       "steam_appid": 2146600,
       "config_path": "%LOCALAPPDATA%\\ICommissionedSomeBees7"
     },
+    "I don't think the sun is real.": {
+      "steam_appid": 4681820
+    },
     "I Expect You to Die": {
       "steam_appid": 587430,
       "dx11": true,
@@ -86047,6 +86078,7 @@
       "config_path": "<path-to-game>\\",
       "engine": "Open Media Toolkit"
     },
+    "Jimmy White's 'Whirlwind' Snooker": {},
     "Jin Lin Love Story": {
       "steam_appid": 896190
     },
@@ -87580,7 +87612,7 @@
     "Kao the Kangaroo (2022)": {
       "steam_appid": 1370140,
       "dx11": true,
-      "config_path": "%LOCALAPPDATA%\\Kao\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Kao\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Kao the Kangaroo: Round 2": {
@@ -97633,6 +97665,9 @@
       "opengl": true,
       "engine": "Flash"
     },
+    "Machinarium 2": {
+      "steam_appid": 1619280
+    },
     "Machinations: Fog of War": {
       "steam_appid": 517240
     },
@@ -107270,6 +107305,7 @@
       "config_path": "%LOCALAPPDATA%\\Mr_Pogo\\pogoscore.ini",
       "engine": "GameMaker"
     },
+    "Mr. Potato Head Saves Veggie Valley": {},
     "Mr. Prepper": {
       "steam_appid": 761830,
       "config_path": "HKEY_USERS\\S-1-5-21-763251882-1183086737-2460335526-1002\\SOFTWARE\\Rejected Games",
@@ -107951,6 +107987,12 @@
       "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\Die Gute Fabrik\\Mutazione\\",
       "engine": "Unity"
+    },
+    "Mute Crimson DX": {
+      "steam_appid": 2830430,
+      "dx11": true,
+      "config_path": "%USERPROFILE%\\Documents\\SavedGames\\MuteCrimsonDX\\SaveData\\AllPlayers",
+      "engine": "FNA"
     },
     "Mute Crimson+": {
       "steam_appid": 384280
@@ -114755,7 +114797,7 @@
     "Octopath Traveler 0": {
       "steam_appid": 3014320,
       "dx12": true,
-      "config_path": "%USERPROFILE%\\Documents\\My Games\\Octopath_Traveler0\\Steam\\",
+      "config_path": "%USERPROFILE%\\Documents/My Games/Octopath_Traveler0/Steam/",
       "engine": "Unreal Engine 5"
     },
     "Octopath Traveler II": {
@@ -118702,7 +118744,7 @@
     "Painkiller (2025)": {
       "steam_appid": 2300120,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Painkiller\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Painkiller\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Painkiller: Hell & Damnation": {
@@ -127367,14 +127409,14 @@
       "steam_appid": 607080,
       "dx11": true,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Psychonauts2\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Psychonauts2\\Saved\\Config\\WindowsNoEditor\\*.ini, %LOCALAPPDATA%\\Psychonauts2\\Saved\\SaveGames\\GraphicsSettings.json",
       "config_path_xbox": "%LOCALAPPDATA%\\Packages\\Microsoft.Psychonauts2_8wekyb3d8bbwe\\LocalCache\\Local\\Psychonauts2\\Saved\\Config\\WinGDK\\",
       "engine": "Unreal Engine 4"
     },
     "Psychonauts in the Rhombus of Ruin": {
       "steam_appid": 788690,
       "dx11": true,
-      "config_path": "%APPDATA%\\PsychonautsInTheRhombusOfRuin\\Saved\\SaveGames\\",
+      "config_path": "%APPDATA%\\PsychonautsInTheRhombusOfRuin\\Saved\\SaveGames\\PsychonautsInTheRhombusOfRuinSettings0.sav",
       "engine": "Unreal Engine 4"
     },
     "Psychopathics": {
@@ -131267,7 +131309,7 @@
     "Reanimal": {
       "steam_appid": 2129530,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Everholm\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\Everholm\\Saved\\Config\\Windows",
       "engine": "Unreal Engine 5"
     },
     "Reanimation Inc.": {
@@ -138393,7 +138435,7 @@
     "S.T.A.L.K.E.R. 2: Heart of Chornobyl": {
       "steam_appid": 1643320,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Stalker2\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\Stalker2\\Saved\\Config\\Windows\\, %LOCALAPPDATA%\\Stalker2\\Saved\\GameSettings\\AppliedSettings.cfg, %LOCALAPPDATA%\\Stalker2\\Saved\\CustomizeControls.cfg",
       "engine": "Unreal Engine 5"
     },
     "S.T.A.L.K.E.R.: Call of Pripyat": {
@@ -142379,7 +142421,7 @@
       "steam_appid": 1227690,
       "dx11": true,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\ThankYouVeryCool\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\ThankYouVeryCool\\Saved\\Config\\WindowsNoEditor\\*.ini, %LOCALAPPDATA%\\ThankYouVeryCool\\Saved\\SaveGames\\settings_rel.sav",
       "engine": "Unreal Engine 4"
     },
     "Sevgilim Olur Musun?": {
@@ -142692,6 +142734,10 @@
     },
     "Shadow Runner": {
       "steam_appid": 1046110
+    },
+    "Shadow Sacrament: The Roots of Evil": {
+      "steam_appid": 3002550,
+      "engine": "GameMaker"
     },
     "Shadow Sorcerer": {
       "steam_appid": 2344020
@@ -153482,7 +153528,7 @@
     "Star Wars: Galactic Racer": {
       "steam_appid": 4078430,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\StarWarsGalacticRacer\\Saved\\Config\\Windows",
+      "config_path": "%LOCALAPPDATA%\\StarWarsGalacticRacer\\Saved\\",
       "engine": "Unreal Engine 5"
     },
     "Star Wars: Galaxy of Heroes": {
@@ -153534,6 +153580,7 @@
       "engine": "Odyssey"
     },
     "Star Wars: Knights of the Old Republic ÔÇô Remake": {},
+    "Star Wars: Millennium Falcon": {},
     "Star Wars: Monopoly": {},
     "Star Wars: Pit Droids": {
       "config_path": "<path-to-game>\\Pit Droids Options.dat"
@@ -166509,7 +166556,7 @@
     "The Finals": {
       "steam_appid": 2073850,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Discovery\\Saved\\",
+      "config_path": "%LOCALAPPDATA%\\Discovery\\Saved, %LOCALAPPDATA%\\Discovery_Entrophy\\Saved",
       "engine": "Unreal Engine 5"
     },
     "The Finnish Virtual Art Gallery": {
@@ -166969,7 +167016,7 @@
     "The Godfather II": {
       "steam_appid": 24830,
       "dx9": true,
-      "config_path": "%LOCALAPPDATA%\\EA Games\\<Localized The GodfatherÔäó II>",
+      "config_path": "%LOCALAPPDATA%\\EA Games\\<Localized The Godfather™ II>",
       "engine": "Visceral Engine"
     },
     "The Godfather: The Game": {
@@ -174493,6 +174540,7 @@
     },
     "Thomas & Friends: Building the New Line": {},
     "Thomas & Friends: The Great Festival Adventure": {},
+    "Thomas & Friends: Thomas Saves the Day": {},
     "Thomas & Friends: Trouble on the Tracks": {},
     "Thomas & Friends: Wonders of Sodor": {
       "steam_appid": 3743790,
@@ -176829,14 +176877,23 @@
       "engine": "Unity"
     },
     "Tonka Construction": {
-      "config_path": "<span class=\"file-span-linebreak\"><span class=\"file-span-directory\"></span><code class=\"file-code\">%WINDIR%</code></span>/Tonka.ini"
+      "config_path": "%WINDIR%/Tonka.ini"
     },
+    "Tonka Construction 2": {},
+    "Tonka Dig'n Rigs": {},
     "Tonka Firefighter": {},
+    "Tonka Garage": {},
     "Tonka Monster Trucks": {
       "engine": "RenderWare"
     },
+    "Tonka Power Tools": {},
+    "Tonka Raceway": {},
     "Tonka Search & Rescue": {},
+    "Tonka Search & Rescue 2": {},
     "Tonka Space Station": {},
+    "Tonka Town": {},
+    "Tonka WorkShop": {},
+    "Tonka: On the Job": {},
     "Tony & Friends in Kellogg's Land": {},
     "Tony Hawk's American Wasteland": {
       "dx9": true,
@@ -180146,7 +180203,7 @@
     },
     "Trover Saves the Universe": {
       "steam_appid": 1051200,
-      "config_path": "%LOCALAPPDATA%\\Trover\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Trover\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "TRPG in VR Space": {
@@ -184982,6 +185039,9 @@
     },
     "Victor Vran": {
       "steam_appid": 345180,
+      "dx9": true,
+      "dx11": true,
+      "opengl": true,
       "config_path": "%APPDATA%\\Victor Vran\\DeveloperStorage.lua",
       "engine": "Sol"
     },
@@ -185498,6 +185558,7 @@
       "steam_appid": 3112260,
       "dx12": true,
       "config_path": "%APPDATA%\\SEGA\\VFREVO\\Steam",
+      "config_path_xbox": "%APPDATA%\\SEGA\\VFREVO\\MicrosoftStore\\",
       "engine": "Dragon Engine"
     },
     "Virtua Fighter PC": {
@@ -185966,7 +186027,7 @@
       "dx11": true,
       "dx12": true,
       "vulkan": true,
-      "config_path": "%LOCALAPPDATA%\\VotV\\Saved\\SaveGames\\",
+      "config_path": "%LOCALAPPDATA%\\VotV\\Saved\\SaveGames\\data.sav, %LOCALAPPDATA%\\VotV\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Void": {
@@ -193422,14 +193483,14 @@
       "steam_appid": 2810,
       "dx9": true,
       "opengl": true,
-      "engine": "X┬│ Reality Engine"
+      "engine": "X³ Reality Engine"
     },
     "X3: Terran Conflict": {
       "steam_appid": 2820,
       "dx9": true,
       "opengl": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\EGOSOFT\\X3TC, %USERPROFILE%\\Documents\\EgoSoft\\X3TC\\profiles\\, %USERPROFILE%\\Documents\\EgoSoft\\X3AP\\profiles\\",
-      "engine": "X┬│ Reality Engine"
+      "engine": "X³ Reality Engine"
     },
     "X4: Foundations": {
       "steam_appid": 392160,
