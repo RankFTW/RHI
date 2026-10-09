@@ -7,7 +7,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 ## v2.8.6 Beta 7
 
 ### Important
-- **Windows App Runtime 2.5.1 is required for this update.** The RHI installer downloads and installs it automatically if it isn't already on your system. If you are updating manually (replacing the exe), download and run the runtime installer first: [windowsappruntimeinstall-x64.exe](https://aka.ms/windowsappsdk/2.5/latest/windowsappruntimeinstall-x64.exe). The runtime update includes reliability fixes for WinUI 3 that may reduce the frequency of the UI freeze.
+- **Windows App Runtime 2.5.1 is required for this update.** The installer handles this automatically. The runtime update includes reliability fixes for WinUI 3 that may reduce the frequency of the UI freeze.
 
 ### New
 
