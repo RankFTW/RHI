@@ -97,7 +97,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 ### Manifest Updates
 - STAR WARS: Galactic Racer — Engine.ini path added for UE-Extended HDR support.
 - The Witcher 3: Wild Hunt - Game of the Year Edition now installs the same RenoDX mod as the standard edition.
-- Mirror's Edge Catalyst — wiki-unlinked (RenoDX mod is work-in-progress; install note added to the Luma row).
+- Mirror's Edge Catalyst — wiki-unlinked.
 
 ## v2.8.5
 
