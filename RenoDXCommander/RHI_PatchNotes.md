@@ -91,9 +91,13 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 **Engine.ini**
 - Fixed Engine.ini not being written on install for games that have never been launched when the config path comes from the PCGW database.
 
+**DLSS Fix**
+- Fixed DLSS Fix downloading as an update multiple times per day. A transient network failure during the version check was returning an unknown result, which RHI was incorrectly treating as a new version. The update is now skipped when the version check can't be resolved.
+
 ### Manifest Updates
 - STAR WARS: Galactic Racer — Engine.ini path added for UE-Extended HDR support.
 - The Witcher 3: Wild Hunt - Game of the Year Edition now installs the same RenoDX mod as the standard edition.
+- Mirror's Edge Catalyst — added to detection blacklist (no RenoDX mod available).
 
 ## v2.8.5
 
