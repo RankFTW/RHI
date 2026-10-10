@@ -748,6 +748,16 @@ public partial class DetailPanelBuilder
                     installBtn.IsEnabled = true;
                     installBtn.Content   = prevContent;
                 });
+                // Refresh the card's detected DLSS versions so the DLSS/SL section also shows
+                // the updated NR DLL version — same version now in both panels.
+                var refreshCard = _window.ViewModel.AllCards
+                    .FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                                         (string.IsNullOrEmpty(store) || c.Source == store));
+                if (refreshCard != null)
+                {
+                    await Task.Run(() => refreshCard.RefreshDlssVersions(dlssSvc)).ConfigureAwait(false);
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildNvidiaProfileSection(refreshCard, refreshCard.GameName));
+                }
                 RefreshStatus();
             }
         }
