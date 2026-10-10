@@ -60,9 +60,6 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Paste any classic PAT (no scopes needed — RHI only reads public repos). The token is saved locally and never expires unless you revoke it on GitHub.
 - Useful if you prefer not to use OAuth, or if your OAuth session keeps expiring.
 
-### Manifest Updates
-- Added `installPathOverrides` for Baldur's Gate 3 (`bin` subfolder)
-
 ### Bug Fixes
 
 **Output Colour Settings**
@@ -133,6 +130,13 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 **DLSS Fix**
 - Fixed DLSS Fix downloading as an update multiple times per day. A transient network failure during the version check was returning an unknown result, which RHI was incorrectly treating as a new version. The update is now skipped when the version check can't be resolved.
+
+### Manifest Updates
+- Added `installPathOverrides` for Baldur's Gate 3 (`bin` subfolder)
+
+---
+
+## v2.8.6 Beta 9
 
 ### Manifest Updates
 - STAR WARS: Galactic Racer — Engine.ini path added for UE-Extended HDR support.
