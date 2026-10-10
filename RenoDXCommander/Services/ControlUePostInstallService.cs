@@ -83,6 +83,26 @@ public static class ControlUePostInstallService
 
             content.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
             {
+                Text = "Required in-game settings:",
+                FontSize = 12,
+                FontWeight = new Windows.UI.Text.FontWeight(600),
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 0),
+            });
+
+            content.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
+            {
+                Text = "  •  DLSS ON  •  SSAO ON  •  Post-processing HIGH\n"
+                     + "  •  Screen-space reflections HIGH (temporarily turn off RT to change, or set render preset to High/Ultra)\n"
+                     + "  •  RT Reflections ON  •  RT Indirect Diffuse ON\n"
+                     + "  •  Render resolution must use even integers (can be set in renderer.ini)",
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            });
+
+            content.Children.Add(new Microsoft.UI.Xaml.Controls.TextBlock
+            {
                 Text = "Clicking Install will also:",
                 FontSize = 13,
                 FontWeight = new Windows.UI.Text.FontWeight(600),
