@@ -2072,7 +2072,33 @@ public partial class MainViewModel
                 continue;
             }
             try { await _optiScalerService.UpdateAsync(card, variantHint: cardVariant, nightlyBuildHint: null); }
-            catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Failed for '{card.GameName}': {ex.Message}"); }
+            catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Failed for '{card.GameName}': {ex.Message}"); continue; }
+
+            // Re-deploy Streamline and DLSS Enabler if they were enabled — UpdateAsync doesn't handle this
+            if ((cardVariant == "Nightly" || cardVariant == "DlssNr") && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                if (GetOsDeployStreamline(card.GameName, card.Source ?? ""))
+                {
+                    try
+                    {
+                        var slVersion = GetOsStreamlineVersion(card.GameName, card.Source ?? "");
+                        _optiScalerService.DeployStreamlineToGame(card.InstallPath, slVersion);
+                        _crashReporter.Log($"[UpdateAllOsAsync] Re-deployed Streamline to '{card.GameName}' post-update");
+                    }
+                    catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Streamline re-deploy failed for '{card.GameName}' — {ex.Message}"); }
+                }
+                if (GetOsDeployDlssEnabler(card.GameName, card.Source ?? ""))
+                {
+                    try
+                    {
+                        var dlssEnablerService = App.Services.GetRequiredService<DlssEnablerService>();
+                        var optiScalerDir = System.IO.Path.Combine(card.InstallPath, "OptiScaler");
+                        await dlssEnablerService.InstallAsync(optiScalerDir).ConfigureAwait(false);
+                        _crashReporter.Log($"[UpdateAllOsAsync] Re-deployed DLSS Enabler to '{card.GameName}' post-update");
+                    }
+                    catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] DLSS Enabler re-deploy failed for '{card.GameName}' — {ex.Message}"); }
+                }
+            }
         }
 
         DispatcherQueue?.TryEnqueue(() =>
