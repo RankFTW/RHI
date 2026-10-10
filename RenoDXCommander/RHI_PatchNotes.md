@@ -26,15 +26,6 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Multiple configurations can be saved (e.g. "Off", "1.78x only", "1.78x + 2.25x")
 - Requires Admin Mode or running RHI as Administrator to read/write the driver registry keys
 
-**RE Framework**
-- Added a ⚙ cog button to the RE Framework row with a "Delete _storage_ folder" button — RE Framework uses this folder as a cache and rebuilds it on each launch, so deleting it is always safe.
-
-**OptiScaler Nightly Build Selection**
-- You can now pin a game to a specific nightly build instead of always using the latest. Open the OptiScaler ⚙ cog and use the new "Nightly Build" dropdown — it lists the last 30 daily builds (about 2 months of history).
-- "Latest (auto-update)" is unchanged — the game tracks the newest nightly and auto-updates as normal.
-- Pinning a build freezes that game at that version and excludes it from auto-updates. Useful when a newer nightly breaks something.
-- Pinned builds download on demand the first time and cache locally for future installs.
-
 **Auto HDR (per-game)**
 - Force Windows Auto HDR on a per-game basis from the RenoDX ⚙ cog, directly below the RTX HDR section.
 - Works on any GPU — no NVIDIA App required. Does not require the global Auto HDR toggle in Windows Settings — the per-exe registry entry is sufficient on its own.
@@ -43,12 +34,21 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Mutual exclusivity with RTX HDR — enabling one disables the other, and enabling either uninstalls any active RenoDX mod.
 - Changes take effect on the next game launch.
 
+**OptiScaler Nightly Build Selection**
+- You can now pin a game to a specific nightly build instead of always using the latest. Open the OptiScaler ⚙ cog and use the new "Nightly Build" dropdown — it lists the last 30 daily builds (about 2 months of history).
+- "Latest (auto-update)" is unchanged — the game tracks the newest nightly and auto-updates as normal.
+- Pinning a build freezes that game at that version and excludes it from auto-updates. Useful when a newer nightly breaks something.
+- Pinned builds download on demand the first time and cache locally for future installs.
+
 **RTX Encore**
 - RTX Encore (SilyNoMeta) is now available as a new Extras row, between OptiScaler and DLSS Enabler.
 - Provides frame generation X2–X6, Smooth Motion on RTX 30, and Neural Rendering for RTX 20/30/40, in games that support DLSS Frame Generation.
 - Click Install to choose a proxy DLL name (version.dll, dinput8.dll, winmm.dll, dxgi.dll, d3d9/10/11/12.dll, and more — or rtx-encore.asi for ASI-loader games). Names in use by other RHI components are disabled. Names with an existing file on disk are shown in amber — RTX Encore backs them up and restores them on uninstall.
 - The ⚙ cog lets you deploy `nvngx_dlssnr.dll` version 310.8.0 for Neural Rendering — RTX Encore requires exactly this version and refuses any other. The file is shared with other NR components and only removed when no other component still needs it.
 - Auto-updates alongside other components.
+
+**RE Framework**
+- Added a ⚙ cog button to the RE Framework row with a "Delete _storage_ folder" button — RE Framework uses this folder as a cache and rebuilds it on each launch, so deleting it is always safe.
 
 ### Changes
 
