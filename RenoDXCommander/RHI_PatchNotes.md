@@ -74,6 +74,12 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Fixed settings, game library, and addon records being left corrupt if RHI was killed mid-write. These files are now written atomically.
 - After an auto-restart, RHI reselects the game that was open before the freeze and shows a brief status bar notice.
 
+**DLSS/Streamline Detection**
+- Added `dlssPathOverrides` and `streamlinePathOverrides` manifest fields — allows RHI to find DLSS and Streamline DLLs in games that store them in non-standard deep subdirectories that the recursive scanner doesn't reach. The Sinking City 2 is the first game to use this.
+
+**DLSS/Streamline — The Sinking City 2**
+- Fixed the DLSS/Streamline section showing empty for The Sinking City 2. The game stores its DLLs 8 levels deep inside the Engine plugins folder rather than alongside the executable.
+
 **Output Colour Settings**
 - Fixed the Colour Depth and Dynamic Range dropdowns being empty and unclickable. The NVAPI display enumeration was returning "device not found" for all monitors.
 
