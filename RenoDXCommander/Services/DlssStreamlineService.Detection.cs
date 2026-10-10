@@ -37,6 +37,9 @@ public partial class DlssStreamlineService
             result.StreamlineInterposerPath = slInterposer;
             result.StreamlineVersion = GetFileVersion(slInterposer);
         }
+        // nvngx_dlssg.dll often lives alongside Streamline rather than DLSS — check Streamline folder too
+        if (result.DlssgPath == null)
+            TryDll(slFolder, DlssgDllName, (p, v) => { result.DlssgPath = p; result.DlssgVersion = v; });
         return result;
     }
 
