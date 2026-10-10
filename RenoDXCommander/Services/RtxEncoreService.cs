@@ -26,7 +26,7 @@ public class RtxEncoreService
 {
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    private const string GitHubApiUrl   = "https://api.github.com/repos/SilyNoMeta/rtx-encore/releases/latest";
+    private const string GitHubApiUrl   = "https://api.github.com/repos/SilyNoMeta/rtx-encore/releases?per_page=10";
     public  const string RepoUrl        = "https://github.com/SilyNoMeta/rtx-encore";
     public  const string StagedDllName  = "rtx-encore.dll";
     public  const string NrDllName      = "nvngx_dlssnr.dll";
@@ -388,25 +388,25 @@ public class RtxEncoreService
             if (json == null) return (null, null);
 
             using var doc  = JsonDocument.Parse(json);
-            var root = doc.RootElement;
 
-            var tag = root.TryGetProperty("tag_name", out var tp) ? tp.GetString() : null;
-            if (string.IsNullOrEmpty(tag)) return (null, null);
-
-            // Strip any leading 'v' for normalisation (store the full tag for display)
-            if (!root.TryGetProperty("assets", out var assets)) return (tag, null);
-
-            // Pick the first .zip asset (filename changes each release)
-            foreach (var asset in assets.EnumerateArray())
+            // releases list endpoint — pick the first release with a zip asset (includes pre-releases)
+            foreach (var release in doc.RootElement.EnumerateArray())
             {
-                var name = asset.TryGetProperty("name", out var np) ? np.GetString() : null;
-                if (name?.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) == true
-                    && asset.TryGetProperty("browser_download_url", out var up))
+                var tag = release.TryGetProperty("tag_name", out var tp) ? tp.GetString() : null;
+                if (string.IsNullOrEmpty(tag)) continue;
+
+                if (!release.TryGetProperty("assets", out var assets)) continue;
+                foreach (var asset in assets.EnumerateArray())
                 {
-                    return (tag, up.GetString());
+                    var name = asset.TryGetProperty("name", out var np) ? np.GetString() : null;
+                    if (name?.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) == true
+                        && asset.TryGetProperty("browser_download_url", out var up))
+                    {
+                        return (tag, up.GetString());
+                    }
                 }
             }
-            return (tag, null);
+            return (null, null);
         }
         catch (Exception ex)
         {
