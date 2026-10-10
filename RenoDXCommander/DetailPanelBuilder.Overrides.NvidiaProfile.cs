@@ -395,6 +395,10 @@ public partial class DetailPanelBuilder
                             try { File.Delete(tc.DlssDetection.DlssnrPath + ".rhi_custom"); } catch { }
                         }
                         tc.RefreshDlssVersions(dlssService);
+                        // Sync the NR section's persisted version selection to match what was just swapped,
+                        // so both the DLSS/SL panel and NR section show the same version after a swap.
+                        var syncedVersion = version.StartsWith("Default", StringComparison.OrdinalIgnoreCase) ? null : version;
+                        _window.ViewModel.SetNrDllVersion(capturedName, syncedVersion, tc.Source ?? "");
                         _window.DispatcherQueue?.TryEnqueue(() => BuildNvidiaProfileSection(tc, tc.GameName));
                     },
                     (preset) => { _ = Task.Run(() => presetService.SetNrPreset(capturedGameName, capturedInstallPath, preset)); },
