@@ -6,6 +6,37 @@ public partial class DlssStreamlineService
 {
     // ── Detection ─────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Reads DLSS/Streamline DLL versions directly from a known exact folder path.
+    /// Used when the manifest specifies a <c>dlssPathOverrides</c> entry —
+    /// skips recursive scanning entirely and just checks known DLL filenames.
+    /// </summary>
+    public DlssDetectionResult DetectFromExactPath(string exactFolderPath)
+    {
+        var result = new DlssDetectionResult();
+        if (string.IsNullOrEmpty(exactFolderPath) || !Directory.Exists(exactFolderPath)) return result;
+
+        void TryDll(string dllName, Action<string, string?> setter)
+        {
+            var path = Path.Combine(exactFolderPath, dllName);
+            if (File.Exists(path)) setter(path, GetFileVersion(path));
+        }
+
+        TryDll(DlssDllName,  (p, v) => { result.DlssPath  = p; result.DlssVersion  = v; });
+        TryDll(DlssdDllName, (p, v) => { result.DlssdPath = p; result.DlssdVersion = v; });
+        TryDll(DlssgDllName, (p, v) => { result.DlssgPath = p; result.DlssgVersion = v; });
+        TryDll(DlssnrDllName,(p, v) => { result.DlssnrPath = p; result.DlssnrVersion = v; });
+
+        var slInterposer = Path.Combine(exactFolderPath, StreamlineIndicator);
+        if (File.Exists(slInterposer))
+        {
+            result.StreamlineFolder = exactFolderPath;
+            result.StreamlineInterposerPath = slInterposer;
+            result.StreamlineVersion = GetFileVersion(slInterposer);
+        }
+        return result;
+    }
+
     /// <inheritdoc />
     public DlssDetectionResult Detect(string installPath)
     {

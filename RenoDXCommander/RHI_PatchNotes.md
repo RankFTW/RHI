@@ -133,6 +133,7 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ### Manifest Updates
 - Added `installPathOverrides` for Baldur's Gate 3 (`bin` subfolder)
+- Added `dlssPathOverrides` for The Sinking City 2 — DLSS DLLs are in a non-standard deep subdirectory that the recursive scanner doesn't reach
 - STAR WARS: Galactic Racer — Engine.ini path added for UE-Extended HDR support.
 - The Witcher 3: Wild Hunt - Game of the Year Edition now installs the same RenoDX mod as the standard edition.
 - Mirror's Edge Catalyst — wiki-unlinked.

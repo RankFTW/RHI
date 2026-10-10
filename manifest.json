@@ -574,7 +574,6 @@
   },
   "graphicsApiOverrides": {
     "Outlast": "DX9",
-    "Outlast 2": "DX9",
     "Anno 117 - Pax Romana": "DX12",
     "ACE COMBAT™7: SKIES UNKNOWN": "DX11",
     "Clair Obscur: Expedition 33": "DX12",
@@ -619,6 +618,9 @@
     "DOOM 64": "VLK",
     "Crimson Desert Enhanced": "DX12",
     "The Witcher 3: Wild Hunt - Complete Edition": "DX12"
+  },
+  "dlssPathOverrides": {
+    "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\DLSS\\Binaries\\ThirdParty\\Win64"
   },
   "thirtyTwoBitGames": [
     "Assassin\u0027s Creed",

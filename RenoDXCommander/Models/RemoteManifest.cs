@@ -160,6 +160,16 @@ public class RemoteManifest
     public Dictionary<string, string>? GraphicsApiOverrides { get; set; }
 
     /// <summary>
+    /// Maps game name → relative path (from game root) containing DLSS/Streamline DLLs.
+    /// Used when DLLs are buried in a non-standard location that the recursive scan
+    /// would either miss or be too slow to reach.
+    /// Example: "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\...\\Win64"
+    /// The path is combined with game.InstallPath to get the absolute search folder.
+    /// </summary>
+    [JsonPropertyName("dlssPathOverrides")]
+    public Dictionary<string, string>? DlssPathOverrides { get; set; }
+
+    /// <summary>
     /// Author donation URLs keyed by display name.
     /// Merged into the hardcoded dictionary at startup — manifest entries
     /// take priority so links can be added/updated without a new build.
