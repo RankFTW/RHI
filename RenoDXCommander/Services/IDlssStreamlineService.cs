@@ -43,7 +43,7 @@ public interface IDlssStreamlineService
     /// Reads DLSS/Streamline DLL versions directly from a known exact folder — no recursive scan.
     /// Used with <c>dlssPathOverrides</c> manifest entries.
     /// </summary>
-    DlssDetectionResult DetectFromExactPath(string exactFolderPath);
+    DlssDetectionResult DetectFromExactPath(string exactFolderPath, string? streamlineFolderPath = null);
 
     // ── Swap ──────────────────────────────────────────────────────────────────
 

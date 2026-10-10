@@ -574,7 +574,7 @@
   },
   "graphicsApiOverrides": {
     "Outlast": "DX9",
-    "Anno 117 - Pax Romana": "DX12",
+    "Outlast 2": "DX9",
     "ACE COMBAT™7: SKIES UNKNOWN": "DX11",
     "Clair Obscur: Expedition 33": "DX12",
     "PRAGMATA": "DX12",
@@ -621,6 +621,9 @@
   },
   "dlssPathOverrides": {
     "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\DLSS\\Binaries\\ThirdParty\\Win64"
+  },
+  "streamlinePathOverrides": {
+    "The Sinking City 2": "Engine\\Plugins\\FrogwaresPlugins\\ThirdPartyPlugins\\Nvidia\\StreamlineCore\\Binaries\\ThirdParty\\Win64"
   },
   "thirtyTwoBitGames": [
     "Assassin\u0027s Creed",

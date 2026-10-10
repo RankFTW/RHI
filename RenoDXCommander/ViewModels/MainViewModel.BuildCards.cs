@@ -1372,7 +1372,12 @@ public partial class MainViewModel
                         var dlssAbsPath = Path.Combine(game.InstallPath, dlssRelPath);
                         if (Directory.Exists(dlssAbsPath))
                         {
-                            var overrideResult = _dlssStreamlineService.DetectFromExactPath(dlssAbsPath);
+                            string? slAbsPath = null;
+                            if (_manifest?.StreamlinePathOverrides?.TryGetValue(game.Name, out var slRelPath) == true
+                                && !string.IsNullOrEmpty(slRelPath))
+                                slAbsPath = Path.Combine(game.InstallPath, slRelPath);
+
+                            var overrideResult = _dlssStreamlineService.DetectFromExactPath(dlssAbsPath, slAbsPath);
                             if (overrideResult.HasAny)
                             {
                                 newCard.ApplyDlssDetection(overrideResult);

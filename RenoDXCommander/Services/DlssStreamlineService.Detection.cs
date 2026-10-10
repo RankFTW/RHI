@@ -11,26 +11,29 @@ public partial class DlssStreamlineService
     /// Used when the manifest specifies a <c>dlssPathOverrides</c> entry —
     /// skips recursive scanning entirely and just checks known DLL filenames.
     /// </summary>
-    public DlssDetectionResult DetectFromExactPath(string exactFolderPath)
+    public DlssDetectionResult DetectFromExactPath(string exactFolderPath, string? streamlineFolderPath = null)
     {
         var result = new DlssDetectionResult();
         if (string.IsNullOrEmpty(exactFolderPath) || !Directory.Exists(exactFolderPath)) return result;
 
-        void TryDll(string dllName, Action<string, string?> setter)
+        void TryDll(string folder, string dllName, Action<string, string?> setter)
         {
-            var path = Path.Combine(exactFolderPath, dllName);
+            var path = Path.Combine(folder, dllName);
             if (File.Exists(path)) setter(path, GetFileVersion(path));
         }
 
-        TryDll(DlssDllName,  (p, v) => { result.DlssPath  = p; result.DlssVersion  = v; });
-        TryDll(DlssdDllName, (p, v) => { result.DlssdPath = p; result.DlssdVersion = v; });
-        TryDll(DlssgDllName, (p, v) => { result.DlssgPath = p; result.DlssgVersion = v; });
-        TryDll(DlssnrDllName,(p, v) => { result.DlssnrPath = p; result.DlssnrVersion = v; });
+        TryDll(exactFolderPath, DlssDllName,  (p, v) => { result.DlssPath  = p; result.DlssVersion  = v; });
+        TryDll(exactFolderPath, DlssdDllName, (p, v) => { result.DlssdPath = p; result.DlssdVersion = v; });
+        TryDll(exactFolderPath, DlssgDllName, (p, v) => { result.DlssgPath = p; result.DlssgVersion = v; });
+        TryDll(exactFolderPath, DlssnrDllName,(p, v) => { result.DlssnrPath = p; result.DlssnrVersion = v; });
 
-        var slInterposer = Path.Combine(exactFolderPath, StreamlineIndicator);
+        // Check Streamline — use dedicated path if provided, else check DLSS folder
+        var slFolder = (!string.IsNullOrEmpty(streamlineFolderPath) && Directory.Exists(streamlineFolderPath))
+            ? streamlineFolderPath : exactFolderPath;
+        var slInterposer = Path.Combine(slFolder, StreamlineIndicator);
         if (File.Exists(slInterposer))
         {
-            result.StreamlineFolder = exactFolderPath;
+            result.StreamlineFolder = slFolder;
             result.StreamlineInterposerPath = slInterposer;
             result.StreamlineVersion = GetFileVersion(slInterposer);
         }

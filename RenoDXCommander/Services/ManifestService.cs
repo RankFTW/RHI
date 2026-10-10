@@ -176,6 +176,8 @@ public class ManifestService : IManifestService
             m.GraphicsApiOverrides = new Dictionary<string, string>(m.GraphicsApiOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.DlssPathOverrides != null)
             m.DlssPathOverrides = new Dictionary<string, string>(m.DlssPathOverrides, StringComparer.OrdinalIgnoreCase);
+        if (m.StreamlinePathOverrides != null)
+            m.StreamlinePathOverrides = new Dictionary<string, string>(m.StreamlinePathOverrides, StringComparer.OrdinalIgnoreCase);
         if (m.DonationUrls != null)
             m.DonationUrls = new Dictionary<string, string>(m.DonationUrls, StringComparer.OrdinalIgnoreCase);
         if (m.AuthorDisplayNames != null)

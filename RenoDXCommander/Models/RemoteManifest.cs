@@ -170,6 +170,13 @@ public class RemoteManifest
     public Dictionary<string, string>? DlssPathOverrides { get; set; }
 
     /// <summary>
+    /// Maps game name → relative path (from game root) containing Streamline DLLs (sl.common.dll etc.).
+    /// Companion to <see cref="DlssPathOverrides"/> for games where Streamline lives in a separate deep path.
+    /// </summary>
+    [JsonPropertyName("streamlinePathOverrides")]
+    public Dictionary<string, string>? StreamlinePathOverrides { get; set; }
+
+    /// <summary>
     /// Author donation URLs keyed by display name.
     /// Merged into the hardcoded dictionary at startup — manifest entries
     /// take priority so links can be added/updated without a new build.
