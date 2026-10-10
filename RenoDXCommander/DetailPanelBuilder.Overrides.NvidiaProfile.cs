@@ -362,11 +362,20 @@ public partial class DetailPanelBuilder
                 dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DlssDivW) });
                 dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(dlssColW5) });
 
-                // Determine NR installed version — show "Custom" if sidecar marker exists
+                // Determine NR installed version — always read from disk for real-time accuracy,
+                // falling back to the cached card property if the file can't be read.
                 var nrDllPath = card.DlssDetection?.DlssnrPath;
-                var nrInstalledVersion = (hasDlssnr && card.DlssnrIsCustom)
-                    ? "Custom"
-                    : card.DlssnrInstalledVersion;
+                string? nrInstalledVersion;
+                if (hasDlssnr && nrDllPath != null && File.Exists(nrDllPath))
+                {
+                    nrInstalledVersion = (card.DlssnrIsCustom)
+                        ? "Custom"
+                        : DlssStreamlineService.FormatVersion(dlssService.GetFileVersion(nrDllPath));
+                }
+                else
+                {
+                    nrInstalledVersion = (hasDlssnr && card.DlssnrIsCustom) ? "Custom" : card.DlssnrInstalledVersion;
+                }
 
                 // Track the version currently selected in the NR combo so Deploy DLL can use it
                 string nrSelectedVersion = nrInstalledVersion ?? "";
@@ -399,7 +408,12 @@ public partial class DetailPanelBuilder
                         // so both the DLSS/SL panel and NR section show the same version after a swap.
                         var syncedVersion = version.StartsWith("Default", StringComparison.OrdinalIgnoreCase) ? null : version;
                         _window.ViewModel.SetNrDllVersion(capturedName, syncedVersion, tc.Source ?? "");
-                        _window.DispatcherQueue?.TryEnqueue(() => BuildNvidiaProfileSection(tc, tc.GameName));
+                        _window.DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            BuildNvidiaProfileSection(tc, tc.GameName);
+                            // Also rebuild the NR section so its combo reflects the swap immediately
+                            BuildOverridesPanel(tc);
+                        });
                     },
                     (preset) => { _ = Task.Run(() => presetService.SetNrPreset(capturedGameName, capturedInstallPath, preset)); },
                     originalVersion: card.DlssDetection?.OriginalDlssnrVersion,
