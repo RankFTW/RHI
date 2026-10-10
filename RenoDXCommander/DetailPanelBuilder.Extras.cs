@@ -103,31 +103,13 @@ public partial class DetailPanelBuilder
         BuildUalRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] UalRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
-        // ── MFG Unlocks separator ─────────────────────────────────────────────
-        exBody.Children.Add(MakeExtrasSeparator("MFG Unlocks"));
-
-        // ── RTX 40 MFG Unlock row ─────────────────────────────────────────────
-        __t0 = __exSw.ElapsedMilliseconds;
-        BuildRtx40MfgRow(card, exBody);
-        CrashReporter.Log($"[BuildExtrasSection] Rtx40MfgRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
-
-        // ── MFG Ada Unlock row ────────────────────────────────────────────────
-        __t0 = __exSw.ElapsedMilliseconds;
-        BuildMfgAdaUnlockRow(card, exBody);
-        CrashReporter.Log($"[BuildExtrasSection] MfgAdaRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
-
-        // ── 20/30 FG Unlock row ───────────────────────────────────────────────
-        __t0 = __exSw.ElapsedMilliseconds;
-        BuildDlssg2030Row(card, exBody);
-        CrashReporter.Log($"[BuildExtrasSection] Dlssg2030Row: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
-
-        // ── Other separator ───────────────────────────────────────────────────
-        exBody.Children.Add(MakeExtrasSeparator("Other"));
-
         // ── OptiScaler row ────────────────────────────────────────────────────
         __t0 = __exSw.ElapsedMilliseconds;
         BuildOsRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] OsRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+
+        // ── MFG Unlocks separator ─────────────────────────────────────────────
+        exBody.Children.Add(MakeExtrasSeparator("MFG Unlocks"));
 
         // ── RTX Encore row ────────────────────────────────────────────────────
         __t0 = __exSw.ElapsedMilliseconds;
@@ -138,6 +120,21 @@ public partial class DetailPanelBuilder
         __t0 = __exSw.ElapsedMilliseconds;
         BuildDlssEnablerRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] DlssEnablerRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+
+        // ── 20/30 FG Unlock row ───────────────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
+        BuildDlssg2030Row(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] Dlssg2030Row: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+
+        // ── RTX 40 MFG Unlock row ─────────────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
+        BuildRtx40MfgRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] Rtx40MfgRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+
+        // ── MFG Ada Unlock row ────────────────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
+        BuildMfgAdaUnlockRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] MfgAdaRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
         // ── API Upgrades sub-header + DXVK row ────────────────────────────────
         if (card.IsDxvkToggleVisible)
