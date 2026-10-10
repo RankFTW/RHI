@@ -10,6 +10,8 @@
                 <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
+            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#FF262B32"/>
+
             <!-- Title-bar colours (extracted from hardcoded values for easy theming) -->
             <Color x:Key="TitleBarBackground">#FF0F1318</Color>
             <Color x:Key="TitleBarForeground">#FFE8ECF2</Color>
