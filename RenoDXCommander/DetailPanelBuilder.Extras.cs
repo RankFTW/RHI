@@ -2598,9 +2598,10 @@ public partial class DetailPanelBuilder
                     // If the user had NR DLL deployment enabled in the cog, deploy it now
                     if (_window.ViewModel.GetRtxEncoreNrDllDeployed(gameName, store))
                     {
-                        // Ensure 310.8.0 is cached — download on demand if needed
+                        // Ensure 310.8.0 is cached — try with (50xx) suffix first (manifest key), then bare version
                         var dlssS = App.Services.GetRequiredService<IDlssStreamlineService>();
                         var cachedNr = svc.GetNrDllCachedPath()
+                                    ?? await dlssS.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer + " (50xx)").ConfigureAwait(false)
                                     ?? await dlssS.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer).ConfigureAwait(false);
                         if (cachedNr != null)
                             svc.DeployNrDll(installPath);
@@ -2642,14 +2643,21 @@ public partial class DetailPanelBuilder
             var cogDlg = new ContentDialog { Title = "RTX Encore Settings", Content = new ScrollViewer { Content = content, MaxHeight = 480, Padding = new Thickness(0, 0, 16, 0) }, PrimaryButtonText = "Apply", CloseButtonText = "Cancel", XamlRoot = _window.Content.XamlRoot, RequestedTheme = ElementTheme.Dark };
             var dlgResult = await DialogService.ShowSafeAsync(cogDlg);
 
-            if (dlgResult != ContentDialogResult.Primary || !isInstalled) return;
+            if (dlgResult != ContentDialogResult.Primary) return;
             bool enableNr = nrCombo.SelectedIndex == 1;
+
+            // Always persist the preference, regardless of install state
+            if (enableNr != nrDeployed)
+                _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, enableNr, store);
+
+            if (!isInstalled) return; // can't deploy to disk yet — preference is saved, deploy happens at install
 
             if (enableNr && !nrDeployed)
             {
-                // Ensure 310.8.0 is cached — download on demand if not present
+                // Ensure 310.8.0 is cached — try exact match first, then with (50xx) suffix
                 var dlssSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
                 var cachedNrPath = svc.GetNrDllCachedPath()
+                                ?? await dlssSvc.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer + " (50xx)").ConfigureAwait(false)
                                 ?? await dlssSvc.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer).ConfigureAwait(false);
                 if (cachedNrPath == null)
                 {
@@ -2657,9 +2665,10 @@ public partial class DetailPanelBuilder
                     return;
                 }
                 bool ok = svc.DeployNrDll(installPath);
-                if (ok) { _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, true, store); RequestExtrasRebuild(card); }
+                if (!ok) { _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store); } // revert if deploy failed
+                RequestExtrasRebuild(card);
             }
-            else if (!enableNr && nrDeployed) { svc.RemoveNrDll(installPath); _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store); RequestExtrasRebuild(card); }
+            else if (!enableNr && nrDeployed) { svc.RemoveNrDll(installPath); RequestExtrasRebuild(card); }
         };
         Grid.SetColumn(cogBtn, 4); row.Children.Add(cogBtn);
 
