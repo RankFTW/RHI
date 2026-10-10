@@ -31695,7 +31695,7 @@
     "Clive Barker's Hellraiser: Revival": {
       "steam_appid": 1551980,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Local\\Hellraiser\\Saved\\Config\\Windows\\",
+      "config_path": "%LOCALAPPDATA%\\Hellraiser\\Saved\\Config\\Windows\\",
       "engine": "Unreal Engine 5"
     },
     "Clive Barker's Jericho": {
