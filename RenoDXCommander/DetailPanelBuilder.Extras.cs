@@ -2591,7 +2591,25 @@ public partial class DetailPanelBuilder
             try
             {
                 bool ok = await svc.InstallAsync(installPath, chosen, currentDllName);
-                if (ok) { _window.ViewModel.SetRtxEncoreInstalledAs(gameName, chosen, store); RequestExtrasRebuild(card); }
+                if (ok)
+                {
+                    _window.ViewModel.SetRtxEncoreInstalledAs(gameName, chosen, store);
+
+                    // If the user had NR DLL deployment enabled in the cog, deploy it now
+                    if (_window.ViewModel.GetRtxEncoreNrDllDeployed(gameName, store))
+                    {
+                        // Ensure 310.8.0 is cached — download on demand if needed
+                        var dlssS = App.Services.GetRequiredService<IDlssStreamlineService>();
+                        var cachedNr = svc.GetNrDllCachedPath()
+                                    ?? await dlssS.EnsureSpecificDlssnrCachedAsync(RtxEncoreService.NrRequiredVer).ConfigureAwait(false);
+                        if (cachedNr != null)
+                            svc.DeployNrDll(installPath);
+                        else
+                            CrashReporter.Log("[RtxEncoreInstall] NR DLL 310.8.0 not available — skipping NR deploy");
+                    }
+
+                    RequestExtrasRebuild(card);
+                }
                 else { installBtn.Content = "Install failed"; installBtn.IsEnabled = true; }
             }
             catch (Exception ex) { CrashReporter.Log($"[BuildRtxEncoreRow] Install failed — {ex.Message}"); installBtn.Content = "Install failed"; installBtn.IsEnabled = true; }
