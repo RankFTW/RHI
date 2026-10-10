@@ -2804,12 +2804,24 @@ public partial class DetailPanelBuilder
                             CrashReporter.Log($"[NeuralRendering] Deployed renodx-dlss5.addon64 to host64\\");
                         }
 
-                        // nvngx_dlssnr.dll (NR runtime — same one as game folder)
-                        var cachedNr = await _dlssStreamlineService.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
-                        if (cachedNr != null)
+                        // nvngx_dlssnr.dll (NR runtime — same version as game folder)
+                        var nrSelVerHost = nrVersionCombo != null
+                            ? await DispatchAsync<string?>(_window.DispatcherQueue!, () => nrVersionCombo.SelectedItem as string).ConfigureAwait(false)
+                            : null;
+                        bool nrUseLatestHost = string.IsNullOrEmpty(nrSelVerHost) || nrSelVerHost.StartsWith("Latest");
+                        string? cachedNrHost;
+                        if (nrUseLatestHost)
+                            cachedNrHost = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                        else
                         {
-                            DeployNrDllSentinel(host64Dir, cachedNr);
-                            CrashReporter.Log($"[NeuralRendering] Deployed nvngx_dlssnr.dll to host64\\");
+                            var nrDirHost = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "DLSS-NR", StripVersionSuffix(nrSelVerHost!));
+                            cachedNrHost = Path.Combine(nrDirHost, "nvngx_dlssnr.dll");
+                            if (!File.Exists(cachedNrHost)) cachedNrHost = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                        }
+                        if (cachedNrHost != null)
+                        {
+                            DeployNrDllSentinel(host64Dir, cachedNrHost);
+                            CrashReporter.Log($"[NeuralRendering] Deployed nvngx_dlssnr.dll v{(nrUseLatestHost ? "latest" : nrSelVerHost)} to host64\\");
                         }
 
                         // nvngx_dlss.dll (DLSS SR runtime)
