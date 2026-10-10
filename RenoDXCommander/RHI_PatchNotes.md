@@ -62,6 +62,18 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ### Bug Fixes
 
+**UI Freeze**
+- RHI now detects and recovers from the UI freeze in about 5 seconds, down from up to 60 seconds.
+- Fixed the auto-restart incorrectly firing after waking from sleep. A 30-second grace period now suppresses the restart check after a system resume.
+- Fixed the auto-restart firing while an install was in progress. The restart is now deferred up to 30 seconds if any component is mid-install.
+- Fixed a recurring freeze after switching between games quickly. Rapid navigation could queue two back-to-back panel rebuilds, causing the UI thread to hang.
+- Fixed a freeze that could occur when opening the Settings panel while a game was selected. Changing certain global driver settings (VSync, ReBAR) was triggering a panel rebuild that conflicted with the Settings page opening.
+- Fixed RHI silently swallowing internal framework messages (WM_APP/0x8000) that were intended for WinUI rather than the system tray icon. These are now forwarded correctly.
+- Fixed several places where NVIDIA driver settings were read on the UI thread before opening a dialog. Opening Configure RTX HDR, Multi Frame Gen, or DXVK settings could block the UI for up to 25 seconds if NVAPI was slow. Values are now fetched in the background first.
+- Fixed DLSS version information refreshing on the UI thread after swapping a DLSS DLL, which could stall the UI on slow disks or with antivirus active.
+- Fixed settings, game library, and addon records being left corrupt if RHI was killed mid-write. These files are now written atomically.
+- After an auto-restart, RHI reselects the game that was open before the freeze and shows a brief status bar notice.
+
 **Output Colour Settings**
 - Fixed the Colour Depth and Dynamic Range dropdowns being empty and unclickable. The NVAPI display enumeration was returning "device not found" for all monitors.
 
@@ -93,18 +105,6 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 **GitHub API**
 - Fixed RenoDX mods not appearing for users whose GitHub session had expired. Previously RHI would keep using a stale login token without realising it had stopped working, causing mods, updates, and downloads to silently fail while the settings page still showed "Connected". RHI now checks the token is valid at startup and clears it immediately if not, showing a notice in the status bar so you know to sign in again.
-
-**UI Freeze**
-- RHI now detects and recovers from the UI freeze in about 5 seconds, down from up to 60 seconds.
-- Fixed the auto-restart incorrectly firing after waking from sleep. A 30-second grace period now suppresses the restart check after a system resume.
-- Fixed the auto-restart firing while an install was in progress. The restart is now deferred up to 30 seconds if any component is mid-install.
-- Fixed a recurring freeze after switching between games quickly. Rapid navigation could queue two back-to-back panel rebuilds, causing the UI thread to hang.
-- Fixed a freeze that could occur when opening the Settings panel while a game was selected. Changing certain global driver settings (VSync, ReBAR) was triggering a panel rebuild that conflicted with the Settings page opening.
-- Fixed RHI silently swallowing internal framework messages (WM_APP/0x8000) that were intended for WinUI rather than the system tray icon. These are now forwarded correctly.
-- Fixed several places where NVIDIA driver settings were read on the UI thread before opening a dialog. Opening Configure RTX HDR, Multi Frame Gen, or DXVK settings could block the UI for up to 25 seconds if NVAPI was slow. Values are now fetched in the background first.
-- Fixed DLSS version information refreshing on the UI thread after swapping a DLSS DLL, which could stall the UI on slow disks or with antivirus active.
-- Fixed settings, game library, and addon records being left corrupt if RHI was killed mid-write. These files are now written atomically.
-- After an auto-restart, RHI reselects the game that was open before the freeze and shows a brief status bar notice.
 
 **Process Doesn't Close**
 - Fixed RHI staying open and using CPU after closing the window. Background tasks now stop on close, with a hard exit fallback to ensure the process always terminates.
