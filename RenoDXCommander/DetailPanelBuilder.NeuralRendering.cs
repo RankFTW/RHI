@@ -2881,18 +2881,30 @@ public partial class DetailPanelBuilder
         }
 
         // Rebuild panel one final time now that shaders are deployed — status will show ✓ Feed.fx / ✓ LumeniteFX
-        _window.DispatcherQueue?.TryEnqueue(() =>
+        // RefreshDlssVersions reads file versions from disk — do it on a background thread first,
+        // then update the card and rebuild panels on the UI thread so the DLSS/SL section shows
+        // the correct installed NR DLL version.
+        _ = Task.Run(async () =>
         {
-            var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+            feederDetection = _dlssStreamlineService.Detect(card.InstallPath ?? "");
+            var targetCard2 = _window.ViewModel.AllCards.FirstOrDefault(c =>
                 c.GameName.Equals(card.GameName, StringComparison.OrdinalIgnoreCase) &&
                 (string.IsNullOrEmpty(card.Source) || c.Source == card.Source));
-            if (targetCard != null)
+            if (targetCard2 != null)
             {
-                targetCard.DlssDetection = feederDetection;
-                targetCard.ApplyDlssDetection(feederDetection);
-                targetCard.RefreshDlssVersions(_dlssStreamlineService);
-                BuildOverridesPanel(targetCard);
+                targetCard2.DlssDetection = feederDetection;
+                targetCard2.ApplyDlssDetection(feederDetection);
+                targetCard2.RefreshDlssVersions(_dlssStreamlineService); // updates DlssnrInstalledVersion from disk
             }
+            await Task.Yield(); // yield before TryEnqueue so it runs after the version is up-to-date
+            _window.DispatcherQueue?.TryEnqueue(() =>
+            {
+                if (targetCard2 != null)
+                {
+                    BuildOverridesPanel(targetCard2);
+                    BuildNvidiaProfileSection(targetCard2, targetCard2.GameName);
+                }
+            });
         });
     }
 
