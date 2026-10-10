@@ -133,15 +133,11 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 
 ### Manifest Updates
 - Added `installPathOverrides` for Baldur's Gate 3 (`bin` subfolder)
-
----
-
-## v2.8.6 Beta 9
-
-### Manifest Updates
 - STAR WARS: Galactic Racer — Engine.ini path added for UE-Extended HDR support.
 - The Witcher 3: Wild Hunt - Game of the Year Edition now installs the same RenoDX mod as the standard edition.
 - Mirror's Edge Catalyst — wiki-unlinked.
+
+---
 
 ## v2.8.5
 
