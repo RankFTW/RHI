@@ -1417,7 +1417,7 @@ public partial class DetailPanelBuilder
                         break;
 
                     case NrMethodFeeder:
-                        await InstallFeederAddonAsync(card, installBtn, addonSvc, addonVersionCombo, packVersionCombo);
+                        await InstallFeederAddonAsync(card, installBtn, addonSvc, dlssSvc, nrVersionCombo, addonVersionCombo, packVersionCombo);
                         break;
                 }
 
@@ -2315,6 +2315,8 @@ public partial class DetailPanelBuilder
         GameCardViewModel card,
         Button statusBtn,
         IAddonPackService addonSvc,
+        IDlssStreamlineService dlssSvc,
+        ComboBox? nrVersionCombo = null,
         ComboBox? addonVersionCombo = null,
         ComboBox? packVersionCombo = null)
     {
@@ -2392,8 +2394,37 @@ public partial class DetailPanelBuilder
             CrashReporter.Log($"[NeuralRendering] Deployed {destName} to '{installPath}'");
         }).ConfigureAwait(false);
 
-        // Also deploy NR dll alongside the feeder
-        await rdx5Svc.DeployNrDllIfAbsentAsync(installPath, "Feeder").ConfigureAwait(false);
+        // Also deploy NR dll alongside the feeder — use the version selected in the NR combo
+        {
+            var nrSelVer = nrVersionCombo != null
+                ? await DispatchAsync<string?>(_window.DispatcherQueue!, () => nrVersionCombo.SelectedItem as string).ConfigureAwait(false)
+                : null;
+            bool nrUseLatestFeeder = string.IsNullOrEmpty(nrSelVer) || nrSelVer.StartsWith("Latest");
+            var nrDestPathFeeder = Path.Combine(installPath, "nvngx_dlssnr.dll");
+            var nrBackup = nrDestPathFeeder + ".original";
+            string? cachedNrFeeder;
+            if (nrUseLatestFeeder)
+                cachedNrFeeder = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+            else
+            {
+                var nrDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "RHI", "DLSS-NR", StripVersionSuffix(nrSelVer!));
+                cachedNrFeeder = Path.Combine(nrDir, "nvngx_dlssnr.dll");
+                if (!File.Exists(cachedNrFeeder))
+                    cachedNrFeeder = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+            }
+            if (cachedNrFeeder != null)
+            {
+                if (File.Exists(nrDestPathFeeder) && !File.Exists(nrBackup))
+                    File.Copy(nrDestPathFeeder, nrBackup);
+                else if (!File.Exists(nrDestPathFeeder) && !File.Exists(nrBackup))
+                    File.WriteAllBytes(nrBackup, Array.Empty<byte>());
+                File.Copy(cachedNrFeeder, nrDestPathFeeder, overwrite: true);
+                RhiInstallManifest.AddSharedFileOwner(installPath, "nvngx_dlssnr.dll", "Feeder");
+                CrashReporter.Log($"[NeuralRendering.Feeder] Deployed nvngx_dlssnr.dll v{(nrUseLatestFeeder ? "latest" : nrSelVer)} to '{installPath}'");
+            }
+        }
 
         // Deploy DLSS5 Tool as neural consumer (Feeder needs renodx-dlss5.addon64 alongside it)
         // For 32-bit games the neural consumer runs in host64\ — it must NOT be in the game folder
