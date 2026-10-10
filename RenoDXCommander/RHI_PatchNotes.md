@@ -60,6 +60,9 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Paste any classic PAT (no scopes needed — RHI only reads public repos). The token is saved locally and never expires unless you revoke it on GitHub.
 - Useful if you prefer not to use OAuth, or if your OAuth session keeps expiring.
 
+### Manifest Updates
+- Added `installPathOverrides` for Baldur's Gate 3 (`bin` subfolder)
+
 ### Bug Fixes
 
 **Output Colour Settings**
