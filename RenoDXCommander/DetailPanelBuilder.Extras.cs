@@ -129,6 +129,11 @@ public partial class DetailPanelBuilder
         BuildOsRow(card, exBody);
         CrashReporter.Log($"[BuildExtrasSection] OsRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
 
+        // ── RTX Encore row ────────────────────────────────────────────────────
+        __t0 = __exSw.ElapsedMilliseconds;
+        BuildRtxEncoreRow(card, exBody);
+        CrashReporter.Log($"[BuildExtrasSection] RtxEncoreRow: {__exSw.ElapsedMilliseconds - __t0}ms '{card.GameName}'");
+
         // ── DLSS Enabler (standalone) row ─────────────────────────────────────
         __t0 = __exSw.ElapsedMilliseconds;
         BuildDlssEnablerRow(card, exBody);
@@ -2535,5 +2540,176 @@ public partial class DetailPanelBuilder
         row.Children.Add(removeBtn);
 
         body.Children.Add(row);
+    }
+
+    // ── RTX Encore ────────────────────────────────────────────────────────────
+
+    private void BuildRtxEncoreRow(GameCardViewModel card, StackPanel body)
+    {
+        _window.ViewModel.SetLastUiAction($"BuildRtxEncoreRow({card.GameName})");
+        var svc         = App.Services.GetRequiredService<RtxEncoreService>();
+        var gameName    = card.GameName;
+        var store       = card.Source ?? "";
+        var installPath = card.InstallPath ?? "";
+
+        var currentDllName = _window.ViewModel.GetRtxEncoreInstalledAs(gameName, store);
+        bool isInstalled   = svc.IsInstalledIn(installPath, currentDllName);
+        bool nrDeployed    = _window.ViewModel.GetRtxEncoreNrDllDeployed(gameName, store);
+
+        string statusText  = isInstalled ? (svc.StagedVersion ?? "Installed") : "Ready";
+        string statusColor = isInstalled ? "#5ECB7D" : "#A0AABB";
+
+        _window.ViewModel.SetLastUiAction($"BuildRtxEncoreRow:BuildGrid({card.GameName})");
+
+        var row = new Grid { ColumnSpacing = 8 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(PanelColW(1, 0, 350, _window.ExtrasContainer.ActualWidth)) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+
+        var label = new TextBlock { Text = "RTX Encore", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
+        ToolTipService.SetToolTip(label, "RTX Encore — frame generation X2-X6, Smooth Motion and Neural Rendering for RTX 20/30/40.");
+        Grid.SetColumn(label, 0); row.Children.Add(label);
+
+        var statusBlock = new TextBlock { Text = statusText, FontSize = 12, Foreground = UIFactory.GetBrush(statusColor), VerticalAlignment = VerticalAlignment.Center, HorizontalTextAlignment = Microsoft.UI.Xaml.TextAlignment.Center, TextDecorations = isInstalled ? Windows.UI.Text.TextDecorations.Underline : Windows.UI.Text.TextDecorations.None };
+        if (isInstalled) { ToolTipService.SetToolTip(statusBlock, $"Installed as: {currentDllName}\nClick to open GitHub releases"); statusBlock.PointerPressed += (s, e) => _ = Windows.System.Launcher.LaunchUriAsync(new Uri(RtxEncoreService.RepoUrl + "/releases")); }
+        Grid.SetColumn(statusBlock, 1); row.Children.Add(statusBlock);
+
+        var infoBtn = new Button { Content = "Info", FontSize = 11, Padding = new Thickness(6, 2, 6, 2), Width = 36, Height = 32, Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush), Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush), BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8) };
+        ToolTipService.SetToolTip(infoBtn, "Open RTX Encore GitHub page");
+        infoBtn.Click += (s, e) => _ = Windows.System.Launcher.LaunchUriAsync(new Uri(RtxEncoreService.RepoUrl));
+        Grid.SetColumn(infoBtn, 2); row.Children.Add(infoBtn);
+
+        string installBtnLabel = isInstalled ? "↺  Reinstall RTX Encore" : "⬇  Install RTX Encore";
+        var installBtn = new Button { Content = installBtnLabel, FontSize = 12, Height = 32, HorizontalAlignment = HorizontalAlignment.Stretch, CornerRadius = new CornerRadius(8), Background = isInstalled ? UIFactory.GetBrush("#182840") : UIFactory.Brush(ResourceKeys.AccentBlueBgBrush), Foreground = isInstalled ? UIFactory.GetBrush("#7AACDD") : UIFactory.Brush(ResourceKeys.AccentBlueBrush), BorderBrush = isInstalled ? UIFactory.GetBrush("#2A4468") : UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush), BorderThickness = new Thickness(1) };
+        ToolTipService.SetToolTip(installBtn, isInstalled ? $"Reinstall RTX Encore (currently '{currentDllName}')" : "Install RTX Encore — choose which DLL name to use");
+        installBtn.Click += async (s, e) =>
+        {
+            if (string.IsNullOrEmpty(installPath)) return;
+            var chosen = await ShowRtxEncoreDllPickerAsync(card, currentDllName);
+            if (chosen == null) return;
+            installBtn.IsEnabled = false; installBtn.Content = "Installing...";
+            try
+            {
+                bool ok = await svc.InstallAsync(installPath, chosen, currentDllName);
+                if (ok) { _window.ViewModel.SetRtxEncoreInstalledAs(gameName, chosen, store); RequestExtrasRebuild(card); }
+                else { installBtn.Content = "Install failed"; installBtn.IsEnabled = true; }
+            }
+            catch (Exception ex) { CrashReporter.Log($"[BuildRtxEncoreRow] Install failed — {ex.Message}"); installBtn.Content = "Install failed"; installBtn.IsEnabled = true; }
+        };
+        Grid.SetColumn(installBtn, 3); row.Children.Add(installBtn);
+
+        var cogBtn = new Button { Width = 36, Height = 32, Padding = new Thickness(0), Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush), Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Content = new TextBlock { Text = "⚙", FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center } };
+        ToolTipService.SetToolTip(cogBtn, "RTX Encore settings");
+        cogBtn.Click += async (s, e) =>
+        {
+            var content = new StackPanel { Spacing = 8 };
+            content.Children.Add(new TextBlock { Text = "Neural Rendering (nvngx_dlssnr.dll)", FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) });
+            content.Children.Add(new TextBlock { Text = "RTX Encore requires nvngx_dlssnr.dll version 310.8.0 exactly. Other versions are refused.", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush), TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap });
+            var nrCachedPath = svc.GetNrDllCachedPath();
+            bool nrAvailable = nrCachedPath != null;
+            var nrRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 4, 0, 0) };
+            nrRow.Children.Add(new TextBlock { Text = "Deploy NR DLL", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center });
+            var nrCombo = new ComboBox { FontSize = 11, MinWidth = 80, IsEnabled = nrAvailable, Opacity = nrAvailable ? 1.0 : 0.5 };
+            nrCombo.Items.Add("No"); nrCombo.Items.Add("Yes");
+            nrCombo.SelectedIndex = nrDeployed ? 1 : 0;
+            ToolTipService.SetToolTip(nrCombo, nrAvailable ? "Deploy nvngx_dlssnr.dll 310.8.0 alongside RTX Encore for Neural Rendering support." : "nvngx_dlssnr.dll 310.8.0 not staged — install DLSS NR 310.8.0 from the NVIDIA Profile section first.");
+            nrRow.Children.Add(nrCombo); content.Children.Add(nrRow);
+            if (nrAvailable) content.Children.Add(new TextBlock { Text = $"Source: {nrCachedPath}", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap });
+            var cogDlg = new ContentDialog { Title = "RTX Encore Settings", Content = new ScrollViewer { Content = content, MaxHeight = 480, Padding = new Thickness(0, 0, 16, 0) }, PrimaryButtonText = "Apply", CloseButtonText = "Cancel", XamlRoot = _window.Content.XamlRoot, RequestedTheme = ElementTheme.Dark };
+            var dlgResult = await DialogService.ShowSafeAsync(cogDlg);
+            if (dlgResult != ContentDialogResult.Primary || !isInstalled) return;
+            bool enableNr = nrCombo.SelectedIndex == 1;
+            if (enableNr && !nrDeployed) { bool ok = svc.DeployNrDll(installPath); if (ok) { _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, true, store); RequestExtrasRebuild(card); } }
+            else if (!enableNr && nrDeployed) { svc.RemoveNrDll(installPath); _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store); RequestExtrasRebuild(card); }
+        };
+        Grid.SetColumn(cogBtn, 4); row.Children.Add(cogBtn);
+
+        var removeBtn2 = new Button { Width = 36, Height = 32, Padding = new Thickness(0), Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush), Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush), BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) }, Opacity = isInstalled ? 1.0 : 0, IsHitTestVisible = isInstalled };
+        ToolTipService.SetToolTip(removeBtn2, "Remove RTX Encore from this game");
+        removeBtn2.Click += (s, e) =>
+        {
+            if (string.IsNullOrEmpty(installPath) || string.IsNullOrEmpty(currentDllName)) return;
+            svc.Uninstall(installPath, currentDllName, removeNrDll: nrDeployed);
+            _window.ViewModel.SetRtxEncoreInstalledAs(gameName, null, store);
+            if (nrDeployed) _window.ViewModel.SetRtxEncoreNrDllDeployed(gameName, false, store);
+            RequestExtrasRebuild(card);
+        };
+        Grid.SetColumn(removeBtn2, 5); row.Children.Add(removeBtn2);
+
+        body.Children.Add(row);
+        _window.ViewModel.SetLastUiAction($"BuildRtxEncoreRow:Done({card.GameName})");
+    }
+
+    private async Task<string?> ShowRtxEncoreDllPickerAsync(GameCardViewModel card, string? currentDllName)
+    {
+        if (string.IsNullOrEmpty(card.InstallPath)) return null;
+        var rhiConflicts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrEmpty(card.RsInstalledFile)) rhiConflicts[card.RsInstalledFile] = "ReShade";
+        if (!string.IsNullOrEmpty(card.OsInstalledFile)) rhiConflicts[card.OsInstalledFile] = "OptiScaler";
+        if (!string.IsNullOrEmpty(card.DcInstalledFile)) rhiConflicts[card.DcInstalledFile] = "Display Commander";
+        var ualName = _window.ViewModel.GetUalInstalledAs(card.GameName, card.Source ?? "");
+        if (!string.IsNullOrEmpty(ualName)) rhiConflicts[ualName] = "ASI Loader";
+        var mfgName = _window.ViewModel.GetRtx40MfgInstalledAs(card.GameName, card.Source ?? "");
+        if (!string.IsNullOrEmpty(mfgName)) rhiConflicts[mfgName] = "RTX 40 MFG";
+        var fgName = _window.ViewModel.GetDlssg2030InstalledAs(card.GameName, card.Source ?? "");
+        if (!string.IsNullOrEmpty(fgName)) rhiConflicts[fgName] = "20/30 FG Unlock";
+        if (!string.IsNullOrEmpty(currentDllName)) rhiConflicts.Remove(currentDllName);
+
+        var onDiskConflicts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (Directory.Exists(card.InstallPath))
+        {
+            foreach (var name in RtxEncoreService.KnownProxyNames)
+            {
+                if (rhiConflicts.ContainsKey(name)) continue;
+                if (string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase)) continue;
+                var diskPath = name.EndsWith(".asi", StringComparison.OrdinalIgnoreCase)
+                    ? System.IO.Path.Combine(card.InstallPath, "plugins", name)
+                    : System.IO.Path.Combine(card.InstallPath, name);
+                if (File.Exists(diskPath))
+                {
+                    try { var fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(diskPath); onDiskConflicts[name] = !string.IsNullOrEmpty(fvi.FileDescription) ? fvi.FileDescription : !string.IsNullOrEmpty(fvi.ProductName) ? fvi.ProductName : "existing file"; }
+                    catch { onDiskConflicts[name] = "existing file"; }
+                }
+            }
+        }
+
+        string? chosen = null;
+        var listPanel = new StackPanel { Spacing = 4 };
+        var scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 480, Content = listPanel };
+
+        foreach (var name in RtxEncoreService.KnownProxyNames)
+        {
+            bool isRecommended = string.Equals(name, "version.dll", StringComparison.OrdinalIgnoreCase);
+            bool isAsi         = name.EndsWith(".asi", StringComparison.OrdinalIgnoreCase);
+            bool isCurrent     = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
+            bool isRhiOwned    = rhiConflicts.ContainsKey(name);
+            bool isOnDisk      = onDiskConflicts.ContainsKey(name);
+            var btn = new Button { HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(10, 6, 10, 6), CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), IsEnabled = !isRhiOwned, Opacity = isRhiOwned ? 0.4 : 1.0, Background = isCurrent ? UIFactory.Brush(ResourceKeys.AccentBlueBgBrush) : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush), BorderBrush = isCurrent ? UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush) : UIFactory.Brush(ResourceKeys.BorderDefaultBrush) };
+            var contentRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            contentRow.Children.Add(new TextBlock { Text = name, FontSize = 12, Foreground = isRhiOwned ? UIFactory.Brush(ResourceKeys.TextTertiaryBrush) : UIFactory.Brush(ResourceKeys.TextPrimaryBrush), VerticalAlignment = VerticalAlignment.Center });
+            if (isRecommended) contentRow.Children.Add(MakeBadge("Recommended", "#1A3A20", "#6AE87A", "#2A5A30"));
+            if (isAsi)         contentRow.Children.Add(MakeBadge("ASI plugin",  "#1A2A3A", "#7AACDD", "#2A4A6A"));
+            if (isRhiOwned)    contentRow.Children.Add(MakeBadge($"In use by {rhiConflicts[name]}", "#2A1818", "#CC6666", "#5A2828"));
+            else if (isOnDisk) contentRow.Children.Add(MakeBadge($"On disk: {onDiskConflicts[name]}", "#2A1A10", "#CC9955", "#5A3A18"));
+            if (isCurrent)     contentRow.Children.Add(MakeBadge("Current", "#182840", "#7AACDD", "#2A4468"));
+            btn.Content = contentRow;
+            if (isRhiOwned)    ToolTipService.SetToolTip(btn, $"In use by {rhiConflicts[name]}. Choose a different name.");
+            else if (isOnDisk) ToolTipService.SetToolTip(btn, $"A '{name}' already exists ({onDiskConflicts[name]}). RHI will back it up and restore it on uninstall.");
+            btn.Tag = name;
+            btn.Click += (s, ev) => { chosen = (s as Button)?.Tag as string; if (s is FrameworkElement fe) FindParentContentDialog(fe)?.Hide(); };
+            listPanel.Children.Add(btn);
+        }
+
+        var pickerDialog = new ContentDialog
+        {
+            Title = "Choose RTX Encore DLL name",
+            Content = new StackPanel { Spacing = 8, Children = { new TextBlock { Text = "Select the filename for RTX Encore. Names in use by RHI components are disabled. Amber names already have a file on disk — RHI will back it up and restore on uninstall.", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), TextWrapping = TextWrapping.Wrap }, scrollViewer } },
+            CloseButtonText = "Cancel", XamlRoot = _window.Content.XamlRoot, RequestedTheme = ElementTheme.Dark,
+        };
+        await DialogService.ShowSafeAsync(pickerDialog);
+        return chosen;
     }
 }

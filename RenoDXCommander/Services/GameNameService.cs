@@ -155,6 +155,12 @@ public class GameNameService : IGameNameService
     private Dictionary<string, string> _dlssg2030InstalledAs = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _dlssg2030GpuGen = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game RTX Encore installed DLL name. Key = "GameName|Store", Value = dll filename. Absent = not installed.</summary>
+    private Dictionary<string, string> _rtxEncoreInstalledAs = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where RTX Encore's nvngx_dlssnr.dll has been deployed. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _rtxEncoreNrDllDeployed = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -284,6 +290,11 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> Dlssg2030InstalledAs => _dlssg2030InstalledAs;
     /// <summary>Per-game 20/30 FG Unlock GPU generation. Key = "GameName|Store", Value = "RTX 30 Series" or "RTX 20 Series".</summary>
     public Dictionary<string, string> Dlssg2030GpuGen => _dlssg2030GpuGen;
+
+    /// <summary>Per-game RTX Encore installed DLL name. Composite-keyed "GameName|Store".</summary>
+    public Dictionary<string, string> RtxEncoreInstalledAs => _rtxEncoreInstalledAs;
+    /// <summary>Games where RTX Encore has deployed nvngx_dlssnr.dll. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> RtxEncoreNrDllDeployed => _rtxEncoreNrDllDeployed;
 
     // ── Debounce infrastructure for SaveNameMappings ─────────────────────────
     private Timer? _saveDebounceTimer;
@@ -714,6 +725,12 @@ public class GameNameService : IGameNameService
             Load<Dictionary<string, string>>("Dlssg2030GpuGen", new()),
             StringComparer.OrdinalIgnoreCase);
 
+        var rtxEncoreInstalledAsDict = Load<Dictionary<string, string>>("RtxEncoreInstalledAs", new(StringComparer.OrdinalIgnoreCase));
+        _rtxEncoreInstalledAs = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in rtxEncoreInstalledAsDict) _rtxEncoreInstalledAs[kv.Key] = kv.Value;
+        _rtxEncoreNrDllDeployed = new HashSet<string>(
+            Load<List<string>>("RtxEncoreNrDllDeployed", new()), StringComparer.OrdinalIgnoreCase);
+
         // Always force Detail view — Simple view has been removed
         setViewLayout(ViewLayout.Detail);
 
@@ -932,6 +949,10 @@ public class GameNameService : IGameNameService
                 else s.Remove("Dlssg2030InstalledAs");
                 if (_dlssg2030GpuGen.Count > 0) s["Dlssg2030GpuGen"] = JsonSerializer.Serialize(_dlssg2030GpuGen);
                 else s.Remove("Dlssg2030GpuGen");
+                if (_rtxEncoreInstalledAs.Count > 0) s["RtxEncoreInstalledAs"] = JsonSerializer.Serialize(_rtxEncoreInstalledAs);
+                else s.Remove("RtxEncoreInstalledAs");
+                if (_rtxEncoreNrDllDeployed.Count > 0) s["RtxEncoreNrDllDeployed"] = JsonSerializer.Serialize(_rtxEncoreNrDllDeployed.ToList());
+                else s.Remove("RtxEncoreNrDllDeployed");
                 s.Remove("Rtx40MfgInstalled"); // remove legacy key
                 s.Remove("SfAutoConfigDisabled"); // legacy — no longer written
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
@@ -1078,6 +1099,8 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_rtx40MfgInstalledAs, oldName, newName);
         MigrateCompositeDict(_dlssg2030InstalledAs, oldName, newName);
         MigrateCompositeDict(_dlssg2030GpuGen, oldName, newName);
+        MigrateCompositeDict(_rtxEncoreInstalledAs, oldName, newName);
+        MigrateCompositeHashSet(_rtxEncoreNrDllDeployed, oldName, newName);
 
         // Migrate name-only HashSets (shared across stores)
         MigrateHashSet(_wikiExclusions, oldName, newName);

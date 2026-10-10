@@ -845,6 +845,49 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── RTX Encore ────────────────────────────────────────────────────────────
+
+    public string? GetRtxEncoreInstalledAs(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.RtxEncoreInstalledAs.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.RtxEncoreInstalledAs.TryGetValue(gameName, out var v2) && !string.IsNullOrEmpty(v2)) return v2;
+        return null;
+    }
+
+    public void SetRtxEncoreInstalledAs(string gameName, string? dllName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (!string.IsNullOrEmpty(dllName))
+            _gameNameService.RtxEncoreInstalledAs[key] = dllName;
+        else
+        {
+            _gameNameService.RtxEncoreInstalledAs.Remove(key);
+            _gameNameService.RtxEncoreInstalledAs.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    public bool GetRtxEncoreNrDllDeployed(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.RtxEncoreNrDllDeployed.Contains(key)
+            || _gameNameService.RtxEncoreNrDllDeployed.Contains(gameName);
+    }
+
+    public void SetRtxEncoreNrDllDeployed(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.RtxEncoreNrDllDeployed.Add(key);
+        else
+        {
+            _gameNameService.RtxEncoreNrDllDeployed.Remove(key);
+            _gameNameService.RtxEncoreNrDllDeployed.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
     /// <summary>
     /// Post-ShortFuse-install auto-config: renames ReShade → Reshade64.asi,
     /// installs UAL (winmm → version → dinput8 priority), writes [INSTALL] keys to reshade.ini.

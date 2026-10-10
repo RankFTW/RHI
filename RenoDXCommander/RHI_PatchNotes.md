@@ -43,6 +43,13 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 - Mutual exclusivity with RTX HDR — enabling one disables the other, and enabling either uninstalls any active RenoDX mod.
 - Changes take effect on the next game launch.
 
+**RTX Encore**
+- RTX Encore (SilyNoMeta) is now available as a new Extras row, between OptiScaler and DLSS Enabler.
+- Provides frame generation X2–X6, Smooth Motion on RTX 30, and Neural Rendering for RTX 20/30/40, in games that support DLSS Frame Generation.
+- Click Install to choose a proxy DLL name (version.dll, dinput8.dll, winmm.dll, dxgi.dll, d3d9/10/11/12.dll, and more — or rtx-encore.asi for ASI-loader games). Names in use by other RHI components are disabled. Names with an existing file on disk are shown in amber — RTX Encore backs them up and restores them on uninstall.
+- The ⚙ cog lets you deploy `nvngx_dlssnr.dll` version 310.8.0 for Neural Rendering — RTX Encore requires exactly this version and refuses any other. The file is shared with other NR components and only removed when no other component still needs it.
+- Auto-updates alongside other components.
+
 ### Changes
 
 **Control Ultimate Edition — OptiScaler FG**

@@ -203,6 +203,11 @@ public interface IGameNameService
     /// <summary>Per-game 20/30 FG Unlock GPU generation. Key = "GameName|Store", Value = "RTX 30 Series" or "RTX 20 Series".</summary>
     Dictionary<string, string> Dlssg2030GpuGen { get; }
 
+    /// <summary>Per-game RTX Encore installed DLL name. Composite-keyed "GameName|Store".</summary>
+    Dictionary<string, string> RtxEncoreInstalledAs { get; }
+    /// <summary>Games where RTX Encore has deployed nvngx_dlssnr.dll. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> RtxEncoreNrDllDeployed { get; }
+
     // ── Load / Save ───────────────────────────────────────────────────────────
 
     /// <summary>
