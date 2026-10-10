@@ -4,6 +4,14 @@ namespace RenoDXCommander.Services;
 
 public partial class DlssStreamlineService
 {
+    /// <summary>
+    /// Sanitizes a version string for use as a directory name by replacing characters
+    /// that Windows treats as path separators or invalid in directory names.
+    /// e.g. "310.8.2 (20/30/40/50)" → "310.8.2 (20-30-40-50)"
+    /// </summary>
+    private static string SanitizeVersionForPath(string version)
+        => version.Replace('/', '-').Replace('\\', '-');
+
     // ── Entry lookup helpers (searches regular + dev lists) ───────────────────
 
     private DlssManifestEntry? FindDlssEntry(string version) =>
@@ -113,7 +121,7 @@ public partial class DlssStreamlineService
             return;
         }
 
-        var cachedDir = Path.Combine(DlssnrCacheDir, version);
+        var cachedDir = Path.Combine(DlssnrCacheDir, SanitizeVersionForPath(version));
         var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
 
         if (!File.Exists(cachedDll))

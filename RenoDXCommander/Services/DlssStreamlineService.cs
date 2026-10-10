@@ -774,7 +774,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         var newest = _manifest?.Dlssnr?.FirstOrDefault();
         if (newest == null) return null;
 
-        var cachedDir = Path.Combine(DlssnrCacheDir, newest.Version);
+        var cachedDir = Path.Combine(DlssnrCacheDir, SanitizeVersionForPath(newest.Version));
         var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
 
         if (File.Exists(cachedDll))
@@ -789,7 +789,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     {
         var newest = _manifest?.Dlssnr?.FirstOrDefault();
         if (newest == null) return null;
-        var cachedDll = Path.Combine(DlssnrCacheDir, newest.Version, DlssnrDllName);
+        var cachedDll = Path.Combine(DlssnrCacheDir, SanitizeVersionForPath(newest.Version), DlssnrDllName);
         return File.Exists(cachedDll) ? cachedDll : null;
     }
 
@@ -806,7 +806,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             return null;
         }
 
-        var cachedDir = Path.Combine(DlssnrCacheDir, version);
+        var cachedDir = Path.Combine(DlssnrCacheDir, SanitizeVersionForPath(version));
         var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
 
         if (File.Exists(cachedDll))

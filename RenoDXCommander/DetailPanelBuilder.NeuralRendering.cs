@@ -52,20 +52,17 @@ public partial class DetailPanelBuilder
         var exact = System.IO.Path.Combine(nrBase, stripped, "nvngx_dlssnr.dll");
         if (File.Exists(exact)) return exact;
 
-        // 2. Search for any subdir that starts with the stripped version (handles slash-mangled names)
+        // 2. Full recursive search under any subdir starting with the stripped version.
+        // Handles forward-slash-mangled paths like "310.8.2 (20/30/40/50)" which become
+        // nested dirs "310.8.2 (20\30\40\50\" on disk.
         foreach (var dir in Directory.GetDirectories(nrBase))
         {
             var dirName = System.IO.Path.GetFileName(dir);
             if (dirName.StartsWith(stripped, StringComparison.OrdinalIgnoreCase))
             {
-                // Recurse one level for slash-mangled paths like "310.8.2 (20\" containing sub-dirs
-                var direct = System.IO.Path.Combine(dir, "nvngx_dlssnr.dll");
-                if (File.Exists(direct)) return direct;
-                foreach (var sub in Directory.GetDirectories(dir))
-                {
-                    var subDll = System.IO.Path.Combine(sub, "nvngx_dlssnr.dll");
-                    if (File.Exists(subDll)) return subDll;
-                }
+                var found = Directory.GetFiles(dir, "nvngx_dlssnr.dll", SearchOption.AllDirectories)
+                    .FirstOrDefault();
+                if (found != null) return found;
             }
         }
         return null;
