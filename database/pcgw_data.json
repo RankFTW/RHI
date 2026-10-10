@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "game_count": 55471,
-  "generated": "2026-10-09T11:04:51Z",
+  "game_count": 55485,
+  "generated": "2026-10-10T05:53:26Z",
   "name_overrides": {
     "ACE COMBAT 8: WINGS OF THEVE": "Ace Combat 8: Wings of Theve",
     "AFOP": "Avatar: Frontiers of Pandora",
@@ -15618,6 +15618,7 @@
       "dx9": true,
       "engine": "WF Engine"
     },
+    "Barbie as Princess Bride": {},
     "Barbie as Rapunzel: A Creative Adventure": {
       "engine": "Director"
     },
@@ -19575,6 +19576,10 @@
     },
     "Black Jewel": {
       "steam_appid": 761320
+    },
+    "Black Lake": {
+      "steam_appid": 4928600,
+      "engine": "Unreal Engine 5"
     },
     "Black Legend": {
       "steam_appid": 1094730
@@ -23754,6 +23759,7 @@
     "Brickfest": {
       "steam_appid": 845940
     },
+    "Bricklayer": {},
     "Brickochet": {
       "steam_appid": 671550
     },
@@ -26828,7 +26834,8 @@
       "steam_appid": 1088770
     },
     "Car Park Capital": {
-      "steam_appid": 3031880
+      "steam_appid": 3031880,
+      "opengl": true
     },
     "Car Puzzler": {
       "steam_appid": 774191
@@ -32034,6 +32041,7 @@
     },
     "Clue": {},
     "Clue Chronicles: Fatal Illusion": {},
+    "Clue Jr.: SpyGlass Mysteries": {},
     "Clue/Cluedo": {
       "steam_appid": 2506480,
       "engine": "Unity"
@@ -35610,6 +35618,7 @@
     "Crazy city": {
       "steam_appid": 1190410
     },
+    "Crazy Classics": {},
     "Crazy Critters - Combat Cats": {
       "steam_appid": 1141880
     },
@@ -58683,7 +58692,8 @@
       "config_path": "C:\\ProgramData\\Farm Frenzy"
     },
     "Farm Frenzy 2": {
-      "steam_appid": 38130
+      "steam_appid": 38130,
+      "config_path": "%PROGRAMDATA%\\FarmFrenzy2"
     },
     "Farm Frenzy 3": {
       "steam_appid": 38150
@@ -68306,6 +68316,10 @@
       "config_path": "<path-to-game>\\SET RULES.txt",
       "engine": "GameMaker"
     },
+    "Glasshouse": {
+      "steam_appid": 2244700,
+      "engine": "Unity"
+    },
     "GlassSmash": {
       "steam_appid": 1052220
     },
@@ -69305,6 +69319,7 @@
       "dx11": true,
       "engine": "Unity"
     },
+    "Golden Age of Racing": {},
     "Golden Axe": {},
     "Golden Axe (Genesis)": {
       "steam_appid": 34276,
@@ -87783,6 +87798,7 @@
     "Kart kids": {
       "steam_appid": 1206230
     },
+    "Kart Racer": {},
     "Kart Racing Pro": {
       "steam_appid": 415600
     },
@@ -102356,6 +102372,12 @@
       "config_path": "<Steam-folder>\\userdata\\<user-id>\\287700\\local\\",
       "engine": "Fox Engine"
     },
+    "Metal Gear Solid Δ: Snake Eater": {
+      "steam_appid": 2417610,
+      "dx12": true,
+      "config_path": "%LOCALAPPDATA%\\MGSDelta\\Saved\\Config\\Windows\\",
+      "engine": "Unreal Engine 5"
+    },
     "Metal Gear Solid ╬ö: Snake Eater": {
       "steam_appid": 2417610,
       "dx12": true,
@@ -114850,6 +114872,10 @@
       "config_path": "%USERPROFILE%\\AppData\\LocalLow\\Oddscure\\OddRemedy\\saves",
       "engine": "Unity"
     },
+    "Odd Town": {
+      "steam_appid": 2688780,
+      "engine": "Unreal Engine 5"
+    },
     "OddBallers": {
       "steam_appid": 1064070,
       "engine": "Unity"
@@ -121577,6 +121603,7 @@
       "config_path_xbox": "%LOCALAPPDATA%\\Packages\\F024294D.PhoenixWrightAceAttorneyTrilogy_8fty0by30jkny\\SystemAppData\\wgs\\<user-id>\\",
       "engine": "Unity"
     },
+    "Phoenix: Deep Space Resurrection": {},
     "Phoenotopia: Awakening": {
       "steam_appid": 1436590,
       "dx11": true,
@@ -129872,6 +129899,7 @@
     },
     "Raid: Shadow Legends": {
       "steam_appid": 2333480,
+      "dx11": true,
       "config_path": "HKEY_CURRENT_USER\\Software\\Plarium\\Raid: Shadow Legends",
       "engine": "Unity"
     },
@@ -135949,6 +135977,7 @@
     "Rock 'N Roll": {
       "steam_appid": 665930
     },
+    "Rock 'n Roll (1991)": {},
     "Rock 'n' Roll Adventures": {
       "engine": "GODS"
     },
@@ -145044,7 +145073,7 @@
     "Silent Hill: Townfall": {
       "steam_appid": 1636440,
       "dx12": true,
-      "config_path": "%USERPROFILE%\\AppData\\Local\\Townfall\\Saved\\Config\\Windows\\",
+      "config_path": "%USERPROFILE%/AppData/Local/Townfall/Saved/Config/Windows",
       "engine": "Unreal Engine 5"
     },
     "Silent Hope": {
@@ -159496,6 +159525,10 @@
       "engine": "Gamebryo"
     },
     "Sven-G├Âran Eriksson's World Manager": {},
+    "Sven: Completely Screwed": {
+      "steam_appid": 2213500,
+      "engine": "Unity"
+    },
     "Svoboda": {
       "steam_appid": 848640
     },
@@ -164584,7 +164617,7 @@
       "steam_appid": 1544020,
       "dx11": true,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\CallistoProtocol\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\CallistoProtocol\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "The Cameron Files: The Secret at Loch Ness": {
@@ -179451,7 +179484,7 @@
       "steam_appid": 924980,
       "dx11": true,
       "dx12": true,
-      "config_path": "%LOCALAPPDATA%\\Trials of Mana\\Saved\\Config\\WindowsNoEditor\\",
+      "config_path": "%LOCALAPPDATA%\\Trials of Mana\\Saved\\Config\\WindowsNoEditor",
       "engine": "Unreal Engine 4"
     },
     "Trials of the Blood Dragon": {
@@ -180224,6 +180257,7 @@
       "steam_appid": 256070,
       "dx9": true
     },
+    "Truck Racer (2009)": {},
     "Truck Racing by Renault Trucks": {
       "dx9": true
     },
