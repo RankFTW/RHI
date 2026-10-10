@@ -24,11 +24,51 @@ public partial class DetailPanelBuilder
     /// <summary>
     /// Strips a display-only parenthetical suffix from a version string so it can be used
     /// as a staging directory name. e.g. "310.8.0 (50xx)" → "310.8.0".
+    /// Also handles versions like "310.8.2 (20/30/40/50)" where the slash causes
+    /// path mangling on disk — always strips at the first '(' or space before '('.
     /// </summary>
     private static string StripVersionSuffix(string version)
     {
         var idx = version.IndexOf('(');
         return idx > 0 ? version[..idx].TrimEnd() : version;
+    }
+
+    /// <summary>
+    /// Resolves the cached nvngx_dlssnr.dll path for a given version string.
+    /// Handles the case where the staging directory name contains forward slashes
+    /// (e.g. "310.8.2 (20/30/40/50)") that Windows mangles into nested folders on disk.
+    /// Searches for any subdirectory that starts with the stripped version number.
+    /// </summary>
+    private static string? ResolveCachedNrDllPath(string versionString)
+    {
+        var nrBase = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "DLSS-NR");
+        if (!Directory.Exists(nrBase)) return null;
+
+        var stripped = StripVersionSuffix(versionString);
+
+        // 1. Exact match on stripped version
+        var exact = System.IO.Path.Combine(nrBase, stripped, "nvngx_dlssnr.dll");
+        if (File.Exists(exact)) return exact;
+
+        // 2. Search for any subdir that starts with the stripped version (handles slash-mangled names)
+        foreach (var dir in Directory.GetDirectories(nrBase))
+        {
+            var dirName = System.IO.Path.GetFileName(dir);
+            if (dirName.StartsWith(stripped, StringComparison.OrdinalIgnoreCase))
+            {
+                // Recurse one level for slash-mangled paths like "310.8.2 (20\" containing sub-dirs
+                var direct = System.IO.Path.Combine(dir, "nvngx_dlssnr.dll");
+                if (File.Exists(direct)) return direct;
+                foreach (var sub in Directory.GetDirectories(dir))
+                {
+                    var subDll = System.IO.Path.Combine(sub, "nvngx_dlssnr.dll");
+                    if (File.Exists(subDll)) return subDll;
+                }
+            }
+        }
+        return null;
     }
 
     // ── Method constants ──────────────────────────────────────────────────────
@@ -727,7 +767,7 @@ public partial class DetailPanelBuilder
                         var nrDir = Path.Combine(
                             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                             "RHI", "DLSS-NR", StripVersionSuffix(sel!));
-                        cachedNr = Path.Combine(nrDir, "nvngx_dlssnr.dll");
+                        cachedNr = ResolveCachedNrDllPath(sel!) ?? Path.Combine(nrDir, "nvngx_dlssnr.dll");
                         if (!File.Exists(cachedNr))
                             cachedNr = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
                     }
@@ -1867,7 +1907,7 @@ public partial class DetailPanelBuilder
             var nrDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "RHI", "DLSS-NR", StripVersionSuffix(nrSelectedVersion));
-            cachedNr = Path.Combine(nrDir, "nvngx_dlssnr.dll");
+            cachedNr = ResolveCachedNrDllPath(nrSelectedVersion) ?? Path.Combine(nrDir, "nvngx_dlssnr.dll");
             if (!File.Exists(cachedNr))
                 cachedNr = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
         }
@@ -2410,7 +2450,7 @@ public partial class DetailPanelBuilder
                 var nrDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "RHI", "DLSS-NR", StripVersionSuffix(nrSelVer!));
-                cachedNrFeeder = Path.Combine(nrDir, "nvngx_dlssnr.dll");
+                cachedNrFeeder = ResolveCachedNrDllPath(nrSelVer!) ?? Path.Combine(nrDir, "nvngx_dlssnr.dll");
                 if (!File.Exists(cachedNrFeeder))
                     cachedNrFeeder = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
             }
@@ -2815,7 +2855,7 @@ public partial class DetailPanelBuilder
                         else
                         {
                             var nrDirHost = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI", "DLSS-NR", StripVersionSuffix(nrSelVerHost!));
-                            cachedNrHost = Path.Combine(nrDirHost, "nvngx_dlssnr.dll");
+                            cachedNrHost = ResolveCachedNrDllPath(nrSelVerHost!) ?? Path.Combine(nrDirHost, "nvngx_dlssnr.dll");
                             if (!File.Exists(cachedNrHost)) cachedNrHost = await dlssSvc.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
                         }
                         if (cachedNrHost != null)
