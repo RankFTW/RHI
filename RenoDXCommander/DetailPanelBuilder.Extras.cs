@@ -2566,7 +2566,7 @@ public partial class DetailPanelBuilder
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
 
-        var label = new TextBlock { Text = "RTX Encore", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
+        var label = new TextBlock { Text = "RTX Encore (Beta)", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
         ToolTipService.SetToolTip(label, "RTX Encore — frame generation X2-X6, Smooth Motion and Neural Rendering for RTX 20/30/40.");
         Grid.SetColumn(label, 0); row.Children.Add(label);
 
@@ -2579,7 +2579,7 @@ public partial class DetailPanelBuilder
         infoBtn.Click += (s, e) => _ = Windows.System.Launcher.LaunchUriAsync(new Uri(RtxEncoreService.RepoUrl));
         Grid.SetColumn(infoBtn, 2); row.Children.Add(infoBtn);
 
-        string installBtnLabel = isInstalled ? "↺  Reinstall RTX Encore" : "⬇  Install RTX Encore";
+        string installBtnLabel = isInstalled ? "↺  Reinstall RTX Encore (Beta)" : "⬇  Install RTX Encore (Beta)";
         var installBtn = new Button { Content = installBtnLabel, FontSize = 12, Height = 32, HorizontalAlignment = HorizontalAlignment.Stretch, CornerRadius = new CornerRadius(8), Background = isInstalled ? UIFactory.GetBrush("#182840") : UIFactory.Brush(ResourceKeys.AccentBlueBgBrush), Foreground = isInstalled ? UIFactory.GetBrush("#7AACDD") : UIFactory.Brush(ResourceKeys.AccentBlueBrush), BorderBrush = isInstalled ? UIFactory.GetBrush("#2A4468") : UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush), BorderThickness = new Thickness(1) };
         ToolTipService.SetToolTip(installBtn, isInstalled ? $"Reinstall RTX Encore (currently '{currentDllName}')" : "Install RTX Encore — choose which DLL name to use");
         installBtn.Click += async (s, e) =>
