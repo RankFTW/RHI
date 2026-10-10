@@ -2180,7 +2180,9 @@ public partial class DetailPanelBuilder
             {
                 var backup = nrDestPath + ".original";
                 if (File.Exists(nrDestPath) && !File.Exists(backup))
-                    File.Copy(nrDestPath, backup);
+                    File.Copy(nrDestPath, backup);   // back up pre-existing game file
+                else if (!File.Exists(nrDestPath) && !File.Exists(backup))
+                    File.WriteAllBytes(backup, Array.Empty<byte>()); // 0-byte sentinel — RHI placed this from scratch
                 File.Copy(cachedNr, nrDestPath, overwrite: true);
                 CrashReporter.Log($"[NeuralRendering] Deployed nvngx_dlssnr.dll (v{(nrUseLatest ? "latest" : nrSelectedVersion)}) to '{installPath}'");
             }
