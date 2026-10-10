@@ -65,12 +65,28 @@ To connect: open **Settings → GitHub API** and click **Sign in with GitHub**. 
 **Output Colour Settings**
 - Fixed the Colour Depth and Dynamic Range dropdowns being empty and unclickable. The NVAPI display enumeration was returning "device not found" for all monitors.
 
+**OptiScaler Detection**
+- Fixed RTX Encore's `winmm.dll` being incorrectly detected as an OptiScaler installation. The binary signature scan used the generic string "OptiScaler" which RTX Encore also contains as a reference. Detection now uses file description metadata (`FileDescription = "OptiScaler"`, `CompanyName = "nitec"`) as the primary check, with a secondary binary scan using more specific internal strings.
+
+**RTX Encore**
+- Moved to the MFG Unlocks section (first entry), above DLSS Enabler.
+- Fixed install always failing — the GitHub `/releases/latest` endpoint silently skips pre-releases, so RTX Encore's beta release was never found. Switched to the releases list endpoint which includes pre-releases.
+
+**Auto HDR**
+- Fixed the Auto HDR enable mechanism — the feature now correctly writes the `D3DBehaviors` subkey under `HKCU\Software\Microsoft\Direct3D` which forces the game into the Auto HDR pipeline. The previous implementation only wrote to `UserGpuPreferences` which controls brightness but does not force-enable Auto HDR on its own.
+- Fixed enabling RTX HDR not turning off Auto HDR (mutual exclusivity only worked in one direction).
+
+**OptiScaler Nightly**
+- Fixed OptiScaler nightly install deploying the wrong version when no build was pinned. An empty string from `GetOsNightlyBuild()` was being treated as a valid build hint instead of null, causing the staging directory lookup to fail and fall back to the flat staging root where no DLL existed.
+
 **DLDSR Control**
 - Fixed the DSR Smoothness Set button wiping DLDSR factor settings. The slider was reading from live registry after a GPU restart, which resets the factor bits. It now reads from the last applied capture file instead.
 - Setting smoothness and then clicking Apply now applies both the DLDSR factors and the slider smoothness value together in a single GPU restart.
 
 **Neural Rendering**
 - Fixed dgVoodoo2 appearing as a required component for DX11/DX12 games. UE4 games contain a legacy DX9 import as a compatibility shim that was being misread as the game running DX9. dgVoodoo2 is now only required when DX9 is the game's primary graphics API.
+- Fixed the NR DLL Version combo in the Neural Rendering section and the Version combo in the DLSS/SL section showing different versions after a swap. Both panels now stay in sync — changing the version in either panel immediately updates the other.
+- Fixed the NR DLL version selection being ignored on install. Selecting a specific version (e.g. 310.8.2) would silently install the latest version instead due to the staging folder name containing forward slashes (`310.8.2 (20/30/40/50)`) that Windows interpreted as path separators, creating a nested directory structure that the path lookup couldn't find. The staging directory is now named correctly (`310.8.2 (20-30-40-50)`) and the lookup scans recursively for any existing cached copy.
 
 **Start with Windows**
 - Fixed "Start with Windows" disabling itself on every launch. The settings panel was removing the startup entry during initialisation.
