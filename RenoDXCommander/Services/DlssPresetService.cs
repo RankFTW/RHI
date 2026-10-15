@@ -322,6 +322,41 @@ public partial class DlssPresetService
         }
     }
 
+    /// <summary>
+    /// Returns true when the setting is stored on this profile itself, false when NVAPI
+    /// reports it missing or only inherited (global/base/default location), or null when
+    /// the raw NVAPI getter is unavailable.
+    /// </summary>
+    private bool? IsSettingInProfileRawNvApi(IntPtr sessionHandle, IntPtr profileHandle, uint settingId)
+    {
+        EnsureNativeFunctions();
+        if (_nativeGetSettingPtr == null) return null;
+
+        const int STRUCT_SIZE = 12320;
+        var ptr = Marshal.AllocHGlobal(STRUCT_SIZE);
+        try
+        {
+            unsafe
+            {
+                new Span<byte>((void*)ptr, STRUCT_SIZE).Clear();
+            }
+            Marshal.WriteInt32(ptr, 0, STRUCT_SIZE | (1 << 16));
+
+            uint extraParam = 0;
+            int result = _nativeGetSettingPtr(sessionHandle, profileHandle, settingId, ptr, ref extraParam);
+            if (result != 0)
+                return false;
+
+            // NVDRS_SETTING.settingLocation sits after version (4), settingName (4096),
+            // settingId (4) and settingType (4). 0 = NVDRS_CURRENT_PROFILE_LOCATION.
+            return Marshal.ReadInt32(ptr, 4108) == 0;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(ptr);
+        }
+    }
+
     // ── Setting IDs ───────────────────────────────────────────────────────────
     private const uint NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION_ID = 0x10E41DF3;
     private const uint NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION_ID = 0x10E41DF7;

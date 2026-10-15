@@ -142,9 +142,32 @@ public partial class DlssPresetService
             catch (Exception delEx)
             {
                 CrashReporter.Log($"[DlssPresetService.DeletePreset] DeleteSetting 0x{settingId:X8} failed for '{gameName}' — {delEx.Message}");
-                var defaultValue = GetSettingDefaultValue(settingId);
-                if (defaultValue.HasValue)
-                    SetPresetCore(profile, settingId, defaultValue.Value, gameName);
+
+                // SETTING_NOT_FOUND usually just means the profile has no override to delete.
+                // Writing a "default" value in that case would create an override that blocks
+                // inheritance from the global profile, so only fall back when the setting is
+                // actually stored on this profile (or that can't be verified).
+                bool notFound = delEx.Message.Contains("SETTING_NOT_FOUND", StringComparison.OrdinalIgnoreCase)
+                             || delEx.Message.Contains("SettingNotFound", StringComparison.OrdinalIgnoreCase);
+                bool? inProfile = null;
+                if (notFound)
+                {
+                    var sessionHandle = GetHandlePtr(_session.Handle);
+                    var profileHandle = GetHandlePtr(profile.Handle);
+                    if (sessionHandle != IntPtr.Zero && profileHandle != IntPtr.Zero)
+                        inProfile = IsSettingInProfileRawNvApi(sessionHandle, profileHandle, settingId);
+                }
+
+                if (notFound && inProfile == false)
+                {
+                    CrashReporter.Log($"[DlssPresetService.DeletePreset] 0x{settingId:X8} not set on '{gameName}' profile — nothing to delete");
+                }
+                else
+                {
+                    var defaultValue = GetSettingDefaultValue(settingId);
+                    if (defaultValue.HasValue)
+                        SetPresetCore(profile, settingId, defaultValue.Value, gameName);
+                }
             }
             _session.Save();
             CrashReporter.Log($"[DlssPresetService.DeletePreset] Deleted 0x{settingId:X8} for '{gameName}'");

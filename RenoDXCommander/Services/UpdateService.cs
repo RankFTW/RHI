@@ -400,7 +400,8 @@ internal static class VersionResolver
     ///   - Stable always wins over beta at same or higher base version
     ///   - Beta only offered when its base version exceeds both latest stable's
     ///     and current version's base version
-    ///   - Only offer if candidate's base version > current base version
+    ///   - Only offer if candidate is newer than current (a stable release of the
+    ///     same base version counts as newer than a beta of that version)
     /// </summary>
     public static RdxcVersion? Resolve(
         RdxcVersion current,
@@ -409,9 +410,10 @@ internal static class VersionResolver
     {
         var currentBase = current.BaseVersion;
 
-        // Determine if stable is a valid candidate (base version > current base version)
+        // Determine if stable is a valid candidate (newer than current). Uses the full
+        // comparison so a beta user (e.g. 1.4.8 beta 1) is offered the 1.4.8 stable release.
         bool stableValid = latestStable.HasValue
-            && latestStable.Value.BaseVersion.CompareTo(currentBase) > 0;
+            && latestStable.Value.CompareTo(current) > 0;
 
         // Determine if beta is a valid candidate:
         //   - base version > current base version, OR

@@ -1579,7 +1579,9 @@ public partial class MainViewModel
             }
 
             // Need at least one matching asset for the variants we care about
-            if ((needs64 && string.IsNullOrEmpty(downloadUrl64)) && (needs32 && string.IsNullOrEmpty(downloadUrl32)))
+            bool hasNeeded64 = needs64 && !string.IsNullOrEmpty(downloadUrl64);
+            bool hasNeeded32 = needs32 && !string.IsNullOrEmpty(downloadUrl32);
+            if (!hasNeeded64 && !hasNeeded32)
             {
                 _crashReporter.Log("[CheckUlUpdateAsync] No matching asset found in latest release");
                 return false;
@@ -1722,7 +1724,9 @@ public partial class MainViewModel
             }
 
             // Need at least one matching asset for the variants we care about
-            if ((needs64 && string.IsNullOrEmpty(downloadUrl64)) && (needs32 && string.IsNullOrEmpty(downloadUrl32)))
+            bool hasNeeded64 = needs64 && !string.IsNullOrEmpty(downloadUrl64);
+            bool hasNeeded32 = needs32 && !string.IsNullOrEmpty(downloadUrl32);
+            if (!hasNeeded64 && !hasNeeded32)
             {
                 _crashReporter.Log("[CheckDcUpdateAsync] No matching asset found in latest release");
                 return false;

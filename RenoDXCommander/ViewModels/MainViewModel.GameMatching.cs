@@ -95,9 +95,17 @@ public partial class MainViewModel
                 var newPath = Path.Combine(card.InstallPath, effectiveRs);
                 try
                 {
-                    if (File.Exists(oldPath))
+                    if (File.Exists(oldPath)
+                        && File.Exists(newPath)
+                        && !AuxInstallService.IsReShadeFileStrict(newPath))
                     {
-                        if (File.Exists(newPath)) File.Delete(newPath);
+                        // Target name is held by something else (OptiScaler, DXVK, a game DLL…).
+                        // Don't delete it — leave ReShade under its current name.
+                        _crashReporter.Log($"[MainViewModel.ApplyManifestDllRenames] RS {card.GameName}: '{effectiveRs}' is occupied by a non-ReShade file — keeping '{card.RsRecord.InstalledAs}'");
+                    }
+                    else if (File.Exists(oldPath))
+                    {
+                        if (File.Exists(newPath)) File.Delete(newPath); // stale ReShade copy
                         File.Move(oldPath, newPath);
                         card.RsRecord.InstalledAs = effectiveRs;
                         _auxInstaller.SaveAuxRecord(card.RsRecord);

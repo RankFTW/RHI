@@ -502,4 +502,74 @@ public class CoreLogicTests
             File.Delete(tempFile);
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // 10. VersionResolver — which app update (stable / beta) to offer
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void VersionResolver_BetaUser_IsOfferedStableOfSameVersion()
+    {
+        var current = new RdxcVersion(1, 4, 8, 1);
+        var stable  = new RdxcVersion(1, 4, 8);
+
+        Assert.Equal(stable, VersionResolver.Resolve(current, stable, null));
+    }
+
+    [Fact]
+    public void VersionResolver_StableUser_SameStable_NoUpdate()
+    {
+        var current = new RdxcVersion(1, 4, 8);
+        Assert.Null(VersionResolver.Resolve(current, new RdxcVersion(1, 4, 8), null));
+    }
+
+    [Fact]
+    public void VersionResolver_StableUser_BetaOfSameVersion_NoUpdate()
+    {
+        var current = new RdxcVersion(1, 4, 8);
+        Assert.Null(VersionResolver.Resolve(current, new RdxcVersion(1, 4, 8), new RdxcVersion(1, 4, 8, 2)));
+    }
+
+    [Fact]
+    public void VersionResolver_BetaAheadOfStable_BetaWins()
+    {
+        var current = new RdxcVersion(1, 4, 8);
+        var beta    = new RdxcVersion(1, 4, 9, 1);
+
+        Assert.Equal(beta, VersionResolver.Resolve(current, new RdxcVersion(1, 4, 8), beta));
+    }
+
+    [Fact]
+    public void VersionResolver_NewerBetaOfSameBase_OfferedToBetaUser()
+    {
+        var current = new RdxcVersion(1, 4, 9, 1);
+        var beta    = new RdxcVersion(1, 4, 9, 2);
+
+        Assert.Equal(beta, VersionResolver.Resolve(current, new RdxcVersion(1, 4, 8), beta));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // 11. GameDetectionService.NormalizeName — dedup key for detected games
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    [Theory]
+    [InlineData("The Witcher® 3: Wild Hunt", "thewitcher3wildhunt")]
+    [InlineData("Pokémon™ Legends", "pokemonlegends")]
+    [InlineData("DOOM Eternal", "doometernal")]
+    public void NormalizeName_LatinTitles_KeepAsciiKey(string input, string expected)
+    {
+        Assert.Equal(expected, new GameDetectionService().NormalizeName(input));
+    }
+
+    [Fact]
+    public void NormalizeName_NonLatinTitles_AreNotEmptyOrMerged()
+    {
+        var svc = new GameDetectionService();
+        var a = svc.NormalizeName("東方紅魔郷");
+        var b = svc.NormalizeName("Смута");
+
+        Assert.NotEqual("", a);
+        Assert.NotEqual("", b);
+        Assert.NotEqual(a, b);
+    }
 }

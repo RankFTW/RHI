@@ -573,38 +573,51 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
         _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] {installed.Count} RenoDX mods to check");
 
-        // Deduplicate: group by resolved URL so each unique addon is only downloaded once.
-        // Games sharing the same snapshot URL (e.g. all generic Unity games) are checked together.
+        // Deduplicate: group by resolved URL so each unique addon is checked together.
+        // Games sharing the same snapshot URL (e.g. all generic Unity games) can still have
+        // different builds installed (e.g. one game was updated individually), so within a URL
+        // group each distinct installed build (by FileHash) gets its own check. Records without
+        // a stored hash fall back to comparing their own local file, so they are checked alone.
         var groupedByUrl = installed.GroupBy(c => ModInstallService.ResolveSnapshotUrlPublic(c.InstalledRecord!.SnapshotUrl!),
             StringComparer.OrdinalIgnoreCase);
 
         var tasks = groupedByUrl.Select(async group =>
         {
             var resolvedUrl = group.Key;
-            var firstCard = group.First();
-            var firstRecord = firstCard.InstalledRecord!;
+            var buildGroups = group.GroupBy(c => string.IsNullOrEmpty(c.InstalledRecord!.FileHash)
+                    ? "path:" + c.InstallPath
+                    : "hash:" + c.InstalledRecord!.FileHash,
+                StringComparer.OrdinalIgnoreCase);
 
-            bool updateAvailable;
-            try
+            // Sequential within a URL: download-based checks for the same addon share
+            // temp-file names in the download cache and must not run concurrently.
+            foreach (var build in buildGroups)
             {
-                updateAvailable = await _installer.CheckForUpdateAsync(firstRecord).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update check failed for URL '{resolvedUrl}' (representative: '{firstCard.GameName}') — {ex.Message}");
-                return;
-            }
+                var firstCard = build.First();
+                var firstRecord = firstCard.InstalledRecord!;
 
-            if (updateAvailable)
-            {
-                // Apply result to ALL games sharing this URL
-                foreach (var card in group)
+                bool updateAvailable;
+                try
                 {
-                    try { _installer.SaveRecordPublic(card.InstalledRecord!); }
-                    catch (Exception ex) { _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Failed to save record for '{card.GameName}' — {ex.Message}"); }
-                    dispatcherQueue?.TryEnqueue(() => { card.Status = GameStatus.UpdateAvailable; });
+                    updateAvailable = await _installer.CheckForUpdateAsync(firstRecord).ConfigureAwait(false);
                 }
-                _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update detected for '{resolvedUrl}' — {group.Count()} game(s) flagged");
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update check failed for URL '{resolvedUrl}' (representative: '{firstCard.GameName}') — {ex.Message}");
+                    continue;
+                }
+
+                if (updateAvailable)
+                {
+                    // Apply result to all games with this same installed build
+                    foreach (var card in build)
+                    {
+                        try { _installer.SaveRecordPublic(card.InstalledRecord!); }
+                        catch (Exception ex) { _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Failed to save record for '{card.GameName}' — {ex.Message}"); }
+                        dispatcherQueue?.TryEnqueue(() => { card.Status = GameStatus.UpdateAvailable; });
+                    }
+                    _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] Update detected for '{resolvedUrl}' — {build.Count()} game(s) flagged");
+                }
             }
         });
 

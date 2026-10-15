@@ -596,6 +596,19 @@ public partial class GameDetectionService : IGameDetectionService
 
         // 3. Lower-case, then strip everything that isn't a letter or digit.
         //    This handles ':', '-', ''', '!', spaces, etc. uniformly.
-        return Regex.Replace(sb.ToString().ToLowerInvariant(), @"[^a-z0-9]", "");
+        var lowered = sb.ToString().ToLowerInvariant();
+        var ascii = Regex.Replace(lowered, @"[^a-z0-9]", "");
+        if (ascii.Length > 0) return ascii;
+
+        // 4. Titles written entirely in a non-Latin script (Japanese, Chinese, Korean,
+        //    Cyrillic, Greek…) would otherwise all normalise to "" and be merged into a
+        //    single game by name-based deduplication. Keep their letters and digits instead.
+        var unicode = new StringBuilder(lowered.Length);
+        foreach (var ch in lowered)
+        {
+            if (char.IsLetterOrDigit(ch))
+                unicode.Append(ch);
+        }
+        return unicode.ToString();
     }
 }

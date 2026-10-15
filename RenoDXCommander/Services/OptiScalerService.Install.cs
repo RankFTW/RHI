@@ -675,7 +675,17 @@ public partial class OptiScalerService
             if (!string.IsNullOrEmpty(installedDll))
             {
                 var dllPath = Path.Combine(gameDir, installedDll);
-                if (File.Exists(dllPath))
+
+                // Never delete a DLL that is positively something else (game-shipped DLL,
+                // ReShade, DXVK). Records created by older detection could point at such files.
+                bool deployedByRhi = gameManifest != null
+                    && installedDll.Equals(gameManifest.InstalledAs, StringComparison.OrdinalIgnoreCase);
+                if (File.Exists(dllPath) && !deployedByRhi
+                    && !IsOptiScalerFileStatic(dllPath) && !IsUnidentifiedDll(dllPath))
+                {
+                    CrashReporter.Log($"[OptiScalerService.Uninstall] '{installedDll}' is not an OptiScaler DLL — leaving it in place");
+                }
+                else if (File.Exists(dllPath))
                 {
                     File.Delete(dllPath);
                     CrashReporter.Log($"[OptiScalerService.Uninstall] Deleted OptiScaler DLL: {dllPath}");
@@ -1670,12 +1680,14 @@ public partial class OptiScalerService
             var iniPath = Path.Combine(installPath, IniFileName);
             if (File.Exists(iniPath))
             {
-                // INI exists but no supported DLL matched — check supported DLL names
-                // by existence only (in case the binary signature scan missed it)
+                // INI exists but no supported DLL matched — accept a supported DLL name only
+                // when the file can't be identified as something else. A leftover ini next to
+                // a game-shipped DLL (dbghelp.dll, d3d12.dll…), ReShade or DXVK must not be
+                // reported as OptiScaler, since Uninstall would then delete that file.
                 foreach (var dllName in SupportedDllNames)
                 {
                     var candidatePath = Path.Combine(installPath, dllName);
-                    if (File.Exists(candidatePath))
+                    if (File.Exists(candidatePath) && IsUnidentifiedDll(candidatePath))
                     {
                         CrashReporter.Log($"[OptiScalerService.DetectInstallation] OptiScaler.ini found with candidate DLL '{dllName}' in '{installPath}'");
                         return dllName;
@@ -1688,6 +1700,28 @@ public partial class OptiScalerService
             CrashReporter.Log($"[OptiScalerService.DetectInstallation] Error scanning '{installPath}' — {ex.Message}");
         }
         return null;
+    }
+
+    /// <summary>
+    /// True when the DLL has no version-resource identity and isn't recognised as ReShade
+    /// or DXVK — i.e. nothing positively says it belongs to another product.
+    /// </summary>
+    private static bool IsUnidentifiedDll(string filePath)
+    {
+        try
+        {
+            var fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(filePath);
+            if (!string.IsNullOrWhiteSpace(fvi.CompanyName) || !string.IsNullOrWhiteSpace(fvi.FileDescription))
+                return false;
+        }
+        catch
+        {
+            // Unreadable version resource — fall through to content checks
+        }
+
+        if (AuxInstallService.IsReShadeFileStrict(filePath)) return false;
+        if (DxvkService.IsDxvkFileStatic(filePath)) return false;
+        return true;
     }
 
     /// <inheritdoc />
@@ -1712,24 +1746,28 @@ public partial class OptiScalerService
             // Fast path: check PE version resource — OptiScaler always reports
             // FileDescription = "OptiScaler" and CompanyName = "nitec".
             // This avoids reading 32 MB of binary and is unambiguous.
-            bool versionResourceReadable = false;
+            // GetVersionInfo does not throw for a PE without a version resource — it returns
+            // empty strings — so "has an identity" is judged from the fields, not from whether
+            // the call succeeded.
+            bool hasOtherIdentity = false;
             try
             {
                 var fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(filePath);
-                versionResourceReadable = true;
                 if (string.Equals(fvi.FileDescription, "OptiScaler", StringComparison.OrdinalIgnoreCase)
                     && string.Equals(fvi.CompanyName, "nitec", StringComparison.OrdinalIgnoreCase))
                     return true;
+                hasOtherIdentity = !string.IsNullOrWhiteSpace(fvi.FileDescription)
+                                || !string.IsNullOrWhiteSpace(fvi.CompanyName);
             }
             catch
             {
                 // Version resource unreadable — fall through to binary scan
             }
 
-            // Binary scan fallback: only run when the version resource was unreadable.
+            // Binary scan fallback: only run when the version resource is absent or unreadable.
             // If FileVersionInfo returned a description for a different tool (e.g. SCSKiller),
             // that's a definitive "not OptiScaler" — no need to scan.
-            if (versionResourceReadable) return false;
+            if (hasOtherIdentity) return false;
 
             // Fallback: binary scan for unique internal strings.
             // OptiScaler's string data lives near the END of its ~24 MB binary,
