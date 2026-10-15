@@ -2993,7 +2993,7 @@ public sealed partial class MainWindow
             forceReflexCombo.SelectionChanged += (s, ev) =>
             {
                 if (string.IsNullOrEmpty(card.InstallPath)) return;
-                var v = forceReflexCombo.SelectedItem as string switch
+                var v = (forceReflexCombo.SelectedItem as string) switch
                 {
                     "Force Disable (1)" => "1",
                     "Force Enable (2)"  => "2",
@@ -3411,11 +3411,11 @@ public sealed partial class MainWindow
                     string? capturedUpscalerApi = apiCombo.SelectedItem as string;     // "DX11", "DX12", "Vulkan"
                     string? capturedUpscaler    = apiCombo.SelectedItem is string upApi && apiUpscalerCombo.SelectedItem is string upSel
                                                   ? UpscalerOptionToIni(upApi, upSel) : null;
-                    string? capturedFgEnabled   = fgEnabledCombo.SelectedItem is string fge
+                    string? capturedFgEnabled   = fgEnabledCombo!.SelectedItem is string fge
                                                   ? (fge == "True" ? "true" : fge == "Auto (false)" ? "auto" : null) : null;
-                    string? capturedForceReflex = forceReflexCombo.SelectedItem is string fr ? fr switch
+                    string? capturedForceReflex = forceReflexCombo!.SelectedItem is string fr ? fr switch
                                                   { "Force Disable (1)" => "1", "Force Enable (2)" => "2", _ => "0" } : null;
-                    string? capturedReflexMarkers = reflexMarkersCombo.SelectedItem is string rm
+                    string? capturedReflexMarkers = reflexMarkersCombo!.SelectedItem is string rm
                                                     ? (rm == "False" ? "false" : "true") : null;
                     float?  capturedFps         = null;
                     if (fpsLimitCombo.SelectedItem is string fpsSel)
@@ -3535,7 +3535,7 @@ public sealed partial class MainWindow
                             }
                             else
                             {
-                                var rsMatch = renderScaleMap.FirstOrDefault(rm => rm.Item1 == p.RenderScale);
+                                var rsMatch = renderScaleMap!.FirstOrDefault(rm => rm.Item1 == p.RenderScale);
                                 if (rsMatch.Item1 != null)
                                 {
                                     OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "UpscaleRatio", "UpscaleRatioOverrideEnabled", "true");

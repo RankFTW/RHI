@@ -673,7 +673,7 @@ public partial class MainViewModel
                 Mod                    = effectiveMod,
                 DetectedGame           = game,
                 InstallPath            = installPath,
-                Source                 = game.Source,
+                Source                 = game.Source ?? "",
                 InstalledRecord        = record,
                 Status                 = record != null ? GameStatus.Installed : GameStatus.Available,
                 WikiStatus             = _wikiExclusions.Contains(game.Name)
@@ -1440,7 +1440,7 @@ public partial class MainViewModel
                 }
             }
             else if (LumaFeatureEnabled
-                && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy || newCard.EngineHint.Contains("Unreal"))
+                && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy || newCard.EngineHint?.Contains("Unreal") == true)
                 && (newCard.GraphicsApi == GraphicsApiType.DirectX11
                     || newCard.DetectedApis.Contains(GraphicsApiType.DirectX11))
                 && (!IsUe5OrHigher(game.Name) || hasUserApiOverride))

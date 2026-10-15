@@ -596,7 +596,7 @@ public partial class MainViewModel
                 GameName               = game.Name,
                 DetectedGame           = game,
                 InstallPath            = installPath,
-                Source                 = game.Source,
+                Source                 = game.Source ?? "",
                 InstalledRecord        = record,
                 Status                 = record != null ? GameStatus.Installed : GameStatus.Available,
                 InstalledAddonFileName = record?.AddonFileName,

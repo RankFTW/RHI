@@ -24,7 +24,7 @@ public readonly record struct GameKey(string Name, string Store)
     }
 
     /// <summary>Creates a GameKey from card properties.</summary>
-    public static GameKey FromCard(string gameName, string source) => new(gameName, source ?? "");
+    public static GameKey FromCard(string gameName, string? source) => new(gameName, source ?? "");
 
     /// <summary>Checks if this key matches by name only (ignoring store).</summary>
     public bool MatchesName(string name) =>

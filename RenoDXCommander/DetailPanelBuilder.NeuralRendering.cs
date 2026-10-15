@@ -2275,7 +2275,6 @@ public partial class DetailPanelBuilder
                     if (File.Exists(asiPath)) File.Delete(asiPath);
                     File.Move(currentPath, asiPath);
                     rsRecord.InstalledAs = asiName;
-                    card.RsRecord.InstalledAs = asiName;
                     _auxInstallService.SaveAuxRecord(rsRecord);
                     CrashReporter.Log($"[SfAutoConfig] Renamed ReShade to '{asiName}' for '{gameName}'");
                 }
@@ -2639,8 +2638,6 @@ public partial class DetailPanelBuilder
                         CrashReporter.Log($"[NeuralRendering] Set DLSS5_MV_PROVIDER=3 in reshade.ini for '{installPath}'");
 
                         // Write ReShadePreset.ini with both techniques enabled, full TechniqueSorting order
-                        const string lumeniteTech = "Lumenite_Kernel@lumenite_Kernel.fx";
-                        const string feederTech   = "DLSS5_Feed@DLSS5_Feed.fx";
                         var presetPath = Path.Combine(installPath, "ReShadePreset.ini");
                         if (!File.Exists(presetPath))
                         {

@@ -76,9 +76,6 @@ public partial class DetailPanelBuilder
         // Store header row so BuildNvidiaProfileBody can append/update the summary
         _nvHeaderRow = nvHeaderRow;
 
-        // _nvBodyPanel is no longer used by BuildDriverProfileSection (it now owns its own panel)
-        _nvBodyPanel = null;
-
         // Capture card state before the background scan
         var gameName    = card.GameName;
         var installPath = card.InstallPath ?? "";
@@ -820,24 +817,24 @@ public partial class DetailPanelBuilder
                 }
 
                 if (settings.DefaultSrPreset != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);
+                    pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath ?? "", settings.DefaultSrPreset);
                 if (settings.DefaultRrPreset != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrPreset);
+                    pSvc.SetRrPreset(targetCard.GameName, targetCard.InstallPath ?? "", settings.DefaultRrPreset);
                 if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg)
-                    pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
+                    pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath ?? "", settings.DefaultFgPreset);
 
                 if (FeatureFlags.DlssNr)
                 {
                     if (!string.IsNullOrEmpty(settings.DefaultDlssnrVersion) && targetCard.HasDlssnr && targetCard.DlssDetection?.DlssnrPath != null)
                         await svc.SwapDlssnrAsync(targetCard.DlssDetection.DlssnrPath, settings.DefaultDlssnrVersion);
                     if (settings.DefaultNrPreset != 0 && targetCard.HasDlssnr)
-                        pSvc.SetNrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultNrPreset);
+                        pSvc.SetNrPreset(targetCard.GameName, targetCard.InstallPath ?? "", settings.DefaultNrPreset);
                 }
 
                 if (settings.DefaultSrRenderScale != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrRenderScale);
+                    pSvc.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath ?? "", settings.DefaultSrRenderScale);
                 if (settings.DefaultRrRenderScale != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
-                    pSvc.SetRrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultRrRenderScale);
+                    pSvc.SetRrRenderScale(targetCard.GameName, targetCard.InstallPath ?? "", settings.DefaultRrRenderScale);
 
                 targetCard.RefreshDlssVersions(svc);
                 _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));

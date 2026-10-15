@@ -1192,8 +1192,8 @@ public partial class MainViewModel
             // Remove D3D9.dll from the tracked file list so LumaService.Uninstall doesn't clean it up.
             if (card.LumaRecord.InstalledFiles.Contains("D3D9.dll", StringComparer.OrdinalIgnoreCase))
             {
-                bool feederInstalled = File.Exists(Path.Combine(card.InstallPath ?? "", "dlss5-feed.addon32"))
-                                    || File.Exists(Path.Combine(card.InstallPath ?? "", "dlss5-feed.addon64"));
+                bool feederInstalled = File.Exists(Path.Combine(card.InstallPath, "dlss5-feed.addon32"))
+                                    || File.Exists(Path.Combine(card.InstallPath, "dlss5-feed.addon64"));
                 bool standaloneInstalled = GetDgVoodooStandalone(card.GameName, card.Source ?? "");
                 if (feederInstalled || standaloneInstalled)
                 {

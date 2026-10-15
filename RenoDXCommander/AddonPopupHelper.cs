@@ -100,7 +100,6 @@ public static class AddonPopupHelper
 
         foreach (var entry in managedAddons)
         {
-            var isCustom = false;
             var isDownloaded = addonPackService.IsDownloaded(entry.PackageName);
             var isSelected = selected.Contains(entry.PackageName);
 
@@ -317,8 +316,6 @@ public static class AddonPopupHelper
 
             foreach (var entry in customAddonsList)
             {
-                var isCustom = true;
-                var isDownloaded = true;
                 var isSelected = selected.Contains(entry.PackageName);
 
                 var textPanel = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };

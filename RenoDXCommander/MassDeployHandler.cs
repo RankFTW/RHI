@@ -37,7 +37,6 @@ public class MassDeployHandler
         if (await DialogService.ShowSafeAsync(confirmDialog) != ContentDialogResult.Primary) return;
 
         int count = 0;
-        var screenshotPath = _window.BuildScreenshotSavePath(null); // base path
         var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
         var screenshotHotkey = _window.ViewModel.Settings.ScreenshotHotkey;
         

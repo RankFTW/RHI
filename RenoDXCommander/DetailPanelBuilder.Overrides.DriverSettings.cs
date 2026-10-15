@@ -10,8 +10,6 @@ namespace RenoDXCommander;
 
 public partial class DetailPanelBuilder
 {
-    // Used by BuildNvidiaProfileBody to update the DLSS collapsed summary (still needed)
-    private StackPanel? _nvBodyPanel;
     private StackPanel? _nvHeaderRow;
 
     // Separate header row reference for the Driver Settings section summary
@@ -168,7 +166,7 @@ public partial class DetailPanelBuilder
                 if (completed == nvapiTask)
                     data = await nvapiTask.ConfigureAwait(false);
                 else
-                    CrashReporter.Log($"[BuildDriverProfileSection] NVAPI reads timed out for '{gameName}' — using defaults");
+                    CrashReporter.Log($"[BuildDriverProfileSection] NVAPI reads timed out for '{gameName}' — skipping driver settings");
             }
             finally
             {
@@ -188,6 +186,21 @@ public partial class DetailPanelBuilder
                 if (currentCard == null || !currentCard.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
                     || currentCard.Source != gameSource)
                     return;
+
+                // NVAPI reads timed out — there is no profile data to build the grid from
+                if (data == null)
+                {
+                    driverContainer.Children.Clear();
+                    driverContainer.Children.Add(new TextBlock
+                    {
+                        Text         = "⚠ The driver profile took too long to read. Select the game again to retry.",
+                        FontSize     = 10,
+                        Foreground   = UIFactory.Brush(ResourceKeys.AccentAmberDimBrush),
+                        TextWrapping = TextWrapping.Wrap,
+                        Margin       = new Thickness(0, 4, 0, 0),
+                    });
+                    return;
+                }
 
                 _window.ViewModel.SetLastUiAction($"BuildDriverProfileSectionWithData({gameName})");
                 var sw = System.Diagnostics.Stopwatch.StartNew();

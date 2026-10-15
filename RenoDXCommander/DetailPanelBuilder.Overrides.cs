@@ -801,7 +801,7 @@ public partial class DetailPanelBuilder
         {
             if (shaderComboInitializing) return;
             var current = shaderModeCombo.SelectedItem as string;
-            if (current == "Select" && _window.ViewModel.GetPerGameShaderMode(capturedName, card.Source) == "Select")
+            if (current == "Select" && _window.ViewModel.GetPerGameShaderMode(capturedName, card.Source ?? "") == "Select")
             {
                 shaderComboInitializing = true;
                 shaderModeCombo.SelectedItem = "Global";
@@ -844,7 +844,7 @@ public partial class DetailPanelBuilder
                 else
                 {
                     // Cancelled — revert to actual current persisted mode
-                    var currentMode = _window.ViewModel.GetPerGameShaderMode(capturedName, card.Source);
+                    var currentMode = _window.ViewModel.GetPerGameShaderMode(capturedName, card.Source ?? "");
                     var revertTo = currentMode == "Select" ? "Select" : (currentMode == "Off" ? "Off" : (currentMode == "Custom" ? "Custom" : "Global"));
                     shaderComboInitializing = true;
                     shaderModeCombo.SelectedItem = revertTo;
@@ -964,7 +964,7 @@ public partial class DetailPanelBuilder
         };
 
         var bitnessItems = new[] { "Auto", "32-bit", "64-bit" };
-        var currentBitnessOverride = _window.ViewModel.GetBitnessOverride(gameName, card.Source);
+        var currentBitnessOverride = _window.ViewModel.GetBitnessOverride(gameName, card.Source ?? "");
         var defaultBitnessSelection = currentBitnessOverride switch
         {
             "32" => "32-bit",
@@ -992,7 +992,7 @@ public partial class DetailPanelBuilder
                 _ => null,
             };
 
-            _window.ViewModel.SetBitnessOverride(capturedName, overrideValue, card.Source);
+            _window.ViewModel.SetBitnessOverride(capturedName, overrideValue, card.Source ?? "");
 
             // Update card.Is32Bit based on selection
             var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -1074,7 +1074,7 @@ public partial class DetailPanelBuilder
             "Reset Overrides reverts to auto-detection.");
 
         var apiDropdownItems = new[] { "Auto", "DirectX8", "DirectX9", "DirectX10", "DirectX11", "DirectX12", "Vulkan", "OpenGL" };
-        var existingApiOverride = _window.ViewModel.GetApiOverride(gameName, card.Source);
+        var existingApiOverride = _window.ViewModel.GetApiOverride(gameName, card.Source ?? "");
 
         // Determine current selection
         string defaultApiSelection = "Auto";
@@ -1124,7 +1124,7 @@ public partial class DetailPanelBuilder
                 _ => null, // "Auto" clears the override
             };
 
-            _window.ViewModel.SetApiOverride(capturedName, apiEnumNames, card.Source);
+            _window.ViewModel.SetApiOverride(capturedName, apiEnumNames, card.Source ?? "");
 
             // Update card properties
             var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>

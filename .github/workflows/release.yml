@@ -29,7 +29,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Read version
         id: version
@@ -53,7 +53,7 @@ jobs:
           Write-Host "Version $raw → $tag ($title), release exists: $exists"
           exit 0
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         if: steps.version.outputs.exists == 'false'
         with:
           dotnet-version: 8.0.x

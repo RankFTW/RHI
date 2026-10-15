@@ -484,7 +484,7 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.ToggleUpdateAllExclusionDc(ctx.CapturedName, card.Source);
             if (_window.ViewModel.IsUpdateAllExcludedOs(ctx.CapturedName, card.Source))
                 _window.ViewModel.ToggleUpdateAllExclusionOs(ctx.CapturedName, card.Source);
-            UpdateInclusionHelper.RefreshSummary(ctx.UpdateSummaryText, _window.ViewModel, ctx.CapturedName, card.IsREEngineGame, card.DxvkEnabled, card.Source ?? "");
+            UpdateInclusionHelper.RefreshSummary(ctx.UpdateSummaryText, _window.ViewModel, ctx.CapturedName, card.IsREEngineGame, card.DxvkEnabled, card.Source);
             ctx.WikiExcludeCombo.SelectedItem = "Included";
 
             // Persist all reset values immediately

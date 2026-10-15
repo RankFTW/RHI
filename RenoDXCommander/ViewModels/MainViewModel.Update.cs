@@ -2315,7 +2315,7 @@ public partial class MainViewModel
                              && !c.IsHidden
                              && c.LumaNexusUrl != null
                              && c.LumaRecord?.NexusFileId != null)  // only premium installs have a reliable baseline
-                    .Select(c => (c.GameName, c.LumaNexusUrl!, c.LumaRecord!.NexusFileId!.Value.ToString()))
+                    .Select(c => (c.GameName, c.LumaNexusUrl!, (string?)c.LumaRecord!.NexusFileId!.Value.ToString()))
                     .ToList();
 
                 if (lumaModsToCheck.Count > 0)
@@ -2508,7 +2508,7 @@ public partial class MainViewModel
                             Category      = "Component",
                             ComponentName = "RTX Encore",
                             OldVersion    = rtxOldVersion,
-                            NewVersion    = rtxEncoreSvc.StagedVersion,
+                            NewVersion    = rtxEncoreSvc.StagedVersion ?? "",
                         });
                         foreach (var c in cards.Where(c => !string.IsNullOrEmpty(c.InstallPath)))
                         {
@@ -2667,7 +2667,7 @@ public partial class MainViewModel
                          && !c.IsHidden
                          && c.LumaNexusUrl != null
                          && c.LumaRecord?.NexusFileId != null)  // only premium installs have a reliable baseline
-                .Select(c => (c.GameName, c.LumaNexusUrl!, c.LumaRecord!.NexusFileId!.Value.ToString()))
+                .Select(c => (c.GameName, c.LumaNexusUrl!, (string?)c.LumaRecord!.NexusFileId!.Value.ToString()))
                 .ToList();
 
             if (lumaModsToCheck.Count > 0)

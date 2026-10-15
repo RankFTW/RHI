@@ -262,7 +262,7 @@ public partial class OptiScalerService
                 if (dirName.Equals("docs", StringComparison.OrdinalIgnoreCase))
                     continue;
                 // Skip dated nightly build subfolders (8-digit names) — staging-only, not game content
-                if (dirName != null && dirName.Length == 8 && dirName.All(char.IsDigit))
+                if (dirName.Length == 8 && dirName.All(char.IsDigit))
                     continue;
 
                 var destSubDir = Path.Combine(card.InstallPath, dirName);
@@ -1217,7 +1217,7 @@ public partial class OptiScalerService
                 if (dirName.Equals("docs", StringComparison.OrdinalIgnoreCase))
                     continue;
                 // Skip dated nightly build subfolders (8-digit names) — staging-only, not game content
-                if (dirName != null && dirName.Length == 8 && dirName.All(char.IsDigit))
+                if (dirName.Length == 8 && dirName.All(char.IsDigit))
                     continue;
 
                 var destSubDir = Path.Combine(gameDir, dirName);

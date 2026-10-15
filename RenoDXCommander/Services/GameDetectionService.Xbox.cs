@@ -126,8 +126,12 @@ public partial class GameDetectionService
                     string? aumid = null;
                     try
                     {
-                        var appEntries = package.GetAppListEntries();
-                        aumid = appEntries?.FirstOrDefault()?.AppUserModelId;
+                        // GetAppListEntries needs Windows 10 2004 (build 19041) or later
+                        if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+                        {
+                            var appEntries = package.GetAppListEntries();
+                            aumid = appEntries?.FirstOrDefault()?.AppUserModelId;
+                        }
                     }
                     catch (Exception ex)
                     {
