@@ -26,7 +26,7 @@
          the transitive buildTransitive targets (MrtCore.PriGen) from being imported
          via the project reference. Using build instead of buildTransitive avoids
          the PRI generation tasks that require Visual Studio. -->
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.250108002" ExcludeAssets="buildTransitive" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" ExcludeAssets="buildTransitive" />
   </ItemGroup>
 
   <ItemGroup>
