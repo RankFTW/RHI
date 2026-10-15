@@ -712,6 +712,7 @@ public sealed partial class MainWindow
                     UseShellExecute = true,
                     WorkingDirectory = System.IO.Path.GetDirectoryName(userExe) ?? "",
                 });
+                GamePriorityService.BoostLaunchedGame(proc, card.InstallPath, gameName);
                 MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                 return;
             }
@@ -725,12 +726,13 @@ public sealed partial class MainWindow
                 if (File.Exists(fullPath))
                 {
                     _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via manifest override: {fullPath} {launchArgs}");
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath)
+                    var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath)
                     {
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                         WorkingDirectory = card.InstallPath ?? "",
                     });
+                    GamePriorityService.BoostLaunchedGame(proc, card.InstallPath, gameName);
                     return;
                 }
             }
@@ -765,6 +767,8 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Steam: {steamUri}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
+                // Steam starts the game itself; only the game's own processes are raised
+                GamePriorityService.BoostLaunchedGame(null, card.InstallPath, gameName);
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                 return;
             }
@@ -775,6 +779,7 @@ public sealed partial class MainWindow
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
+                GamePriorityService.BoostLaunchedGame(null, card.InstallPath, gameName);
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                 return;
             }
@@ -787,6 +792,7 @@ public sealed partial class MainWindow
                 var uri = $"shell:AppsFolder\\{card.DetectedGame.XboxAumid}";
                 _crashReporter.Log($"[MainWindow.LaunchGameAsync] Launching '{gameName}' via Xbox AUMID: {card.DetectedGame.XboxAumid}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri) { UseShellExecute = true });
+                GamePriorityService.BoostLaunchedGame(null, card.InstallPath, gameName);
                 MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                 return;
             }
@@ -817,6 +823,7 @@ public sealed partial class MainWindow
                         UseShellExecute = true,
                         WorkingDirectory = installPath,
                     });
+                    GamePriorityService.BoostLaunchedGame(proc, installPath, gameName);
                     MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore, shouldToggleAutoHdrHdr, autoHdrHdrWasAlreadyOn);
                     return;
                 }

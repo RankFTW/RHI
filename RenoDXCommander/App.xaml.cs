@@ -231,6 +231,10 @@ public partial class App : Application
             return;
         }
 
+        // Admin Mode's scheduled task starts RHI at Below Normal, which the games it
+        // launches would inherit.
+        GamePriorityService.EnsureNormalPriorityForSelf();
+
         // Only the owning instance may migrate shared application data.
         MigrateLegacyAppData();
         DownloadsMigrationService.RunOnce();
