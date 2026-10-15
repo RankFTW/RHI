@@ -61,14 +61,14 @@ jobs:
           "installer=$(Join-Path $installer 'RHI-Setup.exe')" >> $env:GITHUB_OUTPUT
 
       - name: Upload installer
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: RHI-Setup-${{ steps.package.outputs.name }}
           path: ${{ steps.package.outputs.installer }}
           if-no-files-found: error
 
       - name: Upload portable app
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: RHI-${{ steps.package.outputs.name }}-portable
           path: ${{ steps.package.outputs.publish }}
