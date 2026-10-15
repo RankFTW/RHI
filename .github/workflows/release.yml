@@ -1,0 +1,145 @@
+name: Release
+
+# Publishes a GitHub release with RHI-Setup.exe whenever the version in
+# RenoDXCommander.csproj (<AssemblyVersion>) changes on main and no release
+# exists for it yet. Can also be started by hand from the Actions tab.
+#
+# Version → release:
+#   2.8.8.0 → tag v2.8.8,        title "RHI 2.8.8"          (latest release)
+#   2.8.8.2 → tag v2.8.8-beta2,  title "RHI 2.8.8 beta 2"   (pre-release)
+# Release notes come from the "## v2.8.8" section of RHI_PatchNotes.md when present.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - RenoDXCommander/RenoDXCommander.csproj
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $raw = (Select-String -Path RenoDXCommander/RenoDXCommander.csproj -Pattern '<AssemblyVersion>([^<]+)</AssemblyVersion>').Matches[0].Groups[1].Value
+          $v = [version]$raw
+          $base = "$($v.Major).$($v.Minor).$($v.Build)"
+          if ($v.Revision -gt 0) {
+            $tag = "v$base-beta$($v.Revision)"; $title = "RHI $base beta $($v.Revision)"; $pre = 'true'
+          } else {
+            $tag = "v$base"; $title = "RHI $base"; $pre = 'false'
+          }
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          $exists = if ($LASTEXITCODE -eq 0) { 'true' } else { 'false' }
+          "base=$base"       >> $env:GITHUB_OUTPUT
+          "tag=$tag"         >> $env:GITHUB_OUTPUT
+          "title=$title"     >> $env:GITHUB_OUTPUT
+          "prerelease=$pre"  >> $env:GITHUB_OUTPUT
+          "exists=$exists"   >> $env:GITHUB_OUTPUT
+          Write-Host "Version $raw → $tag ($title), release exists: $exists"
+          exit 0
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.version.outputs.exists == 'false'
+        with:
+          dotnet-version: 8.0.x
+
+      # RenoDXCommander.csproj copies ClrMD from the NuGet cache as a loose file
+      # (it is deliberately not a PackageReference), so make sure it is there.
+      - name: Restore ClrMD into the NuGet cache
+        if: steps.version.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'clrmd'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Set-Content (Join-Path $dir 'clrmd.csproj') '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include="Microsoft.Diagnostics.Runtime" Version="3.1.512801" /></ItemGroup></Project>'
+          dotnet restore (Join-Path $dir 'clrmd.csproj') --packages (Join-Path $env:USERPROFILE '.nuget\packages')
+
+      # Mirrors publish.bat
+      - name: Publish RHI
+        if: steps.version.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'publish'
+          $src = 'RenoDXCommander'
+
+          dotnet publish "$src/RenoDXCommander.csproj" -c Release -r win-x64 -p:PublishSingleFile=true -p:Platform=x64 --self-contained false -o $out
+          if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed' }
+
+          dotnet build RHI.DropHelper/RHI.DropHelper.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'drop helper build failed' }
+          $helper = 'RHI.DropHelper/bin/x64/Release/net8.0-windows'
+          foreach ($f in 'RHI.DropHelper.exe', 'RHI.DropHelper.dll', 'RHI.DropHelper.runtimeconfig.json') {
+            Copy-Item (Join-Path $helper $f) $out -Force
+          }
+
+          $content = @(
+            'icon.ico', '7z.exe', '7z.dll', 'ReShade.ini', 'ReShade.Vulkan.ini', 'ReShade64.json',
+            'RHI_PatchNotes.md', 'relimiter.ini', 'reshade.rdr2.ini',
+            'OptiScaler_nightly.nvidia.ini', 'OptiScaler_nightly.amd-dlss.ini', 'OptiScaler_nightly.amd-nodlss.ini',
+            'OptiScaler_dlssnr.nvidia.ini', 'OptiScaler_dlssnr.amd-dlss.ini', 'OptiScaler_dlssnr.amd-nodlss.ini',
+            'OptiScaler_f5.nvidia.ini', 'OptiScaler_f5.amd-dlss.ini', 'OptiScaler_f5.amd-nodlss.ini',
+            'OptiScaler.nvidia.ini', 'OptiScaler.amd-dlss.ini', 'OptiScaler.amd-nodlss.ini'
+          )
+          foreach ($f in $content) { Copy-Item (Join-Path $src $f) $out -Force }
+
+          $icons = Join-Path $out 'Assets/icons'
+          New-Item -ItemType Directory -Force $icons | Out-Null
+          Copy-Item "$src/Assets/icons/*.ico", "$src/Assets/icons/*.png" $icons -Force
+
+          Copy-Item (Join-Path $env:USERPROFILE '.nuget/packages/microsoft.diagnostics.runtime/3.1.512801/lib/net6.0/Microsoft.Diagnostics.Runtime.dll') $out -Force
+
+          "PUBLISH_DIR=$out" >> $env:GITHUB_ENV
+
+      - name: Build installer
+        if: steps.version.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          choco upgrade innosetup -y --no-progress
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          $dist = Join-Path $env:RUNNER_TEMP 'dist'
+          New-Item -ItemType Directory -Force $dist | Out-Null
+          & $iscc "/DPublishDir=$env:PUBLISH_DIR" "/DInstallerOutputDir=$dist" 'RHI Setup.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
+          "INSTALLER=$(Join-Path $dist 'RHI-Setup.exe')" >> $env:GITHUB_ENV
+
+      - name: Create GitHub release
+        if: steps.version.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          $base = '${{ steps.version.outputs.base }}'
+          $notesFile = Join-Path $env:RUNNER_TEMP 'notes.md'
+          $patchNotes = Get-Content RenoDXCommander/RHI_PatchNotes.md -Raw -Encoding utf8
+          $pattern = '(?ms)^## v' + [regex]::Escape($base) + '[ \t]*\r?\n(.*?)(?=^## v|\z)'
+          $m = [regex]::Match($patchNotes, $pattern)
+
+          $ghArgs = @('${{ steps.version.outputs.tag }}', $env:INSTALLER,
+                      '--repo', $env:GITHUB_REPOSITORY,
+                      '--title', '${{ steps.version.outputs.title }}',
+                      '--target', $env:GITHUB_SHA)
+          # Sections end with a "---" separator line; drop it.
+          $notes = if ($m.Success) { ($m.Groups[1].Value -replace '\s*-{3,}\s*$', '').Trim() } else { '' }
+          if ($notes) {
+            Set-Content $notesFile $notes -Encoding utf8
+            $ghArgs += @('--notes-file', $notesFile)
+          } else {
+            $ghArgs += '--generate-notes'
+          }
+          if ('${{ steps.version.outputs.prerelease }}' -eq 'true') { $ghArgs += '--prerelease' }
+
+          gh release create @ghArgs
+          if ($LASTEXITCODE -ne 0) { throw 'gh release create failed' }

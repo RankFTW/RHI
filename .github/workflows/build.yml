@@ -1,0 +1,43 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # RenoDXCommander.csproj copies ClrMD from the NuGet cache as a loose file
+      # (it is deliberately not a PackageReference), so make sure it is there.
+      - name: Restore ClrMD into the NuGet cache
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'clrmd'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Set-Content (Join-Path $dir 'clrmd.csproj') '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include="Microsoft.Diagnostics.Runtime" Version="3.1.512801" /></ItemGroup></Project>'
+          dotnet restore (Join-Path $dir 'clrmd.csproj') --packages (Join-Path $env:USERPROFILE '.nuget\packages')
+
+      - name: Build RHI
+        run: dotnet build RenoDXCommander/RenoDXCommander.csproj -c Release -p:Platform=x64
+
+      - name: Build drop helper
+        run: dotnet build RHI.DropHelper/RHI.DropHelper.csproj -c Release
+
+      - name: Run tests
+        run: dotnet test RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -c Release -p:Platform=x64
