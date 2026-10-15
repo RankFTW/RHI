@@ -58,64 +58,13 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      # RenoDXCommander.csproj copies ClrMD from the NuGet cache as a loose file
-      # (it is deliberately not a PackageReference), so make sure it is there.
-      - name: Restore ClrMD into the NuGet cache
+      - name: Package app and installer
         if: steps.version.outputs.exists == 'false'
         shell: pwsh
         run: |
-          $dir = Join-Path $env:RUNNER_TEMP 'clrmd'
-          New-Item -ItemType Directory -Force $dir | Out-Null
-          Set-Content (Join-Path $dir 'clrmd.csproj') '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include="Microsoft.Diagnostics.Runtime" Version="3.1.512801" /></ItemGroup></Project>'
-          dotnet restore (Join-Path $dir 'clrmd.csproj') --packages (Join-Path $env:USERPROFILE '.nuget\packages')
-
-      # Mirrors publish.bat
-      - name: Publish RHI
-        if: steps.version.outputs.exists == 'false'
-        shell: pwsh
-        run: |
-          $out = Join-Path $env:RUNNER_TEMP 'publish'
-          $src = 'RenoDXCommander'
-
-          dotnet publish "$src/RenoDXCommander.csproj" -c Release -r win-x64 -p:PublishSingleFile=true -p:Platform=x64 --self-contained false -o $out
-          if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed' }
-
-          dotnet build RHI.DropHelper/RHI.DropHelper.csproj -c Release
-          if ($LASTEXITCODE -ne 0) { throw 'drop helper build failed' }
-          $helper = 'RHI.DropHelper/bin/x64/Release/net8.0-windows'
-          foreach ($f in 'RHI.DropHelper.exe', 'RHI.DropHelper.dll', 'RHI.DropHelper.runtimeconfig.json') {
-            Copy-Item (Join-Path $helper $f) $out -Force
-          }
-
-          $content = @(
-            'icon.ico', '7z.exe', '7z.dll', 'ReShade.ini', 'ReShade.Vulkan.ini', 'ReShade64.json',
-            'RHI_PatchNotes.md', 'relimiter.ini', 'reshade.rdr2.ini',
-            'OptiScaler_nightly.nvidia.ini', 'OptiScaler_nightly.amd-dlss.ini', 'OptiScaler_nightly.amd-nodlss.ini',
-            'OptiScaler_dlssnr.nvidia.ini', 'OptiScaler_dlssnr.amd-dlss.ini', 'OptiScaler_dlssnr.amd-nodlss.ini',
-            'OptiScaler_f5.nvidia.ini', 'OptiScaler_f5.amd-dlss.ini', 'OptiScaler_f5.amd-nodlss.ini',
-            'OptiScaler.nvidia.ini', 'OptiScaler.amd-dlss.ini', 'OptiScaler.amd-nodlss.ini'
-          )
-          foreach ($f in $content) { Copy-Item (Join-Path $src $f) $out -Force }
-
-          $icons = Join-Path $out 'Assets/icons'
-          New-Item -ItemType Directory -Force $icons | Out-Null
-          Copy-Item "$src/Assets/icons/*.ico", "$src/Assets/icons/*.png" $icons -Force
-
-          Copy-Item (Join-Path $env:USERPROFILE '.nuget/packages/microsoft.diagnostics.runtime/3.1.512801/lib/net6.0/Microsoft.Diagnostics.Runtime.dll') $out -Force
-
-          "PUBLISH_DIR=$out" >> $env:GITHUB_ENV
-
-      - name: Build installer
-        if: steps.version.outputs.exists == 'false'
-        shell: pwsh
-        run: |
-          choco upgrade innosetup -y --no-progress
-          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-          $dist = Join-Path $env:RUNNER_TEMP 'dist'
-          New-Item -ItemType Directory -Force $dist | Out-Null
-          & $iscc "/DPublishDir=$env:PUBLISH_DIR" "/DInstallerOutputDir=$dist" 'RHI Setup.iss'
-          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          "INSTALLER=$(Join-Path $dist 'RHI-Setup.exe')" >> $env:GITHUB_ENV
+          $installer = Join-Path $env:RUNNER_TEMP 'installer'
+          ./.github/scripts/package.ps1 -PublishDir (Join-Path $env:RUNNER_TEMP 'RHI') -InstallerDir $installer
+          "INSTALLER=$(Join-Path $installer 'RHI-Setup.exe')" >> $env:GITHUB_ENV
 
       - name: Create GitHub release
         if: steps.version.outputs.exists == 'false'

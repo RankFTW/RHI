@@ -1,5 +1,10 @@
 name: Build
 
+# Builds and tests RHI on every push to main and every pull request, then
+# packages it. Each run's page has two downloads under "Artifacts":
+#   RHI-Setup-<version>-<commit>     the installer (RHI-Setup.exe)
+#   RHI-<version>-<commit>-portable  the app folder, ready to run without installing
+
 on:
   push:
     branches: [main]
@@ -41,3 +46,30 @@ jobs:
 
       - name: Run tests
         run: dotnet test RenoDXCommander.Tests/RenoDXCommander.Tests.csproj -c Release -p:Platform=x64
+
+      - name: Package app and installer
+        id: package
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path RenoDXCommander/RenoDXCommander.csproj -Pattern '<AssemblyVersion>([^<]+)</AssemblyVersion>').Matches[0].Groups[1].Value
+          $sha = '${{ github.event.pull_request.head.sha || github.sha }}'.Substring(0, 7)
+          $publish = Join-Path $env:RUNNER_TEMP 'RHI'
+          $installer = Join-Path $env:RUNNER_TEMP 'installer'
+          ./.github/scripts/package.ps1 -PublishDir $publish -InstallerDir $installer
+          "name=$version-$sha"                              >> $env:GITHUB_OUTPUT
+          "publish=$publish"                                >> $env:GITHUB_OUTPUT
+          "installer=$(Join-Path $installer 'RHI-Setup.exe')" >> $env:GITHUB_OUTPUT
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v5
+        with:
+          name: RHI-Setup-${{ steps.package.outputs.name }}
+          path: ${{ steps.package.outputs.installer }}
+          if-no-files-found: error
+
+      - name: Upload portable app
+        uses: actions/upload-artifact@v5
+        with:
+          name: RHI-${{ steps.package.outputs.name }}-portable
+          path: ${{ steps.package.outputs.publish }}
+          if-no-files-found: error
