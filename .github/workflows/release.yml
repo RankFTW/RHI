@@ -26,14 +26,18 @@ concurrency:
 jobs:
   release:
     runs-on: windows-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
+      # The token only goes to the two steps that call gh, not to restore,
+      # publish or the Inno Setup install.
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Read version
         id: version
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           $raw = (Select-String -Path RenoDXCommander/RenoDXCommander.csproj -Pattern '<AssemblyVersion>([^<]+)</AssemblyVersion>').Matches[0].Groups[1].Value
           $v = [version]$raw
@@ -69,6 +73,8 @@ jobs:
       - name: Create GitHub release
         if: steps.version.outputs.exists == 'false'
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           $base = '${{ steps.version.outputs.base }}'
           $notesFile = Join-Path $env:RUNNER_TEMP 'notes.md'
