@@ -2710,6 +2710,7 @@ public partial class DetailPanelBuilder
     private async Task<string?> ShowRtxEncoreDllPickerAsync(GameCardViewModel card, string? currentDllName)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return null;
+        var recommendedName = RtxEncoreService.GetRecommendedProxyName(card.GameName);
         var rhiConflicts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrEmpty(card.RsInstalledFile)) rhiConflicts[card.RsInstalledFile] = "ReShade";
         if (!string.IsNullOrEmpty(card.OsInstalledFile)) rhiConflicts[card.OsInstalledFile] = "OptiScaler";
@@ -2744,9 +2745,10 @@ public partial class DetailPanelBuilder
         var listPanel = new StackPanel { Spacing = 4 };
         var scrollViewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 480, Content = listPanel };
 
-        foreach (var name in RtxEncoreService.KnownProxyNames)
+        foreach (var name in RtxEncoreService.KnownProxyNames.OrderBy(name =>
+            !string.Equals(name, recommendedName, StringComparison.OrdinalIgnoreCase)))
         {
-            bool isRecommended = string.Equals(name, "version.dll", StringComparison.OrdinalIgnoreCase);
+            bool isRecommended = string.Equals(name, recommendedName, StringComparison.OrdinalIgnoreCase);
             bool isAsi         = name.EndsWith(".asi", StringComparison.OrdinalIgnoreCase);
             bool isCurrent     = string.Equals(name, currentDllName, StringComparison.OrdinalIgnoreCase);
             bool isRhiOwned    = rhiConflicts.ContainsKey(name);
