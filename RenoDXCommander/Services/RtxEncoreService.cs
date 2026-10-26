@@ -46,6 +46,11 @@ public class RtxEncoreService
         "rtx-encore.asi",   // ASI plugin variant
     };
 
+    public static string GetRecommendedProxyName(string? gameName)
+        => string.Equals(gameName?.Trim(), "Euro Truck Simulator 2", StringComparison.OrdinalIgnoreCase)
+            ? "winmm.dll"
+            : "version.dll";
+
     private static readonly string BaseStagingDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI");
