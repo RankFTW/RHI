@@ -44,7 +44,7 @@ public sealed partial class NeuralRenderingSetup
         byte[] Read(string directory, string name) => File.ReadAllBytes(Path.Combine(directory, name));
 
         var dllsToDeploy = new List<(string Source, string Destination, bool IfAbsent)>();
-        var detection = DlssScanner.Detect(game.Root);
+        var detection = DlssScanner.Detect(game.Root, game.Name);
         string DllTarget(DlssKind kind) => detection.Path(kind) ?? At(dir, DlssFiles.DllName(kind));
         switch (method)
         {
@@ -106,6 +106,8 @@ public sealed partial class NeuralRenderingSetup
         {
             // Undo the Cost Scaler first so the real NR DLL is back in place before it is updated.
             UninstallCostScaler(dir, previous?.CostScaler == true);
+            // A Windows "ZZZ Load Order" copy would make ReShade load ShortFuse twice.
+            if (method == NrMethod.ShortFuse && At(dir, NrFiles.SfAddonZzz) is var zzz && File.Exists(zzz)) File.Delete(zzz);
             new Installation(dir).Install(Component, $"{NrMethod.Name(method)} {record.AddonVersion}".Trim(), payloads, replaceForeign: true);
             record.Dlls = previous?.Dlls ?? [];
             foreach (var (source, destination, ifAbsent) in dllsToDeploy)
@@ -186,12 +188,12 @@ public sealed partial class NeuralRenderingSetup
     private static void RemoveLegacy(Game game)
     {
         var dir = game.InstallDirectory;
-        foreach (var file in new[] { NrFiles.Dlss5Addon, NrFiles.SfAddon, NrFiles.Bridge, NrFiles.Feeder64, NrFiles.Feeder32 })
+        foreach (var file in new[] { NrFiles.Dlss5Addon, NrFiles.SfAddon, NrFiles.SfAddonZzz, NrFiles.Bridge, NrFiles.Feeder64, NrFiles.Feeder32 })
         {
             var path = At(dir, file);
             if (File.Exists(path) && !new Installation(dir).ReadState().Files.Any(f => f.Path.Equals(file, StringComparison.OrdinalIgnoreCase))) File.Delete(path);
         }
-        var detection = DlssScanner.Detect(game.Root);
+        var detection = DlssScanner.Detect(game.Root, game.Name);
         foreach (var kind in DlssFiles.Dlls)
         {
             Sentinel.Restore(At(dir, DlssFiles.DllName(kind)));

@@ -263,6 +263,41 @@ public sealed class OptiScalerTests : IDisposable
         Assert.False(OptiScaler.Installed(game));
     }
 
+    [Fact] public async Task RemovingWindowsInstallKeepsGameOwnedPlugins()
+    {
+        var game = Game("Plugins");
+        var dir = game.InstallDirectory;
+        void Write(string relative, string text) { var path = Path.Combine(dir, relative); Directory.CreateDirectory(Path.GetDirectoryName(path)!); File.WriteAllText(path, text); }
+        Write("dxgi.dll", "optiscaler"); Write("dxgi.dll.original", ""); Write("OptiScaler.ini", "ini");
+        Write("plugins/OptiPatcher.asi", "patcher");
+        Write("plugins/cyber_engine_tweaks/cyber_engine_tweaks.asi", "cet"); Write("plugins/RED4ext.dll", "red4ext");
+        File.WriteAllText(Path.Combine(dir, "rhi_install.txt"), JsonSerializer.Serialize(new
+        {
+            Component = "OptiScaler", Variant = "Stable", Version = "v0.9.4", InstalledAs = "dxgi.dll",
+            Files = new[] { "dxgi.dll", "OptiScaler.ini" }, Folders = new[] { "plugins" },
+        }));
+        await OptiScaler.Remove(game);
+        Assert.False(Exists(game, "plugins/OptiPatcher.asi") || Exists(game, "dxgi.dll"));
+        Assert.Equal("cet", Read(game, "plugins/cyber_engine_tweaks/cyber_engine_tweaks.asi"));
+        Assert.Equal("red4ext", Read(game, "plugins/RED4ext.dll"));
+    }
+
+    [Fact] public async Task RemovingWindowsF5InstallRemovesItsNrRuntime()
+    {
+        var game = Game("F5");
+        var dir = game.InstallDirectory;
+        void Write(string relative, string text) { var path = Path.Combine(dir, relative); Directory.CreateDirectory(Path.GetDirectoryName(path)!); File.WriteAllText(path, text); }
+        Write("dxgi.dll", "optiscaler"); Write("dxgi.dll.original", ""); Write("OptiScaler.ini", "ini");
+        Write("nvngx_dlssnr.dll", "f5 nr"); Write("nvngx_dlssnr.dll.original", ""); Write("nvngx.dll_dlssnr.dll", "forwarder");
+        File.WriteAllText(Path.Combine(dir, "rhi_install.txt"), JsonSerializer.Serialize(new
+        {
+            Component = "OptiScaler", Variant = "F5", Version = "v0.9.4", InstalledAs = "dxgi.dll",
+            Files = new[] { "dxgi.dll", "OptiScaler.ini", "nvngx_dlssnr.dll", "nvngx.dll_dlssnr.dll" },
+        }));
+        await OptiScaler.Remove(game);
+        Assert.False(Exists(game, "nvngx_dlssnr.dll") || Exists(game, "nvngx_dlssnr.dll.original") || Exists(game, "nvngx.dll_dlssnr.dll"));
+    }
+
     [Fact] public async Task NeuralRenderingAndOptiScalerEachKeepTheOthersDlssDlls()
     {
         var game = Game("Shared dlls");

@@ -131,7 +131,7 @@ public sealed partial class MainWindow
         _status.Text = "Finding games with DLSS…";
         foreach (var game in _games.Where(g => g.Executable != null))
         {
-            var detection = await Task.Run(() => DlssScanner.Detect(game.Root));
+            var detection = await Task.Run(() => DlssScanner.Detect(game.Root, game.Name));
             if (detection.HasAny) candidates.Add((game, detection));
         }
         if (candidates.Count == 0) { await Message("DLSS defaults", "No installed games with DLSS or Streamline DLLs were found."); return; }

@@ -48,12 +48,12 @@ public sealed partial class NeuralRenderingSetup(Downloads downloads, DlssCatalo
         {
             Record = record, Is32Bit = is32, Root = dir,
             Dlss5Tool = is32 ? File.Exists(At(host, NrFiles.Dlss5Addon)) : Exists(NrFiles.Dlss5Addon),
-            ShortFuse = Exists(NrFiles.SfAddon), Bridge = Exists(NrFiles.Bridge), Feeder = Exists(is32 ? NrFiles.Feeder32 : NrFiles.Feeder64),
+            ShortFuse = Exists(NrFiles.SfAddon) || Exists(NrFiles.SfAddonZzz), Bridge = Exists(NrFiles.Bridge), Feeder = Exists(is32 ? NrFiles.Feeder32 : NrFiles.Feeder64),
             HostExe = File.Exists(At(host, NrFiles.HostExe)), FeedFx = Shader(NrFiles.FeedFx), Lumenite = Shader(NrFiles.LumeniteFx),
             DgVoodoo = record?.DgVoodoo == true ? Exists(NrFiles.DgVoodooDll) : Sentinel.Placed(At(dir, NrFiles.DgVoodooDll)),
             CostScaler = Exists(NrFiles.CostReal), NrOwned = Sentinel.Placed(At(dir, DlssFiles.Nr)),
             RootSr = Exists(DlssFiles.Sr), RootSrVersion = PeVersion.Read(At(dir, DlssFiles.Sr)) is { } sr ? PeVersion.Format(sr) : null,
-            Detection = DlssScanner.Detect(game.Root),
+            Detection = DlssScanner.Detect(game.Root, game.Name),
         };
     }
 

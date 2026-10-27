@@ -47,6 +47,8 @@ public static class NrMethod
 public static class NrFiles
 {
     public const string Dlss5Addon = "renodx-dlss5.addon64", SfAddon = "renodx-dlss.addon64", Bridge = "dlss5-bridge.addon64";
+    // Windows RHI's "ZZZ Load Order" option renames the ShortFuse addon so ReShade loads it last.
+    public const string SfAddonZzz = "zzz_renodx-dlss.addon64";
     public const string Feeder64 = "dlss5-feed.addon64", Feeder32 = "dlss5-feed.addon32", HostExe = "dlss5-feed-host64.exe";
     public const string FeedFx = "DLSS5_Feed.fx", LumeniteFx = "lumenite_Kernel.fx";
     public const string CostProxy = "nvngx_dlssnr.dll", CostReal = "nvngx_dlssnr_real.dll", CostIni = "nvngx_dlssnr.ini", CostAddon = "dlssnr-companion.addon64";

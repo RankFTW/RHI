@@ -162,6 +162,34 @@ public sealed class DlssTests : IDisposable
         Assert.Equal("2.7.32", detection.Version(DlssKind.Streamline)); // highest sl.*.dll
     }
 
+    [Fact] public void DetectionIgnoresOptiScalersOwnStreamlineCopies()
+    {
+        FileAt("game/Game/Binaries/Win64/OptiScaler/Streamline/nvngx_dlssg.dll", PeWithVersion(310, 9, 0, 0));
+        FileAt("game/Game/Binaries/Win64/OptiScaler/Streamline/sl.interposer.dll", PeWithVersion(2, 14, 0, 0));
+        var detection = DlssScanner.Detect(Path.Combine(_root, "game"));
+        Assert.False(detection.HasAny);
+    }
+
+    [Fact] public void ManifestPathOverrideFindsDllsBeyondScanDepth()
+    {
+        const string dlss = @"Engine\Plugins\Frog\Third\Nvidia\DLSS\Binaries\ThirdParty\Win64";
+        const string sl = @"Engine\Plugins\Frog\Third\Nvidia\StreamlineCore\Binaries\ThirdParty\Win64";
+        FileAt("game/Engine/Plugins/Frog/Third/Nvidia/dlss/binaries/thirdparty/win64/nvngx_dlss.dll", PeWithVersion(310, 9, 0, 0));
+        FileAt("game/" + sl.Replace('\\', '/') + "/sl.interposer.dll", PeWithVersion(2, 14, 0, 0));
+        FileAt("game/" + sl.Replace('\\', '/') + "/nvngx_dlssg.dll", PeWithVersion(310, 8, 0, 0));
+        FileAt("cache/rhi-linux/manifest.json", System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
+        {
+            dlssPathOverrides = new Dictionary<string, string> { ["Deep Game"] = dlss },
+            streamlinePathOverrides = new Dictionary<string, string> { ["Deep Game"] = sl },
+        })));
+        var root = Path.Combine(_root, "game");
+        Assert.False(DlssScanner.Detect(root).Has(DlssKind.SR));
+        var detection = DlssScanner.Detect(root, "deep game");
+        Assert.Equal("310.9.0", detection.Version(DlssKind.SR));
+        Assert.Equal("310.8.0", detection.Version(DlssKind.FG));
+        Assert.Equal("2.14.0", detection.Version(DlssKind.Streamline));
+    }
+
     [Fact] public async Task VersionSwapsSupportCustomAndDefault()
     {
         var target = FileAt("game/nvngx_dlssd.dll", PeWithVersion(310, 1, 0, 0));
@@ -244,6 +272,18 @@ public sealed class DlssTests : IDisposable
         Assert.False(File.Exists(Path.Combine(dir, "renodx-dlss5.addon64")));
         Assert.False(File.Exists(Path.Combine(dir, "nvngx_dlssnr.dll")));
         Assert.Equal("310.1.0.0", PeVersion.Read(Path.Combine(dir, "nvngx_dlss.dll")));
+        Assert.False(NeuralRenderingSetup.Read(game).AnyInstalled);
+    }
+
+    [Fact] public async Task RecognisesAndRemovesWindowsZzzShortFuseAddon()
+    {
+        var dir = Path.Combine(_root, "zzz/Game"); var exe = FileAt("zzz/Game/Game.exe", PeWithVersion(1, 0, 0, 0));
+        FileAt("zzz/Game/zzz_renodx-dlss.addon64", Encoding.UTF8.GetBytes("addon"));
+        var game = GameAt(Path.Combine(_root, "zzz"), exe);
+        Assert.Equal(NrMethod.ShortFuse, NeuralRenderingSetup.Read(game).Method);
+        using var http = new HttpClient(); var downloads = new Downloads(http);
+        await new NeuralRenderingSetup(downloads, new DlssCatalog(http, downloads), new AddonReleases(http, downloads), new Catalog(http)).Remove(game);
+        Assert.False(File.Exists(Path.Combine(dir, "zzz_renodx-dlss.addon64")));
         Assert.False(NeuralRenderingSetup.Read(game).AnyInstalled);
     }
 

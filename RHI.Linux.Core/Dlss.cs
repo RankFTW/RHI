@@ -106,16 +106,47 @@ public sealed class DlssDetection
 
 public static class DlssScanner
 {
-    // Linux already supplies the game root. OptiScaler and helper copies are not native game DLSS.
-    public static DlssDetection Detect(string root)
+    // Linux already supplies the game root. OptiScaler and helper copies are not native game DLSS;
+    // OptiScaler/ holds OptiScaler's own Streamline and DLSS FG copies.
+    public static DlssDetection Detect(string root, string? gameName = null)
     {
+        if (gameName != null && DetectFromManifestPath(root, gameName) is { } exact) return exact;
         var result = new DlssDetection();
         var files = DlssFileDiscovery.Scan(root,
-            name => name.Equals(".rhi-linux", StringComparison.OrdinalIgnoreCase) || name.Equals("host64", StringComparison.OrdinalIgnoreCase),
+            name => name.Equals(".rhi-linux", StringComparison.OrdinalIgnoreCase) || name.Equals("host64", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("OptiScaler", StringComparison.OrdinalIgnoreCase),
             preferStreamlineIndicator: false);
         foreach (var kind in DlssFiles.Dlls)
             if (files.GameDlls.TryGetValue(DlssFiles.DllName(kind), out var path)) result.Paths[kind] = path;
         result.StreamlineFolder = files.StreamlineFolder;
+        result.ReadVersions();
+        return result;
+    }
+
+    // Manifest dlssPathOverrides/streamlinePathOverrides name folders deeper than the recursive
+    // scan reaches (The Sinking City 2). A missing folder falls back to the scan, as on Windows.
+    private static DlssDetection? DetectFromManifestPath(string root, string gameName)
+    {
+        var manifest = Catalog.LoadManifestSnapshot();
+        string? Folder(string section)
+        {
+            if (!manifest.TryGetProperty(section, out var map) || map.ValueKind != JsonValueKind.Object) return null;
+            var relative = map.EnumerateObject().FirstOrDefault(p => p.Name.Equals(gameName, StringComparison.OrdinalIgnoreCase)).Value;
+            if (relative.ValueKind != JsonValueKind.String || relative.GetString() is not { Length: > 0 } value) return null;
+            try { return LinuxPaths.ResolveCase(root, value) is var folder && Directory.Exists(folder) ? folder : null; }
+            catch (IOException) { return null; }
+        }
+        if (Folder("dlssPathOverrides") is not { } dlssFolder) return null;
+        var slFolder = Folder("streamlinePathOverrides") ?? dlssFolder;
+        string? Find(string folder, string name) => Directory.EnumerateFiles(folder)
+            .FirstOrDefault(f => System.IO.Path.GetFileName(f).Equals(name, StringComparison.OrdinalIgnoreCase));
+
+        var result = new DlssDetection();
+        foreach (var kind in DlssFiles.Dlls)
+            // nvngx_dlssg.dll often sits beside Streamline rather than DLSS.
+            if ((Find(dlssFolder, DlssFiles.DllName(kind)) ?? (kind == DlssKind.FG ? Find(slFolder, DlssFiles.Fg) : null)) is { } path)
+                result.Paths[kind] = path;
+        if (DlssFiles.Streamline.Any(f => Find(slFolder, f) != null)) result.StreamlineFolder = slFolder;
         result.ReadVersions();
         return result;
     }

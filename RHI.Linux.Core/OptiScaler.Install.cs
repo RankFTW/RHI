@@ -29,8 +29,7 @@ public sealed partial class OptiScaler
             catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException) { CrashReporter.Log($"OptiScaler {DlssFiles.Label(kind)}: " + ex.Message); }
         }
         if (variant == OsVariant.DlssNr) dlls.Add((await dlss.Fetch(DlssKind.NR, prefs.OsNrRuntime, progress), DlssFiles.Nr));
-        string? streamline = null;
-        if (OsVariant.Advanced(variant) && prefs.OsDeployStreamline) streamline = await dlss.Fetch(DlssKind.Streamline, prefs.OsStreamlineVersion, progress);
+        var streamline = OsVariant.Advanced(variant) && prefs.OsDeployStreamline ? await FetchStreamline(prefs, progress) : default;
         var template = Template(settings.EffectiveGpu, settings.DlssInputs, variant);
         var stagedIni = Path.Combine(staged, IniName);
 
@@ -70,7 +69,7 @@ public sealed partial class OptiScaler
                 Sentinel.Deploy(source, destination);
                 if (!record.Dlls.Contains(destination)) record.Dlls.Add(destination);
             }
-            DeployStreamline(dir, streamline);
+            DeployStreamline(dir, streamline.Folder, streamline.Fg);
             SaveRecord(dir, record);
         });
     }
@@ -97,7 +96,7 @@ public sealed partial class OptiScaler
             var dir = game.InstallDirectory;
             if (FromWindows(game)) { RemoveWindows(game); return; }
             var record = LoadRecord(dir);
-            DeployStreamline(dir, null);
+            DeployStreamline(dir, null, null);
             var installation = new Installation(dir);
             if (installation.ReadState().Components.ContainsKey(Component)) installation.Remove(Component);
             RestoreReShade(installation, dir);
@@ -141,12 +140,18 @@ public sealed partial class OptiScaler
         foreach (var name in manifest.Files)
         {
             if (name.Equals(IniName, StringComparison.OrdinalIgnoreCase) || name.Equals(manifest.InstalledAs, StringComparison.OrdinalIgnoreCase) || Shared(name)) continue;
-            if (name.Equals(DlssFiles.Nr, StringComparison.OrdinalIgnoreCase) && (manifest.Variant != OsVariant.DlssNr || !string.IsNullOrEmpty(manifest.NrMethod))) continue;
+            // Windows' DLSS NR and F5 variants deploy the NR runtime; other variants never own it.
+            if (name.Equals(DlssFiles.Nr, StringComparison.OrdinalIgnoreCase) && (manifest.Variant is not (OsVariant.DlssNr or WindowsF5Variant) || !string.IsNullOrEmpty(manifest.NrMethod))) continue;
             var path = At(name);
             if (File.Exists(path)) File.Delete(path);
             Sentinel.Restore(path);
         }
-        foreach (var folder in manifest.Folders.Append("plugins").Append("OptiScaler"))
+        // plugins/ is game-owned (Cyberpunk 2077 keeps CET and RED4ext there): remove only OptiPatcher.
+        var patcher = At(OptiPatcherPath);
+        if (File.Exists(patcher)) File.Delete(patcher);
+        Sentinel.Restore(patcher);
+        RemoveEmpty(At("plugins"));
+        foreach (var folder in manifest.Folders.Append("OptiScaler").Where(f => !f.Equals("plugins", StringComparison.OrdinalIgnoreCase)))
         {
             var path = At(folder);
             if (!Directory.Exists(path) || new DirectoryInfo(path).LinkTarget != null) continue;

@@ -50,6 +50,8 @@ public sealed class WindowsOsManifest
 public sealed partial class OptiScaler(HttpClient http, Downloads downloads, DlssCatalog dlss)
 {
     public const string Component = "OptiScaler", IniName = "OptiScaler.ini", DefaultDll = "dxgi.dll", OptiPatcherPath = "plugins/OptiPatcher.asi";
+    // Windows-only janblade F5 build (OptiScaler with a bundled NR forwarder); Linux only removes it.
+    public const string WindowsF5Variant = "F5";
     public const string Description = "OptiScaler replaces or adds upscalers (DLSS, FSR, XeSS) and frame generation in games that support any one of them. " +
         "It loads ReShade itself when both are installed, so RHI renames ReShade to ReShade64.dll if they would share a DLL name.";
     public static readonly string[] DllNames = ["dxgi.dll", "winmm.dll", "d3d11.dll", "d3d12.dll", "dbghelp.dll", "version.dll", "wininet.dll", "winhttp.dll"];
